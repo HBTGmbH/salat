@@ -2,6 +2,7 @@ package org.tb.order.service;
 
 import static org.tb.common.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.TransactionUtils.markForRollback;
 
 import java.time.LocalDate;
 import java.time.Year;
@@ -146,6 +147,7 @@ public class EmployeeorderService {
           var allMessages = new ArrayList<ServiceFeedbackMessage>();
           allMessages.add(error(ErrorCode.EO_UPDATE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
           allMessages.addAll(feedbackMessages);
+          markForRollback();
           event.vetoed(allMessages);
           break;
         }
@@ -155,6 +157,7 @@ public class EmployeeorderService {
           var allMessages = new ArrayList<ServiceFeedbackMessage>();
           allMessages.add(error(ErrorCode.EO_DELETE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
           allMessages.addAll(feedbackMessages);
+          markForRollback();
           event.vetoed(allMessages);
           break;
         }
@@ -171,6 +174,7 @@ public class EmployeeorderService {
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
         allMessages.add(error(ErrorCode.EO_DELETE_GOT_VETO, employeeorder.getSuborder().getCompleteOrderSign()));
         allMessages.addAll(feedbackMessages);
+        markForRollback();
         event.vetoed(allMessages);
         break;
       }

@@ -36,7 +36,6 @@ import static org.tb.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
 import static org.tb.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static org.tb.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
-import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEECONTRACT;
 import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
@@ -51,6 +50,7 @@ import static org.tb.common.util.DateUtils.getFirstDay;
 import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
 import static org.tb.common.util.DateUtils.getYearMonth;
+import static org.tb.common.util.TransactionUtils.markForRollback;
 import static org.tb.common.util.UrlUtils.absoluteUrl;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
@@ -78,7 +78,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.Warning;
-import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
@@ -96,8 +95,6 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.event.EmployeecontractDeleteEvent;
-import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
@@ -681,59 +678,36 @@ public class TimereportService {
   }
 
   @EventListener
-  public void onEmployeeorderUpdate(EmployeeorderUpdateEvent event) {
+  void onEmployeeorderUpdate(EmployeeorderUpdateEvent event) {
     var from = event.getDomainObject().getFromDate();
     var until = event.getDomainObject().getUntilDate();
     var timereports = timereportDAO.getTimereportsByCustomerOrderIdInvalidForDates(from, until, event.getDomainObject().getId());
     if(!timereports.isEmpty()) {
-      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER));
+      markForRollback();
+      var errors = timereports.stream()
+          .map(tr -> error(
+              TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER,
+              tr.getReferenceday()
+          ))
+          .toList();
+      event.vetoed(errors);
     }
   }
 
   @EventListener
-  public void onEmployeeorderDelete(EmployeeorderDeleteEvent event) {
+  void onEmployeeorderDelete(EmployeeorderDeleteEvent event) {
     var employeeorderId = event.getId();
-    if(!timereportDAO.getTimereportsByEmployeeOrderId(employeeorderId).isEmpty()) {
-      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER));
-    }
-  }
-
-  @EventListener
-  public void onEmployeecontractUpdate(EmployeecontractUpdateEvent event) {
-    var employeecontract = event.getDomainObject();
-    if(employeecontract.isNew()) return; // fresh new contract dont have to mind time report rules
-
-    // no time reports may exist outside the validity of the employee contract
-    var validFrom = employeecontract.getValidFrom();
-    var validUntil = employeecontract.getValidUntil();
-    var timereports = timereportDAO.getTimereportsByEmployeeContractIdInvalidForDates(validFrom, validUntil, employeecontract.getId());
+    List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeeOrderId(employeeorderId);
     if(!timereports.isEmpty()) {
-      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEECONTRACT));
-      return;
+      markForRollback();
+      var errors = timereports.stream()
+          .map(tr -> error(
+              TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEEORDER,
+              tr.getReferenceday()
+          ))
+          .toList();
+      event.vetoed(errors);
     }
-
-    // if no veto delete working days
-    var validity = employeecontract.getValidity();
-    var workingdays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontract.getId());
-    workingdays.stream()
-        .filter(w -> !validity.contains(w.getRefday()))
-        .mapToLong(AuditedEntity::getId)
-        .forEach(workingdayDAO::deleteWorkingdayById);
-  }
-
-  @EventListener
-  public void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
-    var employeeContractId = event.getId();
-    if(!timereportDAO.getTimereportsByEmployeecontractId(employeeContractId).isEmpty()) {
-      event.vetoed(error(TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EOMPLOYEECONTRACT));
-      return;
-    }
-
-    // if no veto delete working days
-    var workingdays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId);
-    workingdays.stream()
-        .mapToLong(AuditedEntity::getId)
-        .forEach(workingdayDAO::deleteWorkingdayById);
   }
 
   // utility methods

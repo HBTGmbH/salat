@@ -1,5 +1,6 @@
 package org.tb.common.event;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
@@ -17,13 +18,17 @@ public abstract class VetoableEvent extends ApplicationEvent {
   }
 
   public void vetoed(ServiceFeedbackMessage... messages) {
-    this.messages = List.of(messages);
-    this.vetoed = true;
+    this.vetoed(List.of(messages));
   }
 
   public void vetoed(List<ServiceFeedbackMessage> messages) {
-    this.messages = messages;
-    this.vetoed = true;
+    if(!vetoed) {
+      this.messages = messages;
+      this.vetoed = true;
+    } else {
+      this.messages = new ArrayList<>(this.messages);
+      this.messages.addAll(messages);
+    }
   }
 
 }

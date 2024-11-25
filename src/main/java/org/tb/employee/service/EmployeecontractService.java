@@ -1,13 +1,16 @@
 package org.tb.employee.service;
 
+import static org.tb.common.ServiceFeedbackMessage.Severity.ERROR;
+import static org.tb.common.ServiceFeedbackMessage.error;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
+import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
 import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,14 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.ServiceFeedbackMessage.Severity;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DataValidationUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -36,7 +38,6 @@ import org.tb.employee.persistence.EmployeecontractRepository;
 import org.tb.employee.persistence.OvertimeDAO;
 import org.tb.employee.persistence.VacationDAO;
 import org.tb.employee.persistence.VacationRepository;
-import org.tb.order.domain.Employeeorder;
 
 @Slf4j
 @Service
@@ -67,7 +68,7 @@ public class EmployeecontractService {
     return employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
   }
 
-  public Employeecontract createEmployeecontract(
+  public List<ServiceFeedbackMessage> createEmployeecontract(
       long employeeId,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -84,7 +85,7 @@ public class EmployeecontractService {
     employeecontract.setOvertimeStatic(Duration.ZERO);
     Employee theEmployee = employeeDAO.getEmployeeById(employeeId);
     employeecontract.setEmployee(theEmployee);
-    createOrUpdate(employeecontract, validFrom,
+    var messages = createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
         taskDescription,
@@ -92,6 +93,10 @@ public class EmployeecontractService {
         hide,
         dailyWorkingTime,
         vacationEntitlement);
+
+    if(messages.stream().anyMatch(ServiceFeedbackMessage::isError)) {
+      return messages;
+    }
 
     if(initialOvertime != null && !initialOvertime.isZero() ) {
       Overtime overtime = new Overtime();
@@ -101,10 +106,10 @@ public class EmployeecontractService {
       overtimeDAO.save(overtime);
     }
 
-    return employeecontract;
+    return List.of();
   }
 
-  public Employeecontract updateEmployeecontract(
+  public List<ServiceFeedbackMessage> updateEmployeecontract(
       long employeecontractId,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -117,7 +122,7 @@ public class EmployeecontractService {
   ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    createOrUpdate(employeecontract, validFrom,
+    var messages = createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
         taskDescription,
@@ -125,10 +130,10 @@ public class EmployeecontractService {
         hide,
         dailyWorkingTime,
         vacationEntitlement);
-    return employeecontract;
+    return messages;
   }
 
-  private void createOrUpdate(
+  private List<ServiceFeedbackMessage> createOrUpdate(
       Employeecontract employeecontract,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -155,13 +160,17 @@ public class EmployeecontractService {
       eventPublisher.publishEvent(event);
       if(event.isVetoed()) {
         var messages = event.getMessages().stream().map(ServiceFeedbackMessage::toString).collect(Collectors.joining("\n"));
-        log.info("Could not update employee contract:\n{}\nVeto messages:\n{}", employeecontract.toString(), messages);
-        throw new BusinessRuleException(ErrorCode.EC_UPDATE_GOT_VETO, messages);
+        log.info("Could not update employee contract for {} ({}).\nVeto messages:\n{}", employeecontract.getEmployee().getSign(), employeecontract.getTimeString(), messages);
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(EC_UPDATE_GOT_VETO));
+        allMessages.addAll(event.getMessages());
+        return allMessages;
       }
     }
 
     adjustVacations(employeecontract, vacationEntitlement);
-    employeecontractDAO.save(employeecontract);
+    employeecontractRepository.save(employeecontract);
+    return List.of();
   }
 
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {

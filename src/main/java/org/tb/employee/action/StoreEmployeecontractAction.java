@@ -16,6 +16,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.common.ServiceFeedbackMessage;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
@@ -123,11 +124,11 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             Duration initialOvertime = ecForm.getInitialOvertimeTyped();
             int yearlyvacation = ecForm.getYearlyvacationTyped();
 
-            final Employeecontract employeecontract;
             Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
             try {
+                List<ServiceFeedbackMessage> messages;
                 if(existingEmployeecontractId != null) {
-                    employeecontract = employeecontractService.updateEmployeecontract(
+                    messages = employeecontractService.updateEmployeecontract(
                         existingEmployeecontractId,
                         validFrom,
                         validUntil,
@@ -139,7 +140,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         yearlyvacation
                     );
                 } else {
-                    employeecontract = employeecontractService.createEmployeecontract(
+                    messages = employeecontractService.createEmployeecontract(
                         ecForm.getEmployee(),
                         validFrom,
                         validUntil,
@@ -152,24 +153,16 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         initialOvertime
                     );
                 }
+                if(!messages.isEmpty()) {
+                    for(var error : messages) {
+                        addToErrors(request, error);
+                    };
+                    return mapping.getInputForward();
+                }
             } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
                 addToMessages(request, e.getErrorCode());
-                if(e.getErrorCode() == ErrorCode.EC_UPDATE_GOT_VETO) {
-                    // in case of a specific error, print out timereports
-                    var timereportsInvalidForDates = timereportService.getTimereportsByEmployeeContractIdInvalidForDates(
-                        validFrom,
-                        validUntil,
-                        existingEmployeecontractId // in this exception case the employee contract must exist
-                    );
-                    if (!timereportsInvalidForDates.isEmpty()) {
-                        request.getSession().setAttribute("timereportsOutOfRange", timereportsInvalidForDates);
-                    }
-                }
                 return mapping.getInputForward();
             }
-
-            request.getSession().setAttribute("currentEmployee", employeecontract.getEmployee().getName());
-            request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
 
             List<Employee> employeeOptionList = employeeService.getAllEmployees();
             request.getSession().setAttribute("employees", employeeOptionList);

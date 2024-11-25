@@ -497,6 +497,7 @@ public class TimereportDAO {
             .lastupdate(timereport.getLastupdate())
             .lastupdatedby(timereport.getLastupdatedby())
             .fitsToContract(timereport.getFitsToContract())
+            .completeOrderSign(timereport.getSuborder().getCompleteOrderSign())
             .build();
     }
 

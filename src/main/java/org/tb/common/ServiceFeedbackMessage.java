@@ -33,4 +33,8 @@ public class ServiceFeedbackMessage {
     return new ServiceFeedbackMessage(errorCode, INFO, args);
   }
 
+  public boolean isError() {
+    return severity == ERROR;
+  }
+
 }
