@@ -184,8 +184,8 @@ public class EmployeeorderService {
     var employeeorder = employeeorderDAO.getEmployeeorderById(employeeorderId);
     var existingValidity = employeeorder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);
-    var newFrom = existingValidity.isInfiniteFrom() ? null : resultingValidity.getFrom();
-    var newUntil = existingValidity.isInfiniteUntil() ? null : resultingValidity.getUntil();
+    var newFrom = resultingValidity.getFrom();
+    var newUntil = resultingValidity.getUntil();
     createOrUpdate(employeeorder, newFrom, newUntil);
   }
 

@@ -150,8 +150,8 @@ public class SuborderService {
     var suborder = suborderDAO.getSuborderById(suborderId);
     var existingValidity = suborder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);
-    var newFrom = existingValidity.isInfiniteFrom() ? null : resultingValidity.getFrom();
-    var newUntil = existingValidity.isInfiniteUntil() ? null : resultingValidity.getUntil();
+    var newFrom = resultingValidity.getFrom();
+    var newUntil = resultingValidity.getUntil();
     AddSuborderForm soForm = createForm(suborder, newFrom, newUntil);
     createOrUpdate(suborderId, soForm, suborder.getCustomerorder());
   }
