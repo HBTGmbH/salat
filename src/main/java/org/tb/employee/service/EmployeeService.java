@@ -1,7 +1,6 @@
 package org.tb.employee.service;
 
 import static org.tb.auth.domain.AccessLevel.LOGIN;
-import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
 import static org.tb.common.exception.ErrorCode.EM_DELETE_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 

@@ -21,7 +21,6 @@ import org.tb.dailyreport.domain.Referenceday_;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Timereport_;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder;

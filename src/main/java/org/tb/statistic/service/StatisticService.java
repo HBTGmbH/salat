@@ -2,7 +2,6 @@ package org.tb.statistic.service;
 
 import static java.time.Duration.ofMinutes;
 
-import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +9,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.domain.AuditedEntity;
-import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;

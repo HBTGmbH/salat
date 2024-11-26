@@ -21,7 +21,6 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
-import org.tb.order.domain.Suborder;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.persistence.CustomerorderDAO;
