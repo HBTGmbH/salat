@@ -1,7 +1,9 @@
 package org.tb.common;
 
 import java.time.LocalDate;
+import java.time.Year;
 import java.time.YearMonth;
+import java.time.temporal.TemporalAdjusters;
 import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,11 @@ public class DateRange {
   public DateRange(YearMonth month) {
     this.from = month.atDay(1);
     this.until = month.atEndOfMonth();
+  }
+
+  public DateRange(Year year) {
+    this.from = year.atDay(1);
+    this.until = from.with(TemporalAdjusters.lastDayOfYear());
   }
 
   public boolean isInfiniteFrom() {
@@ -94,4 +101,16 @@ public class DateRange {
     return date != null && until != null && date.isAfter(until);
   }
 
+  public boolean overlaps(Year year) {
+    if (year == null) {
+      return false;
+    }
+    LocalDate yearStart = year.atDay(1);
+    LocalDate yearEnd = year.atDay(1).with(TemporalAdjusters.lastDayOfYear());
+
+    LocalDate from = isInfiniteFrom() ? FINIT_FROM_BOUNDARY : this.from;
+    LocalDate until = isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : this.until;
+
+    return !from.isAfter(yearEnd) && !until.isBefore(yearStart);
+  }
 }

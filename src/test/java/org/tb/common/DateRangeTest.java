@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.time.Year;
 import java.time.YearMonth;
 import org.junit.jupiter.api.Test;
 
@@ -71,7 +72,7 @@ public class DateRangeTest {
   public void testOverlaps_nullDateRange_returnsFalse() {
     LocalDate currentDate = LocalDate.now();
     DateRange range = new DateRange(currentDate, currentDate.plusDays(3));
-    assertFalse(range.overlaps(null));
+    assertFalse(range.overlaps((DateRange)null));
   }
 
   @Test
@@ -180,6 +181,53 @@ public class DateRangeTest {
     DateRange range2 = new DateRange(currentDate.plusDays(3), currentDate.plusDays(7));
     assertFalse(range1.overlaps(range2));
     assertFalse(range2.overlaps(range1));
+  }
+
+  @Test
+  public void testOverlaps_intersectingYear_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    DateRange range1 = new DateRange(currentDate, currentDate.plusDays(3));
+    var year = Year.now();
+    assertTrue(range1.overlaps(year));
+  }
+
+  @Test
+  public void testOverlaps_intersectingYearOneInfinite_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    DateRange range1 = new DateRange(currentDate, null);
+    var year = Year.now();
+    assertTrue(range1.overlaps(year));
+  }
+
+  @Test
+  public void testOverlaps_intersectingYearTwoInfinite_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    DateRange range1 = new DateRange(null, null);
+    var year = Year.now();
+    assertTrue(range1.overlaps(year));
+  }
+
+  @Test
+  public void testOverlaps_intersectingYearNull_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    DateRange range1 = new DateRange(currentDate, currentDate);
+    assertFalse(range1.overlaps((Year)null));
+  }
+
+  @Test
+  public void testOverlaps_disjunctYear_returnsFalse() {
+    LocalDate currentDate = LocalDate.now();
+    DateRange range1 = new DateRange(currentDate, currentDate.plusDays(3));
+    var year = Year.now().minusYears(1);
+    assertFalse(range1.overlaps(year));
+  }
+
+  @Test
+  public void testOverlaps_disjunctFutureYear_returnsFalse() {
+    LocalDate currentDate = LocalDate.now();
+    DateRange range1 = new DateRange(currentDate, currentDate.plusDays(3));
+    var year = Year.now().plusYears(1);
+    assertFalse(range1.overlaps(year));
   }
 
   @Test
