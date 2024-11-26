@@ -45,7 +45,7 @@
 <br>
 <span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.customers.text" /><br></span>
 <br>
-<span style="color:red"><html:errors footer="<br>" /> </span>
+<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 <table class="backgroundcolor">
 <html:form action="/ShowCustomer?task=refresh">

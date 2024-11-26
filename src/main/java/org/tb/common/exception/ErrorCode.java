@@ -7,23 +7,21 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ErrorCode {
 
-  CU_NOT_FOUND("CU-0001", "the customer was not found!"),
-  CU_DELETE_GOT_VETO("CU-0002", "customer cannot be deleted due to veto"),
+  CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
+  CU_NOT_FOUND("CU-0002", "the customer was not found!"),
 
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
 
   EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
-  EC_INVALID_DATE_RANGE("EC-0002", "employee contract has invalid date range"),
-  EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY("EC-0003", "effective employee order exists outside employee contract validity"),
+  EC_DELETE_GOT_VETO("EC-0002","employee contract suborder be deleted due to veto"),
+  EC_INVALID_DATE_RANGE("EC-0003", "employee contract has invalid date range"),
   EC_SUPERVISOR_INVALID("EC-0004", "supervisor for employee contract is invalid"),
   EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
   EC_EMPLOYEE_CONTRACT_NOT_FOUND("EC-0006","employeeContractId must match an employee contract"),
-  EC_DELETE_GOT_VETO("EC-0007","employee contract suborder be deleted due to veto"),
 
-  SO_TIMEREPORT_EXISTS_OUTSIDE_VALIDITY("SO-0001", "suborder validity does not cover all existing time reports"),
+  SO_UPDATE_GOT_VETO("SO-0001", "suborder cannot be changed due to veto"),
   SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),
-  SO_UPDATE_GOT_VETO("SO-0003", "suborder cannot be changed due to veto"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),

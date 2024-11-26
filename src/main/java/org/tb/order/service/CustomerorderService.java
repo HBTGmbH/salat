@@ -15,6 +15,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DurationUtils;
+import org.tb.customer.event.CustomerDeleteEvent;
 import org.tb.customer.persistence.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -211,8 +212,8 @@ public class CustomerorderService {
   }
 
   @EventListener
-  void onCustomerDelete(CustomerorderDeleteEvent event) {
-    var customerorders = customerorderDAO.getCustomerordersByCustomerId(event.getId());
+  void onCustomerDelete(CustomerDeleteEvent event) {
+    var customerorders = customerorderRepository.findAllByCustomerId(event.getId());
     for (Customerorder customerorder : customerorders) {
       deleteCustomerorderById(customerorder.getId());
     }
