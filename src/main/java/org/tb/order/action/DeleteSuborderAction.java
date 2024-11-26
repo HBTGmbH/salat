@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.SuborderService;
@@ -44,11 +45,10 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
         if (so == null)
             return mapping.getInputForward();
 
-        var serviceErrors = suborderService.deleteSuborderById(soId);
-        if(!serviceErrors.isEmpty()) {
-            for(var error : serviceErrors) {
-                addToErrors(request, error);
-            };
+        try {
+            suborderService.deleteSuborderById(soId);
+        } catch(ErrorCodeException e) {
+            addToErrors(request, e);
             return mapping.getInputForward();
         }
 

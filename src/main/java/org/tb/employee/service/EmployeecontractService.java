@@ -68,7 +68,7 @@ public class EmployeecontractService {
     return employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
   }
 
-  public List<ServiceFeedbackMessage> createEmployeecontract(
+  public void createEmployeecontract(
       long employeeId,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -85,7 +85,7 @@ public class EmployeecontractService {
     employeecontract.setOvertimeStatic(Duration.ZERO);
     Employee theEmployee = employeeDAO.getEmployeeById(employeeId);
     employeecontract.setEmployee(theEmployee);
-    var messages = createOrUpdate(employeecontract, validFrom,
+    createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
         taskDescription,
@@ -94,10 +94,6 @@ public class EmployeecontractService {
         dailyWorkingTime,
         vacationEntitlement);
 
-    if(messages.stream().anyMatch(ServiceFeedbackMessage::isError)) {
-      return messages;
-    }
-
     if(initialOvertime != null && !initialOvertime.isZero() ) {
       Overtime overtime = new Overtime();
       overtime.setComment("initial overtime");
@@ -105,11 +101,9 @@ public class EmployeecontractService {
       overtime.setTime(initialOvertime);
       overtimeDAO.save(overtime);
     }
-
-    return List.of();
   }
 
-  public List<ServiceFeedbackMessage> updateEmployeecontract(
+  public void updateEmployeecontract(
       long employeecontractId,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -122,7 +116,7 @@ public class EmployeecontractService {
   ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    var messages = createOrUpdate(employeecontract, validFrom,
+    createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
         taskDescription,
@@ -130,10 +124,9 @@ public class EmployeecontractService {
         hide,
         dailyWorkingTime,
         vacationEntitlement);
-    return messages;
   }
 
-  private List<ServiceFeedbackMessage> createOrUpdate(
+  private void createOrUpdate(
       Employeecontract employeecontract,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -158,19 +151,10 @@ public class EmployeecontractService {
     if(!employeecontract.isNew()) {
       var event = new EmployeecontractUpdateEvent(employeecontract);
       eventPublisher.publishEvent(event);
-      if(event.isVetoed()) {
-        var messages = event.getMessages().stream().map(ServiceFeedbackMessage::toString).collect(Collectors.joining("\n"));
-        log.info("Could not update employee contract for {} ({}).\nVeto messages:\n{}", employeecontract.getEmployee().getSign(), employeecontract.getTimeString(), messages);
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        allMessages.add(error(EC_UPDATE_GOT_VETO, employeecontract.getEmployee().getSign()));
-        allMessages.addAll(event.getMessages());
-        return allMessages;
-      }
     }
 
     adjustVacations(employeecontract, vacationEntitlement);
     employeecontractRepository.save(employeecontract);
-    return List.of();
   }
 
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
@@ -226,17 +210,13 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContracts();
   }
 
-  public List<ServiceFeedbackMessage> deleteEmployeeContractById(long employeeContractId) {
+  public void deleteEmployeeContractById(long employeeContractId) {
     Employeecontract ec = getEmployeecontractById(employeeContractId);
 
     if (ec != null) {
 
       var event = new EmployeecontractDeleteEvent(employeeContractId);
       eventPublisher.publishEvent(event);
-
-      if(event.isVetoed()) {
-        return event.getMessages();
-      }
 
       // if ok for deletion, check for overtime and vacation entries and
       // delete them successively (cannot yet be done via web application)
@@ -253,7 +233,6 @@ public class EmployeecontractService {
       // finally, go for deletion of employeecontract
       employeecontractRepository.delete(ec);
     }
-    return List.of();
   }
 
   public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter,

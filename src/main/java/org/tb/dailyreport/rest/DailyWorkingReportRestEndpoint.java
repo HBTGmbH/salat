@@ -119,9 +119,9 @@ public class DailyWorkingReportRestEndpoint {
         try {
             dailyWorkingReportService.createReports(List.of(report));
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
+            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 
@@ -135,9 +135,9 @@ public class DailyWorkingReportRestEndpoint {
         try {
             dailyWorkingReportService.updateReports(List.of(report));
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
+            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 
@@ -151,9 +151,9 @@ public class DailyWorkingReportRestEndpoint {
         try {
             dailyWorkingReportService.createReports(reports);
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
+            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 
@@ -167,9 +167,9 @@ public class DailyWorkingReportRestEndpoint {
         try {
             dailyWorkingReportService.updateReports(reports);
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
+            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 

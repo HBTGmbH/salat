@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.service.SimpleMailService;
@@ -75,11 +76,8 @@ public class ReleaseService {
   private final EmployeecontractService employeecontractService;
   private final TimereportService timereportService;
 
-  public List<ServiceFeedbackMessage> releaseTimereports(long employeecontractId, LocalDate releaseDate) {
-    var errors = validateForRelease(employeecontractId, releaseDate);
-    if(!errors.isEmpty()) {
-      return errors;
-    }
+  public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
+    validateForRelease(employeecontractId, releaseDate);
 
     // set status in timereports
     var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(
@@ -96,8 +94,6 @@ public class ReleaseService {
     employeecontractDAO.save(employeecontract);
 
     sendTimeReportsReleasedMail(employeecontract);
-
-    return List.of();
   }
 
   public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
@@ -167,7 +163,7 @@ public class ReleaseService {
   }
 
   @VisibleForTesting
-  protected List<ServiceFeedbackMessage> validateForRelease(Long employeeContractId, LocalDate releaseDate) {
+  protected void validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
 
     var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
@@ -232,7 +228,10 @@ public class ReleaseService {
         .map(Optional::get)
         .forEach(errors::add);
 
-    return errors.stream().sorted(Comparator.comparing(Pair::getFirst)).map(Pair::getSecond).toList();
+    var messages = errors.stream().sorted(Comparator.comparing(Pair::getFirst)).map(Pair::getSecond).toList();
+    if(!messages.isEmpty()) {
+      throw new BusinessRuleException(messages);
+    }
   }
 
   private void releaseTimereport(long timereportId, String releasedBy) {

@@ -34,11 +34,11 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeeContractId, date);
   }
 
-  public List<ServiceFeedbackMessage> create(long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
+  public void create(long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
       Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
-    return createOrUpdate(
+    createOrUpdate(
         null,
         customerId,
         fromDate,
@@ -59,11 +59,11 @@ public class CustomerorderService {
     );
   }
 
-  public List<ServiceFeedbackMessage> update(long customerorderId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
+  public void update(long customerorderId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
       Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
-    return createOrUpdate(
+    createOrUpdate(
         customerorderId,
         customerId,
         fromDate,
@@ -84,7 +84,7 @@ public class CustomerorderService {
     );
   }
 
-  private List<ServiceFeedbackMessage> createOrUpdate(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
+  private void createOrUpdate(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
       Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
@@ -134,14 +134,8 @@ public class CustomerorderService {
     if(!co.isNew()) {
       var event = new CustomerorderUpdateEvent(co);
       eventPublisher.publishEvent(event);
-      if(event.isVetoed()) {
-        return event.getMessages();
-      }
     }
-
     customerorderRepository.save(co);
-
-    return List.of();
   }
 
   public Customerorder getCustomerorderBySign(String selectedOrder) {
@@ -176,14 +170,10 @@ public class CustomerorderService {
     return customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
   }
 
-  public List<ServiceFeedbackMessage> deleteCustomerorderById(long customerOrderId) {
+  public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);
     eventPublisher.publishEvent(event);
-    if(event.isVetoed()) {
-      return event.getMessages();
-    }
     customerorderRepository.deleteById(customerOrderId);
-    return List.of();
   }
 
   public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {

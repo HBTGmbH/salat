@@ -2,7 +2,6 @@ package org.tb.order.service;
 
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.common.util.TransactionUtils.markForRollback;
 
 import java.time.LocalDate;
 import java.time.Year;
@@ -19,6 +18,7 @@ import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.VetoedException;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
@@ -47,12 +47,12 @@ public class EmployeeorderService {
   private final VacationDAO vacationDAO;
   private final EmployeeorderRepository employeeorderRepository;
 
-  public List<ServiceFeedbackMessage> create(Employeeorder employeeorder) {
-    return createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  public void create(Employeeorder employeeorder) {
+    createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
-  public List<ServiceFeedbackMessage> update(Employeeorder employeeorder) {
-    return createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  public void update(Employeeorder employeeorder) {
+    createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
   public void generateMissingStandardOrders(long employeecontractId) {
@@ -143,34 +143,25 @@ public class EmployeeorderService {
     for (Employeeorder employeeorder : employeeorders) {
 
       var existingValidity = employeeorder.getValidity();
-      if(existingValidity.overlaps(newValidity)) {
-        var feedbackMessages = adjustValidity(employeeorder.getId(), newValidity);
-        if(!feedbackMessages.isEmpty()) {
-          var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(
-              ErrorCode.EO_UPDATE_GOT_VETO,
-              employeeorder.getSuborder().getCompleteOrderSign(),
-              employeeorder.getEmployeecontract().getEmployee().getSign()
-          ));
-          allMessages.addAll(feedbackMessages);
-          markForRollback();
-          event.vetoed(allMessages);
-          break;
+      var updating = existingValidity.overlaps(newValidity);
+
+      try {
+        if(updating) {
+          adjustValidity(employeeorder.getId(), newValidity);
+        } else {
+          deleteEmployeeorderById(employeeorder.getId());
         }
-      } else {
-        var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
-        if(!feedbackMessages.isEmpty()) {
-          var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(
-              ErrorCode.EO_DELETE_GOT_VETO,
-              employeeorder.getSuborder().getCompleteOrderSign(),
-              employeeorder.getEmployeecontract().getEmployee().getSign()
-          ));
-          allMessages.addAll(feedbackMessages);
-          markForRollback();
-          event.vetoed(allMessages);
-          break;
-        }
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        var errorCode = updating ? ErrorCode.EO_UPDATE_GOT_VETO : ErrorCode.EO_DELETE_GOT_VETO;
+        allMessages.add(error(
+            errorCode,
+            employeeorder.getSuborder().getCompleteOrderSign(),
+            employeeorder.getEmployeecontract().getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
   }
@@ -179,18 +170,17 @@ public class EmployeeorderService {
   void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
     var employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(event.getId());
     for (Employeeorder employeeorder : employeeorders) {
-      var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
-      if(!feedbackMessages.isEmpty()) {
+      try {
+        deleteEmployeeorderById(employeeorder.getId());
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
         allMessages.add(error(
             ErrorCode.EO_DELETE_GOT_VETO,
             employeeorder.getSuborder().getCompleteOrderSign(),
             employeeorder.getEmployeecontract().getEmployee().getSign()
-        ));
-        allMessages.addAll(feedbackMessages);
-        markForRollback();
-        event.vetoed(allMessages);
-        break;
+        ));allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
   }
@@ -205,34 +195,25 @@ public class EmployeeorderService {
     for (Employeeorder employeeorder : employeeorders) {
 
       var existingValidity = employeeorder.getValidity();
-      if(existingValidity.overlaps(newValidity)) {
-        var feedbackMessages = adjustValidity(employeeorder.getId(), newValidity);
-        if(!feedbackMessages.isEmpty()) {
-          var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(
-              ErrorCode.EO_UPDATE_GOT_VETO,
-              employeeorder.getSuborder().getCompleteOrderSign(),
-              employeeorder.getEmployeecontract().getEmployee().getSign()
-          ));
-          allMessages.addAll(feedbackMessages);
-          markForRollback();
-          event.vetoed(allMessages);
-          break;
+      var updating = existingValidity.overlaps(newValidity);
+
+      try {
+        if(updating) {
+          adjustValidity(employeeorder.getId(), newValidity);
+        } else {
+          deleteEmployeeorderById(employeeorder.getId());
         }
-      } else {
-        var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
-        if(!feedbackMessages.isEmpty()) {
-          var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(
-              ErrorCode.EO_DELETE_GOT_VETO,
-              employeeorder.getSuborder().getCompleteOrderSign(),
-              employeeorder.getEmployeecontract().getEmployee().getSign()
-          ));
-          allMessages.addAll(feedbackMessages);
-          markForRollback();
-          event.vetoed(allMessages);
-          break;
-        }
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        var errorCode = updating ? ErrorCode.EO_UPDATE_GOT_VETO : ErrorCode.EO_DELETE_GOT_VETO;
+        allMessages.add(error(
+            errorCode,
+            employeeorder.getSuborder().getCompleteOrderSign(),
+            employeeorder.getEmployeecontract().getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
   }
@@ -241,45 +222,40 @@ public class EmployeeorderService {
   void onSuborderDelete(SuborderDeleteEvent event) {
     var employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(event.getId());
     for (Employeeorder employeeorder : employeeorders) {
-      var feedbackMessages = deleteEmployeeorderById(employeeorder.getId());
-      if(!feedbackMessages.isEmpty()) {
+      try {
+        deleteEmployeeorderById(employeeorder.getId());
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
         allMessages.add(error(
             ErrorCode.EO_DELETE_GOT_VETO,
             employeeorder.getSuborder().getCompleteOrderSign(),
             employeeorder.getEmployeecontract().getEmployee().getSign()
-        ));
-        allMessages.addAll(feedbackMessages);
-        markForRollback();
-        event.vetoed(allMessages);
-        break;
+        ));allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
   }
 
-  private List<ServiceFeedbackMessage> adjustValidity(long employeeorderId, DateRange newValidity) {
+  private void adjustValidity(long employeeorderId, DateRange newValidity) {
     var employeeorder = employeeorderDAO.getEmployeeorderById(employeeorderId);
     var existingValidity = employeeorder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);
     var newFrom = existingValidity.isInfiniteFrom() ? null : resultingValidity.getFrom();
     var newUntil = existingValidity.isInfiniteUntil() ? null : resultingValidity.getUntil();
-    return createOrUpdate(employeeorder, newFrom, newUntil);
+    createOrUpdate(employeeorder, newFrom, newUntil);
   }
 
-  private List<ServiceFeedbackMessage> createOrUpdate(Employeeorder employeeorder, LocalDate from, LocalDate until) {
+  private void createOrUpdate(Employeeorder employeeorder, LocalDate from, LocalDate until) {
     employeeorder.setFromDate(from);
     employeeorder.setUntilDate(until);
 
     if(!employeeorder.isNew()) {
       EmployeeorderUpdateEvent event = new EmployeeorderUpdateEvent(employeeorder);
       eventPublisher.publishEvent(event);
-      if(event.isVetoed()) {
-        return event.getMessages();
-      }
     }
 
     employeeorderRepository.save(employeeorder);
-    return List.of();
   }
 
   public Employeeorder getEmployeeorderForEmployeecontractValidAt(long employeecontractId, long suborderId, LocalDate validAt) {
@@ -315,14 +291,10 @@ public class EmployeeorderService {
     return employeeorderDAO.getEmployeeorders();
   }
 
-  public List<ServiceFeedbackMessage> deleteEmployeeorderById(long employeeOrderId) {
+  public void deleteEmployeeorderById(long employeeOrderId) {
     var event = new EmployeeorderDeleteEvent(employeeOrderId);
     eventPublisher.publishEvent(event);
-    if(event.isVetoed()) {
-      return event.getMessages();
-    }
     employeeorderRepository.deleteById(employeeOrderId);
-    return List.of();
   }
 
   public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, long employeeContractId,

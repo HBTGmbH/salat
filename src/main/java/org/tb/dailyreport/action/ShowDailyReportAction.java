@@ -120,7 +120,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             try {
                 timereportService.deleteTimereports(timereportIds, authorizedUser);
             } catch (ErrorCodeException e) {
-                addToErrors(request, e.getErrorCode());
+                addToErrors(request, e);
                 return mapping.getInputForward();
             }
 
@@ -720,7 +720,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         try {
             workingdayService.upsertWorkingday(workingday);
         } catch(ErrorCodeException e) {
-            addToErrors(request, e.getErrorCode());
+            addToErrors(request, e);
             return mapping.getInputForward();
         }
 

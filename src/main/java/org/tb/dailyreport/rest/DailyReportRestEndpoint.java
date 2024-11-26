@@ -109,9 +109,9 @@ public class DailyReportRestEndpoint {
         try {
             createDailyReport(booking);
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e.getErrorCode());
+            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 
@@ -127,7 +127,7 @@ public class DailyReportRestEndpoint {
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereports. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 
@@ -145,9 +145,9 @@ public class DailyReportRestEndpoint {
                                     replaceDailyReports(DateUtils.parse(day), employeeOrderId, bookingsOfOrder))
                     );
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereports. " + e.getErrorCode());
+            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereports. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e.getErrorCode() + ": " + e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
     }
 

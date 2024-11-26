@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.util.DateUtils;
@@ -116,8 +117,8 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 long suborderId = Long.parseLong(request.getSession().getAttribute("soId").toString());
                 try {
                     suborderService.fitValidityOfChildren(suborderId);
-                } catch (BusinessRuleException e) {
-                    addToErrors(request, e.getErrorCode());
+                } catch (ErrorCodeException e) {
+                    addToErrors(request, e);
                     return mapping.getInputForward();
                 }
 
@@ -249,16 +250,14 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             if(request.getSession().getAttribute("soId") != null) {
                 soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
             }
-            List<ServiceFeedbackMessage> serviceErrors;
-            if(soId == null) {
-                serviceErrors = suborderService.create(addSuborderForm, customerorder);
-            } else {
-                serviceErrors = suborderService.update(soId, addSuborderForm, customerorder);
-            }
-            if(!serviceErrors.isEmpty()) {
-                for(var error : serviceErrors) {
-                    addToErrors(request, error);
-                };
+            try {
+                if(soId == null) {
+                    suborderService.create(addSuborderForm, customerorder);
+                } else {
+                    suborderService.update(soId, addSuborderForm, customerorder);
+                }
+            } catch(ErrorCodeException e) {
+                addToErrors(request, e);
                 return mapping.getInputForward();
             }
 

@@ -40,7 +40,7 @@ public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
         try {
             customerService.delete(cuId);
         } catch(ErrorCodeException e) {
-            addToMessages(request, e.getErrorCode());
+            addToErrors(request, e);
             return mapping.getInputForward();
         }
 

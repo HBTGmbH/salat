@@ -195,7 +195,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             try {
                 workingdayService.upsertWorkingday(workingday);
             } catch(ErrorCodeException e) {
-                addToErrors(request, e.getErrorCode());
+                addToErrors(request, e);
                 return mapping.getInputForward();
             }
         }
@@ -282,7 +282,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                                     try {
                                         workingdayService.upsertWorkingday(workingday);
                                     } catch(ErrorCodeException e) {
-                                        addToErrors(request, e.getErrorCode());
+                                        addToErrors(request, e);
                                         return mapping.getInputForward();
                                     }
                                 }
@@ -301,8 +301,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         form.getSelectedMinuteDuration(),
                         effectiveNumberOfSerialDays // ensure at least one
                     );
-                } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-                    addToErrors(request, e.getErrorCode());
+                } catch (ErrorCodeException e) {
+                    addToErrors(request, e);
                     return mapping.getInputForward();
                 }
             } else {
@@ -319,8 +319,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                         form.getSelectedHourDuration(),
                         form.getSelectedMinuteDuration()
                     );
-                } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-                    addToErrors(request, e.getErrorCode());
+                } catch (ErrorCodeException e) {
+                    addToErrors(request, e);
                     return mapping.getInputForward();
                 }
             }

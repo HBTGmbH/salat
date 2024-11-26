@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -69,7 +70,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should return error about missing begin of working time
             assertThat(errors).hasSize(1);
@@ -98,7 +99,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should not return any errors
             assertThat(errors).hasSize(0);
@@ -130,7 +131,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should not return any errors
             assertThat(errors).hasSize(0);
@@ -162,7 +163,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should not return any errors
             assertThat(errors).hasSize(0);
@@ -195,7 +196,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
@@ -230,7 +231,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
@@ -265,7 +266,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should not return any error
             assertThat(errors).hasSize(0);
@@ -303,7 +304,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should not return any error
             assertThat(errors).hasSize(0);
@@ -341,7 +342,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
@@ -382,7 +383,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then should return an error regarding breaktime
             assertThat(errors).hasSize(1);
@@ -422,7 +423,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then expect no error
             assertThat(errors).hasSize(0);
@@ -467,7 +468,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, releaseDate);
 
             // then expect an error regarding resttime
             assertThat(errors).hasSize(1);
@@ -507,7 +508,7 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, releaseDate);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, releaseDate);
 
             // then expect no error to be returned
             assertThat(errors).hasSize(0);
@@ -535,10 +536,19 @@ class ReleaseServiceTest {
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
             // when validating
-            final List<ServiceFeedbackMessage> errors = classUnderTest.validateForRelease(employeeContractId, date);
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
 
             // then expect no error to be returned
             assertThat(errors).hasSize(0);
+        }
+
+        private List<ServiceFeedbackMessage> runValidateForRelease(long employeeContractId, LocalDate date) {
+            try {
+                classUnderTest.validateForRelease(employeeContractId, date);
+                return List.of();
+            } catch(ErrorCodeException e) {
+                return e.getMessages();
+            }
         }
     }
 }

@@ -67,9 +67,9 @@ public class WorkingDayRestEndpoint {
         try {
             workingdayService.upsertWorkingday(wd);
         } catch(AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, e.getErrorCode().getCode());
+            throw new ResponseStatusException(UNAUTHORIZED, e.toString());
         } catch(InvalidDataException | BusinessRuleException e) {
-            throw new ResponseStatusException(BAD_REQUEST, e.getErrorCode().getCode());
+            throw new ResponseStatusException(BAD_REQUEST, e.toString());
         }
     }
 

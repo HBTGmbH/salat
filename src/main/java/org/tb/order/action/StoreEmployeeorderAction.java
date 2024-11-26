@@ -23,6 +23,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
@@ -231,11 +232,14 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 eo.setDebithours(DurationUtils.parseDuration(eoForm.getDebithours()));
                 eo.setDebithoursunit(eoForm.getDebithoursunit());
             }
-            var serviceErrors = eo.isNew() ? employeeorderService.create(eo) : employeeorderService.update(eo);
-            if(!serviceErrors.isEmpty()) {
-                for(var error : serviceErrors) {
-                    addToErrors(request, error);
-                };
+            try {
+                if(eo.isNew()) {
+                    employeeorderService.create(eo);
+                } else {
+                    employeeorderService.update(eo);
+                }
+            } catch(ErrorCodeException e) {
+                addToErrors(request, e);
                 return mapping.getInputForward();
             }
 

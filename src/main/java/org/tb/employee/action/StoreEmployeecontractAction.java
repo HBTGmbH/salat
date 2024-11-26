@@ -16,6 +16,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -125,9 +126,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
             Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
             try {
-                List<ServiceFeedbackMessage> messages;
                 if(existingEmployeecontractId != null) {
-                    messages = employeecontractService.updateEmployeecontract(
+                    employeecontractService.updateEmployeecontract(
                         existingEmployeecontractId,
                         validFrom,
                         validUntil,
@@ -139,7 +139,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         yearlyvacation
                     );
                 } else {
-                    messages = employeecontractService.createEmployeecontract(
+                    employeecontractService.createEmployeecontract(
                         ecForm.getEmployee(),
                         validFrom,
                         validUntil,
@@ -152,14 +152,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                         initialOvertime
                     );
                 }
-                if(!messages.isEmpty()) {
-                    for(var error : messages) {
-                        addToErrors(request, error);
-                    };
-                    return mapping.getInputForward();
-                }
-            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-                addToMessages(request, e.getErrorCode());
+            } catch (ErrorCodeException e) {
+                addToErrors(request, e);
                 return mapping.getInputForward();
             }
 

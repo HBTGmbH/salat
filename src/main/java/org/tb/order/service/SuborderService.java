@@ -1,7 +1,6 @@
 package org.tb.order.service;
 
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
-import static org.tb.common.util.TransactionUtils.markForRollback;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -12,11 +11,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.AuthorizedUser;
 import org.tb.common.DateRange;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.order.action.AddSuborderForm;
@@ -26,7 +25,6 @@ import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.event.SuborderDeleteEvent;
 import org.tb.order.event.SuborderUpdateEvent;
-import org.tb.order.persistence.CustomerorderDAO;
 import org.tb.order.persistence.SuborderDAO;
 import org.tb.order.persistence.SuborderRepository;
 
@@ -38,8 +36,6 @@ public class SuborderService {
   private final ApplicationEventPublisher eventPublisher;
   private final SuborderDAO suborderDAO;
   private final SuborderRepository suborderRepository;
-  private final AuthorizedUser authorizedUser;
-  private final CustomerorderDAO customerorderDAO;
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
@@ -131,26 +127,21 @@ public class SuborderService {
     for (Suborder suborder : suborders) {
 
       var existingValidity = suborder.getValidity();
-      if(existingValidity.overlaps(newValidity)) {
-        var feedbackMessages = adjustValidity(suborder.getId(), newValidity);
-        if(!feedbackMessages.isEmpty()) {
-          var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(ErrorCode.SO_UPDATE_GOT_VETO, suborder.getCompleteOrderSign()));
-          allMessages.addAll(feedbackMessages);
-          markForRollback();
-          event.vetoed(allMessages);
-          break;
+      var updating = existingValidity.overlaps(newValidity);
+
+      try {
+        if(updating) {
+          adjustValidity(suborder.getId(), newValidity);
+        } else {
+          deleteSuborderById(suborder.getId());
         }
-      } else {
-        var feedbackMessages = deleteSuborderById(suborder.getId());
-        if(!feedbackMessages.isEmpty()) {
-          var allMessages = new ArrayList<ServiceFeedbackMessage>();
-          allMessages.add(error(ErrorCode.SO_DELETE_GOT_VETO, suborder.getCompleteOrderSign()));
-          allMessages.addAll(feedbackMessages);
-          markForRollback();
-          event.vetoed(allMessages);
-          break;
-        }
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        var errorCode = updating ? ErrorCode.SO_UPDATE_GOT_VETO : ErrorCode.SO_DELETE_GOT_VETO;
+        allMessages.add(error(errorCode, suborder.getCompleteOrderSign()));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
   }
@@ -159,18 +150,16 @@ public class SuborderService {
   void onCustomerorderDelete(CustomerorderDeleteEvent event) {
     var suborders = suborderDAO.getSubordersByCustomerorderId(event.getId(), false);
     for (Suborder suborder : suborders) {
-      var feedbackMessages = deleteSuborderById(suborder.getId());
-      if(!feedbackMessages.isEmpty()) {
+      try {
+        deleteSuborderById(suborder.getId());
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
         allMessages.add(error(ErrorCode.SO_DELETE_GOT_VETO, suborder.getCompleteOrderSign()));
-        allMessages.addAll(feedbackMessages);
-        markForRollback();
-        event.vetoed(allMessages);
-        break;
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
-
-
   }
 
   private List<ServiceFeedbackMessage> adjustValidity(long suborderId, DateRange newValidity) {
@@ -252,14 +241,10 @@ public class SuborderService {
     return suborderDAO.getSuborders(false);
   }
 
-  public List<ServiceFeedbackMessage> deleteSuborderById(long suborderId) {
+  public void deleteSuborderById(long suborderId) {
     var event = new SuborderDeleteEvent(suborderId);
     eventPublisher.publishEvent(event);
-    if(event.isVetoed()) {
-      return event.getMessages();
-    }
     suborderRepository.deleteById(suborderId);
-    return List.of();
   }
 
   public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {

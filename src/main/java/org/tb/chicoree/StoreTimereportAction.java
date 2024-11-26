@@ -10,6 +10,7 @@ import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.chicoree.ChicoreeSessionStore.TimereportData;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.service.EmployeeorderService;
@@ -57,8 +58,8 @@ public class StoreTimereportAction extends LoginRequiredAction<TimereportForm> {
             form.getMinutesTyped()
         );
       }
-    } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-      addToMessages(request, e.getErrorCode());
+    } catch (ErrorCodeException e) {
+      addToErrors(request, e);
       return mapping.getInputForward();
     }
     chicoreeSessionStore.setLastStoredTimereport(new TimereportData(form.getOrderId(), form.getSuborderId()));

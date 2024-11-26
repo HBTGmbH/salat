@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -73,22 +74,15 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                         changed = true;
                     }
                     // 3) begin after end now?
-                    if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
-                        var errors = employeeorderService.update(employeeorder);
-                        if(!errors.isEmpty()) {
-                            for(var error : errors) {
-                                addToErrors(request, error);
-                            };
-                            return mapping.getInputForward();
+                    try {
+                        if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
+                            employeeorderService.update(employeeorder);
+                        } else {
+                            employeeorderService.deleteEmployeeorderById(employeeorder.getId());
                         }
-                    } else {
-                        var errors = employeeorderService.deleteEmployeeorderById(employeeorder.getId());
-                        if(!errors.isEmpty()) {
-                            for(var error : errors) {
-                                addToErrors(request, error);
-                            };
-                            return mapping.getInputForward();
-                        }
+                    } catch(ErrorCodeException e) {
+                        addToErrors(request, e);
+                        return mapping.getInputForward();
                     }
                 }
             }

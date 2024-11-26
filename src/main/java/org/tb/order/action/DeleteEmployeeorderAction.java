@@ -7,6 +7,7 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
@@ -34,11 +35,10 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeO
         Employeeorder eo = employeeorderService.getEmployeeorderById(eoId);
         if (eo == null) return mapping.getInputForward();
 
-        var errors = employeeorderService.deleteEmployeeorderById(eoId);
-        if(!errors.isEmpty()) {
-            for(var error : errors) {
-                addToErrors(request, error);
-            };
+        try {
+            employeeorderService.deleteEmployeeorderById(eoId);
+        } catch(ErrorCodeException e) {
+            addToErrors(request, e);
             return mapping.getInputForward();
         }
 

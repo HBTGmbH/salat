@@ -50,7 +50,6 @@ import static org.tb.common.util.DateUtils.getFirstDay;
 import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
 import static org.tb.common.util.DateUtils.getYearMonth;
-import static org.tb.common.util.TransactionUtils.markForRollback;
 import static org.tb.common.util.UrlUtils.absoluteUrl;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
@@ -661,14 +660,13 @@ public class TimereportService {
     var until = event.getDomainObject().getEffectiveUntilDate();
     var timereports = timereportDAO.getTimereportsByEmployeeorderIdInvalidForDates(event.getDomainObject().getId(), from, until);
     if(!timereports.isEmpty()) {
-      markForRollback();
       var errors = timereports.stream()
           .map(tr -> error(
               TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER,
               tr.getReferenceday()
           ))
           .toList();
-      event.vetoed(errors);
+      event.veto(errors);
     }
   }
 
@@ -677,14 +675,13 @@ public class TimereportService {
     var employeeorderId = event.getId();
     List<TimereportDTO> timereports = timereportDAO.getTimereportsByEmployeeOrderId(employeeorderId);
     if(!timereports.isEmpty()) {
-      markForRollback();
       var errors = timereports.stream()
           .map(tr -> error(
               TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER,
               tr.getReferenceday()
           ))
           .toList();
-      event.vetoed(errors);
+      event.veto(errors);
     }
   }
 

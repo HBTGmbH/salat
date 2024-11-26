@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 
 /**
@@ -27,36 +28,20 @@ public abstract class TypedAction<F extends ActionForm> extends Action {
     return executeWithForm(mapping, (F) form, request, response);
   }
 
-  public void addToErrors(HttpServletRequest request, ErrorCode errorCode) {
-    ActionMessages messages = new ActionMessages();
-    messages.add(
-        GLOBAL_MESSAGE,
-        // TR-0015 -> errorcode.tr.0015
-        new ActionMessage("errorcode." + errorCode.getCode().replace('-', '.').toLowerCase())
-    );
+  public void addToErrors(HttpServletRequest request, ErrorCodeException e) {
+    ActionMessages messages = convertToActionMessages(e);
     addErrors(request, messages);
   }
 
-  public void addToErrors(HttpServletRequest request, ServiceFeedbackMessage message) {
+  private static ActionMessages convertToActionMessages(ErrorCodeException e) {
     ActionMessages messages = new ActionMessages();
-    messages.add(
-        GLOBAL_MESSAGE,
-        // e.g. TR-0015 -> errorcode.tr.0015
-        new ActionMessage(
-            "errorcode." + message.getErrorCode().getCode().replace('-', '.').toLowerCase(),
-            message.getArguments().toArray())
-    );
-    addErrors(request, messages);
-  }
-
-  public void addToMessages(HttpServletRequest request, ErrorCode errorCode) {
-    ActionMessages messages = new ActionMessages();
-    messages.add(
-        GLOBAL_MESSAGE,
-        // TR-0015 -> errorcode.tr.0015
-        new ActionMessage("errorcode." + errorCode.getCode().replace('-', '.').toLowerCase())
-    );
-    addMessages(request, messages);
+    e.getMessages().forEach(m -> {
+      // TR-0015 -> errorcode.tr.0015
+      var messageKey = "errorcode." + m.getErrorCode().getCode().replace('-', '.').toLowerCase();
+      var arguments = m.getArguments().toArray();
+      messages.add(GLOBAL_MESSAGE, new ActionMessage(messageKey, arguments));
+    });
+    return messages;
   }
 
 }

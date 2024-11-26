@@ -13,6 +13,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
@@ -63,8 +64,8 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                     reportForm.getSelectedDurationHour(),
                     reportForm.getSelectedDurationMinute()
                 );
-            } catch (AuthorizationException | BusinessRuleException | InvalidDataException e) {
-                addToErrors(request, e.getErrorCode());
+            } catch (ErrorCodeException e) {
+                addToErrors(request, e);
                 return mapping.getInputForward();
             }
 

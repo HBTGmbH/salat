@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 import org.tb.common.exception.ServiceFeedbackMessage;
+import org.tb.common.exception.VetoedException;
 
 @Getter
 public abstract class VetoableEvent extends ApplicationEvent {
@@ -17,11 +18,7 @@ public abstract class VetoableEvent extends ApplicationEvent {
     messages = List.of();
   }
 
-  public void vetoed(ServiceFeedbackMessage... messages) {
-    this.vetoed(List.of(messages));
-  }
-
-  public void vetoed(List<ServiceFeedbackMessage> messages) {
+  public void veto(List<ServiceFeedbackMessage> messages) throws VetoedException {
     if(!vetoed) {
       this.messages = messages;
       this.vetoed = true;
@@ -29,6 +26,7 @@ public abstract class VetoableEvent extends ApplicationEvent {
       this.messages = new ArrayList<>(this.messages);
       this.messages.addAll(messages);
     }
+    throw new VetoedException(this);
   }
 
 }

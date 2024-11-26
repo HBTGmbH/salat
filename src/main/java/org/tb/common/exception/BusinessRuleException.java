@@ -1,5 +1,7 @@
 package org.tb.common.exception;
 
+import java.util.List;
+
 public class BusinessRuleException extends ErrorCodeException {
 
   public BusinessRuleException(ErrorCode errorCode) {
@@ -12,6 +14,10 @@ public class BusinessRuleException extends ErrorCodeException {
 
   public BusinessRuleException(ErrorCode errorCode, Object... arguments) {
     super(errorCode, arguments);
+  }
+
+  public BusinessRuleException(List<ServiceFeedbackMessage> messages) {
+    super(messages);
   }
 
 }
