@@ -47,7 +47,8 @@
 <br>
 <span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.employees.text" /><br></span>
 <br>
-<span style="color:red"><html:errors footer="<br>" /> </span>
+
+<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 <table class="center backgroundcolor">
 <html:form action="/ShowEmployee?task=refresh">

@@ -41,7 +41,8 @@ $(document).ready(function() {
 	<bean:message key="main.general.mainmenu.multipleEmployeeorders.text" /><br>
 	</span>
 	<br>
-	<span style="color: red"><html:errors footer="<br>" /> </span>
+
+	<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 
 	<html:form action="/GenerateMultipleEmployeeorders?task=refresh">
