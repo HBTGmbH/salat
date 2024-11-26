@@ -40,8 +40,8 @@
 		<form-bean name="addEmployeeForm" type="org.tb.employee.action.AddEmployeeForm" />
 		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
 
-		<form-bean name="addCustomerForm" type="org.tb.customer.AddCustomerForm" />
-		<form-bean name="showCustomerForm" type="org.tb.customer.ShowCustomerForm" />
+		<form-bean name="addCustomerForm" type="org.tb.customer.action.AddCustomerForm" />
+		<form-bean name="showCustomerForm" type="org.tb.customer.action.ShowCustomerForm" />
 
 		<form-bean name="addCustomerOrderForm" type="org.tb.order.action.AddCustomerorderForm" />
 		<form-bean name="showCustomerOrderForm" type="org.tb.order.action.ShowCustomerorderForm" />
@@ -190,30 +190,30 @@
 
 		<!-- Customer -->
 		<action path="/CreateCustomer" validate="true" name="addCustomerForm"
-			type="org.tb.customer.CreateCustomerAction">
+			type="org.tb.customer.action.CreateCustomerAction">
 			<forward name="success" path="/customer/addCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/EditCustomer" name="addCustomerForm" type="org.tb.customer.EditCustomerAction">
+		<action path="/EditCustomer" name="addCustomerForm" type="org.tb.customer.action.EditCustomerAction">
 			<forward name="success" path="/customer/addCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/DeleteCustomer" input="/customer/showCustomer.jsp" name="addCustomerForm"
-			type="org.tb.customer.DeleteCustomerAction">
+			type="org.tb.customer.action.DeleteCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowCustomer" name="showCustomerForm" type="org.tb.customer.ShowCustomerAction">
+		<action path="/ShowCustomer" name="showCustomerForm" type="org.tb.customer.action.ShowCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreCustomer" input="/customer/addCustomer.jsp" validate="true"
-			name="addCustomerForm" type="org.tb.customer.StoreCustomerAction">
+			name="addCustomerForm" type="org.tb.customer.action.StoreCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
 			<forward name="cancel" path="/welcome/showWelcome.jsp" />
 			<forward name="reset" path="/customer/addCustomer.jsp" />

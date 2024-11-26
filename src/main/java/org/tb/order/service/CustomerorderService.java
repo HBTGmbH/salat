@@ -14,7 +14,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DurationUtils;
-import org.tb.customer.CustomerDAO;
+import org.tb.customer.persistence.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;

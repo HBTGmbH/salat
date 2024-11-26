@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -7,6 +7,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.customer.service.CustomerService;
 
 /**
  * action class for showing all customers
@@ -39,7 +40,7 @@ public class ShowCustomerAction extends LoginRequiredAction<ShowCustomerForm> {
             }
         }
 
-        request.getSession().setAttribute("customers", customerService.list(filter));
+        request.getSession().setAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));
 
 
         if (request.getParameter("task") != null) {

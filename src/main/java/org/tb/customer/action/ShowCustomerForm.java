@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;

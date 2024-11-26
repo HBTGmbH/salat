@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;

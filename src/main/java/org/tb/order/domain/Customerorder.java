@@ -27,7 +27,7 @@ import org.tb.common.DateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.customer.Customer;
+import org.tb.customer.domain.Customer;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.comparator.SubOrderComparator;
 

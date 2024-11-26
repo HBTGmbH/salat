@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.persistence;
 
 import static org.springframework.data.domain.Sort.Direction.ASC;
 
@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
+import org.tb.customer.Customer_;
+import org.tb.customer.domain.Customer;
 import org.tb.employee.domain.Employee;
 
 @Component

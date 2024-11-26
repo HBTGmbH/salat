@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +11,8 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.customer.domain.CustomerDTO;
+import org.tb.customer.service.CustomerService;
 
 /**
  * action class for deleting a customer
@@ -32,13 +34,13 @@ public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
 
         ActionMessages errors = new ActionMessages();
         long cuId = Long.parseLong(request.getParameter("cuId"));
-        CustomerDTO cu = customerService.get(cuId);
+        CustomerDTO cu = customerService.getCustomerById(cuId);
         if (cu == null)
             return mapping.getInputForward();
 
 
         try {
-            customerService.delete(cuId);
+            customerService.deleteCustomerById(cuId);
         } catch(ErrorCodeException e) {
             addToErrors(request, e);
             return mapping.getInputForward();
@@ -52,7 +54,7 @@ public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
             filter = (String) request.getSession().getAttribute("customerFilter");
         }
 
-        request.getSession().setAttribute("customers", customerService.list(filter));
+        request.getSession().setAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));
 
         // back to customer display jsp
         return mapping.getInputForward();

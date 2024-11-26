@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +11,9 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
+import org.tb.customer.domain.CustomerDTO;
+import org.tb.customer.domain.CustomerDTO.CustomerDTOBuilder;
+import org.tb.customer.service.CustomerService;
 
 /**
  * action class for storing a customer permanently
@@ -36,7 +39,7 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
 
             // 'main' task - prepare everything to store the customer.
             // I.e., copy properties from the form into the customer before saving.
-            CustomerDTO.CustomerDTOBuilder builder = CustomerDTO.builder();
+            CustomerDTOBuilder builder = CustomerDTO.builder();
             if (request.getSession().getAttribute("cuId") != null) {
                 // edited customer
                 long cuId = Long.parseLong(request.getSession().getAttribute("cuId").toString());
@@ -47,7 +50,7 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
                 .shortName(cuForm.getShortname())
                 .address(cuForm.getAddress());
 
-            customerService.save(builder.build());
+            customerService.createOrUpdate(builder.build());
 
             request.getSession().removeAttribute("cuId");
 
@@ -59,7 +62,7 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
                     filter = (String) request.getSession().getAttribute("customerFilter");
                 }
 
-                request.getSession().setAttribute("customers", customerService.list(filter));
+                request.getSession().setAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));
 
                 return mapping.findForward("success");
             } else {
@@ -104,7 +107,7 @@ public class StoreCustomerAction extends LoginRequiredAction<AddCustomerForm> {
         // for a new customer, check if name already exists
         // TODO move to service!!!
         if (request.getSession().getAttribute("cuId") == null) {
-            List<CustomerDTO> allCustomers = customerService.list();
+            List<CustomerDTO> allCustomers = customerService.getAllCustomerDTOs();
             for (CustomerDTO cu : allCustomers) {
                 if (cu.getName().equalsIgnoreCase(cuForm.getName())) {
                     errors.add("name", new ActionMessage("form.customer.error.name.alreadyexists"));

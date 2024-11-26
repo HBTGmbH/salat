@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.domain;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

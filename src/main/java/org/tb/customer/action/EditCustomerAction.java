@@ -1,4 +1,4 @@
-package org.tb.customer;
+package org.tb.customer.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -7,6 +7,8 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.customer.domain.CustomerDTO;
+import org.tb.customer.service.CustomerService;
 
 /**
  * action class for editing a customer
@@ -22,7 +24,7 @@ public class EditCustomerAction extends LoginRequiredAction<AddCustomerForm> {
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerForm cuForm, HttpServletRequest request, HttpServletResponse response) {
         long cuId = Long.parseLong(request.getParameter("cuId"));
-        CustomerDTO cu = customerService.get(cuId);
+        CustomerDTO cu = customerService.getCustomerById(cuId);
         request.getSession().setAttribute("cuId", cu.getId());
 
         // fill the form with properties of customer to be edited
