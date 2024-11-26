@@ -23,7 +23,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.persistence.VacationDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.EmployeeorderDeleteEvent;
@@ -44,8 +44,8 @@ public class EmployeeorderService {
   private final EmployeecontractDAO employeecontractDAO;
   private final EmployeeorderDAO employeeorderDAO;
   private final SuborderDAO suborderDAO;
-  private final VacationDAO vacationDAO;
   private final EmployeeorderRepository employeeorderRepository;
+  private final EmployeecontractService employeecontractService;
 
   public void create(Employeeorder employeeorder) {
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
@@ -113,11 +113,7 @@ public class EmployeeorderService {
           // calculate effective vacation entitlement and set budget accordingly
           if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
             int vacationOrderYear = Year.parse(suborder.getSign()).getValue();
-            var vacation = employeecontract.getVacation(vacationOrderYear);
-            if(vacation.isEmpty()) {
-              vacationDAO.addNewVacation(employeecontract, vacationOrderYear, employeecontract.getVacationEntitlement());
-            }
-            var vacationBudget = employeecontract.getEffectiveVacationEntitlement(vacationOrderYear); // calculate real entitlement
+            var vacationBudget = employeecontractService.getEffectiveVacationEntitlement(employeecontractId, vacationOrderYear); // calculate real entitlement
             employeeorder.setDebithours(vacationBudget);
             employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
           }

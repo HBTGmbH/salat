@@ -1,4 +1,4 @@
-package org.tb.employee;
+package org.tb.employee.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -16,15 +16,10 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizedUserAuditorAware;
 import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
-import org.tb.dailyreport.auth.TimereportAuthorization;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.persistence.OvertimeDAO;
-import org.tb.employee.persistence.VacationDAO;
 import org.tb.testutils.EmployeeTestUtils;
 
 @DataJpaTest
@@ -33,21 +28,17 @@ import org.tb.testutils.EmployeeTestUtils;
 		AuthorizedUser.class,
 		EmployeeDAO.class,
 		EmployeecontractDAO.class,
-		VacationDAO.class,
-		OvertimeDAO.class,
-		TimereportDAO.class,
-		WorkingdayDAO.class,
+		EmployeeService.class,
 		AuthService.class,
 		SalatProperties.class,
 		EmployeeAuthorization.class,
-		AuthService.class,
-		TimereportAuthorization.class
+		AuthService.class
 })
 @DisplayNameGeneration(ReplaceUnderscores.class)
-public class EmployeeDAOTest {
+public class EmployeeServiceTest {
 
 	@Autowired
-	private EmployeeDAO employeeDAO;
+	private EmployeeService employeeDAO;
 
 	@MockBean
 	private AuthorizedUser authorizedUser;
@@ -74,7 +65,7 @@ public class EmployeeDAOTest {
 	@Test
 	public void new_employee_has_id_set() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
-		employeeDAO.save(employee);
+		employeeDAO.createOrUpdate(employee);
 		assertThat(employee.getId()).isNotNull();
 	}
 
@@ -85,7 +76,7 @@ public class EmployeeDAOTest {
 	public void employee_gets_loaded_by_id() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
-		employeeDAO.save(employee);
+		employeeDAO.createOrUpdate(employee);
 		Long employeeId = employee.getId();
 
 		employee = employeeDAO.getEmployeeById(employeeId);
@@ -99,7 +90,7 @@ public class EmployeeDAOTest {
 	public void employee_gets_loaded_by_sign() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
-		employeeDAO.save(employee);
+		employeeDAO.createOrUpdate(employee);
 
 		employee = employeeDAO.getEmployeeBySign(TESTY_SIGN);
 		assertThat(employee).isNotNull();
@@ -112,10 +103,10 @@ public class EmployeeDAOTest {
 	public void employee_is_deleted_in_test_db() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		
-		employeeDAO.save(employee);
+		employeeDAO.createOrUpdate(employee);
 		Long employeeId = employee.getId();
 		
-		assertThat(employeeDAO.deleteEmployeeById(employeeId)).isTrue();
+		employeeDAO.deleteEmployeeById(employeeId);
 		assertThat(employeeDAO.getEmployeeById(employeeId)).isNull();
 	}
 	

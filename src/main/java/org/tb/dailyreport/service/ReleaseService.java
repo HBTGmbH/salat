@@ -90,8 +90,7 @@ public class ReleaseService {
 
     // store new release date in employee contract
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    employeecontract.setReportReleaseDate(releaseDate);
-    employeecontractDAO.save(employeecontract);
+    employeecontractService.updateReportReleaseData(employeecontractId, releaseDate, employeecontract.getReportAcceptanceDate());
 
     sendTimeReportsReleasedMail(employeecontract);
   }
@@ -105,8 +104,7 @@ public class ReleaseService {
 
     // set new acceptance date in employee contract
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    employeecontract.setReportAcceptanceDate(acceptanceDate);
-    employeecontractDAO.save(employeecontract);
+    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), acceptanceDate);
 
     //compute overtimeStatic and set it in employee contract
     overtimeService.updateOvertimeStatic(employeecontract.getId());
@@ -126,40 +124,40 @@ public class ReleaseService {
       reopenTimereport(timereport.getId());
     }
 
-    if(employeecontract.getReportReleaseDate() != null) {
-      var newReportReleaseDate = min(employeecontract.getReportReleaseDate(), reopenDate.minusDays(1));
+    LocalDate releaseDate = employeecontract.getReportReleaseDate();
+    LocalDate acceptanceDate = employeecontract.getReportAcceptanceDate();
+    if(releaseDate != null) {
+      var newReportReleaseDate = min(releaseDate, reopenDate.minusDays(1));
 
       if(newReportReleaseDate.isBefore(employeecontract.getValidFrom())) {
-        employeecontract.setReportReleaseDate(null);
+        releaseDate = null;
       } else {
-        employeecontract.setReportReleaseDate(newReportReleaseDate);
+        releaseDate = newReportReleaseDate;
       }
     }
-
-    if(employeecontract.getReportAcceptanceDate() != null) {
-      var newReportAcceptDate = min(employeecontract.getReportAcceptanceDate(), reopenDate.minusDays(1));
+    if(acceptanceDate != null) {
+      var newReportAcceptDate = min(acceptanceDate, reopenDate.minusDays(1));
       if(newReportAcceptDate.isBefore(employeecontract.getValidFrom())) {
-        employeecontract.setReportAcceptanceDate(null);
+        acceptanceDate = null;
       } else {
-        employeecontract.setReportAcceptanceDate(newReportAcceptDate);
+        acceptanceDate = newReportAcceptDate;
       }
 
       // recompute overtimeStatic and set it in employeecontract
+      Duration overtimeStatic = Duration.ZERO;
+      // if employee contract had been accepted before, we need to recalculate
       if(employeecontract.getReportAcceptanceDate() != null) {
         var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
         if(otStatic.isPresent()) {
-          employeecontract.setOvertimeStatic(otStatic.get());
-        } else {
-          employeecontract.setOvertimeStatic(Duration.ZERO);
+          overtimeStatic = otStatic.get();
         }
-      } else {
-        // no overtime can be calculated as no time reports have been accepted, set to zero to be consistent
-        employeecontract.setOvertimeStatic(Duration.ZERO);
       }
 
-    }
+      // update accordingly
+      employeecontractService.updateReportReleaseData(employeecontractId, releaseDate, acceptanceDate);
+      employeecontractService.updateOvertimeStatic(employeecontractId, overtimeStatic);
 
-    employeecontractDAO.save(employeecontract);
+    }
   }
 
   @VisibleForTesting

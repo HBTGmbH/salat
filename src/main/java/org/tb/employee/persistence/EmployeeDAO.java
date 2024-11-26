@@ -114,36 +114,4 @@ public class EmployeeDAO {
         }
     }
 
-    public void save(Employee employee) {
-        if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
-            throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());
-        }
-
-        employeeRepository.save(employee);
-    }
-
-    /**
-     * Deletes the given employee.
-     */
-    public boolean deleteEmployeeById(long employeeId) {
-        Employee employee = getEmployeeById(employeeId);
-        if(!employeeAuthorization.isAuthorized(employee, AccessLevel.DELETE)) {
-            throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getEmployeeId());
-        }
-
-        Employee emToDelete = getEmployeeById(employeeId);
-
-        List<Employeecontract> employeeContracts = employeecontractDAO.getEmployeeContractsByFilters(
-            true,
-            null,
-            employeeId
-        );
-        if (employeeContracts == null || employeeContracts.isEmpty()) {
-            employeeRepository.delete(emToDelete);
-            return true;
-        }
-
-        return false;
-    }
-
 }

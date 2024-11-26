@@ -328,6 +328,7 @@ public class TimereportService {
     });
 
     // recompute overtimeStatic and store it in employeecontract if change made before acceptance date
+    // TODO use event and move to overtime service
     LocalDate reportAcceptanceDate = timereports.getFirst().getEmployeecontract().getReportAcceptanceDate();
     if(reportAcceptanceDate != null) {
       Optional<LocalDate> match = timereports.stream()
@@ -349,8 +350,7 @@ public class TimereportService {
                   employeecontract.getOvertimeStatic(),
                   overtimeStaticNewValue
           );
-          employeecontract.setOvertimeStatic(overtimeStaticNewValue);
-          employeecontractDAO.save(employeecontract);
+          employeecontractService.updateOvertimeStatic(employeecontract.getId(), overtimeStaticNewValue);
         });
       }
     }

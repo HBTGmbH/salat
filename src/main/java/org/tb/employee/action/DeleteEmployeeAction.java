@@ -12,6 +12,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 
@@ -33,7 +34,6 @@ public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
                 (!GenericValidator.isLong(request.getParameter("emId"))))
             return mapping.getInputForward();
 
-        ActionMessages errors = new ActionMessages();
         long emId = Long.parseLong(request.getParameter("emId"));
         Employee em = employeeService.getEmployeeById(emId);
         if (em == null) {
@@ -42,18 +42,18 @@ public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
 
         Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         if (Objects.equals(em.getId(), loginEmployee.getId())) {
+            ActionMessages errors = new ActionMessages();
             errors.add(null, new ActionMessage("form.employee.error.delete.isloginemployee"));
             saveErrors(request, errors);
             return mapping.getInputForward();
         }
 
-        boolean deleted = employeeService.deleteEmployeeById(emId);
-
-        if (!deleted) {
-            errors.add(null, new ActionMessage("form.employee.error.hasemployeecontract"));
+        try {
+            employeeService.deleteEmployeeById(emId);
+        } catch(ErrorCodeException e) {
+            addToErrors(request, e);
+            return mapping.getInputForward();
         }
-
-        saveErrors(request, errors);
 
         String filter = null;
 

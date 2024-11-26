@@ -13,6 +13,8 @@ public enum ErrorCode {
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
 
+  EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
+
   EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
   EC_DELETE_GOT_VETO("EC-0002","employee contract suborder be deleted due to veto"),
   EC_INVALID_DATE_RANGE("EC-0003", "employee contract has invalid date range"),

@@ -91,10 +91,10 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             overtime.setEmployeecontract(ec);
             overtime.setTimeMinutes(ecForm.getNewOvertimeTyped());
 
-            employeecontractService.save(overtime);
+            employeecontractService.create(overtime);
 
             // refresh list of overtime adjustments
-            List<Overtime> overtimes = employeecontractService.getOvertimesByEmployeeContractId(ecId);
+            List<Overtime> overtimes = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(ecId);
             Duration totalOvertime = Duration.ZERO;
             for (Overtime ot : overtimes) {
                 totalOvertime = totalOvertime.plus(ot.getTimeMinutes());

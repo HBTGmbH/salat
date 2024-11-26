@@ -37,19 +37,18 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.persistence.OvertimeDAO;
+import org.tb.employee.service.EmployeecontractService;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
-// FIXME move to dailyreport
 public class OvertimeService {
 
   private final EmployeecontractDAO employeecontractDAO;
   private final PublicholidayDAO publicholidayDAO;
   private final TimereportDAO timereportDAO;
-  private final OvertimeDAO overtimeDAO;
   private final WorkingdayDAO workingdayDAO;
+  private final EmployeecontractService employeecontractService;
 
   public Optional<Duration> calculateOvertime(long employeecontractId, LocalDate begin, LocalDate end) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
@@ -240,7 +239,7 @@ public class OvertimeService {
 
     Duration overtime = actualWorkingTime.minus(workingTimeTarget);
     if (useOverTimeAdjustment) {
-      var overtimes = overtimeDAO.getOvertimesByEmployeeContractId(employeecontract.getId());
+      var overtimes = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(employeecontract.getId());
       overtimeAdjustment = overtimes
           .stream()
           .filter(o -> isOvertimeEffectiveBetween(start, end, o))
@@ -263,7 +262,7 @@ public class OvertimeService {
     return new OvertimeInfo(actualWorkingTime, overtimeAdjustment, actualWorkingTime.plus(overtimeAdjustment), workingTimeTarget, overtime);
   }
 
-  // TODO introduce effective date in Overtime?
+  // TODO introduce effective date in Overtime (adjustment)?
   private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
     return overtime.getCreated().isBefore(end.plusDays(1).atStartOfDay()) &&
            !overtime.getCreated().isBefore(start.atStartOfDay());
@@ -344,15 +343,12 @@ public class OvertimeService {
     if(employeecontract.getReportAcceptanceDate() == null) {
       throw new IllegalArgumentException("employeecontract.reportAcceptanceDate must not be null for " + employeecontractId);
     }
-    var otStatic = calculateOvertime(employeecontractId, employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
-    if(otStatic.isPresent()) {
-      employeecontract.setOvertimeStatic(otStatic.get());
-      employeecontractDAO.save(employeecontract);
-    } else {
-      employeecontract.setOvertimeStatic(Duration.ZERO);
-      employeecontractDAO.save(employeecontract);
-    }
-    employeecontractDAO.save(employeecontract);
+    var newOvertimeStatic = calculateOvertime(employeecontractId,
+        employeecontract.getValidFrom(),
+        employeecontract.getReportAcceptanceDate()).orElse(Duration.ZERO
+    );
+
+    employeecontractService.updateOvertimeStatic(employeecontractId, newOvertimeStatic);
   }
 
   @Getter

@@ -51,7 +51,7 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("employeeContractContext", "edit");
 
         // get overtime-entries
-        List<Overtime> overtimes = employeecontractService.getOvertimesByEmployeeContractId(ecId);
+        List<Overtime> overtimes = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(ecId);
         Duration totalOvertime = Duration.ZERO;
         for (Overtime overtime : overtimes) {
             totalOvertime = totalOvertime.plus(overtime.getTimeMinutes());

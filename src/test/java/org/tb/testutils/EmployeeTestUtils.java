@@ -13,6 +13,7 @@ import org.tb.employee.domain.Employee;
 @UtilityClass
 public class EmployeeTestUtils {
 
+	public static final String BOSS_SIGN = "boss";
 	public static final String TESTY_SIGN = "testy";
 	
 	/**

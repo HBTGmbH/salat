@@ -18,10 +18,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.auth.EmployeeAuthorization;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
@@ -30,13 +27,9 @@ import org.tb.employee.domain.Employeecontract_;
 @RequiredArgsConstructor
 public class EmployeecontractDAO {
 
-    private final VacationDAO vacationDAO;
-    private final OvertimeDAO overtimeDAO;
     private final EmployeecontractRepository employeecontractRepository;
     private final AuthorizedUser authorizedUser;
     private final EmployeeAuthorization employeeAuthorization;
-    private final TimereportDAO timereportDAO;
-    private final WorkingdayDAO workingdayDAO;
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -60,13 +53,6 @@ public class EmployeecontractDAO {
             Hibernate.initialize(e.getVacations());
             return e;
         }).orElse(null);
-    }
-
-    /**
-     * Calls {@link EmployeecontractDAO#save(Employeecontract, Employee)} with {@link Employee} = null.
-     */
-    public void save(Employeecontract ec) {
-        employeecontractRepository.save(ec);
     }
 
     /**

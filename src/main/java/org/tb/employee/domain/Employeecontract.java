@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -134,22 +133,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     public int getVacationEntitlement() {
         if(vacations == null) return 0;
         return vacations.stream().findAny().map(Vacation::getEntitlement).orElse(0);
-    }
-
-    public Duration getEffectiveVacationEntitlement(int year) {
-        if(vacations == null) return Duration.ZERO;
-        return vacations.stream()
-            .filter(v -> v.getYear() == year)
-            .map(Vacation::getEffectiveEntitlement)
-            .findAny()
-            .orElse(Duration.ZERO);
-    }
-
-    public Optional<Vacation> getVacation(int year) {
-        if(vacations == null) return Optional.empty();
-        return vacations.stream()
-            .filter(v -> v.getYear() == year)
-            .findAny();
     }
 
     /**

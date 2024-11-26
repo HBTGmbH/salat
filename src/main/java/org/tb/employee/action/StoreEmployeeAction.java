@@ -60,7 +60,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             employee.setSign(emForm.getSign());
             employee.setGender(emForm.getGender().charAt(0));
 
-            employeeService.save(employee);
+            employeeService.createOrUpdate(employee);
 
             request.getSession().setAttribute("employees", employeeService.getAllEmployees());
 
