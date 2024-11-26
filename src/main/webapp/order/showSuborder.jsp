@@ -326,15 +326,10 @@
 						</c:choose>
 
 						<!-- Checkbox -->
-						<c:choose>
-							<c:when test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
-								<td align="center"><html:multibox styleId="suborderIdArray"
-																  property="suborderIdArray" value="${suborder.id}" /></td>
-							</c:when>
-							<c:otherwise>
-								<td align="center">&nbsp;</td>
-							</c:otherwise>
-						</c:choose>
+						<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
+							<td align="center"><html:multibox styleId="suborderIdArray"
+															  property="suborderIdArray" value="${suborder.id}" /></td>
+						</c:if>
 
 
 						<!-- Info -->
