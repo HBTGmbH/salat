@@ -376,7 +376,7 @@ public class OvertimeService {
     var contractsToRecalculate = event.getIds().stream()
         .filter(id -> {
           var contract = contracts.get(id.getEmployeeorderId());
-          if(contract.getReportAcceptanceDate() == null) return true;
+          if(contract.getReportAcceptanceDate() == null) return false;
           return !id.getReferenceDay().isAfter(contract.getReportAcceptanceDate());
         })
         .map(TimereportDeleteId::getEmployeeorderId)
@@ -404,7 +404,7 @@ public class OvertimeService {
     var contractsToRecalculate = timereports.stream()
         .filter(t -> {
           var contract = contracts.get(t.getEmployeecontractId());
-          if(contract.getReportAcceptanceDate() == null) return true;
+          if(contract.getReportAcceptanceDate() == null) return false;
           return !t.getReferenceday().isAfter(contract.getReportAcceptanceDate());
         })
         .map(TimereportDTO::getEmployeecontractId)
