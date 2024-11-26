@@ -38,7 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
-import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.service.SimpleMailService;
 import org.tb.common.service.SimpleMailService.MailContact;

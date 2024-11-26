@@ -1,6 +1,6 @@
 package org.tb.order.service;
 
-import static org.tb.common.ServiceFeedbackMessage.error;
+import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.TransactionUtils.markForRollback;
 
 import java.time.Duration;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.DateRange;
-import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.util.DateUtils;

@@ -11,7 +11,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.tb.common.exception.ErrorCode;
-import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.exception.ServiceFeedbackMessage;
 
 /**
  * Extends struts {@link Action}s with a typed form of execute.

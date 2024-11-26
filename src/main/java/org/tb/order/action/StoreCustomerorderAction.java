@@ -17,7 +17,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
-import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;

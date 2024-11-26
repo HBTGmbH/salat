@@ -1,13 +1,12 @@
-package org.tb.common;
+package org.tb.common.exception;
 
-import static org.tb.common.ServiceFeedbackMessage.Severity.ERROR;
-import static org.tb.common.ServiceFeedbackMessage.Severity.INFO;
+import static org.tb.common.exception.ServiceFeedbackMessage.Severity.ERROR;
+import static org.tb.common.exception.ServiceFeedbackMessage.Severity.INFO;
 
 import java.util.Arrays;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.tb.common.exception.ErrorCode;
 
 @Data
 @AllArgsConstructor

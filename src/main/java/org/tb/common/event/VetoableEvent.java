@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
-import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.exception.ServiceFeedbackMessage;
 
 @Getter
 public abstract class VetoableEvent extends ApplicationEvent {

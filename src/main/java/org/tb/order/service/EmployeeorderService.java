@@ -1,6 +1,6 @@
 package org.tb.order.service;
 
-import static org.tb.common.ServiceFeedbackMessage.error;
+import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.TransactionUtils.markForRollback;
 
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
-import org.tb.common.ServiceFeedbackMessage;
+import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.ErrorCode;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
