@@ -1,13 +1,18 @@
 package org.tb.order.service;
 
+import static org.tb.common.exception.ServiceFeedbackMessage.error;
+
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
+import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DurationUtils;
 import org.tb.customer.CustomerDAO;
 import org.tb.employee.domain.Employee;
@@ -133,7 +138,18 @@ public class CustomerorderService {
 
     if(!co.isNew()) {
       var event = new CustomerorderUpdateEvent(co);
-      eventPublisher.publishEvent(event);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            ErrorCode.CO_UPDATE_GOT_VETO,
+            co.getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
     }
     customerorderRepository.save(co);
   }
@@ -172,7 +188,19 @@ public class CustomerorderService {
 
   public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);
-    eventPublisher.publishEvent(event);
+    var customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          ErrorCode.CO_DELETE_GOT_VETO,
+          customerorder.getSign()
+      ));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
     customerorderRepository.deleteById(customerOrderId);
   }
 

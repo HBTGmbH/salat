@@ -141,27 +141,12 @@ public class EmployeeorderService {
     // adjust employeeorders
     List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontract.getId());
     for (Employeeorder employeeorder : employeeorders) {
-
       var existingValidity = employeeorder.getValidity();
       var updating = existingValidity.overlaps(newValidity);
-
-      try {
-        if(updating) {
-          adjustValidity(employeeorder.getId(), newValidity);
-        } else {
-          deleteEmployeeorderById(employeeorder.getId());
-        }
-      } catch(VetoedException e) {
-        // adding context to the veto to make it easier to understand the complete picture
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        var errorCode = updating ? ErrorCode.EO_UPDATE_GOT_VETO : ErrorCode.EO_DELETE_GOT_VETO;
-        allMessages.add(error(
-            errorCode,
-            employeeorder.getSuborder().getCompleteOrderSign(),
-            employeeorder.getEmployeecontract().getEmployee().getSign()
-        ));
-        allMessages.addAll(e.getMessages());
-        event.veto(allMessages);
+      if(updating) {
+        adjustValidity(employeeorder.getId(), newValidity);
+      } else {
+        deleteEmployeeorderById(employeeorder.getId());
       }
     }
   }
@@ -170,18 +155,7 @@ public class EmployeeorderService {
   void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
     var employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(event.getId());
     for (Employeeorder employeeorder : employeeorders) {
-      try {
-        deleteEmployeeorderById(employeeorder.getId());
-      } catch(VetoedException e) {
-        // adding context to the veto to make it easier to understand the complete picture
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        allMessages.add(error(
-            ErrorCode.EO_DELETE_GOT_VETO,
-            employeeorder.getSuborder().getCompleteOrderSign(),
-            employeeorder.getEmployeecontract().getEmployee().getSign()
-        ));allMessages.addAll(e.getMessages());
-        event.veto(allMessages);
-      }
+      deleteEmployeeorderById(employeeorder.getId());
     }
   }
 
@@ -193,27 +167,12 @@ public class EmployeeorderService {
     // adjust employeeorders
     List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(suborder.getId());
     for (Employeeorder employeeorder : employeeorders) {
-
       var existingValidity = employeeorder.getValidity();
       var updating = existingValidity.overlaps(newValidity);
-
-      try {
-        if(updating) {
-          adjustValidity(employeeorder.getId(), newValidity);
-        } else {
-          deleteEmployeeorderById(employeeorder.getId());
-        }
-      } catch(VetoedException e) {
-        // adding context to the veto to make it easier to understand the complete picture
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        var errorCode = updating ? ErrorCode.EO_UPDATE_GOT_VETO : ErrorCode.EO_DELETE_GOT_VETO;
-        allMessages.add(error(
-            errorCode,
-            employeeorder.getSuborder().getCompleteOrderSign(),
-            employeeorder.getEmployeecontract().getEmployee().getSign()
-        ));
-        allMessages.addAll(e.getMessages());
-        event.veto(allMessages);
+      if(updating) {
+        adjustValidity(employeeorder.getId(), newValidity);
+      } else {
+        deleteEmployeeorderById(employeeorder.getId());
       }
     }
   }
@@ -222,18 +181,7 @@ public class EmployeeorderService {
   void onSuborderDelete(SuborderDeleteEvent event) {
     var employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(event.getId());
     for (Employeeorder employeeorder : employeeorders) {
-      try {
-        deleteEmployeeorderById(employeeorder.getId());
-      } catch(VetoedException e) {
-        // adding context to the veto to make it easier to understand the complete picture
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        allMessages.add(error(
-            ErrorCode.EO_DELETE_GOT_VETO,
-            employeeorder.getSuborder().getCompleteOrderSign(),
-            employeeorder.getEmployeecontract().getEmployee().getSign()
-        ));allMessages.addAll(e.getMessages());
-        event.veto(allMessages);
-      }
+      deleteEmployeeorderById(employeeorder.getId());
     }
   }
 
@@ -252,7 +200,19 @@ public class EmployeeorderService {
 
     if(!employeeorder.isNew()) {
       EmployeeorderUpdateEvent event = new EmployeeorderUpdateEvent(employeeorder);
-      eventPublisher.publishEvent(event);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            ErrorCode.EO_UPDATE_GOT_VETO,
+            employeeorder.getSuborder().getCompleteOrderSign(),
+            employeeorder.getEmployeecontract().getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
     }
 
     employeeorderRepository.save(employeeorder);
@@ -292,8 +252,20 @@ public class EmployeeorderService {
   }
 
   public void deleteEmployeeorderById(long employeeOrderId) {
+    var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
     var event = new EmployeeorderDeleteEvent(employeeOrderId);
-    eventPublisher.publishEvent(event);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          ErrorCode.EO_DELETE_GOT_VETO,
+          employeeorder.getSuborder().getCompleteOrderSign(),
+          employeeorder.getEmployeecontract().getEmployee().getSign()
+      ));allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
     employeeorderRepository.deleteById(employeeOrderId);
   }
 

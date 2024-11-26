@@ -7,6 +7,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ErrorCode {
 
+  CU_NOT_FOUND("CU-0001", "the customer was not found!"),
+  CU_CUSTOMER_ORDERS_EXIST("CU-0002", "there are customer orders for this customer. Deletion is not possible!"),
+
+  CO_UPDATE_GOT_VETO("EC-0001", "customer order cannot be changed due to veto"),
+  CO_DELETE_GOT_VETO("EC-0001", "customer order cannot be changed due to veto"),
+
   EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
   EC_INVALID_DATE_RANGE("EC-0002", "employee contract has invalid date range"),
   EC_EFFECTIVE_EMPLOYEE_ORDER_OUTSIDE_VALIDITY("EC-0003", "effective employee order exists outside employee contract validity"),
@@ -58,9 +64,6 @@ public enum ErrorCode {
   WD_NO_TIMEREPORT("WD-0009", "no time report found for workday."),
   WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
   WD_OUTSIDE_CONTRACT("WD-0011", "the date is outside the validity of the employee contract!"),
-
-  CU_NOT_FOUND("CU-0001", "the customer was not found!"),
-  CU_CUSTOMER_ORDERS_EXIST("CU-0002", "there are customer orders for this customer. Deletion is not possible!"),
 
   AA_NEEDS_MANAGER("AA-0001", "not authorized. Manager level required!")
   ;

@@ -41,15 +41,15 @@ public class SuborderService {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
   }
 
-  public List<ServiceFeedbackMessage> create(AddSuborderForm addSuborderForm, Customerorder customerorder) {
-    return createOrUpdate(null, addSuborderForm, customerorder);
+  public void create(AddSuborderForm addSuborderForm, Customerorder customerorder) {
+    createOrUpdate(null, addSuborderForm, customerorder);
   }
 
-  public List<ServiceFeedbackMessage> update(long suborderId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
-    return createOrUpdate(suborderId, addSuborderForm, customerorder);
+  public void update(long suborderId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
+    createOrUpdate(suborderId, addSuborderForm, customerorder);
   }
 
-  private List<ServiceFeedbackMessage> createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
+  private void createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
     Suborder so;
     if (soId != null) {
       // edited suborder
@@ -106,15 +106,18 @@ public class SuborderService {
 
     if(!so.isNew()) {
       var event = new SuborderUpdateEvent(so);
-      eventPublisher.publishEvent(event);
-      if(event.isVetoed()) {
-        return event.getMessages();
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(ErrorCode.SO_UPDATE_GOT_VETO, so.getCompleteOrderSign()));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
       }
     }
 
     suborderRepository.save(so);
-
-    return List.of();
   }
 
   @EventListener
@@ -125,23 +128,12 @@ public class SuborderService {
     // adjust suborders
     List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorder.getId(), false);
     for (Suborder suborder : suborders) {
-
       var existingValidity = suborder.getValidity();
       var updating = existingValidity.overlaps(newValidity);
-
-      try {
-        if(updating) {
-          adjustValidity(suborder.getId(), newValidity);
-        } else {
-          deleteSuborderById(suborder.getId());
-        }
-      } catch(VetoedException e) {
-        // adding context to the veto to make it easier to understand the complete picture
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        var errorCode = updating ? ErrorCode.SO_UPDATE_GOT_VETO : ErrorCode.SO_DELETE_GOT_VETO;
-        allMessages.add(error(errorCode, suborder.getCompleteOrderSign()));
-        allMessages.addAll(e.getMessages());
-        event.veto(allMessages);
+      if(updating) {
+        adjustValidity(suborder.getId(), newValidity);
+      } else {
+        deleteSuborderById(suborder.getId());
       }
     }
   }
@@ -150,26 +142,18 @@ public class SuborderService {
   void onCustomerorderDelete(CustomerorderDeleteEvent event) {
     var suborders = suborderDAO.getSubordersByCustomerorderId(event.getId(), false);
     for (Suborder suborder : suborders) {
-      try {
-        deleteSuborderById(suborder.getId());
-      } catch(VetoedException e) {
-        // adding context to the veto to make it easier to understand the complete picture
-        var allMessages = new ArrayList<ServiceFeedbackMessage>();
-        allMessages.add(error(ErrorCode.SO_DELETE_GOT_VETO, suborder.getCompleteOrderSign()));
-        allMessages.addAll(e.getMessages());
-        event.veto(allMessages);
-      }
+      deleteSuborderById(suborder.getId());
     }
   }
 
-  private List<ServiceFeedbackMessage> adjustValidity(long suborderId, DateRange newValidity) {
+  private void adjustValidity(long suborderId, DateRange newValidity) {
     var suborder = suborderDAO.getSuborderById(suborderId);
     var existingValidity = suborder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);
     var newFrom = existingValidity.isInfiniteFrom() ? null : resultingValidity.getFrom();
     var newUntil = existingValidity.isInfiniteUntil() ? null : resultingValidity.getUntil();
     AddSuborderForm soForm = createForm(suborder, newFrom, newUntil);
-    return createOrUpdate(suborderId, soForm, suborder.getCustomerorder());
+    createOrUpdate(suborderId, soForm, suborder.getCustomerorder());
   }
 
   @Deprecated
@@ -210,14 +194,11 @@ public class SuborderService {
     return soForm;
   }
 
-  public List<ServiceFeedbackMessage> fitValidityOfChildren(long suborderId) throws BusinessRuleException {
-    var result = new ArrayList<ServiceFeedbackMessage>();
+  public void fitValidityOfChildren(long suborderId) throws BusinessRuleException {
     var parent = suborderDAO.getSuborderById(suborderId);
     for (Suborder child : parent.getAllChildren()) {
-      var messages = adjustValidity(child.getId(), new DateRange(parent.getFromDate(), parent.getUntilDate()));
-      result.addAll(messages);
+      adjustValidity(child.getId(), new DateRange(parent.getFromDate(), parent.getUntilDate()));
     }
-    return result;
   }
 
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showOnlyValid) {
@@ -243,7 +224,16 @@ public class SuborderService {
 
   public void deleteSuborderById(long suborderId) {
     var event = new SuborderDeleteEvent(suborderId);
-    eventPublisher.publishEvent(event);
+    var suborder = suborderDAO.getSuborderById(suborderId);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(ErrorCode.SO_DELETE_GOT_VETO, suborder.getCompleteOrderSign()));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
     suborderRepository.deleteById(suborderId);
   }
 
