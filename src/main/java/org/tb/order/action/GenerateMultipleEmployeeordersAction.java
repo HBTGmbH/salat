@@ -11,7 +11,6 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
@@ -114,12 +113,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         eo.setSign("");
                         eo.setDebithours(so.getDebithours());
                         eo.setDebithoursunit(so.getDebithoursunit());
-                        try {
-                            employeeorderService.create(eo);
-                        } catch(ErrorCodeException e) {
-                            addToErrors(request, e);
-                            return mapping.getInputForward();
-                        }
+                        employeeorderService.create(eo);
 
                         Long currentEmployeeId = (Long) request.getSession().getAttribute("currentEmployeeId");
 

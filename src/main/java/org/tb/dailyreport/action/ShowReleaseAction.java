@@ -16,7 +16,6 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.ReleaseService;
 import org.tb.employee.domain.Employee;
@@ -109,12 +108,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
 
             LocalDate releaseDate = releaseForm.getReleaseDate();
-            try {
-                releaseService.releaseTimereports(employeecontract.getId(), releaseDate);
-            } catch(ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
-            }
+            releaseService.releaseTimereports(employeecontract.getId(), releaseDate);
 
             updateEmployee = true;
         }

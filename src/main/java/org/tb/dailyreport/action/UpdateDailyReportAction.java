@@ -11,7 +11,6 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
@@ -49,21 +48,16 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
             long trId = Long.parseLong(request.getParameter("trId"));
             TimereportDTO tr = timereportService.getTimereportById(trId);
 
-            try {
-                timereportService.updateTimereport(
-                    trId,
-                    tr.getEmployeecontractId(),
-                    tr.getEmployeeorderId(),
-                    tr.getReferenceday(),
-                    reportForm.getComment(),
-                    Boolean.TRUE.equals(reportForm.getTraining()),
-                    reportForm.getSelectedDurationHour(),
-                    reportForm.getSelectedDurationMinute()
-                );
-            } catch (ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
-            }
+            timereportService.updateTimereport(
+                trId,
+                tr.getEmployeecontractId(),
+                tr.getEmployeeorderId(),
+                tr.getReferenceday(),
+                reportForm.getComment(),
+                Boolean.TRUE.equals(reportForm.getTraining()),
+                reportForm.getSelectedDurationHour(),
+                reportForm.getSelectedDurationMinute()
+            );
 
             // get updated list of timereports from DB
             ShowDailyReportForm showDailyReportForm = new ShowDailyReportForm();

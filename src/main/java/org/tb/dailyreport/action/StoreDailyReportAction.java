@@ -26,7 +26,6 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
@@ -189,12 +188,8 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 workingday.setStarttimehour(form.getSelectedHourBeginDay());
                 workingday.setStarttimeminute(form.getSelectedMinuteBeginDay());
             }
-            try {
-                workingdayService.upsertWorkingday(workingday);
-            } catch(ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
-            }
+
+            workingdayService.upsertWorkingday(workingday);
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshHours")) {
@@ -260,64 +255,49 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             }
 
             if(form.isNewTimeReport()) {
-                try {
-                    int effectiveNumberOfSerialDays = Math.max(form.getNumberOfSerialDays(), 1);
+                int effectiveNumberOfSerialDays = Math.max(form.getNumberOfSerialDays(), 1);
 
-                    if(effectiveNumberOfSerialDays > 1) {
-                        // serial booking, needs to ensure working days are present - just copy the value of the first day
-                        Workingday firstWorkingday = workingdayService.getWorkingday(employeeContract.getId(), referencedayRefDate);
-                        if(firstWorkingday != null) {
-                            var workingday = firstWorkingday;
-                            for(int i = 1; i < effectiveNumberOfSerialDays; i++) {
-                                workingday = workingdayService.getNextRegularWorkingday(workingday);
-                                if(workingday.isNew()) {
-                                    workingday.setStarttimehour(firstWorkingday.getStarttimehour());
-                                    workingday.setStarttimeminute(firstWorkingday.getStarttimeminute());
-                                    workingday.setBreakhours(firstWorkingday.getBreakhours());
-                                    workingday.setBreakminutes(firstWorkingday.getBreakminutes());
-                                    workingday.setType(firstWorkingday.getType());
-                                    try {
-                                        workingdayService.upsertWorkingday(workingday);
-                                    } catch(ErrorCodeException e) {
-                                        addToErrors(request, e);
-                                        return mapping.getInputForward();
-                                    }
-                                }
+                if(effectiveNumberOfSerialDays > 1) {
+                    // serial booking, needs to ensure working days are present - just copy the value of the first day
+                    Workingday firstWorkingday = workingdayService.getWorkingday(employeeContract.getId(), referencedayRefDate);
+                    if(firstWorkingday != null) {
+                        var workingday = firstWorkingday;
+                        for(int i = 1; i < effectiveNumberOfSerialDays; i++) {
+                            workingday = workingdayService.getNextRegularWorkingday(workingday);
+                            if(workingday.isNew()) {
+                                workingday.setStarttimehour(firstWorkingday.getStarttimehour());
+                                workingday.setStarttimeminute(firstWorkingday.getStarttimeminute());
+                                workingday.setBreakhours(firstWorkingday.getBreakhours());
+                                workingday.setBreakminutes(firstWorkingday.getBreakminutes());
+                                workingday.setType(firstWorkingday.getType());
+                                workingdayService.upsertWorkingday(workingday);
                             }
                         }
                     }
-
-                    timereportService.createTimereports(
-                        form.getEmployeeContractId(),
-                        employeeorderId,
-                        referencedayRefDate,
-                        form.getComment(),
-                        Boolean.TRUE.equals(form.getTraining()),
-                        form.getSelectedHourDuration(),
-                        form.getSelectedMinuteDuration(),
-                        effectiveNumberOfSerialDays // ensure at least one
-                    );
-                } catch (ErrorCodeException e) {
-                    addToErrors(request, e);
-                    return mapping.getInputForward();
                 }
+
+                timereportService.createTimereports(
+                    form.getEmployeeContractId(),
+                    employeeorderId,
+                    referencedayRefDate,
+                    form.getComment(),
+                    Boolean.TRUE.equals(form.getTraining()),
+                    form.getSelectedHourDuration(),
+                    form.getSelectedMinuteDuration(),
+                    effectiveNumberOfSerialDays // ensure at least one
+                );
             } else {
                 long timeReportId = form.getId();
-                try {
-                    timereportService.updateTimereport(
-                        timeReportId,
-                        form.getEmployeeContractId(),
-                        employeeorderId,
-                        referencedayRefDate,
-                        form.getComment(),
-                        Boolean.TRUE.equals(form.getTraining()),
-                        form.getSelectedHourDuration(),
-                        form.getSelectedMinuteDuration()
-                    );
-                } catch (ErrorCodeException e) {
-                    addToErrors(request, e);
-                    return mapping.getInputForward();
-                }
+                timereportService.updateTimereport(
+                    timeReportId,
+                    form.getEmployeeContractId(),
+                    employeeorderId,
+                    referencedayRefDate,
+                    form.getComment(),
+                    Boolean.TRUE.equals(form.getTraining()),
+                    form.getSelectedHourDuration(),
+                    form.getSelectedMinuteDuration()
+                );
             }
 
             request.getSession().setAttribute("currentDay", DateUtils.getDayString(referencedayRefDate));

@@ -10,7 +10,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.customer.domain.CustomerDTO;
 import org.tb.customer.service.CustomerService;
 
@@ -38,13 +37,7 @@ public class DeleteCustomerAction extends LoginRequiredAction<ActionForm> {
         if (cu == null)
             return mapping.getInputForward();
 
-
-        try {
-            customerService.deleteCustomerById(cuId);
-        } catch(ErrorCodeException e) {
-            addToErrors(request, e);
-            return mapping.getInputForward();
-        }
+        customerService.deleteCustomerById(cuId);
 
         saveErrors(request, errors);
 

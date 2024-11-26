@@ -8,7 +8,6 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.chicoree.ChicoreeSessionStore.TimereportData;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.service.EmployeeorderService;
 
@@ -29,33 +28,29 @@ public class StoreTimereportAction extends LoginRequiredAction<TimereportForm> {
         form.getSuborderIdTyped(),
         form.getDateTyped()
     ).getId();
-    try {
-      if(form.isNew()) {
-        timereportService.createTimereports(
-            employeecontractId,
-            employeeorderId,
-            form.getDateTyped(),
-            form.getComment(),
-            false,
-            form.getHoursTyped(),
-            form.getMinutesTyped(),
-            1
-        );
-      } else {
-        timereportService.updateTimereport(
-            form.getIdTyped(),
-            employeecontractId,
-            employeeorderId,
-            form.getDateTyped(),
-            form.getComment(),
-            false,
-            form.getHoursTyped(),
-            form.getMinutesTyped()
-        );
-      }
-    } catch (ErrorCodeException e) {
-      addToErrors(request, e);
-      return mapping.getInputForward();
+
+    if(form.isNew()) {
+      timereportService.createTimereports(
+          employeecontractId,
+          employeeorderId,
+          form.getDateTyped(),
+          form.getComment(),
+          false,
+          form.getHoursTyped(),
+          form.getMinutesTyped(),
+          1
+      );
+    } else {
+      timereportService.updateTimereport(
+          form.getIdTyped(),
+          employeecontractId,
+          employeeorderId,
+          form.getDateTyped(),
+          form.getComment(),
+          false,
+          form.getHoursTyped(),
+          form.getMinutesTyped()
+      );
     }
     chicoreeSessionStore.setLastStoredTimereport(new TimereportData(form.getOrderId(), form.getSuborderId()));
     chicoreeSessionStore.setDashboardDate(form.getDateTyped());

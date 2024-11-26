@@ -17,7 +17,6 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
@@ -100,21 +99,16 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
 
             OrderType orderType = coForm.getOrderType();
 
-            try {
-                if(coId != null) {
-                    customerorderService.update(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
-                        coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
-                        coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
-                        coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
-                } else {
-                    customerorderService.create(coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
-                        coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
-                        coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
-                        coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
-                }
-            } catch(ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
+            if(coId != null) {
+                customerorderService.update(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
+                    coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
+                    coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
+                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
+            } else {
+                customerorderService.create(coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
+                    coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
+                    coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
+                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
             }
 
             request.getSession().setAttribute("customerorders", customerorderService.getAllCustomerorders());

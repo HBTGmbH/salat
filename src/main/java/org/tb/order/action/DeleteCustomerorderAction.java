@@ -11,7 +11,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
@@ -44,12 +43,7 @@ public class DeleteCustomerorderAction extends LoginRequiredAction<ShowCustomero
             return mapping.getInputForward();
         }
 
-        try {
-            customerorderService.deleteCustomerorderById(coId);
-        } catch(ErrorCodeException e) {
-            addToErrors(request, e);
-            return mapping.getInputForward();
-        }
+        customerorderService.deleteCustomerorderById(coId);
 
         //fix for accessing deleted Order in EmployeeOrderAction
         Long coID = (Long) request.getSession().getAttribute("currentOrderId");

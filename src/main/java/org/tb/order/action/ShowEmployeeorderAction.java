@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -74,15 +73,10 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
                         changed = true;
                     }
                     // 3) begin after end now?
-                    try {
-                        if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
-                            employeeorderService.update(employeeorder);
-                        } else {
-                            employeeorderService.deleteEmployeeorderById(employeeorder.getId());
-                        }
-                    } catch(ErrorCodeException e) {
-                        addToErrors(request, e);
-                        return mapping.getInputForward();
+                    if (changed && !employeeorder.getFromDate().isAfter(employeeorder.getUntilDate())) {
+                        employeeorderService.update(employeeorder);
+                    } else {
+                        employeeorderService.deleteEmployeeorderById(employeeorder.getId());
                     }
                 }
             }

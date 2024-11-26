@@ -16,7 +16,6 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
@@ -121,36 +120,31 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             int yearlyvacation = ecForm.getYearlyvacationTyped();
 
             Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
-            try {
-                if(existingEmployeecontractId != null) {
-                    employeecontractService.updateEmployeecontract(
-                        existingEmployeecontractId,
-                        validFrom,
-                        validUntil,
-                        ecForm.getSupervisorid(),
-                        ecForm.getTaskdescription(),
-                        ecForm.getFreelancer(),
-                        ecForm.getHide(),
-                        dailyworkingtime,
-                        yearlyvacation
-                    );
-                } else {
-                    employeecontractService.createEmployeecontract(
-                        ecForm.getEmployee(),
-                        validFrom,
-                        validUntil,
-                        ecForm.getSupervisorid(),
-                        ecForm.getTaskdescription(),
-                        ecForm.getFreelancer(),
-                        ecForm.getHide(),
-                        dailyworkingtime,
-                        yearlyvacation,
-                        initialOvertime
-                    );
-                }
-            } catch (ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
+            if(existingEmployeecontractId != null) {
+                employeecontractService.updateEmployeecontract(
+                    existingEmployeecontractId,
+                    validFrom,
+                    validUntil,
+                    ecForm.getSupervisorid(),
+                    ecForm.getTaskdescription(),
+                    ecForm.getFreelancer(),
+                    ecForm.getHide(),
+                    dailyworkingtime,
+                    yearlyvacation
+                );
+            } else {
+                employeecontractService.createEmployeecontract(
+                    ecForm.getEmployee(),
+                    validFrom,
+                    validUntil,
+                    ecForm.getSupervisorid(),
+                    ecForm.getTaskdescription(),
+                    ecForm.getFreelancer(),
+                    ecForm.getHide(),
+                    dailyworkingtime,
+                    yearlyvacation,
+                    initialOvertime
+                );
             }
 
             List<Employee> employeeOptionList = employeeService.getAllEmployees();

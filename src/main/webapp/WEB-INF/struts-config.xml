@@ -62,12 +62,7 @@
 	<!-- ========================================= Global Exception Definitions -->
 
 	<global-exceptions>
-		<!-- sample exception handler
-			<exception
-			key="expired.password"
-			type="app.ExpiredPasswordException"
-			path="/changePassword.jsp"/>
-			end sample -->
+		<exception type="org.tb.common.exception.ErrorCodeException" handler="org.tb.common.struts.ErrorCodeExceptionHandler"/>
 	</global-exceptions>
 
 	<!-- =========================================== Global Forward Definitions -->

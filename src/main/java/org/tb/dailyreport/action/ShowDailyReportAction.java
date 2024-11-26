@@ -115,12 +115,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-            try {
-                timereportService.deleteTimereportsById(timereportIds);
-            } catch (ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
-            }
+            timereportService.deleteTimereportsById(timereportIds);
 
             task = "refreshTimereports";
         } else if ("toggleShowAllMinutes".equalsIgnoreCase(task)) {
@@ -715,12 +710,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
             // unreachable code
             assert false;
         }
-        try {
-            workingdayService.upsertWorkingday(workingday);
-        } catch(ErrorCodeException e) {
-            addToErrors(request, e);
-            return mapping.getInputForward();
-        }
+        workingdayService.upsertWorkingday(workingday);
 
         //show break time, quitting time and working day ends on the showdailyreport.jsp
         request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);

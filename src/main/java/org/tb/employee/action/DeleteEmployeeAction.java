@@ -12,7 +12,6 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 
@@ -48,12 +47,7 @@ public class DeleteEmployeeAction extends LoginRequiredAction<ActionForm> {
             return mapping.getInputForward();
         }
 
-        try {
-            employeeService.deleteEmployeeById(emId);
-        } catch(ErrorCodeException e) {
-            addToErrors(request, e);
-            return mapping.getInputForward();
-        }
+        employeeService.deleteEmployeeById(emId);
 
         String filter = null;
 

@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
-import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
@@ -113,13 +112,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
             if (request.getSession().getAttribute("soId") != null) {
                 long suborderId = Long.parseLong(request.getSession().getAttribute("soId").toString());
-                try {
-                    suborderService.fitValidityOfChildren(suborderId);
-                } catch (ErrorCodeException e) {
-                    addToErrors(request, e);
-                    return mapping.getInputForward();
-                }
-
+                suborderService.fitValidityOfChildren(suborderId);
             }
             return mapping.findForward("success");
         }
@@ -248,15 +241,10 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             if(request.getSession().getAttribute("soId") != null) {
                 soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
             }
-            try {
-                if(soId == null) {
-                    suborderService.create(addSuborderForm, customerorder);
-                } else {
-                    suborderService.update(soId, addSuborderForm, customerorder);
-                }
-            } catch(ErrorCodeException e) {
-                addToErrors(request, e);
-                return mapping.getInputForward();
+            if(soId == null) {
+                suborderService.create(addSuborderForm, customerorder);
+            } else {
+                suborderService.update(soId, addSuborderForm, customerorder);
             }
 
             request.getSession().removeAttribute("soId");
