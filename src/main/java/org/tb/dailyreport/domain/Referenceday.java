@@ -1,10 +1,10 @@
 package org.tb.dailyreport.domain;
 
+import jakarta.persistence.Entity;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
-import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;

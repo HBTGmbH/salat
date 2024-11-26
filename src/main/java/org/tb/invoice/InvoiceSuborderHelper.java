@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 

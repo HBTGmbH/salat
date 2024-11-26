@@ -1,16 +1,15 @@
 package org.tb.dailyreport.viewhelper.matrix;
 
-import java.time.Duration;
-import java.time.LocalDate;
-
-import lombok.Data;
-import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-
 import static java.time.Duration.ZERO;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import lombok.Data;
+import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
 @Data
 public class MatrixDayTotal {

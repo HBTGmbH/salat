@@ -1,10 +1,9 @@
 package org.tb.reporting.domain;
 
-import java.io.Serializable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import org.tb.common.domain.AuditedEntity;

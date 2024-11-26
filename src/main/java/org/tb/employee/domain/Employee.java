@@ -1,14 +1,14 @@
 package org.tb.employee.domain;
 
-import java.io.Serializable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.tb.common.domain.AuditedEntity;
 import org.tb.common.GlobalConstants;
+import org.tb.common.domain.AuditedEntity;
 
 @Getter
 @Setter

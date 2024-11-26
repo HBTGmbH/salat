@@ -1,16 +1,15 @@
 package org.tb.common;
 
-import java.util.Properties;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
+import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.stereotype.Component;
-import org.tb.common.ServerTimeHelper;
 
 @Component
 @RequiredArgsConstructor

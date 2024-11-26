@@ -3,7 +3,6 @@ package org.tb.dailyreport.domain.comparator;
 import static lombok.AccessLevel.PRIVATE;
 
 import java.util.Comparator;
-
 import lombok.NoArgsConstructor;
 import org.tb.dailyreport.domain.TimereportDTO;
 

@@ -1,11 +1,11 @@
 package org.tb.employee.domain;
 
-import java.io.Serializable;
-import java.time.Duration;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.io.Serializable;
+import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;

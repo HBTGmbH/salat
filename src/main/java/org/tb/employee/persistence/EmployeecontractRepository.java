@@ -1,10 +1,9 @@
 package org.tb.employee.persistence;
 
+import jakarta.persistence.QueryHint;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.persistence.QueryHint;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

@@ -4,7 +4,6 @@ import com.google.common.base.Supplier;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.exceptions.CsvBeanIntrospectionException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
-
 import java.util.Map;
 
 public class PositionAwareColumnMappingStrategy<T> extends ColumnPositionMappingStrategy<T> {

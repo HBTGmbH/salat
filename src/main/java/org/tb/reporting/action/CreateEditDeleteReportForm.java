@@ -1,11 +1,10 @@
 package org.tb.reporting.action;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @Getter
 @Setter

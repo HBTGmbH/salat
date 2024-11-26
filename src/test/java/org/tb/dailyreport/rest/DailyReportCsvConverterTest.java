@@ -1,5 +1,11 @@
 package org.tb.dailyreport.rest;
 
+import static org.apache.commons.io.IOUtils.toInputStream;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.jupiter.api.Test;
@@ -9,13 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
-
-import java.io.IOException;
-import java.util.List;
-
-import static org.apache.commons.io.IOUtils.toInputStream;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DailyReportCsvConverterTest {

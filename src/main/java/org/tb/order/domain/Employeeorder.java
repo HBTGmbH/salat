@@ -2,16 +2,13 @@ package org.tb.order.domain;
 
 import static org.tb.common.util.DateUtils.format;
 
-import java.io.Serializable;
-import java.time.Duration;
-import java.time.LocalDate;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;

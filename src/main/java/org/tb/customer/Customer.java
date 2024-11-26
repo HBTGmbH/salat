@@ -1,9 +1,9 @@
 package org.tb.customer;
 
-import java.io.Serializable;
-import java.util.List;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
+import java.io.Serializable;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;

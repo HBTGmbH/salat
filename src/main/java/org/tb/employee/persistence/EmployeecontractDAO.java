@@ -5,7 +5,6 @@ import static java.util.Comparator.comparing;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +18,6 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.auth.EmployeeAuthorization;
@@ -27,7 +25,6 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
-import org.tb.order.domain.Employeeorder;
 
 @Component
 @RequiredArgsConstructor

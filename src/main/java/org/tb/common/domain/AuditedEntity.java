@@ -1,13 +1,13 @@
 package org.tb.common.domain;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;
+import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;

@@ -1,12 +1,15 @@
 package org.tb.reporting.action;
 
-import lombok.*;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
 
 @Getter
 @Setter

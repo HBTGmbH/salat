@@ -1,13 +1,13 @@
 package org.tb.dailyreport.domain;
 
-import java.io.Serializable;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
+import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;

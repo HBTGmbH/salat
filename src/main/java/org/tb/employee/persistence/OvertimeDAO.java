@@ -3,7 +3,6 @@ package org.tb.employee.persistence;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Overtime;
 
 @Component
