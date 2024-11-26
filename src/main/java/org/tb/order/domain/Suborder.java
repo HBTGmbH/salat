@@ -15,6 +15,7 @@ import jakarta.persistence.OneToMany;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -339,6 +340,14 @@ public class Suborder extends AuditedEntity implements Serializable {
 
     public void setDebithours(Duration value) {
         debitMinutes = value; // its a Duration - hours or minutes make no difference
+    }
+
+    public List<Suborder> withParents() {
+        List<Suborder> result = new LinkedList<>();
+        acceptVisitor((suborder) -> {
+            result.add(suborder);
+        }, VisitorDirection.PARENT);
+        return result.reversed();
     }
 
     public String getCompleteOrderSign() {
