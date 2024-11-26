@@ -11,6 +11,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.TimereportService;
@@ -53,7 +54,10 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
             return mapping.getInputForward();
         }
 
-        if (!timereportService.deleteTimereport(trId, authorizedUser)) {
+        try {
+            timereportService.deleteTimereportById(trId);
+        } catch (ErrorCodeException e) {
+            addToErrors(request, e);
             return mapping.findForward("error");
         }
 

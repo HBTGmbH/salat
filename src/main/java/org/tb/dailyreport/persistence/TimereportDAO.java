@@ -398,28 +398,6 @@ public class TimereportDAO {
         }
     }
 
-    /**
-     * Calls {@link TimereportDAO#save(Timereport, Employee, boolean)} with {@link Employee} = null.
-     */
-    public void save(Timereport tr) {
-        timereportRepository.save(tr);
-    }
-
-    /**
-     * Deletes the given timereport.
-     */
-    public void deleteTimereportById(long trId) {
-        timereportRepository.deleteById(trId);
-    }
-
-    public List<TimereportDTO> getTimereportsByEmployeecontractId(long employeecontractId) {
-        return toDaoList(timereportRepository.findAllByEmployeecontractId(employeecontractId));
-    }
-
-    public List<TimereportDTO> getTimereportsBySuborderId(long suborderId) {
-        return toDaoList(timereportRepository.findAllByEmployeecontractId(suborderId));
-    }
-
     private Optional<TimereportDTO> toDao(Optional<Timereport> timereport) {
         return timereport.filter(this::accessible).map(this::toDao);
     }

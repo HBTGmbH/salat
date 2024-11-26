@@ -2,6 +2,7 @@ package org.tb.dailyreport.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
+import static java.util.function.Function.identity;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
 import static org.tb.common.util.DateUtils.today;
@@ -13,12 +14,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
@@ -31,6 +36,9 @@ import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
+import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;
+import org.tb.dailyreport.event.TimereportsDeletedEvent;
+import org.tb.dailyreport.event.TimereportsDeletedEvent.TimereportDeleteId;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -38,6 +46,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.service.EmployeeorderService;
 
 @Service
 @Transactional
@@ -49,6 +58,8 @@ public class OvertimeService {
   private final TimereportDAO timereportDAO;
   private final WorkingdayDAO workingdayDAO;
   private final EmployeecontractService employeecontractService;
+  private final TimereportService timereportService;
+  private final EmployeeorderService employeeorderService;
 
   public Optional<Duration> calculateOvertime(long employeecontractId, LocalDate begin, LocalDate end) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
@@ -349,6 +360,61 @@ public class OvertimeService {
     );
 
     employeecontractService.updateOvertimeStatic(employeecontractId, newOvertimeStatic);
+  }
+
+  @EventListener
+  void onTimereportsDeleted(TimereportsDeletedEvent event) {
+    // collect all employee contracts in a map to have better access later
+    var contracts = event.getIds().stream()
+        .map(TimereportDeleteId::getEmployeeorderId)
+        .distinct()
+        .map(employeeorderService::getEmployeeorderById)
+        .map(eo -> Pair.of(eo.getId(), eo.getEmployeecontract()))
+        .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
+    // what employee contracts need to recalculate - only when there are changed time reports before the acceptance date
+    // (this is to reduce too many calculations)
+    var contractsToRecalculate = event.getIds().stream()
+        .filter(id -> {
+          var contract = contracts.get(id.getEmployeeorderId());
+          if(contract.getReportAcceptanceDate() == null) return true;
+          return !id.getReferenceDay().isAfter(contract.getReportAcceptanceDate());
+        })
+        .map(TimereportDeleteId::getEmployeeorderId)
+        .distinct()
+        .map(contracts::get)
+        .map(Employeecontract::getId)
+        .distinct()
+        .toList();
+    recomputeOvertime(contractsToRecalculate);
+  }
+
+  @EventListener
+  void onTimereportsCreatedOrUpdated(TimereportsCreatedOrUpdatedEvent event) {
+    var timereports = event.getIds().stream()
+        .map(timereportService::getTimereportById)
+        .toList();
+    // collect all employee contracts in a map to have better access later
+    var contracts = timereports.stream()
+        .map(TimereportDTO::getEmployeecontractId)
+        .distinct()
+        .map(employeecontractService::getEmployeecontractById)
+        .collect(Collectors.toMap(AuditedEntity::getId, identity()));
+    // what employee contracts need to recalculate - only when there are changed time reports before the acceptance date
+    // (this is to reduce too many calculations)
+    var contractsToRecalculate = timereports.stream()
+        .filter(t -> {
+          var contract = contracts.get(t.getEmployeecontractId());
+          if(contract.getReportAcceptanceDate() == null) return true;
+          return !t.getReferenceday().isAfter(contract.getReportAcceptanceDate());
+        })
+        .map(TimereportDTO::getEmployeecontractId)
+        .distinct()
+        .toList();
+    recomputeOvertime(contractsToRecalculate);
+  }
+
+  private void recomputeOvertime(List<Long> employeecontractIds) {
+    employeecontractIds.forEach(this::updateOvertimeStatic);
   }
 
   @Getter

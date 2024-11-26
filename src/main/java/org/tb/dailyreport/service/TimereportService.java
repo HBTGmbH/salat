@@ -56,6 +56,7 @@ import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import jakarta.servlet.ServletContext;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -70,6 +71,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -78,7 +80,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.common.Warning;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
-import org.tb.common.exception.InvalidDataException;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DataValidationUtils;
@@ -88,6 +90,9 @@ import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;
+import org.tb.dailyreport.event.TimereportsDeletedEvent;
+import org.tb.dailyreport.event.TimereportsDeletedEvent.TimereportDeleteId;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.ReferencedayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -109,65 +114,24 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @RequiredArgsConstructor
 public class TimereportService {
 
+  private final ApplicationEventPublisher eventPublisher;
   private final EmployeecontractDAO employeecontractDAO;
   private final ReferencedayDAO referencedayDAO;
   private final EmployeeorderDAO employeeorderDAO;
   private final TimereportDAO timereportDAO;
   private final TimereportRepository timereportRepository;
   private final PublicholidayDAO publicholidayDAO;
-  private final OvertimeService overtimeService;
   private final WorkingdayDAO workingdayDAO;
   private final EmployeecontractService employeecontractService;
   private final ServletContext servletContext;
+  private final AuthorizedUser authorizedUser;
 
   public TimereportDTO getTimereportById(long id) {
     return timereportDAO.getTimereportById(id);
   }
 
-  public List<TimereportDTO> getTimereportsForEmployeecontractAndDate(long employeecontractId, LocalDate date) {
-    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date);
-  }
-
-  public List<TimereportDTO> getTimereportsByDates(LocalDate beginDate, LocalDate endDate) {
-    return timereportDAO.getTimereportsByDates(beginDate, endDate);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractId(long employeecontractId, LocalDate beginDate,
-      LocalDate endDate) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, beginDate, endDate);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndCustomerOrderId(LocalDate beginDate, LocalDate endDate,
-      long orderId) {
-    return timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long employeecontractId, LocalDate beginDate,
-      LocalDate endDate, long orderId) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeecontractId, beginDate, endDate, orderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndSuborderId(LocalDate beginDate, LocalDate endDate,
-      long suborderId) {
-    return timereportDAO.getTimereportsByDatesAndSuborderId(beginDate, endDate, suborderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long employeecontractId, LocalDate beginDate,
-      LocalDate endDate, long suborderId) {
-    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
-  }
-
-  public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
-    return timereportDAO.getTimereportsByDate(date);
-  }
-
-  public List<TimereportDTO> getTimereportsByDateAndEmployeeContractId(long employeeContractId, LocalDate date) {
-    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
-  }
-
-  public void createTimereports(AuthorizedUser authorizedUser, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
-  throws AuthorizationException, InvalidDataException, BusinessRuleException {
+  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays) throws ErrorCodeException {
 
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
@@ -185,30 +149,27 @@ public class TimereportService {
       timereportTemplate.setReferenceday(nextWorkableDay);
     }
 
-    checkAndSaveTimereports(authorizedUser, timereportsToSave);
+    checkAndSaveTimereports(timereportsToSave);
   }
 
-  public void updateTimereport(AuthorizedUser authorizedUser, long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
-      boolean trainingFlag, long durationHours, long durationMinutes)
-      throws AuthorizationException, InvalidDataException, BusinessRuleException {
+  public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
-    checkAndSaveTimereports(authorizedUser, Collections.singletonList(timereport));
+    checkAndSaveTimereports(Collections.singletonList(timereport));
   }
 
   /**
    * shifts a timereport by days
    */
-  public void shiftDays(long timereportId, int amountDays, AuthorizedUser authorizedUser)
-      throws AuthorizationException, InvalidDataException, BusinessRuleException {
+  public void shiftDays(long timereportId, int amountDays) throws ErrorCodeException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     Referenceday referenceday = timereport.getReferenceday();
     LocalDate shiftedDate = DateUtils.addDays(referenceday.getRefdate(), amountDays);
-    updateTimereport(authorizedUser,
-        timereport.getId(),
+    updateTimereport(timereport.getId(),
         timereport.getEmployeecontract().getId(),
         timereport.getEmployeeorder().getId(),
         shiftedDate,
@@ -218,101 +179,44 @@ public class TimereportService {
         timereport.getDurationminutes());
   }
 
-  public boolean deleteTimereport(long timereportId, AuthorizedUser authorizedUser)
-      throws AuthorizationException, InvalidDataException, BusinessRuleException {
+  public void deleteTimereportById(long timereportId) throws ErrorCodeException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     checkAuthorization(Collections.singletonList(timereport), authorizedUser);
-    timereportDAO.deleteTimereportById(timereportId);
-    return true;
+    var deleteId = new TimereportDeleteId(
+        timereportId,
+        timereport.getEmployeeorder().getId(),
+        timereport.getReferenceday().getRefdate()
+    );
+    var event = new TimereportsDeletedEvent(List.of(deleteId));
+    timereportRepository.deleteById(timereportId);
+    eventPublisher.publishEvent(event);
   }
 
-  public void deleteTimeReports(LocalDate date, long employeeOrderId, AuthorizedUser authorizedUser) {
+  public void deleteTimeReports(LocalDate date, long employeeOrderId) {
     var timeReports = timereportRepository.findAllByEmployeeorderIdAndReferencedayRefdate(employeeOrderId, date);
     checkAuthorization(timeReports, authorizedUser);
-    timeReports.forEach(timeReport -> timereportDAO.deleteTimereportById(timeReport.getId()));
+    deleteTimereports(timeReports);
   }
 
-  /**
-   * deletes many timereports at once
-   *
-   * @param timereportIds ids of the timereports
-   */
-  public void deleteTimereports(List<Long> timereportIds, AuthorizedUser authorizedUser)
-      throws AuthorizationException, InvalidDataException, BusinessRuleException{
+  public void deleteTimereportsById(List<Long> timereportIds) throws ErrorCodeException {
     List<Timereport> timereports = timereportIds.stream().map(timereportRepository::findById)
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(Collectors.toList());
+    deleteTimereports(timereports);
+  }
+
+  private void deleteTimereports(List<Timereport> timereports) {
     checkAuthorization(timereports, authorizedUser);
-    timereports.stream()
-        .map(Timereport::getId)
-        .forEach(timereportDAO::deleteTimereportById);
+    var deleteIds = timereports.stream()
+        .map(t -> new TimereportDeleteId(t.getId(), t.getEmployeeorder().getId(), t.getReferenceday().getRefdate()))
+        .toList();
+    timereportRepository.deleteAll(timereports);
+    eventPublisher.publishEvent(new TimereportsDeletedEvent(deleteIds));
   }
 
-  public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
-    return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
-  }
-
-  /**
-   * Gets the sum of all duration minutes WITH considering the hours.
-   */
-  public long getTotalDurationMinutesForSuborders(List<Long> ids) {
-    if (ids == null || ids.isEmpty()) return 0;
-    return timereportRepository.getReportedMinutesForSuborders(ids).orElse(0L);
-  }
-
-  /**
-   * Gets the sum of all duration minutes within a range of time WITH considering the hours.
-   */
-  public long getTotalDurationMinutesForSuborder(long soId, LocalDate fromDate, LocalDate untilDate) {
-    return timereportRepository.getReportedMinutesForSuborderAndBetween(soId, fromDate, untilDate).orElse(0L);
-  }
-
-  /**
-   * Gets the sum of all duration minutes WITH consideration of the hours.
-   */
-  public long getTotalDurationMinutesForCustomerOrder(long coId) {
-    return timereportRepository.getReportedMinutesForCustomerorder(coId).orElse(0L);
-  }
-
-  /**
-   * Gets the sum of all duration minutes WITH considering the hours.
-   */
-  public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
-    return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
-  }
-
-  /**
-   * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
-   * 1) associated to the given employee contract
-   * 2) refdate out of range of the employee contract
-   *
-   * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
-   */
-  public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeContract(long employeecontractId) {
-    return timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontractId);
-  }
-
-  /**
-   * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
-   * 1) associated to the given employee contract
-   * 2) refdate out of range of the associated employee order
-   *
-   * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
-   */
-  public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeOrder(long employeecontractId) {
-    return timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontractId);
-  }
-
-  /**
-   * Gets a list of all {@link TimereportDTO}s, that have no duration and are associated to the given ecId.
-   */
-  public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long employeecontractId, LocalDate releaseDate) {
-    return timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontractId, releaseDate);
-  }
-
-  private void checkAndSaveTimereports(AuthorizedUser authorizedUser, List<Timereport> timereports) {
+  private void checkAndSaveTimereports(List<Timereport> timereports) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
     checkAuthorization(timereports, authorizedUser);
@@ -324,36 +228,11 @@ public class TimereportService {
 
     timereports.forEach(t -> {
       log.debug("Saving Timereport {}", t.getTimeReportAsString());
-      timereportDAO.save(t);
+      timereportRepository.save(t);
     });
 
-    // recompute overtimeStatic and store it in employeecontract if change made before acceptance date
-    // TODO use event and move to overtime service
-    LocalDate reportAcceptanceDate = timereports.getFirst().getEmployeecontract().getReportAcceptanceDate();
-    if(reportAcceptanceDate != null) {
-      Optional<LocalDate> match = timereports.stream()
-              .map(Timereport::getReferenceday)
-              .map(Referenceday::getRefdate)
-              .filter(d -> !d.isAfter(reportAcceptanceDate))
-              .findAny();
-      if(match.isPresent()) {
-        Employeecontract employeecontract = timereports.getFirst().getEmployeecontract();
-        var overtimeStaticNew = overtimeService.calculateOvertime(
-                employeecontract.getId(),
-                employeecontract.getValidFrom(),
-                reportAcceptanceDate
-        );
-        overtimeStaticNew.ifPresent(overtimeStaticNewValue -> {
-          log.info(
-                  "Overtime for employeecontract {} changed from {} to {}",
-                  employeecontract.getId(),
-                  employeecontract.getOvertimeStatic(),
-                  overtimeStaticNewValue
-          );
-          employeecontractService.updateOvertimeStatic(employeecontract.getId(), overtimeStaticNewValue);
-        });
-      }
-    }
+    var ids = timereports.stream().map(Timereport::getId).toList();
+    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(ids));
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
@@ -434,21 +313,21 @@ public class TimereportService {
     // authorization is based on the status
     timereports.forEach(t -> {
       if(TIMEREPORT_STATUS_CLOSED.equals(t.getStatus()) &&
-          !authorizedUser.isAdmin()) {
+         !authorizedUser.isAdmin()) {
         throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
-          !authorizedUser.isManager() &&
-          !authorizedUser.isAdmin()) {
+         !authorizedUser.isManager() &&
+         !authorizedUser.isAdmin()) {
         throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
-          Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
+         Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
         throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_NOT_SELF);
       }
       if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
-          !authorizedUser.isAdmin() &&
-          !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
+         !authorizedUser.isAdmin() &&
+         !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
         throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
       }
     });
@@ -654,6 +533,19 @@ public class TimereportService {
     return warnings;
   }
 
+  public void updateReleaseData(long timereportId, String status, String releasedBy, LocalDateTime releasedDate,
+      String acceptedBy, LocalDateTime acceptedDate) {
+    Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
+    DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    timereport.setStatus(status);
+    timereport.setReleasedby(releasedBy);
+    timereport.setReleased(releasedDate);
+    timereport.setAcceptedby(acceptedBy);
+    timereport.setAccepted(acceptedDate);
+    timereportRepository.save(timereport);
+    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(List.of(timereportId)));
+  }
+
   @EventListener
   void onEmployeeorderUpdate(EmployeeorderUpdateEvent event) {
     var from = event.getDomainObject().getFromDate();
@@ -731,6 +623,109 @@ public class TimereportService {
 
   static boolean noTimeReportsFound(Map<LocalDate, List<TimereportDTO>> timeReports, LocalDate date) {
     return !timeReports.containsKey(date);
+  }
+
+  public List<TimereportDTO> getTimereportsForEmployeecontractAndDate(long employeecontractId, LocalDate date) {
+    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date);
+  }
+
+  public List<TimereportDTO> getTimereportsByDates(LocalDate beginDate, LocalDate endDate) {
+    return timereportDAO.getTimereportsByDates(beginDate, endDate);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractId(long employeecontractId, LocalDate beginDate,
+      LocalDate endDate) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, beginDate, endDate);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndCustomerOrderId(LocalDate beginDate, LocalDate endDate,
+      long orderId) {
+    return timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long employeecontractId, LocalDate beginDate,
+      LocalDate endDate, long orderId) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeecontractId, beginDate, endDate, orderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndSuborderId(LocalDate beginDate, LocalDate endDate,
+      long suborderId) {
+    return timereportDAO.getTimereportsByDatesAndSuborderId(beginDate, endDate, suborderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndSuborderId(long employeecontractId, LocalDate beginDate,
+      LocalDate endDate, long suborderId) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
+  }
+
+  public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
+    return timereportDAO.getTimereportsByDate(date);
+  }
+
+  public List<TimereportDTO> getTimereportsByDateAndEmployeeContractId(long employeeContractId, LocalDate date) {
+    return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
+  }
+
+  public long getTotalDurationMinutesForSuborderAndEmployeeContract(long soId, long ecId) {
+    return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForSuborders(List<Long> ids) {
+    if (ids == null || ids.isEmpty()) return 0;
+    return timereportRepository.getReportedMinutesForSuborders(ids).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes within a range of time WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForSuborder(long soId, LocalDate fromDate, LocalDate untilDate) {
+    return timereportRepository.getReportedMinutesForSuborderAndBetween(soId, fromDate, untilDate).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH consideration of the hours.
+   */
+  public long getTotalDurationMinutesForCustomerOrder(long coId) {
+    return timereportRepository.getReportedMinutesForCustomerorder(coId).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
+    return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
+  }
+
+  /**
+   * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
+   * 1) associated to the given employee contract
+   * 2) refdate out of range of the employee contract
+   *
+   * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
+   */
+  public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeContract(long employeecontractId) {
+    return timereportDAO.getTimereportsOutOfRangeForEmployeeContract(employeecontractId);
+  }
+
+  /**
+   * Gets a list of all {@link TimereportDTO}s that fulfill following criteria:
+   * 1) associated to the given employee contract
+   * 2) refdate out of range of the associated employee order
+   *
+   * @return Returns a {@link List} with all {@link TimereportDTO}s, that fulfill the criteria.
+   */
+  public List<TimereportDTO> getTimereportsOutOfRangeForEmployeeOrder(long employeecontractId) {
+    return timereportDAO.getTimereportsOutOfRangeForEmployeeOrder(employeecontractId);
+  }
+
+  /**
+   * Gets a list of all {@link TimereportDTO}s, that have no duration and are associated to the given ecId.
+   */
+  public List<TimereportDTO> getTimereportsWithoutDurationForEmployeeContractId(long employeecontractId, LocalDate releaseDate) {
+    return timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontractId, releaseDate);
   }
 
 }

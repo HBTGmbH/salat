@@ -8,11 +8,15 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static org.tb.common.GlobalConstants.REST_PERIOD_IN_MINUTES;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 import static org.tb.common.util.DateUtils.min;
+import static org.tb.common.util.DateUtils.now;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 import static org.tb.dailyreport.service.TimereportService.isRelevantForWorkingTimeValidation;
@@ -44,7 +48,6 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.service.SimpleMailService;
 import org.tb.common.service.SimpleMailService.MailContact;
 import org.tb.common.util.DataValidationUtils;
-import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -235,30 +238,37 @@ public class ReleaseService {
   private void releaseTimereport(long timereportId, String releasedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
-    timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_COMMITED);
-    timereport.setReleasedby(releasedBy);
-    timereport.setReleased(DateUtils.now());
-    timereportDAO.save(timereport);
+    timereportService.updateReleaseData(timereportId,
+        TIMEREPORT_STATUS_COMMITED,
+        releasedBy,
+        now(),
+        timereport.getAcceptedby(),
+        timereport.getAccepted()
+    );
   }
 
   private void acceptTimereport(long timereportId, String acceptedBy) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
-    timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_CLOSED);
-    timereport.setAcceptedby(acceptedBy);
-    timereport.setAccepted(DateUtils.now());
-    timereportDAO.save(timereport);
+    timereportService.updateReleaseData(timereportId,
+        TIMEREPORT_STATUS_CLOSED,
+        timereport.getReleasedby(),
+        timereport.getReleased(),
+        acceptedBy,
+        now()
+    );
   }
 
   public void reopenTimereport(long timereportId) {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
-    timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
-    timereport.setReleasedby(null);
-    timereport.setReleased(null);
-    timereport.setAcceptedby(null);
-    timereport.setAccepted(null);
-    timereportDAO.save(timereport);
+    timereportService.updateReleaseData(timereportId,
+        TIMEREPORT_STATUS_OPEN,
+        null,
+        null,
+        null,
+        null
+    );
   }
 
   public void sendReleaseReminderMail(long employeeId) {

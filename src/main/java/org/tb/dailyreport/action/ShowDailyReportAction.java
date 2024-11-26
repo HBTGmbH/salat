@@ -44,7 +44,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessages;
 import org.mapstruct.factory.Mappers;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
@@ -97,7 +96,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     private final CustomerorderHelper customerorderHelper;
     private final TimereportHelper timereportHelper;
     private final TimereportService timereportService;
-    private final AuthorizedUser authorizedUser;
     private final OvertimeService overtimeService;
     private final FavoriteDtoMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDtoMapper.class);
     private final CustomerorderService customerorderService;
@@ -118,7 +116,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
                 .collect(Collectors.toList());
 
             try {
-                timereportService.deleteTimereports(timereportIds, authorizedUser);
+                timereportService.deleteTimereportsById(timereportIds);
             } catch (ErrorCodeException e) {
                 addToErrors(request, e);
                 return mapping.getInputForward();
@@ -285,7 +283,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
       LocalDate date = DateUtils.parse(request.getParameter("date"));
 
-      timereportService.createTimereports(authorizedUser, ec.getId(), favorite.getEmployeeorderId(), date,
+      timereportService.createTimereports(ec.getId(), favorite.getEmployeeorderId(), date,
           favorite.getComment(), false,
           favorite.getHours(), favorite.getMinutes(), 1);
 
@@ -344,7 +342,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         List<Long> problematicTimereportIds = new ArrayList<>();
         ids.forEach(id -> {
             try {
-                timereportService.shiftDays(id, days, authorizedUser);
+                timereportService.shiftDays(id, days);
             } catch (ErrorCodeException e) {
                 log.error(e.getMessage(), e);
                 problematicTimereportIds.add(id);

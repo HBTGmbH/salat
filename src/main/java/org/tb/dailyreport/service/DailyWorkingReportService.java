@@ -116,7 +116,8 @@ public class DailyWorkingReportService {
         var oldBookings = existingBookings.stream().filter(booking -> !bookings.contains(booking.withoutId())).toList();
 
         if (!oldBookings.isEmpty() && upsert){
-            oldBookings.stream().map(DailyReportData::getId).filter(Objects::nonNull).forEach(timereportDAO::deleteTimereportById);
+            var ids = oldBookings.stream().map(DailyReportData::getId).filter(Objects::nonNull).toList();
+            timereportService.deleteTimereportsById(ids);
         }
 
         newBookings.forEach(booking -> doCreateDailyReport(day, booking, employeeOrder, employeeContract));
@@ -124,7 +125,6 @@ public class DailyWorkingReportService {
 
     private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder, Employeecontract employeeContract) {
         timereportService.createTimereports(
-                authorizedUser,
                 requireNonNull(employeeContract.getId(), "ID of contract is required"),
                 requireNonNull(employeeorder.getId(), "ID of order is required"),
                 day,

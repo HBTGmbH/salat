@@ -8,7 +8,6 @@ public class DomainObjectDeleteEvent extends VetoableEvent {
   private final long id;
 
   public DomainObjectDeleteEvent(long id) {
-    super(id);
     this.id = id;
   }
 

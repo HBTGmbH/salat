@@ -141,7 +141,7 @@ class DailyReportRestEndpointTest {
         dailyReportRestEndpoint.createBooking(valueOf(timeReport1));
 
         // then
-        verify(timereportService, times(1)).createTimereports(authorizedUser,
+        verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
                 false,1, 0, 1);
     }
@@ -175,7 +175,7 @@ class DailyReportRestEndpointTest {
         dailyReportRestEndpoint.createBookings(List.of(valueOf(timeReport1)));
 
         // then
-        verify(timereportService, times(1)).createTimereports(authorizedUser,
+        verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
                 false,1, 0, 1);
     }
@@ -224,15 +224,15 @@ class DailyReportRestEndpointTest {
         ));
 
         // then
-        verify(timereportService, times(1)).deleteTimeReports(day, 1L, authorizedUser);
-        verify(timereportService, times(1)).createTimereports(authorizedUser,
+        verify(timereportService, times(1)).deleteTimeReports(day, 1L);
+        verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder1.getId(), day, "test1",
                 false,1, 0, 1);
-        verify(timereportService, times(1)).deleteTimeReports(day, 2L, authorizedUser);
-        verify(timereportService, times(1)).createTimereports(authorizedUser,
+        verify(timereportService, times(1)).deleteTimeReports(day, 2L);
+        verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder2.getId(), day, "test2",
                 false,1, 0, 1);
-        verify(timereportService, times(1)).createTimereports(authorizedUser,
+        verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder2.getId(), day, "test3",
                 false,1, 0, 1);
     }

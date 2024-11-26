@@ -8,9 +8,8 @@ public class DomainObjectUpdateEvent<T extends Persistable<Long>> extends Vetoab
 
   private final T domainObject;
 
-  public DomainObjectUpdateEvent(T source) {
-    super(source);
-    this.domainObject = source;
+  public DomainObjectUpdateEvent(T domainObject) {
+    this.domainObject = domainObject;
   }
 
 }

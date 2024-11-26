@@ -51,7 +51,6 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
 
             try {
                 timereportService.updateTimereport(
-                    authorizedUser,
                     trId,
                     tr.getEmployeecontractId(),
                     tr.getEmployeeorderId(),

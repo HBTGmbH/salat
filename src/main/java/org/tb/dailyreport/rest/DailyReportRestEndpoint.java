@@ -156,7 +156,7 @@ public class DailyReportRestEndpoint {
         if (employeeorder == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
         }
-        timereportService.deleteTimeReports(day, employeeOrderId, authorizedUser);
+        timereportService.deleteTimeReports(day, employeeOrderId);
         bookings.forEach(booking -> doCreateDailyReport(booking, employeeorder));
     }
 
@@ -170,7 +170,6 @@ public class DailyReportRestEndpoint {
 
     private void doCreateDailyReport(DailyReportData booking, Employeeorder employeeorder) {
         timereportService.createTimereports(
-                authorizedUser,
                 employeeorder.getEmployeecontract().getId(),
                 employeeorder.getId(),
                 DateUtils.parse(booking.getDate()),
@@ -198,7 +197,7 @@ public class DailyReportRestEndpoint {
             @RequestBody DailyReportData report
     ) {
         checkAuthenticated();
-        timereportService.deleteTimereport(report.getId(), authorizedUser);
+        timereportService.deleteTimereportById(report.getId());
     }
 
     private void checkAuthenticated() {
