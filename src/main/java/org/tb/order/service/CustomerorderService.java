@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.exception.ErrorCode;
@@ -19,6 +20,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
+import org.tb.order.domain.Suborder;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -206,6 +208,14 @@ public class CustomerorderService {
 
   public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
     return customerorderDAO.getCustomerordersByFilters(showInvalid, filter, customerId);
+  }
+
+  @EventListener
+  void onCustomerDelete(CustomerorderDeleteEvent event) {
+    var customerorders = customerorderDAO.getCustomerordersByCustomerId(event.getId());
+    for (Customerorder customerorder : customerorders) {
+      deleteCustomerorderById(customerorder.getId());
+    }
   }
 
 }

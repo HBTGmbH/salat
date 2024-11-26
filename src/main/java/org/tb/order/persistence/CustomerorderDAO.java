@@ -20,7 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.customer.Customer_;
+import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
@@ -132,6 +132,12 @@ public class CustomerorderDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }, Sort.by(order));
+    }
+
+    public List<Customerorder> getCustomerordersByCustomerId(long customerId) {
+        return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
+            return builder.and(matchingCustomerId(customerId).toPredicate(root, query, builder));
+        });
     }
 
     /**

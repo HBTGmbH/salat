@@ -8,10 +8,10 @@ import lombok.RequiredArgsConstructor;
 public enum ErrorCode {
 
   CU_NOT_FOUND("CU-0001", "the customer was not found!"),
-  CU_CUSTOMER_ORDERS_EXIST("CU-0002", "there are customer orders for this customer. Deletion is not possible!"),
+  CU_DELETE_GOT_VETO("CU-0002", "customer cannot be deleted due to veto"),
 
-  CO_UPDATE_GOT_VETO("EC-0001", "customer order cannot be changed due to veto"),
-  CO_DELETE_GOT_VETO("EC-0001", "customer order cannot be changed due to veto"),
+  CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
+  CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
 
   EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
   EC_INVALID_DATE_RANGE("EC-0002", "employee contract has invalid date range"),
