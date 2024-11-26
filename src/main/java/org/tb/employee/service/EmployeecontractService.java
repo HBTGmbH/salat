@@ -172,7 +172,7 @@ public class EmployeecontractService {
     var employeecontract = getEmployeecontractById(employeecontractId);
     var vacation = vacationRepository
         .findByEmployeecontractIdAndYear(employeecontractId, year)
-        .orElse(createVacation(employeecontractId, year, employeecontract.getVacationEntitlement()));
+        .orElseGet(() -> createVacation(employeecontractId, year, employeecontract.getVacationEntitlement()));
     return vacation.getEffectiveEntitlement();
   }
 

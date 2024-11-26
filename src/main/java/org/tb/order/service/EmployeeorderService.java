@@ -141,10 +141,24 @@ public class EmployeeorderService {
       var updating = existingValidity.overlaps(newValidity);
       if(updating) {
         adjustValidity(employeeorder.getId(), newValidity);
+        if(isVacationOrder(employeeorder)) {
+          adjustVacationBudget(employeeorder);
+        }
       } else {
         deleteEmployeeorderById(employeeorder.getId());
       }
     }
+  }
+
+  private boolean isVacationOrder(Employeeorder employeeorder) {
+    return employeeorder.getSuborder().getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION);
+  }
+
+  private void adjustVacationBudget(Employeeorder employeeorder) {
+    var year = Integer.parseInt(employeeorder.getSuborder().getSign());
+    var budget = employeecontractService.getEffectiveVacationEntitlement(employeeorder.getEmployeecontract().getId(), year);
+    employeeorder.setDebithours(budget);
+    createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
   @EventListener
@@ -190,6 +204,7 @@ public class EmployeeorderService {
     createOrUpdate(employeeorder, newFrom, newUntil);
   }
 
+  // TODO improve method arguments to reflect all details of an employee order
   private void createOrUpdate(Employeeorder employeeorder, LocalDate from, LocalDate until) {
     employeeorder.setFromDate(from);
     employeeorder.setUntilDate(until);
