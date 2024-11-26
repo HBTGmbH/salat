@@ -82,6 +82,7 @@
 	<bean:message key="main.general.entersuborderproperties.text" />:<br>
 	</span>
 	<br>
+	<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 	<table class="center backgroundcolor">
 		<colgroup>
 			<col width="195" align="left"/>

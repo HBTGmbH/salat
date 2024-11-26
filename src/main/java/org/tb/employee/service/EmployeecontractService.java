@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -25,6 +24,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -150,7 +150,18 @@ public class EmployeecontractService {
 
     if(!employeecontract.isNew()) {
       var event = new EmployeecontractUpdateEvent(employeecontract);
-      eventPublisher.publishEvent(event);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            EC_UPDATE_GOT_VETO,
+            employeecontract.getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
     }
 
     adjustVacations(employeecontract, vacationEntitlement);
@@ -216,7 +227,18 @@ public class EmployeecontractService {
     if (ec != null) {
 
       var event = new EmployeecontractDeleteEvent(employeeContractId);
-      eventPublisher.publishEvent(event);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            ErrorCode.EC_DELETE_GOT_VETO,
+            ec.getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
 
       // if ok for deletion, check for overtime and vacation entries and
       // delete them successively (cannot yet be done via web application)

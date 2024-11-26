@@ -54,6 +54,7 @@
 	<span style="font-size:14pt;font-weight:bold;"><br><bean:message
 		key="main.general.entercustomerorderproperties.text" />:<br></span>
 	<br>
+	<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">

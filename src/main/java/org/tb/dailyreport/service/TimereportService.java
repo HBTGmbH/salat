@@ -663,6 +663,8 @@ public class TimereportService {
       var errors = timereports.stream()
           .map(tr -> error(
               TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER,
+              tr.getCompleteOrderSign(),
+              tr.getEmployeeSign(),
               tr.getReferenceday()
           ))
           .toList();
@@ -678,6 +680,8 @@ public class TimereportService {
       var errors = timereports.stream()
           .map(tr -> error(
               TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER,
+              tr.getCompleteOrderSign(),
+              tr.getEmployeeSign(),
               tr.getReferenceday()
           ))
           .toList();

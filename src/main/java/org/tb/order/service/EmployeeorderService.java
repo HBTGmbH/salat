@@ -263,7 +263,8 @@ public class EmployeeorderService {
           ErrorCode.EO_DELETE_GOT_VETO,
           employeeorder.getSuborder().getCompleteOrderSign(),
           employeeorder.getEmployeecontract().getEmployee().getSign()
-      ));allMessages.addAll(e.getMessages());
+      ));
+      allMessages.addAll(e.getMessages());
       event.veto(allMessages);
     }
     employeeorderRepository.deleteById(employeeOrderId);
