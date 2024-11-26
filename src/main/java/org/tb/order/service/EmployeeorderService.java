@@ -1,15 +1,14 @@
 package org.tb.order.service;
 
+import static java.time.Year.parse;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -63,32 +62,18 @@ public class EmployeeorderService {
       // test if employeeorder exists
       for (Suborder suborder : standardSuborders) {
 
-        LocalDate contractValidFrom = employeecontract.getValidFrom();
-        LocalDate contractValidUntil = employeecontract.getValidUntil();
-        LocalDate orderValidFrom = suborder.getFromDate();
-        LocalDate orderValidUntil = suborder.getUntilDate();
-
-        // calculate effective time period
-        LocalDate effectiveFromDate = ObjectUtils.max(contractValidFrom, orderValidFrom);
-        LocalDate effectiveUntilDate;
-        if (contractValidUntil == null && orderValidUntil == null) {
-          effectiveUntilDate = null;
-        } else if (contractValidUntil == null) {
-          effectiveUntilDate = orderValidUntil;
-        } else if (orderValidUntil == null) {
-          effectiveUntilDate = contractValidUntil;
-        } else {
-          effectiveUntilDate = ObjectUtils.min(contractValidUntil, orderValidUntil);
-        }
+        var contractValidity = employeecontract.getValidity();
+        var orderValidity = suborder.getValidity();
+        var effectiveValidity = contractValidity.intersection(orderValidity);
 
         // check if effective validity has at least a single day - otherwise creation makes no sense - skip it!
-        if(effectiveUntilDate != null && effectiveFromDate.isAfter(effectiveUntilDate)) {
+        if(effectiveValidity == null) {
           continue;
         }
 
         // check if effective validity is not in the past (before date of accepted time reports) - else SKIP IT!!!
         var acceptanceDate = employeecontract.getReportAcceptanceDate();
-        if(effectiveUntilDate != null && acceptanceDate != null && effectiveUntilDate.isAfter(acceptanceDate)) {
+        if(acceptanceDate != null && effectiveValidity.isBefore(acceptanceDate)) {
           continue;
         }
 
@@ -97,28 +82,28 @@ public class EmployeeorderService {
 
           // skip vacation orders that do not match the contract
           if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-            int vacationOrderYear = Year.parse(suborder.getSign()).getValue();
-            if(vacationOrderYear < contractValidFrom.getYear()) {
+            var year = parse(suborder.getSign());
+            if(!contractValidity.overlaps(year)) {
               continue; // skip creation
             }
           }
 
           Employeeorder employeeorder = new Employeeorder();
-          employeeorder.setFromDate(effectiveFromDate);
-          employeeorder.setUntilDate(effectiveUntilDate);
+          employeeorder.setFromDate(effectiveValidity.getFrom());
+          employeeorder.setUntilDate(effectiveValidity.getUntil());
           employeeorder.setEmployeecontract(employeecontract);
           employeeorder.setSign(" ");
           employeeorder.setSuborder(suborder);
 
           // calculate effective vacation entitlement and set budget accordingly
           if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-            int vacationOrderYear = Year.parse(suborder.getSign()).getValue();
+            int vacationOrderYear = parse(suborder.getSign()).getValue();
             var vacationBudget = employeecontractService.getEffectiveVacationEntitlement(employeecontractId, vacationOrderYear); // calculate real entitlement
             employeeorder.setDebithours(vacationBudget);
             employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
           }
 
-          createOrUpdate(employeeorder, effectiveFromDate, effectiveUntilDate);
+          createOrUpdate(employeeorder, effectiveValidity.getFrom(), effectiveValidity.getUntil());
           log.info(
               "Created standard order for order {} and employee {}.",
               suborder.getCompleteOrderSign(),
