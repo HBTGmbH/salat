@@ -5,6 +5,7 @@ import static java.time.Duration.ofMinutes;
 import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -56,11 +58,11 @@ public class StatisticService {
   private void generateTimereportStatistics(List<Employeeorder> employeeorders) {
     employeeorders.forEach(eo -> {
       var duration = timereportService.getTotalDurationMinutesForEmployeeOrder(eo.getId());
-      System.out.println("EO: Duration for %s of %s: %s".formatted(
+      log.info("EO: Duration for {} of {}: {}",
           eo.getSuborder().getCompleteOrderSign(),
           eo.getEmployeecontract().getEmployee().getSign(),
           DurationUtils.format(ofMinutes(duration))
-      ));
+      );
     });
     var suborders = employeeorders.stream()
         .map(Employeeorder::getSuborder)
@@ -71,10 +73,10 @@ public class StatisticService {
         .toList();
     suborders.forEach(so -> {
       var duration = timereportService.getTotalDurationMinutesForSuborders(List.of(so.getId()));
-      System.out.println("SO Duration for %s: %s".formatted(
+      log.info("SO Duration for {}: {}",
           so.getCompleteOrderSign(),
           DurationUtils.format(ofMinutes(duration))
-      ));
+      );
     });
     var customerorders = suborders.stream()
         .map(Suborder::getCustomerorder)
@@ -84,10 +86,10 @@ public class StatisticService {
         .toList();
     customerorders.forEach(co -> {
       var duration = timereportService.getTotalDurationMinutesForCustomerOrder(co.getId());
-      System.out.println("CO Duration for %s: %s".formatted(
+      log.info("CO Duration for {}: {}",
           co.getSign(),
           DurationUtils.format(ofMinutes(duration))
-      ));
+      );
     });
   }
 
