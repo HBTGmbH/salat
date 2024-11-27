@@ -4,7 +4,6 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toSet;
-import static org.tb.common.util.DateUtils.isInRange;
 
 import jakarta.annotation.PostConstruct;
 import java.time.Clock;
@@ -12,6 +11,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -26,6 +26,7 @@ import org.tb.auth.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
+import org.tb.common.DateRange;
 import org.tb.common.SalatProperties;
 
 @Service
@@ -66,7 +67,7 @@ public class AuthService {
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
-      if(authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return ALL_OBJECTS.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
@@ -75,7 +76,7 @@ public class AuthService {
 
   public boolean isAuthorized(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
-      if(authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
       if(rule.getGrantorId() != null && !ALL_OBJECTS.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
@@ -85,7 +86,7 @@ public class AuthService {
 
   public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel) {
     return anyRuleMatches(category, rule -> {
-      if(authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
       if(rule.getGrantorId() != null && !ALL_OBJECTS.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
@@ -95,11 +96,18 @@ public class AuthService {
 
   public boolean isAuthorizedAnyObject(String category, LocalDate date, AccessLevel accessLevel) {
     return anyRuleMatches(category, rule -> {
-      if(authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return true;
     });
+  }
+
+  public List<Rule> getAuthRules(String category, String objectId) {
+    ensureUpToDateCache();
+    return cacheEntries.getOrDefault(category, Set.of()).stream()
+        .filter(r -> ALL_OBJECTS.equals(r.getObjectId()) || objectId.equals(r.getObjectId()))
+        .toList();
   }
 
   private boolean anyRuleMatches(String category, Predicate<Rule> rulePredicate) {
@@ -119,8 +127,7 @@ public class AuthService {
                       rule.getCategory(),
                       rule.getGrantorId(),
                       granteeId,
-                      rule.getValidFrom(),
-                      rule.getValidUntil(),
+                      new DateRange(rule.getValidFrom(), rule.getValidUntil()),
                       ALL_OBJECTS,
                       accessLevel
                   )
@@ -132,8 +139,7 @@ public class AuthService {
                         rule.getCategory(),
                         rule.getGrantorId(),
                         granteeId,
-                        rule.getValidFrom(),
-                        rule.getValidUntil(),
+                        new DateRange(rule.getValidFrom(), rule.getValidUntil()),
                         objectId,
                         accessLevel
                     )
@@ -154,17 +160,16 @@ public class AuthService {
 
   @Data
   @RequiredArgsConstructor
-  private static class Rule {
+  public static class Rule {
     private final String category;
     private final String grantorId;
     private final String granteeId;
-    private final LocalDate validFrom;
-    private final LocalDate validUntil;
+    private final DateRange validity;
     private final String objectId;
     private final AccessLevel accessLevel;
 
     public boolean isValid(LocalDate date) {
-      return isInRange(date, validFrom, validUntil);
+      return validity.contains(date);
     }
 
   }
