@@ -8,9 +8,11 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.domain.AuditedEntity;
@@ -39,10 +41,12 @@ public class StatisticService {
   private final CustomerorderService customerorderService;
   private final StatisticValueRepository statisticValueRepository;
 
+  @Async
   @EventListener
   void onTimereportsCreatedOrUpdated(TimereportsCreatedOrUpdatedEvent event) {
     var timereports = event.getIds().stream()
         .map(timereportService::getTimereportById)
+        .filter(Objects::nonNull) // because of async, object may no longer be available
         .toList();
     var minDate = timereports.stream()
         .map(TimereportDTO::getReferenceday)
@@ -55,6 +59,7 @@ public class StatisticService {
 
     var employeeorders = timereports.stream()
         .map(TimereportDTO::getEmployeeorderId)
+        .filter(Objects::nonNull) // because of async, object may no longer be available
         .distinct()
         .map(employeeorderService::getEmployeeorderById)
         .toList();
@@ -64,6 +69,7 @@ public class StatisticService {
     generateOrderStatistics(employeeorders, minDate, maxDate, comment);
   }
 
+  @Async
   @EventListener
   void onTimereportsDeleted(TimereportsDeletedEvent event) {
     var referencedDays = event.getIds().stream()
@@ -81,6 +87,7 @@ public class StatisticService {
         .map(TimereportDeleteId::getEmployeeorderId)
         .distinct()
         .map(employeeorderService::getEmployeeorderById)
+        .filter(Objects::nonNull) // because of async, object may no longer be available
         .toList();
 
     var comment = "time report(s) deleted @ %s".formatted(now());
