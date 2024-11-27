@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,7 @@ import org.tb.common.util.DateUtils;
 
 @Data
 @RequiredArgsConstructor
-public class DateRange {
+public class DateRange implements Comparable<DateRange> {
 
   private final static LocalDate FINIT_FROM_BOUNDARY = LocalDate.of(1970, 1, 1);
   private final static LocalDate FINIT_UNTIL_BOUNDARY = LocalDate.of(2999, 12, 31);
@@ -24,11 +25,6 @@ public class DateRange {
   public DateRange(YearMonth month) {
     this.from = month.atDay(1);
     this.until = month.atEndOfMonth();
-  }
-
-  public DateRange(Year year) {
-    this.from = year.atDay(1);
-    this.until = from.with(TemporalAdjusters.lastDayOfYear());
   }
 
   public boolean isInfiniteFrom() {
@@ -113,4 +109,50 @@ public class DateRange {
 
     return !from.isAfter(yearEnd) && !until.isBefore(yearStart);
   }
+
+  @Override
+  public int compareTo(DateRange other) {
+    if (other == null) {
+      throw new NullPointerException("The other DateRange is null");
+    }
+
+    if (this.from == null && other.from != null) {
+      return -1;
+    } else if (this.from != null && other.from == null) {
+      return 1;
+    } else if (this.from != null && other.from != null) {
+      int fromComparison = this.from.compareTo(other.from);
+      if (fromComparison != 0) {
+        return fromComparison;
+      }
+    }
+
+    if (this.until == null && other.until != null) {
+      return 1;
+    } else if (this.until != null && other.until == null) {
+      return -1;
+    } else if (this.until != null && other.until != null) {
+      return this.until.compareTo(other.until);
+    }
+
+    return 0;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    DateRange dateRange = (DateRange) o;
+    return Objects.equals(from, dateRange.from) && Objects.equals(until, dateRange.until);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(from, until);
+  }
+  
 }
