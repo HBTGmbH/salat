@@ -62,7 +62,10 @@
 	<!-- ========================================= Global Exception Definitions -->
 
 	<global-exceptions>
-		<exception type="org.tb.common.exception.ErrorCodeException" handler="org.tb.common.struts.ErrorCodeExceptionHandler"/>
+		<exception
+			key="ErrorCodeExceptionHandler"
+			type="org.tb.common.exception.ErrorCodeException"
+			handler="org.tb.common.struts.ErrorCodeExceptionHandler"/>
 	</global-exceptions>
 
 	<!-- =========================================== Global Forward Definitions -->
