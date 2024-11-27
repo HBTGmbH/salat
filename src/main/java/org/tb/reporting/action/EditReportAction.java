@@ -25,6 +25,7 @@ public class EditReportAction extends LoginRequiredAction<CreateEditDeleteReport
         form.setName(reportDefinition.getName());
         form.setSql(reportDefinition.getSql());
         boolean authorizedToStore = reportAuthorization.isAuthorized(reportDefinition, AccessLevel.WRITE);
+        request.setAttribute("reportAuthorizations", reportAuthorization.getAuthorizations(reportDefinition));
         request.setAttribute("createEditReport_authorizedToStore", authorizedToStore);
         return mapping.findForward("success");
     }

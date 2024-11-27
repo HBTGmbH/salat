@@ -8,6 +8,7 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import org.tb.common.util.DateUtils;
 
 @Data
@@ -153,6 +154,11 @@ public class DateRange implements Comparable<DateRange> {
   @Override
   public int hashCode() {
     return Objects.hash(from, until);
+  }
+
+  @Override
+  public String toString() {
+    return (from != null ? from.toString() : "...") + " - " + (until != null ? until.toString() : "...");
   }
   
 }

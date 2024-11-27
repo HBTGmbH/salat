@@ -56,5 +56,24 @@
 	<html:hidden property="mode" />
 	<html:hidden property="reportId" />
 </html:form>
+<h2>Authorizations</h2>
+<table>
+	<thead>
+		<tr>
+			<th>User</th>
+			<th>Access Level</th>
+			<th>Validity</th>
+		</tr>
+	</thead>
+	<tbody>
+		<c:forEach items="${reportAuthorizations}" var="reportAuthorization">
+			<tr>
+				<td>${reportAuthorization.userSign}</td>
+				<td>${reportAuthorization.accessLevel}</td>
+				<td>${reportAuthorization.validity}</td>
+			</tr>
+		</c:forEach>
+	</tbody>
+</table>
 </body>
 </html:html>
