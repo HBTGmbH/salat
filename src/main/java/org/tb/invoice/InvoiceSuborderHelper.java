@@ -117,8 +117,8 @@ public class InvoiceSuborderHelper extends Suborder {
         return suborder.getCompleteOrderSign();
     }
 
-    public String getCompleteOrderDescription(boolean shortDescription) {
-        return suborder.getCompleteOrderDescription(shortDescription);
+    public String getCompleteOrderDescription(boolean shortDescription, boolean useCustomerDescription) {
+        return suborder.getCompleteOrderDescription(shortDescription, useCustomerDescription);
     }
 
     @Override

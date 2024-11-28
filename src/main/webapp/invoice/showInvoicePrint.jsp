@@ -94,13 +94,10 @@
 							<tr class="invoice_suborder_row">
 								<td class="invoice_suborder_row wrap" colspan="${dynamicColumnCount + 1}">
 									<c:if test="${optionsuborderdescription eq 'longdescription'}">
-										<c:out value="${suborderviewhelper.getCompleteOrderDescription(false)}"></c:out>
+										<c:out value="${suborderviewhelper.getCompleteOrderDescription(false, customeridbox)}"></c:out>
 									</c:if>
 									<c:if test="${optionsuborderdescription eq 'shortdescription'}">
-										<c:out value="${suborderviewhelper.getCompleteOrderDescription(true)}"></c:out>
-									</c:if>
-									<c:if test="${customeridbox and not empty suborderviewhelper.suborder_customer}">
-										/ <c:out value="${suborderviewhelper.suborder_customer}" />
+										<c:out value="${suborderviewhelper.getCompleteOrderDescription(true, customeridbox)}"></c:out>
 									</c:if>
 									<c:if test="${targethoursbox and not empty suborderviewhelper.debithoursString}">
 										/ Budget: <c:out value="${suborderviewhelper.debithoursString}" />

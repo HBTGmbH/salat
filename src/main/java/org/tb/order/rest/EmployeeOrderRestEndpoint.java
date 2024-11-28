@@ -72,7 +72,7 @@ public class EmployeeOrderRestEndpoint {
                     s.getId(),
                     requestedRefDate
                 );
-                String suborderLabel = s.getCompleteOrderDescription(true);
+                String suborderLabel = s.getCompleteOrderDescription(true, false);
                 return new EmployeeOrderData(
                     new SuborderData(s.getId(), suborderLabel, s.getCommentnecessary()),
                     eo.getId()

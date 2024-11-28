@@ -66,7 +66,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
      */
     private void setFormEntries(HttpServletRequest request, AddSuborderForm soForm, Suborder so) {
         soForm.setCustomerorderId(so.getCustomerorder().getId());
-        soForm.setSign(so.getCompleteOrderSign());
+        soForm.setSign(so.getSign());
         soForm.setDescription(so.getDescription());
         soForm.setShortdescription(so.getShortdescription());
         soForm.setInvoice(so.getInvoice());

@@ -595,13 +595,10 @@
 							<!-- Long or short suborderdescription -->
 							<td style="white-space: nowrap">
 								<c:if test="${showInvoiceForm.suborderdescription eq 'longdescription'}">
-									<c:out value="${suborderviewhelper.getCompleteOrderDescription(false)}"></c:out>
+									<c:out value="${suborderviewhelper.getCompleteOrderDescription(false, customeridbox)}"></c:out>
 								</c:if>
 								<c:if test="${showInvoiceForm.suborderdescription eq 'shortdescription'}">
-									<c:out value="${suborderviewhelper.getCompleteOrderDescription(true)}"></c:out>
-								</c:if>
-								<c:if test="${showInvoiceForm.customeridbox and not empty suborderviewhelper.suborder_customer}">
-									/ <c:out value="${suborderviewhelper.suborder_customer}" />
+									<c:out value="${suborderviewhelper.getCompleteOrderDescription(true, customeridbox)}"></c:out>
 								</c:if>
 							</td>
 							<!-- Show targethours if active-->

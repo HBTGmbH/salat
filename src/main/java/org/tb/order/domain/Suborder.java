@@ -365,22 +365,28 @@ public class Suborder extends AuditedEntity implements Serializable {
         return result.toString();
     }
 
-    public String getCompleteOrderDescription(boolean shortDescription) {
+    public String getCompleteOrderDescription(boolean shortDescription, boolean useCustomerDescription) {
         StringBuilder result = new StringBuilder();
         acceptVisitor((suborder) -> {
             if(result.isEmpty()) {
-                result.append(suborder.getCustomerorder().getSign()).append(" ");
-                if(shortDescription && !isEmpty(suborder.getCustomerorder().getShortdescription())) {
+                if(useCustomerDescription && !isEmpty(suborder.getCustomerorder().getOrder_customer())) {
+                    result.append(suborder.getCustomerorder().getOrder_customer());
+                } else if(shortDescription && !isEmpty(suborder.getCustomerorder().getShortdescription())) {
+                    result.append(suborder.getCustomerorder().getSign()).append(" ");
                     result.append(suborder.getCustomerorder().getShortdescription());
                 } else {
+                    result.append(suborder.getCustomerorder().getSign()).append(" ");
                     result.append(suborder.getCustomerorder().getDescription());
                 }
             }
             result.append(" / ");
-            result.append(suborder.getSign()).append(" ");
-            if(shortDescription && !isEmpty(suborder.getShortdescription())) {
+            if(useCustomerDescription && !isEmpty(suborder.getSuborder_customer())) {
+                result.append(suborder.getSuborder_customer());
+            } else if(shortDescription && !isEmpty(suborder.getShortdescription())) {
+                result.append(suborder.getSign()).append(" ");
                 result.append(suborder.getShortdescription());
             } else {
+                result.append(suborder.getSign()).append(" ");
                 result.append(suborder.getDescription());
             }
         }, VisitorDirection.PARENT);
