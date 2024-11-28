@@ -183,27 +183,27 @@
 		</html:form>
 		<bean:size id="subordersSize" name="suborders" />
 		<c:if test="${subordersSize>10}">
-
 			<c:if test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
 				<tr>
-					<td colspan="11" class="noBborderStyle">
+					<td colspan="10" class="noBborderStyle">
 						<table class="center backgroundcolor">
 							<tr>
 								<html:form action="/CreateSuborder">
-									<td class="noBborderStyle"><html:submit styleId="button"
-											titleKey="main.general.button.createsuborder.alttext.text">
+									<td class="noBborderStyle">
+										<html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
 											<bean:message key="main.general.button.createsuborder.text" />
-										</html:submit></td>
+										</html:submit>
+									</td>
 								</html:form>
-								<html:form action="/ShowSuborder">
-									<td class="noBborderStyle"><c:if
-											test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
-											<html:submit styleId="button" onclick="setflag(this.form)"
-												titleKey="main.general.button.setflag.alttext.text">
+								<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
+									<html:form action="/ShowSuborder">
+										<td class="noBborderStyle">
+											<html:submit styleId="button" onclick="setflag(this.form)" titleKey="main.general.button.setflag.alttext.text">
 												<bean:message key="main.general.button.setflag.text" />
 											</html:submit>
-										</c:if></td>
-								</html:form>
+										</td>
+									</html:form>
+								</c:if>
 							</tr>
 						</table>
 					</td>
@@ -689,70 +689,65 @@
 						</c:choose>
 						</tr>
 					</c:forEach>
+					<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
+						<tr>
+							<td colspan="10" class="noBborderStyle">
+								<table class="center backgroundcolor">
+									<tr>
+										<td class="noBborderStyle">
+											<html:hidden styleId="suborderOptionValue" property="suborderOptionValue" />
+											<html:select styleId="suborderOption" property="suborderOption" onchange="multipleChange(this.form)">
+												<html:option value="">
+													<bean:message key="main.suborder.suborderoption.choose.text" />
+												</html:option>
+												<html:option value="delete">
+													<bean:message key="main.suborder.suborderoption.delete.text" />
+												</html:option>
+												<html:option value="altersubordercustomer">
+													<bean:message key="main.suborder.suborderoption.subordercustomer.text" />
+												</html:option>
+											</html:select>
+											<span style="color: red"><html:errors property="suborderOption" /></span>
+										</td>
+										<td class="noBborderStyle">
+											<b><bean:message key="main.general.button.resetChoice.text" />:</b>
+											<html:checkbox styleId="noResetChoice" property="noResetChoice" />
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</c:if>
+					<c:if test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
+						<tr>
+							<td colspan="10" class="noBborderStyle">
+								<table class="center backgroundcolor">
+									<tr>
+										<html:form action="/CreateSuborder">
+											<td class="noBborderStyle">
+												<html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
+													<bean:message key="main.general.button.createsuborder.text" />
+												</html:submit>
+											</td>
+										</html:form>
+										<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
+											<html:form action="/ShowSuborder">
+												<td class="noBborderStyle">
+													<html:submit styleId="button" onclick="setflag(this.form)" titleKey="main.general.button.setflag.alttext.text">
+														<bean:message key="main.general.button.setflag.text" />
+													</html:submit>
+												</td>
+											</html:form>
+										</c:if>
+									</tr>
+								</table>
+							</td>
+
+						</tr>
+					</c:if>
 				</c:otherwise>
 			</c:choose>
-			<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
-				<tr>
-					<html:hidden styleId="suborderOptionValue"
-						property="suborderOptionValue" />
-					<td class="noBborderStyle"><html:select
-							styleId="suborderOption" property="suborderOption"
-							onchange="multipleChange(this.form)">
-							<html:option value="">
-								<bean:message key="main.suborder.suborderoption.choose.text" />
-							</html:option>
-							<html:option value="delete">
-								<bean:message key="main.suborder.suborderoption.delete.text" />
-							</html:option>
-							<html:option value="altersubordercustomer">
-								<bean:message
-									key="main.suborder.suborderoption.subordercustomer.text" />
-							</html:option>
-						</html:select><span style="color: red"><html:errors
-								property="suborderOption" /></span></td>
-					<td class="noBborderStyle"><b><bean:message
-								key="main.general.button.resetChoice.text" />:</b></td>
-					<td class="noBborderStyle" align="left"><html:checkbox
-							styleId="noResetChoice" property="noResetChoice" /></td>
-				</tr>
-			</c:if>
 		</html:form>
-		<c:if
-			test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
-			<tr>
-				<td colspan="11" class="noBborderStyle">
-					<table class="center backgroundcolor">
-						<tr>
-							<html:form action="/CreateSuborder">
-								<td class="noBborderStyle"><html:submit styleId="button"
-										titleKey="main.general.button.createsuborder.alttext.text">
-										<bean:message key="main.general.button.createsuborder.text" />
-									</html:submit></td>
-							</html:form>
-							<html:form action="/ShowSuborder">
-								<td class="noBborderStyle"><c:if
-										test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
-										<html:submit styleId="button" onclick="setflag(this.form)"
-											titleKey="main.general.button.setflag.alttext.text">
-											<bean:message key="main.general.button.setflag.text" />
-										</html:submit>
-									</c:if></td>
-							</html:form>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</c:if>
 	</table>
-	<br>
-	<br>
-	<br>
-	<br>
-	<br>
-	<br>
-	<br>
-	<br>
-	<br>
-	<br>
 </body>
 </html:html>
