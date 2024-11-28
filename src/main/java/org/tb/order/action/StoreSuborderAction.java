@@ -331,29 +331,26 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             suborderId = 0L;
         }
 
-        // for a new suborder, check if the sign already exists
-        if (Objects.equals(suborderId, 0L)) {
-            // Liste aller Children der übergeordneten Suborder
-            // ggf. gibt es keine übergeordnete Suborder (=null?)
-            // dann die untergeordneten Suboders der Customerorder.
-            List<Suborder> suborders;
-            if (addSuborderForm.getParentId() == null) {
-                suborders = suborderService.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false);
-                for (Suborder suborder : suborders) {
-                    if (suborder.getCurrentlyValid()
-                            && suborder.getParentorder() == null // vergleiche nur Suborder direkt unter der Customerorder
-                            && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
-                        errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
-                        break;
-                    }
+        // Liste aller Children der übergeordneten Suborder
+        // ggf. gibt es keine übergeordnete Suborder (=null?)
+        // dann die untergeordneten Suboders der Customerorder.
+        List<Suborder> suborders;
+        if (isCustomerorderSelectedAsParent(addSuborderForm)) {
+            suborders = suborderService.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false);
+            for (Suborder suborder : suborders) {
+                if (suborder.getCurrentlyValid()
+                    && suborder.getParentorder() == null // vergleiche nur Suborder direkt unter der Customerorder
+                    && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
+                    errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
+                    break;
                 }
-            } else {
-                suborders = suborderService.getSuborderChildren(addSuborderForm.getParentId());
-                for (Suborder suborder : suborders) {
-                    if (suborder.getCurrentlyValid() && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
-                        errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
-                        break;
-                    }
+            }
+        } else {
+            suborders = suborderService.getSuborderChildren(addSuborderForm.getParentId());
+            for (Suborder suborder : suborders) {
+                if (suborder.getCurrentlyValid() && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
+                    errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
+                    break;
                 }
             }
         }
@@ -461,6 +458,12 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
         saveErrors(request, errors);
         return errors;
+    }
+
+    private boolean isCustomerorderSelectedAsParent(AddSuborderForm form) {
+        if(!Objects.equals(form.getCustomerorderId(), form.getParentId())) return false;
+        var customerOrder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+        return form.getParentDescriptionAndSign().equals(customerOrder.getSignAndDescription());
     }
 
     private void refreshForOverview(HttpServletRequest request) {
