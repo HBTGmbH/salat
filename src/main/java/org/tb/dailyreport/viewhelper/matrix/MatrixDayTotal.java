@@ -36,7 +36,7 @@ public class MatrixDayTotal {
     }
 
     public String getWorkingTimeString() {
-        return DurationUtils.format(workingTime);
+        return DurationUtils.format(workingTime, false);
     }
 
     public String getDayString() {

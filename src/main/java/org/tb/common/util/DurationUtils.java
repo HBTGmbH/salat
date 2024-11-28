@@ -12,14 +12,11 @@ import lombok.experimental.UtilityClass;
 public class DurationUtils {
 
   public static String format(Duration duration) {
-    return format(duration, false);
+    return format(duration, true);
   }
 
   public static String format(Duration duration, boolean printZero) {
-    if(duration == null) {
-      return "";
-    }
-    if(duration.isZero()) {
+    if(duration == null || duration.isZero()) {
       return printZero ? "0:00" : "";
     }
     StringBuilder sb = new StringBuilder();

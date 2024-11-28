@@ -280,14 +280,14 @@ public class MatrixHelper {
     private void insertIntoMatrixLine(List<MatrixLine> matrixLines, TimereportDTO timeReport, String taskdescription) {
         // Update existing MatrixLine
         for (MatrixLine matrixLine : matrixLines) {
-            if(matrixLine.matchesOrder(timeReport.getCustomerorderSign(), timeReport.getSuborderSign())) {
+            if(matrixLine.matchesOrder(timeReport.getCustomerorderSign(), timeReport.getCompleteOrderSign())) {
                 matrixLine.addTimereport(timeReport, taskdescription);
                 return;
             }
         }
         // add a new MatrixLine
         var customerorderData = new OrderSummaryData(timeReport.getCustomerorderSign(), timeReport.getCustomerorderDescription());
-        var suborderData = new OrderSummaryData(timeReport.getSuborderSign(), timeReport.getSuborderDescription());
+        var suborderData = new OrderSummaryData(timeReport.getCompleteOrderSign(), timeReport.getSuborderDescription());
         matrixLines.add(
             new MatrixLine(
                 timeReport.getCustomerShortname(),

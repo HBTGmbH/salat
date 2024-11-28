@@ -57,7 +57,7 @@ public class BookingDay implements Comparable<BookingDay> {
     }
 
     public String getDurationString() {
-        return DurationUtils.format(duration, true);
+        return DurationUtils.format(duration, bookingCount > 0);
     }
 
     public void addBooking(Duration duration, String taskdescription) {

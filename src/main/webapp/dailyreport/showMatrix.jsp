@@ -358,7 +358,7 @@
 					class="matrix${bookingday.publicHoliday ? ' holiday' : (bookingday.satSun ? ' weekend' : '')}"
 					align="right"
 					style="font-size: 7pt; border: 1px black solid;">
-						<c:out value="${bookingday.bookingCount gt 0 ? bookingday.durationString : ' '}" />
+						<c:out value="${bookingday.durationString}" />
 					</td>
 				</c:forEach>
 				<td class="matrix" align="right"><c:out	value="${matrixline.totalString}"></c:out></td>
@@ -384,7 +384,7 @@
 				<td class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
 					style="font-size: 7pt;"
 					align="right">
-					<java8:formatDuration value="${matrixdaytotal.effectiveOvertime}" />
+					<java8:formatDuration value="${matrixdaytotal.effectiveOvertime}" printZero="false" />
 				</td>
 			</c:forEach>
 			<td class="matrix bold" align="right"><c:out value="${totalovertimecompensationstring}"></c:out></td>

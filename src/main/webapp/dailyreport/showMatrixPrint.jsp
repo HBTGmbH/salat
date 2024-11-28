@@ -108,12 +108,7 @@
 					</c:if>
 
 				</c:if>
-				<c:if
-					test="${bookingday.bookingCount eq 0}">&nbsp;&nbsp;&nbsp;&nbsp;</c:if>
-				<c:if
-					test="${bookingday.bookingCount gt 0}">
 					<c:out value="${bookingday.durationString}"></c:out>
-				</c:if>
 				</td>
 			</c:forEach>
 			<td class="matrix" align="right"><c:out
