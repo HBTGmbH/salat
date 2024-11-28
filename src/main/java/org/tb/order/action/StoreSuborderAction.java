@@ -200,7 +200,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                 }
 
                 if (tempSubOrder != null) {
-                    addSuborderForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+                    addSuborderForm.setParentDescriptionAndSign(tempSubOrder.getCompleteOrderSignAndDescription());
 
                     String parentOrderFromDate = "";
                     String parentOrderUntilDate = "";
