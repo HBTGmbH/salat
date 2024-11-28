@@ -376,10 +376,10 @@
 			</c:forEach>
 			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${totalworkingtimestring}"></c:out></td>
 		</tr>
-
-		<c:if test="${dailyReportViewHelper.displayOvertimeCompensation and not totalovertimecompensation.zero}">
+        <c:if test="${dailyReportViewHelper.displayOvertimeCompensation and totalovertimecompensation != null and not totalovertimecompensation.zero}">
 		<tr class="matrix">
-			<td colspan="2" class="matrix bold"	align="right"><bean:message key="main.matrixoverview.table.overtimecompensation.text" /></td>
+			<td colspan="2" class="matrix bold"	align="right"><bean:message key="main.matrixoverview.table.overtimecompensation.text" />
+			</td>
 			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
 				<td class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
 					style="font-size: 7pt;"
