@@ -356,7 +356,7 @@
 										<td class="info"><bean:message
 												key="main.timereport.tooltip.suborder" />:</td>
 										<td class="info" colspan="3"><c:out
-												value="${suborder.sign}" /></td>
+												value="${suborder.completeOrderSign}" /></td>
 									</tr>
 									<tr>
 										<td class="info">&nbsp;</td>
@@ -443,7 +443,7 @@
 								<td
 									title="<c:out value="${suborder.customerorder.description}" />"><c:out
 										value="${suborder.customerorder.sign}" /></td>
-								<td><c:out value="${suborder.sign}" /></td>
+								<td><c:out value="${suborder.completeOrderSign}" /></td>
 								<td><c:if test="${suborder.suborder_customer == null}">&nbsp;</c:if>
 									<c:out value="${suborder.suborder_customer}" /></td>
 								<td><c:out value="${suborder.shortdescription}" /></td>
@@ -554,7 +554,7 @@
 								<td style="color: gray"
 									title="<c:out value="${suborder.customerorder.description}" />"><c:out
 										value="${suborder.customerorder.sign}" /></td>
-								<td style="color: gray"><c:out value="${suborder.sign}" /></td>
+								<td style="color: gray"><c:out value="${suborder.completeOrderSign}" /></td>
 								<td style="color: gray"><c:out
 										value="${suborder.suborder_customer}" /></td>
 								<td style="color: gray"><c:out

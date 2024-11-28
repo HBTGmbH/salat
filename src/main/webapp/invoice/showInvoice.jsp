@@ -106,7 +106,7 @@
 							</html:option>
 							<c:forEach var="suborder" items="${suborders}">
 								<html:option value="${suborder.id}">
-									<c:out value="${suborder.signAndDescription}" />
+									<c:out value="${suborder.completeOrderSignAndDescription}" />
 									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(
 									<c:out value="${suborder.timeString}" />
 									<c:if test="${suborder.openEnd}">

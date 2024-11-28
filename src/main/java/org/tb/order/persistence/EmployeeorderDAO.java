@@ -65,7 +65,7 @@ public class EmployeeorderDAO {
     public List<Employeeorder> getEmployeeOrdersByEmployeeContractId(long employeeContractId) {
         return employeeorderRepository.findAllByEmployeecontractId(employeeContractId).stream()
             .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -77,7 +77,7 @@ public class EmployeeorderDAO {
         return employeeorderRepository.findAllBySuborderId(suborderId).stream()
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -91,7 +91,7 @@ public class EmployeeorderDAO {
             suborderId
         ).stream()
             .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -106,7 +106,7 @@ public class EmployeeorderDAO {
             date
         ).stream()
             .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -130,7 +130,7 @@ public class EmployeeorderDAO {
         return StreamSupport.stream(employeeorderRepository.findAll().spliterator(), false)
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -141,7 +141,7 @@ public class EmployeeorderDAO {
     public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeContractId(long orderId, long employeeContractId) {
         return employeeorderRepository.findAllByCustomerorderIdAndEmployeecontractId(orderId, employeeContractId).stream()
             .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -221,7 +221,7 @@ public class EmployeeorderDAO {
             }).stream()
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }
@@ -245,7 +245,7 @@ public class EmployeeorderDAO {
             }).stream()
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
-                .thenComparing((Employeeorder e) -> e.getSuborder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
     }

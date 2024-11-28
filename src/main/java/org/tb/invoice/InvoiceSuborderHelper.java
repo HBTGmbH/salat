@@ -138,7 +138,7 @@ public class InvoiceSuborderHelper extends Suborder {
 
     @Override
     public String getSign() {
-        return suborder.getSign();
+        return suborder.getCompleteOrderSign();
     }
 
     @Override

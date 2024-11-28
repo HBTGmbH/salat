@@ -439,7 +439,7 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
             InvoiceSuborderHelper newInvoiceSuborderViewHelper = new InvoiceSuborderHelper(suborder, timereportService, dateFirst, dateLast, invoiceForm.isInvoicebox());
             newInvoiceSuborderViewHelper.setInvoiceTimereportViewHelperList(invoiceTimereportViewHelperList);
             Pattern p = Pattern.compile("\\.");
-            Matcher m = p.matcher(suborder.getSign());
+            Matcher m = p.matcher(suborder.getCompleteOrderSign());
             int counter = 0;
             while (m.find()) {
                 counter++;

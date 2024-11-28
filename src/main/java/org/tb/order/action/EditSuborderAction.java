@@ -66,7 +66,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
      */
     private void setFormEntries(HttpServletRequest request, AddSuborderForm soForm, Suborder so) {
         soForm.setCustomerorderId(so.getCustomerorder().getId());
-        soForm.setSign(so.getSign());
+        soForm.setSign(so.getCompleteOrderSign());
         soForm.setDescription(so.getDescription());
         soForm.setShortdescription(so.getShortdescription());
         soForm.setInvoice(so.getInvoice());
@@ -82,7 +82,7 @@ public class EditSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
         Suborder tempSubOrder = suborderService.getSuborderById(soForm.getParentId());
         if (tempSubOrder != null && Objects.equals(tempSubOrder.getCustomerorder().getId(), so.getCustomerorder().getId())) {
-            soForm.setParentDescriptionAndSign(tempSubOrder.getSignAndDescription());
+            soForm.setParentDescriptionAndSign(tempSubOrder.getCompleteOrderSignAndDescription());
             request.getSession().setAttribute("suborderParent", tempSubOrder);
         } else {
             Customerorder tempOrder = customerorderService.getCustomerorderById(soForm.getParentId());

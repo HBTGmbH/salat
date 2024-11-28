@@ -128,7 +128,7 @@
 				<html:select property="suborderId" styleClass="mandatory make-select2" onchange="setStoreAction(this.form, 'refreshSuborderDescription')">
 					<c:forEach var="suborder" items="${suborders}">
 						<html:option value="${suborder.id}">
-							<c:out value="${suborder.signAndDescription}"/>
+							<c:out value="${suborder.completeOrderSignAndDescription}"/>
 							<c:if test="${!suborder.currentlyValid}">
 								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(&dagger; ${suborder.formattedUntilDate})
 							</c:if>
@@ -409,7 +409,7 @@
 								<td class="info"><bean:message
 										key="main.timereport.tooltip.suborder" />:</td>
 								<td class="info" colspan="3"><c:out
-										value="${timereport.suborderSign}" /></td>
+										value="${timereport.completeOrderSign}" /></td>
 							</tr>
 							<tr>
 								<td class="info">&nbsp;</td>
@@ -484,7 +484,7 @@
 				<!-- Auftrag -->
 				<td>
 					<c:out value="${timereport.customerorderSign}" /><br>
-					<c:out value="${timereport.suborderSign}" />
+					<c:out value="${timereport.completeOrderSign}" />
 				</td>
 
 				<!-- Bezeichnung -->

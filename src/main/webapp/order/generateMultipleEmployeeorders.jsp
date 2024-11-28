@@ -77,7 +77,7 @@ $(document).ready(function() {
 					</c:choose>
 					<c:forEach var="suborder" items="${suborders}">
 						<html:option value="${suborder.id}">
-							<c:out value="${suborder.signAndDescription}"/>
+							<c:out value="${suborder.completeOrderSignAndDescription}"/>
 							<c:if test="${!suborder.currentlyValid}">
 								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(&dagger; ${suborder.formattedUntilDate})
 							</c:if>

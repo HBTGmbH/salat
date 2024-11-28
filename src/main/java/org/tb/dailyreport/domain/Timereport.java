@@ -97,7 +97,7 @@ public class Timereport extends AuditedEntity implements Serializable {
         return "TR[" + getEmployeecontract().getEmployee().getSign() + " | "
                 + DateUtils.format(getReferenceday().getRefdate()) + " | "
                 + getSuborder().getCustomerorder().getSign() + " / "
-                + getSuborder().getSign() + " | " + getDurationhours() + ":"
+                + getSuborder().getCompleteOrderSign() + " | " + getDurationhours() + ":"
                 + getDurationminutes() + " | " + getTaskdescription() + " | "
                 + getStatus() + "]";
     }

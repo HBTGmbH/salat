@@ -97,13 +97,13 @@ public class Employeeorder extends AuditedEntity implements Serializable {
         if (getUntilDate() != null) {
             return "EO[" + getEmployeecontract().getEmployee().getSign() + " | "
                     + getSuborder().getCustomerorder().getSign() + " / "
-                    + getSuborder().getSign() + " | "
+                    + getSuborder().getCompleteOrderSign() + " | "
                     + format(getFromDate()) + " - "
                     + format(getUntilDate()) + "]";
         } else {
             return "EO[" + getEmployeecontract().getEmployee().getSign() + " | "
                     + getSuborder().getCustomerorder().getSign() + " / "
-                    + getSuborder().getSign() + " | "
+                    + getSuborder().getCompleteOrderSign() + " | "
                     + format(getFromDate()) + " - offen]";
         }
     }

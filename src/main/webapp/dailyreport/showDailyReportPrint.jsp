@@ -130,7 +130,7 @@
 		
 				<td class="matrix">
 					<c:out value="${timereport.customerorderSign}"></c:out> (<c:out	value="${timereport.customerShortname}" />)<br>
-					<c:out value="${timereport.suborderSign}"></c:out><br>
+					<c:out value="${timereport.completeOrderSign}"></c:out><br>
 				</td>
 				
 				<td class="matrix" nowrap="nowrap">

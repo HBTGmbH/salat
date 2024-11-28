@@ -165,7 +165,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             // refresh suborder sign/description select menus
             suborderHelper.adjustSuborderSignChanged(request.getSession(), form);
             Suborder suborder = suborderService.getSuborderById(form.getSuborderSignId());
-            request.getSession().setAttribute("currentSuborderSign", suborder.getSign());
+            request.getSession().setAttribute("currentSuborderSign", suborder.getCompleteOrderSign());
             // if selected Suborder has a default-flag for projectbased training, set training in the form to true, so that the training-box in the jsp is checked
             if (TRUE.equals(suborder.getTrainingFlag())) {
                 form.setTraining(true);

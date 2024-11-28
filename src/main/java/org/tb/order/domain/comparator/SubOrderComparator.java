@@ -12,15 +12,15 @@ public class SubOrderComparator implements Comparator<Suborder> {
     public static final Comparator<Suborder> INSTANCE = new SubOrderComparator();
 
     /**
-     * Compares {@link Suborder}s by {@link Suborder#getSign()} (1st criteria) and {@link Suborder#getDescription()} (2nd criteria).
+     * Compares {@link Suborder}s by {@link Suborder#getCompleteOrderSign()} (1st criteria) and {@link Suborder#getDescription()} (2nd criteria).
      *
      * @param so1 first {@link Suborder}
      * @param so2 second {@link Suborder}
      * @return Returns -1, 0, 1 if the first {@link Suborder} is less, equal, greater than the second one.
      */
     public int compare(Suborder so1, Suborder so2) {
-        if (so1.getSign() != null && so2.getSign() != null) {
-            int comp = String.CASE_INSENSITIVE_ORDER.compare(so1.getSign(), so2.getSign());
+        if (so1.getCompleteOrderSign() != null && so2.getCompleteOrderSign() != null) {
+            int comp = String.CASE_INSENSITIVE_ORDER.compare(so1.getCompleteOrderSign(), so2.getCompleteOrderSign());
             if (comp != 0) return comp;
         }
 

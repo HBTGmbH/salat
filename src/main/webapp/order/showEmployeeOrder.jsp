@@ -129,7 +129,7 @@
 					</html:option>
 					<c:forEach var="suborder" items="${suborders}">
 						<html:option value="${suborder.id}">
-							${suborder.signAndDescription}
+							${suborder.completeOrderSignAndDescription}
 							<c:if test="${!suborder.currentlyValid}">
 								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(&dagger; ${suborder.formattedUntilDate})
 							</c:if>
@@ -302,7 +302,7 @@
 				<td class="info"><bean:message
 					key="main.timereport.tooltip.suborder" />:</td>
 				<td class="info" colspan="3"><c:out
-					value="${employeeorder.suborder.sign}" /></td>
+					value="${employeeorder.suborder.completeOrderSignAndDescription}" /></td>
 			</tr>
 			<tr>
 				<td class="info">&nbsp;</td>
@@ -356,7 +356,7 @@
 					value="${employeeorder.suborder.customerorder.sign}" /></td>
 				<td style="color: gray"
 					title="<c:out value="${employeeorder.suborder.description}" />"><c:out
-					value="${employeeorder.suborder.sign}" /></td>
+					value="${employeeorder.suborder.completeOrderSignAndDescription}" /></td>
 				<td style="color: gray"><c:out
 					value="${employeeorder.suborder.customerorder.shortdescription}" /></td>
 				<td style="color: gray"><c:out
@@ -456,7 +456,7 @@
 					value="${employeeorder.suborder.customerorder.sign}" /></td>
 				<!-- td><c:out value="${employeeorder.suborder.customerorder.shortdescription}" /></td -->
 				<td title="<c:out value="${employeeorder.suborder.description}" />"><c:out
-					value="${employeeorder.suborder.sign}" /></td>
+					value="${employeeorder.suborder.completeOrderSignAndDescription}" /></td>
 
 				<td><c:out
 					value="${employeeorder.suborder.customerorder.shortdescription}" /></td>

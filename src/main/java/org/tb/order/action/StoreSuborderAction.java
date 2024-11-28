@@ -136,19 +136,19 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                     for (Suborder suborder : suborders) {
                         if (suborder.getParentorder() != null && Objects.equals(suborder.getParentorder().getId(),
                             tempSubOrder.getId())) {
-                            if (suborder.getSign().equals(tempSubOrder.getSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
+                            if (suborder.getCompleteOrderSign().equals(tempSubOrder.getCompleteOrderSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
                                 version++;
                             }
                         }
                     }
-                    addSuborderForm.setSign(tempSubOrder.getSign() + "." + df.format(version));
+                    addSuborderForm.setSign(tempSubOrder.getCompleteOrderSign() + "." + df.format(version));
                 } else if (tempOrder != null) {
                     int version = 1;
                     DecimalFormat df = new DecimalFormat("00");
                     for (Suborder suborder : suborders) {
                         if (suborder.getParentorder() == null && Objects.equals(suborder.getCustomerorder().getId(),
                             tempOrder.getId())) {
-                            if (suborder.getSign().equals(tempOrder.getSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
+                            if (suborder.getCompleteOrderSign().equals(tempOrder.getSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
                                 version++;
                             }
                         }

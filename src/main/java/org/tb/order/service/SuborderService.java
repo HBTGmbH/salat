@@ -160,7 +160,7 @@ public class SuborderService {
   private AddSuborderForm createForm(Suborder so, LocalDate newFrom, LocalDate newUntil) {
     AddSuborderForm soForm = new AddSuborderForm();
     soForm.setCustomerorderId(so.getCustomerorder().getId());
-    soForm.setSign(so.getSign());
+    soForm.setSign(so.getCompleteOrderSign());
     soForm.setDescription(so.getDescription());
     soForm.setShortdescription(so.getShortdescription());
     soForm.setInvoice(so.getInvoice());

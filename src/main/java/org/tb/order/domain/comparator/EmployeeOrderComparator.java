@@ -16,7 +16,7 @@ public class EmployeeOrderComparator implements Comparator<Employeeorder> {
 
     /**
      * Compares {@link Employeeorder}s by the result of the compare methods of {@link Employee#getName()}, {@link Customerorder#getSign()},
-     * {@link Suborder#getSign()} and {@link Employeeorder#getFromDate()}.
+     * {@link Suborder#getCompleteOrderSign()} and {@link Employeeorder#getFromDate()}.
      *
      * @param employeeorder1 first {@link Employeeorder}
      * @param employeeorder2 second {@link Employeeorder}
@@ -37,11 +37,11 @@ public class EmployeeOrderComparator implements Comparator<Employeeorder> {
                     compareTo(employeeorder2.getSuborder().getCustomerorder().getSign()) > 0) {
                 return 1;
             } else {
-                if (employeeorder1.getSuborder().getSign().
-                        compareTo(employeeorder2.getSuborder().getSign()) < 0) {
+                if (employeeorder1.getSuborder().getCompleteOrderSign().
+                        compareTo(employeeorder2.getSuborder().getCompleteOrderSign()) < 0) {
                     return -1;
-                } else if (employeeorder1.getSuborder().getSign().
-                        compareTo(employeeorder2.getSuborder().getSign()) > 0) {
+                } else if (employeeorder1.getSuborder().getCompleteOrderSign().
+                        compareTo(employeeorder2.getSuborder().getCompleteOrderSign()) > 0) {
                     return 1;
                 } else {
                     if (employeeorder1.getFromDate().

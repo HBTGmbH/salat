@@ -129,7 +129,7 @@ public class CreateEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOr
                 request.getSession().setAttribute("selectedsuborder", suborders.getFirst());
             }
             if ((selectedCustomerorder.getSuborders() != null) && (!selectedCustomerorder.getSuborders().isEmpty())) {
-                employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().getFirst().getSign());
+                employeeOrderForm.setSuborder(selectedCustomerorder.getSuborders().getFirst().getCompleteOrderSign());
                 employeeOrderForm.setSuborderId(selectedCustomerorder.getSuborders().getFirst().getId());
             }
 

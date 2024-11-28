@@ -11,17 +11,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
@@ -31,10 +29,8 @@ import org.tb.order.domain.comparator.SubOrderComparator;
 @Component
 @RequiredArgsConstructor
 public class SuborderDAO {
-    private static final Logger LOG = LoggerFactory.getLogger(SuborderDAO.class);
 
     private final SuborderRepository suborderRepository;
-    private final TimereportDAO timereportDAO;
 
     /**
      * Gets the suborder for the given id.
@@ -118,7 +114,7 @@ public class SuborderDAO {
             return getSuborders(today());
         } else {
             return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
-                .sorted(comparing(Suborder::getSign))
+                .sorted(comparing(Suborder::getCompleteOrderSign))
                 .collect(Collectors.toList());
         }
     }
@@ -129,7 +125,7 @@ public class SuborderDAO {
     public List<Suborder> getSuborders(LocalDate date) {
         return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
             .filter(s -> s.isValidAt(date))
-            .sorted(comparing(Suborder::getSign))
+            .sorted(comparing(Suborder::getCompleteOrderSign))
             .collect(Collectors.toList());
     }
 
@@ -150,23 +146,10 @@ public class SuborderDAO {
         return (root, query, builder) -> builder.equal(root.join(Suborder_.customerorder).get(Customerorder_.id), customerorderId);
     }
 
-    private Specification<Suborder> filterMatches(String filter) {
-        final var filterValue = ('%' + filter + '%').toUpperCase();
-        return (root, query, builder) -> builder.or(
-            builder.like(builder.upper(root.get(Suborder_.description).as(String.class)), filterValue),
-            builder.like(builder.upper(root.get(Suborder_.shortdescription).as(String.class)), filterValue),
-            builder.like(builder.upper(root.get(Suborder_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.description).as(String.class)), filterValue),
-            builder.like(builder.upper(root.join(Suborder_.customerorder).get(Customerorder_.shortdescription).as(String.class)), filterValue)
-        );
-    }
-
     /**
      * Get a list of all suborders fitting to the given filters ordered by their sign.
      */
     public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerorderId) {
-        var order = new Order(ASC, Suborder_.SIGN);
         return suborderRepository.findAll((root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
             if(!TRUE.equals(showInvalid)) {
@@ -175,12 +158,35 @@ public class SuborderDAO {
             if(customerorderId != null && customerorderId > 0) {
                 predicates.add(matchingCustomerorderId(customerorderId).toPredicate(root, query, builder));
             }
-            boolean isFilter = filter != null && !filter.trim().isEmpty();
-            if(isFilter) {
-                predicates.add(filterMatches(filter).toPredicate(root, query, builder));
-            }
             return builder.and(predicates.toArray(new Predicate[0]));
-        }, Sort.by(order));
+        }).stream()
+            .filter(suborder -> matchesFilter(suborder, filter))
+            .sorted(comparing(Suborder::getCompleteOrderSign))
+            .toList();
+    }
+
+    private static boolean matchesFilter(Suborder suborder, String filter) {
+        if(filter == null || filter.trim().isEmpty()) {
+            return true;
+        }
+        var customerorder = suborder.getCustomerorder();
+        var matchCandidates = List.of(
+            customerorder.getSign(),
+            customerorder.getShortdescription(),
+            customerorder.getDescription(),
+            customerorder.getOrder_customer(),
+            suborder.getCompleteOrderSign(),
+            suborder.getShortdescription(),
+            suborder.getDescription(),
+            suborder.getSuborder_customer()
+        );
+
+        // do a case insensitive comparison
+        final var filterValue = filter.toLowerCase();
+        return matchCandidates.stream()
+            .filter(Objects::nonNull)
+            .map(String::toLowerCase)
+            .anyMatch(candidate -> candidate.contains(filterValue));
     }
 
     /**
@@ -191,7 +197,7 @@ public class SuborderDAO {
             .map(Suborder::getSuborders)
             .orElse(Collections.emptyList())
             .stream()
-            .sorted(comparing(Suborder::getSign))
+            .sorted(comparing(Suborder::getCompleteOrderSign))
             .collect(Collectors.toList());
     }
 

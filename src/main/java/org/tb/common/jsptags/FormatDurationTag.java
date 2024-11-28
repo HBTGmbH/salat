@@ -12,13 +12,14 @@ import org.tb.common.util.DurationUtils;
 public class FormatDurationTag extends TagSupport {
 
   private Duration value;
+  private boolean printZero = true;
 
   @Override
   public int doStartTag() throws JspException {
     if(value != null) {
       JspWriter out = pageContext.getOut();
       try {
-        out.print(DurationUtils.format(value));
+        out.print(DurationUtils.format(value, printZero));
         return super.doStartTag();
       } catch (IOException e) {
         throw new JspException(e);

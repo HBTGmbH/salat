@@ -507,7 +507,7 @@
 								<td class="info"><bean:message
 										key="main.timereport.tooltip.suborder" />:</td>
 								<td class="info" colspan="3"><c:out
-										value="${timereport.suborderSign}" /></td>
+										value="${timereport.completeOrderSign}" /></td>
 							</tr>
 							<tr>
 								<td class="info">&nbsp;</td>
@@ -582,7 +582,7 @@
 				<!-- Auftrag -->
 				<td>
 					<c:out value="${timereport.customerorderSign}" /><br>
-					<c:out value="${timereport.suborderSign}" />
+					<c:out value="${timereport.completeOrderSign}" />
 				</td>
 
 				<!-- Bezeichnung -->

@@ -4,11 +4,11 @@ import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
 import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
-import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -87,7 +87,7 @@ public class EmployeecontractService {
       create(overtime);
     }
 
-    createVacation(employeecontract.getId(), getCurrentYear(), vacationEntitlement);
+    createVacation(employeecontract.getId(), Year.now(), vacationEntitlement);
     return employeecontract.getId();
   }
 
@@ -156,11 +156,11 @@ public class EmployeecontractService {
     employeecontractRepository.save(employeecontract);
   }
 
-  private Vacation createVacation(long employeecontractId, int year, int vacationEntitlement) {
+  private Vacation createVacation(long employeecontractId, Year year, int vacationEntitlement) {
     var employeecontract = getEmployeecontractById(employeecontractId);
     var vacation = new Vacation();
     vacation.setEmployeecontract(employeecontract);
-    vacation.setYear(year);
+    vacation.setYear(year.getValue());
     vacation.setEntitlement(vacationEntitlement);
     vacation.setUsed(0);
     employeecontract.getVacations().add(vacation);
@@ -168,10 +168,10 @@ public class EmployeecontractService {
     return vacation;
   }
 
-  public Duration getEffectiveVacationEntitlement(long employeecontractId, int year) {
+  public Duration getEffectiveVacationEntitlement(long employeecontractId, Year year) {
     var employeecontract = getEmployeecontractById(employeecontractId);
     var vacation = vacationRepository
-        .findByEmployeecontractIdAndYear(employeecontractId, year)
+        .findByEmployeecontractIdAndYear(employeecontractId, year.getValue())
         .orElseGet(() -> createVacation(employeecontractId, year, employeecontract.getVacationEntitlement()));
     return vacation.getEffectiveEntitlement();
   }

@@ -22,9 +22,9 @@ public class TimereportByOrderDescComparator implements Comparator<TimereportDTO
         } else if (tr1.getCustomerorderSign().compareTo(tr2.getCustomerorderSign()) > 0) {
             return -1;
         } else {
-            if (tr1.getSuborderSign().compareTo(tr2.getSuborderSign()) < 0) {
+            if (tr1.getCompleteOrderSign().compareTo(tr2.getCompleteOrderSign()) < 0) {
                 return 1;
-            } else if (tr1.getSuborderSign().compareTo(tr2.getSuborderSign()) > 0) {
+            } else if (tr1.getCompleteOrderSign().compareTo(tr2.getCompleteOrderSign()) > 0) {
                 return -1;
             } else {
                 if (tr1.getReferenceday().compareTo(tr2.getReferenceday()) < 0) {

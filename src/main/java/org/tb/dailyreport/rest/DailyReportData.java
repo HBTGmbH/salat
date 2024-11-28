@@ -52,7 +52,7 @@ public class DailyReportData {
                 .training(timeReport.isTraining())
                 .hours(timeReport.getDuration().toHours())
                 .minutes(timeReport.getDuration().toMinutesPart())
-                .suborderSign(timeReport.getSuborderSign())
+                .suborderSign(timeReport.getCompleteOrderSign())
                 .orderSign(timeReport.getCustomerorderSign())
                 .build();
     }

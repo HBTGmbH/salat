@@ -24,14 +24,14 @@ public class TimereportDTO implements Serializable {
   private final String employeeName;
   private final String employeeSign;
   private final long employeecontractId;
-  private final OrderType orderType;
-  private final String customerShortname;
-  private final long suborderId;
-  private final String suborderSign;
-  private final String suborderDescription;
-  private final long customerorderId;
+  private final String completeOrderSign;
   private final String customerorderSign;
   private final String customerorderDescription;
+  private final long suborderId;
+  private final String suborderDescription;
+  private final OrderType orderType;
+  private final String customerShortname;
+  private final long customerorderId;
   private final long employeeorderId;
   private final Duration duration;
   private final String taskdescription;
@@ -53,7 +53,6 @@ public class TimereportDTO implements Serializable {
   private final long durationhours;
   private final long durationminutes;
   private final boolean holiday;
-  private final String completeOrderSign;
 
   public boolean matches5MinuteSchema() {
     return duration.toMinutesPart() % 5 == 0;

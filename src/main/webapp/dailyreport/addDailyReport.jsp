@@ -198,7 +198,7 @@
 				<b> / </b>
 				<html:select property="suborderSignId" styleClass="mandatory make-select2 suborderCls" value="${currentSuborderId}"
 					onchange="adjustSuborderSignChangedAction(this.form)">
-					<html:options collection="suborders" labelProperty="signAndDescription"	property="id" />
+					<html:options collection="suborders" labelProperty="completeOrderSignAndDescription"	property="id" />
 				</html:select>
 				<img id="favSuborderBtn" class="favOrderBtn" src="<c:url value="/images/Button/whiteStar.svg"/>" width="20" height="20" title="<bean:message key="add.report.no.default.suborder" />" onclick="HBT.Salat.FavouriteOrders.actionSuborderSet(this);" />
 				<span style="color:red">

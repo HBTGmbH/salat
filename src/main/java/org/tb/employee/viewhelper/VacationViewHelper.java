@@ -91,7 +91,7 @@ public class VacationViewHelper implements Serializable {
         List<Employeeorder> orders = employeeorderService.getVacationEmployeeOrders(employeecontract.getId());
         for (Employeeorder employeeorder : orders) {
             VacationViewHelper vacationView = new VacationViewHelper(employeecontract);
-            vacationView.setSuborderSign(employeeorder.getSuborder().getDescription());
+            vacationView.setSuborderSign(employeeorder.getSuborder().getSign());
             if (employeeorder.getDebithours() != null) {
                 vacationView.setBudget(employeeorder.getDebithours());
             }

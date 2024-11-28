@@ -195,6 +195,10 @@ public class Suborder extends AuditedEntity implements Serializable {
         return result;
     }
 
+    public String getCompleteOrderSignAndDescription() {
+        return getCompleteOrderSign() + " - " + getShortdescription();
+    }
+
     /**
      * @return Returns true, if the {@link Suborder} is currently valid, false otherwise.
      */

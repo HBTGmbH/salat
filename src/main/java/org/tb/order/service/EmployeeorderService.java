@@ -97,7 +97,7 @@ public class EmployeeorderService {
 
           // calculate effective vacation entitlement and set budget accordingly
           if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
-            int vacationOrderYear = parse(suborder.getSign()).getValue();
+            var vacationOrderYear = parse(suborder.getSign());
             var vacationBudget = employeecontractService.getEffectiveVacationEntitlement(employeecontractId, vacationOrderYear); // calculate real entitlement
             employeeorder.setDebithours(vacationBudget);
             employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
@@ -140,7 +140,7 @@ public class EmployeeorderService {
   }
 
   private void adjustVacationBudget(Employeeorder employeeorder) {
-    var year = Integer.parseInt(employeeorder.getSuborder().getSign());
+    var year = parse(employeeorder.getSuborder().getSign());
     var budget = employeecontractService.getEffectiveVacationEntitlement(employeeorder.getEmployeecontract().getId(), year);
     employeeorder.setDebithours(budget);
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());

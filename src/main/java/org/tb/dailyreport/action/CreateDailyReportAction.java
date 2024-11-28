@@ -169,7 +169,7 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         request.getSession().setAttribute("suborders", theSuborders);
         request.getSession().setAttribute("subordersByDescription", subordersByDescription);
         request.getSession().setAttribute("currentSuborderId", theSuborders.getFirst().getId());
-        request.getSession().setAttribute("currentSuborderSign", theSuborders.getFirst().getSign());
+        request.getSession().setAttribute("currentSuborderSign", theSuborders.getFirst().getCompleteOrderSign());
 
         // get first Suborder to synchronize suborder lists
         Suborder so = theSuborders.getFirst();

@@ -147,7 +147,7 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
             reportForm.setSelectedMinuteBeginDay(0);
         }
 
-        reportForm.setSuborder(tr.getSuborderSign());
+        reportForm.setSuborder(tr.getCompleteOrderSign());
         reportForm.setSuborderSignId(tr.getSuborderId());
         reportForm.setSuborderDescriptionId(tr.getSuborderId());
         reportForm.setOrder(tr.getCustomerorderSign());

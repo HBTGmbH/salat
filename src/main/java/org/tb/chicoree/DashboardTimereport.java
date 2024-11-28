@@ -17,7 +17,7 @@ public class DashboardTimereport {
   public static DashboardTimereport valueOf(TimereportDTO timereport) {
     var title = timereport.getCustomerorderSign()
         + "/" + timereport.getCustomerorderDescription()
-        + " - " + timereport.getSuborderSign()
+        + " - " + timereport.getCompleteOrderSign()
         + "/" + timereport.getSuborderDescription();
     var duration = DurationUtils.format(timereport.getDuration());
     return new DashboardTimereport(title, duration, timereport.getTaskdescription(), String.valueOf(timereport.getId()));
