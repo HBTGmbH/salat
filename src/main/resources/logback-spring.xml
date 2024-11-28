@@ -33,6 +33,10 @@
   <logger name="org.eclipse.jetty.util.component.AbstractLifeCycle" level="ERROR"/>
   <logger name="org.hibernate.validator.internal.util.Version" level="WARN"/>
 
+  <logger name="p6spy" level="DEBUG" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>

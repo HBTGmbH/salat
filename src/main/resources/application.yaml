@@ -18,14 +18,14 @@ spring:
   profiles:
     default: local
   datasource:
-    url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
+    url: jdbc:p6spy:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
     username: salattest
     password: salattest
     hikari:
       connection-timeout: 1000
       minimum-idle: 0
       maximum-pool-size: 20
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
   jpa:
     generate-ddl: false
     show-sql: false

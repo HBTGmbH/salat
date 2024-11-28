@@ -38,6 +38,7 @@
     <springdoc-openapi-starter-webmvc-ui.version>2.7.0</springdoc-openapi-starter-webmvc-ui.version>
     <webjars-locator.version>0.52</webjars-locator.version>
     <archunit.version>1.3.0</archunit.version>
+    <p6spy.version>3.9.1</p6spy.version>
   </properties>
 
   <dependencies>
@@ -228,6 +229,13 @@
       <artifactId>lombok-mapstruct-binding</artifactId>
       <version>0.2.0</version>
       <scope>provided</scope>
+    </dependency>
+
+    <!-- jdbc spy driver for local dev -->
+    <dependency>
+      <groupId>p6spy</groupId>
+      <artifactId>p6spy</artifactId>
+      <version>${p6spy.version}</version> <!-- Überprüfen Sie die neueste Version -->
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-jcache -->
