@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.event.EmployeecontractChangedEvent;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.EmployeeorderService;
@@ -26,10 +28,10 @@ import org.tb.order.service.EmployeeorderService;
 @RequiredArgsConstructor
 public class AuthorizedUserChangedListener {
 
+  private final ApplicationEventPublisher eventPublisher;
   private final AuthorizedUser authorizedUser;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
-  private final EmployeeorderService employeeorderService;
   private final HttpServletRequest request;
 
   @EventListener
@@ -76,16 +78,12 @@ public class AuthorizedUserChangedListener {
 
   private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee,
       Employeecontract employeecontract) {
-    // auto generate employee orders
-    if (!loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM) &&
-        Boolean.FALSE.equals(employeecontract.getFreelancer())) {
-      employeeorderService.generateMissingStandardOrders(employeecontract.getId());
-    }
-
     // set used employee contract of login employee
     request.getSession().setAttribute("loginEmployeeContract", employeecontract);
     request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
     request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+
+    eventPublisher.publishEvent(new EmployeecontractChangedEvent(this, employeecontract.getId()));
   }
 
 }

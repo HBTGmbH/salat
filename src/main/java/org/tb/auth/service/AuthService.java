@@ -54,7 +54,7 @@ public class AuthService {
     Authentication authentication = event.getAuthentication();
     if(!authorizedUser.isAuthenticated() || !authorizedUser.getLoginSign().equals(authentication.getName())) {
       authorizedUser.login(authentication.getName());
-      applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(authorizedUser));
+      applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
     } else {
       // already logged in
     }
@@ -62,7 +62,7 @@ public class AuthService {
 
   public void switchLogin(String sign) {
     authorizedUser.setSign(sign);
-    applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(authorizedUser));
+    applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {

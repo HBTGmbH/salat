@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.service.OvertimeService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -33,7 +32,6 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
-    private final OvertimeService overtimeService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddEmployeeContractForm ecForm, HttpServletRequest request, HttpServletResponse response) {

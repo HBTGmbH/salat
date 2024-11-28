@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -36,7 +35,6 @@ import org.tb.employee.service.EmployeecontractService;
 public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployeeContractForm> {
 
     private final EmployeeService employeeService;
-    private final TimereportService timereportService;
     private final EmployeecontractService employeecontractService;
 
     @Override

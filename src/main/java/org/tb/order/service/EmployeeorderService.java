@@ -1,5 +1,6 @@
 package org.tb.order.service;
 
+import static java.lang.Boolean.TRUE;
 import static java.time.Year.parse;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
@@ -22,6 +23,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.event.EmployeecontractChangedEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -59,8 +61,9 @@ public class EmployeeorderService {
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
-  public void generateMissingStandardOrders(long employeecontractId) {
+  private void generateMissingStandardOrders(long employeecontractId) {
     Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    if(employeecontract.getFreelancer() == TRUE) return; // do not create this for freelancers
 
     List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
     if (standardSuborders != null && !standardSuborders.isEmpty()) {
@@ -254,6 +257,11 @@ public class EmployeeorderService {
     for (Employeeorder employeeorder : employeeorders) {
       deleteEmployeeorderById(employeeorder.getId());
     }
+  }
+
+  @EventListener
+  void onEmployeecontractChanged(EmployeecontractChangedEvent event) {
+    generateMissingStandardOrders(event.getEmployeecontractId());
   }
 
   public Duration getTotalDuration(long employeeorderId) {

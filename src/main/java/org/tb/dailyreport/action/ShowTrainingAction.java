@@ -32,6 +32,7 @@ import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.EmployeeorderService;
 
 /**
  * Action class for trainings to be shown on separate page
@@ -45,6 +46,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
     private final TrainingService trainingService;
     private final EmployeeService employeeService;
     private final CustomerorderService customerorderService;
+    private final EmployeeorderService employeeorderService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowTrainingForm trainingForm, HttpServletRequest request, HttpServletResponse response) throws ParseException {
@@ -91,18 +93,16 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;
 
-        List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
-        employeecontracts.removeIf(c -> c.getFreelancer()
-                                        || c.getDailyWorkingTime().toMinutes() <= 0
-                                        || c.getEmployeeorders() == null
-                                        || c.getEmployeeorders().isEmpty());
+        var employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today()).stream()
+            .filter(ec -> ec.getFreelancer() != Boolean.TRUE)
+            .filter(ec -> ec.getDailyWorkingTime().toMinutes() > 0)
+            .filter(ec -> !employeeorderService.getEmployeeordersForEmployeecontractAndValidAt(ec.getId(), today()).isEmpty())
+            .toList();
+
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         // refresh all relevant attributes
-        if (trainingForm.getEmployeeContractId() == -1
-            || employeecontract.getFreelancer()
-            || employeecontract.getDailyWorkingTime().toMinutes() <= 0
-            || employeecontract.getEmployeeorders() == null) {
+        if (!employeecontracts.stream().anyMatch(c -> c.getId().equals(employeecontract.getId()))) {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewsForAll(startdate, enddate, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
@@ -130,7 +130,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String forward = "success";
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
-        Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeService, employeecontractService);
+        Employeecontract employeecontract = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeService, employeecontractService);
         Customerorder trainingOrder = customerorderService.getCustomerorderBySign(TRAINING_ID);
         if (trainingOrder == null) {
             request.setAttribute("errorMessage", "No training customer order has been found matching " + TRAINING_ID + " - please call system administrator.");
@@ -142,17 +142,16 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
         request.getSession().setAttribute("showTrainingForm", trainingForm);
 
-        List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
+        var employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today()).stream()
+            .filter(ec -> ec.getFreelancer() != Boolean.TRUE)
+            .filter(ec -> ec.getDailyWorkingTime().toMinutes() > 0)
+            .filter(ec -> !employeeorderService.getEmployeeordersForEmployeecontractAndValidAt(ec.getId(), today()).isEmpty())
+            .toList();
         if (employeecontracts == null || employeecontracts.isEmpty()) {
             request.setAttribute("errorMessage", "No employees with valid contracts that have training entitlement found - please call system administrator.");
             forward = "error";
             return forward;
         }
-
-        employeecontracts.removeIf(c -> c.getFreelancer()
-                                        || c.getDailyWorkingTime().toMinutes() <= 0
-                                        || c.getEmployeeorders() == null
-                                        || !authorizedUser.isManager() && !c.getEmployee().getId().equals(authorizedUser.getEmployeeId()));
 
         // set all relevant attributes
         request.getSession().setAttribute("employeecontracts", employeecontracts);
@@ -160,18 +159,15 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
         // If all Employees are to be shown, get a list of TrainingOverviews with an entry for each Employeecontract.
         // Is the case if All Employees preselected on other page or current logged-in employee has no training, e.g. as admin.
-        if (employeeContractId == -1
-            || ec.getFreelancer()
-            || ec.getDailyWorkingTime().toMinutes() <= 0 || ec.getEmployeeorders() == null) {
+        if (!employeecontracts.stream().anyMatch(c -> c.getId().equals(employeecontract.getId()))) {
             trainingOverview = getTrainingOverviewsForAll(startdate, enddate, trainingCustomerorderId, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
             request.getSession().setAttribute("years", getYearsToDisplay());
             // get a List of TrainingOverviews with only one entry for the selected Employee
         } else {
-            trainingOverview = getTrainingOverviewByEmployeecontract(startdate,
-                    enddate, ec, trainingCustomerorderId, year);
+            trainingOverview = getTrainingOverviewByEmployeecontract(startdate, enddate, employeecontract, trainingCustomerorderId, year);
             request.getSession().setAttribute("currentEmployeeId", employeeContractId);
-            request.getSession().setAttribute("years", getYearsSinceContractStartToDisplay(ec.getValidFrom()));
+            request.getSession().setAttribute("years", getYearsSinceContractStartToDisplay(employeecontract.getValidFrom()));
         }
         request.getSession().setAttribute("trainingOverview", trainingOverview);
         return forward;

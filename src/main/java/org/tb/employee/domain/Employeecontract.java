@@ -25,7 +25,6 @@ import org.tb.common.DateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
-import org.tb.order.domain.Employeeorder;
 
 /**
  * The duration fields have their entity attribute names with minutes to indicate the value in the database.
@@ -72,13 +71,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @JoinColumn(name = "EMPLOYEE_ID")
     @Cascade(value = CascadeType.PERSIST)
     private Employee employee;
-
-    /**
-     * list of employeeorders, associated to this employeecontract
-     */
-    @OneToMany(mappedBy = "employeecontract")
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Employeeorder> employeeorders = new ArrayList<>();
 
     /**
      * list of vacations, associated to this employeecontract
