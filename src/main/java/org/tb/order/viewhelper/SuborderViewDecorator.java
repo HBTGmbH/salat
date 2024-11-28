@@ -8,8 +8,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.Delegate;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
+import org.tb.order.service.SuborderService;
 
 public class SuborderViewDecorator extends Suborder {
     private static final long serialVersionUID = 1L; // 123L;
@@ -19,7 +19,7 @@ public class SuborderViewDecorator extends Suborder {
     private Duration duration;
     private Duration durationNotInvoiceable;
 
-    public SuborderViewDecorator(TimereportService timereportService, Suborder suborder) {
+    public SuborderViewDecorator(SuborderService suborderService, Suborder suborder) {
         this.suborder = suborder;
         if (suborder.getInvoice() == YESNO_NO) {
             this.duration = Duration.ZERO;
@@ -27,12 +27,10 @@ public class SuborderViewDecorator extends Suborder {
         } else {
             List<Long> descendants = new ArrayList<>();
             generateListOfDescendants(suborder, true, descendants);
-            long durationMinutes = timereportService.getTotalDurationMinutesForSuborders(descendants);
-            this.duration = Duration.ofMinutes(durationMinutes);
+            this.duration = suborderService.getTotalDuration(descendants);
             descendants.clear();
             generateListOfDescendants(suborder, false, descendants);
-            durationMinutes = timereportService.getTotalDurationMinutesForSuborders(descendants);
-            this.durationNotInvoiceable = Duration.ofMinutes(durationMinutes);
+            this.durationNotInvoiceable = suborderService.getTotalDuration(descendants);
         }
     }
 

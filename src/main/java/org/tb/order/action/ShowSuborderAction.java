@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
@@ -34,7 +33,6 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
 
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -186,8 +184,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
             List<Suborder> suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
-                SuborderViewDecorator decorator = new SuborderViewDecorator(
-                    timereportService, suborder);
+                SuborderViewDecorator decorator = new SuborderViewDecorator(suborderService, suborder);
                 suborderViewDecorators.add(decorator);
             }
             request.getSession().setAttribute("suborders",

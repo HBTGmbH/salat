@@ -4,8 +4,8 @@ import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 
 import java.time.Duration;
 import lombok.experimental.Delegate;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.service.CustomerorderService;
 
 public class CustomerOrderViewDecorator extends Customerorder {
     private static final long serialVersionUID = 1L; // 456L;
@@ -14,9 +14,8 @@ public class CustomerOrderViewDecorator extends Customerorder {
     private final Customerorder customerOrder;
     private final Duration duration;
 
-    public CustomerOrderViewDecorator(TimereportService timereportService, Customerorder customerOrder) {
-        long durationMinutes = timereportService.getTotalDurationMinutesForCustomerOrder(customerOrder.getId());
-        this.duration = Duration.ofMinutes(durationMinutes);
+    public CustomerOrderViewDecorator(CustomerorderService customerorderService, Customerorder customerOrder) {
+        this.duration = customerorderService.getTotalDuration(customerOrder.getId());
         this.customerOrder = customerOrder;
     }
 

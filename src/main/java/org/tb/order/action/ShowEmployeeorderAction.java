@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
@@ -32,7 +31,6 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
     private final SuborderService suborderService;
     private final EmployeecontractService employeecontractService;
     private final CustomerorderService customerorderService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -105,9 +103,8 @@ public class ShowEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeOrd
         }
         request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
 
-        refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderService, employeecontractService, timereportService,
-            suborderService,
-            customerorderService, !orderForm.getShow());
+        refreshEmployeeOrdersAndSuborders(request, orderForm, employeeorderService, employeecontractService,
+            suborderService, customerorderService, !orderForm.getShow());
 
         return mapping.findForward("success");
 

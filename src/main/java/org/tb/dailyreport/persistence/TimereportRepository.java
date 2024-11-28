@@ -6,6 +6,7 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import jakarta.persistence.QueryHint;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -119,5 +120,23 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Timereport> findAllByEmployeeorderIdAndReferencedayRefdate(long employeeorderId, LocalDate refDate);
 
   List<Timereport> findAllBySuborderId(long suborderId);
+
+  @Query("""
+      select tr.employeeorder.suborder.customerorder.id, sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.employeeorder.suborder.customerorder.id in (:ids) group by tr.employeeorder.suborder.customerorder.id
+  """)
+  List<Long[]> getReportedMinutesForCustomerordersAsMap(List<Long> ids);
+
+  @Query("""
+      select tr.employeeorder.suborder.id, sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.employeeorder.suborder.id in (:ids) group by tr.employeeorder.suborder.id
+  """)
+  List<Long[]> getReportedMinutesForSubordersAsMap(List<Long> ids);
+
+  @Query("""
+      select tr.employeeorder.id, sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.employeeorder.id in (:ids) group by tr.employeeorder.id
+  """)
+  List<Long[]> getReportedMinutesForEmployeeordersAsMap(List<Long> ids);
 
 }

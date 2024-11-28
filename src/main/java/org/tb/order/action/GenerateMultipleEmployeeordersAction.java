@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
@@ -37,7 +36,6 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
     private final CustomerorderService customerorderService;
     private final EmployeecontractService employeecontractService;
     private final EmployeeorderService employeeorderService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -120,7 +118,7 @@ public class GenerateMultipleEmployeeordersAction extends LoginRequiredAction<Ge
                         if (currentEmployeeId.equals(ec.getEmployee().getId())) {
                             @SuppressWarnings("unchecked")
                             List<EmployeeOrderViewDecorator> decorators = (List<EmployeeOrderViewDecorator>) request.getSession().getAttribute("employeeorders");
-                            EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportService, eo);
+                            EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(employeeorderService, eo);
                             decorators.add(decorator);
                             request.getSession().setAttribute("employeeorders", decorators);
                         }

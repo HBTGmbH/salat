@@ -25,7 +25,6 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
@@ -49,7 +48,6 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
     private final EmployeeorderService employeeorderService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -265,7 +263,7 @@ public class StoreEmployeeorderAction extends EmployeeOrderAction<AddEmployeeOrd
                 List<EmployeeOrderViewDecorator> decorators = new LinkedList<>();
 
                 for (Employeeorder employeeorder : employeeOrders) {
-                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(timereportService, employeeorder);
+                    EmployeeOrderViewDecorator decorator = new EmployeeOrderViewDecorator(employeeorderService, employeeorder);
                     decorators.add(decorator);
                 }
                 request.getSession().setAttribute("employeeorders", decorators);

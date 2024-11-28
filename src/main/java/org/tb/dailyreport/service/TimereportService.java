@@ -101,6 +101,7 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
@@ -579,6 +580,24 @@ public class TimereportService {
           .toList();
       event.veto(errors);
     }
+  }
+
+  @EventListener
+  void handleCommandEvent(GetTimereportMinutesCommandEvent event) {
+    var ids = event.getOrderIds();
+    switch(event.getOrderType()) {
+      case CUSTOMER -> event.setResult(toDurationMap(timereportRepository.getReportedMinutesForCustomerordersAsMap(ids)));
+      case SUB -> event.setResult(toDurationMap(timereportRepository.getReportedMinutesForSubordersAsMap(ids)));
+      case EMPLOYEE -> event.setResult(toDurationMap(timereportRepository.getReportedMinutesForEmployeeordersAsMap(ids)));
+    }
+  }
+
+  private Map<Long, Duration> toDurationMap(List<Long[]> minutesGrouped) {
+    return minutesGrouped.stream()
+        .collect(Collectors.toMap(
+            cols -> cols[0],
+            cols -> Duration.ofMinutes(cols[1])
+        ));
   }
 
   // utility methods

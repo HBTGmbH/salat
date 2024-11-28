@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.SuborderService;
 import org.tb.order.viewhelper.SuborderViewDecorator;
@@ -29,7 +28,6 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
     private static final Logger LOG = LoggerFactory.getLogger(DeleteSuborderAction.class);
 
     private final SuborderService suborderService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowSuborderForm suborderForm, HttpServletRequest request, HttpServletResponse response) {
@@ -72,7 +70,7 @@ public class DeleteSuborderAction extends LoginRequiredAction<ShowSuborderForm> 
             List<Suborder> suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
-                SuborderViewDecorator decorator = new SuborderViewDecorator(timereportService, suborder);
+                SuborderViewDecorator decorator = new SuborderViewDecorator(suborderService, suborder);
                 suborderViewDecorators.add(decorator);
             }
             request.getSession().setAttribute("suborders", suborderViewDecorators);

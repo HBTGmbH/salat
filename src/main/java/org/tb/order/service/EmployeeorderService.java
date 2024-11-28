@@ -3,7 +3,9 @@ package org.tb.order.service;
 import static java.time.Year.parse;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.EMPLOYEE;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
+import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
@@ -23,6 +26,7 @@ import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.EmployeeorderDeleteEvent;
@@ -40,6 +44,7 @@ import org.tb.order.persistence.SuborderDAO;
 public class EmployeeorderService {
 
   private final ApplicationEventPublisher eventPublisher;
+  private final CommandPublisher commandPublisher;
   private final EmployeecontractDAO employeecontractDAO;
   private final EmployeeorderDAO employeeorderDAO;
   private final SuborderDAO suborderDAO;
@@ -114,6 +119,25 @@ public class EmployeeorderService {
     }
   }
 
+  public void deleteEmployeeorderById(long employeeOrderId) {
+    var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
+    var event = new EmployeeorderDeleteEvent(employeeOrderId);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          ErrorCode.EO_DELETE_GOT_VETO,
+          employeeorder.getSuborder().getCompleteOrderSign(),
+          employeeorder.getEmployeecontract().getEmployee().getSign()
+      ));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
+    employeeorderRepository.deleteById(employeeOrderId);
+  }
+
   @EventListener
   void onEmployeecontractUpdate(EmployeecontractUpdateEvent event) {
     var employeecontract = event.getDomainObject();
@@ -144,6 +168,58 @@ public class EmployeeorderService {
     var budget = employeecontractService.getEffectiveVacationEntitlement(employeeorder.getEmployeecontract().getId(), year);
     employeeorder.setDebithours(budget);
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
+  }
+
+  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, long employeeContractId,
+      Long customerOrderId) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId);
+  }
+
+  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId);
+  }
+
+  public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId,
+      long suborderId) {
+    return employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
+  }
+
+  public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId,
+      long suborderId, LocalDate date) {
+    return employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontractId, suborderId, date);
+  }
+
+  public Employeeorder getEmployeeorderForEmployeecontractValidAt(long employeecontractId, long suborderId, LocalDate validAt) {
+    return employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontractId, suborderId, validAt);
+  }
+
+  public List<Employeeorder> getEmployeeordersForEmployeecontractAndValidAt(long employeecontractId, LocalDate validAt) {
+    return employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(employeecontractId, validAt);
+  }
+
+  public List<Employeeorder> getEmployeeordersByCustomerorderIdAndEmployeeContractId(long customerorderId, long employeeContractId) {
+    return employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(customerorderId, employeeContractId);
+  }
+
+  public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndValidAt(long employeeContractId,
+      long suborderSignId, LocalDate validAt) {
+    return employeeorderDAO
+        .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(employeeContractId, suborderSignId, validAt)
+        .stream()
+        .filter(eo -> eo.isValidAt(validAt))
+        .toList();
+  }
+
+  public Employeeorder getEmployeeorderById(Long employeeOrderId) {
+    return employeeorderDAO.getEmployeeorderById(employeeOrderId);
+  }
+
+  public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId) {
+    return employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, today());
+  }
+
+  public List<Employeeorder> getAllEmployeeOrders() {
+    return employeeorderDAO.getEmployeeorders();
   }
 
   @EventListener
@@ -180,6 +256,15 @@ public class EmployeeorderService {
     }
   }
 
+  public Duration getTotalDuration(long employeeorderId) {
+    var command = GetTimereportMinutesCommandEvent.builder()
+        .orderType(EMPLOYEE)
+        .orderIds(List.of(employeeorderId))
+        .build();
+    commandPublisher.publish(command);
+    return command.getResult().get(employeeorderId);
+  }
+
   private void adjustValidity(long employeeorderId, DateRange newValidity) {
     var employeeorder = employeeorderDAO.getEmployeeorderById(employeeorderId);
     var existingValidity = employeeorder.getValidity();
@@ -214,78 +299,4 @@ public class EmployeeorderService {
     employeeorderRepository.save(employeeorder);
   }
 
-  public Employeeorder getEmployeeorderForEmployeecontractValidAt(long employeecontractId, long suborderId, LocalDate validAt) {
-    return employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontractId, suborderId, validAt);
-  }
-
-  public List<Employeeorder> getEmployeeordersForEmployeecontractAndValidAt(long employeecontractId, LocalDate validAt) {
-    return employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(employeecontractId, validAt);
-  }
-
-  public List<Employeeorder> getEmployeeordersByCustomerorderIdAndEmployeeContractId(long customerorderId, long employeeContractId) {
-    return employeeorderDAO.getEmployeeordersByOrderIdAndEmployeeContractId(customerorderId, employeeContractId);
-  }
-
-  public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndValidAt(long employeeContractId,
-      long suborderSignId, LocalDate validAt) {
-    return employeeorderDAO
-        .getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(employeeContractId, suborderSignId, validAt)
-        .stream()
-        .filter(eo -> eo.isValidAt(validAt))
-        .toList();
-  }
-
-  public Employeeorder getEmployeeorderById(Long employeeOrderId) {
-    return employeeorderDAO.getEmployeeorderById(employeeOrderId);
-  }
-
-  public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId) {
-    return employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, today());
-  }
-
-  public List<Employeeorder> getAllEmployeeOrders() {
-    return employeeorderDAO.getEmployeeorders();
-  }
-
-  public void deleteEmployeeorderById(long employeeOrderId) {
-    var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
-    var event = new EmployeeorderDeleteEvent(employeeOrderId);
-    try {
-      eventPublisher.publishEvent(event);
-    } catch(VetoedException e) {
-      // adding context to the veto to make it easier to understand the complete picture
-      var allMessages = new ArrayList<ServiceFeedbackMessage>();
-      allMessages.add(error(
-          ErrorCode.EO_DELETE_GOT_VETO,
-          employeeorder.getSuborder().getCompleteOrderSign(),
-          employeeorder.getEmployeecontract().getEmployee().getSign()
-      ));
-      allMessages.addAll(e.getMessages());
-      event.veto(allMessages);
-    }
-    employeeorderRepository.deleteById(employeeOrderId);
-  }
-
-  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, long employeeContractId,
-      Long customerOrderId) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId);
-  }
-
-  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId);
-  }
-
-  public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId,
-      long suborderId) {
-    return employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
-  }
-
-  public List<Employeeorder> getEmployeeOrdersBySuborderId(Long suborderId) {
-    return employeeorderDAO.getEmployeeOrdersBySuborderId(suborderId);
-  }
-
-  public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId,
-      long suborderId, LocalDate date) {
-    return employeeorderDAO.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(employeecontractId, suborderId, date);
-  }
 }

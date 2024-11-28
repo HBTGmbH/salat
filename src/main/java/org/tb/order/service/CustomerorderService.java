@@ -1,6 +1,7 @@
 package org.tb.order.service;
 
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
+import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.CUSTOMER;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
@@ -19,6 +21,7 @@ import org.tb.customer.event.CustomerDeleteEvent;
 import org.tb.customer.persistence.CustomerDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
+import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.event.CustomerorderDeleteEvent;
@@ -32,6 +35,7 @@ import org.tb.order.persistence.CustomerorderRepository;
 public class CustomerorderService {
 
   private final ApplicationEventPublisher eventPublisher;
+  private final CommandPublisher commandPublisher;
   private final CustomerorderDAO customerorderDAO;
   private final CustomerDAO customerDAO;
   private final EmployeeDAO employeeDAO;
@@ -216,6 +220,15 @@ public class CustomerorderService {
     for (Customerorder customerorder : customerorders) {
       deleteCustomerorderById(customerorder.getId());
     }
+  }
+
+  public Duration getTotalDuration(long customerorderId) {
+    var command = GetTimereportMinutesCommandEvent.builder()
+        .orderType(CUSTOMER)
+        .orderIds(List.of(customerorderId))
+        .build();
+    commandPublisher.publish(command);
+    return command.getResult().get(customerorderId);
   }
 
 }

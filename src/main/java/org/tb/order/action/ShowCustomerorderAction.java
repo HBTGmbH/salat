@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.service.CustomerService;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.viewhelper.CustomerOrderViewDecorator;
@@ -27,7 +26,6 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
 
     private final CustomerorderService customerorderService;
     private final CustomerService customerService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping,
@@ -74,7 +72,7 @@ public class ShowCustomerorderAction extends LoginRequiredAction<ShowCustomerord
             List<Customerorder> customerOrders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
             List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
             for (Customerorder customerorder : customerOrders) {
-                CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
+                CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(customerorderService, customerorder);
                 decorators.add(decorator);
             }
             request.getSession().setAttribute("customerorders", decorators);

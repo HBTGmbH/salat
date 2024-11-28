@@ -1,6 +1,7 @@
 package org.tb.order.service;
 
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
+import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.SUB;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.DateRange;
+import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -19,6 +21,7 @@ import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.order.action.AddSuborderForm;
+import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.CustomerorderDeleteEvent;
@@ -34,6 +37,7 @@ import org.tb.order.persistence.SuborderRepository;
 public class SuborderService {
 
   private final ApplicationEventPublisher eventPublisher;
+  private final CommandPublisher commandPublisher;
   private final SuborderDAO suborderDAO;
   private final SuborderRepository suborderRepository;
 
@@ -144,6 +148,15 @@ public class SuborderService {
     for (Suborder suborder : suborders) {
       deleteSuborderById(suborder.getId());
     }
+  }
+
+  public Duration getTotalDuration(List<Long> suborderIds) {
+    var command = GetTimereportMinutesCommandEvent.builder()
+        .orderType(SUB)
+        .orderIds(suborderIds)
+        .build();
+    commandPublisher.publish(command);
+    return command.getResult().values().stream().reduce(Duration::plus).orElse(Duration.ZERO);
   }
 
   private void adjustValidity(long suborderId, DateRange newValidity) {

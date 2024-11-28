@@ -7,7 +7,6 @@ import org.apache.commons.validator.GenericValidator;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
@@ -24,7 +23,6 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeO
 
     private final EmployeeorderService employeeorderService;
     private final EmployeecontractService employeecontractService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowEmployeeOrderForm oldEmployeeOrderForm, HttpServletRequest request, HttpServletResponse response) {
@@ -49,7 +47,7 @@ public class DeleteEmployeeorderAction extends EmployeeOrderAction<ShowEmployeeO
 
         employeeOrderForm.setShowActualHours(oldEmployeeOrderForm.getShowActualHours());
 
-        refreshEmployeeOrders(request, employeeOrderForm, employeeorderService, employeecontractService, timereportService);
+        refreshEmployeeOrders(request, employeeOrderForm, employeeorderService, employeecontractService);
 
         // back to employee order display jsp
         return mapping.getInputForward();

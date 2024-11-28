@@ -3,8 +3,8 @@ package org.tb.order.viewhelper;
 import java.time.Duration;
 import lombok.experimental.Delegate;
 import org.tb.common.GlobalConstants;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Employeeorder;
+import org.tb.order.service.EmployeeorderService;
 
 public class EmployeeOrderViewDecorator extends Employeeorder {
     private static final long serialVersionUID = 1L; // 789L;
@@ -14,10 +14,9 @@ public class EmployeeOrderViewDecorator extends Employeeorder {
 
     private final Duration duration;
 
-    public EmployeeOrderViewDecorator(TimereportService timereportService, Employeeorder employeeOrder) {
+    public EmployeeOrderViewDecorator(EmployeeorderService employeeorderService, Employeeorder employeeOrder) {
         this.employeeOrder = employeeOrder;
-        long durationMinutes = timereportService.getTotalDurationMinutesForEmployeeOrder(employeeOrder.getId());
-        this.duration = Duration.ofMinutes(durationMinutes);
+        this.duration = employeeorderService.getTotalDuration(employeeOrder.getId());
     }
 
     public Duration getDuration() {

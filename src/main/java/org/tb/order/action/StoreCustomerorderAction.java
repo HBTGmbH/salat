@@ -19,7 +19,6 @@ import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.service.CustomerorderService;
@@ -35,7 +34,6 @@ import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerorderForm> {
 
     private final CustomerorderService customerorderService;
-    private final TimereportService timereportService;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddCustomerorderForm coForm, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -136,7 +134,7 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                     List<Customerorder> customerOrders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
                     List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
                     for (Customerorder customerorder : customerOrders) {
-                        CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(timereportService, customerorder);
+                        CustomerOrderViewDecorator decorator = new CustomerOrderViewDecorator(customerorderService, customerorder);
                         decorators.add(decorator);
                     }
                     request.getSession().setAttribute("customerorders", decorators);
