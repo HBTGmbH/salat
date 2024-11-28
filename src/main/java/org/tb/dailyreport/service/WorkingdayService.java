@@ -101,7 +101,7 @@ public class WorkingdayService {
   }
 
   public void deleteWorkingdayById(long workingDayId) {
-    workingdayDAO.deleteWorkingdayById(workingDayId);
+    workingdayRepository.deleteById(workingDayId);
   }
 
   public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate dateFirst,

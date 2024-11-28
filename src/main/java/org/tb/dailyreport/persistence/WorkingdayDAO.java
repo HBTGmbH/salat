@@ -16,19 +16,8 @@ public class WorkingdayDAO {
         return workingdayRepository.findByRefdayAndEmployeecontractId(refdate, employeeContractId).orElse(null);
     }
 
-    public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId) {
-        return workingdayRepository.findAllByEmployeecontractId(employeeContractId);
-    }
-
     public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate begin, LocalDate end) {
         return workingdayRepository.findAllByEmployeecontractIdAndReferencedayBetween(employeeContractId, begin, end);
     }
 
-    public void save(Workingday wd) {
-        workingdayRepository.save(wd);
-    }
-
-    public void deleteWorkingdayById(long id) {
-        workingdayRepository.deleteById(id);
-    }
 }

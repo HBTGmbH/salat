@@ -54,6 +54,7 @@ import static org.tb.common.util.UrlUtils.absoluteUrl;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
 import jakarta.servlet.ServletContext;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -94,7 +95,7 @@ import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent.TimereportDeleteId;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
-import org.tb.dailyreport.persistence.ReferencedayDAO;
+import org.tb.dailyreport.persistence.ReferencedayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
@@ -117,7 +118,7 @@ public class TimereportService {
 
   private final ApplicationEventPublisher eventPublisher;
   private final EmployeecontractDAO employeecontractDAO;
-  private final ReferencedayDAO referencedayDAO;
+  private final ReferencedayRepository referencedayRepository;
   private final EmployeeorderDAO employeeorderDAO;
   private final TimereportDAO timereportDAO;
   private final TimereportRepository timereportRepository;
@@ -244,7 +245,7 @@ public class TimereportService {
     Employeeorder employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
     DataValidationUtils.notNull(employeeorder, TR_EMPLOYEE_ORDER_NOT_FOUND);
     DataValidationUtils.notNull(referenceDay, TR_REFERENCE_DAY_NULL);
-    Referenceday referenceday = referencedayDAO.getOrAddReferenceday(referenceDay);
+    Referenceday referenceday = getOrAddReferenceday(referenceDay);
     DataValidationUtils.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
     DataValidationUtils.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidationUtils.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
@@ -257,6 +258,48 @@ public class TimereportService {
     timereport.setTraining(trainingFlag);
     timereport.setDurationhours((int) durationHours);
     timereport.setDurationminutes((int) durationMinutes);
+  }
+
+  /**
+   * Gets the referenceday for the given date. In case the
+   * referenceday does not exists, create a new one.
+   */
+  public Referenceday getOrAddReferenceday(LocalDate refDate) {
+    return referencedayRepository
+        .findByRefdate(refDate)
+        .orElseGet(() -> addReferenceday(refDate));
+  }
+
+  /**
+   * Adds a referenceday to database at the time when it is first referenced in a new timereport.
+   */
+  public Referenceday addReferenceday(LocalDate date) {
+    Referenceday rd = new Referenceday();
+    rd.setRefdate(date);
+
+    // set day of week
+    String dow = DateUtils.getDoW(date);
+    rd.setDow(dow);
+
+    // checks for public holidays
+    Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(date);
+    if (publicHoliday.isPresent()) {
+      rd.setHoliday(Boolean.TRUE);
+      rd.setName(publicHoliday.get().getName());
+    } else {
+      rd.setHoliday(Boolean.FALSE);
+      rd.setName("");
+    }
+
+    // check workingday
+    if ((rd.getHoliday()) || date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+      rd.setWorkingday(Boolean.FALSE);
+    } else {
+      rd.setWorkingday(Boolean.TRUE);
+    }
+
+    referencedayRepository.save(rd);
+    return rd;
   }
 
   boolean needsWorkingHoursLawValidation(long employeeContractId) {
@@ -302,7 +345,7 @@ public class TimereportService {
         Optional<Publicholiday> publicHoliday = publicholidayDAO.getPublicHoliday(nextDay);
         if(publicHoliday.isEmpty()) {
           // we have found a weekday that is not a public holiday, hooray!
-          nextWorkableDay = referencedayDAO.getOrAddReferenceday(nextDay);
+          nextWorkableDay = getOrAddReferenceday(nextDay);
         }
       }
       day = nextDay; // prepare next iteration

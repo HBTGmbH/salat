@@ -114,7 +114,7 @@ public class EmployeeorderDAO {
     /**
      * Gets the list of employeeorders for the given employee contract and suborder id and date.
      */
-    public long countEmployeeorders(long employeeContractId, long suborderId) {
+    public long getEmployeeorderCount(long employeeContractId, long suborderId) {
         return employeeorderRepository.countEmployeeorders(
             employeeContractId,
             suborderId

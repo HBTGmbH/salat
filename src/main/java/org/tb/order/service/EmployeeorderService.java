@@ -82,7 +82,7 @@ public class EmployeeorderService {
           continue;
         }
 
-        boolean employeeorderPresent = employeeorderDAO.countEmployeeorders(employeecontract.getId(), suborder.getId()) > 0;
+        boolean employeeorderPresent = employeeorderDAO.getEmployeeorderCount(employeecontract.getId(), suborder.getId()) > 0;
         if (!employeeorderPresent) {
 
           // skip vacation orders that do not match the contract

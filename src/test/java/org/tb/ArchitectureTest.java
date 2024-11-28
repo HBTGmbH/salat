@@ -1,6 +1,7 @@
 package org.tb;
 
 import static com.tngtech.archunit.lang.Priority.HIGH;
+import static com.tngtech.archunit.lang.Priority.MEDIUM;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.priority;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
@@ -33,6 +34,16 @@ public class ArchitectureTest {
     importedClasses = new ClassFileImporter()
         .withImportOption(new ImportOption.DoNotIncludeTests())
         .importPackages("org.tb");
+  }
+
+  @Test
+  public void daoMethodsMustStartWithGetOrFind() {
+    ArchRule rule = priority(MEDIUM).methods()
+        .that().areNotPrivate()
+        .and().areDeclaredInClassesThat().haveSimpleNameEndingWith("DAO")
+        .should().haveNameStartingWith("get")
+        .orShould().haveNameStartingWith("find");
+    rule.check(importedClasses);
   }
 
   @Test
@@ -135,22 +146,22 @@ public class ArchitectureTest {
         .areAnnotatedWith(Entity.class)
         .should().accessClassesThat().areAnnotatedWith(Repository.class)
         .orShould().accessClassesThat().areAnnotatedWith(Service.class)
-        .orShould().accessClassesThat().haveNameMatching(".*DAO");
+        .orShould().accessClassesThat().haveSimpleNameEndingWith("DAO");
     rule.check(importedClasses);
   }
 
   @Test
   public void accessDataAccessObjectsOnlyInServices() {
     ArchRule rule = priority(HIGH).noClasses()
-        .that().areNotAnnotatedWith(Service.class).and().haveNameNotMatching(".*DAO")
-        .should().accessClassesThat().haveNameMatching(".*DAO");
+        .that().areNotAnnotatedWith(Service.class).and().haveSimpleNameNotEndingWith("DAO")
+        .should().accessClassesThat().haveSimpleNameEndingWith("DAO");
     rule.check(importedClasses);
   }
 
   @Test
   public void accessRepositoriesOnlyInServicesOrDAOs() {
     ArchRule rule = priority(HIGH).noClasses()
-        .that().areNotAnnotatedWith(Service.class).and().haveNameNotMatching(".*DAO")
+        .that().areNotAnnotatedWith(Service.class).and().haveSimpleNameNotEndingWith("DAO")
         .should().accessClassesThat().areAnnotatedWith(Repository.class);
     rule.check(importedClasses);
   }
@@ -161,7 +172,7 @@ public class ArchitectureTest {
         .that().areNotAnnotatedWith(Entity.class)
         .and().areNotAnnotatedWith(Repository.class)
         .and().areNotAnnotatedWith(Service.class)
-        .and().haveNameNotMatching(".*DAO")
+        .and().haveSimpleNameNotEndingWith("DAO")
         .should().accessClassesThat().areAnnotatedWith(Entity.class);
     rule.check(importedClasses);
   }

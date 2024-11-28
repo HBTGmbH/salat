@@ -20,13 +20,6 @@ public class PublicholidayDAO {
     private final PublicholidayRepository publicholidayRepository;
 
     /**
-     * Saves the given public holiday.
-     */
-    public void save(Publicholiday ph) {
-        publicholidayRepository.save(ph);
-    }
-
-    /**
      * checks if given date is a German public holiday
      * An algorithm proposed by Gauss is used.
      *
