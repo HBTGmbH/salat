@@ -1,4 +1,4 @@
-package org.tb.order.viewhelper;
+package org.tb.dailyreport.viewhelper;
 
 import static org.tb.common.util.DateUtils.parse;
 

@@ -75,8 +75,8 @@ import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
-import org.tb.order.viewhelper.CustomerorderHelper;
-import org.tb.order.viewhelper.SuborderHelper;
+import org.tb.dailyreport.viewhelper.CustomerorderHelper;
+import org.tb.dailyreport.viewhelper.SuborderHelper;
 
 /**
  * Action class for a timereport to be shown in the daily display
