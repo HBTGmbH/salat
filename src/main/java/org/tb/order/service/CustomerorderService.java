@@ -48,7 +48,7 @@ public class CustomerorderService {
   public void create(long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
+      Byte debithoursunit, Boolean hide, OrderType orderType) {
     createOrUpdate(
         null,
         customerId,
@@ -64,7 +64,6 @@ public class CustomerorderService {
         respEmpHbtContractId,
         debithours,
         debithoursunit,
-        statusreport,
         hide,
         orderType
     );
@@ -73,7 +72,7 @@ public class CustomerorderService {
   public void update(long customerorderId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
+      Byte debithoursunit, Boolean hide, OrderType orderType) {
     createOrUpdate(
         customerorderId,
         customerId,
@@ -89,7 +88,6 @@ public class CustomerorderService {
         respEmpHbtContractId,
         debithours,
         debithoursunit,
-        statusreport,
         hide,
         orderType
     );
@@ -98,7 +96,7 @@ public class CustomerorderService {
   private void createOrUpdate(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, int statusreport, Boolean hide, OrderType orderType) {
+      Byte debithoursunit, Boolean hide, OrderType orderType) {
 
     Customerorder co;
     if (coId != null) {
@@ -137,7 +135,6 @@ public class CustomerorderService {
       co.setDebithoursunit(debithoursunit);
     }
 
-    co.setStatusreport(statusreport);
     co.setHide(hide);
 
     co.setOrderType(orderType);

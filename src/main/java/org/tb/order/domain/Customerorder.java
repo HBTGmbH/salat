@@ -98,7 +98,6 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private Duration debitMinutes;
 
     private Byte debithoursunit;
-    private Integer statusreport;
     /**
      * Hide in select boxes
      */
@@ -110,13 +109,6 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "orderType", columnDefinition = "varchar(255)")
     private OrderType orderType;
-
-    public Integer getStatusreport() {
-        if (statusreport == null) {
-            return 0;
-        }
-        return statusreport;
-    }
 
     public String getFormattedUntilDate() {
         LocalDate untilLocalDate = getUntilDate();
@@ -132,7 +124,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     }
 
     public String getShortdescription() {
-        if (shortdescription == null || shortdescription.equals("")) {
+        if (shortdescription == null || shortdescription.isEmpty()) {
             if (description == null) {
                 description = "";
             }

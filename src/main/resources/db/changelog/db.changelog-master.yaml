@@ -1011,5 +1011,19 @@ databaseChangeLog:
                   name: key
               - column:
                   name: object_id
+
+  - changeSet:
+      id: 30
+      author: kr
+      comment: Remove statusreport column from customerorder table
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: customerorder
+            columnName: statusreport
+      changes:
+        - dropColumn:
+            columnName: statusreport
+            tableName: customerorder
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

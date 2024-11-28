@@ -263,24 +263,6 @@
 			</td>
 		</tr>
 		
-		<!-- Statusbericht -->
-		<tr>
-			<td align="left" class="noBborderStyle"><b><bean:message
-				key="main.customerorder.statusreport.text" /></b></td>
-			<td align="left" class="noBborderStyle">
-				<html:select property="statusreport">
-					<html:option value="0"><bean:message
-				key="main.customerorder.statusreport.option.0.text" /></html:option>
-					<html:option value="12"><bean:message
-				key="main.customerorder.statusreport.option.12.text" /></html:option>
-					<html:option value="6"><bean:message
-				key="main.customerorder.statusreport.option.6.text" /></html:option>
-					<html:option value="4"><bean:message
-				key="main.customerorder.statusreport.option.4.text" /></html:option>
-				</html:select>
-			</td>
-		</tr>		
-		
 		<!-- hide -->
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message

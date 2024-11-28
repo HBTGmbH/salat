@@ -101,12 +101,12 @@ public class StoreCustomerorderAction extends LoginRequiredAction<AddCustomerord
                 customerorderService.update(coId, coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
                     coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
                     coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
-                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
+                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getHide(), orderType);
             } else {
                 customerorderService.create(coForm.getCustomerId(), fromDate, untilDate, coForm.getSign(),
                     coForm.getDescription(), coForm.getShortdescription(), coForm.getOrderCustomer(), coForm.getResponsibleCustomerContractually(),
                     coForm.getResponsibleCustomerTechnical(), coForm.getEmployeeId(), coForm.getRespContrEmployeeId(),
-                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getStatusreport(), coForm.getHide(), orderType);
+                    coForm.getDebithours(), coForm.getDebithoursunit(), coForm.getHide(), orderType);
             }
 
             request.getSession().setAttribute("customerorders", customerorderService.getAllCustomerorders());

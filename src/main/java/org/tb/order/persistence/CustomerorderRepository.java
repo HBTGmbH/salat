@@ -19,9 +19,6 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
 
   List<Customerorder> findAllByCustomerId(long customerId);
 
-  @Query("select c from Customerorder c where c.responsible_hbt.id = :responsibleHbtId and c.statusreport in (:statusreports)")
-  List<Customerorder> findAllByResponsibleHbtAndStatusReportIn(long responsibleHbtId, List<Integer> statusreports);
-
   Optional<Customerorder> findBySign(String sign);
 
   @Query("""

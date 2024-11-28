@@ -143,8 +143,6 @@
 			key="main.customerorder.table.responsiblehbt.text" /><br><bean:message
 			key="main.customerorder.dv.text" /><br><bean:message
 			key="main.customerorder.av.text" /></b></th>
-		<th align="left"><b><bean:message
-			key="main.customerorder.statusreport.text" /></b></th>				
 		<th align="left"
 			title="<bean:message
 			key="main.headlinedescription.orders.ordercustomer.text" />"><b><bean:message
@@ -264,22 +262,6 @@
 					<br>
 					b) <c:out value="${customerorder.respEmpHbtContract.name}" />
 				</td>
-				<td align="center">
-					<c:choose>
-						<c:when test="${customerorder.statusreport == 0}">
-							-
-						</c:when>
-						<c:when test="${customerorder.statusreport == 12}">
-							<bean:message key="main.customerorder.statusreport.option.12.text" />
-						</c:when>
-						<c:when test="${customerorder.statusreport == 6}">
-							<bean:message key="main.customerorder.statusreport.option.6.text" />
-						</c:when>
-						<c:when test="${customerorder.statusreport == 4}">
-							<bean:message key="main.customerorder.statusreport.option.4.text" />
-						</c:when>
-					</c:choose>
-				</td>
 				<td><c:out value="${customerorder.order_customer}" /></td>
 				<td><c:choose>
 					<c:when test="${customerorder.debithours == null || customerorder.debithours.zero}">
@@ -351,22 +333,6 @@
 					a) <c:out value="${customerorder.responsible_hbt.name}" />
 					<br>
 					b) <c:out value="${customerorder.respEmpHbtContract.name}" />
-				</td>
-				<td style="color:gray" align="center">
-					<c:choose>
-						<c:when test="${customerorder.statusreport == 0}">
-							-
-						</c:when>
-						<c:when test="${customerorder.statusreport == 12}">
-							<bean:message key="main.customerorder.statusreport.option.12.text" />
-						</c:when>
-						<c:when test="${customerorder.statusreport == 6}">
-							<bean:message key="main.customerorder.statusreport.option.6.text" />
-						</c:when>
-						<c:when test="${customerorder.statusreport == 4}">
-							<bean:message key="main.customerorder.statusreport.option.4.text" />
-						</c:when>
-					</c:choose>
 				</td>
 				<td style="color:gray"><c:out
 					value="${customerorder.order_customer}" /></td>

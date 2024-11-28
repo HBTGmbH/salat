@@ -34,7 +34,6 @@ public class AddCustomerorderForm extends ActionForm {
     private String debithours;
     private Byte debithoursunit;
 
-    private int statusreport;
     private Boolean hide;
 
     private Long customerId;
@@ -70,7 +69,6 @@ public class AddCustomerorderForm extends ActionForm {
         orderCustomer = "";
         debithours = null;
         debithoursunit = null;
-        statusreport = 0;
         hide = false;
         setOrderType(OrderType.STANDARD);
     }

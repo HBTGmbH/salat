@@ -148,17 +148,6 @@ public class CustomerorderDAO {
     }
 
     /**
-     * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible and statusreports are necessary.
-     */
-    public List<Customerorder> getCustomerOrdersByResponsibleEmployeeIdWithStatusReports(long responsibleHbtId) {
-        var statusreports = new ArrayList<Integer>();
-        statusreports.add(4);
-        statusreports.add(6);
-        statusreports.add(12);
-        return customerorderRepository.findAllByResponsibleHbtAndStatusReportIn(responsibleHbtId, statusreports);
-    }
-
-    /**
      * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
      */
     public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {

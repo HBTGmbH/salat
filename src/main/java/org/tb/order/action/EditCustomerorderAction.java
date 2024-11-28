@@ -110,11 +110,6 @@ public class EditCustomerorderAction extends LoginRequiredAction<AddCustomerorde
             coForm.setDebithours(null);
             coForm.setDebithoursunit(null);
         }
-        if (co.getStatusreport() == null) {
-            coForm.setStatusreport(0);
-        } else {
-            coForm.setStatusreport(co.getStatusreport());
-        }
         if (co.getOrderType() == null) {
             coForm.setOrderType(OrderType.STANDARD);
         } else {
