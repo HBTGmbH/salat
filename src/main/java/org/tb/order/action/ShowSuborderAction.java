@@ -1,7 +1,10 @@
 package org.tb.order.action;
 
+import static java.lang.Boolean.TRUE;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
+import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
@@ -56,6 +60,11 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
         LOG.debug("suborderCustomerOrderId" + request.getSession().getAttribute("suborderCustomerOrderId"));
         LOG.debug("showStructure" + request.getSession().getAttribute("showStructure"));
 
+        List<Suborder> suborders = (List<Suborder>) request.getSession().getAttribute("suborders");
+        if(suborders == null) {
+            suborders = List.of();
+        }
+
         if (request.getParameter("task") != null && request.getParameter("task").equals("refresh")) {
 
             Boolean showStructure = suborderForm.getShowstructure();
@@ -68,8 +77,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
             request.getSession().setAttribute("suborderShow", show);
 
             customerOrderId = suborderForm.getCustomerOrderId();
-            request.getSession().setAttribute("suborderCustomerOrderId",
-                    customerOrderId);
+            request.getSession().setAttribute("suborderCustomerOrderId", customerOrderId);
 
             Customerorder co = customerorderService.getCustomerorderById(suborderForm.getCustomerOrderId());
             request.getSession().setAttribute("currentOrder", co);
@@ -80,21 +88,17 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
 
         } else {
             if (request.getSession().getAttribute("suborderFilter") != null) {
-                filter = (String) request.getSession().getAttribute(
-                        "suborderFilter");
+                filter = (String) request.getSession().getAttribute("suborderFilter");
                 suborderForm.setFilter(filter);
             }
             if (request.getSession().getAttribute("suborderShow") != null) {
-                show = (Boolean) request.getSession().getAttribute(
-                        "suborderShow");
+                show = (Boolean) request.getSession().getAttribute("suborderShow");
                 suborderForm.setShow(show);
             }
             if (request.getSession().getAttribute("suborderCustomerOrderId") != null) {
-                customerOrderId = (Long) request.getSession().getAttribute(
-                        "suborderCustomerOrderId");
+                customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
                 suborderForm.setCustomerOrderId(customerOrderId);
-                Customerorder co = customerorderService
-                        .getCustomerorderById(suborderForm.getCustomerOrderId());
+                Customerorder co = customerorderService.getCustomerorderById(suborderForm.getCustomerOrderId());
                 LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
                 request.getSession().setAttribute("currentOrder", co);
             } else {
@@ -102,8 +106,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                 suborderForm.setCustomerOrderId(customerOrderId);
             }
             if (request.getSession().getAttribute("showStructure") != null) {
-                Boolean showStructure = (Boolean) request.getSession()
-                        .getAttribute("showStructure");
+                Boolean showStructure = (Boolean) request.getSession().getAttribute("showStructure");
                 suborderForm.setShowstructure(showStructure);
             } else {
                 request.getSession().setAttribute("showStructure", false);
@@ -113,67 +116,37 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
 
         if (request.getParameter("task") != null
                 && request.getParameter("task").equals("setflag")) {
-            /* FIXME clarify with antje
-            Long coID = suborderForm.getCustomerOrderId();
-
-            if (coID != -1) {
-                Customerorder co = customerorderService.getCustomerorderById(coID);
-                for (Suborder so : co.getSuborders()) {
-                    if (!so.getCurrentlyValid()) {
-                        so.setHide(true);
-                        suborderService.save(so);
-                    }
-                }
-            } else {
-                for (Customerorder co : customerorderService.getAllCustomerorders()) {
-                    for (Suborder so : co.getSuborders()) {
-                        if (!so.getCurrentlyValid()) {
-                            so.setHide(true);
-                            suborderService.save(so);
-                        }
-                    }
-                }
-            }
-             */
+            var today = DateUtils.today();
+            var suborderIds = suborders.stream()
+                .filter(so -> so.getHide() != TRUE)
+                .filter(so -> so.getValidity().isBefore(today)) // outdated
+                .map(Suborder::getId)
+                .toList();
+            suborderService.hideSuborders(suborderIds);
         }
 
-        if (request.getParameter("task") != null
-                && request.getParameter("task").equals("multiplechange")) {
-            /*
-            TODO clarify with antje
+        if (request.getParameter("task") != null && request.getParameter("task").equals("multiplechange")) {
             ActionMessages errorMessages = validateFormData(request, suborderForm);
-            if (errorMessages.isEmpty()) {
-                String[] suborderIdArray = suborderForm.getSuborderIdArray();
-                if (suborderIdArray != null) {
-                    if (suborderForm.getSuborderOption().equals("delete")) {
-                        List<String> soIDList = new ArrayList<>();
-                        for (String soID : suborderIdArray) {
-                            if (!suborderService.deleteSuborderById(Long.parseLong(soID))) {
-                                soIDList.add(soID);
-                            }
-                        }
-                        if (!soIDList.isEmpty()) {
-                            errorMessages.add("suborderOption", new ActionMessage(
-                                    "form.suborder.error.delete", soIDList));
-                        }
-                    }
-                    if (suborderForm.getSuborderOption().equals("altersubordercustomer")) {
-                        for (String soID : suborderIdArray) {
-                            Suborder so = suborderService.getSuborderById(Long.parseLong(soID));
-                            so.setSuborder_customer(suborderForm.getSuborderOptionValue());
-                            suborderService.save(so);
-                        }
+            if (errorMessages.isEmpty() && suborderForm.getSuborderIdArray() != null) {
+                var suborderIds = Arrays.stream(suborderForm.getSuborderIdArray())
+                    .mapToLong(Long::parseLong)
+                    .boxed().toList();
+                if (suborderForm.getSuborderOption().equals("delete")) {
+                    for (long suborderId : suborderIds) {
+                        suborderService.deleteSuborderById(suborderId);
                     }
                 }
-
+                if (suborderForm.getSuborderOption().equals("altersubordercustomer")) {
+                    for (long suborderId : suborderIds) {
+                        suborderService.changeSuborder_customer(suborderId, suborderForm.getSuborderOptionValue());
+                    }
+                }
             }
             suborderForm.setSuborderOption("");
             saveErrors(request, errorMessages);
             if (!suborderForm.getNoResetChoice()) {
                 suborderForm.setSuborderIdArray(null);
             }
-
-             */
         }
 
         boolean showActualHours = suborderForm.getShowActualHours();
@@ -181,32 +154,26 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
 
         if (showActualHours) {
             /* show actual hours */
-            List<Suborder> suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
+            suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
             List<SuborderViewDecorator> suborderViewDecorators = new LinkedList<>();
             for (Suborder suborder : suborders) {
                 SuborderViewDecorator decorator = new SuborderViewDecorator(suborderService, suborder);
                 suborderViewDecorators.add(decorator);
             }
-            request.getSession().setAttribute("suborders",
-                    suborderViewDecorators);
+            request.getSession().setAttribute("suborders", suborderViewDecorators);
         } else {
-            request.getSession().setAttribute(
-                    "suborders",
-                    suborderService.getSubordersByFilters(show, filter,
-                            customerOrderId));
+            suborders = suborderService.getSubordersByFilters(show, filter, customerOrderId);
+            request.getSession().setAttribute("suborders", suborders);
         }
 
         // check if loginEmployee has responsibility for some orders
-        List<Customerorder> orders = customerorderService
-                .getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee
-                        .getId());
+        List<Customerorder> orders = customerorderService.getVisibleCustomerOrdersByResponsibleEmployeeId(loginEmployee.getId());
         boolean employeeIsResponsible = false;
 
         if (orders != null && !orders.isEmpty()) {
             employeeIsResponsible = true;
         }
-        request.getSession().setAttribute("employeeIsResponsible",
-                employeeIsResponsible);
+        request.getSession().setAttribute("employeeIsResponsible", employeeIsResponsible);
 
         // check if there are visible customer orders
         orders = customerorderService.getVisibleCustomerorders();
@@ -214,8 +181,7 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
         if (orders != null && !orders.isEmpty()) {
             visibleOrdersPresent = true;
         }
-        request.getSession().setAttribute("visibleOrdersPresent",
-                visibleOrdersPresent);
+        request.getSession().setAttribute("visibleOrdersPresent", visibleOrdersPresent);
 
         if (request.getParameter("task") != null) {
             if (request.getParameter("task").equalsIgnoreCase("back")) {

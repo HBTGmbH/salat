@@ -272,4 +272,13 @@ public class SuborderService {
     suborderRepository.save(copy);
   }
 
+  public void changeSuborder_customer(long suborderId, String suborder_customer) {
+    getSuborderById(suborderId).setSuborder_customer(suborder_customer);
+  }
+
+  public void hideSuborders(List<Long> suborderIds) {
+    for (long suborderId : suborderIds) {
+      getSuborderById(suborderId).setHide(true);
+    }
+  }
 }
