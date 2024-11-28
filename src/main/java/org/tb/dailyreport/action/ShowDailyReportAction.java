@@ -60,6 +60,8 @@ import org.tb.dailyreport.domain.comparator.TimereportByRefdayDescComparator;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.dailyreport.viewhelper.CustomerorderHelper;
+import org.tb.dailyreport.viewhelper.SuborderHelper;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -75,8 +77,6 @@ import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
-import org.tb.dailyreport.viewhelper.CustomerorderHelper;
-import org.tb.dailyreport.viewhelper.SuborderHelper;
 
 /**
  * Action class for a timereport to be shown in the daily display

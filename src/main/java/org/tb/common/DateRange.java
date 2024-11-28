@@ -8,7 +8,6 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import org.tb.common.util.DateUtils;
 
 @Data

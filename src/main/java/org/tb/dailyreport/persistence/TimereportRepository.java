@@ -6,7 +6,6 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import jakarta.persistence.QueryHint;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
