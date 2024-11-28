@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
+import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -326,31 +327,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             suborderId = (Long) request.getSession().getAttribute("soId");
         } else {
             // new suborder
-            suborderId = 0L;
-        }
-
-        // Liste aller Children der übergeordneten Suborder
-        // ggf. gibt es keine übergeordnete Suborder (=null?)
-        // dann die untergeordneten Suboders der Customerorder.
-        List<Suborder> suborders;
-        if (isCustomerorderSelectedAsParent(addSuborderForm)) {
-            suborders = suborderService.getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false);
-            for (Suborder suborder : suborders) {
-                if (suborder.getCurrentlyValid()
-                    && suborder.getParentorder() == null // vergleiche nur Suborder direkt unter der Customerorder
-                    && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
-                    errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
-                    break;
-                }
-            }
-        } else {
-            suborders = suborderService.getSuborderChildren(addSuborderForm.getParentId());
-            for (Suborder suborder : suborders) {
-                if (suborder.getCurrentlyValid() && suborder.getSign().equalsIgnoreCase(addSuborderForm.getSign())) {
-                    errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
-                    break;
-                }
-            }
+            suborderId = -1L;
         }
 
         // check length of text fields
@@ -449,6 +426,42 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
                     }
                     if (!(parentUntilDate == null || suborderUntilDate != null && !suborderUntilDate.isAfter(parentUntilDate))) {
                         errors.add("validUntil", new ActionMessage("form.suborder.error.date.outofrange.suborder"));
+                    }
+                }
+            }
+        }
+
+        var datesValid = addSuborderForm.getValidFrom() != null ? suborderFromDate != null : suborderFromDate == null;
+        datesValid &= addSuborderForm.getValidUntil() != null ? suborderUntilDate != null : suborderUntilDate == null;
+        var signToCheck = addSuborderForm.getSign();
+        if(datesValid && signToCheck != null && !signToCheck.isBlank()) {
+            // Liste aller Children der übergeordneten Suborder
+            // ggf. gibt es keine übergeordnete Suborder (=null?)
+            // dann die untergeordneten Suboders der Customerorder.
+
+            var validityToCheck = new DateRange(suborderFromDate, suborderUntilDate);
+            if (isCustomerorderSelectedAsParent(addSuborderForm)) {
+                var suborders = suborderService
+                    .getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false).stream()
+                    .filter(s -> s.getParentorder() == null) // only top level
+                    .filter(s -> !s.getId().equals(suborderId))
+                    .toList();
+                for (Suborder suborder : suborders) {
+                    if (suborder.getValidity().overlaps(validityToCheck) && suborder.getSign().equalsIgnoreCase(signToCheck)) {
+                        errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
+                        break;
+                    }
+                }
+            } else {
+                var suborders = suborderService
+                    .getSuborderChildren(addSuborderForm.getParentId()).stream()
+                    .filter(s -> s.getParentorder().getId().equals(addSuborderForm.getParentId()))
+                    .filter(s -> !s.getId().equals(suborderId))
+                    .toList();
+                for (Suborder suborder : suborders) {
+                    if (suborder.getValidity().overlaps(validityToCheck) && suborder.getSign().equalsIgnoreCase(signToCheck)) {
+                        errors.add("sign", new ActionMessage("form.suborder.error.sign.alreadyexists"));
+                        break;
                     }
                 }
             }
