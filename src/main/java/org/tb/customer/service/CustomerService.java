@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
@@ -30,6 +31,7 @@ import org.tb.customer.persistence.CustomerRepository;
 @Data
 @RequiredArgsConstructor
 @Transactional
+@Authorized
 public class CustomerService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -57,6 +59,7 @@ public class CustomerService {
     }
   }
 
+  @Authorized(requiresManager = true)
   public void createOrUpdate(CustomerDTO customerDTO) {
     if(!authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);
@@ -74,6 +77,7 @@ public class CustomerService {
     customerDTO.setId(customer.getId());
   }
 
+  @Authorized(requiresManager = true)
   public void deleteCustomerById(long id) {
     if(!authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);

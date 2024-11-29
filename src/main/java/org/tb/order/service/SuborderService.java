@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.DateRange;
 import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.BusinessRuleException;
@@ -34,6 +35,7 @@ import org.tb.order.persistence.SuborderRepository;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class SuborderService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -45,10 +47,12 @@ public class SuborderService {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
   }
 
+  @Authorized(requiresManager = true)
   public void create(AddSuborderForm addSuborderForm, Customerorder customerorder) {
     createOrUpdate(null, addSuborderForm, customerorder);
   }
 
+  @Authorized(requiresManager = true)
   public void update(long suborderId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
     createOrUpdate(suborderId, addSuborderForm, customerorder);
   }
@@ -207,6 +211,7 @@ public class SuborderService {
     return soForm;
   }
 
+  @Authorized(requiresManager = true)
   public void fitValidityOfChildren(long suborderId) throws BusinessRuleException {
     var parent = suborderDAO.getSuborderById(suborderId);
     for (Suborder child : parent.getAllChildren()) {
@@ -235,6 +240,7 @@ public class SuborderService {
     return suborderDAO.getSuborders(false);
   }
 
+  @Authorized(requiresManager = true)
   public void deleteSuborderById(long suborderId) {
     var event = new SuborderDeleteEvent(suborderId);
     var suborder = suborderDAO.getSuborderById(suborderId);
@@ -267,15 +273,18 @@ public class SuborderService {
     return suborderDAO.getSubordersByEmployeeContractIdWithValidEmployeeOrders(employeecontractId, validAt);
   }
 
+  @Authorized(requiresManager = true)
   public void createCopy(Suborder so) {
     var copy = so.copy(true);
     suborderRepository.save(copy);
   }
 
+  @Authorized(requiresManager = true)
   public void changeSuborder_customer(long suborderId, String suborder_customer) {
     getSuborderById(suborderId).setSuborder_customer(suborder_customer);
   }
 
+  @Authorized(requiresManager = true)
   public void hideSuborders(List<Long> suborderIds) {
     for (long suborderId : suborderIds) {
       getSuborderById(suborderId).setHide(true);

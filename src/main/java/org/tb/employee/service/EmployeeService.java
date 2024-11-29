@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -24,6 +25,7 @@ import org.tb.employee.persistence.EmployeeRepository;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class EmployeeService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -67,6 +69,7 @@ public class EmployeeService {
     return employeeDAO.getEmployeesByFilter(filter);
   }
 
+  @Authorized(requiresManager = true)
   public void deleteEmployeeById(long employeeId) {
     var employee = employeeDAO.getEmployeeById(employeeId);
 
@@ -92,6 +95,7 @@ public class EmployeeService {
     employeeRepository.deleteById(employeeId);
   }
 
+  @Authorized(requiresManager = true)
   public void createOrUpdate(Employee employee) {
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
       throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());

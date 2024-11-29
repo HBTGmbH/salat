@@ -16,6 +16,7 @@ import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitializat
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
@@ -30,6 +31,7 @@ import org.tb.reporting.persistence.ReportDefinitionRepository;
 @Service
 @RequiredArgsConstructor
 @DependsOnDatabaseInitialization
+@Authorized
 public class ReportingService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
@@ -43,6 +45,7 @@ public class ReportingService {
     ).stream().filter(r -> reportAuthorization.isAuthorized(r, EXECUTE)).toList();
   }
 
+  @Authorized(requiresManager = true)
   public void deleteReportDefinition(long reportDefinitionId) {
     reportDefinitionRepository.findById(reportDefinitionId).ifPresent(report -> {
       if(reportAuthorization.isAuthorized(report, DELETE)) {
@@ -57,6 +60,7 @@ public class ReportingService {
         .orElseThrow();
   }
 
+  @Authorized(requiresManager = true)
   public ReportDefinition create(String name, String sql) {
     if(!reportAuthorization.isAuthorizedForAnyReportDefinition(WRITE)) {
       return null;
@@ -68,6 +72,7 @@ public class ReportingService {
     return reportDefinition;
   }
 
+  @Authorized(requiresManager = true)
   public void update(long reportDefinitionId, String name, String sql) {
     var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
     if(!reportAuthorization.isAuthorized(reportDefinition, WRITE)) {

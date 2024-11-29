@@ -7,9 +7,11 @@ import static org.tb.invoice.domain.InvoiceSettings.ImageUrl.LOGO;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.tb.auth.domain.Authorized;
 import org.tb.invoice.domain.InvoiceSettings;
 
 @Service
+@Authorized(requiresBackoffice = true)
 public class InvoiceSettingsService {
 
   private final List<InvoiceSettings> repository = new ArrayList<>();

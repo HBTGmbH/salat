@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.command.CommandPublisher;
@@ -43,6 +44,7 @@ import org.tb.order.persistence.SuborderDAO;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class EmployeeorderService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -53,10 +55,12 @@ public class EmployeeorderService {
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
 
+  @Authorized(requiresManager = true)
   public void create(Employeeorder employeeorder) {
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
+  @Authorized(requiresManager = true)
   public void update(Employeeorder employeeorder) {
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
@@ -122,6 +126,7 @@ public class EmployeeorderService {
     }
   }
 
+  @Authorized(requiresManager = true)
   public void deleteEmployeeorderById(long employeeOrderId) {
     var employeeorder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
     var event = new EmployeeorderDeleteEvent(employeeOrderId);

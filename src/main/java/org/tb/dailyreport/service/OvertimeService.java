@@ -23,6 +23,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
@@ -51,6 +52,7 @@ import org.tb.order.service.EmployeeorderService;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class OvertimeService {
 
   private final EmployeecontractDAO employeecontractDAO;

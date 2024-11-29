@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.favorites.domain.Favorite;
 import org.tb.favorites.persistence.FavoriteRepository;
@@ -15,6 +16,7 @@ import org.tb.favorites.persistence.FavoriteRepository;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Authorized
 public class FavoriteService {
 
   private final FavoriteRepository favoriteRepository;

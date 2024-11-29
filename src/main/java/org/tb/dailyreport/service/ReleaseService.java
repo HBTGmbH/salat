@@ -40,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.BusinessRuleException;
@@ -65,6 +66,7 @@ import org.tb.employee.service.EmployeecontractService;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class ReleaseService {
 
   private final EmployeecontractDAO employeecontractDAO;
@@ -98,6 +100,7 @@ public class ReleaseService {
     sendTimeReportsReleasedMail(employeecontract);
   }
 
+  @Authorized(requiresManager = true)
   public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
     // set status in timereports
     var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
@@ -113,6 +116,7 @@ public class ReleaseService {
     overtimeService.updateOvertimeStatic(employeecontract.getId());
   }
 
+  @Authorized(requiresManager = true)
   public void reopenTimereports(long employeecontractId, LocalDate reopenDate) {
 
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);

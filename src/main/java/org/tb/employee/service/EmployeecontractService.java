@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -44,6 +45,7 @@ import org.tb.employee.persistence.VacationRepository;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class EmployeecontractService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -53,6 +55,7 @@ public class EmployeecontractService {
   private final VacationRepository vacationRepository;
   private final OvertimeRepository overtimeRepository;
 
+  @Authorized(requiresManager = true)
   public long createEmployeecontract(
       long employeeId,
       LocalDate validFrom,
@@ -91,6 +94,7 @@ public class EmployeecontractService {
     return employeecontract.getId();
   }
 
+  @Authorized(requiresManager = true)
   public void updateEmployeecontract(
       long employeecontractId,
       LocalDate validFrom,
@@ -205,6 +209,7 @@ public class EmployeecontractService {
 
   }
 
+  @Authorized(requiresManager = true)
   public void deleteEmployeeContractById(long employeeContractId) {
     Employeecontract ec = getEmployeecontractById(employeeContractId);
 

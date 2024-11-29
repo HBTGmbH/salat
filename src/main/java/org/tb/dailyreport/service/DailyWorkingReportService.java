@@ -14,6 +14,7 @@ import java.util.Objects;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -31,6 +32,7 @@ import org.tb.order.persistence.EmployeeorderDAO;
 @Service
 @AllArgsConstructor
 @Transactional
+@Authorized
 public class DailyWorkingReportService {
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeorderDAO employeeorderDAO;

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.HolidaysUtil;
@@ -17,6 +18,7 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 @Service
 @AllArgsConstructor
 @Transactional
+@Authorized
 public class PublicholidayService {
 
   private final PublicholidayRepository publicholidayRepository;

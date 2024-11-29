@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -32,6 +33,7 @@ import org.tb.order.persistence.CustomerorderRepository;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class CustomerorderService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -45,6 +47,7 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeeContractId, date);
   }
 
+  @Authorized(requiresManager = true)
   public void create(long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
@@ -69,6 +72,7 @@ public class CustomerorderService {
     );
   }
 
+  @Authorized(requiresManager = true)
   public void update(long customerorderId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
       String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
       String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
@@ -189,6 +193,7 @@ public class CustomerorderService {
     return customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
   }
 
+  @Authorized(requiresManager = true)
   public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);
     var customerorder = customerorderDAO.getCustomerorderById(customerOrderId);

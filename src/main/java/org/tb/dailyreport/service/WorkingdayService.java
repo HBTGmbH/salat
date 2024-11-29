@@ -16,6 +16,7 @@ import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.util.BusinessRuleCheckUtils;
@@ -30,6 +31,7 @@ import org.tb.dailyreport.persistence.WorkingdayRepository;
 @Service
 @Transactional
 @AllArgsConstructor
+@Authorized
 public class WorkingdayService {
 
   private final WorkingdayRepository workingdayRepository;
