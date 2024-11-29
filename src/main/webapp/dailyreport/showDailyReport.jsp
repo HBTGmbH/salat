@@ -108,8 +108,14 @@
 						confirm("<bean:message key="main.timereport.extendtime.error.notbelowone.text" />");
 						return currentValue;
 					}
-					form.selectedDurationHour.value = newValue[0];
-					form.selectedDurationMinute.value = roundMinutes(newValue[1], 15);
+					hours = newValue[0];
+					minutes = roundMinutes(newValue[1], 15);
+					if(minutes == 60) {
+						hours++;
+						minutes = 0;
+					}
+					form.selectedDurationHour.value = hours;
+					form.selectedDurationMinute.value = minutes;
 				}
 
 				if (form.elements['status'] != null && form.elements['status'].value == 'closed') {
@@ -124,8 +130,14 @@
 
 			function saveBegin(form, time) {
 				if (time != null) {
-					form.selectedWorkHourBegin.value = time.getHours();
-					form.selectedWorkMinuteBegin.value = roundMinutes(time.getMinutes());
+					hours = time.getHours();
+					minutes = roundMinutes(time.getMinutes());
+					if(minutes == 60) {
+						hours++;
+						minutes = 0;
+					}
+					form.selectedWorkHourBegin.value = hours;
+					form.selectedWorkMinuteBegin.value = minutes;
 				}
 				form.action = "/do/ShowDailyReport?task=saveBegin";
 				form.submit();
@@ -163,8 +175,14 @@
 					if (newValue[0] > 5) {
 						newValue = [5, 55];
 					}
-					form.selectedBreakHour.value = newValue[0];
-					form.selectedBreakMinute.value = roundMinutes(newValue[1]);
+					hours = newValue[0];
+					minutes = roundMinutes(newValue[1]);
+					if(minutes == 60) {
+						hours++;
+						minutes = 0;
+					}
+					form.selectedBreakHour.value = hours;
+					form.selectedBreakMinute.value = minutes;
 				}
 				form.action = "/do/ShowDailyReport?task=saveBreak";
 				form.submit();
