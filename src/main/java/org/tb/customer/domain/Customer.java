@@ -1,17 +1,12 @@
 package org.tb.customer.domain;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
 import java.io.Serializable;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 import org.tb.common.domain.AuditedEntity;
-import org.tb.order.domain.Customerorder;
 
 @Getter
 @Setter
@@ -24,15 +19,6 @@ public class Customer extends AuditedEntity implements Serializable {
     private String name;
     private String shortname;
     private String address;
-
-    /**
-     * TODO check removal
-     * list of customerorders, associated to this customer
-     */
-    @OneToMany(mappedBy = "customer")
-    @Cascade(CascadeType.PERSIST)
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Customerorder> customerorders;
 
     public String getShortname() {
         if (shortname == null || shortname.equals("")) {
