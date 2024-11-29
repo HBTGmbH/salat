@@ -31,10 +31,10 @@ public class AuthorizedUser implements Serializable {
   public void login(String loginSign) {
     this.setLoginSign(loginSign);
     this.setSign(loginSign);
+    this.setAuthenticated(true);
   }
 
   public void init(long employeeId, boolean restricted, String employeeStatus) {
-    this.setAuthenticated(true);
     this.setEmployeeId(employeeId);
     this.setRestricted(restricted);
     boolean isAdmin = employeeStatus.equals(EMPLOYEE_STATUS_ADM);
