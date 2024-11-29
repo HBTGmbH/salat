@@ -1,4 +1,4 @@
-package org.tb.invoice;
+package org.tb.invoice.action;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;

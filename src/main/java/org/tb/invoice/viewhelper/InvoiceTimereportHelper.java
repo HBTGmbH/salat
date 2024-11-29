@@ -1,4 +1,4 @@
-package org.tb.invoice;
+package org.tb.invoice.viewhelper;
 
 import java.io.Serializable;
 import java.time.LocalDate;

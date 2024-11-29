@@ -1,4 +1,4 @@
-package org.tb.invoice;
+package org.tb.invoice.service;
 
 import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;

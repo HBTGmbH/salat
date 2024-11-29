@@ -28,7 +28,7 @@
 
 		<form-bean name="addDailyReportForm" type="org.tb.dailyreport.action.AddDailyReportForm" />
 		<form-bean name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixForm" />
-		<form-bean name="showInvoiceForm" type="org.tb.invoice.ShowInvoiceForm" />
+		<form-bean name="showInvoiceForm" type="org.tb.invoice.action.ShowInvoiceForm" />
 		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportForm" />
 		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
 		<form-bean name="showOvertimeForm" type="org.tb.dailyreport.action.ShowOvertimeForm" />
@@ -397,7 +397,7 @@
 
 		<!-- invoice -->
 		<action path="/ShowInvoice" input="/invoice/showInvoice.jsp" validate="true"
-			name="showInvoiceForm" type="org.tb.invoice.ShowInvoiceAction">
+			name="showInvoiceForm" type="org.tb.invoice.action.ShowInvoiceAction">
 			<forward name="success" path="/invoice/showInvoice.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />

@@ -1,4 +1,4 @@
-package org.tb.invoice;
+package org.tb.invoice.viewhelper;
 
 import static org.tb.common.util.TimeFormatUtils.decimalFormatMinutes;
 
@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.invoice.service.InvoiceSuborderActualHoursVisitor;
 import org.tb.order.domain.Suborder;
 
 public class InvoiceSuborderHelper extends Suborder {
