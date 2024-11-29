@@ -14,7 +14,7 @@ import java.util.Objects;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;

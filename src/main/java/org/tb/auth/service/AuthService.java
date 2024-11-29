@@ -22,7 +22,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.auth.persistence.AuthorizationRuleRepository;

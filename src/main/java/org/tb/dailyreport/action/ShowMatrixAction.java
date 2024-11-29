@@ -14,7 +14,7 @@ import lombok.SneakyThrows;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;

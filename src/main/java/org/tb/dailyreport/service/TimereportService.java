@@ -77,7 +77,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.Warning;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;

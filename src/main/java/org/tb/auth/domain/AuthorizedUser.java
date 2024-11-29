@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.domain;
 
 import static org.springframework.web.context.WebApplicationContext.SCOPE_SESSION;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;

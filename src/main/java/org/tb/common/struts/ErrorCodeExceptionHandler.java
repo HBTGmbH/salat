@@ -13,6 +13,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.apache.struts.action.ExceptionHandler;
 import org.apache.struts.config.ExceptionConfig;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
 
 public class ErrorCodeExceptionHandler extends ExceptionHandler {
@@ -21,6 +22,9 @@ public class ErrorCodeExceptionHandler extends ExceptionHandler {
   public ActionForward execute(Exception ex, ExceptionConfig ae, ActionMapping mapping, ActionForm form,
       HttpServletRequest request, HttpServletResponse response) throws ServletException {
     addToErrors(request, (ErrorCodeException) ex);
+    if(ex instanceof AuthorizationException) {
+      return mapping.findForward("unauthorized");
+    }
     return mapping.getInputForward();
   }
 

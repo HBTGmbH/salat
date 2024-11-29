@@ -12,7 +12,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;

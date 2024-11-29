@@ -11,7 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.auth.EmployeeAuthorization;

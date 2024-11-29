@@ -35,7 +35,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;

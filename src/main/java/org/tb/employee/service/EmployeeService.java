@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;

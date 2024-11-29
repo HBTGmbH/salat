@@ -5,7 +5,7 @@ import static org.tb.common.GlobalConstants.YESNO_YES;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.service.AuthService;
 import org.tb.dailyreport.domain.Timereport;

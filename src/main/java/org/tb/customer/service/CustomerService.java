@@ -13,7 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;

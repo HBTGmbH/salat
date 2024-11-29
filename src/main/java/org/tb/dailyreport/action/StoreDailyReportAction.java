@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;

@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.tb.auth.domain.AuthorizedUser;
 
 
 /**

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.AuthorizationRule;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.common.SalatProperties;

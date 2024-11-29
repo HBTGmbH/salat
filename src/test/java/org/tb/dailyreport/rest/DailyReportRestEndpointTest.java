@@ -19,7 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;

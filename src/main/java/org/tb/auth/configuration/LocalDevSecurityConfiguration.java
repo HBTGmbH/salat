@@ -33,9 +33,9 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.tb.auth.AuthFilter;
-import org.tb.auth.AuthViewHelper;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.filter.AuthFilter;
+import org.tb.auth.filter.AuthViewHelper;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
 @Configuration

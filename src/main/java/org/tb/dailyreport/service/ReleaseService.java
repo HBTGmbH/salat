@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;

@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.tb.auth.AuthorizedUser;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.domain.TimereportDTO;

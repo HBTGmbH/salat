@@ -1,4 +1,4 @@
-package org.tb.auth;
+package org.tb.auth.filter;
 
 public interface AuthViewHelper {
 

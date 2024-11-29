@@ -65,7 +65,11 @@ public enum ErrorCode {
   WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
   WD_OUTSIDE_CONTRACT("WD-0011", "the date is outside the validity of the employee contract!"),
 
-  AA_NEEDS_MANAGER("AA-0001", "not authorized. Manager level required!")
+  AA_REQUIRED("AA-0001", "not authenticated!"),
+  AA_NEEDS_UNRESTRICTED("AA-0002", "not authorized. Unrestricted access required!"),
+  AA_NEEDS_BACKOFFICE("AA-0003", "not authorized. Backoffice level required!"),
+  AA_NEEDS_MANAGER("AA-0004", "not authorized. Manager level required!"),
+  AA_NEEDS_ADMIN("AA-0005", "not authorized. Admin level required!"),
   ;
 
   private final String code;
