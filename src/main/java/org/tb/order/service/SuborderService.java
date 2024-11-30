@@ -219,6 +219,10 @@ public class SuborderService {
     }
   }
 
+  public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false);
+  }
+
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showOnlyValid) {
     return suborderDAO.getSubordersByCustomerorderId(customerorderId, showOnlyValid);
   }
