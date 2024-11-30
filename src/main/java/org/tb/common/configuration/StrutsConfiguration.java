@@ -14,6 +14,7 @@ public class StrutsConfiguration {
   public ServletRegistrationBean<ActionServlet> actionServlet() {
     var bean = new ServletRegistrationBean<>(new ActionServlet());
     bean.addInitParameter("config", "/WEB-INF/struts-config.xml");
+    bean.addInitParameter("convertNull", "true");
     bean.setLoadOnStartup(1);
     bean.addUrlMappings("/do/*");
     return bean;
