@@ -47,7 +47,7 @@
 			<table style="clear: both; float: left">
 				<tr>
 					<td class="invoice_title">
-						<c:out value="${titleinvoiceattachment}"/>
+						<c:out value="${showInvoiceForm.titleinvoiceattachment}"/>
 					</td>
 				</tr>
 				<tr>
@@ -56,12 +56,12 @@
 				</tr>
 				<tr>
 					<td class="invoice_address_line">
-						<c:out value="${customername}" />
+						<c:out value="${showInvoiceForm.customername}" />
 					</td>
 				</tr>
 				<tr>
 					<td class="invoice_address_line">
-						<c:out escapeXml="false" value="${customeraddress}" />
+						<c:out escapeXml="false" value="${showInvoiceForm.customeraddressFormatted}" />
 					</td>
 				</tr>
 				<tr>
@@ -70,141 +70,107 @@
 				</tr>
 				<tr>
 					<td class="invoice_time_reference">
-						Zeitraum:
-						<c:choose>
-							<c:when test="${invoiceview eq 'month'}">
-								<bean:message key="${dateMonth}" /> <c:out value="${dateYear}" />
-							</c:when>
-							<c:when test="${invoiceview eq 'custom'}">
-								<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" />
-							</c:when>
-							<c:when test="${invoiceview eq 'week'}">
-								<c:out value="${dateFirst}" /> - <c:out value="${dateLast}" /> (KW<c:out value="${currentWeek}" />)
-							</c:when>
-						</c:choose>
+						Zeitraum: <java8:formatLocalDate value="${invoiceData.invoiceDateRange.from}" pattern="dd.MM.yyyy" /> - <java8:formatLocalDate value="${invoiceData.invoiceDateRange.until}" pattern="dd.MM.yyyy" />
 					</td>
 				</tr>
 			</table>
 			<span style="float: right" class="invoice_date">Stand: <java8:formatLocalDate value="${today}" pattern="dd.MM.yyyy" /></span>
 			<br style="clear: both" />
-			<c:forEach var="suborderviewhelper" items="${viewhelpers}">
-				<table width="100%" style="border-collapse: collapse">
-					<c:if test="${suborderviewhelper.visible and (suborderviewhelper.layer <= layerlimit or layerlimit eq -1)}">
+			<c:forEach var="invoiceSuborder" items="${invoiceData.suborders}">
+				<c:if test="${invoiceSuborder.visible}">
+					<table width="100%" style="border-collapse: collapse">
 						<thead>
 							<tr class="invoice_suborder_row">
-								<td class="invoice_suborder_row wrap" colspan="${dynamicColumnCount + 1}">
-									<c:if test="${optionsuborderdescription eq 'longdescription'}">
-										<c:out value="${suborderviewhelper.getCompleteOrderDescription(false, customeridbox)}"></c:out>
-									</c:if>
-									<c:if test="${optionsuborderdescription eq 'shortdescription'}">
-										<c:out value="${suborderviewhelper.getCompleteOrderDescription(true, customeridbox)}"></c:out>
-									</c:if>
-									<c:if test="${targethoursbox and not empty suborderviewhelper.debithoursString}">
-										/ Budget: <c:out value="${suborderviewhelper.debithoursString}" />
+								<td class="invoice_suborder_row wrap" colspan="${dynamicColumnCount + 2}">
+									<c:out value="${invoiceSuborder.orderDescription}"></c:out>
+									<c:if test="${targethoursbox and not empty invoiceSuborder.debithoursString}">
+										/ Budget: <fmt:formatNumber value="${invoiceSuborder.budget}" minFractionDigits="2" maxFractionDigits="2" />
 									</c:if>
 								</td>
 							</tr>
-							<bean:size id="invoiceTimereportViewHelperListSize" name="suborderviewhelper" property="invoiceTimereportViewHelperList" />
-							<c:if test="${timereportsbox && invoiceTimereportViewHelperListSize > 0}">
-								<tr class="invoice_header">
-									<c:if test="${timereportsbox}">
-										<th class="invoice_header">
-											<c:out value="${titledatetext}" />
-										</th>
-									</c:if>
-									<c:if test="${employeesignbox}">
-										<th class="invoice_header">
-											<c:out value="${titleemployeesigntext}" />
-										</th>
-									</c:if>
-									<!-- Suborderdescription and targethours -->
-									<th class="invoice_header" width="100%">
-										<c:out value="${titledescriptiontext}" />
+							<bean:size id="timereportsSize" name="invoiceSuborder" property="timereports" />
+							<tr class="invoice_header">
+								<c:if test="${showInvoiceForm.timereportsbox && timereportsSize > 0}">
+									<th class="invoice_header">
+										<c:out value="${showInvoiceForm.titledatetext}" />
 									</th>
-									<c:if test="${actualhoursbox}">
-										<th class="invoice_header right">
-											<c:out value="${titleactualdurationtext}" />
+									<c:if test="${showInvoiceForm.employeesignbox}">
+										<th class="invoice_header">
+											<c:out value="${showInvoiceForm.titleemployeesigntext}" />
 										</th>
-										<th class="invoice_header right"></th>
 									</c:if>
-								</tr>
-							    </thead>
-							    <tbody>
-								<c:forEach var="timereportviewhelper" items="${suborderviewhelper.invoiceTimereportViewHelperList}" varStatus="iterstatus">
-									<c:if test="${timereportviewhelper.visible}">
-										<tr class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
-											<td class="invoice_booking_row nonproportional ${iterstatus.last?'last_timereport':''}">
-												<java8:formatLocalDate value="${timereportviewhelper.referenceday}" pattern="dd.MM.yyyy" />
+									<c:if test="${showInvoiceForm.timereportdescriptionbox}">
+										<th class="invoice_header" width="100%">
+											<c:out value="${showInvoiceForm.titledescriptiontext}" />
+										</th>
+									</c:if>
+								</c:if>
+								<th class="invoice_header right">
+									<c:out value="${showInvoiceForm.titleactualdurationtext}" />
+								</th>
+								<th class="invoice_header right">
+									<c:out value="${showInvoiceForm.titleactualhourstext}" />
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="invoiceTimereport" items="${invoiceSuborder.timereports}" varStatus="iterstatus">
+								<c:if test="${invoiceTimereport.visible}">
+									<tr class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
+										<td class="invoice_booking_row nonproportional ${iterstatus.last?'last_timereport':''}">
+											<java8:formatLocalDate value="${invoiceTimereport.referenceDay}" pattern="dd.MM.yyyy" />
+										</td>
+										<c:if test="${showInvoiceForm.employeesignbox}">
+											<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
+												<c:out value="${invoiceTimereport.employeeName}" />
 											</td>
-											<c:if test="${employeesignbox && timereportsbox}">
-												<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}">
-													<c:out value="${timereportviewhelper.employeeName}" />
-												</td>
-											</c:if>
-											<c:if test="${timereportdescriptionbox}">
-												<td class="invoice_booking_row wrap ${iterstatus.last?'last_timereport':''}"
-													style="width: 100%">
-													<c:out escapeXml="false" value="${timereportviewhelper.taskdescriptionHtml}" />
-												</td>
-											</c:if>
-											<c:if test="${timereportdescriptionbox eq 'false'}">
-												<td class="invoice_booking_row ${iterstatus.last?'last_timereport':''}"
-													style="width: 100%">
-													&nbsp;
-												</td>
-											</c:if>
-											<c:if test="${actualhoursbox}">
-												<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
-													style="min-width: 2cm">
-													<c:out value="${timereportviewhelper.durationString}"/>
-												</td>
-												<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
-													style="min-width: 2cm">
-												</td>
-											</c:if>
-										</tr>
-									</c:if>
-								</c:forEach>
-								</tbody>
-							</c:if>
-						    <c:if test="${not (timereportsbox && invoiceTimereportViewHelperListSize > 0)}">
-							    </thead>
-							</c:if>
-							<c:if test="${actualhoursbox}">
-								<tbody>
-								<tr class="invoice_subordersum_row">
-									<td class="invoice_subordersum_row right" colspan="${dynamicColumnCount + 1 - 2}" style="width: 100%">
-										Summe
-									</td>
-									<td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm">
-										<c:out value="${suborderviewhelper.actualDurationPrint}" />
-									</td>
-									<td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm">
-										<c:out value="${suborderviewhelper.actualHoursPrint}" />
-									</td>
-								</tr>
-								</tbody>
-							</c:if>
-					</c:if>
-				</table>
+										</c:if>
+										<c:if test="${showInvoiceForm.timereportdescriptionbox}">
+											<td class="invoice_booking_row wrap ${iterstatus.last?'last_timereport':''}"
+												style="width: 100%">
+												<c:out escapeXml="false" value="${invoiceTimereport.taskDescription}" />
+											</td>
+										</c:if>
+										<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
+											style="min-width: 2cm">
+											<java8:formatDuration value="${invoiceTimereport.duration}"/>
+										</td>
+										<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}"
+											style="min-width: 2cm">
+										</td>
+									</tr>
+								</c:if>
+							</c:forEach>
+							<tr class="invoice_subordersum_row">
+								<td class="invoice_subordersum_row right" colspan="${dynamicColumnCount}" style="width: 100%">
+									Summe
+								</td>
+								<td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm">
+									<java8:formatDuration value="${invoiceSuborder.totalDuration}" />
+								</td>
+								<td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm">
+									<fmt:formatNumber value="${invoiceSuborder.totalHours}" minFractionDigits="2" maxFractionDigits="2" />
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</c:if>
 			</c:forEach>
-			<c:if test="${actualhoursbox}">
-				<table width="100%" style="border-collapse: collapse">
-					<tbody>
-					<tr class="invoice_totalsum_row">
-						<td class="invoice_totalsum_row right" style="width: 100%" colspan="${timereportsbox?'3':'1'}">
-							<bean:message key="main.invoice.overall.text" />
-						</td>
-						<td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm">
-							<java8:formatDuration value="${actualminutessum}" />
-						</td>
-						<td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm">
-							<c:out value="${printactualhourssum}" />
-						</td>
-					</tr>
-					</tbody>
-				</table>
-			</c:if>
+			<table width="100%" style="border-collapse: collapse">
+				<tbody>
+				<tr class="invoice_totalsum_row">
+					<td class="invoice_totalsum_row right" style="width: 100%" colspan="${dynamicColumnCount}">
+						<bean:message key="main.invoice.overall.text" />
+					</td>
+					<td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm">
+						<java8:formatDuration value="${invoiceData.totalDurationVisible}" />
+					</td>
+					<td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm">
+						<c:out value="${invoiceData.totalHoursVisible}" />
+					</td>
+				</tr>
+				</tbody>
+			</table>
 		</div>
 	</body>
 </html>

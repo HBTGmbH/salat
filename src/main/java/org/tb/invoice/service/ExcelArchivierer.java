@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.poi.hssf.usermodel.HSSFDataFormatter;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
@@ -37,8 +35,8 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.tb.common.GlobalConstants;
 import org.tb.invoice.action.ShowInvoiceForm;
-import org.tb.invoice.viewhelper.InvoiceSuborderHelper;
-import org.tb.invoice.viewhelper.InvoiceTimereportHelper;
+import org.tb.invoice.domain.InvoiceSuborder;
+import org.tb.invoice.domain.InvoiceTimereport;
 
 /**
  * This Class saves the created excel workbook
@@ -48,44 +46,8 @@ import org.tb.invoice.viewhelper.InvoiceTimereportHelper;
  */
 public class ExcelArchivierer {
 
-    private static final String CONTENT_DISPOSITION = "attachment; filename=\"" + GlobalConstants.INVOICE_EXCEL_EXPORT_FILENAME + "\"";
     private static final String CONTENT_DISPOSITION_NEW = "attachment; filename=\"" + GlobalConstants.INVOICE_EXCEL_NEW_EXPORT_FILENAME + "\"";
     private static final Map<String, Short> cellStyleIndexes = new HashMap<String, Short>();
-
-    public static InstanceFactory getHSSFFactory() {
-        return new InstanceFactory() {
-            private final DataFormatter dataFormatter = new HSSFDataFormatter();
-
-            @Override
-            public Workbook createWorkbook() {
-                return new HSSFWorkbook();
-            }
-
-            @Override
-            public RichTextString createRichTextString(String str) {
-                if (str.length() <= 255) {
-                    return new HSSFRichTextString(str);
-                } else {
-                    return new HSSFRichTextString(str.substring(0, 255));
-                }
-            }
-
-            @Override
-            public DataFormatter getDataFormatter() {
-                return dataFormatter;
-            }
-
-            @Override
-            public String getContentHeader() {
-                return CONTENT_DISPOSITION;
-            }
-
-            @Override
-            public String getMimeType() {
-                return GlobalConstants.INVOICE_EXCEL_CONTENT_TYPE;
-            }
-        };
-    }
 
     public static InstanceFactory getXSSFFactory() {
         return new InstanceFactory() {
@@ -118,16 +80,13 @@ public class ExcelArchivierer {
         };
     }
 
-    public static void exportInvoice(ShowInvoiceForm showInvoiceForm, HttpServletRequest request, HttpServletResponse response, InstanceFactory factory) {
-        Workbook workbook = createInvoiceExcel(showInvoiceForm, request, factory);
-        response.setHeader("Content-disposition", factory.getContentHeader());
-        response.setContentType(factory.getMimeType());
-        try {
-            ServletOutputStream out = response.getOutputStream();
+    public static void exportInvoice(ShowInvoiceForm showInvoiceForm, HttpServletRequest request, HttpServletResponse response, InstanceFactory factory)
+        throws IOException {
+        try(ServletOutputStream out = response.getOutputStream();
+            Workbook workbook = createInvoiceExcel(showInvoiceForm, request, factory)) {
+            response.setHeader("Content-disposition", factory.getContentHeader());
+            response.setContentType(factory.getMimeType());
             workbook.write(out);
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -138,26 +97,16 @@ public class ExcelArchivierer {
         workbook.createSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME);
         addTitleRow(workbook, showInvoiceForm, request, factory);
         int rowIndex = 1;
-        List<InvoiceSuborderHelper> invoiceSuborderViewhelpers = (List<InvoiceSuborderHelper>) request.getSession().getAttribute("viewhelpers");
-        int layerlimit;
-        try {
-            layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
-        } catch (NumberFormatException e) {
-            layerlimit = -1;
-        }
-        for (InvoiceSuborderHelper invoiceSuborderViewHelper : invoiceSuborderViewhelpers) {
-            if (invoiceSuborderViewHelper.getLayer() <= layerlimit || layerlimit == -1) {
-                if (invoiceSuborderViewHelper.isVisible()) {
-                    rowIndex = addSuborderDataRow(workbook, rowIndex, invoiceSuborderViewHelper, showInvoiceForm, request, factory);
-                    // ab hier ggf. Timereports ausgeben
-                    List<InvoiceTimereportHelper> invoiceTimereportViewHelpers = invoiceSuborderViewHelper.getInvoiceTimereportViewHelperList();
-                    if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))
-                        && !invoiceTimereportViewHelpers.isEmpty()) {
-                        for (InvoiceTimereportHelper invoiceTimereportViewHelper : invoiceTimereportViewHelpers) {
-                            if (invoiceTimereportViewHelper.isVisible()) {
-                                rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereportViewHelper, request, factory);
-                            }
-                        }
+        List<InvoiceSuborder> invoiceSuborderViewhelpers = (List<InvoiceSuborder>) request.getSession().getAttribute("viewhelpers");
+        for (InvoiceSuborder invoiceSuborderViewHelper : invoiceSuborderViewhelpers) {
+            if (invoiceSuborderViewHelper.isVisible()) {
+                rowIndex = addSuborderDataRow(workbook, rowIndex, invoiceSuborderViewHelper, showInvoiceForm, request, factory);
+                // ab hier ggf. Timereports ausgeben
+                List<InvoiceTimereport> invoiceTimereportViewHelpers = invoiceSuborderViewHelper.getTimereports();
+                if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))
+                    && !invoiceTimereportViewHelpers.isEmpty()) {
+                    for (InvoiceTimereport invoiceTimereportViewHelper : invoiceTimereportViewHelpers) {
+                        rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereportViewHelper, request, factory);
                     }
                 }
             }
@@ -230,16 +179,16 @@ public class ExcelArchivierer {
         return factory.createRichTextString(str);
     }
 
-    private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborderHelper invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
+    private static int addSuborderDataRow(Workbook workbook, int rowIndex, InvoiceSuborder invoiceSuborderViewHelper, ShowInvoiceForm showInvoiceForm, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 0;
         Cell cell = row.createCell(colIndex, STRING);
-        cell.setCellValue(createRTS(invoiceSuborderViewHelper.getSign(), factory));
+        cell.setCellValue(createRTS(invoiceSuborderViewHelper.getOrderDescription(), factory));
         colIndex++;
         if (request.getSession().getAttribute("customeridbox") != null && ((Boolean) request.getSession().getAttribute("customeridbox"))) {
             cell = row.createCell(colIndex, STRING);
-            cell.setCellValue(createRTS(invoiceSuborderViewHelper.getSuborder_customer(), factory));
+            cell.setCellValue(createRTS(invoiceSuborderViewHelper.getOrderDescription(), factory));
             colIndex++;
         }
         if (request.getSession().getAttribute("timereportsbox") != null && ((Boolean) request.getSession().getAttribute("timereportsbox"))) {
@@ -250,19 +199,11 @@ public class ExcelArchivierer {
         }
         cell = row.createCell(colIndex, STRING);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
-        if ("longdescription".equals(showInvoiceForm.getSuborderdescription())) {
-            cell.setCellValue(createRTS(invoiceSuborderViewHelper.getDescription(), factory));
-        } else if ("shortdescription".equals(showInvoiceForm.getSuborderdescription())) {
-            cell.setCellValue(createRTS(invoiceSuborderViewHelper.getShortdescription(), factory));
-        } else {
-            // should be unreachable, see selectbox in showInvoice.jsp:266ff
-            assert false;
-        }
         colIndex++;
         if (request.getSession().getAttribute("targethoursbox") != null && ((Boolean) request.getSession().getAttribute("targethoursbox"))) {
             cell = row.createCell(colIndex, NUMERIC);
-            if (invoiceSuborderViewHelper.getDebithours() != null) {
-                cell.setCellValue((double) invoiceSuborderViewHelper.getDebithours().toMinutes() / 24);
+            if (invoiceSuborderViewHelper.getBudget() != null) {
+                cell.setCellValue((double) invoiceSuborderViewHelper.getBudget().toMinutes() / 24);
             } else {
                 cell.setCellValue(0L);
             }
@@ -270,32 +211,17 @@ public class ExcelArchivierer {
             colIndex++;
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
-            int layerlimit;
-            try {
-                layerlimit = Integer.parseInt(showInvoiceForm.getLayerlimit());
-            } catch (NumberFormatException e) {
-                layerlimit = -1;
-            }
             cell = row.createCell(colIndex, NUMERIC);
-            if (invoiceSuborderViewHelper.getLayer() < layerlimit || layerlimit == -1) {
-                cell.setCellValue((double) invoiceSuborderViewHelper.getTotalActualminutesPrint() / 1440);
-                cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
-            } else if (invoiceSuborderViewHelper.getLayer() == layerlimit) {
-                cell.setCellValue((double) invoiceSuborderViewHelper.getDurationInMinutes() / 1440);
-                cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
-            }
+            cell.setCellValue((double) invoiceSuborderViewHelper.getTotalDuration().toMinutes() / 1440);
+            cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             colIndex++;
             cell = row.createCell(colIndex, NUMERIC);
-            if (invoiceSuborderViewHelper.getLayer() < layerlimit || layerlimit == -1) {
-                cell.setCellValue((double) invoiceSuborderViewHelper.getTotalActualminutesPrint() / MINUTES_PER_HOUR);
-            } else if (invoiceSuborderViewHelper.getLayer() == layerlimit) {
-                cell.setCellValue((double) invoiceSuborderViewHelper.getDurationInMinutes() / MINUTES_PER_HOUR);
-            }
+            cell.setCellValue((double) invoiceSuborderViewHelper.getTotalDuration().toMinutes() / MINUTES_PER_HOUR);
         }
         return rowIndex;
     }
 
-    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereportHelper invoiceTimereportViewHelper, HttpServletRequest request, InstanceFactory factory) {
+    private static int addTimereportDataRow(Workbook workbook, int rowIndex, @Nonnull InvoiceTimereport invoiceTimereportViewHelper, HttpServletRequest request, InstanceFactory factory) {
         Row row = workbook.getSheet(GlobalConstants.INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         rowIndex++;
         int colIndex = 1;
@@ -303,10 +229,10 @@ public class ExcelArchivierer {
             colIndex++;
         }
         Cell cell = row.createCell(colIndex, NUMERIC);
-        if (invoiceTimereportViewHelper.getReferenceday() != null) {
+        if (invoiceTimereportViewHelper.getReferenceDay() != null) {
             Date date = Date.from(
                 invoiceTimereportViewHelper
-                    .getReferenceday()
+                    .getReferenceDay()
                     .atStartOfDay(ZoneId.of(DEFAULT_TIMEZONE_ID))
                     .toInstant()
             );
@@ -324,7 +250,7 @@ public class ExcelArchivierer {
         }
         if (request.getSession().getAttribute("timereportdescriptionbox") != null && ((Boolean) request.getSession().getAttribute("timereportdescriptionbox"))) {
             cell = row.createCell(colIndex, STRING);
-            cell.setCellValue(createRTS(invoiceTimereportViewHelper.getTaskdescription(), factory));
+            cell.setCellValue(createRTS(invoiceTimereportViewHelper.getTaskDescription(), factory));
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("textwrap")));
             colIndex++;
         } else {
@@ -335,8 +261,8 @@ public class ExcelArchivierer {
         }
         if (request.getSession().getAttribute("actualhoursbox") != null && ((Boolean) request.getSession().getAttribute("actualhoursbox"))) {
             cell = row.createCell(colIndex, NUMERIC);
-            if (invoiceTimereportViewHelper.getDurationhours() != null) {
-                double duration = (invoiceTimereportViewHelper.getDurationhours() * MINUTES_PER_HOUR) + invoiceTimereportViewHelper.getDurationminutes();
+            if (invoiceTimereportViewHelper.getDuration() != null) {
+                double duration = invoiceTimereportViewHelper.getDuration().toMinutes();
                 cell.setCellValue(duration / 1440);
             } else {
                 cell.setCellValue(0L);
@@ -344,8 +270,8 @@ public class ExcelArchivierer {
             cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
             colIndex++;
             cell = row.createCell(colIndex, NUMERIC);
-            if (invoiceTimereportViewHelper.getDurationhours() != null) {
-                double duration = (invoiceTimereportViewHelper.getDurationhours() * MINUTES_PER_HOUR) + invoiceTimereportViewHelper.getDurationminutes();
+            if (invoiceTimereportViewHelper.getDuration() != null) {
+                double duration = invoiceTimereportViewHelper.getDuration().toMinutes();
                 cell.setCellValue(duration / MINUTES_PER_HOUR);
             } else {
                 cell.setCellValue(0L);
