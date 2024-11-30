@@ -19,7 +19,7 @@
 				form.submit();
 			}
 			function exportExcel(form) {
-				form.target = "_blank";
+				form.target = "_self";
 				form.action = "/do/ShowInvoice?task=export";
 				form.submit();
 			}

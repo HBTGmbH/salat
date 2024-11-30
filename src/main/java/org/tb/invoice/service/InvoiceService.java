@@ -59,7 +59,7 @@ public class InvoiceService {
         .reduce(Duration::plus)
         .orElse(ZERO);
 
-    return new InvoiceData(invoiceDateRange, customerorder.getCustomer(), totalDuration, invoiceSuborders);
+    return new InvoiceData(options, invoiceDateRange, customerorder.getSign(), customerorder.getCustomer(), totalDuration, invoiceSuborders);
   }
 
   @Builder

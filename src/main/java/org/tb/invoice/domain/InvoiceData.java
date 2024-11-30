@@ -10,11 +10,14 @@ import java.util.List;
 import lombok.Data;
 import org.tb.common.DateRange;
 import org.tb.customer.domain.Customer;
+import org.tb.invoice.service.InvoiceService.InvoiceOptions;
 
 @Data
 public class InvoiceData {
 
+  private final InvoiceOptions invoiceOptions;
   private final DateRange invoiceDateRange;
+  private final String customerOrderSign;
   private final Customer customer;
   private final Duration totalDuration;
   private final List<InvoiceSuborder> suborders;

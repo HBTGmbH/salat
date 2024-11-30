@@ -5,6 +5,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
+import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
@@ -82,12 +83,19 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
 
     private void exportToExcel(ReportDefinition reportDefinition, ReportResult reportResult, HttpServletResponse response) {
         try (ServletOutputStream out = response.getOutputStream(); Workbook workbook = createExcel(reportResult)) {
-            response.setHeader("Content-disposition", "attachment; filename=\"" + createFilename(reportDefinition) + "\"");
-            response.setContentType(GlobalConstants.INVOICE_EXCEL_NEW_CONTENT_TYPE);
+            response.setHeader("Content-disposition", "attachment; filename=" + createFileName(reportDefinition));
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             workbook.write(out);
         } catch (IOException e) {
             log.warn("Could not write excel export to output stream", e);
         }
+    }
+
+    private static String createFileName(ReportDefinition reportDefinition) {
+        var fileName = reportDefinition.getName() + "-" + today() + ".xlsx";
+        var sanitizedFileName = fileName
+            .replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+        return sanitizedFileName;
     }
 
     private Workbook createExcel(ReportResult reportResult) {
@@ -173,7 +181,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
             switch (parameter.getType()) {
                 case "date" -> {
                     if(parameter.getValue().equals("TODAY") || parameter.getValue().equals("HEUTE")) {
-                        result.put(parameter.getName(), DateUtils.today());
+                        result.put(parameter.getName(), today());
                     } else {
                         result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
                     }

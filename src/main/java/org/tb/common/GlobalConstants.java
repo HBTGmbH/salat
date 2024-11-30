@@ -144,9 +144,6 @@ public class GlobalConstants {
     public static final char GENDER_FEMALE = 'f';
 
     public static final char INVOICE_YES = 'Y';
-    public static final String INVOICE_EXCEL_NEW_EXPORT_FILENAME = "SALAT_Rechnung.xlsx";
-    public static final String INVOICE_EXCEL_SHEET_NAME = "SALAT Rechnung";
-    public static final String INVOICE_EXCEL_NEW_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     public static final String MAIL_DOMAIN = "hbt.de";
 

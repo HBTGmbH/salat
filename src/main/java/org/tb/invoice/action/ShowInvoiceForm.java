@@ -12,10 +12,11 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
+import org.tb.invoice.service.ExcelExportService.InvoiceColumnHeaders;
 
 @Getter
 @Setter
-public class ShowInvoiceForm extends ActionForm {
+public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders {
 
     private static final long serialVersionUID = 1L; // -5141807789236654602L;
     private String invoiceview;
@@ -38,9 +39,7 @@ public class ShowInvoiceForm extends ActionForm {
     private int fromWeek;
     private long[] suborderIdArray;
     private long[] timereportIdArray;
-    private String titleprinttext;
     private String titlesubordertext;
-    private String titlecustomersigntext;
     private String titledatetext;
     private String titleemployeesigntext;
     private String titledescriptiontext;
@@ -71,7 +70,6 @@ public class ShowInvoiceForm extends ActionForm {
 
         this.setTitleactualhourstext(messageResources.getMessage(locale,"main.invoice.title.actualhours.text"));
         this.setTitleactualdurationtext(messageResources.getMessage(locale,"main.invoice.title.actualduration.text"));
-        this.setTitlecustomersigntext(messageResources.getMessage(locale,"main.invoice.title.customersign.text"));
         this.setTitledatetext(messageResources.getMessage(locale,"main.invoice.title.date.text"));
         this.setTitledescriptiontext(messageResources.getMessage(locale,"main.invoice.title.description.text"));
         this.setTitleemployeesigntext(messageResources.getMessage(locale,"main.invoice.title.employeesign.text"));
@@ -100,5 +98,40 @@ public class ShowInvoiceForm extends ActionForm {
             .replaceAll("\\n", "<br/>")
             .replaceAll("\\r", "<br/>");
     }
+
+  @Override
+  public String getOrderHeader() {
+    return titlesubordertext;
+  }
+
+  @Override
+  public String getDateHeader() {
+    return titledatetext;
+  }
+
+  @Override
+  public String getEmployeeHeader() {
+    return titleemployeesigntext;
+  }
+
+  @Override
+  public String getTaskDescriptionHeader() {
+    return titledescriptiontext;
+  }
+
+  @Override
+  public String getBudgetHeader() {
+    return titletargethourstext;
+  }
+
+  @Override
+  public String getDurationHeader() {
+    return titleactualdurationtext;
+  }
+
+  @Override
+  public String getHoursHeader() {
+    return titleactualhourstext;
+  }
 
 }
