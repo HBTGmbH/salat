@@ -27,7 +27,7 @@ public class InvoiceSettingsService {
               height: 2.5cm;
           }
           .invoice_suborder_row {
-              border-bottom: 3px solid #fd9#dbfb58;
+              border-bottom: 3px solid #dbfb58;
           }
           """)
       .imageUrls(of(
