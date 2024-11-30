@@ -13,6 +13,8 @@ import org.apache.struts.action.ActionMapping;
  */
 public abstract class TypedAction<F extends ActionForm> extends Action {
 
+  protected static final ActionForward RESPONSE_COMPLETED = null;
+
   public abstract ActionForward executeWithForm(ActionMapping mapping, F form, HttpServletRequest request,
       HttpServletResponse response) throws Exception;
 
