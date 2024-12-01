@@ -77,7 +77,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
 
     private static String createFileName(ReportDefinition reportDefinition) {
         var fileName = "report-" + reportDefinition.getName() +
-                       "-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
+                       "-erzeugt-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
                        ".xlsx";
         var sanitizedFileName = fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
         return sanitizedFileName;
