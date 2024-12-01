@@ -29,9 +29,9 @@ import org.tb.order.service.SuborderService;
 @RequiredArgsConstructor
 public class InvoiceService {
 
+  private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final TimereportService timereportService;
-  private final CustomerorderService customerorderService;
 
   public InvoiceData generateInvoiceData(long customerorderId, Optional<Long> suborderId, DateRange invoiceDateRange, InvoiceOptions options) {
     var customerorder = customerorderService.getCustomerorderById(customerorderId);

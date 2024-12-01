@@ -8,6 +8,7 @@ import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
@@ -16,10 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
+import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.DateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.dailyreport.action.DailyReportAction;
 import org.tb.invoice.domain.InvoiceData;
 import org.tb.invoice.service.ExcelExportService;
 import org.tb.invoice.domain.InvoiceSuborder;
@@ -32,11 +33,10 @@ import org.tb.order.domain.Suborder;
 import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
-import org.tb.reporting.domain.ReportDefinition;
 
 @Component
 @RequiredArgsConstructor
-public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
+public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
 
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
@@ -146,11 +146,13 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
       return mapping.findForward("print");
     } else if ("export".equals(task)) {
       var invoiceData = (InvoiceData) request.getSession().getAttribute("invoiceData");
-      var bytes = excelExportService.exportToExcel(invoiceData, form);
-      response.setContentLength(bytes.length);
-      response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      response.setHeader("Content-disposition", "attachment; filename=" + createFileName(invoiceData));
-      response.getOutputStream().write(bytes);
+      try (ServletOutputStream out = response.getOutputStream()) {
+        var bytes = excelExportService.exportToExcel(invoiceData, form);
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-disposition", "attachment; filename=" + createFileName(invoiceData));
+        response.setContentLength(bytes.length);
+        out.write(bytes);
+      }
       return RESPONSE_COMPLETED;
     } else if ("back".equals(task)) {
       // END
@@ -187,9 +189,12 @@ public class ShowInvoiceAction extends DailyReportAction<ShowInvoiceForm> {
   }
 
   private static String createFileName(InvoiceData invoiceData) {
-    var fileName = invoiceData.getCustomerOrderSign() + "-" + invoiceData.getInvoiceDateRange() + " - " + today() + ".xlsx";
-    var sanitizedFileName = fileName
-        .replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+    var fileName = "rechnung-" + invoiceData.getCustomerOrderSign() +
+                   "-" + DateUtils.format(invoiceData.getInvoiceDateRange().getFrom(), "dd.MM.yy") +
+                   "-" + DateUtils.format(invoiceData.getInvoiceDateRange().getUntil(), "dd.MM.yy") +
+                   "-erzeugt-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
+                   ".xlsx";
+    var sanitizedFileName = fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
     return sanitizedFileName;
   }
 
