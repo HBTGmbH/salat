@@ -33,6 +33,7 @@ import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.GlobalConstants;
 import org.tb.invoice.domain.InvoiceData;
 import org.tb.invoice.domain.InvoiceSuborder;
@@ -48,6 +49,7 @@ import org.tb.invoice.service.InvoiceService.InvoiceOptions;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized(requiresBackoffice = true)
 public class ExcelExportService {
 
     private static final String INVOICE_EXCEL_SHEET_NAME = "Tätigkeitsnachweis";

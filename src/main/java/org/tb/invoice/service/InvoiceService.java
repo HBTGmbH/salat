@@ -14,6 +14,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.DateRange;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
@@ -27,6 +28,7 @@ import org.tb.order.service.SuborderService;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Authorized(requiresBackoffice = true)
 public class InvoiceService {
 
   private final CustomerorderService customerorderService;
