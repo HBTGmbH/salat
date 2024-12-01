@@ -16,13 +16,15 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.GlobalConstants;
 import org.tb.reporting.domain.ReportResult;
 import org.tb.reporting.domain.ReportResultColumnValue;
 
-@Service
+@Service("reportingExcelExportService")
 @Transactional
 @RequiredArgsConstructor
+@Authorized
 public class ExcelExportService {
 
   public static final String CELL_STYLE_DATE_KEY = "Date";

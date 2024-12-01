@@ -46,7 +46,7 @@ import org.tb.invoice.service.InvoiceService.InvoiceOptions;
  *
  * @author la
  */
-@Service
+@Service("invoiceExcelExportService")
 @Transactional
 @RequiredArgsConstructor
 @Authorized(requiresBackoffice = true)
