@@ -22,11 +22,11 @@ public class FavoriteService {
   private final FavoriteRepository favoriteRepository;
   private final AuthorizedUser authorizedUser;
 
-  public List<Favorite> getFavorites(Long employeeId) {
+  public List<Favorite> getFavorites(long employeeId) {
     return favoriteRepository.findAllByEmployeeId(employeeId);
   }
 
-  public Optional<Favorite> getFavorite(Long favoriteId) {
+  public Optional<Favorite> getFavorite(long favoriteId) {
     return favoriteRepository.findById(favoriteId);
   }
 
