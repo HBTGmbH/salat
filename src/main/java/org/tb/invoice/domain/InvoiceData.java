@@ -8,7 +8,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.List;
 import lombok.Data;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.customer.domain.Customer;
 import org.tb.invoice.service.InvoiceService.InvoiceOptions;
 
@@ -16,7 +16,7 @@ import org.tb.invoice.service.InvoiceService.InvoiceOptions;
 public class InvoiceData {
 
   private final InvoiceOptions invoiceOptions;
-  private final DateRange invoiceDateRange;
+  private final LocalDateRange invoiceDateRange;
   private final String customerOrderSign;
   private final Customer customer;
   private final Duration totalDuration;

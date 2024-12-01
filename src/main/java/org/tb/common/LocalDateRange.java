@@ -12,7 +12,7 @@ import org.tb.common.util.DateUtils;
 
 @Data
 @RequiredArgsConstructor
-public class DateRange implements Comparable<DateRange> {
+public class LocalDateRange implements Comparable<LocalDateRange> {
 
   private final static LocalDate FINIT_FROM_BOUNDARY = LocalDate.of(1970, 1, 1);
   private final static LocalDate FINIT_UNTIL_BOUNDARY = LocalDate.of(2999, 12, 31);
@@ -22,7 +22,7 @@ public class DateRange implements Comparable<DateRange> {
   @Nullable
   private final LocalDate until;
 
-  public DateRange(YearMonth month) {
+  public LocalDateRange(YearMonth month) {
     this.from = month.atDay(1);
     this.until = month.atEndOfMonth();
   }
@@ -39,7 +39,7 @@ public class DateRange implements Comparable<DateRange> {
     return isInfiniteFrom() && isInfiniteUntil();
   }
 
-  public boolean contains(DateRange dateRange) {
+  public boolean contains(LocalDateRange dateRange) {
     if (dateRange == null) {
       return false;
     }
@@ -59,7 +59,7 @@ public class DateRange implements Comparable<DateRange> {
     return true;
   }
 
-  public boolean overlaps(DateRange dateRange) {
+  public boolean overlaps(LocalDateRange dateRange) {
     if (dateRange == null) {
       return false;
     }
@@ -72,7 +72,7 @@ public class DateRange implements Comparable<DateRange> {
     return !from.isAfter(dateUntil) && !until.isBefore(dateFrom);
   }
 
-  public DateRange intersection(DateRange dateRange) {
+  public LocalDateRange intersection(LocalDateRange dateRange) {
     if (dateRange == null) {
       return this;
     }
@@ -86,7 +86,7 @@ public class DateRange implements Comparable<DateRange> {
     var minUntil = DateUtils.min(until, dateUntil);
 
     if(maxFrom.isAfter(minUntil)) return null;
-    return new DateRange(maxFrom, minUntil);
+    return new LocalDateRange(maxFrom, minUntil);
   }
 
   public boolean isAfter(LocalDate date) {
@@ -111,7 +111,7 @@ public class DateRange implements Comparable<DateRange> {
   }
 
   @Override
-  public int compareTo(DateRange other) {
+  public int compareTo(LocalDateRange other) {
     if (other == null) {
       throw new NullPointerException("The other DateRange is null");
     }
@@ -146,7 +146,7 @@ public class DateRange implements Comparable<DateRange> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DateRange dateRange = (DateRange) o;
+    LocalDateRange dateRange = (LocalDateRange) o;
     return Objects.equals(from, dateRange.from) && Objects.equals(until, dateRange.until);
   }
 

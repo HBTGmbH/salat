@@ -27,7 +27,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
@@ -207,10 +207,10 @@ public class Suborder extends AuditedEntity implements Serializable {
         return isValidAt(now);
     }
 
-    public DateRange getValidity() {
+    public LocalDateRange getValidity() {
         LocalDate from = getFromDate();
         LocalDate until = getUntilDate();
-        return new DateRange(from, until);
+        return new LocalDateRange(from, until);
     }
 
     public boolean isValidAt(LocalDate date) {

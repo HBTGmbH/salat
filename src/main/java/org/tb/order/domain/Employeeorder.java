@@ -18,7 +18,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
@@ -108,8 +108,8 @@ public class Employeeorder extends AuditedEntity implements Serializable {
         }
     }
 
-    public DateRange getValidity() {
-        return new DateRange(getFromDate(), getUntilDate());
+    public LocalDateRange getValidity() {
+        return new LocalDateRange(getFromDate(), getUntilDate());
     }
 
     /**

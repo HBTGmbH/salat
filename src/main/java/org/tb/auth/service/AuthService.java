@@ -27,7 +27,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.SalatProperties;
 
 @Service
@@ -129,7 +129,7 @@ public class AuthService {
                       rule.getCategory(),
                       rule.getGrantorId(),
                       granteeId,
-                      new DateRange(rule.getValidFrom(), rule.getValidUntil()),
+                      new LocalDateRange(rule.getValidFrom(), rule.getValidUntil()),
                       ALL_OBJECTS,
                       accessLevel
                   )
@@ -141,7 +141,7 @@ public class AuthService {
                         rule.getCategory(),
                         rule.getGrantorId(),
                         granteeId,
-                        new DateRange(rule.getValidFrom(), rule.getValidUntil()),
+                        new LocalDateRange(rule.getValidFrom(), rule.getValidUntil()),
                         objectId,
                         accessLevel
                     )
@@ -166,7 +166,7 @@ public class AuthService {
     private final String category;
     private final String grantorId;
     private final String granteeId;
-    private final DateRange validity;
+    private final LocalDateRange validity;
     private final String objectId;
     private final AccessLevel accessLevel;
 

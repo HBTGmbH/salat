@@ -13,7 +13,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
@@ -163,7 +163,7 @@ public class SuborderService {
     return command.getResult().values().stream().reduce(Duration::plus).orElse(Duration.ZERO);
   }
 
-  private void adjustValidity(long suborderId, DateRange newValidity) {
+  private void adjustValidity(long suborderId, LocalDateRange newValidity) {
     var suborder = suborderDAO.getSuborderById(suborderId);
     var existingValidity = suborder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);
@@ -215,7 +215,7 @@ public class SuborderService {
   public void fitValidityOfChildren(long suborderId) throws BusinessRuleException {
     var parent = suborderDAO.getSuborderById(suborderId);
     for (Suborder child : parent.getAllChildren()) {
-      adjustValidity(child.getId(), new DateRange(parent.getFromDate(), parent.getUntilDate()));
+      adjustValidity(child.getId(), new LocalDateRange(parent.getFromDate(), parent.getUntilDate()));
     }
   }
 

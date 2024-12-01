@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -439,7 +439,7 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             // ggf. gibt es keine übergeordnete Suborder (=null?)
             // dann die untergeordneten Suboders der Customerorder.
 
-            var validityToCheck = new DateRange(suborderFromDate, suborderUntilDate);
+            var validityToCheck = new LocalDateRange(suborderFromDate, suborderUntilDate);
             if (isCustomerorderSelectedAsParent(addSuborderForm)) {
                 var suborders = suborderService
                     .getSubordersByCustomerorderId(addSuborderForm.getCustomerorderId(), false).stream()

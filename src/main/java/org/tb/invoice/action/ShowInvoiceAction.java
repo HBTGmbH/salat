@@ -18,7 +18,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.invoice.domain.InvoiceData;
@@ -106,7 +106,7 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
 
         var customerorderId = form.getOrderId();
         var suborderId = ofNullable(form.getSuborderId());
-        var validity = new DateRange(dateFirst, dateLast);
+        var validity = new LocalDateRange(dateFirst, dateLast);
         var options = getInvoiceOptions(form);
 
         var invoiceData = invoiceService.generateInvoiceData(customerorderId, suborderId, validity, options);

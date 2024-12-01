@@ -21,7 +21,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
 import org.tb.common.util.DateUtils;
@@ -118,8 +118,8 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         return !date.isBefore(validFrom) && (validUntil == null || !date.isAfter(validUntil));
     }
 
-    public DateRange getValidity() {
-        return new DateRange(getValidFrom(), getValidUntil());
+    public LocalDateRange getValidity() {
+        return new LocalDateRange(getValidFrom(), getValidUntil());
     }
 
     public int getVacationEntitlement() {

@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.invoice.domain.InvoiceData;
@@ -35,7 +35,7 @@ public class InvoiceService {
   private final SuborderService suborderService;
   private final TimereportService timereportService;
 
-  public InvoiceData generateInvoiceData(long customerorderId, Optional<Long> suborderId, DateRange invoiceDateRange, InvoiceOptions options) {
+  public InvoiceData generateInvoiceData(long customerorderId, Optional<Long> suborderId, LocalDateRange invoiceDateRange, InvoiceOptions options) {
     var customerorder = customerorderService.getCustomerorderById(customerorderId);
 
     var dateFirst = invoiceDateRange.getFrom();

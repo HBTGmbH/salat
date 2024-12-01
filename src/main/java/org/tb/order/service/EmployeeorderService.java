@@ -17,7 +17,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.common.GlobalConstants;
 import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.ErrorCode;
@@ -278,7 +278,7 @@ public class EmployeeorderService {
     return command.getResult().get(employeeorderId);
   }
 
-  private void adjustValidity(long employeeorderId, DateRange newValidity) {
+  private void adjustValidity(long employeeorderId, LocalDateRange newValidity) {
     var employeeorder = employeeorderDAO.getEmployeeorderById(employeeorderId);
     var existingValidity = employeeorder.getValidity();
     var resultingValidity = existingValidity.intersection(newValidity);

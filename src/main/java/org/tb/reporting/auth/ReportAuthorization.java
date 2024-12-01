@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
-import org.tb.common.DateRange;
+import org.tb.common.LocalDateRange;
 import org.tb.reporting.domain.ReportDefinition;
 
 @Component
@@ -58,7 +58,7 @@ public class ReportAuthorization {
 
     private final String userSign;
     private final AccessLevel accessLevel;
-    private final DateRange validity;
+    private final LocalDateRange validity;
 
   }
 
