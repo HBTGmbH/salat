@@ -304,39 +304,6 @@ public class Suborder extends AuditedEntity implements Serializable {
         return "Suborder_" + getId() + ": (" + sign + " " + description + ")";
     }
 
-    public Suborder copy(boolean copyroot) {
-        Suborder copy = new Suborder();
-
-        // set attrib values in copy
-        copy.setCommentnecessary(commentnecessary);
-        copy.setCustomerorder(customerorder);
-        copy.setDebithours(getDebithours()); // see #getDebithours
-        copy.setDebithoursunit(debithoursunit);
-        copy.setDescription(description);
-        copy.setFromDate(fromDate);
-        copy.setHide(hide);
-        copy.setInvoice(invoice);
-        copy.setShortdescription(shortdescription);
-        copy.setStandard(standard);
-        copy.setUntilDate(untilDate);
-        copy.setSign(sign);
-        copy.setSuborder_customer(suborder_customer);
-        copy.setFixedPrice(fixedPrice);
-        copy.setTrainingFlag(trainingFlag);
-        copy.setOrderType(orderType);
-
-        if (copyroot) {
-            copy.setSign("copy_of_" + sign);
-        }
-
-        for (Suborder child : suborders) {
-            Suborder childCopy = child.copy(false);
-            childCopy.setParentorder(copy);
-            copy.addSuborder(childCopy);
-        }
-        return copy;
-    }
-
     public Duration getDebithours() {
         return debitMinutes; // its a Duration - hours or minutes make no difference
     }

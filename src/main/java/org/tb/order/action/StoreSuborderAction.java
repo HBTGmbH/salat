@@ -89,18 +89,9 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
         }
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("copy")) {
-
             long soId = Long.parseLong(request.getSession().getAttribute("soId").toString());
-            Suborder so = suborderService.getSuborderById(soId);
-
-            if (so != null) {
-                suborderService.createCopy(so);
-
-                request.getSession().removeAttribute("soId");
-
-                // store used customer order id for the next creation of a suborder
-                request.getSession().setAttribute("lastCoId", so.getCustomerorder().getId());
-            }
+            suborderService.createCopy(soId);
+            request.getSession().removeAttribute("soId");
 
             refreshForOverview(request);
 

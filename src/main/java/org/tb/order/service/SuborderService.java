@@ -278,8 +278,9 @@ public class SuborderService {
   }
 
   @Authorized(requiresManager = true)
-  public void createCopy(Suborder so) {
-    var copy = so.copy(true);
+  public void createCopy(long suborederId) {
+    var suborder = getSuborderById(suborederId);
+    var copy = createCopy(suborder, true);
     suborderRepository.save(copy);
   }
 
@@ -293,5 +294,38 @@ public class SuborderService {
     for (long suborderId : suborderIds) {
       getSuborderById(suborderId).setHide(true);
     }
+  }
+
+  private Suborder createCopy(Suborder suborder, boolean copyroot) {
+    Suborder copy = new Suborder();
+
+    // set attrib values in copy
+    copy.setCommentnecessary(suborder.getCommentnecessary());
+    copy.setCustomerorder(suborder.getCustomerorder());
+    copy.setDebithours(suborder.getDebithours()); // see #getDebithours
+    copy.setDebithoursunit(suborder.getDebithoursunit());
+    copy.setDescription(suborder.getDescription());
+    copy.setFromDate(suborder.getFromDate());
+    copy.setHide(suborder.isHide());
+    copy.setInvoice(suborder.getInvoice());
+    copy.setShortdescription(suborder.getShortdescription());
+    copy.setStandard(suborder.getStandard());
+    copy.setUntilDate(suborder.getUntilDate());
+    copy.setSign(suborder.getSign());
+    copy.setSuborder_customer(suborder.getSuborder_customer());
+    copy.setFixedPrice(suborder.getFixedPrice());
+    copy.setTrainingFlag(suborder.getTrainingFlag());
+    copy.setOrderType(suborder.getOrderType());
+
+    if (copyroot) {
+      copy.setSign("copy_of_" + suborder.getSign());
+    }
+
+    for (Suborder child : suborder.getSuborders()) {
+      Suborder childCopy = createCopy(child, false);
+      childCopy.setParentorder(copy);
+      copy.addSuborder(childCopy);
+    }
+    return copy;
   }
 }

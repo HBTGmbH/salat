@@ -12,8 +12,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
@@ -33,7 +31,6 @@ import org.tb.order.viewhelper.SuborderViewDecorator;
 @Component
 @RequiredArgsConstructor
 public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
-    private static final Logger LOG = LoggerFactory.getLogger(ShowSuborderAction.class);
 
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
@@ -50,15 +47,6 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
         String filter = null;
         Boolean show = null;
         Long customerOrderId = null;
-
-        LOG.debug("suborderForm.getShowStructure()" + suborderForm.getShowstructure());
-        LOG.debug("suborderForm.getShow();" + suborderForm.getShow());
-        LOG.debug("suborderForm.getFilter-()" + suborderForm.getFilter());
-        LOG.debug("suborderForm.getCustomerOrderId-();" + suborderForm.getCustomerOrderId());
-        LOG.debug("suborderFilter" + request.getSession().getAttribute("suborderFilter"));
-        LOG.debug("suborderShow;" + request.getSession().getAttribute("suborderShow"));
-        LOG.debug("suborderCustomerOrderId" + request.getSession().getAttribute("suborderCustomerOrderId"));
-        LOG.debug("showStructure" + request.getSession().getAttribute("showStructure"));
 
         List<Suborder> suborders = (List<Suborder>) request.getSession().getAttribute("suborders");
         if(suborders == null) {
@@ -99,7 +87,6 @@ public class ShowSuborderAction extends LoginRequiredAction<ShowSuborderForm> {
                 customerOrderId = (Long) request.getSession().getAttribute("suborderCustomerOrderId");
                 suborderForm.setCustomerOrderId(customerOrderId);
                 Customerorder co = customerorderService.getCustomerorderById(suborderForm.getCustomerOrderId());
-                LOG.debug("ShowSuborderAction.executeAuthenticated - suborderForm.getCustomerOrderId()" + suborderForm.getCustomerOrderId());
                 request.getSession().setAttribute("currentOrder", co);
             } else {
                 request.getSession().setAttribute("suborderCustomerOrderId", -1L);
