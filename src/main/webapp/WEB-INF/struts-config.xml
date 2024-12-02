@@ -71,7 +71,7 @@
 	<!-- =========================================== Global Forward Definitions -->
 
 	<global-forwards>
-		<forward name="showWelcome" path="/welcome/showWelcome.jsp" redirect="true" />
+		<forward name="showWelcome" path="/dailyreport/showWelcome.jsp" redirect="true" />
 		<forward name="unauthorized" path="/auth/unauthorized.jsp" />
 	</global-forwards>
 
@@ -125,7 +125,7 @@
 			<forward name="success" path="/dailyreport/addDailyReport.jsp" redirect="true" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="showDaily" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -134,7 +134,7 @@
 			name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportAction">
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -156,7 +156,7 @@
 			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="newreport" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="print" path="/dailyreport/showDailyReportPrint.jsp" />
 		</action>
 
@@ -176,7 +176,7 @@
 			name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixAction">
 			<forward name="success" path="/dailyreport/showMatrix.jsp" />
 			<forward name="error" path="/error.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="print" path="/dailyreport/showMatrixPrint.jsp" />
 		</action>
 		
@@ -184,7 +184,7 @@
 			name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingAction">
 			<forward name="success" path="/dailyreport/showTraining.jsp" />
 			<forward name="error" path="/error.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 		</action>
 
 		<!-- Customer -->
@@ -207,14 +207,14 @@
 
 		<action path="/ShowCustomer" name="showCustomerForm" type="org.tb.customer.action.ShowCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreCustomer" input="/customer/addCustomer.jsp" validate="true"
 			name="addCustomerForm" type="org.tb.customer.action.StoreCustomerAction">
 			<forward name="success" path="/customer/showCustomer.jsp" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/customer/addCustomer.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -241,14 +241,14 @@
 		<action path="/ShowCustomerorder" name="showCustomerOrderForm"
 			type="org.tb.order.action.ShowCustomerorderAction">
 			<forward name="success" path="/order/showCustomerOrder.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreCustomerorder" input="/order/addCustomerOrder.jsp" validate="true"
 			name="addCustomerOrderForm" type="org.tb.order.action.StoreCustomerorderAction">
 			<forward name="success" path="/order/showCustomerOrder.jsp" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/order/addCustomerOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 			<forward name="dummy" path="/order/generateMultipleEmployeeorders.jsp" />
@@ -275,14 +275,14 @@
 
 		<action path="/ShowSuborder" name="showSuborderForm" type="org.tb.order.action.ShowSuborderAction">
 			<forward name="success" path="/order/showSuborder.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreSuborder" input="/order/addSuborder.jsp" validate="true"
 			name="addSuborderForm" type="org.tb.order.action.StoreSuborderAction">
 			<forward name="success" path="/do/ShowSuborder" redirect="true" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/order/addSuborder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -309,14 +309,14 @@
 		<action path="/ShowEmployeeorder" name="showEmployeeOrderForm"
 			type="org.tb.order.action.ShowEmployeeorderAction">
 			<forward name="success" path="/order/showEmployeeOrder.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreEmployeeorder" input="/order/addEmployeeOrder.jsp" validate="true"
 			name="addEmployeeOrderForm" type="org.tb.order.action.StoreEmployeeorderAction">
 			<forward name="success" path="/order/showEmployeeOrder.jsp" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/order/addEmployeeOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -325,7 +325,7 @@
 			name="generateMultipleEmployeeordersForm" type="org.tb.order.action.GenerateMultipleEmployeeordersAction">
 			<forward name="start" path="/order/generateMultipleEmployeeorders.jsp"/>
 			<forward name="success" path="/order/showEmployeeOrder.jsp" redirect="true"/>
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 		</action>
 
 		<!-- Employeecontract -->
@@ -350,14 +350,14 @@
 		<action path="/ShowEmployeecontract" name="showEmployeeContractForm"
 			type="org.tb.employee.action.ShowEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreEmployeecontract" input="/employee/addEmployeeContract.jsp" validate="true"
 			name="addEmployeeContractForm" type="org.tb.employee.action.StoreEmployeecontractAction">
 			<forward name="success" path="/employee/showEmployeeContract.jsp" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployeeContract.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -383,14 +383,14 @@
 
 		<action path="/ShowEmployee" name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeAction">
 			<forward name="success" path="/employee/showEmployee.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
 		<action path="/StoreEmployee" input="/employee/addEmployee.jsp" validate="true"
 			type="org.tb.employee.action.StoreEmployeeAction" name="addEmployeeForm">
 			<forward name="success" path="/employee/showEmployee.jsp" />
-			<forward name="cancel" path="/welcome/showWelcome.jsp" />
+			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/employee/addEmployee.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
@@ -400,7 +400,7 @@
 			name="showInvoiceForm" type="org.tb.invoice.action.ShowInvoiceAction">
 			<forward name="success" path="/invoice/showInvoice.jsp" />
 			<forward name="error" path="/error.jsp" />
-			<forward name="backtomenu" path="/welcome/showWelcome.jsp" />
+			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 			<forward name="print" path="/invoice/showInvoicePrint.jsp" />
 		</action>
 
@@ -432,9 +432,9 @@
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowWelcome" input="/welcome/showWelcome.jsp" validate="true"
+		<action path="/ShowWelcome" input="/dailyreport/showWelcome.jsp" validate="true"
 			name="showWelcomeForm" type="org.tb.dailyreport.action.ShowWelcomeAction">
-			<forward name="success" path="/welcome/showWelcome.jsp" />
+			<forward name="success" path="/dailyreport/showWelcome.jsp" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
