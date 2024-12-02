@@ -66,6 +66,10 @@
 			key="ErrorCodeExceptionHandler"
 			type="org.tb.common.exception.ErrorCodeException"
 			handler="org.tb.common.struts.ErrorCodeExceptionHandler"/>
+		<exception
+			key="servletExceptionHandler"
+			type="jakarta.servlet.ServletException"
+			handler="org.tb.common.struts.ServletExceptionHandler"/>
 	</global-exceptions>
 
 	<!-- =========================================== Global Forward Definitions -->

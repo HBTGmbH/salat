@@ -7,13 +7,17 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ErrorCode {
 
-  CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
-  CU_NOT_FOUND("CU-0002", "the customer was not found!"),
+  AA_REQUIRED("AA-0001", "not authenticated!"),
+  AA_NEEDS_UNRESTRICTED("AA-0002", "not authorized. Unrestricted access required!"),
+  AA_NEEDS_BACKOFFICE("AA-0003", "not authorized. Backoffice level required!"),
+  AA_NEEDS_MANAGER("AA-0004", "not authorized. Manager level required!"),
+  AA_NEEDS_ADMIN("AA-0005", "not authorized. Admin level required!"),
 
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
 
-  EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
+  CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
+  CU_NOT_FOUND("CU-0002", "the customer was not found!"),
 
   EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
   EC_DELETE_GOT_VETO("EC-0002","employee contract suborder be deleted due to veto"),
@@ -22,11 +26,13 @@ public enum ErrorCode {
   EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
   EC_EMPLOYEE_CONTRACT_NOT_FOUND("EC-0006","employeeContractId must match an employee contract"),
 
-  SO_UPDATE_GOT_VETO("SO-0001", "suborder cannot be changed due to veto"),
-  SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),
+  EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),
+
+  SO_UPDATE_GOT_VETO("SO-0001", "suborder cannot be changed due to veto"),
+  SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
@@ -65,11 +71,7 @@ public enum ErrorCode {
   WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
   WD_OUTSIDE_CONTRACT("WD-0011", "the date is outside the validity of the employee contract!"),
 
-  AA_REQUIRED("AA-0001", "not authenticated!"),
-  AA_NEEDS_UNRESTRICTED("AA-0002", "not authorized. Unrestricted access required!"),
-  AA_NEEDS_BACKOFFICE("AA-0003", "not authorized. Backoffice level required!"),
-  AA_NEEDS_MANAGER("AA-0004", "not authorized. Manager level required!"),
-  AA_NEEDS_ADMIN("AA-0005", "not authorized. Admin level required!"),
+  XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   ;
 
   private final String code;

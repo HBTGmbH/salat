@@ -44,7 +44,7 @@ public class DelegatingRequestProcessor extends RequestProcessor {
     return this.webApplicationContext;
   }
 
-  protected Action processActionCreate(HttpServletRequest request, HttpServletResponse response, ActionMapping mapping) throws IOException {
+  protected Action processActionCreate(HttpServletRequest request, HttpServletResponse response, ActionMapping mapping) {
     Action action = this.getDelegateAction(mapping);
     if(action == null) {
       throw new RuntimeException("ouch! no bean found for action with id " + mapping.getActionId() + "(Path=" + mapping.getPath() + ")");
