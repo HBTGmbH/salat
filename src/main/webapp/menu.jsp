@@ -3,10 +3,6 @@
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <script type="text/javascript">
 	$(function() {
-		var err = '<%= session.getAttribute("errors") %>';
-		if (err == 'true') {
-			window.scrollTo(0,document.body.scrollHeight);
-		}
 		$("#nav > li").click(function(){ $(this).toggleClass("over") });
 	});
 </script>

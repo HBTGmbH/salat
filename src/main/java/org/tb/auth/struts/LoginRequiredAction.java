@@ -32,10 +32,6 @@ public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAct
 
     @Override
     public final ActionForward executeWithForm(ActionMapping mapping, F form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (request.getSession().getAttribute("errors") != null) {
-            request.getSession().removeAttribute("errors");
-        }
-
         if (authorizedUser.isAuthenticated() && (isAllowedForRestrictedUsers() || !authorizedUser.isRestricted())) {
             log.trace("entering {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
             try {
