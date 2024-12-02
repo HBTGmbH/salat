@@ -186,13 +186,6 @@
 							</html:submit>
 					</html:form>
 				</td>
-				<td class="noBborderStyle">
-					<html:form action="/GenerateMultipleEmployeeorders?task=initialize">
-						<html:submit styleId="button" titleKey="main.general.button.generatemultipleemployeeorders.alttext.text">
-							<bean:message key="main.general.button.generatemultipleemployeeorders.text" />
-						</html:submit>
-					</html:form>
-				</td>
 			</c:if>
 			<c:if test="${authorizedUser.manager}">
 				<td class="noBborderStyle"> 
@@ -578,13 +571,6 @@
 					<html:form action="/CreateEmployeeorder">
 						<html:submit styleId="button" titleKey="main.general.button.createemployeeorder.alttext.text">
 							<bean:message key="main.general.button.createemployeeorder.text" />
-						</html:submit>
-					</html:form>
-				</td>
-				<td class="noBborderStyle">
-					<html:form action="/GenerateMultipleEmployeeorders?task=initialize">
-						<html:submit styleId="button" titleKey="main.general.button.generatemultipleemployeeorders.alttext.text">
-							<bean:message key="main.general.button.generatemultipleemployeeorders.text" />
 						</html:submit>
 					</html:form>
 				</td>
