@@ -1,5 +1,6 @@
 package org.tb.common.filter;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 
 import jakarta.servlet.FilterChain;
@@ -25,6 +26,8 @@ public class LoggingFilter extends HttpFilter {
       throws IOException, ServletException {
 
     MDC.put("request-uri", request.getRequestURI());
+    MDC.put("request-method", request.getMethod());
+    MDC.put("request-query-string", ofNullable(request.getQueryString()).orElse("<empty>"));
     var data = mdcDataSources.stream()
         .flatMap(ds -> ds.getData().entrySet().stream())
         .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -33,6 +36,8 @@ public class LoggingFilter extends HttpFilter {
     super.doFilter(request, response, chain);
 
     data.keySet().forEach(MDC::remove);
+    MDC.remove("request-query-string");
+    MDC.remove("request-method");
     MDC.remove("request-uri");
   }
 
