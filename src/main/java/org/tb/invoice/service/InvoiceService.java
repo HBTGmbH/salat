@@ -14,6 +14,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -21,6 +22,7 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.invoice.domain.InvoiceData;
 import org.tb.invoice.domain.InvoiceSuborder;
 import org.tb.invoice.domain.InvoiceTimereport;
+import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -61,7 +63,15 @@ public class InvoiceService {
         .reduce(Duration::plus)
         .orElse(ZERO);
 
-    return new InvoiceData(options, invoiceDateRange, customerorder.getSign(), customerorder.getCustomer(), totalDuration, invoiceSuborders);
+    var customerOrderSign = options.isUseCustomerDescriptions() && isCustomerDescriptionAvailable(customerorder) ?
+        customerorder.getOrder_customer() :
+        customerorder.getSignAndDescription();
+
+    return new InvoiceData(options, invoiceDateRange, customerOrderSign, customerorder.getCustomer(), totalDuration, invoiceSuborders);
+  }
+
+  private static boolean isCustomerDescriptionAvailable(Customerorder customerorder) {
+    return StringUtils.hasText(customerorder.getOrder_customer());
   }
 
   @Builder

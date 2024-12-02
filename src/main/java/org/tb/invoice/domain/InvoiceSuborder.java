@@ -41,6 +41,19 @@ public class InvoiceSuborder implements Serializable {
         .divide(BigDecimal.valueOf(MINUTES_PER_HOUR), 2, RoundingMode.HALF_UP);
   }
 
+  public Duration getTotalDurationVisible() {
+    if(!visible) return ZERO;
+    return timereports.stream()
+        .filter(InvoiceTimereport::isVisible)
+        .map(InvoiceTimereport::getDuration)
+        .reduce(ZERO, Duration::plus);
+  }
 
+  public BigDecimal getTotalHoursVisible() {
+    if(!visible) return BigDecimal.ZERO;
+    return BigDecimal
+        .valueOf(getTotalDurationVisible().toMinutes())
+        .divide(BigDecimal.valueOf(MINUTES_PER_HOUR), 2, RoundingMode.HALF_UP);
+  }
 
 }

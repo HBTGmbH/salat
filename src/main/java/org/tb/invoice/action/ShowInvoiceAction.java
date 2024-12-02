@@ -190,8 +190,8 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
 
   private static String createFileName(InvoiceData invoiceData) {
     var fileName = "rechnung-" + invoiceData.getCustomerOrderSign() +
-                   "-" + DateUtils.format(invoiceData.getInvoiceDateRange().getFrom(), "dd.MM.yy") +
-                   "-" + DateUtils.format(invoiceData.getInvoiceDateRange().getUntil(), "dd.MM.yy") +
+                   "-" + DateUtils.format(invoiceData.getBillingPeriod().getFrom(), "dd.MM.yy") +
+                   "-" + DateUtils.format(invoiceData.getBillingPeriod().getUntil(), "dd.MM.yy") +
                    "-erzeugt-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
                    ".xlsx";
     var sanitizedFileName = fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");

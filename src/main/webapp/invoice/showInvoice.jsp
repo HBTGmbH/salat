@@ -409,7 +409,7 @@
 					</tr>
 					<c:forEach var="invoiceSuborder" items="${invoiceData.suborders}">
 						<tr>
-							<td>
+							<td class="noBborderStyle">
 								<html:multibox property="suborderIdArray" value="${invoiceSuborder.id}" onclick="updateVisible(this.form)" />
 							</td>
 							<td>
@@ -429,7 +429,7 @@
 							</c:if>
 							<c:if test="${showInvoiceForm.targethoursbox}">
 								<td style="text-align: right;">
-									<fmt:formatNumber value="${invoiceSuborder.budget}" minFractionDigits="2" maxFractionDigits="2" />
+									<java8:formatDuration value="${invoiceSuborder.budget}" />
 								</td>
 							</c:if>
 							<td style="text-align: right;">
@@ -443,7 +443,7 @@
 							<tr>
 								<%-- Empty cell for suborderprintcheckbox --%>
 								<td class="noBborderStyle"></td>
-								<td align="right">
+								<td align="right" class="noBborderStyle">
 									<html:multibox property="timereportIdArray" value="${invoiceTimereport.id}" onclick="updateVisible(this.form)" />
 								</td>
 								<td>
@@ -480,28 +480,22 @@
 							&nbsp;
 						</td>
 						<c:if test="${showInvoiceForm.timereportsbox}">
-							<td class="noBborderStyle">
-								&nbsp;
-							</td>
-						</c:if>
-						<c:if
-							test="${showInvoiceForm.employeesignbox && showInvoiceForm.timereportsbox}">
-							<td class="noBborderStyle">
-								&nbsp;
-							</td>
+							<td class="noBborderStyle"></td>
+							<c:if test="${showInvoiceForm.employeesignbox}">
+								<td class="noBborderStyle"></td>
+							</c:if>
+							<c:if test="${showInvoiceForm.timereportdescriptionbox}">
+								<td class="noBborderStyle">
+								<c:if test="${not showInvoiceForm.targethoursbox}">
+									<bean:message key="main.invoice.overall.text" />
+								</c:if>
+								</td>
+							</c:if>
 						</c:if>
 						<c:if test="${showInvoiceForm.targethoursbox}">
-							<td class="noBborderStyle"></td>
-							<td class="noBborderStyle" style="text-align: right;">
-								<bean:message key="main.invoice.overall.text" />
-							</td>
+							<td class="noBborderStyle"><bean:message key="main.invoice.overall.text" /></td>
 						</c:if>
-						<c:if test="${not showInvoiceForm.targethoursbox}">
-							<td class="noBborderStyle" style="text-align:right;">
-								<b><bean:message key="main.invoice.overall.text" /></b>
-							</td>
-						</c:if>
-						<th style="text-align: right;">
+						<th style="text-align: right">
 							<java8:formatDuration value="${invoiceData.totalDurationVisible}" /><br/>
 						</th>
 						<th style="text-align: right;">

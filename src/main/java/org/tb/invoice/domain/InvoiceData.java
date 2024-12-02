@@ -16,7 +16,7 @@ import org.tb.invoice.service.InvoiceService.InvoiceOptions;
 public class InvoiceData {
 
   private final InvoiceOptions invoiceOptions;
-  private final LocalDateRange invoiceDateRange;
+  private final LocalDateRange billingPeriod;
   private final String customerOrderSign;
   private final Customer customer;
   private final Duration totalDuration;
@@ -30,10 +30,7 @@ public class InvoiceData {
 
   public Duration getTotalDurationVisible() {
     return suborders.stream()
-        .filter(InvoiceSuborder::isVisible)
-        .flatMap(invoiceSuborder -> invoiceSuborder.getTimereports().stream())
-        .filter(InvoiceTimereport::isVisible)
-        .map(InvoiceTimereport::getDuration)
+        .map(InvoiceSuborder::getTotalDurationVisible)
         .reduce(ZERO, Duration::plus);
   }
 
