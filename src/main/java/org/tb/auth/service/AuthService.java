@@ -61,7 +61,7 @@ public class AuthService {
     }
   }
 
-  @Authorized(requiresManager = true)
+  @Authorized
   public void switchLogin(String sign) {
     authorizedUser.setSign(sign);
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
