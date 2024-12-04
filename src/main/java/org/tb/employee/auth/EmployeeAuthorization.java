@@ -14,13 +14,15 @@ import org.tb.employee.domain.Employee;
 @RequiredArgsConstructor
 public class EmployeeAuthorization {
 
+  private static final String AUTH_CATEGORY_EMPLOYEE = "EMPLOYEE";
+
   private final AuthService authService;
   private final AuthorizedUser authorizedUser;
 
   public boolean isAuthorized(Employee employee, AccessLevel accessLevel) {
     if(accessLevel == LOGIN) {
       if(employee.getSign().equals(authorizedUser.getLoginSign())) return true;
-      return authService.isAuthorizedAnyObject(employee.getSign(), "EMPLOYEE", today(), LOGIN);
+      return authService.isAuthorizedAnyObject(employee.getSign(), AUTH_CATEGORY_EMPLOYEE, today(), LOGIN, true);
     }
 
     if(authorizedUser.isManager()) return true;

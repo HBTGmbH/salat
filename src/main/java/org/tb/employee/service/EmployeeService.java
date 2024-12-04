@@ -1,6 +1,7 @@
 package org.tb.employee.service;
 
 import static org.tb.auth.domain.AccessLevel.LOGIN;
+import static org.tb.common.exception.ErrorCode.AA_REQUIRED;
 import static org.tb.common.exception.ErrorCode.EM_DELETE_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
@@ -8,12 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.employee.auth.EmployeeAuthorization;
@@ -22,6 +25,7 @@ import org.tb.employee.event.EmployeeDeleteEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -35,13 +39,20 @@ public class EmployeeService {
   private final EmployeeAuthorization employeeAuthorization;
 
   public Employee getLoginEmployee() {
-    return employeeDAO.getLoginEmployee(authorizedUser.getLoginSign());
+    var loginEmployee = employeeDAO.getLoginEmployee(authorizedUser.getSign()); // do not use loginSign!!!
+    var allowedLoginEmployees = getLoginEmployees();
+    if(!allowedLoginEmployees.contains(loginEmployee)) {
+      log.warn("User {} tried to impersonate {}. This was not authorized!", authorizedUser.getLoginSign(), authorizedUser.getSign());
+      throw new AuthorizationException(AA_REQUIRED);
+    }
+    return loginEmployee;
   }
 
   public List<Employee> getLoginEmployees() {
-    return StreamSupport
-        .stream(employeeRepository.findAll().spliterator(), false)
-        .filter(e -> e.getSign().equals(authorizedUser.getLoginSign()) || employeeAuthorization.isAuthorized(e, LOGIN))
+    var employees = StreamSupport
+        .stream(employeeRepository.findAll().spliterator(), false).toList();
+    return employees.stream()
+        .filter(e -> employeeAuthorization.isAuthorized(e, LOGIN))
         .toList();
   }
 
