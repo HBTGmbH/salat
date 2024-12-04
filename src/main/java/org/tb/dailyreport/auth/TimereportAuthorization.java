@@ -14,6 +14,8 @@ import org.tb.dailyreport.domain.Timereport;
 @RequiredArgsConstructor
 public class TimereportAuthorization {
 
+  private static final String AUTH_CATEGORY_TIMEREPORT = "TIMEREPORT";
+
   private final AuthorizedUser authorizedUser;
   private final AuthService authService;
 
@@ -40,7 +42,7 @@ public class TimereportAuthorization {
     var date = timereport.getReferenceday().getRefdate();
     var customerOrderSign = timereport.getSuborder().getCustomerorder().getSign();
     var suborderSign = timereport.getSuborder().getCompleteOrderSign();
-    return authService.isAuthorized(grantor, "TIMEREPORT", date, accessLevel, customerOrderSign, suborderSign);
+    return authService.isAuthorized(grantor, AUTH_CATEGORY_TIMEREPORT, date, accessLevel, customerOrderSign, suborderSign);
   }
 
 }

@@ -4,6 +4,7 @@ import static java.lang.String.valueOf;
 import static java.util.Comparator.comparing;
 import static org.tb.common.util.DateUtils.today;
 
+import java.io.Serializable;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +19,8 @@ import org.tb.reporting.domain.ReportDefinition;
 @AllArgsConstructor
 public class ReportAuthorization {
 
+  private static final String AUTH_CATEGORY_REPORT_DEFINITION = "REPORT_DEFINITION";
+
   private final AuthorizedUser authorizedUser;
   private final AuthService authService;
 
@@ -25,18 +28,18 @@ public class ReportAuthorization {
     if (authorizedUser.isManager()) {
       return true;
     }
-    return authService.isAuthorized("REPORT_DEFINITION", today(), accessLevel, valueOf(report.getId()));
+    return authService.isAuthorized(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel, valueOf(report.getId()));
   }
 
   public boolean isAuthorizedForAnyReportDefinition(AccessLevel accessLevel) {
     if (authorizedUser.isManager()) {
       return true;
     }
-    return authService.isAuthorizedAnyObject("REPORT_DEFINITION", today(), accessLevel);
+    return authService.isAuthorizedAnyObject(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel);
   }
 
   public List<ReportAuthorizationInfo> getAuthorizations(ReportDefinition report) {
-    var rules = authService.getAuthRules("REPORT_DEFINITION", valueOf(report.getId()));
+    var rules = authService.getAuthRules(AUTH_CATEGORY_REPORT_DEFINITION, valueOf(report.getId()));
     return rules.stream()
         .map(r -> new ReportAuthorizationInfo(
             r.getGranteeId(),
@@ -52,7 +55,7 @@ public class ReportAuthorization {
   }
 
   @Data
-  public static class ReportAuthorizationInfo {
+  public static class ReportAuthorizationInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
