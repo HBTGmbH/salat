@@ -34,7 +34,7 @@ import org.tb.common.SalatProperties;
 @RequiredArgsConstructor
 public class AuthService {
 
-  private static final String ALL_OBJECTS = "*";
+  private static final String ANY_MATCH = "*";
 
   private final AuthorizedUser authorizedUser;
   private final AuthorizationRuleRepository authorizationRuleRepository;
@@ -72,24 +72,29 @@ public class AuthService {
       if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
-      return ALL_OBJECTS.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
+      return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
     });
   }
 
   public boolean isAuthorized(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
       if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
-      if(rule.getGrantorId() != null && !ALL_OBJECTS.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
+      if(rule.getGrantorId() != null && !ANY_MATCH.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
-      return ALL_OBJECTS.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
+      return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
     });
   }
 
   public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel) {
+    return isAuthorizedAnyObject(grantorSign, category, date, accessLevel, false);
+  }
+
+  public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, boolean useLoginSign) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
-      if(rule.getGrantorId() != null && !ALL_OBJECTS.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
+      String userSign = useLoginSign ? authorizedUser.getLoginSign() : authorizedUser.getSign();
+      if(!userSign.equals(rule.getGranteeId()) && !ANY_MATCH.equals(rule.getGranteeId())) return false;
+      if(rule.getGrantorId() != null && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return true;
@@ -108,7 +113,7 @@ public class AuthService {
   public List<Rule> getAuthRules(String category, String objectId) {
     ensureUpToDateCache();
     return cacheEntries.getOrDefault(category, Set.of()).stream()
-        .filter(r -> ALL_OBJECTS.equals(r.getObjectId()) || objectId.equals(r.getObjectId()))
+        .filter(r -> ANY_MATCH.equals(r.getObjectId()) || objectId.equals(r.getObjectId()))
         .toList();
   }
 
@@ -130,7 +135,7 @@ public class AuthService {
                       rule.getGrantorId(),
                       granteeId,
                       new LocalDateRange(rule.getValidFrom(), rule.getValidUntil()),
-                      ALL_OBJECTS,
+                      ANY_MATCH,
                       accessLevel
                   )
               );
