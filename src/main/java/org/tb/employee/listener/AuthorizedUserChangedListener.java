@@ -37,7 +37,7 @@ public class AuthorizedUserChangedListener {
   public void onAuthorizedUserChanged(AuthorizedUserChangedEvent event) {
 
     Employee loginEmployee = employeeService.getLoginEmployee();
-    // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
+
     if (loginEmployee == null) {
       log.error("No matching employee found for {}.", authorizedUser.getSign());
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getSign());
@@ -45,8 +45,6 @@ public class AuthorizedUserChangedListener {
 
     LocalDate today = today();
     Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), today);
-
-    // TODO dieser Check sollte im Rahmen der Authentifizierung geschehen - ist hier eigentlich zu spät
     if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
       log.error("No valid contract found for {}.", loginEmployee.getSign());
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
