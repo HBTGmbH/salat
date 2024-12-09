@@ -718,36 +718,35 @@
 							</td>
 						</tr>
 					</c:if>
-					<c:if test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
-						<tr>
-							<td colspan="10" class="noBborderStyle">
-								<table class="center backgroundcolor">
-									<tr>
-										<html:form action="/CreateSuborder">
-											<td class="noBborderStyle">
-												<html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
-													<bean:message key="main.general.button.createsuborder.text" />
-												</html:submit>
-											</td>
-										</html:form>
-										<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
-											<html:form action="/ShowSuborder">
-												<td class="noBborderStyle">
-													<html:submit styleId="button" onclick="setflag(this.form)" titleKey="main.general.button.setflag.alttext.text">
-														<bean:message key="main.general.button.setflag.text" />
-													</html:submit>
-												</td>
-											</html:form>
-										</c:if>
-									</tr>
-								</table>
-							</td>
-
-						</tr>
-					</c:if>
 				</c:otherwise>
 			</c:choose>
 		</html:form>
+		<c:if test="${(authorizedUser.manager && visibleOrdersPresent) || employeeIsResponsible}">
+			<tr>
+				<td colspan="10" class="noBborderStyle">
+					<table class="center backgroundcolor">
+						<tr>
+							<html:form action="/CreateSuborder">
+								<td class="noBborderStyle">
+									<html:submit styleId="button" titleKey="main.general.button.createsuborder.alttext.text">
+										<bean:message key="main.general.button.createsuborder.text" />
+									</html:submit>
+								</td>
+							</html:form>
+							<c:if test="${(authorizedUser.manager || suborder.customerorder.responsible_hbt.id == loginEmployee.id)}">
+								<html:form action="/ShowSuborder">
+									<td class="noBborderStyle">
+										<html:submit styleId="button" onclick="setflag(this.form)" titleKey="main.general.button.setflag.alttext.text">
+											<bean:message key="main.general.button.setflag.text" />
+										</html:submit>
+									</td>
+								</html:form>
+							</c:if>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</c:if>
 	</table>
 </body>
 </html:html>
