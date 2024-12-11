@@ -69,19 +69,6 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
       if(form.isTimereportdescriptionbox()) dynamicColumnCount++;
       request.getSession().setAttribute("dynamicColumnCount", dynamicColumnCount);
 
-    } else if ("updateVisible".equals(task)) {
-      var invoiceData = (InvoiceData) request.getSession().getAttribute("invoiceData");
-
-      // set visibility to true if found in arrays
-      var suborderIds = stream(form.getSuborderIdArray()).boxed().toList();
-      var timereportIds = stream(form.getTimereportIdArray()).boxed().toList();
-
-      for (var invoiceSuborder : invoiceData.getSuborders()) {
-        invoiceSuborder.setVisible(suborderIds.contains(invoiceSuborder.getId()));
-        for(var invoiceTimereport : invoiceSuborder.getTimereports()) {
-          invoiceTimereport.setVisible(timereportIds.contains(invoiceTimereport.getId()));
-        }
-      }
     } else if ("generateMaximumView".equals(task)) {
       if (isOrderSelected(form)) {
 
@@ -130,6 +117,8 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
         request.getSession().setAttribute("invoiceData", invoiceData);
       }
     } else if ("print".equals(task)) {
+      updateVisibleFlags(form, request);
+
       String invoiceSettingsName = ofNullable(request.getParameter("invoice-settings")).orElse("HBT");
       InvoiceSettings invoiceSettings = invoiceSettingsService.getAllSettings()
           .stream()
@@ -145,6 +134,8 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
 
       return mapping.findForward("print");
     } else if ("export".equals(task)) {
+      updateVisibleFlags(form, request);
+
       var invoiceData = (InvoiceData) request.getSession().getAttribute("invoiceData");
       try (ServletOutputStream out = response.getOutputStream()) {
         var bytes = excelExportService.exportToExcel(invoiceData, form);
@@ -170,6 +161,20 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
       form.init(getResources(request), getLocale(request));
     }
     return mapping.findForward("success");
+  }
+
+  private static void updateVisibleFlags(ShowInvoiceForm form, HttpServletRequest request) {
+    var invoiceData = (InvoiceData) request.getSession().getAttribute("invoiceData");
+
+    var suborderIds = stream(form.getSuborderIdArray()).boxed().toList();
+    var timereportIds = stream(form.getTimereportIdArray()).boxed().toList();
+
+    for (var invoiceSuborder : invoiceData.getSuborders()) {
+      invoiceSuborder.setVisible(suborderIds.contains(invoiceSuborder.getId()));
+      for(var invoiceTimereport : invoiceSuborder.getTimereports()) {
+        invoiceTimereport.setVisible(timereportIds.contains(invoiceTimereport.getId()));
+      }
+    }
   }
 
   private static InvoiceOptions getInvoiceOptions(ShowInvoiceForm form) {

@@ -28,11 +28,6 @@
 				form.action = "/do/ShowInvoice?task=print";
 				form.submit();
 			}
-			function updateVisible(form) {
-				form.target = "_self";
-				form.action = "/do/ShowInvoice?task=updateVisible";
-				form.submit();
-			}
 
 			$(document).ready(function() {
 				$(".make-select2").select2({
@@ -410,7 +405,7 @@
 					<c:forEach var="invoiceSuborder" items="${invoiceData.suborders}">
 						<tr>
 							<td class="noBborderStyle">
-								<html:multibox property="suborderIdArray" value="${invoiceSuborder.id}" onclick="updateVisible(this.form)" />
+								<html:multibox property="suborderIdArray" value="${invoiceSuborder.id}" />
 							</td>
 							<td>
 								<c:out value="${invoiceSuborder.orderDescription}"></c:out>
@@ -444,7 +439,7 @@
 								<%-- Empty cell for suborderprintcheckbox --%>
 								<td class="noBborderStyle"></td>
 								<td align="right" class="noBborderStyle">
-									<html:multibox property="timereportIdArray" value="${invoiceTimereport.id}" onclick="updateVisible(this.form)" />
+									<html:multibox property="timereportIdArray" value="${invoiceTimereport.id}" />
 								</td>
 								<td>
 									<java8:formatLocalDate value="${invoiceTimereport.referenceDay}" pattern="dd.MM.yyyy" />
