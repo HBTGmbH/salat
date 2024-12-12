@@ -157,9 +157,13 @@ public class EmployeeorderService {
       var existingValidity = employeeorder.getValidity();
       var updating = existingValidity.overlaps(newValidity);
       if(updating) {
-        adjustValidity(employeeorder.getId(), newValidity);
-        if(isVacationOrder(employeeorder)) {
-          adjustVacationBudget(employeeorder);
+        if(!newValidity.contains(existingValidity)) {
+          // new validity does not contain the validity of the employee order, thus we need to reduce it to fit in
+          adjustValidity(employeeorder.getId(), newValidity);
+          // ensure correct reduction of vacation budget
+          if(isVacationOrder(employeeorder)) {
+            adjustVacationBudget(employeeorder);
+          }
         }
       } else {
         deleteEmployeeorderById(employeeorder.getId());
