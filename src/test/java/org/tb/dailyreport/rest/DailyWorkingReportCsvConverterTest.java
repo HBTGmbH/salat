@@ -39,7 +39,7 @@ class DailyWorkingReportCsvConverterTest {
                 Arguments.of(
                         """
                                 date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
-                                
+                                ,,,,,,,,,,some comment
                                 2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111.01,Stuhlpolsterung,00:30,Team-Mittag
                                 2024-11-04,,,,183209,111,Rumsitzen,111.01,Stuhlpolsterung,07:30,Daily
                                 """,

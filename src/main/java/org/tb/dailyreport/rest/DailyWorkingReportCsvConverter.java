@@ -89,7 +89,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
     @SneakyThrows
     private static List<DailyWorkingReportData> fromRows(List<CsvRow> rows) {
         return rows.stream()
-                .filter(not(CsvRow.EMPTY::equals))
+                .filter(not(DailyWorkingReportCsvConverter::isEmptyRow))
                 .collect(groupingBy(CsvRow::getDate)).entrySet().stream()
                 .map(entry -> Map.entry(getUniqueWorkingDayRow(entry.getKey(), entry.getValue()), entry.getValue()))
                 .map(entry ->  DailyWorkingReportData.builder()
@@ -114,8 +114,11 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return workingDayRows.getFirst();
     }
 
+    private static boolean isEmptyRow(CsvRow row) {
+        return row.getDate() == null;
+    }
+
     private static boolean isEmptyWorkingDayRow(CsvRow row) {
-        if(row.getDate() == null) return true; // date is empty
         if(row.getType() == WorkingDayType.NOT_WORKED) return false; // only date required for NOT_WORKED
 
         // if start time or break time is missing, it is considered empty for other work types
