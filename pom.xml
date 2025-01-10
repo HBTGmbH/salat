@@ -26,7 +26,7 @@
     <guava.version>33.4.0-jre</guava.version>
     <jettison.version>1.5.4</jettison.version>
     <commons-email.version>1.6.0</commons-email.version>
-    <poi.version>5.3.0</poi.version>
+    <poi.version>5.4.0</poi.version>
     <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
     <jstl-api.version>3.0.2</jstl-api.version>
     <jstl.version>3.0.1</jstl.version>
