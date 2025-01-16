@@ -1,6 +1,7 @@
 package org.tb.order.viewhelper;
 
 import java.time.Duration;
+import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.tb.common.GlobalConstants;
 import org.tb.order.domain.Employeeorder;
@@ -12,6 +13,7 @@ public class EmployeeOrderViewDecorator extends Employeeorder {
     @Delegate
     private final Employeeorder employeeOrder;
 
+    @Getter
     private final Duration duration;
 
     public EmployeeOrderViewDecorator(EmployeeorderService employeeorderService, Employeeorder employeeOrder) {
@@ -19,14 +21,10 @@ public class EmployeeOrderViewDecorator extends Employeeorder {
         this.duration = employeeorderService.getTotalDuration(employeeOrder.getId());
     }
 
-    public Duration getDuration() {
-        return this.duration;
-    }
-
     public Duration getDifference() {
         if ((this.employeeOrder.getDebithours() != null && this.employeeOrder.getDebithours().toMinutes() > 0)
                 && (this.employeeOrder.getDebithoursunit() == null || this.employeeOrder.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
-            return this.employeeOrder.getDebithours().minus(getDuration());
+            return this.employeeOrder.getDebithours().minus(this.duration);
         } else {
             return null;
         }

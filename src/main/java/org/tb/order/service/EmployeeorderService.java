@@ -279,7 +279,7 @@ public class EmployeeorderService {
         .orderIds(List.of(employeeorderId))
         .build();
     commandPublisher.publish(command);
-    return command.getResult().get(employeeorderId);
+    return command.getResult().getOrDefault(employeeorderId, Duration.ZERO);
   }
 
   private void adjustValidity(long employeeorderId, LocalDateRange newValidity) {
