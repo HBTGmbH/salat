@@ -1,9 +1,12 @@
 package org.tb.invoice.action;
 
+import static java.util.stream.StreamSupport.longStream;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Locale;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,12 +14,13 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.tb.common.GlobalConstants;
+import org.tb.common.struts.PopulateAware;
 import org.tb.common.util.DateUtils;
 import org.tb.invoice.service.ExcelExportService.InvoiceColumnHeaders;
 
 @Getter
 @Setter
-public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders {
+public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders, PopulateAware {
 
     private static final long serialVersionUID = 1L; // -5141807789236654602L;
     private String invoiceview;
@@ -134,4 +138,15 @@ public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders 
     return titleactualhourstext;
   }
 
+  @Override
+  public void postPopulate(HttpServletRequest request, HttpServletResponse response, ActionMapping mapping) {
+    if(orderId != null && orderId == 0L) {
+      orderId = null;
+    }
+    if(suborderId != null && suborderId == 0L) {
+      suborderId = null;
+    }
+    suborderIdArray = longStream(Arrays.spliterator(suborderIdArray), false).filter(id -> id != 0).toArray();
+    timereportIdArray = longStream(Arrays.spliterator(timereportIdArray), false).filter(id -> id != 0).toArray();
+  }
 }

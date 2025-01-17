@@ -27,6 +27,7 @@ public class DelegatingRequestProcessor extends RequestProcessor {
 
   private WebApplicationContext webApplicationContext;
 
+  @Override
   public void init(ActionServlet actionServlet, ModuleConfig moduleConfig) throws ServletException {
     super.init(actionServlet, moduleConfig);
     if (actionServlet != null) {
@@ -34,36 +35,13 @@ public class DelegatingRequestProcessor extends RequestProcessor {
     }
   }
 
-  protected WebApplicationContext initWebApplicationContext(ActionServlet actionServlet) throws IllegalStateException {
-    WebApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(actionServlet.getServletContext());
-    context.getServletContext().setAttribute("salatProperties", context.getBean(SalatProperties.class));
-    return context;
-  }
-
-  protected final WebApplicationContext getWebApplicationContext() {
-    return this.webApplicationContext;
-  }
-
+  @Override
   protected Action processActionCreate(HttpServletRequest request, HttpServletResponse response, ActionMapping mapping) {
     Action action = this.getDelegateAction(mapping);
     if(action == null) {
       throw new RuntimeException("ouch! no bean found for action with id " + mapping.getActionId() + "(Path=" + mapping.getPath() + ")");
     }
     return action;
-  }
-
-  protected Action getDelegateAction(ActionMapping mapping) throws BeansException {
-    Class<?> actionClassType = this.determineActionClass(mapping);
-    return (Action) this.getWebApplicationContext().getBean(actionClassType);
-  }
-
-  @SneakyThrows
-  public static Class<?> determineActionClass(ActionMapping mapping) {
-    if(mapping.getType() == null) {
-      throw new RuntimeException("Missing type attribute in struts-config.xml action declaration for path " + mapping.getPath());
-    }
-    String actionClassName = mapping.getType();
-    return ClassUtils.forName(actionClassName, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
@@ -83,6 +61,30 @@ public class DelegatingRequestProcessor extends RequestProcessor {
     }
   }
 
+  @Override
+  protected void processPopulate(HttpServletRequest request, HttpServletResponse response, ActionForm form,
+      ActionMapping mapping) throws ServletException {
+    super.processPopulate(request, response, form, mapping);
+    if(form instanceof PopulateAware aware) {
+      aware.postPopulate(request, response, mapping);
+    }
+  }
+
+  private WebApplicationContext initWebApplicationContext(ActionServlet actionServlet) throws IllegalStateException {
+    WebApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(actionServlet.getServletContext());
+    context.getServletContext().setAttribute("salatProperties", context.getBean(SalatProperties.class));
+    return context;
+  }
+
+  private final WebApplicationContext getWebApplicationContext() {
+    return this.webApplicationContext;
+  }
+
+  private Action getDelegateAction(ActionMapping mapping) throws BeansException {
+    Class<?> actionClassType = this.determineActionClass(mapping);
+    return (Action) this.getWebApplicationContext().getBean(actionClassType);
+  }
+
   private static ActionForm getActionForm(HttpServletRequest request, ActionMapping mapping) {
     if ("request".equals(mapping.getScope())) {
       return (ActionForm) request.getAttribute(mapping.getAttribute());
@@ -90,4 +92,14 @@ public class DelegatingRequestProcessor extends RequestProcessor {
     HttpSession session = request.getSession();
     return (ActionForm) session.getAttribute(mapping.getAttribute());
   }
+
+  @SneakyThrows
+  private static Class<?> determineActionClass(ActionMapping mapping) {
+    if(mapping.getType() == null) {
+      throw new RuntimeException("Missing type attribute in struts-config.xml action declaration for path " + mapping.getPath());
+    }
+    String actionClassName = mapping.getType();
+    return ClassUtils.forName(actionClassName, Thread.currentThread().getContextClassLoader());
+  }
+
 }
