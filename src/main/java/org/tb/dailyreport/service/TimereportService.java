@@ -625,6 +625,8 @@ public class TimereportService {
           .toList();
       event.veto(errors);
     }
+    var deletedCount = timereportRepository.hardDeleteSoftDeletedByEmployeeorderId(employeeorderId); // ensure no soft deleted timereport exists
+    log.info("{} soft deleted timereports were deleted to allow deletion of employee order {}.", deletedCount, employeeorderId);
   }
 
   @EventListener
