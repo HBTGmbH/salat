@@ -24,7 +24,6 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
-@Disabled
 @AnalyzeClasses(packages = "org.tb", importOptions = {DoNotIncludeTests.class, DoNotIncludeJars.class, DoNotIncludeGradleTestFixtures.class})
 public class ArchitectureTest {
 
@@ -77,7 +76,7 @@ public class ArchitectureTest {
         .that().areNotAnnotatedWith(Service.class).and().haveSimpleNameNotEndingWith("DAO")
         .should().accessClassesThat().areAnnotatedWith(Repository.class);
 
-  @ArchTest
+  // TODO @ArchTest
   static final ArchRule accessEntitiesOnlyInServicesOrDAOs = priority(HIGH).noClasses()
         .that().areNotAnnotatedWith(Entity.class)
         .and().areNotAnnotatedWith(Repository.class)
@@ -85,7 +84,7 @@ public class ArchitectureTest {
         .and().haveSimpleNameNotEndingWith("DAO")
         .should().accessClassesThat().areAnnotatedWith(Entity.class);
 
-  @ArchTest
+  // TODO @ArchTest
   static final ArchRule noEntityInPublicInterfaceOfService = priority(HIGH).methods()
       .that().areDeclaredInClassesThat().areAnnotatedWith(Service.class).and().areNotPrivate()
       .should(new ArchCondition<JavaMethod>("not have JPA entities in their signature") {
