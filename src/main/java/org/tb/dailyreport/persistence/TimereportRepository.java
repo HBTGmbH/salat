@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.CrudRepository;
@@ -137,5 +139,9 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       where tr.employeeorder.id in (:ids) group by tr.employeeorder.id
   """)
   List<Long[]> getReportedMinutesForEmployeeordersAsMap(List<Long> ids);
+
+  @Modifying
+  @NativeQuery("DELETE FROM timereport t WHERE t.employeeorder_id = :employeeorderId and t.deleted = true")
+  int hardDeleteSoftDeletedByEmployeeorderId(Long employeeorderId);
 
 }
