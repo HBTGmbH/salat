@@ -1,10 +1,10 @@
 package org.tb.invoice.action;
 
 import static java.util.stream.StreamSupport.longStream;
+import static java.util.stream.StreamSupport.stream;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Locale;
@@ -14,13 +14,12 @@ import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.util.MessageResources;
 import org.tb.common.GlobalConstants;
-import org.tb.common.struts.PopulateAware;
 import org.tb.common.util.DateUtils;
 import org.tb.invoice.service.ExcelExportService.InvoiceColumnHeaders;
 
 @Getter
 @Setter
-public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders, PopulateAware {
+public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders {
 
     private static final long serialVersionUID = 1L; // -5141807789236654602L;
     private String invoiceview;
@@ -30,8 +29,8 @@ public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders,
     private String untilMonth;
     private String fromYear;
     private String untilYear;
-    private Long orderId;
-    private Long suborderId;
+    private String orderId;
+    private String suborderId;
     private String suborderdescription;
     private boolean timereportsbox;
     private boolean customeridbox;
@@ -41,8 +40,8 @@ public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders,
     private boolean invoicebox;
     private boolean fixedpricebox;
     private int fromWeek;
-    private long[] suborderIdArray;
-    private long[] timereportIdArray;
+    private String[] suborderIdArray;
+    private String[] timereportIdArray;
     private String titlesubordertext;
     private String titledatetext;
     private String titleemployeesigntext;
@@ -92,8 +91,8 @@ public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders,
         invoicebox = false;
         fixedpricebox = false;
         showOnlyValid = false;
-        suborderIdArray = new long[0];
-        timereportIdArray = new long[0];
+        suborderIdArray = new String[0];
+        timereportIdArray = new String[0];
     }
 
     public String getCustomeraddressFormatted() {
@@ -138,15 +137,50 @@ public class ShowInvoiceForm extends ActionForm implements InvoiceColumnHeaders,
     return titleactualhourstext;
   }
 
-  @Override
-  public void postPopulate(HttpServletRequest request, HttpServletResponse response, ActionMapping mapping) {
-    if(orderId != null && orderId == 0L) {
-      orderId = null;
-    }
-    if(suborderId != null && suborderId == 0L) {
-      suborderId = null;
-    }
-    suborderIdArray = longStream(Arrays.spliterator(suborderIdArray), false).filter(id -> id != 0).toArray();
-    timereportIdArray = longStream(Arrays.spliterator(timereportIdArray), false).filter(id -> id != 0).toArray();
+  public Long getOrderIdTyped() {
+      if(orderId == null || orderId.isBlank()) {
+        return null;
+      }
+      return Long.parseLong(orderId);
   }
+
+  public void setOrderIdTyped(Long orderId) {
+      if(orderId == null) {
+        this.orderId = null;
+      } else {
+        this.orderId = orderId.toString();
+      }
+  }
+
+  public Long getSuborderIdTyped() {
+      if(suborderId == null || suborderId.isBlank()) {
+        return null;
+      }
+      return Long.parseLong(suborderId);
+  }
+
+  public void setSuborderIdTyped(Long suborderId) {
+      if(suborderId == null) {
+        this.suborderId = null;
+      } else {
+        this.suborderId = suborderId.toString();
+      }
+  }
+
+  public long[] getSuborderIdArrayTyped() {
+    return stream(Arrays.spliterator(suborderIdArray), false).filter(id -> id != null && !id.isBlank()).mapToLong(Long::parseLong).toArray();
+  }
+
+  public void setSuborderIdArrayTyped(long[] suborderIdArray) {
+    this.suborderIdArray = longStream(Arrays.spliterator(suborderIdArray), false).mapToObj(Long::toString).toArray(String[]::new);
+  }
+
+  public long[] getTimereportIdArrayTyped() {
+    return stream(Arrays.spliterator(timereportIdArray), false).filter(id -> id != null && !id.isBlank()).mapToLong(Long::parseLong).toArray();
+  }
+
+  public void setTimereportIdArrayTyped(long[] timereportIdArray) {
+    this.timereportIdArray = longStream(Arrays.spliterator(timereportIdArray), false).mapToObj(Long::toString).toArray(String[]::new);
+  }
+
 }

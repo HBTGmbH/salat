@@ -52,7 +52,7 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
 
     String task = request.getParameter("task");
     if ("updateOptions".equals(task)) {
-      List<Suborder> suborders = ofNullable(form.getOrderId())
+      List<Suborder> suborders = ofNullable(form.getOrderIdTyped())
           .map(orderId -> suborderService.getSubordersByCustomerorderId(orderId, form.isShowOnlyValid()).stream()
               .sorted(SubOrderComparator.INSTANCE)
               .toList()
@@ -91,8 +91,8 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
             return mapping.getInputForward();
         }
 
-        var customerorderId = form.getOrderId();
-        var suborderId = ofNullable(form.getSuborderId());
+        var customerorderId = form.getOrderIdTyped();
+        var suborderId = ofNullable(form.getSuborderIdTyped());
         var validity = new LocalDateRange(dateFirst, dateLast);
         var options = getInvoiceOptions(form);
 
@@ -108,8 +108,8 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
             .mapToLong(tr -> tr.getId())
             .toArray();
 
-        form.setSuborderIdArray(suborderIdArray);
-        form.setTimereportIdArray(timereportIdArray);
+        form.setSuborderIdArrayTyped(suborderIdArray);
+        form.setTimereportIdArrayTyped(timereportIdArray);
 
         form.setCustomername(invoiceData.getCustomer().getName());
         form.setCustomeraddress(invoiceData.getCustomer().getAddress());
@@ -166,8 +166,8 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
   private static void updateVisibleFlags(ShowInvoiceForm form, HttpServletRequest request) {
     var invoiceData = (InvoiceData) request.getSession().getAttribute("invoiceData");
 
-    var suborderIds = stream(form.getSuborderIdArray()).boxed().toList();
-    var timereportIds = stream(form.getTimereportIdArray()).boxed().toList();
+    var suborderIds = stream(form.getSuborderIdArrayTyped()).boxed().toList();
+    var timereportIds = stream(form.getTimereportIdArrayTyped()).boxed().toList();
 
     for (var invoiceSuborder : invoiceData.getSuborders()) {
       invoiceSuborder.setVisible(suborderIds.contains(invoiceSuborder.getId()));
