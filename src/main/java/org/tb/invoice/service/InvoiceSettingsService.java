@@ -28,7 +28,7 @@ public class InvoiceSettingsService {
           }
           .invoice_suborder_row {
               font-weight: normal;
-              background-image: linear-gradient(to right, #dbfb58, #effac3);
+              background-image: linear-gradient(to right, #D5DC6D, #EDF1CC);
           }
           """)
       .imageUrls(of(
