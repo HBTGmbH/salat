@@ -88,7 +88,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
-        Employeecontract employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
+
         Customerorder trainingOrder = customerorderService.getCustomerorderBySign(TRAINING_ID);
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;
@@ -102,13 +102,14 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         request.getSession().setAttribute("employeecontracts", employeecontracts);
 
         // refresh all relevant attributes
-        if (!employeecontracts.stream().anyMatch(c -> c.getId().equals(employeecontract.getId()))) {
+        if (!employeecontracts.stream().anyMatch(c -> c.getId().equals(employeeContractId))) {
             // get the training times for specific year, all employees, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewsForAll(startdate, enddate, orderID, employeecontracts, year);
             request.getSession().setAttribute("currentEmployeeId", -1L);
             request.getSession().setAttribute("years", getYearsToDisplay());
 
         } else {
+            Employeecontract employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
             // get the training times for specific year, specific employee, all orders (project Training) and order i976 (CommonTraining)
             trainingOverviews = getTrainingOverviewByEmployeecontract(startdate, enddate, employeecontract, orderID, year);
 
