@@ -177,6 +177,14 @@ public class ReleaseService {
     var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
     var end = releaseDate;
 
+    // ensure begin and end dates fit to contract
+    if(contract.getValidFrom().isAfter(begin)) {
+      begin = contract.getValidFrom();
+    }
+    if(contract.getValidUntil() != null && contract.getValidUntil().isBefore(end)) {
+      end = contract.getValidUntil();
+    }
+
     final var workingDays = workingdayDAO
         .getWorkingdaysByEmployeeContractId(employeeContractId, begin.minusDays(1), end)
         .stream()
