@@ -378,6 +378,7 @@ class ReleaseServiceTest {
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
+            contract.setValidFrom(LocalDate.of(2023, 10, 1));
             contract.setReportReleaseDate(LocalDate.of(2023, 12, 31));
             contract.setEmployee(employee);
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
@@ -464,6 +465,7 @@ class ReleaseServiceTest {
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
+            contract.setValidFrom(LocalDate.of(2023, 10, 1));
             contract.setReportReleaseDate(LocalDate.of(2024, 1, 30));
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
@@ -504,6 +506,7 @@ class ReleaseServiceTest {
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             final var contract = new Employeecontract();
             contract.setEmployee(employee);
+            contract.setValidFrom(LocalDate.of(2023, 10, 1));
             contract.setReportReleaseDate(LocalDate.of(2024, 1, 30));
             when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
 
