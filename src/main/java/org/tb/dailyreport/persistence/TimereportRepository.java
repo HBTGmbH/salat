@@ -141,7 +141,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Long[]> getReportedMinutesForEmployeeordersAsMap(List<Long> ids);
 
   @Modifying
-  @NativeQuery("DELETE FROM timereport t WHERE t.employeeorder_id = :employeeorderId and t.deleted = true")
-  int hardDeleteSoftDeletedByEmployeeorderId(Long employeeorderId);
+  @NativeQuery("DELETE FROM timereport WHERE employeeorder_id = :employeeorderId and deleted = true")
+  int hardDeleteSoftDeletedByEmployeeorderId(long employeeorderId);
 
 }
