@@ -5,7 +5,7 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Objects;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.tb.common.util.DateUtils;
