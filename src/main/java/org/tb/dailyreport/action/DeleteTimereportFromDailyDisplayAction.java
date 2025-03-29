@@ -72,7 +72,7 @@ public class DeleteTimereportFromDailyDisplayAction extends DailyReportAction<Sh
                 return mapping.findForward("error");
             }
             Employeecontract employeecontract = employeecontractService.getEmployeecontractById(form.getEmployeeContractId());
-            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
             if (employeecontract != null) {
                 request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
                 request.getSession().setAttribute("currentEmployeeContract", employeecontract);

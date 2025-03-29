@@ -374,10 +374,10 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
                 request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-                request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+                request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
 
                 //calculate Working Day End
-                request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
+                request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateWorkingDayEnds(workingday, request));
 
                 request.getSession().setAttribute("years", getYearsToDisplay());
                 request.getSession().setAttribute("days", getDaysToDisplay());

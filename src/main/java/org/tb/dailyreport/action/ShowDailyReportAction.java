@@ -83,7 +83,6 @@ import org.tb.order.service.SuborderService;
  *
  * @author oda, th
  */
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -675,10 +674,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
           return mapping.findForward("error");
         }
         request.getSession()
-            .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+            .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
         //calculate Working Day End
         request.getSession().setAttribute("workingDayEnds",
-            timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
+            timereportHelper.calculateWorkingDayEnds(workingday, request));
         // save current filter settings in session
         request.getSession().setAttribute("currentOrder", reportForm.getOrder());
         request.getSession().setAttribute("suborderFilerId", reportForm.getSuborderId());
@@ -734,10 +733,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
     //show break time, quitting time and working day ends on the showdailyreport.jsp
     request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);
     request.getSession()
-        .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+        .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
     //calculate Working Day End
     request.getSession()
-        .setAttribute("workingDayEnds", timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
+        .setAttribute("workingDayEnds", timereportHelper.calculateWorkingDayEnds(workingday, request));
     request.getSession().setAttribute("reportForm", reportForm);
     return mapping.findForward("success");
   }
@@ -866,10 +865,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
       if (workingday != null) {
         request.getSession()
-            .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+            .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
         // calculate Working Day End
         request.getSession().setAttribute("workingDayEnds",
-            timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
+            timereportHelper.calculateWorkingDayEnds(workingday, request));
       }
       if (request.getSession().getAttribute("timereportComparator") != null) {
         @SuppressWarnings("unchecked")
@@ -949,10 +948,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
       }
       request.getSession().setAttribute("timereports", timereports);
       request.getSession()
-          .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+          .setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
       // calculate Working Day End
       request.getSession().setAttribute("workingDayEnds",
-          timereportHelper.calculateQuittingTime(workingday, request, "workingDayEnds"));
+          timereportHelper.calculateWorkingDayEnds(workingday, request));
       // orders
       List<Customerorder> orders;
       if (employeeId != null && employeeId == -1) {
