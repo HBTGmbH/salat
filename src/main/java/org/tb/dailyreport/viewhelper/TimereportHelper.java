@@ -245,23 +245,23 @@ public class TimereportHelper {
 
     private static String calculateEndTime(Workingday workingday, long timeHoursLong, long timeMinutesInt) {
         try {
-            long quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
-            long quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
-            quittingtimeHours += quittingtimeMinutes / MINUTES_PER_HOUR;
-            quittingtimeMinutes = quittingtimeMinutes % MINUTES_PER_HOUR;
+            long endTimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
+            long endtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
+            endTimeHours += endtimeMinutes / MINUTES_PER_HOUR;
+            endtimeMinutes = endtimeMinutes % MINUTES_PER_HOUR;
 
             // format return string
-            StringBuilder quittingTime = new StringBuilder();
-            if (quittingtimeHours < 10) {
-                quittingTime.append("0");
+            StringBuilder endTimeString = new StringBuilder();
+            if (endTimeHours < 10) {
+                endTimeString.append("0");
             }
-            quittingTime.append(quittingtimeHours);
-            quittingTime.append(":");
-            if (quittingtimeMinutes < 10) {
-                quittingTime.append("0");
+            endTimeString.append(endTimeHours);
+            endTimeString.append(":");
+            if (endtimeMinutes < 10) {
+                endTimeString.append("0");
             }
-            quittingTime.append(quittingtimeMinutes);
-            return quittingTime.toString();
+            endTimeString.append(endtimeMinutes);
+            return endTimeString.toString();
         } catch (Exception e) {
             log.error("Could not calculate quitting time.", e);
             return "n/a";
