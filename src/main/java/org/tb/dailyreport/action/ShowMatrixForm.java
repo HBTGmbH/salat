@@ -1,10 +1,8 @@
 package org.tb.dailyreport.action;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 import org.apache.struts.upload.FormFile;
 
 @Getter
@@ -20,22 +18,13 @@ public class ShowMatrixForm extends ActionForm {
     private String untilYear;
     private FormFile importFile;
     private String importMode;
-    private Long employeeContractId;
+    private long employeeContractId = -1;
     private String order;
     private String suborder;
     private String matrixview;
     private long orderId;
-    private Boolean invoice;
-    private Boolean nonInvoice;
-    private Boolean startAndBreakTime;
-
-    @Override
-    public void reset(ActionMapping arg0, HttpServletRequest arg1) {
-        invoice = false;
-        nonInvoice = false;
-        startAndBreakTime = false;
-        importFile = null;
-        importMode = null;
-    }
+    private Boolean invoice = Boolean.TRUE;
+    private Boolean nonInvoice = Boolean.TRUE;
+    private Boolean startAndBreakTime = Boolean.TRUE;
 
 }
