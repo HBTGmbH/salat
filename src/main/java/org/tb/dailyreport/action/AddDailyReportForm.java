@@ -62,13 +62,6 @@ public class AddDailyReportForm extends ActionForm {
             errors.add("referenceday", new ActionMessage("form.timereport.error.date.wrongformat"));
         }
 
-        // end time must be later than begin time when entering hours:minute
-        long begin = selectedHourBegin * MINUTES_PER_HOUR + selectedMinuteBegin;
-        long end = selectedHourEnd * MINUTES_PER_HOUR + selectedMinuteEnd;
-        if (end < begin) {
-            errors.add("selectedHourBegin", new ActionMessage("form.timereport.error.endbeforebegin"));
-        }
-
         return errors;
     }
 
@@ -104,7 +97,12 @@ public class AddDailyReportForm extends ActionForm {
     }
 
     public void recalcDurationFromBeginAndEnd() {
-        Duration duration = Duration.ofHours(selectedHourEnd)
+        Duration duration = Duration.ZERO;
+        if(selectedHourEnd < selectedHourBegin || selectedHourEnd == selectedHourBegin && selectedMinuteEnd < selectedMinuteBegin) {
+            // user selected a time in the morning and a overnight period is the result
+            duration = duration.plusHours(24);
+        }
+        duration = duration.plusHours(selectedHourEnd)
             .plusMinutes(selectedMinuteEnd)
             .minusHours(selectedHourBegin)
             .minusMinutes(selectedMinuteBegin);
@@ -117,7 +115,7 @@ public class AddDailyReportForm extends ActionForm {
             .plusMinutes(selectedMinuteBegin)
             .plusHours(selectedHourDuration)
             .plusMinutes(selectedMinuteDuration);
-        this.selectedHourEnd = duration.toHoursPart();
+        this.selectedHourEnd = duration.toHoursPart() % 24; // handle overnight period
         this.selectedMinuteEnd = duration.toMinutesPart();
     }
 
