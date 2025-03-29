@@ -255,6 +255,9 @@ public class TimereportHelper {
             if (endTimeHours < 10) {
                 endTimeString.append("0");
             }
+            if (endTimeHours >= 24) {
+                endTimeHours = endTimeHours % 24;
+            }
             endTimeString.append(endTimeHours);
             endTimeString.append(":");
             if (endtimeMinutes < 10) {
