@@ -221,30 +221,30 @@ public class TimereportHelper {
         return Duration.ofHours(maxDailyLaborTimeHours).minus(actual).isNegative();
     }
 
+    public String calculateWorkingDayEnds(Workingday workingday, HttpServletRequest request) {
+        if (workingday == null) return "n/a";
+        Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+        long timeHoursLong = employeecontract.getDailyWorkingTime().toHours();
+        long timeMinutesInt = employeecontract.getDailyWorkingTime().toMinutesPart();
+        return calculateEndTime(workingday, timeHoursLong, timeMinutesInt);
+    }
+
     /**
      * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing workingday, etc.), "n/a" will be returned.
      */
-    public String calculateQuittingTime(Workingday workingday, HttpServletRequest request, String timeSwitch) {
-        String N_A = "n/a";
-        if (workingday == null) return N_A;
+    public String calculateQuittingTime(Workingday workingday, HttpServletRequest request) {
+        if (workingday == null) return "n/a";
+        String labortimeString = (String) request.getSession().getAttribute("labortime");
+        String[] laborTimeArray = labortimeString.split(":");
+        String laborTimeHoursString = laborTimeArray[0];
+        String laborTimeMinutesString = laborTimeArray[1];
+        long timeHoursLong = Long.parseLong(laborTimeHoursString);
+        long timeMinutesInt = Integer.parseInt(laborTimeMinutesString);
+        return calculateEndTime(workingday, timeHoursLong, timeMinutesInt);
+    }
+
+    private static String calculateEndTime(Workingday workingday, long timeHoursLong, long timeMinutesInt) {
         try {
-            long timeHoursLong = 0;
-            int timeMinutesInt = 0;
-
-            if (timeSwitch.equals("quittingtime")) {
-                String labortimeString = (String) request.getSession().getAttribute("labortime");
-                String[] laborTimeArray = labortimeString.split(":");
-                String laborTimeHoursString = laborTimeArray[0];
-                String laborTimeMinutesString = laborTimeArray[1];
-                timeHoursLong = Long.parseLong(laborTimeHoursString);
-                timeMinutesInt = Integer.parseInt(laborTimeMinutesString);
-            }
-            if (timeSwitch.equals("workingDayEnds")) {
-                Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-                timeHoursLong = employeecontract.getDailyWorkingTime().toHours();
-                timeMinutesInt = employeecontract.getDailyWorkingTime().toMinutesPart();
-            }
-
             long quittingtimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
             long quittingtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
             quittingtimeHours += quittingtimeMinutes / MINUTES_PER_HOUR;
@@ -264,7 +264,7 @@ public class TimereportHelper {
             return quittingTime.toString();
         } catch (Exception e) {
             log.error("Could not calculate quitting time.", e);
-            return N_A;
+            return "n/a";
         }
     }
 

@@ -119,7 +119,7 @@ public class UpdateDailyReportAction extends DailyReportAction<UpdateDailyReport
                 showDailyReportForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
             }
 
-            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request, "quittingtime"));
+            request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
 
             //refresh overtime
             Employeecontract ec = employeecontractService.getEmployeecontractById(tr.getEmployeecontractId());
