@@ -372,7 +372,7 @@ public class MatrixHelper {
 
         Customerorder order = customerorderService.getCustomerorderBySign(reportForm.getOrder());
         Matrix matrix;
-        Long ecId = reportForm.getEmployeeContractId();
+        long ecId = reportForm.getEmployeeContractId();
         boolean isInvoiceable = reportForm.getInvoice();
         boolean isNonInvoiceable = reportForm.getNonInvoice();
         boolean isStartAndBreakTime = reportForm.getStartAndBreakTime();
@@ -480,6 +480,7 @@ public class MatrixHelper {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employee contract found for employee - please call system administrator.");
             return results;
         }
+        reportForm.setEmployeeContractId(ec.getId());
 
         List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
 
