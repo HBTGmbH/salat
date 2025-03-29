@@ -139,7 +139,7 @@ public class DateTimeUtils {
    * builds up a list of string with hour to display (1-5)
    */
   public static List<OptionItem> getBreakHoursOptions() {
-    return getOptionItemListOfInts(0, 5);
+    return getOptionItemListOfInts(0, 12);
   }
 
   /*
