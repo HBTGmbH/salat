@@ -79,13 +79,12 @@ public class EmployeecontractDAO {
     private Specification<Employeecontract> showOnlyValid() {
         LocalDate now = DateUtils.today();
         return (root, query, builder) -> {
-            var fromDateLess = builder.lessThanOrEqualTo(root.get(Employeecontract_.validFrom), now);
             var untilDateNullOrGreater = builder.or(
                 builder.isNull(root.get(Employeecontract_.validUntil)),
                 builder.greaterThanOrEqualTo(root.get(Employeecontract_.validUntil), now)
             );
             var notHidden = builder.notEqual(root.get(Employeecontract_.hide), TRUE);
-            return builder.and(fromDateLess, untilDateNullOrGreater, notHidden);
+            return builder.and(untilDateNullOrGreater, notHidden);
         };
     }
 

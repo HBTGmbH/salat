@@ -81,13 +81,12 @@ public class CustomerorderDAO {
     private Specification<Customerorder> showOnlyValid() {
         LocalDate now = today();
         return (root, query, builder) -> {
-            var fromDateLess = builder.lessThanOrEqualTo(root.get(Customerorder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(
                 builder.isNull(root.get(Customerorder_.untilDate)),
                 builder.greaterThanOrEqualTo(root.get(Customerorder_.untilDate), now)
             );
             var notHidden = builder.notEqual(root.get(Customerorder_.hide), TRUE);
-            return builder.and(fromDateLess, untilDateNullOrGreater, notHidden);
+            return builder.and(untilDateNullOrGreater, notHidden);
         };
     }
 
