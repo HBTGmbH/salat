@@ -143,7 +143,7 @@ public class CustomerorderHelper {
     }
 
     public boolean isOrderStandard(Customerorder order) {
-        return order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND;
+        return order != null && order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND;
     }
 
 }
