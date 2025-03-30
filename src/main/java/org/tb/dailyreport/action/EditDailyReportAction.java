@@ -95,8 +95,8 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
                 mapping.findForward("error");
             }
         } else {
-            request.setAttribute("errorMessage", "no orders found for employee - please call system administrator.");
-            mapping.findForward("error");
+            //request.setAttribute("errorMessage", "no orders found for employee - please call system administrator.");
+            //mapping.findForward("error");
         }
 
         List<Employeecontract> employeecontracts = employeecontractService.getTimeReportableEmployeeContractsForAuthorizedUser();

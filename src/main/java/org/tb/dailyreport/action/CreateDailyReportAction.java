@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionForward;
@@ -146,34 +147,28 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
         form.setReferenceday(DateUtils.format(selectedDate));
 
         // init form with first order and corresponding suborders
-        List<Suborder> theSuborders;
+        List<Suborder> theSuborders = List.of();
+        Optional<Suborder> currentSuborder = Optional.empty();
         if (orders != null && !orders.isEmpty()) {
             form.setOrder(orders.getFirst().getSign());
             form.setOrderId(orders.getFirst().getId());
-
             theSuborders = suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ec.getId(), orders.getFirst().getId(), selectedDate);
-
-            if (theSuborders == null || theSuborders.isEmpty()) {
-                request.setAttribute("errorMessage", "Orders/suborders inconsistent for employee - please call system administrator."); //TODO
-                return mapping.findForward("error");
+            if(!theSuborders.isEmpty()) {
+                currentSuborder = Optional.of(theSuborders.getFirst());
             }
             // set isEdit = false into the session, so order/suborder menu will not be disabled
             request.getSession().setAttribute("isEdit", false);
-        } else {
-            request.setAttribute("errorMessage", "no orders found for employee - please call system administrator."); //TODO
-            return mapping.findForward("error");
         }
         // prepare second collection of suborders sorted by description
         List<Suborder> subordersByDescription = new ArrayList<>(theSuborders);
         subordersByDescription.sort(SubOrderByDescriptionComparator.INSTANCE);
         request.getSession().setAttribute("suborders", theSuborders);
         request.getSession().setAttribute("subordersByDescription", subordersByDescription);
-        request.getSession().setAttribute("currentSuborderId", theSuborders.getFirst().getId());
-        request.getSession().setAttribute("currentSuborderSign", theSuborders.getFirst().getCompleteOrderSign());
+        request.getSession().setAttribute("currentSuborderId", currentSuborder.map(Suborder::getId).orElse(-1L));
+        request.getSession().setAttribute("currentSuborderSign", currentSuborder.map(Suborder::getCompleteOrderSign).orElse(""));
 
         // get first Suborder to synchronize suborder lists
-        Suborder so = theSuborders.getFirst();
-        request.getSession().setAttribute("currentSuborderId", so.getId());
+        request.getSession().setAttribute("currentSuborderId", currentSuborder.map(Suborder::getId).orElse(-1L));
 
         // make sure, no cuId still exists in session, remove from form, too
         request.getSession().removeAttribute("trId");

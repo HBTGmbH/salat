@@ -73,7 +73,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             }
         }
         if (employeecontract == null) {
-            employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), today());
+            employeecontract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElseThrow();
             updateEmployee = true;
         }
 
