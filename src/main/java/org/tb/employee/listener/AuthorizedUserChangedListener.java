@@ -63,7 +63,7 @@ public class AuthorizedUserChangedListener {
     // check if employee has an employee contract and it has employee orders for all standard suborders
     if (employeecontract != null) {
       request.getSession().setAttribute("employeeHasValidContract", true);
-      handleEmployeeWithValidContract(request, loginEmployee, employeecontract);
+      handleEmployeeWithValidContract(request, employeecontract);
     } else {
       request.getSession().setAttribute("employeeHasValidContract", false);
     }
@@ -73,8 +73,7 @@ public class AuthorizedUserChangedListener {
     request.getSession().setAttribute("employeecontracts", employeecontracts);
   }
 
-  private void handleEmployeeWithValidContract(HttpServletRequest request, Employee loginEmployee,
-      Employeecontract employeecontract) {
+  private void handleEmployeeWithValidContract(HttpServletRequest request, Employeecontract employeecontract) {
     // set used employee contract of login employee
     request.getSession().setAttribute("loginEmployeeContract", employeecontract);
     request.getSession().setAttribute("loginEmployeeContractId", employeecontract.getId());
