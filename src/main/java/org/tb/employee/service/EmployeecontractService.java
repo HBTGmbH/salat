@@ -1,6 +1,5 @@
 package org.tb.employee.service;
 
-import static java.lang.Boolean.TRUE;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
 import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
@@ -31,6 +30,7 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.employee.domain.Overtime;
@@ -288,7 +288,19 @@ public class EmployeecontractService {
   }
 
   public Optional<Employeecontract> getCurrentContract(long employeeId) {
-    return Optional.ofNullable(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, today()));
+    var contract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, today());
+    if(contract != null) {
+      return Optional.of(contract);
+    }
+
+    // fallback find next future contract
+    Specification<Employeecontract> spec = (root, query, builder) -> {
+      var validFromInFuture = builder.greaterThan(root.get(Employeecontract_.validFrom), today());
+      var employee = root.join(Employeecontract_.employee);
+      var employeeIdMatches = builder.equal(employee.get(Employee_.id), employeeId);
+      return builder.and(validFromInFuture, employeeIdMatches);
+    };
+    return employeecontractRepository.findOne(spec);
   }
 
   public Employeecontract getEmployeecontractById(long employeeContractId) {
