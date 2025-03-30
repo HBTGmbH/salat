@@ -175,8 +175,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      */
     public boolean getCurrentlyValid() {
         LocalDate now = DateUtils.today();
-        return !now.isBefore(getValidFrom()) &&
-            (getValidUntil() == null || !now.isAfter(getValidUntil()));
+        return getValidUntil() == null || !now.isAfter(getValidUntil());
     }
 
     /**

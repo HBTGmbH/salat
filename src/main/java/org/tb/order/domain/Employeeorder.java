@@ -117,7 +117,7 @@ public class Employeeorder extends AuditedEntity implements Serializable {
      */
     public boolean getCurrentlyValid() {
         LocalDate today = DateUtils.today();
-        return !today.isBefore(getFromDate()) && (getEffectiveUntilDate() == null || !today.isAfter(getEffectiveUntilDate()));
+        return getEffectiveUntilDate() == null || !today.isAfter(getEffectiveUntilDate());
     }
 
     /**
