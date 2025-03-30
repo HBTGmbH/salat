@@ -131,8 +131,9 @@ public class CustomerorderHelper {
         List<Customerorder> orders = customerorderService.getCustomerordersByEmployeeContractId(ec.getId());
         request.getSession().setAttribute("orders", orders);
 
-        if ((orders == null) || (orders.size() <= 0)) {
-            request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
+        if ((orders == null) || (orders.isEmpty())) {
+            //request.setAttribute("errorMessage", "No orders found for employee - please call system administrator."); //TODO: MessageResources
+            request.getSession().setAttribute("suborders", List.of());
             return false;
         }
         // get suborders related to employee AND selected customer order...
