@@ -203,8 +203,8 @@ public class Suborder extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Suborder} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        java.time.LocalDate now = DateUtils.today();
-        return isValidAt(now);
+        LocalDate now = DateUtils.today();
+        return fromDate == null || !now.isAfter(untilDate);
     }
 
     public LocalDateRange getValidity() {

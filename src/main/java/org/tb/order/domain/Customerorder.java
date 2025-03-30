@@ -152,7 +152,8 @@ public class Customerorder extends AuditedEntity implements Serializable {
      * @return Returns true, if the {@link Customerorder} is currently valid, false otherwise.
      */
     public boolean getCurrentlyValid() {
-        return isValidAt(DateUtils.today());
+        LocalDate now = DateUtils.today();
+        return fromDate == null || !now.isAfter(untilDate);
     }
 
     public boolean isValidAt(LocalDate date) {
