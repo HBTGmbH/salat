@@ -6,6 +6,7 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,8 +45,8 @@ public class AuthorizedUserChangedListener {
     }
 
     LocalDate today = today();
-    Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), today);
-    if (employeecontract == null && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
+    Optional<Employeecontract> employeecontract = employeecontractService.getCurrentContract(loginEmployee.getId());
+    if (employeecontract.isEmpty() && !loginEmployee.getStatus().equalsIgnoreCase(GlobalConstants.EMPLOYEE_STATUS_ADM)) {
       log.error("No valid contract found for {}.", loginEmployee.getSign());
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
     }
@@ -61,9 +62,9 @@ public class AuthorizedUserChangedListener {
     request.getSession().setAttribute("currentEmployeeId", loginEmployee.getId());
 
     // check if employee has an employee contract and it has employee orders for all standard suborders
-    if (employeecontract != null) {
+    if (employeecontract.isPresent()) {
       request.getSession().setAttribute("employeeHasValidContract", true);
-      handleEmployeeWithValidContract(request, employeecontract);
+      handleEmployeeWithValidContract(request, employeecontract.get());
     } else {
       request.getSession().setAttribute("employeeHasValidContract", false);
     }
