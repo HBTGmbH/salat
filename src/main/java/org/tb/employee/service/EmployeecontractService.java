@@ -1,5 +1,6 @@
 package org.tb.employee.service;
 
+import static java.lang.Boolean.TRUE;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
 import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
@@ -30,6 +32,7 @@ import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.domain.Employeecontract_;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.domain.Vacation;
 import org.tb.employee.event.EmployeeDeleteEvent;
@@ -317,4 +320,14 @@ public class EmployeecontractService {
     return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
   }
 
+  public List<Employeecontract> getFutureContracts(long employeecontractId) {
+    var employeecontract = getEmployeecontractById(employeecontractId);
+    if(employeecontract != null) {
+      Specification<Employeecontract> spec = (root, query, builder) -> {
+        return builder.greaterThan(root.get(Employeecontract_.validFrom), employeecontract.getValidFrom());
+      };
+      return employeecontractRepository.findAll(spec);
+    }
+    return List.of();
+  }
 }

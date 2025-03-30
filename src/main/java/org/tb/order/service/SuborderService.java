@@ -57,6 +57,10 @@ public class SuborderService {
     createOrUpdate(suborderId, addSuborderForm, customerorder);
   }
 
+  public List<Suborder> getStandardSuborders() {
+    return suborderDAO.getStandardSuborders();
+  }
+
   private void createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
     Suborder so;
     if (soId != null) {

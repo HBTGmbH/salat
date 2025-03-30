@@ -9,6 +9,7 @@ import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.EM
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,6 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractChangedEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
-import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
@@ -38,7 +38,6 @@ import org.tb.order.event.SuborderDeleteEvent;
 import org.tb.order.event.SuborderUpdateEvent;
 import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.persistence.EmployeeorderRepository;
-import org.tb.order.persistence.SuborderDAO;
 
 @Slf4j
 @Service
@@ -49,9 +48,8 @@ public class EmployeeorderService {
 
   private final ApplicationEventPublisher eventPublisher;
   private final CommandPublisher commandPublisher;
-  private final EmployeecontractDAO employeecontractDAO;
   private final EmployeeorderDAO employeeorderDAO;
-  private final SuborderDAO suborderDAO;
+  private final SuborderService suborderService;
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
 
@@ -66,10 +64,20 @@ public class EmployeeorderService {
   }
 
   private void generateMissingStandardOrders(long employeecontractId) {
-    Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    if(employeecontract.getFreelancer() == TRUE) return; // do not create this for freelancers
+    Employeecontract contract = employeecontractService.getEmployeecontractById(employeecontractId);
+    List<Employeecontract> futureContracts = employeecontractService.getFutureContracts(employeecontractId);
+    var contracts = new HashSet<Employeecontract>(futureContracts);
+    contracts.add(contract);
 
-    List<Suborder> standardSuborders = suborderDAO.getStandardSuborders();
+    for(Employeecontract employeecontract : contracts) {
+      generateMissingStandardOrders(employeecontract);
+    }
+  }
+
+  private void generateMissingStandardOrders(Employeecontract employeecontract) {
+    if(employeecontract.getFreelancer() == TRUE) return;
+
+    List<Suborder> standardSuborders = suborderService.getStandardSuborders();
     if (standardSuborders != null && !standardSuborders.isEmpty()) {
       // test if employeeorder exists
       for (Suborder suborder : standardSuborders) {
@@ -110,16 +118,17 @@ public class EmployeeorderService {
           // calculate effective vacation entitlement and set budget accordingly
           if (suborder.getCustomerorder().getSign().equals(GlobalConstants.CUSTOMERORDER_SIGN_VACATION)) {
             var vacationOrderYear = parse(suborder.getSign());
-            var vacationBudget = employeecontractService.getEffectiveVacationEntitlement(employeecontractId, vacationOrderYear); // calculate real entitlement
+            var vacationBudget = employeecontractService.getEffectiveVacationEntitlement(employeecontract.getId(), vacationOrderYear); // calculate real entitlement
             employeeorder.setDebithours(vacationBudget);
             employeeorder.setDebithoursunit(GlobalConstants.DEBITHOURS_UNIT_TOTALTIME);
           }
 
           createOrUpdate(employeeorder, effectiveValidity.getFrom(), effectiveValidity.getUntil());
           log.info(
-              "Created standard order for order {} and employee {}.",
+              "Created standard order for order {} and employee {} and contract {}.",
               suborder.getCompleteOrderSign(),
-              employeecontract.getEmployee().getSign()
+              employeecontract.getEmployee().getSign(),
+              employeecontract.getId()
           );
         }
       }
