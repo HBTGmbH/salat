@@ -204,7 +204,7 @@ public class Suborder extends AuditedEntity implements Serializable {
      */
     public boolean getCurrentlyValid() {
         LocalDate now = DateUtils.today();
-        return fromDate == null || !now.isAfter(untilDate);
+        return untilDate == null || !now.isAfter(untilDate);
     }
 
     public LocalDateRange getValidity() {
