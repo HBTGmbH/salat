@@ -63,8 +63,7 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         boolean displayTargetHours = false;
         var currentContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         if(currentContract != null) {
-            var loginContract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-            if(currentContract.getId().equals(loginContract.getId())) {
+            if(currentContract.getEmployee().getId().equals(authorizedUser.getEmployeeId())) {
                 createTimereports = true;
                 editTimereports = true;
                 displayWorkingDay = true;
