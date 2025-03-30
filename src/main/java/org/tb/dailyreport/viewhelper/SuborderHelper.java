@@ -1,6 +1,7 @@
 package org.tb.dailyreport.viewhelper;
 
 import static org.tb.common.util.DateUtils.parse;
+import static org.tb.common.util.DateUtils.validateDate;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -39,15 +40,25 @@ public class SuborderHelper {
         request.getSession().removeAttribute("overtimeCompensation");
         request.getSession().removeAttribute("currentSuborderId");
 
-        Employeecontract ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
-
-        if (ec == null) {
-            // request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
+        String dateString = reportForm.getReferenceday();
+        LocalDate date;
+        if(validateDate(dateString)) {
+            date = parse(dateString);
+        } else {
             return;
         }
 
-        String dateString = reportForm.getReferenceday();
-        LocalDate date = parse(dateString);
+        Employeecontract ec = employeecontractService.getEmployeecontractById(reportForm.getEmployeeContractId());
+
+        if (ec != null) {
+            Employeecontract matchingTimeEC = employeecontractService.getEmployeeContractValidAt(ec.getEmployee().getId(), date);
+            if (matchingTimeEC != null) {
+                ec = matchingTimeEC;
+            }
+        } else {
+            // request.setAttribute("errorMessage", "No employee contract found for employee - please call system administrator.");
+            return;
+        }
 
         // get suborders related to employee AND selected customer order
         long customerorderId = reportForm.getOrderId();
