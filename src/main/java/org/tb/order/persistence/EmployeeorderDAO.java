@@ -148,12 +148,10 @@ public class EmployeeorderDAO {
 
     private Specification<Employeeorder> showOnlyValid(LocalDate date) {
         return (root, query, builder) -> {
-            var fromDateLess = builder.lessThanOrEqualTo(root.get(Employeeorder_.fromDate), date);
-            var untilDateNullOrGreater = builder.or(
+            return builder.or(
                 builder.isNull(root.get(Employeeorder_.untilDate)),
                 builder.greaterThanOrEqualTo(root.get(Employeeorder_.untilDate), date)
             );
-            return builder.and(fromDateLess, untilDateNullOrGreater);
         };
     }
 

@@ -132,13 +132,12 @@ public class SuborderDAO {
     private Specification<Suborder> showOnlyValid() {
         LocalDate now = today();
         return (root, query, builder) -> {
-            var fromDateLess = builder.lessThanOrEqualTo(root.get(Suborder_.fromDate), now);
             var untilDateNullOrGreater = builder.or(
                 builder.isNull(root.get(Suborder_.untilDate)),
                 builder.greaterThanOrEqualTo(root.get(Suborder_.untilDate), now)
             );
             var notHidden = builder.notEqual(root.get(Suborder_.hide), TRUE);
-            return builder.and(fromDateLess, untilDateNullOrGreater, notHidden);
+            return builder.and(untilDateNullOrGreater, notHidden);
         };
     }
 
