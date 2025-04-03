@@ -272,18 +272,27 @@
 			<!-- select invoice -->
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.invoice.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox property="invoice" onclick="setRefreshMatrixAction(this.form)" /></td>
+				<td align="left" class="noBborderStyle">
+					<html:checkbox property="invoice" onclick="setRefreshMatrixAction(this.form)" />
+					<html:hidden property="invoice" value="false" />
+				</td>
 			</tr>
 			<!-- select invoice -->
 			<tr>
 				<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.non.invoice.text" />:</b></td>
-				<td align="left" class="noBborderStyle"><html:checkbox property="nonInvoice" onclick="setRefreshMatrixAction(this.form)" /></td>
+				<td align="left" class="noBborderStyle">
+					<html:checkbox property="nonInvoice" onclick="setRefreshMatrixAction(this.form)" />
+					<html:hidden property="nonInvoice" value="false" />
+				</td>
 			</tr>
 			<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak}">
 				<!-- select start and break times -->
 				<tr>
 					<td align="left" class="noBborderStyle"><b><bean:message key="main.monthlyreport.startandbreaktime.text" />:</b></td>
-					<td align="left" class="noBborderStyle"><html:checkbox property="startAndBreakTime" onclick="setRefreshMatrixAction(this.form)" /></td>
+					<td align="left" class="noBborderStyle">
+						<html:checkbox property="startAndBreakTime" onclick="setRefreshMatrixAction(this.form)" />
+						<html:hidden property="startAndBreakTime" value="false" />
+					</td>
 				</tr>
 			</c:if>
 		</table>
