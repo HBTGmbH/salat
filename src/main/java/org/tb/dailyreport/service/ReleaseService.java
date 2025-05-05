@@ -149,22 +149,21 @@ public class ReleaseService {
       } else {
         acceptanceDate = newReportAcceptDate;
       }
-
-      // recompute overtimeStatic and set it in employeecontract
-      Duration overtimeStatic = Duration.ZERO;
-      // if employee contract had been accepted before, we need to recalculate
-      if(employeecontract.getReportAcceptanceDate() != null) {
-        var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), employeecontract.getReportAcceptanceDate());
-        if(otStatic.isPresent()) {
-          overtimeStatic = otStatic.get();
-        }
-      }
-
-      // update accordingly
-      employeecontractService.updateReportReleaseData(employeecontractId, releaseDate, acceptanceDate);
-      employeecontractService.updateOvertimeStatic(employeecontractId, overtimeStatic);
-
     }
+
+    // update accordingly
+    employeecontractService.updateReportReleaseData(employeecontractId, releaseDate, acceptanceDate);
+
+    // recompute overtimeStatic and set it in employeecontract
+    Duration overtimeStatic = Duration.ZERO;
+    // if employee contract had been accepted before, we need to recalculate
+    if(acceptanceDate != null) {
+      var otStatic = overtimeService.calculateOvertime(employeecontract.getId(), employeecontract.getValidFrom(), acceptanceDate);
+      if(otStatic.isPresent()) {
+        overtimeStatic = otStatic.get();
+      }
+    }
+    employeecontractService.updateOvertimeStatic(employeecontractId, overtimeStatic);
   }
 
   @VisibleForTesting
