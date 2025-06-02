@@ -336,7 +336,9 @@ public class EmployeecontractService {
     var employeecontract = getEmployeecontractById(employeecontractId);
     if(employeecontract != null) {
       Specification<Employeecontract> spec = (root, query, builder) -> {
-        return builder.greaterThan(root.get(Employeecontract_.validFrom), employeecontract.getValidFrom());
+        var equalEmployeeId = builder.equal(root.get(Employeecontract_.employee).get(Employee_.id), employeecontract.getEmployee().getId());
+        var greaterValidFrom = builder.greaterThan(root.get(Employeecontract_.validFrom), employeecontract.getValidFrom());
+        return builder.and(equalEmployeeId, greaterValidFrom);
       };
       return employeecontractRepository.findAll(spec);
     }
