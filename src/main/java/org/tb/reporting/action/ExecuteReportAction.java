@@ -63,6 +63,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
 
             if (!missingParameters.isEmpty()) {
                 // show parameters dialog if query parameters are missing
+                form.initParameters(parametersFromRequest, missingParameters);
                 request.getSession().setAttribute("report", reportDefinition);
                 return mapping.findForward("showReportParameters");
             } else {

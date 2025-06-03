@@ -30,59 +30,59 @@
                 <th align="left"><b><bean:message key="main.reporting.parameter.value.text" /></b></th>
             </tr>
             <tr>
-                <td><input type="text" name="parameters[0].name" /></td>
+                <td><html:text property="parameters[0].name" /></td>
                 <td>
-                    <select name="parameters[0].type">
-                        <option>string</option>
-                        <option>date</option>
-                        <option>number</option>
-                    </select>
+                    <html:select property="parameters[0].type">
+                        <html:option value="string">string</html:option>
+                        <html:option value="date">date</html:option>
+                        <html:option value="number">number</html:option>
+                    </html:select>
                 </td>
-                <td><input type="text" name="parameters[0].value" /></td>
+                <td><html:text property="parameters[0].value" /></td>
             </tr>
             <tr>
-                <td><input type="text" name="parameters[1].name" /></td>
+                <td><html:text property="parameters[1].name" /></td>
                 <td>
-                    <select name="parameters[1].type">
-                        <option>string</option>
-                        <option>date</option>
-                        <option>number</option>
-                    </select>
+                    <html:select property="parameters[1].type">
+                        <html:option value="string">string</html:option>
+                        <html:option value="date">date</html:option>
+                        <html:option value="number">number</html:option>
+                    </html:select>
                 </td>
-                <td><input type="text" name="parameters[1].value" /></td>
+                <td><html:text property="parameters[1].value" /></td>
             </tr>
             <tr>
-                <td><input type="text" name="parameters[2].name" /></td>
+                <td><html:text property="parameters[2].name" /></td>
                 <td>
-                    <select name="parameters[2].type">
-                        <option>string</option>
-                        <option>date</option>
-                        <option>number</option>
-                    </select>
+                    <html:select property="parameters[2].type">
+                        <html:option value="string">string</html:option>
+                        <html:option value="date">date</html:option>
+                        <html:option value="number">number</html:option>
+                    </html:select>
                 </td>
-                <td><input type="text" name="parameters[2].value" /></td>
+                <td><html:text property="parameters[2].value" /></td>
             </tr>
             <tr>
-                <td><input type="text" name="parameters[3].name" /></td>
+                <td><html:text property="parameters[3].name" /></td>
                 <td>
-                    <select name="parameters[3].type">
-                        <option>string</option>
-                        <option>date</option>
-                        <option>number</option>
-                    </select>
+                    <html:select property="parameters[3].type">
+                        <html:option value="string">string</html:option>
+                        <html:option value="date">date</html:option>
+                        <html:option value="number">number</html:option>
+                    </html:select>
                 </td>
-                <td><input type="text" name="parameters[3].value" /></td>
+                <td><html:text property="parameters[3].value" /></td>
             </tr>
             <tr>
-                <td><input type="text" name="parameters[4].name" /></td>
+                <td><html:text property="parameters[4].name" /></td>
                 <td>
-                    <select name="parameters[4].type">
-                        <option>string</option>
-                        <option>date</option>
-                        <option>number</option>
-                    </select>
+                    <html:select property="parameters[4].type">
+                        <html:option value="string">string</html:option>
+                        <html:option value="date">date</html:option>
+                        <html:option value="number">number</html:option>
+                    </html:select>
                 </td>
-                <td><input type="text" name="parameters[4].value" /></td>
+                <td><html:text property="parameters[4].value" /></td>
             </tr>
         </table>
         <html:hidden property="reportId" />
