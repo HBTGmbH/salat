@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
@@ -15,6 +16,7 @@ import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 @Builder
 @Jacksonized
 @EqualsAndHashCode
+@ToString
 public class DailyWorkingReportData {
 
     @NonNull

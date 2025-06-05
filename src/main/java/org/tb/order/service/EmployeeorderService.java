@@ -9,8 +9,10 @@ import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.EM
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +30,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractChangedEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
@@ -52,6 +55,7 @@ public class EmployeeorderService {
   private final SuborderService suborderService;
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
+  private final EmployeeService employeeService;
 
   @Authorized(requiresManager = true)
   public void create(Employeeorder employeeorder) {
@@ -323,6 +327,26 @@ public class EmployeeorderService {
     }
 
     employeeorderRepository.save(employeeorder);
+  }
+
+  public Employeeorder getEmployeeorderByEmployeeAndSuborder(String employeeSign, String suborderSign, LocalDate date) {
+    var employee = employeeService.getEmployeeBySign(employeeSign);
+    if(employee == null) {
+      return null;
+    }
+    var contract = employeecontractService.getEmployeeContractValidAt(employee.getId(), date);
+    if(contract == null) {
+      return null;
+    }
+    var orders = employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(contract.getId(), date);
+    var mapped = orders.stream().collect(Collectors.toMap(order -> normalizeSign(order.getSuborder().getCompleteOrderSign()), order -> order));
+    var suborderSignNormalized = normalizeSign(suborderSign);
+    var match = mapped.keySet().stream().sorted(Comparator.comparing(String::length)).filter(sign -> sign.contains(suborderSignNormalized)).findFirst();
+    return match.map(mapped::get).orElse(null);
+  }
+
+  private String normalizeSign(String orderSign) {
+    return orderSign.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
   }
 
 }
