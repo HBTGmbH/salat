@@ -49,7 +49,6 @@
 		<form-bean name="showSuborderForm" type="org.tb.order.action.ShowSuborderForm" />
 		<form-bean name="addEmployeeOrderForm" type="org.tb.order.action.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm" type="org.tb.order.action.ShowEmployeeOrderForm" />
-		<form-bean name="generateMultipleEmployeeordersForm" type="org.tb.order.action.GenerateMultipleEmployeeordersForm"/>
 
 		<form-bean name="executeReportForm" type="org.tb.reporting.action.ExecuteReportForm" />
 		<form-bean name="createEditDeleteReportForm" type="org.tb.reporting.action.CreateEditDeleteReportForm" />
@@ -255,7 +254,6 @@
 			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/order/addCustomerOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
-			<forward name="dummy" path="/order/generateMultipleEmployeeorders.jsp" />
 		</action>
 
 		<!-- Suborder -->
@@ -323,13 +321,6 @@
 			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/order/addEmployeeOrder.jsp" />
 			<forward name="error" path="/error.jsp" />
-		</action>
-		
-		<action path="/GenerateMultipleEmployeeorders" input="/order/generateMultipleEmployeeorders.jsp"
-			name="generateMultipleEmployeeordersForm" type="org.tb.order.action.GenerateMultipleEmployeeordersAction">
-			<forward name="start" path="/order/generateMultipleEmployeeorders.jsp"/>
-			<forward name="success" path="/order/showEmployeeOrder.jsp" redirect="true"/>
-			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 		</action>
 
 		<!-- Employeecontract -->
