@@ -81,15 +81,6 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 
 ## Business-logic that should be refactored (i.e. move to service)
 
-- AfterLogin#createWarnings - erzeugt Warnungen, die dem User angezeigt werden sollen. Diese weisen 
-  auf Fehler bzw. offenen TODOs hin. Könnte man in einen Service packen und dann via
-  scheduled Job regelmässig erzeugen lassen und in der DB speichern.
-- AfterLogin#handleOvertime - berechnet Überstunden zur Anzeige beim User. Sollte in den OvertimeService
-  überführt werden. Dieser existiert bereits und ist auch in der Lage, Überstunden zu
-  berechnen. Könnte man entsprechend zusammenführen.
-- StoreCustomerAction#executeAuthenticated - bei task=save wird ein Customer angelegt. Sollte im 
-  CustomerService sein.
-- DeleteCustomerAction#executeAuthenticated - auch dies sollte weitestgehend im CustomerService sein.
 - TimereportHelper#determineBeginTimeToDisplay - move to WorkingdayService
 - TimereportHelper#determineTimesToDisplay - move to WorkingdayService and introduce a better value class
   to carry the result
@@ -101,15 +92,3 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 - TrainingHelper#fromDBtimeToString - nach DurationUtils als neue Methode
   formatWithWorkingsdays(Duration duration, Duration dailyWorkingTime
 - TrainingHelper#hoursMinToString - better use Duration and then DurationUtils#format
-- StoreEmployeeAction#executeAuthenticated - move storing of Employee to EmployeeService
-- DeleteEmployeeAction#executeAuthenticated - move deletion to EmployeeService
-- StoreEmployeecontractAction#executeAuthenticated - move storing of Employeecontract to EmployeecontractService
-- DeleteEmployeecontractAction#executeAuthenticated - move deletion to EmployeecontractService
-- StoreCustomerorderAction#executeAuthenticated - move storing to CustomerorderService
-- DeleteCustomerorderAction#executeAuthenticated - move deletion to CustomerorderService
-- StoreEmployeeorderAction#executeAuthenticated - move storing to EmployeeorderService
-- DeleteEmployeeorderAction#executeAuthenticated - move deletion to EmployeeorderService
-- StoreSuborderAction#executeAuthenticated - move storing to SuborderService
-- StoreSuborderAction#executeAuthenticated - move copy to SuborderService
-- DeleteSuborderAction#executeAuthenticated - move deletion to SuborderService
-- GenerateMultipleEmployeeordersAction - move storing to EmployeeorderService
