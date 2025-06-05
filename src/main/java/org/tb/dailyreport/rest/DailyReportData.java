@@ -4,12 +4,14 @@ import com.opencsv.bean.CsvBindByPosition;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
 @Getter
 @Builder(toBuilder = true)
 @EqualsAndHashCode
+@ToString
 public class DailyReportData {
 
     private Long id;

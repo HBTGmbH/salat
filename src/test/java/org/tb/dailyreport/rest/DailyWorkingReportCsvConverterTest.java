@@ -2,7 +2,12 @@ package org.tb.dailyreport.rest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mock.Strictness.LENIENT;
 import static org.mockito.Mockito.when;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_EMPLOYEE_ORDER;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,63 +24,68 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.Suborder;
+import org.tb.order.service.EmployeeorderService;
 
 @ExtendWith(MockitoExtension.class)
 class DailyWorkingReportCsvConverterTest {
 
-    @Mock
+    @Mock(strictness = LENIENT)
     HttpOutputMessage httpOutputMessage;
+
+    @Mock(strictness = LENIENT)
+    EmployeeorderService employeeorderService;
+
+    @Mock(strictness = LENIENT)
+    AuthorizedUser authorizedUser;
 
     @InjectMocks
     DailyWorkingReportCsvConverter dailyWorkingReportCsvConverter;
 
     private static Stream<Arguments> readCsv() {
         return Stream.of(
-                Arguments.of(
-                        "",
-                        List.of()
-                ),
-                Arguments.of(
-                        """
-                                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
-                                ,,,,,,,,,,some comment
-                                2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111.01,Stuhlpolsterung,00:30,Team-Mittag
-                                2024-11-04,,,,183209,111,Rumsitzen,111.01,Stuhlpolsterung,07:30,Daily
-                                """,
-                        List.of(
-                                DailyWorkingReportData.builder()
-                                        .type(Workingday.WorkingDayType.WORKED)
-                                        .date(LocalDate.of(2024,11,4))
-                                        .startTime(LocalTime.of(9,0))
-                                        .breakDuration(LocalTime.of(0,30))
-                                        .dailyReports(List.of(
-                                                DailyReportData.builder()
-                                                        .date("2024-11-04")
-                                                        .employeeorderId(183209)
-                                                        .orderSign("111")
-                                                        .orderLabel("Rumsitzen")
-                                                        .suborderSign("111.01")
-                                                        .suborderLabel("Stuhlpolsterung")
-                                                        .hours(0)
-                                                        .minutes(30)
-                                                        .comment("Team-Mittag")
-                                                        .build(),
-                                                DailyReportData.builder()
-                                                        .date("2024-11-04")
-                                                        .employeeorderId(183209)
-                                                        .orderSign("111")
-                                                        .orderLabel("Rumsitzen")
-                                                        .suborderSign("111.01")
-                                                        .suborderLabel("Stuhlpolsterung")
-                                                        .hours(7)
-                                                        .minutes(30)
-                                                        .comment("Daily")
-                                                        .build()
-                                        ))
-                                        .build()
-                        )
-                )
+            Arguments.of(
+                "",
+                List.of()
+            ),
+            Arguments.of(
+                """
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+                    ,,,,,,,,,,some comment
+                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
+                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
+                    """,
+                List.of(TWO_BOOKINGS)
+            ),
+            Arguments.of(
+                """
+                    date;type;startTime;breakTime;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;workingTime;comment
+                    2024-11-04;WORKED;09:00;00:30;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30;Team-Mittag
+                    2024-11-04;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30;Daily
+                    """,
+                List.of(TWO_BOOKINGS)
+            ),
+            Arguments.of(
+                """
+                    date;type;startTime;breakTime;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;workingTime;comment
+                    04.11.2024;WORKED;09:00:00;00:30:00;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30:00;Team-Mittag
+                    04.11.2024;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30:00;Daily
+                    """,
+                List.of(TWO_BOOKINGS)
+            ),
+            Arguments.of(
+                """
+                    date;type;startTime;breakTime;suborderSign;workingTime;comment
+                    2024-11-04;WORKED;09:00;00:30;111/01;00:30;Team-Mittag
+                    2024-11-04;;;;111/01;07:30;Daily
+                    """,
+                List.of(TWO_BOOKINGS_NO_EMPLOYEE_ORDER)
+            )
         );
     }
 
@@ -83,6 +93,21 @@ class DailyWorkingReportCsvConverterTest {
     @MethodSource("readCsv")
     void shouldReadFromCsv(String csv, List<DailyWorkingReportData> expected) throws IOException {
         // given
+        var customerorder = new Customerorder();
+        customerorder.setSign("111");
+        customerorder.setDescription("Rumsitzen");
+        var suborder = new Suborder();
+        suborder.setSign("01");
+        suborder.setDescription("Stuhlpolsterung");
+        suborder.setCustomerorder(customerorder);
+        var employeeorder = new Employeeorder();
+        ReflectionTestUtils.setField(employeeorder, "id", 183209L);
+        employeeorder.setSuborder(suborder);
+
+        when(employeeorderService.getEmployeeorderById(eq(183209L))).thenReturn(employeeorder);
+        when(employeeorderService.getEmployeeorderByEmployeeAndSuborder(eq("testuser"), eq("111/01"), any())).thenReturn(employeeorder);
+        when(authorizedUser.getSign()).thenReturn("testuser");
+
         // when
         var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8));
 
@@ -92,45 +117,14 @@ class DailyWorkingReportCsvConverterTest {
 
     private static Stream<Arguments> writeCsv() {
         return Stream.of(
-                Arguments.of(
-                        List.of(
-                                DailyWorkingReportData.builder()
-                                        .type(Workingday.WorkingDayType.WORKED)
-                                        .date(LocalDate.of(2024,11,4))
-                                        .startTime(LocalTime.of(9,0))
-                                        .breakDuration(LocalTime.of(0,30))
-                                        .dailyReports(List.of(
-                                                DailyReportData.builder()
-                                                        .date("2024-11-04")
-                                                        .employeeorderId(183209)
-                                                        .orderSign("111")
-                                                        .orderLabel("Rumsitzen")
-                                                        .suborderSign("111.01")
-                                                        .suborderLabel("Stuhlpolsterung")
-                                                        .hours(0)
-                                                        .minutes(30)
-                                                        .comment("Team-Mittag")
-                                                        .build(),
-                                                DailyReportData.builder()
-                                                        .date("2024-11-04")
-                                                        .employeeorderId(183209)
-                                                        .orderSign("111")
-                                                        .orderLabel("Rumsitzen")
-                                                        .suborderSign("111.01")
-                                                        .suborderLabel("Stuhlpolsterung")
-                                                        .hours(7)
-                                                        .minutes(30)
-                                                        .comment("Daily")
-                                                        .build()
-                                        ))
-                                        .build()
-                        ),
-                        """
-                        date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
-                        2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111.01,Stuhlpolsterung,00:30,Team-Mittag
-                        2024-11-04,,,,183209,111,Rumsitzen,111.01,Stuhlpolsterung,07:30,Daily
-                        """
-                )
+            Arguments.of(
+                    List.of(TWO_BOOKINGS),
+                    """
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
+                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
+                    """
+            )
         );
     }
 
@@ -146,6 +140,88 @@ class DailyWorkingReportCsvConverterTest {
 
         // then
         assertThat(outputStream.toString(UTF_8)).isEqualTo(expected);
+    }
+
+    class DailyWorkingReportDataFixtures {
+      static DailyWorkingReportData ONE_BOOKING = DailyWorkingReportData.builder()
+          .type(Workingday.WorkingDayType.WORKED)
+          .date(LocalDate.of(2024,11,3))
+          .startTime(LocalTime.of(8,0))
+          .breakDuration(LocalTime.of(0,45))
+          .dailyReports(List.of(
+              DailyReportData.builder()
+                  .date("2024-11-03")
+                  .employeeorderId(183209)
+                  .orderSign("111")
+                  .orderLabel("Rumsitzen")
+                  .suborderSign("111/01")
+                  .suborderLabel("Stuhlpolsterung")
+                  .hours(8)
+                  .minutes(0)
+                  .comment("schlafen")
+                  .build()
+          ))
+          .build();
+      static DailyWorkingReportData TWO_BOOKINGS = DailyWorkingReportData.builder()
+          .type(Workingday.WorkingDayType.WORKED)
+          .date(LocalDate.of(2024,11,4))
+          .startTime(LocalTime.of(9,0))
+          .breakDuration(LocalTime.of(0,30))
+          .dailyReports(List.of(
+              DailyReportData.builder()
+                  .date("2024-11-04")
+                  .employeeorderId(183209)
+                  .orderSign("111")
+                  .orderLabel("Rumsitzen")
+                  .suborderSign("111/01")
+                  .suborderLabel("Stuhlpolsterung")
+                  .hours(0)
+                  .minutes(30)
+                  .comment("Team-Mittag")
+                  .build(),
+              DailyReportData.builder()
+                  .date("2024-11-04")
+                  .employeeorderId(183209)
+                  .orderSign("111")
+                  .orderLabel("Rumsitzen")
+                  .suborderSign("111/01")
+                  .suborderLabel("Stuhlpolsterung")
+                  .hours(7)
+                  .minutes(30)
+                  .comment("Daily")
+                  .build()
+          ))
+          .build();
+      static DailyWorkingReportData TWO_BOOKINGS_NO_EMPLOYEE_ORDER = DailyWorkingReportData.builder()
+        .type(Workingday.WorkingDayType.WORKED)
+        .date(LocalDate.of(2024,11,4))
+        .startTime(LocalTime.of(9,0))
+        .breakDuration(LocalTime.of(0,30))
+        .dailyReports(List.of(
+            DailyReportData.builder()
+                .date("2024-11-04")
+                .employeeorderId(183209)
+                .orderSign("111")
+                .orderLabel("Rumsitzen")
+                .suborderSign("111/01")
+                .suborderLabel("Stuhlpolsterung")
+                .hours(0)
+                .minutes(30)
+                .comment("Team-Mittag")
+                .build(),
+            DailyReportData.builder()
+                .date("2024-11-04")
+                .employeeorderId(183209)
+                .orderSign("111")
+                .orderLabel("Rumsitzen")
+                .suborderSign("111/01")
+                .suborderLabel("Stuhlpolsterung")
+                .hours(7)
+                .minutes(30)
+                .comment("Daily")
+                .build()
+        ))
+        .build();
     }
 
 }
