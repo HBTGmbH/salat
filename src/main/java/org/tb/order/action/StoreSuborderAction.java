@@ -119,7 +119,10 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
             List<Suborder> suborders;
             if(Objects.equals(addSuborderForm.getParentId(), addSuborderForm.getCustomerorderId())) {
                 Customerorder parentCustomerorder = customerorderService.getCustomerorderById(addSuborderForm.getParentId());
-                suborders = suborderService.getSubordersByCustomerorderId(parentCustomerorder.getId());
+                suborders = suborderService.getSubordersByCustomerorderId(parentCustomerorder.getId())
+                    .stream()
+                    .filter(so -> so.getParentorder() == null) // only top level suborders
+                    .toList();
             } else {
                 Suborder parentSuborder = suborderService.getSuborderById(addSuborderForm.getParentId());
                 suborders = suborderService.getSuborderChildren(parentSuborder.getId());
