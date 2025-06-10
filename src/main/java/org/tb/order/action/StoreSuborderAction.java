@@ -109,43 +109,31 @@ public class StoreSuborderAction extends LoginRequiredAction<AddSuborderForm> {
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("generateSign")) {
             //*** task for generating new suborder's sign
-            Suborder tempSubOrder = suborderService.getSuborderById(addSuborderForm.getParentId());
-            Customerorder tempOrder = customerorderService.getCustomerorderById(addSuborderForm.getParentId());
-            List<Suborder> suborders = suborderService.getAllSuborders();
             Long soId;
             try {
                 soId = Long.valueOf(request.getSession().getAttribute("soId").toString());
             } catch (Throwable th) {
                 soId = -1L;
             }
-            if (suborders != null) {
-                if (tempSubOrder != null && (tempOrder == null || Objects.equals(
-                    tempSubOrder.getCustomerorder().getId(), tempOrder.getId()))) {
-                    int version = 1;
-                    DecimalFormat df = new DecimalFormat("00");
-                    for (Suborder suborder : suborders) {
-                        if (suborder.getParentorder() != null && Objects.equals(suborder.getParentorder().getId(),
-                            tempSubOrder.getId())) {
-                            if (suborder.getCompleteOrderSign().equals(tempSubOrder.getCompleteOrderSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
-                                version++;
-                            }
-                        }
-                    }
-                    addSuborderForm.setSign(tempSubOrder.getCompleteOrderSign() + "." + df.format(version));
-                } else if (tempOrder != null) {
-                    int version = 1;
-                    DecimalFormat df = new DecimalFormat("00");
-                    for (Suborder suborder : suborders) {
-                        if (suborder.getParentorder() == null && Objects.equals(suborder.getCustomerorder().getId(),
-                            tempOrder.getId())) {
-                            if (suborder.getCompleteOrderSign().equals(tempOrder.getSign() + "." + df.format(version)) && !soId.equals(suborder.getId())) {
-                                version++;
-                            }
-                        }
-                    }
-                    addSuborderForm.setSign(tempOrder.getSign() + "." + df.format(version));
+
+            List<Suborder> suborders;
+            if(Objects.equals(addSuborderForm.getParentId(), addSuborderForm.getCustomerorderId())) {
+                Customerorder parentCustomerorder = customerorderService.getCustomerorderById(addSuborderForm.getParentId());
+                suborders = suborderService.getSubordersByCustomerorderId(parentCustomerorder.getId());
+            } else {
+                Suborder parentSuborder = suborderService.getSuborderById(addSuborderForm.getParentId());
+                suborders = suborderService.getSuborderChildren(parentSuborder.getId());
+            }
+
+            int version = 1;
+            DecimalFormat df = new DecimalFormat("00");
+            for (Suborder suborder : suborders) {
+                if (suborder.getCompleteOrderSign().endsWith("/" + df.format(version)) && !soId.equals(suborder.getId())) {
+                    version++;
                 }
             }
+            addSuborderForm.setSign(df.format(version));
+
             request.getSession().setAttribute("invoice", addSuborderForm.getInvoice());
             return mapping.getInputForward();
         }
