@@ -128,7 +128,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     ecForm.getFreelancer(),
                     ecForm.getHide(),
                     dailyworkingtime,
-                    yearlyvacation
+                    yearlyvacation,
+                    false
                 );
             } else {
                 employeecontractService.createEmployeecontract(
@@ -141,7 +142,8 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     ecForm.getHide(),
                     dailyworkingtime,
                     yearlyvacation,
-                    initialOvertime
+                    initialOvertime,
+                    false
                 );
             }
 

@@ -67,7 +67,8 @@ public class EmployeecontractServiceTest {
 				TRUE == ec.getHide(),
 				ec.getDailyWorkingTime(),
 				ec.getVacationEntitlement(),
-				Duration.ZERO
+				Duration.ZERO,
+				false
 		);
 
 		assertThat(id).isGreaterThan(0);

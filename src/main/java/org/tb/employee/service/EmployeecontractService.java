@@ -69,7 +69,8 @@ public class EmployeecontractService {
       boolean hide,
       Duration dailyWorkingTime,
       int vacationEntitlement,
-      Duration initialOvertime
+      Duration initialOvertime,
+      boolean resolveConflicts
   ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     var employeecontract = new Employeecontract();
@@ -83,7 +84,8 @@ public class EmployeecontractService {
         freelancer,
         hide,
         dailyWorkingTime,
-        vacationEntitlement);
+        vacationEntitlement,
+        resolveConflicts);
 
     if(initialOvertime != null && !initialOvertime.isZero() ) {
       Overtime overtime = new Overtime();
@@ -107,7 +109,8 @@ public class EmployeecontractService {
       boolean freelancer,
       boolean hide,
       Duration dailyWorkingTime,
-      int vacationEntitlement
+      int vacationEntitlement,
+      boolean resolveConflicts
   ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
@@ -118,7 +121,8 @@ public class EmployeecontractService {
         freelancer,
         hide,
         dailyWorkingTime,
-        vacationEntitlement);
+        vacationEntitlement,
+        resolveConflicts);
   }
 
   private void createOrUpdate(
@@ -130,7 +134,8 @@ public class EmployeecontractService {
       boolean freelancer,
       boolean hide,
       Duration dailyWorkingTime,
-      int vacationEntitlement) {
+      int vacationEntitlement,
+      boolean resolveConflicts) {
 
     validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorId);
 
