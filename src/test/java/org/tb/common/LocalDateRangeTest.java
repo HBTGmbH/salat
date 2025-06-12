@@ -8,9 +8,53 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class LocalDateRangeTest {
+
+  @Test
+  public void testMinus_NoOverlap_ReturnsOriginalRange() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    LocalDateRange other = new LocalDateRange(currentDate.plusDays(4), currentDate.plusDays(7));
+    assertEquals(List.of(range), range.minus(other));
+  }
+
+  @Test
+  public void testMinus_CompleteOverlap_ReturnsEmptyList() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(currentDate, currentDate.plusDays(5));
+    LocalDateRange other = new LocalDateRange(currentDate.minusDays(1), currentDate.plusDays(6));
+    assertEquals(List.of(), range.minus(other));
+  }
+
+  @Test
+  public void testMinus_PartialOverlapAtStart_ReturnsRemainingRange() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(currentDate, currentDate.plusDays(5));
+    LocalDateRange other = new LocalDateRange(currentDate.minusDays(1), currentDate.plusDays(2));
+    assertEquals(List.of(new LocalDateRange(currentDate.plusDays(3), currentDate.plusDays(5))), range.minus(other));
+  }
+
+  @Test
+  public void testMinus_PartialOverlapAtEnd_ReturnsRemainingRange() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(currentDate, currentDate.plusDays(5));
+    LocalDateRange other = new LocalDateRange(currentDate.plusDays(4), currentDate.plusDays(6));
+    assertEquals(List.of(new LocalDateRange(currentDate, currentDate.plusDays(3))), range.minus(other));
+  }
+
+  @Test
+  public void testMinus_RangeInside_ReturnsTwoSplitRanges() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(currentDate, currentDate.plusDays(5));
+    LocalDateRange other = new LocalDateRange(currentDate.plusDays(2), currentDate.plusDays(3));
+    assertEquals(List.of(
+        new LocalDateRange(currentDate, currentDate.plusDays(1)),
+        new LocalDateRange(currentDate.plusDays(4), currentDate.plusDays(5))
+    ), range.minus(other));
+  }
 
   @Test
   public void testContains_dateIsNull_returnsFalse() {
