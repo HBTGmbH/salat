@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.temporal.TemporalAdjusters;
+import java.util.List;
 import java.util.Objects;
 import jakarta.annotation.Nullable;
 import lombok.Data;
@@ -159,5 +160,32 @@ public class LocalDateRange implements Comparable<LocalDateRange> {
   public String toString() {
     return (from != null ? from.toString() : "...") + " - " + (until != null ? until.toString() : "...");
   }
-  
+
+  public List<LocalDateRange> minus(LocalDateRange other) {
+    if (other == null || !overlaps(other)) {
+      return List.of(this);
+    }
+
+    LocalDate from = isInfiniteFrom() ? FINIT_FROM_BOUNDARY : this.from;
+    LocalDate until = isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : this.until;
+    LocalDate otherFrom = other.isInfiniteFrom() ? FINIT_FROM_BOUNDARY : other.from;
+    LocalDate otherUntil = other.isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : other.until;
+
+    if (!otherFrom.isAfter(from) && !otherUntil.isBefore(until)) {
+      return List.of();
+    }
+
+    if (otherFrom.isAfter(from) && otherUntil.isBefore(until)) {
+      return List.of(
+          new LocalDateRange(from, otherFrom.minusDays(1)),
+          new LocalDateRange(otherUntil.plusDays(1), until)
+      );
+    }
+
+    if (!otherFrom.isAfter(from)) {
+      return List.of(new LocalDateRange(otherUntil.plusDays(1), until));
+    }
+
+    return List.of(new LocalDateRange(from, otherFrom.minusDays(1)));
+  }
 }
