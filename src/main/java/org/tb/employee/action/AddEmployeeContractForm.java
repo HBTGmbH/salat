@@ -3,6 +3,7 @@ package org.tb.employee.action;
 import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DataValidationUtils.isInRange;
 import static org.tb.common.util.DataValidationUtils.isPositiveInteger;
+import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.parse;
 import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.parseDuration;
@@ -41,6 +42,7 @@ public class AddEmployeeContractForm extends ActionForm {
     private String initialOvertime;
     private String newOvertime;
     private String newOvertimeComment;
+    private String newOvertimeEffective;
     private Boolean hide;
     private String action;
     private Boolean resolveConflicts;
@@ -70,6 +72,11 @@ public class AddEmployeeContractForm extends ActionForm {
         return parseDuration(newOvertime);
     }
 
+    public LocalDate getNewOvertimeEffectiveTyped() {
+        if(newOvertimeEffective == null || newOvertimeEffective.isBlank()) return null;
+        return parse(newOvertimeEffective);
+    }
+
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         employee = 0;
@@ -84,6 +91,7 @@ public class AddEmployeeContractForm extends ActionForm {
         yearlyvacation = String.valueOf(DEFAULT_VACATION_PER_YEAR);
         newOvertime = "0:00";
         newOvertimeComment = "";
+        newOvertimeEffective = format(DateUtils.today());
         resolveConflicts = Boolean.FALSE;
     }
 

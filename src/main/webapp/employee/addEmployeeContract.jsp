@@ -495,7 +495,7 @@
 			</c:forEach>
 			<tr>
 				<td style="text-align: right">
-					<c:out value="${dateString}" />
+					<html:text property="newOvertimeEffective" size="10" style="text-align: left" />
 				</td>
 				<td style="text-align: right">
 					<html:text property="newOvertime" size="10" style="text-align: right" />

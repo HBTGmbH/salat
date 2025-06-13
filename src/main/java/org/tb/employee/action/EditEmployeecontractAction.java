@@ -57,10 +57,6 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
         request.getSession().setAttribute("overtimes", overtimes);
         request.getSession().setAttribute("totalovertime", DurationUtils.format(totalOvertime));
 
-        // set day string for overime
-        LocalDate now = today();
-        request.getSession().setAttribute("dateString", DateUtils.format(now));
-
         // forward to employee contract add/edit form
         return mapping.findForward("success");
     }
