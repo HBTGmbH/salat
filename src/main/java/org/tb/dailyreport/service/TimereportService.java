@@ -90,6 +90,7 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
@@ -650,6 +651,8 @@ public class TimereportService {
       tr.setStatus(TIMEREPORT_STATUS_OPEN);
       tr.setEmployeecontract(updatingEmployeeorder.getEmployeecontract());
       timereportRepository.save(tr);
+      event.addLog("Buchung %s, %s, %s verschoben".formatted(tr.getReferenceday().getRefdate(), tr.getSuborder().getCompleteOrderSign(),
+          DurationUtils.format(tr.getDuration())));
     });
 
     var timereportIds = timereports.stream().map(Timereport::getId).toList();

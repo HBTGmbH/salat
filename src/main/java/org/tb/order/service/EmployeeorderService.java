@@ -2,7 +2,6 @@ package org.tb.order.service;
 
 import static java.lang.Boolean.TRUE;
 import static java.time.Year.parse;
-import static org.tb.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static org.tb.common.exception.ErrorCode.EO_CONFLICT_RESOLUTION_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
@@ -200,12 +199,15 @@ public class EmployeeorderService {
         .toList();
 
     for (Employeeorder conflictingOrder : conflictingOrders) {
-      resolveConflict(conflictingOrder, updatingEmployeecontract, conflictingEmployeecontract);
+      resolveConflict(conflictingOrder, updatingEmployeecontract, conflictingEmployeecontract, event);
     }
   }
 
   private void resolveConflict(Employeeorder conflictingOrder, Employeecontract updatingEmployeecontract,
-      Employeecontract conflictingEmployeecontract) {
+      Employeecontract conflictingEmployeecontract, EmployeecontractConflictResolutionEvent originEvent) {
+
+    originEvent.addLog("Alter Mitarbeiterauftrag muss in seiner Gültigkeit verkürzt werden %s (%s). ".formatted(conflictingOrder.getSuborder().getCompleteOrderSign(), conflictingOrder.getValidity()));
+
     var newOrder = new Employeeorder();
     // start not earlier than the new contract
     newOrder.setFromDate(DateUtils.max(updatingEmployeecontract.getValidFrom(), conflictingOrder.getFromDate()));
@@ -226,9 +228,13 @@ public class EmployeeorderService {
     employeeorderRepository.save(mergedOrder);
     employeeorderRepository.save(conflictingOrder);
 
+    originEvent.addLog("Neuen Mitarbeiterauftrag angelegt %s (%s)".formatted(mergedOrder.getSuborder().getCompleteOrderSign(), mergedOrder.getValidity()));
+    originEvent.addLog("Alten Mitarbeiterauftrag angepasst %s (%s)".formatted(conflictingOrder.getSuborder().getCompleteOrderSign(), conflictingOrder.getValidity()));
+
     var event = new EmployeeorderConflictResolutionEvent(mergedOrder, conflictingOrder);
     try {
       eventPublisher.publishEvent(event);
+      event.getEventLog().forEach(originEvent::addLog);
     } catch(VetoedException e) {
       // adding context to the veto to make it easier to understand the complete picture
       var allMessages = new ArrayList<ServiceFeedbackMessage>();
@@ -249,20 +255,21 @@ public class EmployeeorderService {
           conflictingOrder.getEmployeecontract().getEmployee().getSign(),
           conflictingOrder.getEmployeecontract().getId()
       );
+      originEvent.addLog("Nicht mehr benötigten alten Mitarbeiterauftrag gelöscht %s (%s) ".formatted(conflictingOrder.getSuborder().getCompleteOrderSign(), conflictingOrder.getValidity()));
     }
   }
 
   private Employeeorder mergeWithExisting(Employeeorder newOrder) {
-    var existingOrders = employeeorderRepository.findAllByEmployeecontractId(newOrder.getEmployeecontract().getId());
-    for (Employeeorder existingOrder : existingOrders) {
-      if(existingOrder.getValidity().isConnected(newOrder.getValidity())) {
-        var newValidity = existingOrder.getValidity().plus(newOrder.getValidity());
-        existingOrder.setFromDate(newValidity.getFrom());
-        existingOrder.setUntilDate(newValidity.getUntil());
-        return existingOrder;
-      }
-    }
-    return newOrder;
+    var existingOrder = employeeorderRepository.findAllByEmployeecontractId(newOrder.getEmployeecontract().getId())
+        .stream().filter(existing -> existing.getSuborder().getId().equals(newOrder.getSuborder().getId()))
+        .filter(existing -> existing.getValidity().isConnected(newOrder.getValidity()))
+        .findFirst();
+    return existingOrder.map(existing -> {
+      var newValidity = existing.getValidity().plus(newOrder.getValidity());
+      existing.setFromDate(newValidity.getFrom());
+      existing.setUntilDate(newValidity.getUntil());
+      return existing;
+    }).orElse(newOrder);
   }
 
   private boolean isVacationOrder(Employeeorder employeeorder) {

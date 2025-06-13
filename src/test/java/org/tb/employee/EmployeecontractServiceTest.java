@@ -57,7 +57,7 @@ public class EmployeecontractServiceTest {
 		this.employeeService.createOrUpdate(supervisor);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
-		long id = employeecontractService.createEmployeecontract(
+		var info = employeecontractService.createEmployeecontract(
 				ec.getEmployee().getId(),
 				ec.getValidFrom(),
 				ec.getValidUntil(),
@@ -71,10 +71,10 @@ public class EmployeecontractServiceTest {
 				false
 		);
 
-		assertThat(id).isGreaterThan(0);
-		var employeecontract = employeecontractService.getEmployeecontractById(id);
+		assertThat(info.getId()).isGreaterThan(0);
+		var employeecontract = employeecontractService.getEmployeecontractById(info.getId());
 		assertThat(employeecontract).isNotNull();
-		assertThat(employeecontract.getId()).isEqualTo(id);
+		assertThat(employeecontract.getId()).isEqualTo(info.getId());
 		assertThat(employeecontract.getVacations()).hasSize(1);
 		assertThat(employeecontract.getVacations().getFirst().getEntitlement()).isEqualTo(ec.getVacationEntitlement());
 	}
