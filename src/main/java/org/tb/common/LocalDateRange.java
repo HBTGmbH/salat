@@ -8,20 +8,23 @@ import java.util.List;
 import java.util.Objects;
 import jakarta.annotation.Nullable;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.tb.common.util.DateUtils;
 
 @Data
-@RequiredArgsConstructor
 public class LocalDateRange implements Comparable<LocalDateRange> {
 
-  private final static LocalDate FINIT_FROM_BOUNDARY = LocalDate.of(1970, 1, 1);
-  private final static LocalDate FINIT_UNTIL_BOUNDARY = LocalDate.of(2999, 12, 31);
+  public final static LocalDate FINIT_FROM_BOUNDARY = LocalDate.of(1970, 1, 1);
+  public final static LocalDate FINIT_UNTIL_BOUNDARY = LocalDate.of(2999, 12, 31);
 
   @Nullable
   private final LocalDate from;
   @Nullable
   private final LocalDate until;
+
+  public LocalDateRange(LocalDate from, LocalDate until) {
+    this.from = from == FINIT_FROM_BOUNDARY ? null : from;
+    this.until = until == FINIT_UNTIL_BOUNDARY ? null : until;
+  }
 
   public LocalDateRange(YearMonth month) {
     this.from = month.atDay(1);

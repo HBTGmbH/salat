@@ -43,6 +43,7 @@ public class AddEmployeeContractForm extends ActionForm {
     private String newOvertimeComment;
     private Boolean hide;
     private String action;
+    private Boolean resolveConflicts;
 
     public LocalDate getValidFromTyped() {
         return parse(validFrom);
@@ -83,6 +84,7 @@ public class AddEmployeeContractForm extends ActionForm {
         yearlyvacation = String.valueOf(DEFAULT_VACATION_PER_YEAR);
         newOvertime = "0:00";
         newOvertimeComment = "";
+        resolveConflicts = Boolean.FALSE;
     }
 
     // form is used by two different form, so validation must be handled a bit differently

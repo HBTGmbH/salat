@@ -25,11 +25,15 @@ public enum ErrorCode {
   EC_SUPERVISOR_INVALID("EC-0004", "supervisor for employee contract is invalid"),
   EC_OVERLAPS("EC-0005", "employee contract validity overlaps another employee contract of the same employee"),
   EC_EMPLOYEE_CONTRACT_NOT_FOUND("EC-0006","employeeContractId must match an employee contract"),
+  EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS("EC-0007", "employee contract validity overlaps too many other employee contracts"),
+  EC_CONFLICT_RESOLUTION_GOT_VETO("EC-0008", "conflict resolution cannot be performed due to veto"),
+  EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT("EC-0009", "employee contract does not clearly overlap an existing but results in a split."),
 
   EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),
+  EO_CONFLICT_RESOLUTION_GOT_VETO("EO-0003", "conflict resolution cannot be performed due to veto"),
 
   SO_UPDATE_GOT_VETO("SO-0001", "suborder cannot be changed due to veto"),
   SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),

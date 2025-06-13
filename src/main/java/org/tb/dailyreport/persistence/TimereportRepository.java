@@ -50,6 +50,15 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   @Query("""
       select t from Timereport t
+      where t.employeeorder.id = :employeeorderId
+        and t.referenceday.refdate >= :begin
+        and t.referenceday.refdate <= :end
+      order by t.referenceday.refdate asc
+      """)
+  List<Timereport> findAllByEmployeeorderIdAndReferencedayBetween(long employeeorderId, LocalDate begin, LocalDate end);
+
+  @Query("""
+      select t from Timereport t
       where t.employeecontract.id = :employeecontractId
       and (t.referenceday.refdate < t.employeecontract.validFrom
       or t.employeecontract.validUntil is not null and t.referenceday.refdate > t.employeecontract.validUntil)
