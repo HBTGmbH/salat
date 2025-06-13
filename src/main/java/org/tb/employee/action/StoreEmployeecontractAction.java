@@ -145,7 +145,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     ecForm.getHide(),
                     dailyworkingtime,
                     yearlyvacation,
-                    initialOvertime,
+                    initialOvertime, // TODO move to OvertimeService - this has nothing to do with the contract, same for the "staticOvertime" in Employeecontract, should be somewhere else
                     resolveConflicts
                 );
             }
