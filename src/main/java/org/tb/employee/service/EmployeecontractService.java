@@ -166,7 +166,7 @@ public class EmployeecontractService {
       // get the conflicting employee contract
       var overlappingContracts = getOverlapping(employeecontract);
       var conflictingEmployeecontract = overlappingContracts.getFirst();
-      logs.add("Konflikt mit altem Vertrag %s erkannt. Automatische Auflösung angefordert...".formatted(conflictingEmployeecontract.getValidity()));
+      logs.add("Konflikt mit altem Vertrag (%s) erkannt. Automatische Auflösung angefordert...".formatted(conflictingEmployeecontract.getValidity()));
 
       // set the conflicting employee contract to invalid - it ends one day before
       var conflictingValidity = conflictingEmployeecontract.getValidity();
@@ -177,7 +177,7 @@ public class EmployeecontractService {
       LocalDateRange resolvedValidity = resolvedValidities.getFirst();
       conflictingEmployeecontract.setValidFrom(resolvedValidity.getFrom());
       conflictingEmployeecontract.setValidUntil(resolvedValidity.getUntil());
-      logs.add("Alten Vertrag angepasst von %s nach %s.".formatted(conflictingValidity, resolvedValidity));
+      logs.add("Alten Vertrag angepasst von (%s) nach (%s).".formatted(conflictingValidity, resolvedValidity));
 
       // update release and acceptance dates
       if(conflictingEmployeecontract.getReportReleaseDate() != null) {
@@ -192,6 +192,15 @@ public class EmployeecontractService {
         );
         logs.add("Abnahmedatum im alten Vertrag angepasst: " + DateUtils.format(conflictingEmployeecontract.getReportAcceptanceDate()));
       }
+
+      // move overtime
+      overtimeRepository.findAllByEmployeecontractId(conflictingEmployeecontract.getId())
+          .stream()
+          .filter(o -> !resolvedValidity.contains(o.getEffective()))
+          .forEach(o -> {
+            o.setEmployeecontract(employeecontract);
+            logs.add("Overtime %s von Vertrag (%s) nach Vertrag (%s) verschoben.".formatted(o.getEffective(), conflictingEmployeecontract.getValidity(), employeecontract.getValidity()));
+          });
 
       // save contracts to ensure id is set before resolving conflicts (other parts in this software rely on this)
       employeecontractRepository.save(employeecontract);
