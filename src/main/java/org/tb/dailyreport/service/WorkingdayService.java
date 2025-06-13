@@ -28,6 +28,7 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.persistence.WorkingdayRepository;
+import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.order.domain.Employeeorder;
 
@@ -118,6 +119,23 @@ public class WorkingdayService {
   void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
     var workingdays = workingdayRepository.findAllByEmployeecontractId(event.getId());
     workingdayRepository.deleteAll(workingdays);
+  }
+
+  @EventListener
+  void onEmployeecontractConflictResolution(EmployeecontractConflictResolutionEvent event) {
+    var updatingEmployeecontract = event.getUpdatingEmployeecontract();
+    var conflictingEmployeecontract = event.getConflictingEmployeecontract();
+
+    var workingdays = workingdayRepository.findAllByEmployeecontractIdAndReferencedayBetween(
+        conflictingEmployeecontract.getId(),
+        updatingEmployeecontract.getValidFrom(),
+        updatingEmployeecontract.getValidUntil()
+    );
+
+    workingdays.forEach(wd -> {
+      wd.setEmployeecontract(updatingEmployeecontract);
+      workingdayRepository.save(wd);
+    });
   }
 
 }
