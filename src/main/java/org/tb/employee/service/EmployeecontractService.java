@@ -184,8 +184,9 @@ public class EmployeecontractService {
         );
       }
 
-      // save new contract to ensure id is set before resolving conflicts (other parts in this software rely on this)
+      // save contracts to ensure id is set before resolving conflicts (other parts in this software rely on this)
       employeecontractRepository.save(employeecontract);
+      employeecontractRepository.save(conflictingEmployeecontract);
 
       var event = new EmployeecontractConflictResolutionEvent(employeecontract, conflictingEmployeecontract);
       try {
@@ -198,6 +199,19 @@ public class EmployeecontractService {
         ));
         allMessages.addAll(e.getMessages());
         event.veto(allMessages);
+      }
+
+      var updateEvent = new EmployeecontractUpdateEvent(conflictingEmployeecontract);
+      try {
+        eventPublisher.publishEvent(updateEvent);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            EC_CONFLICT_RESOLUTION_GOT_VETO
+        ));
+        allMessages.addAll(e.getMessages());
+        updateEvent.veto(allMessages);
       }
     }
 
