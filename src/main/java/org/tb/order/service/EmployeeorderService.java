@@ -216,14 +216,17 @@ public class EmployeeorderService {
     newOrder.setDebithours(conflictingOrder.getDebithours());
     newOrder.setDebithoursunit(conflictingOrder.getDebithoursunit());
 
+    var mergedOrder = mergeWithExisting(newOrder);
+
     // confliciting should end with the old contract
     conflictingOrder.setFromDate(DateUtils.max(conflictingEmployeecontract.getValidFrom(), conflictingOrder.getFromDate()));
     conflictingOrder.setUntilDate(DateUtils.min(conflictingEmployeecontract.getValidUntil(), conflictingOrder.getUntilDate()));
 
-    // save new order to ensure id is set before resolving conflicts (other parts in this software rely on this)
-    employeeorderRepository.save(newOrder);
+    // save orders to ensure id is set before resolving conflicts (other parts in this software rely on this)
+    employeeorderRepository.save(mergedOrder);
+    employeeorderRepository.save(conflictingOrder);
 
-    var event = new EmployeeorderConflictResolutionEvent(newOrder, conflictingOrder);
+    var event = new EmployeeorderConflictResolutionEvent(mergedOrder, conflictingOrder);
     try {
       eventPublisher.publishEvent(event);
     } catch(VetoedException e) {
@@ -231,14 +234,24 @@ public class EmployeeorderService {
       var allMessages = new ArrayList<ServiceFeedbackMessage>();
       allMessages.add(error(
           EO_CONFLICT_RESOLUTION_GOT_VETO,
-          newOrder.getSign()
+          mergedOrder.getSign()
       ));
       allMessages.addAll(e.getMessages());
       event.veto(allMessages);
     }
+  }
 
-    employeeorderRepository.save(conflictingOrder);
-    employeeorderRepository.save(newOrder);
+  private Employeeorder mergeWithExisting(Employeeorder newOrder) {
+    var existingOrders = employeeorderRepository.findAllByEmployeecontractId(newOrder.getEmployeecontract().getId());
+    for (Employeeorder existingOrder : existingOrders) {
+      if(existingOrder.getValidity().isConnected(newOrder.getValidity())) {
+        var newValidity = existingOrder.getValidity().plus(newOrder.getValidity());
+        existingOrder.setFromDate(newValidity.getFrom());
+        existingOrder.setUntilDate(newValidity.getUntil());
+        return existingOrder;
+      }
+    }
+    return newOrder;
   }
 
   private boolean isVacationOrder(Employeeorder employeeorder) {
