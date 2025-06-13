@@ -45,8 +45,10 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
+import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
 @Service
@@ -413,6 +415,12 @@ public class OvertimeService {
         .distinct()
         .toList();
     recomputeOvertime(contractsToRecalculate);
+  }
+
+  @EventListener
+  void onEmployeecontractUpdate(EmployeecontractUpdateEvent event) {
+    var employeecontract = event.getDomainObject();
+    recomputeOvertime(List.of(employeecontract.getId()));
   }
 
   private void recomputeOvertime(List<Long> employeecontractIds) {
