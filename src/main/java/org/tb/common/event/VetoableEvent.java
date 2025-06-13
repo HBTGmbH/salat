@@ -6,7 +6,7 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 
 @Getter
-public abstract class VetoableEvent {
+public abstract class VetoableEvent extends LoggingEvent {
 
   private boolean vetoed;
   private List<ServiceFeedbackMessage> messages = List.of();
