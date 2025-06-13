@@ -483,7 +483,7 @@
 					</c:otherwise>
 				</c:choose>
 					<td style="text-align: right">
-						<c:out value="${overtime.createdString}" />
+						<java8:formatLocalDate value="${overtime.effective}" />
 					</td>
 					<td style="text-align: right">
 						<java8:formatDuration value="${overtime.timeMinutes}" />

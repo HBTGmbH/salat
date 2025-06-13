@@ -48,7 +48,6 @@ import org.tb.employee.domain.Overtime;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
 @Service
@@ -267,8 +266,8 @@ public class OvertimeService {
   }
 
   private boolean isOvertimeEffectiveBetween(LocalDate start, LocalDate end, Overtime overtime) {
-    return overtime.getEffectiveDate().isBefore(end.plusDays(1)) &&
-           !overtime.getEffectiveDate().isBefore(start);
+    return overtime.getEffective().isBefore(end.plusDays(1)) &&
+           !overtime.getEffective().isBefore(start);
   }
 
   public OvertimeReport createDetailedReportForEmployee(long employeecontractId) {
