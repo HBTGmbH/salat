@@ -59,6 +59,13 @@
 
 <html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
+<c:if test="${!empty logs}">
+	<c:forEach items="${logs}" var="log">
+		<div class="logMessage"><c:out value="${log}" /></div>
+	</c:forEach>
+</c:if>
+
+
 <table class="center backgroundcolor">
 <html:form action="/ShowEmployeecontract?task=refresh">
 	<tr>

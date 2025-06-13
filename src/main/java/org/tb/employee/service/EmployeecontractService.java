@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -65,7 +66,7 @@ public class EmployeecontractService {
   private final OvertimeRepository overtimeRepository;
 
   @Authorized(requiresManager = true)
-  public long createEmployeecontract(
+  public ContractStoredInfo createEmployeecontract(
       long employeeId,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -83,7 +84,7 @@ public class EmployeecontractService {
     employeecontract.setOvertimeStatic(Duration.ZERO);
     Employee theEmployee = employeeDAO.getEmployeeById(employeeId);
     employeecontract.setEmployee(theEmployee);
-    createOrUpdate(employeecontract, validFrom,
+    var info = createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
         taskDescription,
@@ -102,11 +103,11 @@ public class EmployeecontractService {
     }
 
     createVacation(employeecontract.getId(), Year.now(), vacationEntitlement);
-    return employeecontract.getId();
+    return info;
   }
 
   @Authorized(requiresManager = true)
-  public void updateEmployeecontract(
+  public ContractStoredInfo updateEmployeecontract(
       long employeecontractId,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -120,7 +121,7 @@ public class EmployeecontractService {
   ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
 
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    createOrUpdate(employeecontract, validFrom,
+    return createOrUpdate(employeecontract, validFrom,
         validUntil,
         supervisorId,
         taskDescription,
@@ -131,7 +132,7 @@ public class EmployeecontractService {
         resolveConflicts);
   }
 
-  private void createOrUpdate(
+  private ContractStoredInfo createOrUpdate(
       Employeecontract employeecontract,
       LocalDate validFrom,
       LocalDate validUntil,
@@ -142,6 +143,8 @@ public class EmployeecontractService {
       Duration dailyWorkingTime,
       int vacationEntitlement,
       boolean resolveConflicts) {
+
+    List<String> logs = new ArrayList<>();
 
     var throwResolvableConflicts = !resolveConflicts; // throw always if not resolving any conflicts
     var valid = validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorId, throwResolvableConflicts);
@@ -159,29 +162,35 @@ public class EmployeecontractService {
     adjustVacations(employeecontract, vacationEntitlement);
 
     if(!valid) {
+
       // get the conflicting employee contract
       var overlappingContracts = getOverlapping(employeecontract);
       var conflictingEmployeecontract = overlappingContracts.getFirst();
+      logs.add("Konflikt mit altem Vertrag %s erkannt. Automatische Auflösung angefordert...".formatted(conflictingEmployeecontract.getValidity()));
 
       // set the conflicting employee contract to invalid - it ends one day before
-      var resolvedValidities = conflictingEmployeecontract.getValidity().minus(employeecontract.getValidity());
+      var conflictingValidity = conflictingEmployeecontract.getValidity();
+      var resolvedValidities = conflictingValidity.minus(employeecontract.getValidity());
       if(resolvedValidities.size() > 1) {
         throw new BusinessRuleException(EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT, resolvedValidities.size());
       }
       LocalDateRange resolvedValidity = resolvedValidities.getFirst();
       conflictingEmployeecontract.setValidFrom(resolvedValidity.getFrom());
       conflictingEmployeecontract.setValidUntil(resolvedValidity.getUntil());
+      logs.add("Alten Vertrag angepasst von %s nach %s.".formatted(conflictingValidity, resolvedValidity));
 
       // update release and acceptance dates
       if(conflictingEmployeecontract.getReportReleaseDate() != null) {
         conflictingEmployeecontract.setReportReleaseDate(
             DateUtils.min(conflictingEmployeecontract.getReportReleaseDate(), conflictingEmployeecontract.getValidUntil())
         );
+        logs.add("Freigabedatum im alten Vertrag angepasst: " + DateUtils.format(conflictingEmployeecontract.getReportReleaseDate()));
       }
       if(conflictingEmployeecontract.getReportAcceptanceDate() != null) {
         conflictingEmployeecontract.setReportAcceptanceDate(
             DateUtils.min(conflictingEmployeecontract.getReportAcceptanceDate(), conflictingEmployeecontract.getValidUntil())
         );
+        logs.add("Abnahmedatum im alten Vertrag angepasst: " + DateUtils.format(conflictingEmployeecontract.getReportAcceptanceDate()));
       }
 
       // save contracts to ensure id is set before resolving conflicts (other parts in this software rely on this)
@@ -191,6 +200,7 @@ public class EmployeecontractService {
       var event = new EmployeecontractConflictResolutionEvent(employeecontract, conflictingEmployeecontract);
       try {
         eventPublisher.publishEvent(event);
+        logs.addAll(event.getEventLog());
       } catch(VetoedException e) {
         // adding context to the veto to make it easier to understand the complete picture
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
@@ -204,6 +214,7 @@ public class EmployeecontractService {
       var updateEvent = new EmployeecontractUpdateEvent(conflictingEmployeecontract);
       try {
         eventPublisher.publishEvent(updateEvent);
+        logs.addAll(updateEvent.getEventLog());
       } catch(VetoedException e) {
         // adding context to the veto to make it easier to understand the complete picture
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
@@ -219,6 +230,7 @@ public class EmployeecontractService {
       var event = new EmployeecontractUpdateEvent(employeecontract);
       try {
         eventPublisher.publishEvent(event);
+        logs.addAll(event.getEventLog());
       } catch(VetoedException e) {
         // adding context to the veto to make it easier to understand the complete picture
         var allMessages = new ArrayList<ServiceFeedbackMessage>();
@@ -231,6 +243,10 @@ public class EmployeecontractService {
       }
     }
     employeecontractRepository.save(employeecontract);
+
+    var info = new ContractStoredInfo(employeecontract.getId());
+    info.addLogs(logs);
+    return info;
   }
 
   private Vacation createVacation(long employeecontractId, Year year, int vacationEntitlement) {
@@ -254,7 +270,12 @@ public class EmployeecontractService {
   }
 
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
-    employeecontract.getVacations().stream().forEach(v -> v.setEntitlement(vacationEntitlement));
+    employeecontract.getVacations().stream().forEach(v -> {
+      if(!v.getEntitlement().equals(vacationEntitlement)) {
+        var oldEntitlemenet = v.getEntitlement();
+        v.setEntitlement(vacationEntitlement);
+      }
+    });
   }
 
   private boolean validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
@@ -428,4 +449,21 @@ public class EmployeecontractService {
     }
     return List.of();
   }
+
+  @Getter
+  @RequiredArgsConstructor
+  public static class ContractStoredInfo {
+    private final long id;
+    private List<String> log = new ArrayList<>();
+
+    public void addLog(String logEntry) {
+      log.add(logEntry);
+    }
+
+    public void addLogs(List<String> logs) {
+      log.addAll(logs);
+    }
+
+  }
+
 }

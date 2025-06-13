@@ -16,7 +16,6 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionUsageException;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -26,6 +25,7 @@ import org.tb.employee.domain.Overtime;
 import org.tb.employee.domain.Vacation;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.employee.service.EmployeecontractService.ContractStoredInfo;
 
 /**
  * action class for storing an employee contractpermanently
@@ -121,8 +121,9 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             var resolveConflicts = TRUE.equals(ecForm.getResolveConflicts());
 
             Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
+            ContractStoredInfo info;
             if(existingEmployeecontractId != null) {
-                employeecontractService.updateEmployeecontract(
+                info = employeecontractService.updateEmployeecontract(
                     existingEmployeecontractId,
                     validFrom,
                     validUntil,
@@ -135,7 +136,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     resolveConflicts
                 );
             } else {
-                employeecontractService.createEmployeecontract(
+                info = employeecontractService.createEmployeecontract(
                     ecForm.getEmployee(),
                     validFrom,
                     validUntil,
@@ -152,6 +153,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
 
             List<Employee> employeeOptionList = employeeService.getAllEmployees();
             request.getSession().setAttribute("employees", employeeOptionList);
+            request.setAttribute("logs", info.getLog());
 
             request.getSession().setAttribute("employeecontracts", employeecontractService.getAllEmployeeContracts());
             request.getSession().removeAttribute("ecId");

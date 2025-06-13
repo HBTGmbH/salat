@@ -356,7 +356,8 @@ public class OvertimeService {
   public void updateOvertimeStatic(Long employeecontractId) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(employeecontract.getReportAcceptanceDate() == null) {
-      throw new IllegalArgumentException("employeecontract.reportAcceptanceDate must not be null for " + employeecontractId);
+      employeecontractService.updateOvertimeStatic(employeecontractId, Duration.ZERO);
+      return;
     }
     var newOvertimeStatic = calculateOvertime(employeecontractId,
         employeecontract.getValidFrom(),
@@ -420,6 +421,7 @@ public class OvertimeService {
   @EventListener
   void onEmployeecontractUpdate(EmployeecontractUpdateEvent event) {
     var employeecontract = event.getDomainObject();
+    event.addLog("Berechne Überstunden neu für Vertrag " + employeecontract.getValidity());
     recomputeOvertime(List.of(employeecontract.getId()));
   }
 
