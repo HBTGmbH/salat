@@ -1025,5 +1025,27 @@ databaseChangeLog:
         - dropColumn:
             columnName: statusreport
             tableName: customerorder
+
+  - changeSet:
+      id: 31
+      author: kr
+      comment: Add effective date column to overtime table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: overtime
+                columnName: effective
+      changes:
+        - addColumn:
+            tableName: overtime
+            columns:
+              - column:
+                  name: effective
+                  type: date
+        - sql:
+            sql: update overtime set effective = greatest(date(overtime.created), (select employeecontract.validFrom from employeecontract where id = overtime.EMPLOYEECONTRACT_ID))
+
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

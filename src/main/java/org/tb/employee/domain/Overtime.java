@@ -38,17 +38,14 @@ public class Overtime extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     private Duration timeMinutes;
 
+    private LocalDate effective;
+
     public String getCreatedString() {
         return DateUtils.formatDateTime(getCreated(), "yyyy-MM-dd HH:mm");
     }
 
     public void setTime(Duration duration) {
         this.timeMinutes = duration;
-    }
-
-    // TODO implement as persistable date
-    public LocalDate getEffectiveDate() {
-        return DateUtils.max(employeecontract.getValidFrom(), getCreated().toLocalDate());
     }
 
 }
