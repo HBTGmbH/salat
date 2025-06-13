@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
@@ -27,6 +28,8 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.persistence.WorkingdayRepository;
+import org.tb.employee.event.EmployeecontractDeleteEvent;
+import org.tb.order.domain.Employeeorder;
 
 @Service
 @Transactional
@@ -110,4 +113,11 @@ public class WorkingdayService {
       LocalDate dateLast) {
     return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast);
   }
+
+  @EventListener
+  void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
+    var workingdays = workingdayRepository.findAllByEmployeecontractId(event.getId());
+    workingdayRepository.deleteAll(workingdays);
+  }
+
 }

@@ -1,7 +1,10 @@
 package org.tb.employee.service;
 
+import static org.tb.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
+import static org.tb.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS;
+import static org.tb.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT;
 import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
@@ -21,6 +24,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -29,6 +33,7 @@ import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DataValidationUtils;
+import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
@@ -36,6 +41,7 @@ import org.tb.employee.domain.Employeecontract_;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.domain.Vacation;
 import org.tb.employee.event.EmployeeDeleteEvent;
+import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -137,8 +143,10 @@ public class EmployeecontractService {
       int vacationEntitlement,
       boolean resolveConflicts) {
 
-    validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorId);
+    var throwResolvableConflicts = !resolveConflicts; // throw always if not resolving any conflicts
+    var valid = validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorId, throwResolvableConflicts);
 
+    employeecontract.setValidUntil(validFrom);
     employeecontract.setValidFrom(validFrom);
     employeecontract.setValidUntil(validUntil);
 
@@ -149,6 +157,49 @@ public class EmployeecontractService {
     employeecontract.setDailyWorkingTime(dailyWorkingTime);
 
     adjustVacations(employeecontract, vacationEntitlement);
+
+    if(!valid) {
+      // get the conflicting employee contract
+      var overlappingContracts = getOverlapping(employeecontract);
+      var conflictingEmployeecontract = overlappingContracts.getFirst();
+
+      // set the conflicting employee contract to invalid - it ends one day before
+      var resolvedValidities = conflictingEmployeecontract.getValidity().minus(employeecontract.getValidity());
+      if(resolvedValidities.size() > 1) {
+        throw new BusinessRuleException(EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT, resolvedValidities.size());
+      }
+      LocalDateRange resolvedValidity = resolvedValidities.getFirst();
+      conflictingEmployeecontract.setValidFrom(resolvedValidity.getFrom());
+      conflictingEmployeecontract.setValidUntil(resolvedValidity.getUntil());
+
+      // update release and acceptance dates
+      if(conflictingEmployeecontract.getReportReleaseDate() != null) {
+        conflictingEmployeecontract.setReportReleaseDate(
+            DateUtils.min(conflictingEmployeecontract.getReportReleaseDate(), conflictingEmployeecontract.getValidUntil())
+        );
+      }
+      if(conflictingEmployeecontract.getReportAcceptanceDate() != null) {
+        conflictingEmployeecontract.setReportAcceptanceDate(
+            DateUtils.min(conflictingEmployeecontract.getReportAcceptanceDate(), conflictingEmployeecontract.getValidUntil())
+        );
+      }
+
+      // save new contract to ensure id is set before resolving conflicts (other parts in this software rely on this)
+      employeecontractRepository.save(employeecontract);
+
+      var event = new EmployeecontractConflictResolutionEvent(employeecontract, conflictingEmployeecontract);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            EC_CONFLICT_RESOLUTION_GOT_VETO
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
+    }
 
     if(!employeecontract.isNew()) {
       var event = new EmployeecontractUpdateEvent(employeecontract);
@@ -192,8 +243,8 @@ public class EmployeecontractService {
     employeecontract.getVacations().stream().forEach(v -> v.setEntitlement(vacationEntitlement));
   }
 
-  private void validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
-      LocalDate validUntil, long supervisorId) {
+  private boolean validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
+      LocalDate validUntil, long supervisorId, boolean throwResolvableConflicts) {
     DataValidationUtils.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
 
     if(employeecontract.getEmployee().getId().equals(supervisorId)) {
@@ -206,15 +257,29 @@ public class EmployeecontractService {
     // ensure no overlapping employee contracts
     employeecontract.setValidFrom(validFrom);
     employeecontract.setValidUntil(validUntil);
-    List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(employeecontract.getEmployee().getId());
-    for (Employeecontract compareEmployeeecontract : allEmployeecontracts) {
-      if (!Objects.equals(compareEmployeeecontract.getId(), employeecontract.getId())) {
-        if(employeecontract.overlaps(compareEmployeeecontract)) {
-          throw new BusinessRuleException(EC_OVERLAPS);
-        }
+    List<Employeecontract> overlapping = getOverlapping(employeecontract);
+    if(!overlapping.isEmpty()) {
+      if(throwResolvableConflicts) {
+        throw new BusinessRuleException(EC_OVERLAPS);
       }
+      // only one overlapping contract can be resolved
+      if(overlapping.size() > 1) {
+        throw new BusinessRuleException(EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS, overlapping.size());
+      }
+      return false;
     }
+    return true;
+  }
 
+  private List<Employeecontract> getOverlapping(Employeecontract employeecontract) {
+    List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(
+        employeecontract.getEmployee().getId());
+    List<Employeecontract> overlapping = allEmployeecontracts
+        .stream()
+        .filter(otherEmployeecontract -> !Objects.equals(otherEmployeecontract.getId(), employeecontract.getId()))
+        .filter(ec -> ec.overlaps(employeecontract))
+        .toList();
+    return overlapping;
   }
 
   @Authorized(requiresManager = true)

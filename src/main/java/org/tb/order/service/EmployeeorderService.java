@@ -2,6 +2,8 @@ package org.tb.order.service;
 
 import static java.lang.Boolean.TRUE;
 import static java.time.Year.parse;
+import static org.tb.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
+import static org.tb.common.exception.ErrorCode.EO_CONFLICT_RESOLUTION_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.EMPLOYEE;
@@ -26,8 +28,10 @@ import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
+import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractChangedEvent;
+import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
 import org.tb.employee.service.EmployeeService;
@@ -35,6 +39,7 @@ import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
+import org.tb.order.event.EmployeeorderConflictResolutionEvent;
 import org.tb.order.event.EmployeeorderDeleteEvent;
 import org.tb.order.event.EmployeeorderUpdateEvent;
 import org.tb.order.event.SuborderDeleteEvent;
@@ -182,6 +187,58 @@ public class EmployeeorderService {
         deleteEmployeeorderById(employeeorder.getId());
       }
     }
+  }
+
+  @EventListener
+  void onEmployeecontractConflictResolution(EmployeecontractConflictResolutionEvent event) {
+    var updatingEmployeecontract = event.getUpdatingEmployeecontract();
+    var conflictingEmployeecontract = event.getConflictingEmployeecontract();
+
+    var conflictingOrders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(conflictingEmployeecontract.getId())
+        .stream()
+        .filter(eo -> eo.getValidity().overlaps(updatingEmployeecontract.getValidity()))
+        .toList();
+
+    for (Employeeorder conflictingOrder : conflictingOrders) {
+      resolveConflict(conflictingOrder, updatingEmployeecontract, conflictingEmployeecontract);
+    }
+  }
+
+  private void resolveConflict(Employeeorder conflictingOrder, Employeecontract updatingEmployeecontract,
+      Employeecontract conflictingEmployeecontract) {
+    var newOrder = new Employeeorder();
+    // start not earlier than the new contract
+    newOrder.setFromDate(DateUtils.max(updatingEmployeecontract.getValidFrom(), conflictingOrder.getFromDate()));
+    newOrder.setUntilDate(DateUtils.min(updatingEmployeecontract.getValidUntil(), conflictingOrder.getUntilDate()));
+    newOrder.setEmployeecontract(updatingEmployeecontract);
+    newOrder.setSuborder(conflictingOrder.getSuborder());
+    newOrder.setSign(conflictingOrder.getSign());
+    newOrder.setDebithours(conflictingOrder.getDebithours());
+    newOrder.setDebithoursunit(conflictingOrder.getDebithoursunit());
+
+    // confliciting should end with the old contract
+    conflictingOrder.setFromDate(DateUtils.max(conflictingEmployeecontract.getValidFrom(), conflictingOrder.getFromDate()));
+    conflictingOrder.setUntilDate(DateUtils.min(conflictingEmployeecontract.getValidUntil(), conflictingOrder.getUntilDate()));
+
+    // save new order to ensure id is set before resolving conflicts (other parts in this software rely on this)
+    employeeorderRepository.save(newOrder);
+
+    var event = new EmployeeorderConflictResolutionEvent(newOrder, conflictingOrder);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          EO_CONFLICT_RESOLUTION_GOT_VETO,
+          newOrder.getSign()
+      ));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
+
+    employeeorderRepository.save(conflictingOrder);
+    employeeorderRepository.save(newOrder);
   }
 
   private boolean isVacationOrder(Employeeorder employeeorder) {

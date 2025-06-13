@@ -19,6 +19,8 @@ import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.LocalDateRange.FINIT_FROM_BOUNDARY;
+import static org.tb.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
 import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
@@ -80,6 +82,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.Warning;
+import org.tb.common.event.VetoableEvent;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
@@ -107,6 +110,7 @@ import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
+import org.tb.order.event.EmployeeorderConflictResolutionEvent;
 import org.tb.order.event.EmployeeorderDeleteEvent;
 import org.tb.order.event.EmployeeorderUpdateEvent;
 import org.tb.order.persistence.EmployeeorderDAO;
@@ -627,6 +631,29 @@ public class TimereportService {
     }
     var deletedCount = timereportRepository.hardDeleteSoftDeletedByEmployeeorderId(employeeorderId); // ensure no soft deleted timereport exists
     log.info("{} soft deleted timereports were deleted to allow deletion of employee order {}.", deletedCount, employeeorderId);
+  }
+
+  @EventListener
+  void onEmployeeorderConflictResolution(EmployeeorderConflictResolutionEvent event) {
+    var updatingEmployeeorder = event.getUpdatingEmployeeorder();
+    var conflictingEmployeeorder = event.getConflictingEmployeeorder();
+
+    var timereports = timereportRepository.findAllByEmployeeorderIdAndReferencedayBetween(
+        conflictingEmployeeorder.getId(),
+        updatingEmployeeorder.getValidity().isInfiniteFrom() ? FINIT_FROM_BOUNDARY : updatingEmployeeorder.getFromDate(),
+        updatingEmployeeorder.getValidity().isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : updatingEmployeeorder.getUntilDate()
+    );
+
+    // move reports
+    timereports.forEach(tr -> {
+      tr.setEmployeeorder(updatingEmployeeorder);
+      tr.setStatus(TIMEREPORT_STATUS_OPEN);
+      tr.setEmployeecontract(updatingEmployeeorder.getEmployeecontract());
+      timereportRepository.save(tr);
+    });
+
+    var timereportIds = timereports.stream().map(Timereport::getId).toList();
+    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(timereportIds));
   }
 
   @EventListener

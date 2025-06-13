@@ -49,6 +49,15 @@
 <html:form action="/StoreEmployeecontract">
 	<table border="0" cellspacing="0" cellpadding="2"
 		class="center backgroundcolor">
+
+		<tr>
+			<td align="left" class="noBborderStyle"><b><bean:message
+					key="main.employeecontract.resolveconflicts.text" /></b></td>
+			<td align="left" class="noBborderStyle"><html:checkbox
+					property="resolveConflicts" /> <span style="color:red"><html:errors
+					property="resolveConflicts" /></span></td>
+		</tr>
+
 		<tr>
 			<td align="left" class="noBborderStyle"><b><bean:message
 				key="main.employeecontract.employee.text" /></b></td>
@@ -73,16 +82,16 @@
 		</tr>
 		
 		
-	<tr>
-	  <td align="left" class="noBborderStyle"><b><bean:message
-				key="main.employeecontract.supervisor.text" /></b></td>
-	  <td align="left" class="noBborderStyle">
-		<html:select property="supervisorid" onchange="refresh(this.form)" styleClass="make-select2">
-		  <html:options collection="empWithCont" labelProperty="name" property="id" />
-		</html:select>
-		<span style="color:red"><html:errors property="supervisorid" /></span>
-	  </td>
-	</tr>
+		<tr>
+		  <td align="left" class="noBborderStyle"><b><bean:message
+					key="main.employeecontract.supervisor.text" /></b></td>
+		  <td align="left" class="noBborderStyle">
+			<html:select property="supervisorid" onchange="refresh(this.form)" styleClass="make-select2">
+			  <html:options collection="empWithCont" labelProperty="name" property="id" />
+			</html:select>
+			<span style="color:red"><html:errors property="supervisorid" /></span>
+		  </td>
+		</tr>
 		
 		
 		<tr>

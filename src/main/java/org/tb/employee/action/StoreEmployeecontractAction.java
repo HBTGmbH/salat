@@ -1,5 +1,6 @@
 package org.tb.employee.action;
 
+import static java.lang.Boolean.TRUE;
 import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.today;
@@ -15,6 +16,7 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.TransactionUsageException;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -116,6 +118,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             Duration dailyworkingtime = ecForm.getDailyworkingtimeTyped();
             Duration initialOvertime = ecForm.getInitialOvertimeTyped();
             int yearlyvacation = ecForm.getYearlyvacationTyped();
+            var resolveConflicts = TRUE.equals(ecForm.getResolveConflicts());
 
             Long existingEmployeecontractId = (Long) request.getSession().getAttribute("ecId");
             if(existingEmployeecontractId != null) {
@@ -129,7 +132,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     ecForm.getHide(),
                     dailyworkingtime,
                     yearlyvacation,
-                    false
+                    resolveConflicts
                 );
             } else {
                 employeecontractService.createEmployeecontract(
@@ -143,7 +146,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
                     dailyworkingtime,
                     yearlyvacation,
                     initialOvertime,
-                    false
+                    resolveConflicts
                 );
             }
 
