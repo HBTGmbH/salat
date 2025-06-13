@@ -14,6 +14,49 @@ import org.junit.jupiter.api.Test;
 public class LocalDateRangeTest {
 
   @Test
+  public void testIsValid_NullFromAndUntil_ReturnsTrue() {
+    LocalDateRange range = new LocalDateRange(null, null);
+    assertTrue(range.isValid());
+  }
+
+  @Test
+  public void testIsValid_NullFrom_ReturnsTrue() {
+    LocalDate until = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(null, until);
+    assertTrue(range.isValid());
+  }
+
+  @Test
+  public void testIsValid_NullUntil_ReturnsTrue() {
+    LocalDate from = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(from, null);
+    assertTrue(range.isValid());
+  }
+
+  @Test
+  public void testIsValid_FromBeforeUntil_ReturnsTrue() {
+    LocalDate from = LocalDate.now();
+    LocalDate until = from.plusDays(1);
+    LocalDateRange range = new LocalDateRange(from, until);
+    assertTrue(range.isValid());
+  }
+
+  @Test
+  public void testIsValid_FromEqualsUntil_ReturnsTrue() {
+    LocalDate date = LocalDate.now();
+    LocalDateRange range = new LocalDateRange(date, date);
+    assertTrue(range.isValid());
+  }
+
+  @Test
+  public void testIsValid_FromAfterUntil_ReturnsFalse() {
+    LocalDate from = LocalDate.now();
+    LocalDate until = from.minusDays(1);
+    LocalDateRange range = new LocalDateRange(from, until);
+    assertFalse(range.isValid());
+  }
+
+  @Test
   public void testIsConnected_NonOverlappingRanges_returnsFalse() {
     LocalDate currentDate = LocalDate.now();
     LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));

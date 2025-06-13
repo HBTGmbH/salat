@@ -101,6 +101,13 @@ public class LocalDateRange implements Comparable<LocalDateRange> {
     return date != null && until != null && date.isAfter(until);
   }
 
+  public boolean isValid() {
+    if (from == null || until == null) {
+      return true;
+    }
+    return !from.isAfter(until);
+  }
+
   public boolean overlaps(Year year) {
     if (year == null) {
       return false;
