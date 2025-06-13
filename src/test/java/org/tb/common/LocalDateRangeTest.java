@@ -14,6 +14,52 @@ import org.junit.jupiter.api.Test;
 public class LocalDateRangeTest {
 
   @Test
+  public void testIsConnected_NonOverlappingRanges_returnsFalse() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(5), currentDate.plusDays(7));
+    assertFalse(range1.isConnected(range2));
+  }
+
+  @Test
+  public void testIsConnected_FullyConnectedRanges_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(2), currentDate.plusDays(5));
+    assertTrue(range1.isConnected(range2));
+  }
+
+  @Test
+  public void testIsConnected_AdjacentRanges_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(4), currentDate.plusDays(7));
+    assertTrue(range1.isConnected(range2));
+  }
+
+  @Test
+  public void testIsConnected_OneRangeInfinite_returnsTrue() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(null, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(2), currentDate.plusDays(5));
+    assertTrue(range1.isConnected(range2));
+  }
+
+  @Test
+  public void testIsConnected_BothRangesInfinite_returnsTrue() {
+    LocalDateRange range1 = new LocalDateRange(null, null);
+    LocalDateRange range2 = new LocalDateRange(LocalDate.now().minusDays(10), null);
+    assertTrue(range1.isConnected(range2));
+  }
+
+  @Test
+  public void testIsConnected_NullRange_returnsFalse() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    assertFalse(range1.isConnected(null));
+  }
+
+  @Test
   public void testMinus_NoOverlap_ReturnsOriginalRange() {
     LocalDate currentDate = LocalDate.now();
     LocalDateRange range = new LocalDateRange(currentDate, currentDate.plusDays(3));
@@ -474,4 +520,42 @@ public class LocalDateRangeTest {
     assertFalse(range.isBefore(currentDate.plusDays(2)));
   }
 
+  @Test
+  public void testPlus_OverlappingRanges_ReturnsMergedRange() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(5));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(3), currentDate.plusDays(8));
+    assertEquals(new LocalDateRange(currentDate, currentDate.plusDays(8)), range1.plus(range2));
+  }
+
+  @Test
+  public void testPlus_AdjacentRanges_ReturnsMergedRange() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(4), currentDate.plusDays(7));
+    assertEquals(new LocalDateRange(currentDate, currentDate.plusDays(7)), range1.plus(range2));
+  }
+
+  @Test
+  public void testPlus_DisconnectedRanges_ReturnsNull() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(currentDate, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.plusDays(5), currentDate.plusDays(8));
+    assertNull(range1.plus(range2));
+  }
+
+  @Test
+  public void testPlus_InfiniteRange_ReturnsMergedRange() {
+    LocalDate currentDate = LocalDate.now();
+    LocalDateRange range1 = new LocalDateRange(null, currentDate.plusDays(3));
+    LocalDateRange range2 = new LocalDateRange(currentDate.minusDays(2), currentDate.plusDays(5));
+    assertEquals(new LocalDateRange(null, currentDate.plusDays(5)), range1.plus(range2));
+  }
+
+  @Test
+  public void testPlus_BothRangesInfinite_ReturnsInfiniteRange() {
+    LocalDateRange range1 = new LocalDateRange(null, null);
+    LocalDateRange range2 = new LocalDateRange(LocalDate.now().minusDays(10), null);
+    assertEquals(new LocalDateRange(null, null), range1.plus(range2));
+  }
 }

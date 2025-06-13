@@ -191,4 +191,36 @@ public class LocalDateRange implements Comparable<LocalDateRange> {
 
     return List.of(new LocalDateRange(from, otherFrom.minusDays(1)));
   }
+
+  public boolean isConnected(LocalDateRange other) {
+    if (other == null) {
+      return false;
+    }
+
+    LocalDate from = isInfiniteFrom() ? FINIT_FROM_BOUNDARY : this.from;
+    LocalDate until = isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : this.until;
+    LocalDate otherFrom = other.isInfiniteFrom() ? FINIT_FROM_BOUNDARY : other.from;
+    LocalDate otherUntil = other.isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : other.until;
+
+    return !from.isAfter(otherUntil.plusDays(1)) && !until.plusDays(1).isBefore(otherFrom);
+  }
+
+  public LocalDateRange plus(LocalDateRange other) {
+    if (other == null) {
+      return this;
+    }
+    if (!isConnected(other)) {
+      return null;
+    }
+
+    LocalDate from = isInfiniteFrom() || other.isInfiniteFrom()
+        ? null
+        : DateUtils.min(this.from, other.from);
+    LocalDate until = isInfiniteUntil() || other.isInfiniteUntil()
+        ? null
+        : DateUtils.max(this.until, other.until);
+
+    return new LocalDateRange(from, until);
+  }
+
 }
