@@ -239,6 +239,17 @@ public class EmployeeorderService {
       allMessages.addAll(e.getMessages());
       event.veto(allMessages);
     }
+
+    // take care of nonsense
+    if(!conflictingOrder.getValidity().isValid()) {
+      deleteEmployeeorderById(conflictingOrder.getId());
+      log.info(
+          "Deleted conflicting order {} for employee {} and contract {} because it is no longer valid.",
+          conflictingOrder.getSuborder().getCompleteOrderSign(),
+          conflictingOrder.getEmployeecontract().getEmployee().getSign(),
+          conflictingOrder.getEmployeecontract().getId()
+      );
+    }
   }
 
   private Employeeorder mergeWithExisting(Employeeorder newOrder) {
