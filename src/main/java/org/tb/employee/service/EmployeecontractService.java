@@ -272,7 +272,6 @@ public class EmployeecontractService {
   private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
     employeecontract.getVacations().stream().forEach(v -> {
       if(!v.getEntitlement().equals(vacationEntitlement)) {
-        var oldEntitlemenet = v.getEntitlement();
         v.setEntitlement(vacationEntitlement);
       }
     });
@@ -366,6 +365,20 @@ public class EmployeecontractService {
 
   public void create(Overtime overtime) {
     overtimeRepository.save(overtime);
+    var employeecontract = overtime.getEmployeecontract();
+    var event = new EmployeecontractUpdateEvent(employeecontract);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          EC_UPDATE_GOT_VETO,
+          employeecontract.getEmployee().getSign()
+      ));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
   }
 
   @EventListener
