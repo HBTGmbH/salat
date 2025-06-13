@@ -88,6 +88,7 @@ public class StoreEmployeecontractAction extends LoginRequiredAction<AddEmployee
             Overtime overtime = new Overtime();
             overtime.setComment(ecForm.getNewOvertimeComment());
             overtime.setEmployeecontract(ec);
+            overtime.setEffective(ecForm.getNewOvertimeEffectiveTyped());
             overtime.setTimeMinutes(ecForm.getNewOvertimeTyped());
 
             employeecontractService.create(overtime);
