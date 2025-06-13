@@ -88,6 +88,9 @@ public class EditEmployeecontractAction extends LoginRequiredAction<AddEmployeeC
 
         LocalDate fromDate = ec.getValidFrom();
         ecForm.setValidFrom(DateUtils.format(fromDate));
+        if(ecForm.getNewOvertimeEffectiveTyped().isBefore(fromDate)) {
+            ecForm.setNewOvertimeEffective(DateUtils.format(fromDate));
+        }
         if (ec.getValidUntil() != null) {
             LocalDate untilDate = ec.getValidUntil();
             ecForm.setValidUntil(DateUtils.format(untilDate));
