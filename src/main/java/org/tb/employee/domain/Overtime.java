@@ -6,6 +6,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.io.Serializable;
 import java.time.Duration;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -43,6 +44,11 @@ public class Overtime extends AuditedEntity implements Serializable {
 
     public void setTime(Duration duration) {
         this.timeMinutes = duration;
+    }
+
+    // TODO implement as persistable date
+    public LocalDate getEffectiveDate() {
+        return DateUtils.max(employeecontract.getValidFrom(), getCreated().toLocalDate());
     }
 
 }
