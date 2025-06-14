@@ -199,7 +199,11 @@ public class EmployeecontractService {
           .filter(o -> !resolvedValidity.contains(o.getEffective()))
           .forEach(o -> {
             o.setEmployeecontract(employeecontract);
-            logs.add("Overtime %s von Vertrag (%s) nach Vertrag (%s) verschoben.".formatted(o.getEffective(), conflictingEmployeecontract.getValidity(), employeecontract.getValidity()));
+            logs.add("Überstundenanpassung vom %s von Vertrag (%s) nach Vertrag (%s) verschoben.".formatted(
+                DateUtils.format(o.getEffective()),
+                conflictingEmployeecontract.getValidity(),
+                employeecontract.getValidity()
+            ));
           });
 
       // save contracts to ensure id is set before resolving conflicts (other parts in this software rely on this)

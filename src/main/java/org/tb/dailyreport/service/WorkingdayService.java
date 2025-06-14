@@ -135,6 +135,10 @@ public class WorkingdayService {
     workingdays.forEach(wd -> {
       wd.setEmployeecontract(updatingEmployeecontract);
       workingdayRepository.save(wd);
+      event.addLog("Informationen zum Arbeitstag am %s nach Vertrag (%s) verschoben".formatted(
+          DateUtils.format(wd.getRefday()),
+          updatingEmployeecontract.getValidity()
+      ));
     });
   }
 
