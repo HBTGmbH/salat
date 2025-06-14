@@ -15,7 +15,7 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
   @Query("""
       select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t
       where t.employeecontract.freelancer = false and t.employeecontract.dailyWorkingTimeMinutes > 0
-      and t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end  and t.training = true
+      and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate) and t.training = true
       group by t.employeecontract.id
   """)
   List<TrainingInformation> getProjectTrainingTimesByDates(LocalDate begin, LocalDate end);
@@ -23,7 +23,7 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
   @Query("""
       select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t
       where t.employeecontract.freelancer=false and t.employeecontract.dailyWorkingTimeMinutes > 0
-      and t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end
+      and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
       and t.suborder.customerorder.id = :customerorderId and  t.suborder.sign not like 'x_%'
       group by t.employeecontract.id
   """)
@@ -31,7 +31,7 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
 
   @Query("""
       select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t
-      where t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end
+      where t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
       and t.employeecontract.id = :employeecontractId and t.training = true and t.suborder.sign != 'FORTBILDUNG'
       group by t.employeecontract.id
   """)
@@ -39,7 +39,7 @@ public interface TrainingRepository extends CrudRepository<Timereport, Long> {
 
   @Query("""
       select new org.tb.dailyreport.domain.TrainingInformation(t.employeecontract.id, sum(t.durationhours), sum(t.durationminutes)) from Timereport t
-      where t.referenceday.refdate >= :begin and t.referenceday.refdate <= :end
+      where t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
       and t.employeecontract.id = :employeecontractId
       and t.suborder.customerorder.id = :customerorderId and t.suborder.sign not like 'x_%'
       group by t.employeecontract.id

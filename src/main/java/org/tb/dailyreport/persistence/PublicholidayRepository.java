@@ -13,6 +13,6 @@ public interface PublicholidayRepository extends CrudRepository<Publicholiday, L
 
   Optional<Publicholiday> findByRefdate(LocalDate date);
 
-  @Query("select ph from Publicholiday ph where ph.refdate >= :start and ph.refdate <= :end")
+  @Query("select ph from Publicholiday ph where ph.refdate >= coalesce(:start, ph.refdate) and ph.refdate <= coalesce(:end, ph.refdate)")
   List<Publicholiday> findAllByRefdateBetween(LocalDate start, LocalDate end);
 }

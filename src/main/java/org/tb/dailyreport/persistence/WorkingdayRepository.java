@@ -26,7 +26,7 @@ public interface WorkingdayRepository extends CrudRepository<Workingday, Long> {
   @Query("""
       select wd from Workingday wd
       where wd.employeecontract.id = :employeecontractId and
-      wd.refday >= :begin and wd.refday <= :end
+      wd.refday >= coalesce(:begin, wd.refday) and wd.refday <= coalesce(:end, wd.refday)
       """)
   List<Workingday> findAllByEmployeecontractIdAndReferencedayBetween(long employeecontractId, LocalDate begin, LocalDate end);
 

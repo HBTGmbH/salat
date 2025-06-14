@@ -39,8 +39,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   @Query("""
       select t from Timereport t
       where t.employeecontract.id = :employeecontractId
-        and t.referenceday.refdate >= :begin
-        and t.referenceday.refdate <= :end
+        and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
       order by t.employeecontract.employee.sign asc,
       t.referenceday.refdate asc,
       t.employeeorder.suborder.customerorder.sign asc,
@@ -51,8 +50,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   @Query("""
       select t from Timereport t
       where t.employeeorder.id = :employeeorderId
-        and t.referenceday.refdate >= :begin
-        and t.referenceday.refdate <= :end
+        and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
       order by t.referenceday.refdate asc
       """)
   List<Timereport> findAllByEmployeeorderIdAndReferencedayBetween(long employeeorderId, LocalDate begin, LocalDate end);
@@ -100,14 +98,14 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   @Query("""
       select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
-      where tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      where tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
       and tr.employeeorder.suborder.id = :suborderId
   """)
   Optional<Long> getReportedMinutesForSuborderAndBetween(long suborderId, LocalDate begin, LocalDate end);
 
   @Query("""
       select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
-      where tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      where tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
       and tr.employeeorder.id = :employeeorderId
   """)
   Optional<Long> getReportedMinutesForEmployeeorderAndBetween(long employeeorderId, LocalDate begin, LocalDate end);
@@ -120,7 +118,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
 
   @Query("""
       select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
-      where tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      where tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
       and tr.employeeorder.employeecontract.id = :employeecontractId
   """)
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
