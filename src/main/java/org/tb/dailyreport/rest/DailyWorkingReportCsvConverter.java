@@ -149,13 +149,13 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
     }
 
     @SneakyThrows
-    private static CsvRow getUniqueWorkingDayRow(LocalDate day, List<CsvRow> rows) {
-        var workingDayRows = rows.stream().filter(not(DailyWorkingReportCsvConverter::isEmptyWorkingDayRow)).toList();
+    private CsvRow getUniqueWorkingDayRow(LocalDate day, List<CsvRow> rows) {
+        var workingDayRows = rows.stream().filter(not(this::isEmptyWorkingDayRow)).toList();
         if (workingDayRows.isEmpty()) {
-            throw new IOException("no start and breaktime found for " + DateUtils.format(day));
+            throw new IOException("no working day data found for " + DateUtils.format(day));
         }
         if (workingDayRows.size() > 1){
-            throw new IOException("more than one start and breaktime found for " + DateUtils.format(day));
+            throw new IOException("more than one working day data found for " + DateUtils.format(day));
         }
         return workingDayRows.getFirst();
     }
@@ -164,8 +164,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return row.getDate() == null;
     }
 
-    private static boolean isEmptyWorkingDayRow(CsvRow row) {
+    private boolean isEmptyWorkingDayRow(CsvRow row) {
         if(row.getType() == WorkingDayType.NOT_WORKED) return false; // only date required for NOT_WORKED
+        if(authorizedUser.isRestricted()) return row.getType() == null; // for external users, only the type is relevant
 
         // if start time or break time is missing, it is considered empty for other work types
         return row.getStartTime() == null || row.getBreakTime() == null;

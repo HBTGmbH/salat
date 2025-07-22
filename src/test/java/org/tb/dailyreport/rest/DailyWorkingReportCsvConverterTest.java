@@ -8,6 +8,7 @@ import static org.mockito.Mock.Strictness.LENIENT;
 import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_EMPLOYEE_ORDER;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_START_BREAK_TIME;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -51,7 +52,8 @@ class DailyWorkingReportCsvConverterTest {
         return Stream.of(
             Arguments.of(
                 "",
-                List.of()
+                List.of(),
+                false
             ),
             Arguments.of(
                 """
@@ -60,7 +62,8 @@ class DailyWorkingReportCsvConverterTest {
                     2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
                     2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
                     """,
-                List.of(TWO_BOOKINGS)
+                List.of(TWO_BOOKINGS),
+                false
             ),
             Arguments.of(
                 """
@@ -68,7 +71,8 @@ class DailyWorkingReportCsvConverterTest {
                     2024-11-04;WORKED;09:00;00:30;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30;Team-Mittag
                     2024-11-04;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30;Daily
                     """,
-                List.of(TWO_BOOKINGS)
+                List.of(TWO_BOOKINGS),
+                false
             ),
             Arguments.of(
                 """
@@ -76,7 +80,8 @@ class DailyWorkingReportCsvConverterTest {
                     04.11.2024;WORKED;09:00:00;00:30:00;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30:00;Team-Mittag
                     04.11.2024;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30:00;Daily
                     """,
-                List.of(TWO_BOOKINGS)
+                List.of(TWO_BOOKINGS),
+                false
             ),
             Arguments.of(
                 """
@@ -84,14 +89,24 @@ class DailyWorkingReportCsvConverterTest {
                     2024-11-04;WORKED;09:00;00:30;111/01;00:30;Team-Mittag
                     2024-11-04;;;;111/01;07:30;Daily
                     """,
-                List.of(TWO_BOOKINGS_NO_EMPLOYEE_ORDER)
+                List.of(TWO_BOOKINGS_NO_EMPLOYEE_ORDER),
+                false
+            ),
+            Arguments.of(
+                """
+                    date;type;startTime;breakTime;employeeorderId;orderSign;orderLabel;suborderSign;suborderLabel;workingTime;comment
+                    04.11.2024;WORKED;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;00:30:00;Team-Mittag
+                    04.11.2024;;;;183209;111;Rumsitzen;111/01;Stuhlpolsterung;07:30:00;Daily
+                    """,
+                List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
+                true
             )
         );
     }
 
     @ParameterizedTest
     @MethodSource("readCsv")
-    void shouldReadFromCsv(String csv, List<DailyWorkingReportData> expected) throws IOException {
+    void shouldReadFromCsv(String csv, List<DailyWorkingReportData> expected, boolean restricted) throws IOException {
         // given
         var customerorder = new Customerorder();
         customerorder.setSign("111");
@@ -107,6 +122,7 @@ class DailyWorkingReportCsvConverterTest {
         when(employeeorderService.getEmployeeorderById(eq(183209L))).thenReturn(employeeorder);
         when(employeeorderService.getEmployeeorderByEmployeeAndSuborder(eq("testuser"), eq("111/01"), any())).thenReturn(employeeorder);
         when(authorizedUser.getSign()).thenReturn("testuser");
+        when(authorizedUser.isRestricted()).thenReturn(restricted);
 
         // when
         var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8));
@@ -123,17 +139,28 @@ class DailyWorkingReportCsvConverterTest {
                     date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
                     2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
                     2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
-                    """
+                    """,
+                    false
+            ),
+            Arguments.of(
+                List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
+                """
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+                2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
+                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
+                """,
+                true
             )
         );
     }
 
     @ParameterizedTest
     @MethodSource("writeCsv")
-    void shouldWriteToCsv(List<DailyWorkingReportData> reportData, String expected) throws IOException {
+    void shouldWriteToCsv(List<DailyWorkingReportData> reportData, String expected, boolean restricted) throws IOException {
         // given
         var outputStream = new ByteArrayOutputStream();
         when(httpOutputMessage.getBody()).thenReturn(outputStream);
+        when(authorizedUser.isRestricted()).thenReturn(restricted);
 
         // when
         dailyWorkingReportCsvConverter.write(reportData, null, httpOutputMessage);
@@ -192,6 +219,34 @@ class DailyWorkingReportCsvConverterTest {
                   .build()
           ))
           .build();
+        static DailyWorkingReportData TWO_BOOKINGS_NO_START_BREAK_TIME = DailyWorkingReportData.builder()
+            .type(Workingday.WorkingDayType.WORKED)
+            .date(LocalDate.of(2024,11,4))
+            .dailyReports(List.of(
+                DailyReportData.builder()
+                    .date("2024-11-04")
+                    .employeeorderId(183209)
+                    .orderSign("111")
+                    .orderLabel("Rumsitzen")
+                    .suborderSign("111/01")
+                    .suborderLabel("Stuhlpolsterung")
+                    .hours(0)
+                    .minutes(30)
+                    .comment("Team-Mittag")
+                    .build(),
+                DailyReportData.builder()
+                    .date("2024-11-04")
+                    .employeeorderId(183209)
+                    .orderSign("111")
+                    .orderLabel("Rumsitzen")
+                    .suborderSign("111/01")
+                    .suborderLabel("Stuhlpolsterung")
+                    .hours(7)
+                    .minutes(30)
+                    .comment("Daily")
+                    .build()
+            ))
+            .build();
       static DailyWorkingReportData TWO_BOOKINGS_NO_EMPLOYEE_ORDER = DailyWorkingReportData.builder()
         .type(Workingday.WorkingDayType.WORKED)
         .date(LocalDate.of(2024,11,4))
