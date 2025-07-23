@@ -28,6 +28,7 @@ import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
 @RestController
@@ -36,6 +37,7 @@ import org.tb.employee.service.EmployeecontractService;
 @Tag(name = "working days")
 public class WorkingDayRestEndpoint {
 
+    private final EmployeeService employeeService;
     private final EmployeecontractService employeecontractService;
     private final WorkingdayService workingdayService;
     private final AuthorizedUser authorizedUser;
@@ -49,7 +51,8 @@ public class WorkingDayRestEndpoint {
         }
 
         var date = ofNullable(data.getDate()).map(DateUtils::parse).orElseGet(DateUtils::today);
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), date);
+        var employee = employeeService.getEmployeeBySign(data.getEmployeeSign());
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(employee.getId(), date);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }

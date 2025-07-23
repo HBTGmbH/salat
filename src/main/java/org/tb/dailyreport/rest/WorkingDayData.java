@@ -16,12 +16,14 @@ public class WorkingDayData {
     private int startminute;
     private int breakhours;
     private int breakminutes;
+    private String employeeSign;
     private String date;
     private WorkingDayType type;
 
     static WorkingDayData valueOf(Workingday wd) {
         return WorkingDayData.builder()
                 .id(wd.getId())
+                .employeeSign(wd.getEmployeecontract().getEmployee().getSign())
                 .starthour(wd.getStarttimehour())
                 .startminute(wd.getStarttimeminute())
                 .breakhours(wd.getBreakhours())
