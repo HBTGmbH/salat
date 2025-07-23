@@ -2,11 +2,15 @@ package org.tb.dailyreport.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
+import static org.tb.auth.domain.AccessLevel.WRITE;
+import static org.tb.common.exception.ErrorCode.WD_DELETE_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.common.exception.ErrorCode.WD_HOLIDAY_NO_WORKED;
 import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_OUTSIDE_CONTRACT;
+import static org.tb.common.exception.ErrorCode.WD_READ_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.common.exception.ErrorCode.WD_SATSUN_NOT_WORKED;
 import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
+import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 
@@ -17,8 +21,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.service.AuthService;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DateUtils;
@@ -30,6 +36,7 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.persistence.WorkingdayRepository;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 
 @Service
@@ -38,19 +45,34 @@ import org.tb.order.domain.Employeeorder;
 @Authorized
 public class WorkingdayService {
 
+  private static final String AUTH_CATEGORY_WORKINGDAY = "WORKINGDAY";
+
   private final WorkingdayRepository workingdayRepository;
   private final PublicholidayRepository publicholidayRepository;
   private final TimereportDAO timereportDAO;
   private final AuthorizedUser authorizedUser;
   private final WorkingdayDAO workingdayDAO;
+  private final AuthService authService;
+  private final EmployeecontractService employeecontractService;
 
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {
+    var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
+    var employeeId = employeecontract.getEmployee().getId();
+    String grantorSign = employeecontract.getEmployee().getSign();
+    if(!authorizedUser.isManager() &&
+       !employeeId.equals(authorizedUser.getEmployeeId()) &&
+       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+      throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
+    }
     return workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId).orElse(null);
   }
 
   public void upsertWorkingday(Workingday workingday) {
     var employeeId = workingday.getEmployeecontract().getEmployee().getId();
-    if(!authorizedUser.isManager() && !employeeId.equals(authorizedUser.getEmployeeId())) {
+    String grantorSign = workingday.getEmployeecontract().getEmployee().getSign();
+    if(!authorizedUser.isManager() &&
+       !employeeId.equals(authorizedUser.getEmployeeId()) &&
+       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
       throw new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
     }
 
@@ -107,11 +129,29 @@ public class WorkingdayService {
   }
 
   public void deleteWorkingdayById(long workingDayId) {
+    var workingday = workingdayRepository.findById(workingDayId).orElseThrow();
+
+    var employeeId = workingday.getEmployeecontract().getEmployee().getId();
+    String grantorSign = workingday.getEmployeecontract().getEmployee().getSign();
+    if(!authorizedUser.isManager() &&
+       !employeeId.equals(authorizedUser.getEmployeeId()) &&
+       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+      throw new AuthorizationException(WD_DELETE_REQ_EMPLOYEE_OR_MANAGER);
+    }
+
     workingdayRepository.deleteById(workingDayId);
   }
 
   public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate dateFirst,
       LocalDate dateLast) {
+    var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
+    var employeeId = employeecontract.getEmployee().getId();
+    String grantorSign = employeecontract.getEmployee().getSign();
+    if(!authorizedUser.isManager() &&
+       !employeeId.equals(authorizedUser.getEmployeeId()) &&
+       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+      throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
+    }
     return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast);
   }
 

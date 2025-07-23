@@ -22,7 +22,9 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +37,9 @@ class WorkingDayRestEndpointTest {
 
     @Mock
     AuthorizedUser authorizedUser;
+
+    @Mock
+    EmployeeService employeeService;
 
     @Captor
     ArgumentCaptor<Workingday> workingDayArgumentCaptor;
@@ -59,11 +64,15 @@ class WorkingDayRestEndpointTest {
                 .date("2024-07-06")
                 .type(WORKED)
                 .build();
+        var employee = new Employee();
+        employee.setSign("test");
+        ReflectionTestUtils.setField(employee, "id", 1L);
+        when(employeeService.getEmployeeBySign("test")).thenReturn(employee);
         when(employeecontractService.getEmployeeContractValidAt(anyLong(), any(LocalDate.class)))
                 .thenReturn(employeeContract);
 
         // when
-        workingDayRestEndpoint.upsert(data);
+        workingDayRestEndpoint.upsert(data, "test");
 
         // then
         verify(workingdayService, times(1)).upsertWorkingday(workingDayArgumentCaptor.capture());
@@ -89,9 +98,13 @@ class WorkingDayRestEndpointTest {
                 .thenReturn(employeeContract);
         when(workingdayService.getWorkingday(anyLong(), any(LocalDate.class)))
                 .thenReturn(workingDay);
+        var employee = new Employee();
+        employee.setSign("test");
+        ReflectionTestUtils.setField(employee, "id", 1L);
+        when(employeeService.getEmployeeBySign("test")).thenReturn(employee);
 
         // when
-        var result = workingDayRestEndpoint.get("2024-07-06");
+        var result = workingDayRestEndpoint.get("test", "2024-07-06");
 
         // then
         assertThat(result)

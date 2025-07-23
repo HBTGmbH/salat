@@ -7,6 +7,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.tb.common.util.DateUtils.today;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,16 +43,16 @@ public class WorkingDayRestEndpoint {
     private final WorkingdayService workingdayService;
     private final AuthorizedUser authorizedUser;
 
-    @PutMapping(consumes = APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/{employeeSign}", consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
     @Operation
-    public void upsert(@RequestBody WorkingDayData data) {
+    public void upsert(@RequestBody WorkingDayData data, @PathVariable String employeeSign) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
         var date = ofNullable(data.getDate()).map(DateUtils::parse).orElseGet(DateUtils::today);
-        var employee = employeeService.getEmployeeBySign(data.getEmployeeSign());
+        var employee = employeeService.getEmployeeBySign(employeeSign);
         var employeecontract = employeecontractService.getEmployeeContractValidAt(employee.getId(), date);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
@@ -76,26 +77,27 @@ public class WorkingDayRestEndpoint {
         }
     }
 
-    @GetMapping(produces = APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/{employeeSign}", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     @Operation
-    public WorkingDayData getToday() {
-        return doGet(DateUtils.today());
+    public WorkingDayData getToday(@PathVariable String employeeSign) {
+        return doGet(today(), employeeSign);
     }
 
-    @GetMapping(path = "/{date}", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/{employeeSign}/{date}", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     @Operation
-    public WorkingDayData get(@PathVariable String date) {
-        return doGet(DateUtils.parse(date));
+    public WorkingDayData get(@PathVariable String employeeSign, @PathVariable String date) {
+        return doGet(DateUtils.parse(date), employeeSign);
     }
 
-    private WorkingDayData doGet(LocalDate date){
+    private WorkingDayData doGet(LocalDate date, String employeeSign){
         if (!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), date);
+        var employee = employeeService.getEmployeeBySign(employeeSign);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(employee.getId(), date);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }
@@ -108,17 +110,18 @@ public class WorkingDayRestEndpoint {
         return WorkingDayData.valueOf(workingDay);
     }
 
-    @DeleteMapping("/{date}")
+    @DeleteMapping("/{employeeSign}/{date}")
     @ResponseStatus(OK)
     @Operation
-    public void delete(@PathVariable String date) {
+    public void delete(@PathVariable String employeeSign, @PathVariable String date) {
         if (!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
         var deleteDate = DateUtils.parse(date);
 
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), deleteDate);
+        var employee = employeeService.getEmployeeBySign(employeeSign);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(employee.getId(), deleteDate);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }

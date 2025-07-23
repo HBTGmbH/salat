@@ -78,6 +78,8 @@ public enum ErrorCode {
   WD_NO_TIMEREPORT("WD-0009", "no time report found for workday."),
   WD_LENGTH_TOO_LONG("WD-0010", "the worked time for the working day exceeds 10 hours!"),
   WD_OUTSIDE_CONTRACT("WD-0011", "the date is outside the validity of the employee contract!"),
+  WD_DELETE_REQ_EMPLOYEE_OR_MANAGER("WD-0012", "you can only delete your own working days or you must be a manager!"),
+  WD_READ_REQ_EMPLOYEE_OR_MANAGER("WD-0013", "you can only read your own working days or you must be a manager!"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   ;
