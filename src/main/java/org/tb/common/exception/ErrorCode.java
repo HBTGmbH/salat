@@ -12,6 +12,7 @@ public enum ErrorCode {
   AA_NEEDS_BACKOFFICE("AA-0003", "not authorized. Backoffice level required!"),
   AA_NEEDS_MANAGER("AA-0004", "not authorized. Manager level required!"),
   AA_NEEDS_ADMIN("AA-0005", "not authorized. Admin level required!"),
+  AA_NOT_ATHORIZED("AA-9999", "not authorized."),
 
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),

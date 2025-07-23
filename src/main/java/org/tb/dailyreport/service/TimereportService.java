@@ -21,9 +21,6 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static org.tb.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
-import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
-import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
-import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
@@ -32,7 +29,6 @@ import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
-import static org.tb.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
 import static org.tb.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
 import static org.tb.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
@@ -67,7 +63,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,11 +74,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.Warning;
-import org.tb.common.event.VetoableEvent;
-import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -91,6 +85,7 @@ import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
@@ -134,6 +129,7 @@ public class TimereportService {
   private final EmployeecontractService employeecontractService;
   private final ServletContext servletContext;
   private final AuthorizedUser authorizedUser;
+  private final TimereportAuthorization timereportAuthorization;
 
   public TimereportDTO getTimereportById(long id) {
     return timereportDAO.getTimereportById(id);
@@ -191,7 +187,7 @@ public class TimereportService {
   public void deleteTimereportById(long timereportId) throws ErrorCodeException {
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
-    checkAuthorization(Collections.singletonList(timereport), authorizedUser);
+    timereportAuthorization.checkAuthorized(Collections.singletonList(timereport), AccessLevel.DELETE);
     var deleteId = new TimereportDeleteId(
         timereportId,
         timereport.getEmployeeorder().getId(),
@@ -204,7 +200,7 @@ public class TimereportService {
 
   public void deleteTimeReports(LocalDate date, long employeeOrderId) {
     var timeReports = timereportRepository.findAllByEmployeeorderIdAndReferencedayRefdate(employeeOrderId, date);
-    checkAuthorization(timeReports, authorizedUser);
+    timereportAuthorization.checkAuthorized(timeReports, AccessLevel.DELETE);
     deleteTimereports(timeReports);
   }
 
@@ -217,7 +213,7 @@ public class TimereportService {
   }
 
   private void deleteTimereports(List<Timereport> timereports) {
-    checkAuthorization(timereports, authorizedUser);
+    timereportAuthorization.checkAuthorized(timereports, AccessLevel.DELETE);
     var deleteIds = timereports.stream()
         .map(t -> new TimereportDeleteId(t.getId(), t.getEmployeeorder().getId(), t.getReferenceday().getRefdate()))
         .toList();
@@ -228,7 +224,7 @@ public class TimereportService {
   private void checkAndSaveTimereports(List<Timereport> timereports) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
-    checkAuthorization(timereports, authorizedUser);
+    timereportAuthorization.checkAuthorized(timereports, AccessLevel.WRITE);
     validateWorkingDayBusinessRules(timereports);
     validateTimeReportingBusinessRules(timereports);
     validateContractBusinessRules(timereports);
@@ -358,30 +354,6 @@ public class TimereportService {
       day = nextDay; // prepare next iteration
     } while(nextWorkableDay == null);
     return nextWorkableDay;
-  }
-
-  private void checkAuthorization(List<Timereport> timereports, AuthorizedUser authorizedUser) throws AuthorizationException {
-    // authorization is based on the status
-    timereports.forEach(t -> {
-      if(TIMEREPORT_STATUS_CLOSED.equals(t.getStatus()) &&
-         !authorizedUser.isAdmin()) {
-        throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
-      }
-      if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
-         !authorizedUser.isManager() &&
-         !authorizedUser.isAdmin()) {
-        throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
-      }
-      if(TIMEREPORT_STATUS_COMMITED.equals(t.getStatus()) &&
-         Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
-        throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_NOT_SELF);
-      }
-      if(TIMEREPORT_STATUS_OPEN.equals(t.getStatus()) &&
-         !authorizedUser.isAdmin() &&
-         !Objects.equals(authorizedUser.getEmployeeId(), t.getEmployeecontract().getEmployee().getId())) {
-        throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
-      }
-    });
   }
 
   private void validateEmployeeorderBudget(List<Timereport> timereports) throws BusinessRuleException {
