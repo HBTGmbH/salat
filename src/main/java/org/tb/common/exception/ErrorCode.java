@@ -63,6 +63,9 @@ public enum ErrorCode {
   TR_COMMITTED_TIME_REPORT_NOT_SELF("TR-0026","own time reports cannot be created or changed before the accepted date"),
   TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER("TR-0027","there are time reports that prevent the update or deletion of the employee order"),
 
+  RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
+  RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
+
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   WD_SATSUN_NOT_WORKED("WD-0002","no one can compensate his overtime on saturdays or sundays!"),
   WD_HOLIDAY_NO_WORKED("WD-0003", "no one can compensate his overtime on a public holiday!"),

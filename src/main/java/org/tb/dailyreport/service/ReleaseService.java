@@ -12,6 +12,9 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
+import static org.tb.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
+import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
+import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
@@ -40,15 +43,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.service.SimpleMailService;
 import org.tb.common.service.SimpleMailService.MailContact;
 import org.tb.common.util.DataValidationUtils;
+import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -80,8 +86,15 @@ public class ReleaseService {
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
   private final TimereportService timereportService;
+  private final ReleaseAuthorization releaseAuthorization;
 
   public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
+    // check authentication
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    if(!releaseAuthorization.isReleaseAuthorized(employeecontract, AccessLevel.WRITE)) {
+      throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
+    }
+
     validateForRelease(employeecontractId, releaseDate);
 
     // set status in timereports
@@ -94,7 +107,6 @@ public class ReleaseService {
     }
 
     // store new release date in employee contract
-    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     employeecontractService.updateReportReleaseData(employeecontractId, releaseDate, employeecontract.getReportAcceptanceDate());
 
     sendTimeReportsReleasedMail(employeecontract);
@@ -102,6 +114,12 @@ public class ReleaseService {
 
   @Authorized(requiresManager = true)
   public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
+    // check authentication
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    if(!releaseAuthorization.isAcceptAuthorized(employeecontract, AccessLevel.WRITE)) {
+      throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
+    }
+
     // set status in timereports
     var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
     for (var timereport : timereports) {
@@ -109,14 +127,13 @@ public class ReleaseService {
     }
 
     // set new acceptance date in employee contract
-    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), acceptanceDate);
 
-    //compute overtimeStatic and set it in employee contract
+    // compute overtimeStatic and set it in employee contract
     overtimeService.updateOvertimeStatic(employeecontract.getId());
   }
 
-  @Authorized(requiresManager = true)
+  @Authorized(requiresAdmin = true)
   public void reopenTimereports(long employeecontractId, LocalDate reopenDate) {
 
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
