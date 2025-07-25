@@ -31,7 +31,7 @@
     <jstl-api.version>3.0.2</jstl-api.version>
     <jstl.version>3.0.1</jstl.version>
     <jsp-api.version>3.1.1</jsp-api.version>
-    <webjars-bootstrap.version>5.3.6</webjars-bootstrap.version>
+    <webjars-bootstrap.version>5.3.7</webjars-bootstrap.version>
     <webjars-jquery.version>3.7.1</webjars-jquery.version>
     <webjars-bootstrap-icons.version>1.13.1</webjars-bootstrap-icons.version>
     <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
