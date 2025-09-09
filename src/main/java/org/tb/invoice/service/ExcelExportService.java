@@ -4,6 +4,7 @@ package org.tb.invoice.service;
 import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
 import static org.apache.poi.ss.usermodel.CellType.STRING;
 import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
+import static org.tb.common.GlobalConstants.MINUTES_PER_DAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import jakarta.annotation.Nonnull;
@@ -196,7 +197,7 @@ public class ExcelExportService {
         if (options.isShowBudget()) {
             cell = row.createCell(colIndex, NUMERIC);
             if (invoiceSuborder.getBudget() != null) {
-                cell.setCellValue((double) invoiceSuborder.getBudget().toMinutes() / 1440); // FIXME ??? what format ???
+                cell.setCellValue((double) invoiceSuborder.getBudget().toMinutes() / MINUTES_PER_DAY);
             } else {
                 cell.setCellValue(0L);
             }
@@ -204,7 +205,7 @@ public class ExcelExportService {
             colIndex++;
         }
         cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue((double) invoiceSuborder.getTotalDuration().toMinutes() / 1440);
+        cell.setCellValue((double) invoiceSuborder.getTotalDuration().toMinutes() / MINUTES_PER_DAY);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
         colIndex++;
         cell = row.createCell(colIndex, NUMERIC);
@@ -247,7 +248,7 @@ public class ExcelExportService {
         cell = row.createCell(colIndex, NUMERIC);
         if (invoiceTimereport.getDuration() != null) {
             double duration = invoiceTimereport.getDuration().toMinutes();
-            cell.setCellValue(duration / 1440);
+            cell.setCellValue(duration / MINUTES_PER_DAY);
         } else {
             cell.setCellValue(0L);
         }
@@ -320,7 +321,7 @@ public class ExcelExportService {
         }
 
         Cell cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue(((double)invoiceData.getTotalDurationVisible().toMinutes()) / 1440);
+        cell.setCellValue(((double)invoiceData.getTotalDurationVisible().toMinutes()) / MINUTES_PER_DAY);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinuteBold")));
         colIndex++;
         cell = row.createCell(colIndex, NUMERIC);
