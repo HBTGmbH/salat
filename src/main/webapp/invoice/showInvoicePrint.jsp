@@ -115,7 +115,7 @@
 										</c:if>
 										<c:if test="${showInvoiceForm.timereportdescriptionbox}">
 											<td class="invoice_booking_row wrap ${iterstatus.last?'last_timereport':''}" style="width: 100%">
-												<c:out escapeXml="false" value="${invoiceTimereport.taskDescription}" />
+												<c:out value="${invoiceTimereport.taskDescription}" />
 											</td>
 										</c:if>
 										<td class="invoice_booking_row nonproportional right ${iterstatus.last?'last_timereport':''}" style="min-width: 2cm">
