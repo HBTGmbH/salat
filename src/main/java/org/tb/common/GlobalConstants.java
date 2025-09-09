@@ -139,6 +139,7 @@ public class GlobalConstants {
     public static final String PARENTICON = "Smily_Krone.gif";
 
     public static final long MINUTES_PER_HOUR = 60;
+    public static final long MINUTES_PER_DAY = MINUTES_PER_HOUR * 24;
 
     public static final char GENDER_MALE = 'm';
     public static final char GENDER_FEMALE = 'f';
