@@ -100,7 +100,9 @@ public class ExcelExportService {
                 List<InvoiceTimereport> invoiceTimereports = invoiceSuborder.getTimereports();
                 if (invoiceData.getInvoiceOptions().isShowTimereports()) {
                     for (var invoiceTimereport : invoiceTimereports) {
-                        rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereport, invoiceData.getInvoiceOptions(), factory);
+                        if(invoiceTimereport.isVisible()) {
+                            rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereport, invoiceData.getInvoiceOptions(), factory);
+                        }
                     }
                 }
             }
