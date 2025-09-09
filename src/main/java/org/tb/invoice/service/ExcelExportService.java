@@ -205,11 +205,11 @@ public class ExcelExportService {
             colIndex++;
         }
         cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue((double) invoiceSuborder.getTotalDuration().toMinutes() / MINUTES_PER_DAY);
+        cell.setCellValue((double) invoiceSuborder.getTotalDurationVisible().toMinutes() / MINUTES_PER_DAY);
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("hourMinute")));
         colIndex++;
         cell = row.createCell(colIndex, NUMERIC);
-        cell.setCellValue((double) invoiceSuborder.getTotalDuration().toMinutes() / MINUTES_PER_HOUR);
+        cell.setCellValue((double) invoiceSuborder.getTotalDurationVisible().toMinutes() / MINUTES_PER_HOUR);
         return rowIndex;
     }
 
