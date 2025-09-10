@@ -52,19 +52,20 @@
 <jsp:include flush="true" page="/menu.jsp">
 	<jsp:param name="title" value="Menu" />
 </jsp:include>
+<c:if test="${!empty logs}">
+	<br>
+	<span style="font-size:14pt;font-weight:bold;"><br>Log output:<br></span>
+	<br>
+	<c:forEach items="${logs}" var="log">
+		<div class="logMessage"><c:out value="${log}" /></div>
+	</c:forEach>
+</c:if>
 <br>
 <span style="font-size:14pt;font-weight:bold;"><br><bean:message
 	key="main.general.mainmenu.employeecontracts.text" /><br></span>
 <br>
 
 <html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
-
-<c:if test="${!empty logs}">
-	<c:forEach items="${logs}" var="log">
-		<div class="logMessage"><c:out value="${log}" /></div>
-	</c:forEach>
-</c:if>
-
 
 <table class="center backgroundcolor">
 <html:form action="/ShowEmployeecontract?task=refresh">
