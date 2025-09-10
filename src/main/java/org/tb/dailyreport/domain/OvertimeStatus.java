@@ -1,9 +1,8 @@
 package org.tb.dailyreport.domain;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Duration;
 import java.time.LocalDate;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 

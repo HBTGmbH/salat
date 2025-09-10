@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
@@ -37,7 +36,6 @@ import org.tb.dailyreport.persistence.WorkingdayRepository;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.order.domain.Employeeorder;
 
 @Service
 @Transactional

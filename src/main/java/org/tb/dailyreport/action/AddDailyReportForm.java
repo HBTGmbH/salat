@@ -1,7 +1,6 @@
 package org.tb.dailyreport.action;
 
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
