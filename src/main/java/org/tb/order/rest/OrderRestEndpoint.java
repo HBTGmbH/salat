@@ -6,6 +6,11 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -34,10 +39,11 @@ import org.tb.order.domain.Suborder.VisitorDirection;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
 
+// FIXME Move to EmployeeOrderRestEndpoint
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(path = { "/api/orders", "/rest/orders" })
-@Tag(name = "order")
+@Tag(name = "order", description = "API zur Abfrage von Mitarbeiteraufträgen")
 public class OrderRestEndpoint {
 
   private final EmployeecontractService employeecontractService;
@@ -47,8 +53,20 @@ public class OrderRestEndpoint {
 
   @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
   @ResponseStatus(OK)
-  @Operation
+  @Operation(
+      summary = "Gibt gültige Mitarbeiteraufträge in einer Hierarchie zurück",
+      description = "Liefert eine hierarchische Liste aller gültigen Aufträge und Unteraufträge für den authentifizierten Benutzer zum angegebenen Referenzdatum",
+      tags = {"order"}
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage", 
+          content = @Content(mediaType = APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = OrderData.class))),
+      @ApiResponse(responseCode = "401", description = "Nicht autorisiert"),
+      @ApiResponse(responseCode = "404", description = "Mitarbeitervertrag nicht gefunden")
+  })
   public List<OrderData> getValidEmployeeOrders(
+      @Parameter(description = "Referenzdatum für die Gültigkeit der Aufträge", required = true)
       @RequestParam("refDate") @DateTimeFormat(iso = ISO.DATE) LocalDate refDate) {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);

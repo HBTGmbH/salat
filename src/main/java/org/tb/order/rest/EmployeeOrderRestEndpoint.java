@@ -6,6 +6,11 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.List;
@@ -30,7 +35,7 @@ import org.tb.order.service.SuborderService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(path = { "/api/employee-orders", "/rest/employee-orders" })
-@Tag(name = "order")
+@Tag(name = "order", description = "API zur Abfrage von Mitarbeiteraufträgen")
 public class EmployeeOrderRestEndpoint {
 
     private final EmployeecontractService employeecontractService;
@@ -40,8 +45,20 @@ public class EmployeeOrderRestEndpoint {
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
-    @Operation
+    @Operation(
+        summary = "Gibt gültige Mitarbeiteraufträge zurück",
+        description = "Liefert eine Liste aller gültigen Mitarbeiteraufträge für den authentifizierten Benutzer zum angegebenen Referenzdatum",
+        tags = {"order"}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Erfolgreiche Abfrage", 
+            content = @Content(mediaType = APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = EmployeeOrderData.class))),
+        @ApiResponse(responseCode = "401", description = "Nicht autorisiert"),
+        @ApiResponse(responseCode = "404", description = "Mitarbeitervertrag nicht gefunden")
+    })
     public List<EmployeeOrderData> getValidEmployeeOrders(
+        @Parameter(description = "Referenzdatum für die Gültigkeit der Aufträge", required = true)
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate
     ) {
         if(!authorizedUser.isAuthenticated()) {
