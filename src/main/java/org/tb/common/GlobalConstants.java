@@ -139,7 +139,8 @@ public class GlobalConstants {
     public static final String PARENTICON = "Smily_Krone.gif";
 
     public static final long MINUTES_PER_HOUR = 60;
-    public static final long MINUTES_PER_DAY = MINUTES_PER_HOUR * 24;
+    public static final long HOURS_PER_DAY = 24;
+    public static final long MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY;
 
     public static final char GENDER_MALE = 'm';
     public static final char GENDER_FEMALE = 'f';
@@ -165,4 +166,10 @@ public class GlobalConstants {
 
     public static final int DEFAULT_WORK_DAY_START = 9;
     public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
+
+    public static final int MAX_TIME_REPORT_HOUR = 24;
+    public static final int MIN_TIME_REPORT_HOUR = 0;
+    public static final int MIN_TIME_REPORT_MINUTE = 0;
+    public static final int MAX_TIME_REPORT_MINUTE = 59;
+
 }

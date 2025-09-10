@@ -1,6 +1,7 @@
 package org.tb.dailyreport.action;
 
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
+import static org.tb.common.GlobalConstants.HOURS_PER_DAY;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -99,7 +100,7 @@ public class AddDailyReportForm extends ActionForm {
         Duration duration = Duration.ZERO;
         if(selectedHourEnd < selectedHourBegin || selectedHourEnd == selectedHourBegin && selectedMinuteEnd < selectedMinuteBegin) {
             // user selected a time in the morning and a overnight period is the result
-            duration = duration.plusHours(24);
+            duration = duration.plusHours(HOURS_PER_DAY);
         }
         duration = duration.plusHours(selectedHourEnd)
             .plusMinutes(selectedMinuteEnd)
@@ -114,7 +115,7 @@ public class AddDailyReportForm extends ActionForm {
             .plusMinutes(selectedMinuteBegin)
             .plusHours(selectedHourDuration)
             .plusMinutes(selectedMinuteDuration);
-        this.selectedHourEnd = duration.toHoursPart() % 24; // handle overnight period
+        this.selectedHourEnd = duration.toHoursPart() % HOURS_PER_DAY; // handle overnight period
         this.selectedMinuteEnd = duration.toMinutesPart();
     }
 

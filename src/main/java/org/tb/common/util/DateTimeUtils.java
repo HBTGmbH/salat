@@ -67,10 +67,6 @@ public class DateTimeUtils {
   };
 
   private static final Map<Year, List<OptionItem>> calendarWeeksCache = new HashMap<>();
-  public static final int MAX_TIME_REPORT_HOUR = 24;
-  public static final int MIN_TIME_REPORT_HOUR = 0;
-  public static final int MIN_TIME_REPORT_MINUTE = 0;
-  public static final int MAX_TIME_REPORT_MINUTE = 59;
 
   /*
    * builds up a list of string with current and previous year
@@ -146,7 +142,7 @@ public class DateTimeUtils {
    * builds up a list of string with duration hours to display (0-23)
    */
   public static List<OptionItem> getTimeReportHoursOptions() {
-    return getOptionItemListOfInts(MIN_TIME_REPORT_HOUR, MAX_TIME_REPORT_HOUR);
+    return getOptionItemListOfInts(GlobalConstants.MIN_TIME_REPORT_HOUR, GlobalConstants.MAX_TIME_REPORT_HOUR);
   }
 
   /*
@@ -154,7 +150,7 @@ public class DateTimeUtils {
    */
   public static List<OptionItem> getTimeReportMinutesOptions(boolean showAllMinutes) {
     if(showAllMinutes) {
-      return getOptionItemListOfInts(MIN_TIME_REPORT_MINUTE, MAX_TIME_REPORT_MINUTE);
+      return getOptionItemListOfInts(GlobalConstants.MIN_TIME_REPORT_MINUTE, GlobalConstants.MAX_TIME_REPORT_MINUTE);
     }
     List<OptionItem> result = new ArrayList<>();
     result.add(intToOptionitem(0));

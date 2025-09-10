@@ -1,5 +1,6 @@
 package org.tb.dailyreport.viewhelper;
 
+import static org.tb.common.GlobalConstants.HOURS_PER_DAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -255,8 +256,8 @@ public class TimereportHelper {
             if (endTimeHours < 10) {
                 endTimeString.append("0");
             }
-            if (endTimeHours >= 24) {
-                endTimeHours = endTimeHours % 24;
+            if (endTimeHours >= HOURS_PER_DAY) {
+                endTimeHours = endTimeHours % HOURS_PER_DAY;
             }
             endTimeString.append(endTimeHours);
             endTimeString.append(":");
