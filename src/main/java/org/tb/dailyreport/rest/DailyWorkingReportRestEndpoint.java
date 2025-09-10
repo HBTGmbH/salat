@@ -3,6 +3,7 @@ package org.tb.dailyreport.rest;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -11,6 +12,11 @@ import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DA
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverter.TEXT_CSV_DAILY_WORKING_REPORT_VALUE;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -43,7 +49,7 @@ import org.tb.employee.service.EmployeecontractService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(path = { "/api/daily-working-reports", "/rest/daily-working-reports" })
-@Tag(name = "daily report")
+@Tag(name = "daily report", description = "API zum Verwalten von täglichen Zeiterfassungen und Zeitbuchungen")
 public class DailyWorkingReportRestEndpoint {
 
     private final EmployeecontractService employeecontractService;
@@ -54,10 +60,30 @@ public class DailyWorkingReportRestEndpoint {
 
     @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(OK)
-    @Operation
+    @Operation(
+        summary = "Liefert tägliche Zeiterfassungen für einen bestimmten Zeitraum",
+        description = "Gibt die täglichen Zeiterfassungen für den authentifizierten Benutzer für einen spezifizierten Zeitraum zurück. Kann als JSON oder CSV geliefert werden."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Erfolgreiche Abfrage",
+            content = @Content(
+                mediaType = APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = DailyWorkingReportData.class)
+            )
+        ),
+        @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+        @ApiResponse(responseCode = "404", description = "Kein gültiger Mitarbeitervertrag gefunden")
+    })
     public ResponseEntity<List<DailyWorkingReportData>> getReports(
+            @Parameter(description = "Referenzdatum für den Beginn des Berichtszeitraums", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate,
+
+            @Parameter(description = "Anzahl der Tage beginnend beim Referenzdatum, für die tägliche Zeiterfassungen abgerufen werden sollen", example = "7")
             @RequestParam(defaultValue = "1") int days,
+
+            @Parameter(description = "Bei 'true' wird die Antwort als CSV-Datei zurückgegeben")
             @RequestParam(defaultValue = "false") boolean csv
     ) {
         checkAuthenticated();
@@ -111,15 +137,25 @@ public class DailyWorkingReportRestEndpoint {
 
     @PostMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
-    @Operation
+    @io.swagger.v3.oas.annotations.Operation(
+        summary = "Erstellt eine neue tägliche Zeiterfassung",
+        description = "Erstellt eine neue tägliche Zeiterfassung für den authentifizierten Benutzer. Kann als JSON oder CSV übermittelt werden."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Erfolgreich erstellt"),
+        @ApiResponse(responseCode = "400", description = "Ungültige Daten oder Geschäftsregelverstoß"),
+        @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+        @ApiResponse(responseCode = "403", description = "Keine Berechtigung für diesen Vorgang")
+    })
     public void createReport(
+            @Parameter(description = "Die zu erstellende tägliche Zeiterfassung", required = true)
             @RequestBody DailyWorkingReportData report
     ) {
         checkAuthenticated();
         try {
             dailyWorkingReportService.createReports(List.of(report));
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
+            throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
@@ -127,15 +163,25 @@ public class DailyWorkingReportRestEndpoint {
 
     @PutMapping(path = "/", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
-    @Operation
+    @Operation(
+        summary = "Aktualisiert eine bestehende tägliche Zeiterfassung",
+        description = "Ersetzt eine bestehende tägliche Zeiterfassung für den angegebenen Tag mit den neuen Daten. Der Bericht kann als JSON oder CSV übermittelt werden."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Erfolgreich aktualisiert"),
+        @ApiResponse(responseCode = "400", description = "Ungültige Daten oder Geschäftsregelverstoß"),
+        @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+        @ApiResponse(responseCode = "403", description = "Keine Berechtigung für diesen Vorgang")
+    })
     public void replaceReport(
+            @Parameter(description = "Die aktualisierte tägliche Zeiterfassung", required = true)
             @RequestBody DailyWorkingReportData report
     ) {
         checkAuthenticated();
         try {
             dailyWorkingReportService.updateReports(List.of(report));
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
+            throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
@@ -143,15 +189,25 @@ public class DailyWorkingReportRestEndpoint {
 
     @PostMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
-    @Operation
+    @Operation(
+        summary = "Erstellt mehrere tägliche Zeiterfassungen",
+        description = "Erstellt mehrere tägliche Zeiterfassungen in einem Batch für den authentifizierten Benutzer. Die Berichte können als JSON oder CSV übermittelt werden."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Erfolgreich erstellt"),
+        @ApiResponse(responseCode = "400", description = "Ungültige Daten oder Geschäftsregelverstoß"),
+        @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+        @ApiResponse(responseCode = "403", description = "Keine Berechtigung für diesen Vorgang")
+    })
     public void createReports(
+            @Parameter(description = "Liste der zu erstellenden täglichen Zeiterfassungen", required = true)
             @RequestBody List<DailyWorkingReportData> reports
     ) {
         checkAuthenticated();
         try {
             dailyWorkingReportService.createReports(reports);
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
+            throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
@@ -159,15 +215,25 @@ public class DailyWorkingReportRestEndpoint {
 
     @PutMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(CREATED)
-    @Operation
+    @Operation(
+        summary = "Aktualisiert mehrere tägliche Zeiterfassungen",
+        description = "Ersetzt mehrere bestehende tägliche Zeiterfassungen in einem Batch für den authentifizierten Benutzer. Die Berichte können als JSON oder CSV übermittelt werden."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Erfolgreich aktualisiert"),
+        @ApiResponse(responseCode = "400", description = "Ungültige Daten oder Geschäftsregelverstoß"),
+        @ApiResponse(responseCode = "401", description = "Nicht authentifiziert"),
+        @ApiResponse(responseCode = "403", description = "Keine Berechtigung für diesen Vorgang")
+    })
     public void replaceReports(
+            @Parameter(description = "Liste der aktualisierten täglichen Zeiterfassungen", required = true)
             @RequestBody List<DailyWorkingReportData> reports
     ) {
         checkAuthenticated();
         try {
             dailyWorkingReportService.updateReports(reports);
         } catch (AuthorizationException e) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Could not create timereport. " + e);
+            throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
