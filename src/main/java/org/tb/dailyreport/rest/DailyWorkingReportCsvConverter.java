@@ -50,6 +50,7 @@ import org.tb.order.service.EmployeeorderService;
 
 @Component
 @AllArgsConstructor
+@io.swagger.v3.oas.annotations.media.Schema(hidden = true)
 public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List<DailyWorkingReportData>> {
 
     private final EmployeeorderService employeeorderService;
