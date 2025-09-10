@@ -2,6 +2,12 @@ package org.tb.favorites.rest;
 
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +31,7 @@ import org.tb.favorites.service.FavoriteService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(path = { "/api/favorite", "/rest/favorite" })
-@Tag(name = "favorite")
+@Tag(name = "favorite", description = "API zum verwalten von Favoriten für Zeitbuchungen")
 public class FavoriteRestEndpoint {
 
   private final FavoriteService favoriteService;
@@ -41,18 +47,38 @@ public class FavoriteRestEndpoint {
     return favoriteDtoMapper.map(favoriteService.getFavorites(authorizedUser.getEmployeeId()));
   }
 
+  @Operation(summary = "Fügt einen neuen Favoriten hinzu",
+      description = "Speichert einen neuen Favoriten für den authentifizierten Benutzer")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "201", description = "Favorit erfolgreich gespeichert",
+          content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = FavoriteDto.class))),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert", content = @Content)
+  })
   @PutMapping(path = "", consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
-  public FavoriteDto addFavorite(@RequestBody FavoriteDto favorite) {
+  public FavoriteDto addFavorite(@RequestBody @Parameter(description = "Der zu speichernde Favorit", 
+      required = true, schema = @Schema(implementation = FavoriteDto.class)) FavoriteDto favorite) {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
     return favoriteDtoMapper.map(favoriteService.addFavorite(favoriteDtoMapper.map(favorite)));
   }
 
+  @Operation(summary = "Löscht einen Favoriten",
+      description = "Löscht einen bestehenden Favoriten anhand seiner ID")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Favorit erfolgreich gelöscht", 
+          content = @Content),
+      @ApiResponse(responseCode = "401", description = "Nicht authentifiziert", 
+          content = @Content),
+      @ApiResponse(responseCode = "404", description = "Favorit nicht gefunden", 
+          content = @Content)
+  })
   @DeleteMapping(path = "/{id}")
   @ResponseStatus(HttpStatus.OK)
-  public void deleteFavorite(@PathVariable long id) {
+  public void deleteFavorite(@PathVariable @Parameter(description = "ID des zu löschenden Favoriten", 
+      required = true) long id) {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
