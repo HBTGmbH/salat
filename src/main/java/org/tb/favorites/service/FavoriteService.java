@@ -43,7 +43,7 @@ public class FavoriteService {
   public void deleteFavorite(long id) {
     Optional<Favorite> favorite = favoriteRepository.findById(id);
     if (favorite.isEmpty()) {
-      throw new IllegalArgumentException("Favorite not found for id " + id);
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Favorite not found for id " + id);
     }
     if (authorizedUser.getEmployeeId().equals(favorite.get().getEmployeeId())) {
       favoriteRepository.deleteById(id);
