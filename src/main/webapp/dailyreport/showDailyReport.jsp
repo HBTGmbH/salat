@@ -172,7 +172,7 @@
 						confirm("<bean:message key="main.timereport.extendtime.error.notbelowzero.text" />");
 						return currentValue;
 					}
-					if (newValue[0] > 5) {
+					if (newValue[0] > 12) {
 						newValue = [5, 55];
 					}
 					hours = newValue[0];
