@@ -173,7 +173,7 @@
 						return currentValue;
 					}
 					if (newValue[0] > 12) {
-						newValue = [5, 55];
+						newValue = [12, 55];
 					}
 					hours = newValue[0];
 					minutes = roundMinutes(newValue[1]);
