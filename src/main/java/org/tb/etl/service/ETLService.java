@@ -68,11 +68,11 @@ public class ETLService {
   private void executeETL(String etlName, LocalDateRange dateRange) {
     ETLDefinition def = definitionRepo.findByName(etlName)
         .orElseThrow(() -> new IllegalArgumentException("ETL not found: " + etlName));
-    if(!authorization.isAuthorized(def, AccessLevel.EXECUTE)) {
+    if (!authorization.isAuthorized(def, AccessLevel.EXECUTE)) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
     }
 
-    if(dateRange.getFrom().isAfter(dateRange.getUntil())) {
+    if (dateRange.getFrom().isAfter(dateRange.getUntil())) {
       throw new InvalidDataException(ETL_INVALID_DATE_RANGE);
     }
 
@@ -85,36 +85,39 @@ public class ETLService {
       try {
 
         Stopwatch stopwatch = Stopwatch.createStarted();
+        int initRows = 0;
         for (String rawSql : def.getInit().getStatements()) {
           String sql = parameterResolver.resolve(rawSql, refPeriod);
           log.debug("Send init SQL: {}", sql);
-          jdbc.update(sql);
+          initRows += jdbc.update(sql);
         }
         stopwatch.stop();
-        message.append("Init took ").append(stopwatch).append("\n");
+        message.append("Init took ").append(stopwatch).append(" (").append(initRows).append(" rows affected)\n");
 
         stopwatch = Stopwatch.createStarted();
+        int executeRows = 0;
         for (String rawSql : def.getExecute().getStatements()) {
           String sql = parameterResolver.resolve(rawSql, refPeriod);
           log.debug("Send execute SQL: {}", sql);
-          jdbc.update(sql);
+          executeRows += jdbc.update(sql);
         }
         stopwatch.stop();
-        message.append("Execute took ").append(stopwatch).append("\n");
+        message.append("Execute took ").append(stopwatch).append(" (").append(executeRows).append(" rows affected)\n");
 
         stopwatch = Stopwatch.createStarted();
+        int cleanupRows = 0;
         for (String rawSql : def.getCleanup().getStatements()) {
           String sql = parameterResolver.resolve(rawSql, refPeriod);
           log.debug("Send cleanup SQL: {}", sql);
-          jdbc.update(sql);
+          cleanupRows += jdbc.update(sql);
         }
         stopwatch.stop();
-        message.append("Cleanup took ").append(stopwatch).append("\n");;
+        message.append("Cleanup took ").append(stopwatch).append(" (").append(cleanupRows).append(" rows affected)\n");
 
         success = true;
       } catch (DataAccessException ex) {
         log.error("ETL execution failed: {}", etlName, ex);
-        message.append("ETL execution failed: ").append(ex.getMessage()).append("\n");;
+        message.append("ETL execution failed: ").append(ex.getMessage()).append("\n");
       } finally {
         historyRepo.save(ETLExecutionHistory.builder()
             .etlId(def.getId())
