@@ -81,6 +81,8 @@ public enum ErrorCode {
   WD_DELETE_REQ_EMPLOYEE_OR_MANAGER("WD-0012", "you can only delete your own working days or you must be a manager!"),
   WD_READ_REQ_EMPLOYEE_OR_MANAGER("WD-0013", "you can only read your own working days or you must be a manager!"),
 
+  ETL_INVALID_DATE_RANGE("ETL-0001", "etl definition executed with invalid date range"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   ;
 
