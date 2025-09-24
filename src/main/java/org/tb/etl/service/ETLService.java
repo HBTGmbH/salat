@@ -1,0 +1,178 @@
+package org.tb.etl.service;
+
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static org.tb.common.exception.ErrorCode.ETL_INVALID_DATE_RANGE;
+
+import com.google.common.base.Stopwatch;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.time.StopWatch;
+import org.springframework.dao.DataAccessException;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.tb.auth.domain.AccessLevel;
+import org.tb.common.LocalDateRange;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DateUtils;
+import org.tb.etl.auth.ETLAuthorization;
+import org.tb.etl.domain.ETLDefinition;
+import org.tb.etl.domain.ETLDefinition.ReferencePeriod;
+import org.tb.etl.domain.ETLExecutionHistory;
+import org.tb.etl.persistence.ETLDefinitionRepository;
+import org.tb.etl.persistence.ETLExecutionHistoryRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ETLService {
+
+  private final ETLDefinitionRepository definitionRepo;
+  private final ETLExecutionHistoryRepository historyRepo;
+  private final ParameterResolver parameterResolver;
+  private final JdbcTemplate jdbc;
+  private final ETLAuthorization authorization;
+
+  @Scheduled(cron = "0 0 2 * * *") // täglich um 02:00
+  public void runDaily() {
+    var today = DateUtils.today();
+    var range = new LocalDateRange(today, today);
+    executeAll(range);
+  }
+
+  public void executeAll(LocalDateRange dateRange) {
+    execute(dateRange, getAllETLNames());
+  }
+
+  public void execute(LocalDateRange dateRange, Set<String> etlNames) {
+    for (String etlName : etlNames) {
+      executeETL(etlName, dateRange);
+    }
+  }
+
+  private Set<String> getAllETLNames() {
+    return definitionRepo.findAll().stream().map(ETLDefinition::getName).collect(Collectors.toSet());
+  }
+
+  private void executeETL(String etlName, LocalDateRange dateRange) {
+    ETLDefinition def = definitionRepo.findByName(etlName)
+        .orElseThrow(() -> new IllegalArgumentException("ETL not found: " + etlName));
+    if(!authorization.isAuthorized(def, AccessLevel.EXECUTE)) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
+
+    if(dateRange.getFrom().isAfter(dateRange.getUntil())) {
+      throw new InvalidDataException(ETL_INVALID_DATE_RANGE);
+    }
+
+    var refPeriods = generateReferencePeriodRanges(dateRange, def.getReferencePeriod());
+    for (LocalDateRange refPeriod : refPeriods) {
+      boolean success = false;
+      StringBuilder message = new StringBuilder();
+      message.append("Date Range: ").append(refPeriod).append("\n");
+
+      try {
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        for (String rawSql : def.getInit().getStatements()) {
+          String sql = parameterResolver.resolve(rawSql, refPeriod);
+          log.debug("Send init SQL: {}", sql);
+          jdbc.update(sql);
+        }
+        stopwatch.stop();
+        message.append("Init took ").append(stopwatch).append("\n");
+
+        stopwatch = Stopwatch.createStarted();
+        for (String rawSql : def.getExecute().getStatements()) {
+          String sql = parameterResolver.resolve(rawSql, refPeriod);
+          log.debug("Send execute SQL: {}", sql);
+          jdbc.update(sql);
+        }
+        stopwatch.stop();
+        message.append("Execute took ").append(stopwatch).append("\n");
+
+        stopwatch = Stopwatch.createStarted();
+        for (String rawSql : def.getCleanup().getStatements()) {
+          String sql = parameterResolver.resolve(rawSql, refPeriod);
+          log.debug("Send cleanup SQL: {}", sql);
+          jdbc.update(sql);
+        }
+        stopwatch.stop();
+        message.append("Cleanup took ").append(stopwatch).append("\n");;
+
+        success = true;
+      } catch (DataAccessException ex) {
+        log.error("ETL execution failed: {}", etlName, ex);
+        message.append("ETL execution failed: ").append(ex.getMessage()).append("\n");;
+      } finally {
+        historyRepo.save(ETLExecutionHistory.builder()
+            .etlId(def.getId())
+            .etlName(def.getName())
+            .executedAt(LocalDateTime.now())
+            .success(success)
+            .message(message.toString())
+            .build());
+      }
+    }
+  }
+
+  private List<LocalDateRange> generateReferencePeriodRanges(LocalDateRange dateRange, ReferencePeriod referencePeriod) {
+    return switch (referencePeriod) {
+      case YEAR -> splitRangeByPeriod(dateRange,
+          date -> date.withDayOfYear(1),
+          date -> date.with(TemporalAdjusters.lastDayOfYear()));
+      case QUARTER -> splitRangeByPeriod(dateRange,
+          date -> date.with(date.getMonth().firstMonthOfQuarter()).withDayOfMonth(1),
+          date -> date.with(date.getMonth().firstMonthOfQuarter()).plusMonths(2)
+              .with(TemporalAdjusters.lastDayOfMonth()));
+      case MONTH -> splitRangeByPeriod(dateRange,
+          date -> date.withDayOfMonth(1),
+          date -> date.with(TemporalAdjusters.lastDayOfMonth()));
+      case WEEK -> splitRangeByPeriod(dateRange,
+          date -> date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
+          date -> date.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)));
+      case DAY -> splitRangeByPeriod(dateRange,
+          date -> date,
+          date -> date);
+    };
+  }
+
+  private List<LocalDateRange> splitRangeByPeriod(LocalDateRange range,
+      Function<LocalDate, LocalDate> periodStart,
+      Function<LocalDate, LocalDate> periodEnd) {
+    List<LocalDateRange> ranges = new ArrayList<>();
+    LocalDate current = range.getFrom();
+
+    while (!current.isAfter(range.getUntil())) {
+      LocalDate start = periodStart.apply(current);
+      LocalDate end = periodEnd.apply(current);
+
+      if (start.isBefore(range.getFrom())) {
+        start = range.getFrom();
+      }
+      if (end.isAfter(range.getUntil())) {
+        end = range.getUntil();
+      }
+
+      ranges.add(new LocalDateRange(start, end));
+      current = end.plusDays(1);
+    }
+
+    return ranges;
+  }
+
+  public boolean isETLExisting(String etlName) {
+    return definitionRepo.findByName(etlName).isPresent();
+  }
+}

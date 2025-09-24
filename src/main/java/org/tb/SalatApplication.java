@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
@@ -28,6 +29,7 @@ import org.springframework.web.context.request.RequestAttributes;
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class, ManagementWebSecurityAutoConfiguration.class})
 @EnableWebSecurity
 @EnableAsync
+@EnableScheduling
 public class SalatApplication implements AsyncConfigurer {
 
   public static void main(String[] args) {
