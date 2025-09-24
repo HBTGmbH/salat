@@ -6,7 +6,6 @@ import static org.tb.common.exception.ErrorCode.ETL_INVALID_DATE_RANGE;
 import com.google.common.base.Stopwatch;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.tb.auth.domain.AccessLevel;
@@ -83,16 +82,20 @@ public class ETLService {
       message.append("Date Range: ").append(refPeriod).append("\n");
 
       try {
-
         Stopwatch stopwatch = Stopwatch.createStarted();
         int initRows = 0;
+        int createdTables = 0;
         for (String rawSql : def.getInit().getStatements()) {
           String sql = parameterResolver.resolve(rawSql, refPeriod);
           log.debug("Send init SQL: {}", sql);
           initRows += jdbc.update(sql);
+          if (sql.toLowerCase().contains("create table")) {
+            createdTables++;
+          }
         }
         stopwatch.stop();
-        message.append("Init took ").append(stopwatch).append(" (").append(initRows).append(" rows affected)\n");
+        message.append("Init took ").append(stopwatch).append(" (").append(initRows).append(" rows affected, ")
+            .append(createdTables).append(" tables created)\n");
 
         stopwatch = Stopwatch.createStarted();
         int executeRows = 0;
@@ -106,13 +109,18 @@ public class ETLService {
 
         stopwatch = Stopwatch.createStarted();
         int cleanupRows = 0;
+        int droppedTables = 0;
         for (String rawSql : def.getCleanup().getStatements()) {
           String sql = parameterResolver.resolve(rawSql, refPeriod);
           log.debug("Send cleanup SQL: {}", sql);
           cleanupRows += jdbc.update(sql);
+          if (sql.toLowerCase().contains("drop table")) {
+            droppedTables++;
+          }
         }
         stopwatch.stop();
-        message.append("Cleanup took ").append(stopwatch).append(" (").append(cleanupRows).append(" rows affected)\n");
+        message.append("Cleanup took ").append(stopwatch).append(" (").append(cleanupRows).append(" rows affected, ")
+            .append(droppedTables).append(" tables dropped)\n");
 
         success = true;
       } catch (DataAccessException ex) {
@@ -122,10 +130,7 @@ public class ETLService {
         historyRepo.save(ETLExecutionHistory.builder()
             .etlId(def.getId())
             .etlName(def.getName())
-            .executedAt(LocalDateTime.now())
-            .success(success)
-            .message(message.toString())
-            .build());
+            .executedAt(LocalDateTime.now()).success(success).message(message.toString()).build());
       }
     }
   }
