@@ -42,6 +42,7 @@ public class ETLService {
   private final ParameterResolver parameterResolver;
   private final JdbcTemplate jdbc;
   private final ETLAuthorization authorization;
+  private final SchemaDiffService schemaDiffService;
 
   @Scheduled(cron = "0 0 2 * * *") // täglich um 02:00
   public void runDaily() {
@@ -82,45 +83,49 @@ public class ETLService {
       message.append("Date Range: ").append(refPeriod).append("\n");
 
       try {
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        int initRows = 0;
-        int createdTables = 0;
-        for (String rawSql : def.getInit().getStatements()) {
-          String sql = parameterResolver.resolve(rawSql, refPeriod);
-          log.debug("Send init SQL: {}", sql);
-          initRows += jdbc.update(sql);
-          if (sql.toLowerCase().contains("create table")) {
-            createdTables++;
-          }
-        }
-        stopwatch.stop();
-        message.append("Init took ").append(stopwatch).append(" (").append(initRows).append(" rows affected, ")
-            .append(createdTables).append(" tables created)\n");
+        var initDiff = schemaDiffService.diffAround(
+            () -> {
+              var stopwatch = Stopwatch.createStarted();
+              int initRows = 0;
+              for (String rawSql : def.getInit().getStatements()) {
+                String sql = parameterResolver.resolve(rawSql, refPeriod);
+                log.debug("Send init SQL: {}", sql);
+                initRows += jdbc.update(sql);
+              }
+              stopwatch.stop();
+              message.append("Init took ").append(stopwatch).append(" (").append(initRows).append(" rows affected, ");
+            },
+            "salat"
+        );
+        message.append(initDiff.created().size()).append(" tables/objects created)\n");
 
-        stopwatch = Stopwatch.createStarted();
-        int executeRows = 0;
-        for (String rawSql : def.getExecute().getStatements()) {
-          String sql = parameterResolver.resolve(rawSql, refPeriod);
-          log.debug("Send execute SQL: {}", sql);
-          executeRows += jdbc.update(sql);
-        }
-        stopwatch.stop();
-        message.append("Execute took ").append(stopwatch).append(" (").append(executeRows).append(" rows affected)\n");
-
-        stopwatch = Stopwatch.createStarted();
-        int cleanupRows = 0;
-        int droppedTables = 0;
-        for (String rawSql : def.getCleanup().getStatements()) {
-          String sql = parameterResolver.resolve(rawSql, refPeriod);
-          log.debug("Send cleanup SQL: {}", sql);
-          cleanupRows += jdbc.update(sql);
-          if (sql.toLowerCase().contains("drop table")) {
-            droppedTables++;
+        {
+          var stopwatch = Stopwatch.createStarted();
+          int executeRows = 0;
+          for (String rawSql : def.getExecute().getStatements()) {
+            String sql = parameterResolver.resolve(rawSql, refPeriod);
+            log.debug("Send execute SQL: {}", sql);
+            executeRows += jdbc.update(sql);
           }
+          stopwatch.stop();
+          message.append("Execute took ").append(stopwatch).append(" (").append(executeRows).append(" rows affected)\n");
         }
-        stopwatch.stop();
-        message.append("Cleanup took ").append(stopwatch).append(" (").append(cleanupRows).append(" rows affected, ")
-            .append(droppedTables).append(" tables dropped)\n");
+
+        var cleanupDiff = schemaDiffService.diffAround(
+            () -> {
+              var stopwatch = Stopwatch.createStarted();
+              int cleanupRows = 0;
+              for (String rawSql : def.getCleanup().getStatements()) {
+                String sql = parameterResolver.resolve(rawSql, refPeriod);
+                log.debug("Send cleanup SQL: {}", sql);
+                cleanupRows += jdbc.update(sql);
+              }
+              stopwatch.stop();
+              message.append("Cleanup took ").append(stopwatch).append(" (").append(cleanupRows).append(" rows affected, ");
+            },
+            "salat"
+        );
+        message.append(cleanupDiff.dropped().size()).append(" tables/objects dropped)\n");
 
         success = true;
       } catch (DataAccessException ex) {
