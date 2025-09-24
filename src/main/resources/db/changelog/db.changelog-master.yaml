@@ -1046,6 +1046,95 @@ databaseChangeLog:
         - sql:
             sql: update overtime set effective = greatest(date(overtime.created), (select employeecontract.validFrom from employeecontract where id = overtime.EMPLOYEECONTRACT_ID))
 
+  - changeSet:
+      id: 32
+      author: kr
+      comment: Add table for ETL definitions
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: etl_definition
+      changes:
+        - createTable:
+            tableName: etl_definition
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: description
+                  type: varchar(4000)
+              - column:
+                  name: reference_period
+                  type: varchar(255)
+              - column:
+                  name: init
+                  type: text
+              - column:
+                  name: execute
+                  type: text
+              - column:
+                  name: cleanup
+                  type: text
+
+  - changeSet:
+      id: 33
+      author: kr
+      comment: Add table for ETL execution history
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: etl_execution_history
+      changes:
+        - createTable:
+            tableName: etl_execution_history
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: etl_id
+                  type: bigint
+              - column:
+                  name: etl_name
+                  type: varchar(255)
+              - column:
+                  name: executed_at
+                  type: datetime
+              - column:
+                  name: success
+                  type: bit(1)
+              - column:
+                  name: message
+                  type: varchar(4000)
+
+
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
