@@ -5,6 +5,7 @@ import static org.springframework.web.context.request.RequestContextHolder.reset
 import static org.springframework.web.context.request.RequestContextHolder.setRequestAttributes;
 
 import java.util.concurrent.Executor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,12 +17,15 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.context.request.RequestAttributes;
 
+@Slf4j
 @Configuration
 @EnableJpaRepositories
 @EnableJpaAuditing
@@ -30,7 +34,7 @@ import org.springframework.web.context.request.RequestAttributes;
 @EnableWebSecurity
 @EnableAsync
 @EnableScheduling
-public class SalatApplication implements AsyncConfigurer {
+public class SalatApplication implements AsyncConfigurer, SchedulingConfigurer {
 
   public static void main(String[] args) {
     SpringApplication.run(SalatApplication.class, args);
@@ -65,4 +69,10 @@ public class SalatApplication implements AsyncConfigurer {
     return new DelegatingSecurityContextAsyncTaskExecutor(taskExecutor);
   }
 
+  @Override
+  public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+    taskRegistrar.getCronTaskList().forEach(task -> {
+      log.info("Scheduled cron task: {} ({})", task, task.getExpression());
+    });
+  }
 }
