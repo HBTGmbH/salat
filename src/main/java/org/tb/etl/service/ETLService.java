@@ -44,10 +44,10 @@ public class ETLService {
   private final ETLAuthorization authorization;
   private final SchemaDiffService schemaDiffService;
 
-  @Scheduled(cron = "0 0 2 * * *") // täglich um 02:00
+  @Scheduled(cron = "0 0 21 * * *") // täglich um 21:00
   public void runDaily() {
     var today = DateUtils.today();
-    var range = new LocalDateRange(today, today);
+    var range = new LocalDateRange(today.minusMonths(3), today);
     executeAll(range);
   }
 
