@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
@@ -38,5 +39,7 @@ public class ETLDefinition extends AuditedEntity implements Serializable {
   private SqlStatements init;
   private SqlStatements execute;
   private SqlStatements cleanup;
+
+  private Set<String> dependencies;
 
 }

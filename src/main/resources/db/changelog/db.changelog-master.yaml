@@ -1135,6 +1135,24 @@ databaseChangeLog:
                   type: varchar(4000)
 
 
+  - changeSet:
+      id: 34
+      author: kr
+      comment: Add dependencies column to ETL definitions
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: etl_definition
+                columnName: dependencies
+      changes:
+        - addColumn:
+            tableName: etl_definition
+            columns:
+              - column:
+                  name: dependencies
+                  type: varchar(1000)
+
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
