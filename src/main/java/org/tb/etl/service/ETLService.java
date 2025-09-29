@@ -171,13 +171,6 @@ public class ETLService {
       LocalDate start = periodStart.apply(current);
       LocalDate end = periodEnd.apply(current);
 
-      if (start.isBefore(range.getFrom())) {
-        start = range.getFrom();
-      }
-      if (end.isAfter(range.getUntil())) {
-        end = range.getUntil();
-      }
-
       ranges.add(new LocalDateRange(start, end));
       current = end.plusDays(1);
     }
