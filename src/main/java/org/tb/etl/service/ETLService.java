@@ -44,7 +44,7 @@ public class ETLService {
   private final ETLAuthorization authorization;
   private final SchemaDiffService schemaDiffService;
 
-  @Scheduled(cron = "0 0 21 * * *") // täglich um 21:00
+  @Scheduled(cron = "0 0 2 * * *") // täglich um 21:00
   public void runDaily() {
     try {
       var today = DateUtils.today();
