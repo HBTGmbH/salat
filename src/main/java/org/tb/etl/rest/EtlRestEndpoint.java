@@ -62,7 +62,7 @@ public class EtlRestEndpoint {
     checkAuthenticated();
 
     try {
-      etlService.executeAll(new LocalDateRange(fromDate, untilDate));
+      etlService.executeAll(new LocalDateRange(fromDate, untilDate), false);
     } catch (AuthorizationException e) {
       throw new ResponseStatusException(FORBIDDEN, "Could not execute all ETL definitions. " + e);
     } catch (InvalidDataException | BusinessRuleException e) {
@@ -99,7 +99,7 @@ public class EtlRestEndpoint {
       if(!etlService.isETLExisting(etlName)) {
         throw new ResponseStatusException(NOT_FOUND, "ETL not found: " + etlName);
       }
-      etlService.execute(new LocalDateRange(fromDate, untilDate), Set.of(etlName));
+      etlService.execute(new LocalDateRange(fromDate, untilDate), Set.of(etlName), false);
     } catch (AuthorizationException e) {
       throw new ResponseStatusException(FORBIDDEN, "Could not execute ETL definition. " + e);
     } catch (InvalidDataException | BusinessRuleException e) {

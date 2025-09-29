@@ -58,13 +58,13 @@ public class ETLService {
     }
   }
 
-  public void executeAll(LocalDateRange dateRange) {
-    execute(dateRange, getAllETLNames());
+  public void executeAll(LocalDateRange dateRange, boolean scheduled) {
+    execute(dateRange, getAllETLNames(), scheduled);
   }
 
-  public void execute(LocalDateRange dateRange, Set<String> etlNames) {
+  public void execute(LocalDateRange dateRange, Set<String> etlNames, boolean scheduled) {
     for (String etlName : etlNames) {
-      executeETL(etlName, dateRange);
+      executeETL(etlName, dateRange, scheduled);
     }
   }
 
@@ -72,10 +72,10 @@ public class ETLService {
     return definitionRepo.findAll().stream().map(ETLDefinition::getName).collect(Collectors.toSet());
   }
 
-  private void executeETL(String etlName, LocalDateRange dateRange) {
+  private void executeETL(String etlName, LocalDateRange dateRange, boolean scheduled) {
     ETLDefinition def = definitionRepo.findByName(etlName)
         .orElseThrow(() -> new IllegalArgumentException("ETL not found: " + etlName));
-    if (!authorization.isAuthorized(def, AccessLevel.EXECUTE)) {
+    if (!scheduled && !authorization.isAuthorized(def, AccessLevel.EXECUTE)) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
     }
 
