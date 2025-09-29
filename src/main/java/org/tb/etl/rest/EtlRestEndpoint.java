@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.websocket.server.PathParam;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -99,7 +100,7 @@ public class EtlRestEndpoint {
       if(!etlService.isETLExisting(etlName)) {
         throw new ResponseStatusException(NOT_FOUND, "ETL not found: " + etlName);
       }
-      etlService.execute(new LocalDateRange(fromDate, untilDate), Set.of(etlName), false);
+      etlService.execute(new LocalDateRange(fromDate, untilDate), List.of(etlName), false);
     } catch (AuthorizationException e) {
       throw new ResponseStatusException(FORBIDDEN, "Could not execute ETL definition. " + e);
     } catch (InvalidDataException | BusinessRuleException e) {

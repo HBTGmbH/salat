@@ -3,7 +3,11 @@ package org.tb.etl.service;
 import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.exception.ErrorCode.ETL_INVALID_DATE_RANGE;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataAccessException;
@@ -62,14 +66,52 @@ public class ETLService {
     execute(dateRange, getAllETLNames(), scheduled);
   }
 
-  public void execute(LocalDateRange dateRange, Set<String> etlNames, boolean scheduled) {
-    for (String etlName : etlNames) {
-      executeETL(etlName, dateRange, scheduled);
+  private List<String> getAllETLNames() {
+    var definitions = definitionRepo.findAll();
+
+    Map<String, Set<String>> etlDependencyGraph = new HashMap<>();
+    for (ETLDefinition def : definitions) {
+      etlDependencyGraph.put(def.getName(), def.getDependencies());
+    }
+
+    return calculateExecutionOrder(etlDependencyGraph);
+  }
+
+  @VisibleForTesting
+  public List<String> calculateExecutionOrder (Map <String, Set<String>> graph) {
+    List<String> executionOrder = new ArrayList<>();
+    Set<String> visited = new HashSet<>();
+    Set<String> temp = new HashSet<>();
+
+    for (String node : graph.keySet()) {
+      if (!visited.contains(node)) {
+        topologicalSort(node, graph, temp, visited, executionOrder);
+      }
+    }
+
+    return executionOrder;
+  }
+
+  private void topologicalSort(String node, Map<String, Set<String>> graph, Set<String> temp, Set <String> visited, List <String> executionOrder) {
+    if (temp.contains(node)) {
+      throw new IllegalStateException("Cyclic dependency detected");
+    }
+    if (!visited.contains(node)) {
+      temp.add(node);
+      Set<String> dependencies = graph.getOrDefault(node, Set.of());
+      for (String dependency : dependencies) {
+        topologicalSort(dependency, graph, temp, visited, executionOrder);
+      }
+      temp.remove(node);
+      visited.add(node);
+      executionOrder.add(node);
     }
   }
 
-  private Set<String> getAllETLNames() {
-    return definitionRepo.findAll().stream().map(ETLDefinition::getName).collect(Collectors.toSet());
+  public void execute(LocalDateRange dateRange, List<String> etlNames, boolean scheduled) {
+    for (String etlName : etlNames) {
+      executeETL(etlName, dateRange, scheduled);
+    }
   }
 
   private void executeETL(String etlName, LocalDateRange dateRange, boolean scheduled) {
@@ -188,4 +230,5 @@ public class ETLService {
   public boolean isETLExisting(String etlName) {
     return definitionRepo.findByName(etlName).isPresent();
   }
+
 }
