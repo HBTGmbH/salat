@@ -46,9 +46,16 @@ public class ETLService {
 
   @Scheduled(cron = "0 0 21 * * *") // täglich um 21:00
   public void runDaily() {
-    var today = DateUtils.today();
-    var range = new LocalDateRange(today.minusMonths(3), today);
-    executeAll(range);
+    try {
+      var today = DateUtils.today();
+      var range = new LocalDateRange(today.minusMonths(3), today);
+      log.info("Starting scheduled daily ETL run for date range: {}", range);
+      executeAll(range);
+      log.info("Successfully completed scheduled daily ETL run");
+    } catch (Exception e) {
+      log.error("Scheduled daily ETL run failed", e);
+      throw new RuntimeException(e);
+    }
   }
 
   public void executeAll(LocalDateRange dateRange) {
