@@ -50,7 +50,7 @@ public class ETLService {
       var today = DateUtils.today();
       var range = new LocalDateRange(today.minusMonths(3), today);
       log.info("Starting scheduled daily ETL run for date range: {}", range);
-      executeAll(range);
+      executeAll(range, true);
       log.info("Successfully completed scheduled daily ETL run");
     } catch (Exception e) {
       log.error("Scheduled daily ETL run failed", e);
