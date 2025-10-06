@@ -29,6 +29,7 @@ import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -98,7 +99,6 @@ public class LocalDevSecurityConfiguration {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
-        .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .csrf().disable();
@@ -110,33 +110,18 @@ public class LocalDevSecurityConfiguration {
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     http.addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
-        .logout(logout -> logout.logoutRequestMatcher(logoutRequestMatcher()).addLogoutHandler(logoutHandler()))
+        .headers(headers -> {
+              headers.cacheControl(cacheControlConfig -> cacheControlConfig.disable());
+              var browserOnlyCacheWriter = new StaticHeadersWriter(
+                  "Cache-Control", "private, max-age=600, must-revalidate, s-maxage=0, no-transform",
+                  "Vary", "Authorization"
+              );
+              headers.addHeaderWriter(browserOnlyCacheWriter);
+            }
+        )
         .cors().disable()
         .csrf().disable();
     return http.build();
-  }
-
-  private LogoutHandler logoutHandler() {
-    return (request, response, auth) -> {
-      Cookie[] cookies = request.getCookies();
-      for(Cookie cookie : cookies) {
-        cookie.setValue("");
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        cookie.setSecure(true);
-        cookie.setComment("EXPIRING COOKIE at " + LocalDateTime.now());
-        response.addCookie(cookie);
-      }
-      try {
-        response.sendRedirect("/");
-      } catch (IOException e) {
-        throw new RuntimeException("Could not send redirect to /", e);
-      }
-    };
-  }
-
-  private RequestMatcher logoutRequestMatcher() {
-    return (request) -> request.getParameter("logout") != null;
   }
 
   @Bean
