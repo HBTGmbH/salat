@@ -13,13 +13,75 @@
 
 <c:if test="${salatProperties.auth.refresh.enabled}">
     <script type="text/javascript">
-      setInterval(function() {
-        let refreshUrl = "<c:out value="${salatProperties.auth.refresh.refreshUrl}" />";
-        $.ajax(refreshUrl).done(function() {
+      (function() {
+        const refreshUrl = "<c:out value="${salatProperties.auth.refresh.refreshUrl}" />";
+        const REFRESH_INTERVAL_MS = 1000 * 60 * 2; // 2 Minuten
+        const DEBOUNCE_MS = 10 * 1000; // min. 10s zwischen zusätzlichen Triggern
+        let lastTriggerTs = 0;
+
+        function logSuccess() {
           console.log("Token refresh completed successfully.");
-        }).fail(function() {
-          console.log("Token refresh failed. See application logs for details.");
+        }
+
+        function logFailure(jqXHR, textStatus, errorThrown) {
+          var status = jqXHR ? jqXHR.status : "n/a";
+          var body = (jqXHR && jqXHR.responseText) ? jqXHR.responseText.substring(0, 500) : "";
+          if (status === 401) {
+            console.warn("Token refresh returned 401 (unauthorized). Session may be expired.", {
+              status: status,
+              textStatus: textStatus,
+              error: errorThrown
+            });
+          } else {
+            console.error("Token refresh failed.", {
+              status: status,
+              textStatus: textStatus,
+              error: errorThrown,
+              responseSnippet: body
+            });
+          }
+        }
+
+        function refreshToken() {
+          $.ajax({
+            url: refreshUrl,
+            method: "GET",
+            timeout: 5000,
+            cache: false
+          }).done(logSuccess).fail(logFailure);
+        }
+
+        function triggerRefreshDebounced() {
+          var now = Date.now();
+          if (now - lastTriggerTs >= DEBOUNCE_MS) {
+            lastTriggerTs = now;
+            refreshToken();
+          }
+        }
+
+        // Periodischer Refresh
+        setInterval(refreshToken, REFRESH_INTERVAL_MS);
+
+        // Zusätzliche Trigger bei "zurück im Browser/Tab"
+        document.addEventListener("visibilitychange", function() {
+          if (document.visibilityState === "visible") {
+            triggerRefreshDebounced();
+          }
         });
-      }, 1000 * 60 * 2);
+
+        window.addEventListener("focus", function() {
+          triggerRefreshDebounced();
+        });
+
+        window.addEventListener("pageshow", function() {
+          // Wird u.a. gefeuert, wenn die Seite aus dem bfcache kommt
+          triggerRefreshDebounced();
+        });
+
+        window.addEventListener("online", function() {
+          // Nach Wiederherstellung der Verbindung
+          triggerRefreshDebounced();
+        });
+      })();
     </script>
 </c:if>
