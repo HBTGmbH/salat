@@ -15,11 +15,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
-import org.springframework.security.web.header.writers.StaticHeadersWriter;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.util.Assert;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -102,16 +97,7 @@ public class AzureEasyAuthSecurityConfiguration {
     http.authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt())
         .cors().disable()
-        .csrf().disable()
-        .headers(headers -> {
-              headers.cacheControl(cacheControlConfig -> cacheControlConfig.disable());
-              var browserOnlyCacheWriter = new StaticHeadersWriter(
-                  "Cache-Control", "private, max-age=600, must-revalidate, s-maxage=0, no-transform",
-                  "Vary", "Authorization"
-              );
-              headers.addHeaderWriter(browserOnlyCacheWriter);
-            }
-        );
+        .csrf().disable();
     return http.build();
   }
 

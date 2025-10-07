@@ -1,9 +1,6 @@
 package org.tb.auth.configuration;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,12 +22,9 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.security.web.header.writers.StaticHeadersWriter;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -110,15 +104,6 @@ public class LocalDevSecurityConfiguration {
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     http.addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
-        .headers(headers -> {
-              headers.cacheControl(cacheControlConfig -> cacheControlConfig.disable());
-              var browserOnlyCacheWriter = new StaticHeadersWriter(
-                  "Cache-Control", "private, max-age=600, must-revalidate, s-maxage=0, no-transform",
-                  "Vary", "Authorization"
-              );
-              headers.addHeaderWriter(browserOnlyCacheWriter);
-            }
-        )
         .cors().disable()
         .csrf().disable();
     return http.build();
