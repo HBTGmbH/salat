@@ -138,6 +138,7 @@ public class ETLService {
               for (String rawSql : def.getInit().getStatements()) {
                 String sql = parameterResolver.resolve(rawSql, refPeriod);
                 log.debug("Send init SQL: {}", sql);
+                message.append("Init SQL: ").append(sql).append("\n");
                 initRows += jdbc.update(sql);
               }
               stopwatch.stop();
@@ -153,6 +154,7 @@ public class ETLService {
           for (String rawSql : def.getExecute().getStatements()) {
             String sql = parameterResolver.resolve(rawSql, refPeriod);
             log.debug("Send execute SQL: {}", sql);
+            message.append("Execute SQL: ").append(sql).append("\n");
             executeRows += jdbc.update(sql);
           }
           stopwatch.stop();
@@ -166,6 +168,7 @@ public class ETLService {
               for (String rawSql : def.getCleanup().getStatements()) {
                 String sql = parameterResolver.resolve(rawSql, refPeriod);
                 log.debug("Send cleanup SQL: {}", sql);
+                message.append("Cleanup SQL: ").append(sql).append("\n");
                 cleanupRows += jdbc.update(sql);
               }
               stopwatch.stop();
