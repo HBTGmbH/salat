@@ -1153,6 +1153,15 @@ databaseChangeLog:
                   name: dependencies
                   type: varchar(1000)
 
+  - changeSet:
+      id: 35
+      author: kr
+      comment: Change message column in etl_execution_history to TEXT
+      changes:
+        - modifyDataType:
+            tableName: etl_execution_history
+            columnName: message
+            newDataType: text
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
