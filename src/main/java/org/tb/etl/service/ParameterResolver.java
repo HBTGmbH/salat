@@ -18,6 +18,7 @@ public class ParameterResolver {
     LocalDate refDate = referencePeriod.getFrom();
     Map<String, String> params = new HashMap<>();
     params.put("TODAY", refDate.toString());
+    params.put("YESTERDAY", refDate.toString());
     params.put("BOM", refDate.withDayOfMonth(1).toString());
     params.put("EOM", refDate.with(TemporalAdjusters.lastDayOfMonth()).toString());
     params.put("BOQ", refDate.with(refDate.getMonth().firstMonthOfQuarter()).withDayOfMonth(1).toString());
