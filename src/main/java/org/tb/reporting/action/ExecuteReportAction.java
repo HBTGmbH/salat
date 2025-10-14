@@ -42,11 +42,8 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
         var reportDefinition = reportingService.getReportDefinition(form.getReportId());
 
         if ("setParameters".equals(request.getParameter("task"))) {
-            var reportResult = reportingService.execute(form.getReportId(), getParameterMap(form.getParameters()));
-            request.getSession().setAttribute("report", reportDefinition);
-            request.getSession().setAttribute("reportParameters", nonEmpty(form.getParameters()));
-            request.getSession().setAttribute("reportResult", reportResult);
-            return mapping.findForward("showReportResult");
+          var queryParams = renderQueryParams(form.getParameters());
+          return new ActionForward("ExecuteReport?reportId=" + form.getReportId() + queryParams, true);
         } else if ("export".equals(request.getParameter("task"))) {
             var reportResult = (ReportResult) request.getSession().getAttribute("reportResult");
             try (ServletOutputStream out = response.getOutputStream()) {
@@ -76,7 +73,24 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
 
     }
 
-    private static String createFileName(ReportDefinition reportDefinition) {
+  private String renderQueryParams(List<ReportParameter> parameters) {
+    if (parameters == null || parameters.isEmpty()) {
+      return "";
+    }
+    var result = new StringBuilder();
+    for (ReportParameter parameter : nonEmpty(parameters)) {
+      if (parameter.getValue() != null && !parameter.getValue().isBlank()) {
+        result.append("&").append(parameter.getName()).append("=");
+        if (!"string".equals(parameter.getType())) {
+          result.append(parameter.getType()).append(",");
+        }
+        result.append(parameter.getValue());
+      }
+    }
+    return result.toString();
+  }
+
+  private static String createFileName(ReportDefinition reportDefinition) {
         var fileName = "report-" + reportDefinition.getName() +
                        "-erzeugt-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
                        ".xlsx";
