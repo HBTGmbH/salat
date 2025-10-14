@@ -8,6 +8,7 @@
     <head>
         <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.reporting.text" /></title>
         <jsp:include flush="true" page="/head-includes.jsp" />
+        <script src="<c:url value="/webjars/plotly.js-dist/plotly.js"/>"></script>
     </head>
     <body>
     <jsp:include flush="true" page="/menu.jsp">
@@ -58,5 +59,91 @@
         <html:hidden property="reportId" />
     </html:form>
     <br><br><br>
+
+    <h2>SQL-Ergebnis visualisieren</h2>
+
+    <div>
+        <label>X-Achse:</label>
+        <select id="xSelect"></select>
+
+        <label>Y-Achse:</label>
+        <select id="ySelect"></select>
+
+        <label>Datenreihe (optional):</label>
+        <select id="groupSelect"></select>
+
+        <label>Diagrammtyp:</label>
+        <select id="chartType">
+            <option value="lines">Linie</option>
+            <option value="bar">Balken</option>
+            <option value="markers">Punkte (Scatter)</option>
+        </select>
+
+        <button id="drawBtn">Zeichnen</button>
+    </div>
+
+    <div id="chart" style="width:100%;height:600px;"></div>
+
+    <script>
+      // --- Daten
+      const data = <c:out value="${reportResult.toJavaScriptArrayLiteral()}" default="[]" escapeXml="false" />;
+
+      // --- Spaltennamen aus den Keys der ersten Zeile ermitteln ---
+      const columns = Object.keys(data[0]);
+
+      const xSel = document.getElementById('xSelect');
+      const ySel = document.getElementById('ySelect');
+      const gSel = document.getElementById('groupSelect');
+      const typeSel = document.getElementById('chartType');
+
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '';
+      gSel.appendChild(opt.cloneNode(true));
+
+      columns.forEach(col => {
+        [xSel, ySel, gSel].forEach(sel => {
+          const opt = document.createElement('option');
+          opt.value = col;
+          opt.textContent = col;
+          sel.appendChild(opt.cloneNode(true));
+        });
+      });
+
+      document.getElementById('drawBtn').addEventListener('click', () => {
+        const xKey = xSel.value;
+        const yKey = ySel.value;
+        const gKey = gSel.value;
+        const chartType = typeSel.value;
+
+        let traces = [];
+
+        if (gKey) {
+          const groups = [...new Set(data.map(d => d[gKey]))];
+          traces = groups.map(group => ({
+            x: data.filter(d => d[gKey] === group).map(d => d[xKey]),
+            y: data.filter(d => d[gKey] === group).map(d => d[yKey]),
+            type: chartType === "bar" ? "bar" : "scatter",
+            mode: chartType === "bar" ? undefined : chartType,
+            name: group
+          }));
+        } else {
+          traces = [{
+            x: data.map(d => d[xKey]),
+            y: data.map(d => d[yKey]),
+            type: chartType === "bar" ? "bar" : "scatter",
+            mode: chartType === "bar" ? undefined : chartType,
+            name: `${yKey} vs ${xKey}`
+          }];
+        }
+
+        Plotly.newPlot('chart', traces, {
+          title: yKey + " vs " + xKey + (gKey ? " grouped by " + gKey : ""),
+          xaxis: { title: xKey },
+          yaxis: { title: yKey }
+        });
+      });
+    </script>
+
     </body>
 </html:html>

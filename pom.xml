@@ -39,6 +39,7 @@
     <webjars-locator.version>0.52</webjars-locator.version>
     <archunit.version>1.4.1</archunit.version>
     <p6spy.version>3.9.1</p6spy.version>
+    <webjars-plotly.version>2.35.3</webjars-plotly.version>
   </properties>
 
   <dependencies>
@@ -210,6 +211,12 @@
       <artifactId>bootstrap-icons</artifactId>
       <version>${webjars-bootstrap-icons.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>plotly.js-dist</artifactId>
+      <version>${webjars-plotly.version}</version>
+    </dependency>
+
 
     <!-- annotation processors -->
     <dependency>
