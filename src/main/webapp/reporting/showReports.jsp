@@ -19,16 +19,6 @@
                 }
             }
 
-            function execute(form, id) {
-                form.action = "/do/ExecuteReport?reportId=" + id;
-                form.submit();
-            }
-
-            function edit(form, id) {
-                form.action = "/do/EditReport?reportId=" + id;
-                form.submit();
-            }
-
         </script>
     </head>
     <body>
@@ -61,21 +51,15 @@
             <td><java8:formatLocalDateTime value="${report.lastupdate}" /></td>
             <td><c:out value="${report.lastupdatedby}" /></td>
             <td align="center">
-                <html:form action="/ExecuteReport">
-                    <html:image
-                            onclick="execute(this.form, ${report.id})"
-                            src="/images/red_circle.gif"
-                            altKey="main.reporting.button.execute.text"/>
-                </html:form>
+                <html:link action="/ExecuteReport?reportId=${report.id}">
+                    <html:image src="/images/red_circle.gif" altKey="main.reporting.button.execute.text"/>
+                </html:link>
             </td>
             <td align="center">
                 <c:if test="${reportAuthViewHelper.isAuth(report,'READ')}">
-                    <html:form action="/EditReport">
-                        <html:image
-                                onclick="edit(this.form, ${report.id})"
-                                src="/images/Edit.gif" altKey="main.reporting.button.edit.text"/>
-                    </html:form>
-
+                    <html:link action="/EditReport?reportId=${report.id}">
+                        <html:image src="/images/Edit.gif" altKey="main.reporting.button.edit.text"/>
+                    </html:link>
                 </c:if>
             </td>
             <td align="center">
@@ -92,7 +76,7 @@
         </c:forEach>
     </table>
     <c:if test="${reportAuthViewHelper.mayCreateNewReports()}">
-        <html:form action="/CreateReport">
+        <html:form action="/CreateReport" method="GET">
             <html:submit styleId="button">
                 <bean:message key="main.reporting.button.create.text" />
             </html:submit>
