@@ -19,7 +19,10 @@
     <span style="color:red"><html:errors footer="<br>" /> </span>
 
     <div>
-        <code>SQL: <c:out value="${report.sql}" /></code>
+        <details>
+            <summary>Show SQL</summary>
+            <code>SQL: <c:out value="${report.sql}"/></code>
+        </details>
     </div>
 
     <html:form action="/ExecuteReport?task=setParameters">
