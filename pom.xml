@@ -38,7 +38,7 @@
     <webjars-locator.version>0.52</webjars-locator.version>
     <archunit.version>1.4.1</archunit.version>
     <p6spy.version>3.9.1</p6spy.version>
-    <webjars-plotly.version>2.35.3</webjars-plotly.version>
+    <webjars-plotly.version>3.0.1</webjars-plotly.version>
   </properties>
 
   <dependencies>
