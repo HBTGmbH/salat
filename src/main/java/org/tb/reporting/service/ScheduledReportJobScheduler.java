@@ -38,11 +38,11 @@ public class ScheduledReportJobScheduler {
     List<ScheduledReportJob> jobs = scheduledReportJobRepository.findByEnabledTrue();
     log.info("Scheduling {} enabled ScheduledReportJobs", jobs.size());
     for (ScheduledReportJob job : jobs) {
-      scheduleJob(job);
+      scheduleOrUnschedule(job);
     }
   }
 
-  private void scheduleJob(ScheduledReportJob job) {
+  private synchronized void scheduleJob(ScheduledReportJob job) {
     String cron = (job.getCronExpression() == null || job.getCronExpression().isBlank()) ? defaultCron : job.getCronExpression();
     try {
       CronTrigger trigger = new CronTrigger(cron);
@@ -72,6 +72,22 @@ public class ScheduledReportJobScheduler {
       }
     } catch (IllegalArgumentException ex) {
       log.error("Invalid cron expression '{}' for job id={} name='{}'. Skipping scheduling.", cron, job.getId(), job.getName());
+    }
+  }
+
+  public synchronized void unscheduleJob(Long jobId) {
+    ScheduledFuture<?> existing = scheduledTasks.remove(jobId);
+    if (existing != null) {
+      existing.cancel(false);
+      log.info("Unscheduled job id={}", jobId);
+    }
+  }
+
+  public void scheduleOrUnschedule(ScheduledReportJob job) {
+    if (job.isEnabled()) {
+      scheduleJob(job);
+    } else {
+      unscheduleJob(job.getId());
     }
   }
 }
