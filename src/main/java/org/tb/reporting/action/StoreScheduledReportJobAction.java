@@ -23,7 +23,8 @@ public class StoreScheduledReportJobAction extends LoginRequiredAction<Scheduled
       HttpServletRequest request, HttpServletResponse response) {
 
     ScheduledReportJob job;
-    if (form.getId() != null) {
+    var editingExistingJob = isEditingExistingJob(form);
+    if (editingExistingJob) {
       job = scheduledReportJobService.getJob(form.getId());
     } else {
       job = new ScheduledReportJob();
@@ -38,13 +39,17 @@ public class StoreScheduledReportJobAction extends LoginRequiredAction<Scheduled
     job.setCronExpression(form.getCronExpression());
     job.setDescription(form.getDescription());
 
-    if (form.getId() != null) {
+    if (editingExistingJob) {
       scheduledReportJobService.updateJob(job);
     } else {
       scheduledReportJobService.createJob(job);
     }
 
     return mapping.findForward("success");
+  }
+
+  private static boolean isEditingExistingJob(ScheduledReportJobForm form) {
+    return form.getId() != null && form.getId() > 0;
   }
 
 }
