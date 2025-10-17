@@ -95,6 +95,11 @@
 					<bean:message key="main.general.mainmenu.reporting.text" />
 				</html:link></li>
 			</c:if>
+			<c:if test="${authorizedUser.manager}">
+				<li><html:link styleClass="menu" action="/ShowScheduledReportJobs">
+					Scheduled Reports
+				</html:link></li>
+			</c:if>
 		</ul>
 		</li>
 	</c:when>

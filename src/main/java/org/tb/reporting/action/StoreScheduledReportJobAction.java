@@ -44,7 +44,7 @@ public class StoreScheduledReportJobAction extends LoginRequiredAction<Scheduled
       scheduledReportJobService.createJob(job);
     }
 
-    return new ActionForward("/ShowScheduledReportJobs.do", true);
+    return mapping.findForward("success");
   }
 
 }
