@@ -6,3 +6,10 @@ services:
     ports:
       - "3306:3306" # not necessary, only so we can access the db from host computer.
     command: --lower_case_table_names=1
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+    restart: unless-stopped

@@ -1,4 +1,24 @@
-
+salat:
+  auth:
+    logout:
+      enabled: true
+      logout-url: /?logout=true
+    refresh:
+      enabled: false
+      refresh-url: /.auth/refresh
+  url: localhost
+  mail-host: localhost
+  auth-service:
+    cache-expiry: 1s
+  cache:
+    max-entries: 1000
+    expiry-tti: 10
+  reporting:
+    scheduler:
+      cron: "0 0 2 * * ?" # Daily at 2:00 AM
+    email:
+      enabled: true
+      from: noreply@salat.local
 server:
   servlet:
     session:
@@ -61,42 +81,20 @@ spring:
         - /style/
         - /scripts/
         - /images/
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-salat:
-  auth:
-    logout:
-      enabled: true
-      logout-url: /?logout=true
-    refresh:
-      enabled: false
-      refresh-url: /.auth/refresh
-  url: localhost
-  mail-host: localhost
-  auth-service:
-    cache-expiry: 1s
-  cache:
-    max-entries: 1000
-    expiry-tti: 10
-  reporting:
-    scheduler:
-      cron: "0 0 2 * * ?" # Daily at 2:00 AM
-    email:
-      enabled: true
-      from: noreply@salat.local
-spring:
   mail:
     host: ${salat.mail-host}
-    port: 25
+    port: 1025
     properties:
       mail:
         smtp:
           auth: false
           starttls:
             enable: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 springdoc:
   swagger-ui:
     path: /api/doc/
