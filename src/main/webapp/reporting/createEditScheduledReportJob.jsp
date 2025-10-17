@@ -79,7 +79,7 @@
 			<td align="left" class="noBborderStyle">
 				<html:text property="cronExpression" size="30" maxlength="255" />
 				<br>
-				<small>Leave empty for default schedule (Daily at 2:00 AM)</small>
+				<small>Leave empty for default schedule (Daily at 5:00 AM)</small>
 				<br>
 				<span style="color:red"><html:errors property="cronExpression" /></span>
 			</td>
