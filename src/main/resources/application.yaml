@@ -15,7 +15,7 @@ salat:
     expiry-tti: 10
   reporting:
     scheduler:
-      cron: "0 0 2 * * ?" # Daily at 2:00 AM
+      cron: "0 0 5 * * ?" # Daily at 5:00 AM
     email:
       enabled: true
       from: noreply@salat.local
