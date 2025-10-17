@@ -52,6 +52,7 @@
 
 		<form-bean name="executeReportForm" type="org.tb.reporting.action.ExecuteReportForm" />
 		<form-bean name="createEditDeleteReportForm" type="org.tb.reporting.action.CreateEditDeleteReportForm" />
+		<form-bean name="scheduledReportJobForm" type="org.tb.reporting.action.ScheduledReportJobForm" />
 
 		<form-bean name="showSettingsForm" type="org.tb.user.ShowSettingsForm" />
 		<form-bean name="showWelcomeForm" type="org.tb.dailyreport.action.ShowWelcomeForm" />
@@ -418,6 +419,23 @@
 		</action>
 		<action path="/DeleteReport" type="org.tb.reporting.action.DeleteReportAction" name="createEditDeleteReportForm">
 			<forward name="success" path="/reporting/showReports.jsp" />
+		</action>
+
+		<!-- scheduled report jobs -->
+		<action path="/ShowScheduledReportJobs" type="org.tb.reporting.action.ShowScheduledReportJobsAction">
+			<forward name="success" path="/reporting/showScheduledReportJobs.jsp" />
+		</action>
+		<action path="/CreateScheduledReportJob" type="org.tb.reporting.action.CreateScheduledReportJobAction" name="scheduledReportJobForm">
+			<forward name="success" path="/reporting/createEditScheduledReportJob.jsp" />
+		</action>
+		<action path="/EditScheduledReportJob" type="org.tb.reporting.action.EditScheduledReportJobAction" name="scheduledReportJobForm">
+			<forward name="success" path="/reporting/createEditScheduledReportJob.jsp" />
+		</action>
+		<action path="/StoreScheduledReportJob" type="org.tb.reporting.action.StoreScheduledReportJobAction" name="scheduledReportJobForm" validate="true" input="/reporting/createEditScheduledReportJob.jsp">
+			<forward name="success" path="/do/ShowScheduledReportJobs" redirect="true" />
+		</action>
+		<action path="/DeleteScheduledReportJob" type="org.tb.reporting.action.DeleteScheduledReportJobAction" name="scheduledReportJobForm">
+			<forward name="success" path="/do/ShowScheduledReportJobs" redirect="true" />
 		</action>
 
 		<!-- other -->

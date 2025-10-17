@@ -21,7 +21,7 @@ public class DeleteScheduledReportJobAction extends LoginRequiredAction<Schedule
 
     scheduledReportJobService.deleteJob(form.getId());
 
-    return new ActionForward("/ShowScheduledReportJobs.do", true);
+    return mapping.findForward("success");
   }
 
 }
