@@ -60,7 +60,11 @@
                     </c:otherwise>
                 </c:choose>
             </td>
-            <td><c:out value="${job.cronExpression != null ? job.cronExpression : 'Daily 2:00 AM'}" /></td>
+            <td>
+                <c:out value="${empty job.cronExpression ? defaultCron : job.cronExpression}" />
+                <br/>
+                <small><c:out value="${cronDescriptions[job.id]}" /></small>
+            </td>
             <td><java8:formatLocalDateTime value="${job.lastupdate}" /></td>
             <td align="center">
                 <html:link action="/EditScheduledReportJob?id=${job.id}">

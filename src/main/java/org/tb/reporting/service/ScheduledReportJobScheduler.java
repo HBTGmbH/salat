@@ -12,6 +12,13 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.Cron;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.CronType;
+import com.cronutils.parser.CronParser;
+import java.util.Locale;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
@@ -66,12 +73,26 @@ public class ScheduledReportJobScheduler {
 
       if (future != null) {
         scheduledTasks.put(job.getId(), future);
-        log.info("Scheduled job id={} name='{}' with cron '{}'", job.getId(), job.getName(), cron);
+        String humanDesc = getHumanReadableCron(cron);
+        log.info("Scheduled job id={} name='{}' with cron '{}' ({})", job.getId(), job.getName(), cron, humanDesc);
       } else {
         log.warn("TaskScheduler returned null future when scheduling job id={} name='{}'", job.getId(), job.getName());
       }
     } catch (IllegalArgumentException ex) {
       log.error("Invalid cron expression '{}' for job id={} name='{}'. Skipping scheduling.", cron, job.getId(), job.getName());
+    }
+  }
+
+  private String getHumanReadableCron(String cronExpr) {
+    try {
+      CronDefinition def = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
+      CronParser parser = new CronParser(def);
+      Cron cron = parser.parse(cronExpr);
+      cron.validate();
+      CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
+      return descriptor.describe(cron);
+    } catch (Exception e) {
+      return "unrecognized/invalid cron pattern";
     }
   }
 
