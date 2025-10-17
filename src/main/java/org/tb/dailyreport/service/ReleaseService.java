@@ -50,8 +50,8 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
-import org.tb.common.service.SimpleMailService;
-import org.tb.common.service.SimpleMailService.MailContact;
+import org.tb.common.service.MailService;
+import org.tb.common.service.MailService.MailContact;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
@@ -81,7 +81,7 @@ public class ReleaseService {
   private final OvertimeService overtimeService;
   private final AuthorizedUser authorizedUser;
   private final WorkingdayDAO workingdayDAO;
-  private final SimpleMailService simpleMailService;
+  private final MailService mailService;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
   private final TimereportService timereportService;
@@ -315,7 +315,7 @@ public class ReleaseService {
     message.append("bitte gib deine SALAT-Buchungen des abgelaufenen Monats frei.\n\n");
     message.append(sender.getName());
 
-    simpleMailService.sendEmail(
+    mailService.sendEmail(
         subject,
         message.toString(),
         new MailContact(sender.getName(), sender.getEmailAddress()),
@@ -349,7 +349,7 @@ public class ReleaseService {
     message.append(" ab.\n\n");
     message.append(sender.getName());
 
-    simpleMailService.sendEmail(
+    mailService.sendEmail(
         subject,
         message.toString(),
         new MailContact(sender.getName(), sender.getEmailAddress()),
@@ -380,7 +380,7 @@ public class ReleaseService {
     message.append("SALAT-Buchungen freigegeben.\n");
     message.append("Bitte nimm diese ab.");
 
-    simpleMailService.sendEmail(
+    mailService.sendEmail(
         subject,
         message.toString(),
         new MailContact(sender.getName(), sender.getEmailAddress()),

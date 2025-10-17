@@ -1163,5 +1163,74 @@ databaseChangeLog:
             columnName: message
             newDataType: text
 
+  - changeSet:
+      id: 36
+      author: kr
+      comment: Create table for scheduled report jobs
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: scheduled_report_job
+      changes:
+        - createTable:
+            tableName: scheduled_report_job
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+              - column:
+                  name: report_definition_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_scheduledjob_reportdef
+                    referencedTableName: report_definition
+                    referencedColumnNames:
+                      - id
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: report_parameters
+                  type: varchar(4000)
+              - column:
+                  name: recipient_emails
+                  type: varchar(1000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: bit(1)
+                  defaultValue: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cron_expression
+                  type: varchar(255)
+              - column:
+                  name: description
+                  type: varchar(1000)
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

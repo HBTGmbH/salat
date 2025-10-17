@@ -31,6 +31,9 @@ salat:
     api-scope: api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation
   auth-service:
     cache-expiry: 1h
+  reporting:
+    email:
+      from: salat-noreply@hbt.de
 springdoc:
   swagger-ui:
     oauth:
