@@ -33,14 +33,7 @@ public class ReportSchedulerService {
    */
   @Scheduled(cron = "${salat.reporting.scheduler.cron:0 0 2 * * ?}")
   public void executeScheduledReports() {
-    // Initialize a temporary session scope for the duration of this scheduled execution
-    Scope previousSessionScope = beanFactory.getRegisteredScope(WebApplicationContext.SCOPE_SESSION);
-    var temporarySessionScope = new SimpleThreadScope();
-    beanFactory.registerScope(WebApplicationContext.SCOPE_SESSION, temporarySessionScope);
-
-    try {
-      initializeAuthorizedUserForJobExecution();
-
+    runInTemporarySessionScope(() -> {
       log.info("Starting scheduled report execution");
 
       var jobs = scheduledReportJobRepository.findByEnabledTrue();
@@ -55,7 +48,37 @@ public class ReportSchedulerService {
       }
 
       log.info("Finished scheduled report execution");
+    });
+  }
 
+  /**
+   * Execute a single scheduled report job by its id within a temporary session scope.
+   */
+  public void executeScheduledReportJobById(Long jobId) {
+    runInTemporarySessionScope(() -> {
+      scheduledReportJobRepository.findById(jobId).ifPresent(job -> {
+        if (job.isEnabled()) {
+          try {
+            executeJob(job);
+          } catch (Exception e) {
+            log.error("Failed to execute scheduled report job: {} (ID: {})", job.getName(), job.getId(), e);
+          }
+        } else {
+          log.info("Skipping disabled scheduled report job ID: {}", jobId);
+        }
+      });
+    });
+  }
+
+  private void runInTemporarySessionScope(Runnable task) {
+    // Initialize a temporary session scope for the duration of this scheduled execution
+    Scope previousSessionScope = beanFactory.getRegisteredScope(WebApplicationContext.SCOPE_SESSION);
+    var temporarySessionScope = new SimpleThreadScope();
+    beanFactory.registerScope(WebApplicationContext.SCOPE_SESSION, temporarySessionScope);
+
+    try {
+      initializeAuthorizedUserForJobExecution();
+      task.run();
     } finally {
       // Clean up session-scoped beans and restore original session scope
       try {
