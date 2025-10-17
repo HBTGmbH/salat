@@ -81,6 +81,22 @@ salat:
   cache:
     max-entries: 1000
     expiry-tti: 10
+  reporting:
+    scheduler:
+      cron: "0 0 2 * * ?" # Daily at 2:00 AM
+    email:
+      enabled: true
+      from: noreply@salat.local
+spring:
+  mail:
+    host: ${salat.mail-host}
+    port: 25
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
 springdoc:
   swagger-ui:
     path: /api/doc/

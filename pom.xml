@@ -25,7 +25,6 @@
     <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     <guava.version>33.5.0-jre</guava.version>
     <jettison.version>1.5.4</jettison.version>
-    <commons-email.version>1.6.0</commons-email.version>
     <poi.version>5.4.1</poi.version>
     <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
     <jstl-api.version>3.0.2</jstl-api.version>
@@ -150,9 +149,8 @@
       <version>${poi.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-email</artifactId>
-      <version>${commons-email.version}</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.jettison</groupId>
