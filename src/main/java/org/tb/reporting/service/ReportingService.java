@@ -4,6 +4,7 @@ import static org.tb.auth.domain.AccessLevel.DELETE;
 import static org.tb.auth.domain.AccessLevel.EXECUTE;
 import static org.tb.auth.domain.AccessLevel.WRITE;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.reporting.service.ReportingParameterResolver;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;
@@ -38,6 +40,7 @@ public class ReportingService {
   private final DataSource dataSource;
   private final ReportAuthorization reportAuthorization;
   private final AuthorizedUser authorizedUser;
+  private final ReportingParameterResolver reportingParameterResolver;
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
@@ -90,8 +93,13 @@ public class ReportingService {
     }
 
     String sql = reportDefinition.get().getSql();
-    if(sql != null && authorizedUser != null && authorizedUser.getSign() != null) {
-      sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getSign()); // ensure the sign is filled in as requested
+    if(sql != null) {
+      if (authorizedUser != null && authorizedUser.getSign() != null) {
+        sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getSign()); // ensure the sign is filled in as requested
+      }
+      // Resolve reporting placeholders based only on today's date (no FROM/UNTIL)
+      LocalDate today = LocalDate.now();
+      sql = reportingParameterResolver.resolve(sql, today);
     }
     final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, parameters);
     var result = new ReportResult();
