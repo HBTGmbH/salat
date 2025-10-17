@@ -6,8 +6,14 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.support.SimpleThreadScope;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.beans.factory.config.Scope;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
@@ -18,6 +24,8 @@ public class ReportSchedulerService {
 
   private final ScheduledReportJobRepository scheduledReportJobRepository;
   private final ReportEmailService reportEmailService;
+  private final ConfigurableListableBeanFactory beanFactory;
+  private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
@@ -25,20 +33,52 @@ public class ReportSchedulerService {
    */
   @Scheduled(cron = "${salat.reporting.scheduler.cron:0 0 2 * * ?}")
   public void executeScheduledReports() {
-    log.info("Starting scheduled report execution");
-    
-    var jobs = scheduledReportJobRepository.findByEnabledTrue();
-    log.info("Found {} enabled scheduled report jobs", jobs.size());
+    // Initialize a temporary session scope for the duration of this scheduled execution
+    Scope previousSessionScope = beanFactory.getRegisteredScope(WebApplicationContext.SCOPE_SESSION);
+    var temporarySessionScope = new SimpleThreadScope();
+    beanFactory.registerScope(WebApplicationContext.SCOPE_SESSION, temporarySessionScope);
 
-    for (ScheduledReportJob job : jobs) {
+    try {
+      initializeAuthorizedUserForJobExecution();
+
+      log.info("Starting scheduled report execution");
+
+      var jobs = scheduledReportJobRepository.findByEnabledTrue();
+      log.info("Found {} enabled scheduled report jobs", jobs.size());
+
+      for (ScheduledReportJob job : jobs) {
+        try {
+          executeJob(job);
+        } catch (Exception e) {
+          log.error("Failed to execute scheduled report job: {} (ID: {})", job.getName(), job.getId(), e);
+        }
+      }
+
+      log.info("Finished scheduled report execution");
+
+    } finally {
+      // Clean up session-scoped beans and restore original session scope
       try {
-        executeJob(job);
-      } catch (Exception e) {
-        log.error("Failed to execute scheduled report job: {} (ID: {})", job.getName(), job.getId(), e);
+        beanFactory.destroyScopedBean("authorizedUser");
+      } catch (Exception ignored) {
+        // ignore cleanup issues
+      }
+      if (previousSessionScope != null) {
+        beanFactory.registerScope(WebApplicationContext.SCOPE_SESSION, previousSessionScope);
       }
     }
+  }
 
-    log.info("Finished scheduled report execution");
+  private void initializeAuthorizedUserForJobExecution() {
+    // Initialize a synthetic AuthorizedUser within this session scope
+    AuthorizedUser systemUser = authorizedUserProvider.getObject();
+    systemUser.setAuthenticated(true);
+    systemUser.setLoginSign("SYSTEM");
+    systemUser.setSign("SYSTEM");
+    systemUser.setAdmin(false);
+    systemUser.setManager(true);
+    systemUser.setBackoffice(true);
+    systemUser.setRestricted(false);
   }
 
   private void executeJob(ScheduledReportJob job) {
