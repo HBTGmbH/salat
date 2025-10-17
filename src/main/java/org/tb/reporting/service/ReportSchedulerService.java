@@ -2,6 +2,7 @@ package org.tb.reporting.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,8 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.beans.factory.config.Scope;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.reporting.domain.ScheduledReportJob;
+import org.tb.reporting.domain.ScheduledReportExecutionHistory;
+import org.tb.reporting.persistence.ScheduledReportExecutionHistoryRepository;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
 @Slf4j
@@ -26,6 +29,7 @@ public class ReportSchedulerService {
   private final ReportEmailService reportEmailService;
   private final ConfigurableListableBeanFactory beanFactory;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
+  private final ScheduledReportExecutionHistoryRepository historyRepository;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   /**
@@ -107,12 +111,23 @@ public class ReportSchedulerService {
   private void executeJob(ScheduledReportJob job) {
     log.info("Executing scheduled report job: {} (ID: {})", job.getName(), job.getId());
 
+    LocalDateTime executedAt = LocalDateTime.now();
     try {
       Map<String, Object> parameters = parseParameters(job.getReportParameters());
       String[] recipients = parseRecipients(job.getRecipientEmails());
 
       if (recipients.length == 0) {
-        log.warn("No recipients configured for job: {} (ID: {})", job.getName(), job.getId());
+        String msg = "No recipients configured";
+        log.warn(msg + " for job: {} (ID: {})", job.getName(), job.getId());
+        historyRepository.save(ScheduledReportExecutionHistory.builder()
+            .jobId(job.getId())
+            .jobName(job.getName())
+            .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
+            .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
+            .executedAt(executedAt)
+            .success(false)
+            .message(msg)
+            .build());
         return;
       }
 
@@ -123,11 +138,41 @@ public class ReportSchedulerService {
       );
 
       log.info("Successfully executed scheduled report job: {} (ID: {})", job.getName(), job.getId());
+      historyRepository.save(ScheduledReportExecutionHistory.builder()
+          .jobId(job.getId())
+          .jobName(job.getName())
+          .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
+          .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
+          .executedAt(executedAt)
+          .success(true)
+          .message("Email sent to " + recipients.length + " recipient(s)")
+          .build());
 
     } catch (Exception e) {
       log.error("Error executing job: {} (ID: {})", job.getName(), job.getId(), e);
+      historyRepository.save(ScheduledReportExecutionHistory.builder()
+          .jobId(job.getId())
+          .jobName(job.getName())
+          .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
+          .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
+          .executedAt(executedAt)
+          .success(false)
+          .message(safeMessage(e))
+          .build());
       throw new RuntimeException("Failed to execute scheduled report job", e);
     }
+  }
+
+  private String safeMessage(Exception e) {
+    String msg = e.getMessage();
+    if (msg == null) {
+      msg = e.getClass().getSimpleName();
+    }
+    // Limit to 3900 to be safe for DB column length 4000
+    if (msg.length() > 3900) {
+      msg = msg.substring(0, 3900);
+    }
+    return msg;
   }
 
   private Map<String, Object> parseParameters(String parametersJson) {
