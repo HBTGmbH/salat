@@ -8,7 +8,7 @@
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <tiles:insert definition="page">
-    <tiles:put name="menuactive" direct="true" value="home" />
+    <tiles:put name="menuactive" direct="true" value="timereport" />
     <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.welcome.title.text"/></tiles:put>
     <tiles:put name="subsection" direct="true"><bean:message key="main.general.mainmenu.overview.text"/></tiles:put>
     <tiles:put name="scripts" direct="true">

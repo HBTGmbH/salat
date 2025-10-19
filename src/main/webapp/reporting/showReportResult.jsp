@@ -8,8 +8,8 @@
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <tiles:insert definition="page">
-    <tiles:put name="menuactive" direct="true" value="reporting" />
-    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.reporting.text"/></tiles:put>
+    <tiles:put name="menuactive" direct="true" value="order" />
+    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.orders.text"/></tiles:put>
     <tiles:put name="subsection" direct="true"><c:out value="${report.name}" /></tiles:put>
     <tiles:put name="scripts" direct="true">
         <script src="<c:url value="/webjars/plotly.js-dist/plotly.js"/>"></script>

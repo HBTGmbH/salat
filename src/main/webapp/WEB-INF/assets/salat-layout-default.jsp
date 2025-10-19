@@ -85,6 +85,9 @@
                                     <html:link styleClass="dropdown-item" action="/ShowRelease">
                                         <bean:message key="main.general.mainmenu.release.title.text" />
                                     </html:link>
+                                    <html:link styleClass="dropdown-item" action="/ShowOvertime">
+                                        <bean:message key="main.general.mainmenu.overtime.text" />
+                                    </html:link>
                                 </div>
                             </div>
                         </div>
@@ -107,9 +110,6 @@
                                         </html:link>
                                         <html:link styleClass="dropdown-item" action="/ShowEmployeeorder">
                                             <bean:message key="main.general.mainmenu.employeeorders.text" />
-                                        </html:link>
-                                        <html:link styleClass="dropdown-item" action="/ShowOvertime">
-                                            <bean:message key="main.general.mainmenu.overtime.text" />
                                         </html:link>
                                     </div>
                                 </div>
@@ -141,6 +141,16 @@
                                         <c:if test="${authViewHelper.isReportMenuAvailable()}">
                                             <html:link styleClass="dropdown-item" action="/ShowReports">
                                                 <bean:message key="main.general.mainmenu.reporting.text" />
+                                            </html:link>
+                                        </c:if>
+                                        <c:if test="${reportAuthViewHelper.isReportMenuAvailable()}">
+                                            <html:link styleClass="dropdown-item" action="/ShowReports">
+                                                <bean:message key="main.general.mainmenu.reporting.text" />
+                                            </html:link>
+                                        </c:if>
+                                        <c:if test="${authorizedUser.manager}">
+                                            <html:link styleClass="dropdown-item" action="/ShowScheduledReportJobs">
+                                                Scheduled Reports
                                             </html:link>
                                         </c:if>
                                     </div>

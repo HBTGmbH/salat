@@ -6,7 +6,7 @@
 <tiles:insert definition="page">
 	<tiles:put name="menuactive" direct="true" value="order" />
 	<tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.customers.text"/></tiles:put>
-	<tiles:put name="subsection" direct="true"><bean:message key="main.general.addcustomer.text"/></tiles:put>
+	<tiles:put name="subsection" direct="true"><bean:message key="main.general.mainmenu.customers.text"/></tiles:put>
 	<tiles:put name="scripts" direct="true">
 		<script type="text/javascript" language="JavaScript">
 			function confirmDelete(form, id) {

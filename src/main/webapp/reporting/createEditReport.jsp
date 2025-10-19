@@ -7,8 +7,8 @@
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <tiles:insert definition="page">
-    <tiles:put name="menuactive" direct="true" value="reporting" />
-    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.reporting.text"/></tiles:put>
+    <tiles:put name="menuactive" direct="true" value="order" />
+    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.orders.text"/></tiles:put>
     <tiles:put name="subsection" direct="true">Create/Edit Report</tiles:put>
     <tiles:put name="content" direct="true">
 

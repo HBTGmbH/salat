@@ -9,7 +9,7 @@
 <%@ taglib prefix="java8" uri="http://hbt.de/jsp/taglib/java8-date-formatting" %>
 <tiles:insert definition="page">
     <tiles:put name="menuactive" direct="true" value="order" />
-    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.customerorders.text"/></tiles:put>
+    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.orders.text"/></tiles:put>
     <tiles:put name="subsection" direct="true"><bean:message key="main.general.addcustomerorder.text"/></tiles:put>
     <tiles:put name="scripts" direct="true">
         <script type="text/javascript" language="JavaScript">
