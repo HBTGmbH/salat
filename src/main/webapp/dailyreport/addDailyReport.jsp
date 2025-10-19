@@ -6,7 +6,6 @@
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
-<%@taglib uri="http://hbt.de/jsp/taglib/tree" prefix="myjsp" %>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
 <tiles:insert definition="page">
 	<tiles:put name="menuactive" direct="true" value="timereport" />
