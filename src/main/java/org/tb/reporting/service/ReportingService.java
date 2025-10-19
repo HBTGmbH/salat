@@ -139,15 +139,23 @@ public class ReportingService {
   private static Map<String, Object> getParameterMap(List<ReportParameter> parameters) {
     var result = new HashMap<String, Object>();
     for (ReportParameter parameter : nonEmpty(parameters)) {
+      var name = parameter.getName();
+      var value = parameter.getValue();
+      if(value == null || value.isBlank()) value = "";
+      value = value.replace('*','%'); // make it SQL compatible
       switch (parameter.getType()) {
         case "date" -> {
-          if(parameter.getValue().equals("TODAY") || parameter.getValue().equals("HEUTE")) {
-            result.put(parameter.getName(), today());
+          if(value.equals("TODAY") || value.equals("HEUTE")) {
+            result.put(name, today());
           } else {
-            result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
+            if(value.isBlank()) {
+              result.put(name, null);
+            } else {
+              result.put(name, DateUtils.parse(value));
+            }
           }
         }
-        default -> result.put(parameter.getName(), parameter.getValue());
+        default -> result.put(name, value);
       }
     }
     return result;
