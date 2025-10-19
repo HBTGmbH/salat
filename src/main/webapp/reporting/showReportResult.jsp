@@ -77,6 +77,7 @@
             <option value="lines">Linie</option>
             <option value="bar">Balken</option>
             <option value="markers">Punkte (Scatter)</option>
+            <option value="pie">Kreis (Pie)</option>
         </select>
 
         <button id="drawBtn">Zeichnen</button>
@@ -118,7 +119,24 @@
 
         let traces = [];
 
-        if (gKey) {
+        if (chartType === 'pie') {
+          let labels = [];
+          let values = [];
+          if (gKey) {
+            const groupMap = new Map();
+            data.forEach(d => {
+              const g = d[gKey];
+              const v = parseFloat(d[yKey]) || 0;
+              groupMap.set(g, (groupMap.get(g) || 0) + v);
+            });
+            labels = Array.from(groupMap.keys());
+            values = Array.from(groupMap.values());
+          } else {
+            labels = data.map(d => d[xKey]);
+            values = data.map(d => parseFloat(d[yKey]) || 0);
+          }
+          traces = [{ labels, values, type: 'pie', name: `${yKey} by ${gKey || xKey}` }];
+        } else if (gKey) {
           const groups = [...new Set(data.map(d => d[gKey]))];
           traces = groups.map(group => ({
             x: data.filter(d => d[gKey] === group).map(d => d[xKey]),
@@ -137,11 +155,15 @@
           }];
         }
 
-        Plotly.newPlot('chart', traces, {
-          title: yKey + " vs " + xKey + (gKey ? " grouped by " + gKey : ""),
-          xaxis: { title: xKey },
-          yaxis: { title: yKey }
-        });
+        const title = (chartType === 'pie')
+          ? (gKey ? (yKey + ' by ' + gKey) : (yKey + ' by ' + xKey))
+          : (yKey + ' vs ' + xKey + (gKey ? ' grouped by ' + gKey : ''));
+
+        const layout = (chartType === 'pie')
+          ? { title }
+          : { title, xaxis: { title: xKey }, yaxis: { title: yKey } };
+
+        Plotly.newPlot('chart', traces, layout);
       });
     </script>
 
