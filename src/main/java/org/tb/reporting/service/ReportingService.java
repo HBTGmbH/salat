@@ -3,8 +3,10 @@ package org.tb.reporting.service;
 import static org.tb.auth.domain.AccessLevel.DELETE;
 import static org.tb.auth.domain.AccessLevel.EXECUTE;
 import static org.tb.auth.domain.AccessLevel.WRITE;
+import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,10 +21,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.reporting.service.ReportingParameterResolver;
+import org.tb.common.util.DateUtils;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportDefinition_;
+import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ReportResult;
 import org.tb.reporting.domain.ReportResultColumnHeader;
 import org.tb.reporting.domain.ReportResultColumnValue;
@@ -86,11 +89,13 @@ public class ReportingService {
     reportDefinitionRepository.save(reportDefinition);
   }
 
-  public ReportResult execute(Long reportDefinitionId, Map<String, Object> parameters) {
+  public ReportResult execute(Long reportDefinitionId, List<ReportParameter> parameters) {
     var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId);
     if(reportDefinition.isEmpty()) {
       throw new IllegalArgumentException("No report definition found for " + reportDefinitionId);
     }
+
+    var resultBuilder = ReportResult.builder().parameters(parameters);
 
     String sql = reportDefinition.get().getSql();
     if(sql != null) {
@@ -101,8 +106,7 @@ public class ReportingService {
       LocalDate today = LocalDate.now();
       sql = reportingParameterResolver.resolve(sql, today);
     }
-    final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, parameters);
-    var result = new ReportResult();
+    final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, getParameterMap(parameters));
 
     // get and create headers
     var columnCount = rowset.getMetaData().getColumnCount();
@@ -110,13 +114,13 @@ public class ReportingService {
             .mapToObj(index -> rowset.getMetaData().getColumnLabel(index))
             .map(ReportResultColumnHeader::new)
             .collect(Collectors.toList());
-    result.getColumnHeaders().addAll(headers);
+    resultBuilder.columnHeaders(headers);
 
     // get and create rows
     var rowAvailable = rowset.first();
     while(rowAvailable) {
       final var row = new ReportResultRow();
-      var values = result.getColumnHeaders().stream()
+      var values = headers.stream()
           .collect(Collectors.toMap(ReportResultColumnHeader::getName, header -> {
             var value = rowset.getObject(header.getName());
             if(!rowset.wasNull() && value.getClass() == java.sql.Date.class) {
@@ -125,11 +129,32 @@ public class ReportingService {
             return new ReportResultColumnValue(value);
           }));
       row.getColumnValues().putAll(values);
-      result.getRows().add(row);
+      resultBuilder.row(row);
       rowAvailable = rowset.next();
     }
 
+    return resultBuilder.build();
+  }
+
+  private static Map<String, Object> getParameterMap(List<ReportParameter> parameters) {
+    var result = new HashMap<String, Object>();
+    for (ReportParameter parameter : nonEmpty(parameters)) {
+      switch (parameter.getType()) {
+        case "date" -> {
+          if(parameter.getValue().equals("TODAY") || parameter.getValue().equals("HEUTE")) {
+            result.put(parameter.getName(), today());
+          } else {
+            result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
+          }
+        }
+        default -> result.put(parameter.getName(), parameter.getValue());
+      }
+    }
     return result;
+  }
+
+  private static List<ReportParameter> nonEmpty(List<ReportParameter> parameters) {
+    return parameters.stream().filter(p -> p.getName() != null && !p.getName().isBlank()).toList();
   }
 
 }

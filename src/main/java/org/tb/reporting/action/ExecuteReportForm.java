@@ -7,13 +7,11 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+import org.tb.reporting.domain.ReportParameter;
 
 @Getter
 @Setter
@@ -73,19 +71,6 @@ public class ExecuteReportForm extends ActionForm {
         for (int i = 0; i < 20; i++) {
             parameters.add(ReportParameter.builder().build());
         }
-    }
-
-    @Builder
-    @Getter
-    @Setter
-    @ToString
-    @EqualsAndHashCode
-    public static class ReportParameter {
-
-        private String name;
-        private String type;
-        private String value;
-
     }
 
 }

@@ -5,15 +5,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Singular;
 
-@Data
+@Getter
+@Builder
 public class ReportResult implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private final List<ReportResultColumnHeader> columnHeaders = new ArrayList<>();
-  private final List<ReportResultRow> rows = new ArrayList<>();
+  private final List<ReportParameter> parameters;
+  private final List<ReportResultColumnHeader> columnHeaders;
+
+  @Singular
+  private final List<ReportResultRow> rows;
 
   /**
    * Liefert ein JavaScript-kompatibles Array als String,

@@ -2,7 +2,6 @@ package org.tb.reporting.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +12,7 @@ import org.tb.common.service.MailService.EmailRequest;
 import org.tb.common.service.MailService.MailContact;
 import org.tb.common.util.DateUtils;
 import org.tb.reporting.domain.ReportDefinition;
+import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ReportResult;
 
 @Slf4j
@@ -30,7 +30,7 @@ public class ReportEmailService {
   @Value("${salat.reporting.email.enabled:true}")
   private boolean emailEnabled;
 
-  public void sendReportEmail(Long reportDefinitionId, Map<String, Object> parameters, String[] recipients) {
+  public void sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients) {
     try {
       if (!emailEnabled) {
         log.info("Email sending is disabled. Skipping report email for report ID: {}", reportDefinitionId);
@@ -82,7 +82,7 @@ public class ReportEmailService {
     }
   }
 
-  private String buildEmailBody(ReportDefinition reportDefinition, ReportResult reportResult, Map<String, Object> parameters) {
+  private String buildEmailBody(ReportDefinition reportDefinition, ReportResult reportResult, List<ReportParameter> parameters) {
     StringBuilder body = new StringBuilder();
     body.append("Guten Tag,\n\n");
     body.append("anbei erhalten Sie den automatisch generierten Report: ").append(reportDefinition.getName()).append("\n\n");
@@ -92,7 +92,7 @@ public class ReportEmailService {
 
     if (!parameters.isEmpty()) {
       body.append("- Parameter:\n");
-      parameters.forEach((key, value) -> body.append("  * ").append(key).append(": ").append(value).append("\n"));
+      parameters.forEach(parameter -> body.append("  * ").append(parameter.getName()).append(": ").append(parameter.getValue()).append("\n"));
     }
 
     body.append("\nDie Ergebnisse befinden sich im angehängten Excel-Dokument.\n\n");

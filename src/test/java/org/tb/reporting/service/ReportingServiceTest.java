@@ -3,7 +3,7 @@ package org.tb.reporting.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 
-import java.util.HashMap;
+import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.tb.common.SalatProperties;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.reporting.auth.ReportAuthorization;
+import org.tb.reporting.domain.ReportParameter;
 import org.tb.testutils.WebContextTestExecutionListener;
 
 @DataJpaTest
@@ -62,7 +63,7 @@ public class ReportingServiceTest {
 
     var reportDefinition = reportingService.create("test", "select id, sign from employee");
 
-    var result = reportingService.execute(reportDefinition.getId(), new HashMap<>());
+    var result = reportingService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
   }
 
@@ -89,8 +90,7 @@ public class ReportingServiceTest {
             "select id, sign from employee where firstname like :firstname"
     );
 
-    var parameters = new HashMap<String, Object>();
-    parameters.put("firstname", "%Klaus%");
+    var parameters = List.of(new ReportParameter("firstname", "string", "%Klaus%"));
     var result = reportingService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getRows()).size().isEqualTo(1);
@@ -119,8 +119,7 @@ public class ReportingServiceTest {
             "select firstname from employee where lastname = :lastname order by firstname"
     );
 
-    var parameters = new HashMap<String, Object>();
-    parameters.put("lastname", "Richarz");
+    var parameters = List.of(new ReportParameter("lastname", "string", "Richarz"));
     var result = reportingService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(1);
     assertThat(result.getRows()).size().isEqualTo(2);
@@ -138,7 +137,7 @@ public class ReportingServiceTest {
 
     var reportDefinition = reportingService.create("test", "select id, sign as sign_alias from employee");
 
-    var result = reportingService.execute(reportDefinition.getId(), new HashMap<>());
+    var result = reportingService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias"));
@@ -169,7 +168,7 @@ public class ReportingServiceTest {
             "select id, sign as sign_alias_1, sign as sign_alias_2 from employee"
     );
 
-    var result = reportingService.execute(reportDefinition.getId(), new HashMap<>());
+    var result = reportingService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(3);
     assertThat(result.getRows()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));

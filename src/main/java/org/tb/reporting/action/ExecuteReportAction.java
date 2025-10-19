@@ -5,14 +5,11 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
-import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
@@ -23,8 +20,8 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.util.DateUtils;
-import org.tb.reporting.action.ExecuteReportForm.ReportParameter;
 import org.tb.reporting.domain.ReportDefinition;
+import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ReportResult;
 import org.tb.reporting.service.ExcelExportService;
 import org.tb.reporting.service.ReportingService;
@@ -64,7 +61,7 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
                 request.getSession().setAttribute("report", reportDefinition);
                 return mapping.findForward("showReportParameters");
             } else {
-                var reportResult = reportingService.execute(form.getReportId(), getParameterMap(parametersFromRequest));
+                var reportResult = reportingService.execute(form.getReportId(), parametersFromRequest);
                 request.getSession().setAttribute("report", reportDefinition);
                 request.getSession().setAttribute("reportResult", reportResult);
                 return mapping.findForward("showReportResult");
@@ -100,23 +97,6 @@ public class ExecuteReportAction extends LoginRequiredAction<ExecuteReportForm> 
 
     private static List<ReportParameter> nonEmpty(List<ReportParameter> parameters) {
         return parameters.stream().filter(p -> p.getName() != null && !p.getName().isBlank()).toList();
-    }
-
-    private static Map<String, Object> getParameterMap(List<ReportParameter> parameters) {
-        var result = new HashMap<String, Object>();
-        for (ReportParameter parameter : nonEmpty(parameters)) {
-            switch (parameter.getType()) {
-                case "date" -> {
-                    if(parameter.getValue().equals("TODAY") || parameter.getValue().equals("HEUTE")) {
-                        result.put(parameter.getName(), today());
-                    } else {
-                        result.put(parameter.getName(), DateUtils.parse(parameter.getValue()));
-                    }
-                }
-                default -> result.put(parameter.getName(), parameter.getValue());
-            }
-        }
-        return result;
     }
 
     private static ReportParameter toReportParameter(String key, String value) {

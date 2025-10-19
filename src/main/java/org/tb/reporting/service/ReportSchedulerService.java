@@ -3,8 +3,7 @@ package org.tb.reporting.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.beans.factory.config.Scope;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.domain.ScheduledReportExecutionHistory;
 import org.tb.reporting.persistence.ScheduledReportExecutionHistoryRepository;
@@ -113,7 +113,7 @@ public class ReportSchedulerService {
 
     LocalDateTime executedAt = LocalDateTime.now();
     try {
-      Map<String, Object> parameters = parseParameters(job.getReportParameters());
+      List<ReportParameter> parameters = parseParameters(job.getReportParameters());
       String[] recipients = parseRecipients(job.getRecipientEmails());
 
       if (recipients.length == 0) {
@@ -175,16 +175,16 @@ public class ReportSchedulerService {
     return msg;
   }
 
-  private Map<String, Object> parseParameters(String parametersJson) {
+  private List<ReportParameter> parseParameters(String parametersJson) {
     if (parametersJson == null || parametersJson.trim().isEmpty()) {
-      return new HashMap<>();
+      return List.of();
     }
 
     try {
-      return objectMapper.readValue(parametersJson, new TypeReference<Map<String, Object>>() {});
+      return objectMapper.readValue(parametersJson, new TypeReference<List<ReportParameter>>() {});
     } catch (Exception e) {
       log.error("Failed to parse report parameters: {}", parametersJson, e);
-      return new HashMap<>();
+      return List.of();
     }
   }
 

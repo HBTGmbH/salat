@@ -10,7 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.tb.reporting.action.ExecuteReportForm.ReportParameter;
+import org.tb.reporting.domain.ReportParameter;
 
 class ExecuteReportActionTest {
 
