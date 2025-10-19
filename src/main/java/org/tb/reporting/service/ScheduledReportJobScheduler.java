@@ -11,7 +11,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
-import org.springframework.stereotype.Component;
 import com.cronutils.descriptor.CronDescriptor;
 import com.cronutils.model.Cron;
 import com.cronutils.model.definition.CronDefinition;
@@ -19,6 +18,7 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.CronType;
 import com.cronutils.parser.CronParser;
 import java.util.Locale;
+import org.springframework.stereotype.Service;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
@@ -27,7 +27,7 @@ import org.tb.reporting.persistence.ScheduledReportJobRepository;
  * Falls back to the global default cron if a job has no expression set.
  */
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
 public class ScheduledReportJobScheduler {
 
