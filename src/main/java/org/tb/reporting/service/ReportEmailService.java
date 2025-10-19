@@ -41,6 +41,11 @@ public class ReportEmailService {
       ReportDefinition reportDefinition = reportingService.getReportDefinition(reportDefinitionId);
       ReportResult reportResult = reportingService.execute(reportDefinitionId, parameters);
 
+      if(reportResult.getRows().isEmpty()) {
+        log.info("Report id={}, name={} returned no rows. Skipping email.", reportDefinitionId, reportDefinition.getName());
+        return;
+      }
+
       byte[] excelBytes = excelExportService.exportToExcel(reportResult);
 
       String emailBody = buildEmailBody(reportDefinition, reportResult, parameters);
