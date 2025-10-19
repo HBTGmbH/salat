@@ -19,7 +19,7 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <link rel="stylesheet" href="<c:url value="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>">
     <link rel="stylesheet" type="text/css" href="<c:url value="/style/tb.tabler.css" />" />
-    <link rel="stylesheet" type="text/css" href="<c:url value="/style/tb-legacy.css" />" media="all" />
+    <!-- link rel="stylesheet" type="text/css" href="<c:url value="/style/tb-legacy.css" />" media="all" / -->
     <tiles:insert attribute="styles" ignore="true"/>
     <style>
       @import url('https://rsms.me/inter/inter.css');
