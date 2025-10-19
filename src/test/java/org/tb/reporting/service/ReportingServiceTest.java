@@ -23,7 +23,7 @@ import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.testutils.WebContextTestExecutionListener;
 
 @DataJpaTest
-@Import({ReportingService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class, ReportAuthorization.class})
+@Import({ReportingService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class, ReportAuthorization.class, ReportingParameterResolver.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration
