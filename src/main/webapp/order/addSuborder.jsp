@@ -1,21 +1,19 @@
-<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
-<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@page pageEncoding="UTF-8"%>
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
-<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <%@taglib uri="jakarta.tags.functions" prefix="fn"%>
+<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
+<%@taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles"%>
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/order" prefix="order" %>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
-<html:html>
-<head>
-
-<title><bean:message key="main.general.application.title" /> -
-<bean:message key="main.general.addsuborder.text" /></title>
-	<jsp:include flush="true" page="/head-includes.jsp" />
-
-<script type="text/javascript" language="JavaScript">
+<tiles:insert definition="page">
+    <tiles:put name="menuactive" direct="true" value="order" />
+    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.suborders.text"/></tiles:put>
+    <tiles:put name="subsection" direct="true"><bean:message key="main.general.addsuborder.text"/></tiles:put>
+    <tiles:put name="scripts" direct="true">
+        <script type="text/javascript" language="JavaScript">
 	
 	function setDate(which, howMuch) {
 		document.forms[0].action = "/do/StoreSuborder?task=setDate&which=" + which + "&howMuch=" + howMuch;
@@ -68,20 +66,11 @@
 	});
 	
 </script>
+    </tiles:put>
+    <tiles:put name="content" direct="true">
 
-</head>
-<body>
 
 <html:form action="/StoreSuborder">
-
-	<jsp:include flush="true" page="/menu.jsp">
-		<jsp:param name="title" value="Menu" />
-	</jsp:include>
-	<br>
-	<span style="font-size:14pt;font-weight:bold;"><br>
-	<bean:message key="main.general.entersuborderproperties.text" />:<br>
-	</span>
-	<br>
 	<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 	<table class="center backgroundcolor">
 		<colgroup>
@@ -615,5 +604,5 @@
 	</c:if>
 	
 </html:form>
-</body>
-</html:html>
+    </tiles:put>
+</tiles:insert>

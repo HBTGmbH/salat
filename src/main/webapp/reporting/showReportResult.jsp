@@ -1,22 +1,20 @@
-<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page pageEncoding="UTF-8"%>
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html"%>
+<%@taglib uri="jakarta.tags.functions" prefix="fn"%>
+<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
+<%@taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles"%>
 <%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
 <%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib uri="http://hbt.de/jsp/taglib/java8-date-formatting" prefix="java8"%>
-<html:html>
-    <head>
-        <title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.mainmenu.reporting.text" /></title>
-        <jsp:include flush="true" page="/head-includes.jsp" />
+<tiles:insert definition="page">
+    <tiles:put name="menuactive" direct="true" value="reporting" />
+    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.reporting.text"/></tiles:put>
+    <tiles:put name="subsection" direct="true"><c:out value="${report.name}" /></tiles:put>
+    <tiles:put name="scripts" direct="true">
         <script src="<c:url value="/webjars/plotly.js-dist/plotly.js"/>"></script>
-    </head>
-    <body>
-    <jsp:include flush="true" page="/menu.jsp">
-        <jsp:param name="title" value="Menu" />
-    </jsp:include>
-    <br>
-    <span style="font-size:14pt;font-weight:bold;"><br><bean:message key="main.general.mainmenu.reporting.text" />: <c:out value="${report.name}" /><br></span>
-    <br>
+    </tiles:put>
+    <tiles:put name="content" direct="true">
     <span style="color:red"><html:errors footer="<br>" /> </span>
 
     <div>
@@ -167,5 +165,5 @@
       });
     </script>
 
-    </body>
-</html:html>
+    </tiles:put>
+</tiles:insert>

@@ -1,78 +1,51 @@
-<%@page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%><%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@taglib uri="http://struts.apache.org/tags-html-el" prefix="html-el"%>
-<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
-<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
+<%@page pageEncoding="UTF-8"%>
 <%@taglib uri="jakarta.tags.core" prefix="c"%>
-<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
 <%@taglib uri="jakarta.tags.functions" prefix="fn"%>
+<%@taglib uri="jakarta.tags.fmt" prefix="fmt"%>
+<%@taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles"%>
+<%@taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
+<%@taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
+<%@taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@taglib prefix="java8" uri="http://hbt.de/jsp/taglib/java8-date-formatting" %>
-<html:html>
-<head>
-
-<title><bean:message key="main.general.application.title" /> - <bean:message key="main.general.addemployeeorder.text" /></title>
-	<jsp:include flush="true" page="/head-includes.jsp" />
-<script type="text/javascript" language="JavaScript">
-	
-	function setDate(which, howMuch) {
-		document.forms[0].action = "/do/StoreEmployeeorder?task=setDate&which=" + which + "&howMuch=" + howMuch;
-		document.forms[0].submit();
-	}
-	
-	function setStoreAction(form, actionVal, addMore) {	
- 		form.action = "/do/StoreEmployeeorder?task=" + actionVal + "&continue=" + addMore;
-		form.submit();
-	}
-	
-	function afterCalenderClick() {
-	}
-	
-	function showWMTT(Trigger,id) {
-  	  wmtt = document.getElementById(id);
-    	var hint;
-   	 hint = Trigger.getAttribute("hint");
-   	 //if((hint != null) && (hint != "")){
-   	 	//wmtt.innerHTML = hint;
-    	wmtt.style.display = "block";
-   	 //}
-	}
-
-	function hideWMTT() {
-		wmtt.style.display = "none";
-	}
-
-	$(document).ready(function() {
-		$(".make-select2").select2({
-			dropdownAutoWidth: true,
-			width: 'auto'
-		});	
-	});		
-</script>
-
-</head>
-<body>
-<html:form action="/StoreEmployeeorder">
-	<jsp:include flush="true" page="/menu.jsp">
-		<jsp:param name="title" value="Menu" />
-	</jsp:include>
-	<br>
-	<span style="font-size:14pt;font-weight:bold;">
-		<br>
-		<c:choose>
-			<c:when test="${newemployeeorder}">
-				<bean:message key="main.employeeorder.new.text" />:
-			</c:when>
-			<c:otherwise>
-				<bean:message key="main.employeeorder.modify.text" />:
-			</c:otherwise>
-		</c:choose>
-		<br>
-	</span>
-	<br>
-	<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
-	<span style="color:red">
-		<html:errors property="overleap" />
-	</span>
-	<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
+<tiles:insert definition="page">
+    <tiles:put name="menuactive" direct="true" value="order" />
+    <tiles:put name="section" direct="true"><bean:message key="main.general.mainmenu.employeeorders.text"/></tiles:put>
+    <tiles:put name="subsection" direct="true"><bean:message key="main.general.addemployeeorder.text"/></tiles:put>
+    <tiles:put name="scripts" direct="true">
+        <script type="text/javascript" language="JavaScript">
+            function setDate(which, howMuch) {
+                document.forms[0].action = "/do/StoreEmployeeorder?task=setDate&which=" + which + "&howMuch=" + howMuch;
+                document.forms[0].submit();
+            }
+            function setStoreAction(form, actionVal, addMore) {
+                form.action = "/do/StoreEmployeeorder?task=" + actionVal + "&continue=" + addMore;
+                form.submit();
+            }
+            function afterCalenderClick() {}
+            function showWMTT(Trigger,id) {
+                wmtt = document.getElementById(id);
+                var hint;
+                hint = Trigger.getAttribute("hint");
+                wmtt.style.display = "block";
+            }
+            function hideWMTT() {
+                wmtt.style.display = "none";
+            }
+            $(document).ready(function() {
+                $(".make-select2").select2({
+                    dropdownAutoWidth: true,
+                    width: 'auto'
+                });
+            });
+        </script>
+    </tiles:put>
+    <tiles:put name="content" direct="true">
+        <html:form action="/StoreEmployeeorder">
+        <html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
+        <span style="color:red">
+            <html:errors property="overleap" />
+        </span>
+        <table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 		<colgroup>
 			<col align="left" width="150" />
 			<col align="left" width="750" />
@@ -516,5 +489,5 @@
 		<br><br>
 	</c:if>
 </html:form>
-</body>
-</html:html>
+    </tiles:put>
+</tiles:insert>
