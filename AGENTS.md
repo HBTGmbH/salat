@@ -38,6 +38,7 @@ This document captures the architectural rules and direction for the project to 
 - Views:
   - Prefer Thymeleaf templates backed by the module’s controllers.
   - Adopt Bootstrap 5 + Tabler components for UI layout and widgets.
+  - Prefer Thymeleaf fragments to reduce duplication; extract reusable sections (tables, headers, toolbars, forms) into templates/fragments and include them via th:replace/th:include.
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
 
 ## Migration Guidance
