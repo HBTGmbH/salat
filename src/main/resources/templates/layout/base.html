@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="${pageTitle}">Salat</title>
+  <link rel="stylesheet" href="/webjars/bootstrap/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/webjars/tabler__core/dist/css/tabler.css" />
+</head>
+<body>
+<div class="page">
+  <!-- Left navigation (Tabler vertical navbar) -->
+  <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <h1 class="navbar-brand navbar-brand-autodark">
+        <a th:href="@{/}" class="text-decoration-none text-reset">Salat</a>
+      </h1>
+      <div class="collapse navbar-collapse" id="sidebar-menu">
+        <ul class="navbar-nav pt-lg-3">
+          <li class="nav-item">
+            <a class="nav-link" th:href="@{/}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-house"></i></span>
+              <span class="nav-link-title">Home</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" th:href="@{/reporting/jobs2}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-clock-history"></i></span>
+              <span class="nav-link-title">Scheduled Jobs</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Page content -->
+  <div class="page-wrapper">
+    <header class="navbar navbar-expand-md d-none d-lg-flex" role="banner">
+      <div class="container-xl">
+        <div class="navbar-nav flex-row order-md-last">
+          <!-- Optional header content (user, settings) -->
+        </div>
+        <div class="navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
+          <a th:href="@{/}" class="text-decoration-none text-reset">Salat</a>
+        </div>
+      </div>
+    </header>
+    <div class="page-body">
+      <div class="container-xl my-4" layout:fragment="content">
+        <!-- page specific content -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/webjars/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/tabler__core/dist/js/tabler.min.js"></script>
+</body>
+</html>
