@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ import org.tb.reporting.service.ScheduledReportJobService;
 @Controller
 @RequestMapping("/reporting/jobs2")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class ReportingJobsController {
 
   private final ScheduledReportJobService jobService;
