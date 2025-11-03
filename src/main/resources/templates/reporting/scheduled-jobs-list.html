@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<main layout:fragment="content">
+
+  <div th:replace="~{fragments/master-table :: masterTable(
+      title=${'Scheduled Report Jobs'},
+      backHref=@{/ShowReports}, backLabel=${'Back to Reports'},
+      addHref=@{/CreateScheduledReportJob}, addLabel=${'Create New Scheduled Job'},
+      thead=~{::theadContent}, tbody=~{::tbodyContent}
+    )}">
+
+    <thead th:fragment="theadContent">
+      <tr>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Name'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Report'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Recipients'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Enabled'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Schedule'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+      </tr>
+    </thead>
+
+    <tbody th:fragment="tbodyContent">
+      <tr th:each="job : ${jobs}">
+        <td th:replace="~{fragments/master-table :: colText(text=${job.name})}"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${job.reportDefinition != null ? job.reportDefinition.name : '—'})}"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${job.recipientEmails})}"></td>
+        <td th:replace="~{fragments/master-table :: colYesNo(enabled=${job.enabled})}"></td>
+        <td th:replace="~{fragments/master-table :: colTextAdd(text=${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}, additional=${cronDescriptions[job.id]})}"></td>
+        <td th:replace="~{fragments/master-table :: colDate(date=${job.lastupdate})}"></td>
+        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/do/EditScheduledReportJob'(id=${job.id})})}"></td>
+        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/do/DeleteScheduledReportJob'})}"></td>
+      </tr>
+    </tbody>
+
+  </div>
+
+</main>
+</html>
