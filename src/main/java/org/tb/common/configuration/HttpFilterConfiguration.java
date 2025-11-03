@@ -21,7 +21,7 @@ public class HttpFilterConfiguration {
     private final ResourceUrlProvider resourceUrlProvider;
 
     @Bean
-    public FilterRegistrationBean<ResourceUrlEncodingFilter> resourceUrlEncodingFilter(){
+    public FilterRegistrationBean<ResourceUrlEncodingFilter> salatResourceUrlEncodingFilter(){
         var registrationBean = new FilterRegistrationBean<ResourceUrlEncodingFilter>();
         registrationBean.setOrder(97);
         registrationBean.setFilter(new ResourceUrlEncodingFilter());
@@ -30,7 +30,7 @@ public class HttpFilterConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean<ResourceUrlProviderExposingFilter> resourceUrlProviderExposingFilter(){
+    public FilterRegistrationBean<ResourceUrlProviderExposingFilter> salatResourceUrlProviderExposingFilter(){
         var registrationBean = new FilterRegistrationBean<ResourceUrlProviderExposingFilter>();
         registrationBean.setOrder(98);
         registrationBean.setFilter(new ResourceUrlProviderExposingFilter(resourceUrlProvider));
