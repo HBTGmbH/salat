@@ -53,3 +53,17 @@ This document captures the architectural rules and direction for the project to 
 ## Documentation
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
+
+## Spring Boot annotations placement
+- Place cross-cutting Spring Boot/Spring Security enabling annotations on the application class (SalatApplication) unless there is a strong, explicit reason to scope them to a specific configuration class.
+  - Examples: @EnableMethodSecurity, @EnableScheduling, @EnableAsync. This centralizes enablement, avoids duplicate configuration, and makes project-wide capabilities obvious.
+
+## Agent usage policy (for code generation and refactoring)
+- Agents and contributors MUST consult and adhere to this AGENTS.md when generating or modifying code.
+- Minimum checklist before committing changes:
+  - Verify dependencies and coupling follow the rules above (no new cycles; use events for cross-module collaboration).
+  - For views, prefer Thymeleaf fragments and the shared layout structure.
+  - Place cross-cutting Spring Boot/Spring Security enabling annotations on SalatApplication.
+  - Favor standard Spring Security (@PreAuthorize/roles) over custom aspects, unless explicitly required.
+  - Keep controllers thin; push logic to services within the same module.
+- Pull Request note: Include a short statement like “Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines.”
