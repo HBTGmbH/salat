@@ -92,3 +92,13 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 - TrainingHelper#fromDBtimeToString - nach DurationUtils als neue Methode
   formatWithWorkingsdays(Duration duration, Duration dailyWorkingTime
 - TrainingHelper#hoursMinToString - better use Duration and then DurationUtils#format
+
+
+
+## Test the new Thymeleaf UI
+
+Follow the step-by-step guide in docs/how-to-test-new-ui.md. Quick start:
+
+- Start the app (see Run locally above)
+- Open: http://localhost:8080/reporting/jobs2?employee-sign=tt
+- If the list is empty, create a scheduled job via legacy pages (e.g., /ShowReports) and refresh the page.
