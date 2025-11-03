@@ -1,6 +1,7 @@
 package org.tb.auth.configuration;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,26 +12,27 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.filter.AuthFilter;
 import org.tb.auth.filter.AuthViewHelper;
+import org.tb.common.GlobalConstants;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
 @Configuration
@@ -40,6 +42,7 @@ public class LocalDevSecurityConfiguration {
 
   private final AuthorizedUser authorizedUser;
   private final Set<AuthViewHelper> authViewHelpers;
+  private final JdbcTemplate jdbcTemplate;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -142,11 +145,30 @@ public class LocalDevSecurityConfiguration {
   @Bean
   public AuthenticationProvider authenticationProvider() {
     PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
-    provider.setPreAuthenticatedUserDetailsService(new AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken>() {
-      @Override
-      public UserDetails loadUserDetails(PreAuthenticatedAuthenticationToken token) throws UsernameNotFoundException {
-        return new User(token.getName(), "N/A", Set.of());
-      }
+    provider.setPreAuthenticatedUserDetailsService(token -> {
+        String sign = token.getName();
+        if (sign == null || sign.isBlank()) {
+          throw new UsernameNotFoundException("Missing employee-sign");
+        }
+        String status;
+        try {
+          status = jdbcTemplate.queryForObject(
+              "select status from employee where sign = ?",
+              String.class,
+              sign
+          );
+        } catch (Exception e) {
+          throw new UsernameNotFoundException("No employee found for sign: " + sign);
+        }
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        boolean isAdmin = GlobalConstants.EMPLOYEE_STATUS_ADM.equalsIgnoreCase(status);
+        boolean isManager = isAdmin || GlobalConstants.EMPLOYEE_STATUS_BL.equalsIgnoreCase(status) || GlobalConstants.EMPLOYEE_STATUS_PV.equalsIgnoreCase(status);
+        boolean isBackoffice = isManager || GlobalConstants.EMPLOYEE_STATUS_BO.equalsIgnoreCase(status);
+        if (isAdmin) authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        if (isManager) authorities.add(new SimpleGrantedAuthority("ROLE_MANAGER"));
+        if (isBackoffice) authorities.add(new SimpleGrantedAuthority("ROLE_BACKOFFICE"));
+        return new User(sign, "N/A", authorities);
     });
     return provider;
   }
