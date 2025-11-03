@@ -1,6 +1,7 @@
 package org.tb.auth.configuration;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,8 +11,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
@@ -22,6 +27,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.filter.AuthFilter;
 import org.tb.auth.filter.AuthViewHelper;
+import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
@@ -80,10 +86,10 @@ public class AzureEasyAuthSecurityConfiguration {
 
   @Bean
   @Order(1)
-  SecurityFilterChain restApi(HttpSecurity http) throws Exception {
+  SecurityFilterChain restApi(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
     http.securityMatcher("/api/**", "/rest/**")
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
         .requestCache().disable()
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -93,9 +99,9 @@ public class AzureEasyAuthSecurityConfiguration {
 
   @Bean
   @Order(2)
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
     http.authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
         .cors().disable()
         .csrf().disable();
     return http.build();
@@ -110,9 +116,35 @@ public class AzureEasyAuthSecurityConfiguration {
   }
 
   @Bean
-  public JwtAuthenticationConverter customJwtAuthenticationConverter(SalatProperties salatProperties) {
+  public JwtAuthenticationConverter customJwtAuthenticationConverter(SalatProperties salatProperties, JdbcTemplate jdbcTemplate) {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-    converter.setPrincipalClaimName(salatProperties.getAuth().getOidcIdToken().getPrincipalClaimName());
+    String principalClaim = salatProperties.getAuth().getOidcIdToken().getPrincipalClaimName();
+    converter.setPrincipalClaimName(principalClaim);
+    converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+      String sign = jwt.getClaimAsString(principalClaim);
+      if (sign == null || sign.isBlank()) {
+        throw new UsernameNotFoundException("Missing principal claim: " + principalClaim);
+      }
+      String status;
+      try {
+        status = jdbcTemplate.queryForObject(
+            "select status from employee where sign = ?",
+            String.class,
+            sign
+        );
+      } catch (Exception e) {
+        throw new UsernameNotFoundException("No employee found for sign: " + sign);
+      }
+      Set<GrantedAuthority> authorities = new HashSet<>();
+      authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+      boolean isAdmin = GlobalConstants.EMPLOYEE_STATUS_ADM.equalsIgnoreCase(status);
+      boolean isManager = isAdmin || GlobalConstants.EMPLOYEE_STATUS_BL.equalsIgnoreCase(status) || GlobalConstants.EMPLOYEE_STATUS_PV.equalsIgnoreCase(status);
+      boolean isBackoffice = isManager || GlobalConstants.EMPLOYEE_STATUS_BO.equalsIgnoreCase(status);
+      if (isAdmin) authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+      if (isManager) authorities.add(new SimpleGrantedAuthority("ROLE_MANAGER"));
+      if (isBackoffice) authorities.add(new SimpleGrantedAuthority("ROLE_BACKOFFICE"));
+      return authorities;
+    });
     return converter;
   }
 
