@@ -14,6 +14,9 @@
 - **Security**: Spring Security with OAuth2 resource server support
 - **UI Technologies**:
   - Legacy UI: JSP/JSTL with Struts
+    - **URL format**: Legacy Struts actions use `/do/<ActionName>` (e.g., `/do/ShowEmployee`, `/do/CreateDailyReport`)
+    - Do NOT use `.do` suffix format (e.g., `/ShowEmployee.do` is incorrect)
+    - When linking from Thymeleaf: `th:href="@{/do/ActionName}"`
   - Modern UI: Thymeleaf with Tabler.io
   - Frontend libraries: Bootstrap 5, jQuery, Plotly.js
 - **Mapping**: MapStruct for DTO/Entity conversions
