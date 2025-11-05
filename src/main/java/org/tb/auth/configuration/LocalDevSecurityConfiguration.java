@@ -123,13 +123,13 @@ public class LocalDevSecurityConfiguration {
     AbstractPreAuthenticatedProcessingFilter preAuthenticatedProcessingFilter = new AbstractPreAuthenticatedProcessingFilter() {
       @Override
       protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-        String employeeSign = request.getParameter("employee-sign");
-        if(employeeSign == null && useSession) {
-          employeeSign = (String) request.getSession().getAttribute("employee-sign");
+        String loginName = request.getParameter("login-name");
+        if(loginName == null && useSession) {
+          loginName = (String) request.getSession().getAttribute("login-name");
         } else if(useSession) {
-          request.getSession().setAttribute("employee-sign", employeeSign);
+          request.getSession().setAttribute("login-name", loginName);
         }
-        return employeeSign;
+        return loginName;
       }
 
       @Override
@@ -148,7 +148,7 @@ public class LocalDevSecurityConfiguration {
     provider.setPreAuthenticatedUserDetailsService(token -> {
         String sign = token.getName();
         if (sign == null || sign.isBlank()) {
-          throw new UsernameNotFoundException("Missing employee-sign");
+          throw new UsernameNotFoundException("Missing login-name");
         }
         String status = authService.getStatusByLoginname(sign);
         if (status == null) {

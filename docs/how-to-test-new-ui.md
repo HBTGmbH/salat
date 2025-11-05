@@ -19,9 +19,9 @@ The project is packaged as a Spring Boot WAR and can be run via Docker Compose o
 2. Start infrastructure and the app:
    - `docker compose up -d` (or `docker-compose up -d` on older Docker)
 3. Open the app:
-   - http://localhost:8080?employee-sign=tt
+   - http://localhost:8080?login-name=tt
 
-Use the `employee-sign` parameter to simulate a login (see README for available signs like `admin`, `bm`, `tt`).
+Use the `login-name` parameter to simulate a login (see README for available signs like `admin`, `bm`, `tt`).
 
 ---
 
@@ -35,14 +35,14 @@ Use the `employee-sign` parameter to simulate a login (see README for available 
 3. Start the app from the project root:
    - `./mvnw spring-boot:run`
 4. Open the app:
-   - http://localhost:8080?employee-sign=tt
+   - http://localhost:8080?login-name=tt
 
 ---
 
 ## Navigate to the new UI
 - URL: http://localhost:8080/reporting/jobs2
-  - You can append `?employee-sign=admin` (or another valid sign) to switch the current user at any time, e.g.:
-  - http://localhost:8080/reporting/jobs2?employee-sign=admin
+  - You can append `?login-name=admin` (or another valid sign) to switch the current user at any time, e.g.:
+  - http://localhost:8080/reporting/jobs2?login-name=admin
 
 This page lists Scheduled Report Jobs using the new stack.
 
@@ -73,7 +73,7 @@ Alternatively, import or create data directly in the database if you are comfort
 - If you see an error about `BuildProperties`:
   - Run `./mvnw package` once (see README troubleshooting section) and restart.
 - If authentication blocks you:
-  - Use the `?employee-sign=<sign>` parameter to switch the current user for local testing (see README for known signs).
+  - Use the `?login-name=<sign>` parameter to switch the current user for local testing (see README for known signs).
 - If you get a DB connection error:
   - Ensure Dockerized MySQL is running and environment variables are configured as in the README.
 
