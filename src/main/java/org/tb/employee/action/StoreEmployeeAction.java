@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.SalatUser;
 import org.tb.employee.service.EmployeeService;
 
 /**
@@ -53,10 +54,17 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
                 return mapping.getInputForward();
             }
 
+            // Create or update SalatUser
+            SalatUser salatUser = employee.getSalatUser();
+            if (salatUser == null) {
+                salatUser = new SalatUser();
+                employee.setSalatUser(salatUser);
+            }
+            salatUser.setLoginname(emForm.getLoginname());
+            salatUser.setStatus(emForm.getStatus());
+
             employee.setFirstname(emForm.getFirstname());
             employee.setLastname(emForm.getLastname());
-            employee.setLoginname(emForm.getLoginname());
-            employee.setStatus(emForm.getStatus());
             employee.setSign(emForm.getSign());
             employee.setGender(emForm.getGender().charAt(0));
 

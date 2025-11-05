@@ -51,7 +51,7 @@ public class AuthorizedUserChangedListener {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
     }
 
-    authorizedUser.init(loginEmployee.getId(), TRUE == loginEmployee.getRestricted(), loginEmployee.getStatus());
+    authorizedUser.init(loginEmployee.getId(), loginEmployee.isRestricted(), loginEmployee.getStatus());
 
     // no further stuff for REST API calls - all is just for struts and old web UI
     if(request.getRequestURL().toString().contains("/api/") || request.getRequestURL().toString().contains("/rest/")) return;

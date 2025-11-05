@@ -1272,5 +1272,124 @@ databaseChangeLog:
               - column:
                   name: message
                   type: varchar(4000)
+  - changeSet:
+      id: 38
+      author: kr
+      comment: Create salat_user table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: salat_user
+      changes:
+        - createTable:
+            tableName: salat_user
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: loginname
+                  type: varchar(255)
+              - column:
+                  name: status
+                  type: varchar(255)
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+  - changeSet:
+      id: 39
+      author: kr
+      comment: Create employee_salat_user join table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: employee_salat_user
+      changes:
+        - createTable:
+            tableName: employee_salat_user
+            columns:
+              - column:
+                  name: employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: salat_user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: employee_salat_user
+            baseColumnNames: employee_id
+            referencedTableName: employee
+            referencedColumnNames: id
+            constraintName: fk_employee_salat_user_employee
+        - addForeignKeyConstraint:
+            baseTableName: employee_salat_user
+            baseColumnNames: salat_user_id
+            referencedTableName: salat_user
+            referencedColumnNames: id
+            constraintName: fk_employee_salat_user_salat_user
+  - changeSet:
+      id: 40
+      author: kr
+      comment: Migrate employee data to salat_user
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: employee
+        - tableExists:
+            tableName: salat_user
+        - tableExists:
+            tableName: employee_salat_user
+        - columnExists:
+            tableName: employee
+            columnName: loginname
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO salat_user (loginname, status, createdby, lastupdatedby, lastupdate, created, updatecounter)
+              SELECT loginname, status, createdby, lastupdatedby, lastupdate, created, updatecounter
+              FROM employee
+        - sql:
+            sql: >
+              INSERT INTO employee_salat_user (employee_id, salat_user_id)
+              SELECT e.id, su.id
+              FROM employee e
+              INNER JOIN salat_user su ON e.loginname = su.loginname AND e.status = su.status
+  - changeSet:
+      id: 41
+      author: kr
+      comment: Drop loginname and status columns from employee table
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employee
+            columnName: loginname
+      changes:
+        - dropColumn:
+            tableName: employee
+            columnName: loginname
+        - dropColumn:
+            tableName: employee
+            columnName: status
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
