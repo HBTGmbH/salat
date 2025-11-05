@@ -21,17 +21,77 @@
       </h1>
       <div class="collapse navbar-collapse" id="sidebar-menu">
         <ul class="navbar-nav pt-lg-3">
-          <li class="nav-item">
-            <a class="nav-link" th:href="@{/}">
-              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-house"></i></span>
-              <span class="nav-link-title">Home</span>
+          <!-- Timereports Section -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#navbar-timereports" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-clock"></i></span>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.timereports.text}">Timereports</span>
             </a>
+            <div class="dropdown-menu">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/do/CreateDailyReport}" th:text="#{main.general.mainmenu.newreport.text}">New Report</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowDailyReport}" th:text="#{main.general.mainmenu.daily.text}">Single overview</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowMatrix}" th:text="#{main.general.mainmenu.matrixmenu.text}">Matrix overview</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}">Overtime</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowTraining}" th:text="#{main.general.mainmenu.training.text}" th:if="${loginEmployee != null && !loginEmployee.restricted}">training overview</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowRelease}" th:text="#{main.general.mainmenu.release.title.text}">Release</a>
+                </div>
+              </div>
+            </div>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" th:href="@{/reporting/jobs2}">
-              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-clock-history"></i></span>
-              <span class="nav-link-title">Scheduled Jobs</span>
+          
+          <!-- Employees Section (only for non-restricted users) -->
+          <li class="nav-item dropdown" th:if="${loginEmployee != null && !loginEmployee.restricted}">
+            <a class="nav-link dropdown-toggle" href="#navbar-employees" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-people"></i></span>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.employees.text}">Employees</span>
             </a>
+            <div class="dropdown-menu">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/do/ShowEmployee}" th:text="#{main.general.mainmenu.employees.text}">Employees</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowEmployeecontract}" th:text="#{main.general.mainmenu.employeecontracts.text}">Employee Contracts</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowEmployeeorder}" th:text="#{main.general.mainmenu.employeeorders.text}">Employee Orders</a>
+                </div>
+              </div>
+            </div>
+          </li>
+          
+          <!-- Orders Section (only for non-restricted users) -->
+          <li class="nav-item dropdown" th:if="${loginEmployee != null && !loginEmployee.restricted}">
+            <a class="nav-link dropdown-toggle" href="#navbar-orders" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-briefcase"></i></span>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.orders.text}">Orders</span>
+            </a>
+            <div class="dropdown-menu">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/do/ShowCustomer}" th:text="#{main.general.mainmenu.customers.text}">Customers</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowCustomerorder}" th:text="#{main.general.mainmenu.customerorders.text}">Orders</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowSuborder}" th:text="#{main.general.mainmenu.suborders.text}">Suborders</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowInvoice}" th:text="#{main.general.mainmenu.invoice.title.text}" th:if="${authorizedUser != null && authorizedUser.backoffice}">Invoiceview</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowReports}" th:text="#{main.general.mainmenu.reporting.text}" th:if="${reportAuthViewHelper != null && reportAuthViewHelper.isReportMenuAvailable()}">Reports</a>
+                  <a class="dropdown-item" th:href="@{/reporting/jobs}" th:if="${authorizedUser != null && authorizedUser.manager}">Scheduled Reports</a>
+                </div>
+              </div>
+            </div>
+          </li>
+          
+          <!-- Management Section -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#navbar-management" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-gear"></i></span>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.management.text}">Management</span>
+            </a>
+            <div class="dropdown-menu">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/do/ShowWelcome}" th:text="#{main.general.mainmenu.overview.text}">Overview</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowSettings}" th:text="#{main.general.mainmenu.settings.text}">Settings</a>
+                </div>
+              </div>
+            </div>
           </li>
         </ul>
       </div>
