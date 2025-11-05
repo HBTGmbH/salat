@@ -16,16 +16,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.domain.SalatUser;
+import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.domain.SalatUser;
 import org.tb.employee.event.EmployeeDeleteEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
-import org.tb.employee.persistence.SalatUserRepository;
 
 @Slf4j
 @Service

@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.domain.AuditedEntity;
 
