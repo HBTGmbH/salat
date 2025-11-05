@@ -27,6 +27,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
+import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.LocalDateRange;
 import org.tb.common.SalatProperties;
 
@@ -38,6 +39,7 @@ public class AuthService {
 
   private final AuthorizedUser authorizedUser;
   private final AuthorizationRuleRepository authorizationRuleRepository;
+  private final SalatUserRepository salatUserRepository;
   private final SalatProperties salatProperties;
   private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -65,6 +67,12 @@ public class AuthService {
   public void switchLogin(String sign) {
     authorizedUser.setSign(sign);
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
+  }
+
+  public String getStatusByLoginname(String loginname) {
+    return salatUserRepository.findByLoginname(loginname)
+        .map(salatUser -> salatUser.getStatus())
+        .orElse(null);
   }
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {

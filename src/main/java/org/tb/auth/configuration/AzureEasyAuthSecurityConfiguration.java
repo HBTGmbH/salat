@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.filter.AuthFilter;
 import org.tb.auth.filter.AuthViewHelper;
+import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
@@ -116,7 +116,7 @@ public class AzureEasyAuthSecurityConfiguration {
   }
 
   @Bean
-  public JwtAuthenticationConverter customJwtAuthenticationConverter(SalatProperties salatProperties, JdbcTemplate jdbcTemplate) {
+  public JwtAuthenticationConverter customJwtAuthenticationConverter(SalatProperties salatProperties, AuthService authService) {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
     String principalClaim = salatProperties.getAuth().getOidcIdToken().getPrincipalClaimName();
     converter.setPrincipalClaimName(principalClaim);
@@ -125,15 +125,9 @@ public class AzureEasyAuthSecurityConfiguration {
       if (sign == null || sign.isBlank()) {
         throw new UsernameNotFoundException("Missing principal claim: " + principalClaim);
       }
-      String status;
-      try {
-        status = jdbcTemplate.queryForObject(
-            "select status from employee where sign = ?",
-            String.class,
-            sign
-        );
-      } catch (Exception e) {
-        throw new UsernameNotFoundException("No employee found for sign: " + sign);
+      String status = authService.getStatusByLoginname(sign);
+      if (status == null) {
+        throw new UsernameNotFoundException("No salat user found for sign: " + sign);
       }
       Set<GrantedAuthority> authorities = new HashSet<>();
       authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
