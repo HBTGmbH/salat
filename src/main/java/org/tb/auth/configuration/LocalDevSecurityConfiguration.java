@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
@@ -32,6 +31,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.filter.AuthFilter;
 import org.tb.auth.filter.AuthViewHelper;
+import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
@@ -42,7 +42,7 @@ public class LocalDevSecurityConfiguration {
 
   private final AuthorizedUser authorizedUser;
   private final Set<AuthViewHelper> authViewHelpers;
-  private final JdbcTemplate jdbcTemplate;
+  private final AuthService authService;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -150,15 +150,9 @@ public class LocalDevSecurityConfiguration {
         if (sign == null || sign.isBlank()) {
           throw new UsernameNotFoundException("Missing employee-sign");
         }
-        String status;
-        try {
-          status = jdbcTemplate.queryForObject(
-              "select status from employee where sign = ?",
-              String.class,
-              sign
-          );
-        } catch (Exception e) {
-          throw new UsernameNotFoundException("No employee found for sign: " + sign);
+        String status = authService.getStatusByLoginname(sign);
+        if (status == null) {
+          throw new UsernameNotFoundException("No salat user found for sign: " + sign);
         }
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
