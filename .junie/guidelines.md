@@ -258,7 +258,7 @@ Refer to README.md section "Business-logic that should be refactored" for detail
 
 ## Before Submitting Changes
 
-1. ✓ Run tests related to modified code
+1. ✓ Run tests related to modified code, including ArchitectureTest
 2. ✓ Ensure the project builds successfully: `./mvnw clean package`
 3. ✓ Check that no existing tests are broken
 4. ✓ Verify code follows the Google Java Style conventions
