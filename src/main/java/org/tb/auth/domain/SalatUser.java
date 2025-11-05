@@ -1,6 +1,7 @@
 package org.tb.auth.domain;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.io.Serializable;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import org.tb.common.domain.AuditedEntity;
 @Setter
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Table(name = "salat_user")
 public class SalatUser extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

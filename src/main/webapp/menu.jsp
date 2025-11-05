@@ -96,9 +96,9 @@
 				</html:link></li>
 			</c:if>
 			<c:if test="${authorizedUser.manager}">
-				<li><html:link styleClass="menu" action="/ShowScheduledReportJobs">
+				<li><a class="menu" href="<c:url value='/reporting/jobs' />">
 					Scheduled Reports
-				</html:link></li>
+				</a></li>
 			</c:if>
 		</ul>
 		</li>

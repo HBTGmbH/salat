@@ -14,17 +14,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.reporting.domain.ScheduledReportJob;
+import org.tb.reporting.service.ReportingService;
 import org.tb.reporting.service.ScheduledReportJobService;
 
 @Controller
-@RequestMapping("/reporting/jobs2")
+@RequestMapping("/reporting/jobs")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class ReportingJobsController {
 
   private final ScheduledReportJobService jobService;
+  private final ReportingService reportingService;
 
   @Value("${salat.reporting.scheduler.cron:0 0 5 * * ?}")
   private String defaultCron;
@@ -46,6 +54,95 @@ public class ReportingJobsController {
     return "reporting/scheduled-jobs-list";
   }
 
+  @GetMapping("/create")
+  public String createForm(Model model) {
+    model.addAttribute("pageTitle", "Create Scheduled Report Job");
+    model.addAttribute("job", new ScheduledReportJobForm());
+    model.addAttribute("reportDefinitions", reportingService.getReportDefinitions());
+    model.addAttribute("isEdit", false);
+    return "reporting/scheduled-job-form";
+  }
+
+  @GetMapping("/edit")
+  public String editForm(@RequestParam("id") Long id, Model model) {
+    var job = jobService.getJob(id);
+    var form = new ScheduledReportJobForm();
+    form.setId(job.getId());
+    form.setReportDefinitionId(job.getReportDefinition().getId());
+    form.setName(job.getName());
+    form.setReportParameters(job.getReportParameters());
+    form.setRecipientEmails(job.getRecipientEmails());
+    form.setEnabled(job.isEnabled());
+    form.setCronExpression(job.getCronExpression());
+    form.setDescription(job.getDescription());
+
+    model.addAttribute("pageTitle", "Edit Scheduled Report Job");
+    model.addAttribute("job", form);
+    model.addAttribute("reportDefinitions", reportingService.getReportDefinitions());
+    model.addAttribute("isEdit", true);
+    return "reporting/scheduled-job-form";
+  }
+
+  @PostMapping("/store")
+  public String store(@ModelAttribute("job") ScheduledReportJobForm form, 
+                      BindingResult bindingResult,
+                      Model model,
+                      RedirectAttributes redirectAttributes) {
+    
+    // Basic validation
+    if (form.getName() == null || form.getName().isBlank()) {
+      bindingResult.rejectValue("name", "error.name", "Name is required");
+    }
+    if (form.getReportDefinitionId() == null) {
+      bindingResult.rejectValue("reportDefinitionId", "error.reportDefinitionId", "Report is required");
+    }
+    if (form.getRecipientEmails() == null || form.getRecipientEmails().isBlank()) {
+      bindingResult.rejectValue("recipientEmails", "error.recipientEmails", "Recipient emails are required");
+    }
+    
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("reportDefinitions", reportingService.getReportDefinitions());
+      boolean isEdit = form.getId() != null && form.getId() > 0;
+      model.addAttribute("pageTitle", isEdit ? "Edit Scheduled Report Job" : "Create Scheduled Report Job");
+      model.addAttribute("isEdit", isEdit);
+      return "reporting/scheduled-job-form";
+    }
+
+    ScheduledReportJob job;
+    boolean isEdit = form.getId() != null && form.getId() > 0;
+    if (isEdit) {
+      job = jobService.getJob(form.getId());
+    } else {
+      job = new ScheduledReportJob();
+    }
+
+    var reportDefinition = reportingService.getReportDefinition(form.getReportDefinitionId());
+    job.setReportDefinition(reportDefinition);
+    job.setName(form.getName());
+    job.setReportParameters(form.getReportParameters());
+    job.setRecipientEmails(form.getRecipientEmails());
+    job.setEnabled(form.isEnabled());
+    job.setCronExpression(form.getCronExpression());
+    job.setDescription(form.getDescription());
+
+    if (isEdit) {
+      jobService.updateJob(job);
+      redirectAttributes.addFlashAttribute("message", "Scheduled job updated successfully");
+    } else {
+      jobService.createJob(job);
+      redirectAttributes.addFlashAttribute("message", "Scheduled job created successfully");
+    }
+
+    return "redirect:/reporting/jobs";
+  }
+
+  @PostMapping("/delete")
+  public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+    jobService.deleteJob(id);
+    redirectAttributes.addFlashAttribute("message", "Scheduled job deleted successfully");
+    return "redirect:/reporting/jobs";
+  }
+
   private String getHumanReadableCron(String cronExpr) {
     try {
       CronDefinition def = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
@@ -57,5 +154,34 @@ public class ReportingJobsController {
     } catch (Exception e) {
       return "unrecognized/invalid cron pattern";
     }
+  }
+  
+  // Form class for binding
+  public static class ScheduledReportJobForm {
+    private Long id;
+    private Long reportDefinitionId;
+    private String name;
+    private String reportParameters;
+    private String recipientEmails;
+    private boolean enabled = true;
+    private String cronExpression;
+    private String description;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getReportDefinitionId() { return reportDefinitionId; }
+    public void setReportDefinitionId(Long reportDefinitionId) { this.reportDefinitionId = reportDefinitionId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getReportParameters() { return reportParameters; }
+    public void setReportParameters(String reportParameters) { this.reportParameters = reportParameters; }
+    public String getRecipientEmails() { return recipientEmails; }
+    public void setRecipientEmails(String recipientEmails) { this.recipientEmails = recipientEmails; }
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public String getCronExpression() { return cronExpression; }
+    public void setCronExpression(String cronExpression) { this.cronExpression = cronExpression; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
   }
 }
