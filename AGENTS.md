@@ -16,6 +16,10 @@ This document captures the architectural rules and direction for the project to 
   - Notes:
     - Existing screens may continue to function but should not receive major new features.
     - Any new UI work should avoid adding to the legacy stack.
+  - URL format:
+    - Legacy Struts actions use the format `/do/<ActionName>` (e.g., `/do/ShowEmployee`, `/do/CreateDailyReport`)
+    - Do NOT use the `.do` suffix format (e.g., `/ShowEmployee.do` is incorrect)
+    - When linking to legacy Struts pages from Thymeleaf templates, use: `th:href="@{/do/ActionName}"`
 
 - Target UI and presentation stack (future direction):
   - Spring Web MVC (controllers, validation, handler methods)
