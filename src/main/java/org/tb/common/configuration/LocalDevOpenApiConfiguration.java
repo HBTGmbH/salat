@@ -39,11 +39,11 @@ public class LocalDevOpenApiConfiguration {
     gitProperties.ifPresent(entries -> openApiDescription.append(" / ").append(entries.getCommitId()));
     openApiDescription.append(")\n");
 
-    SecurityScheme employeeSign = new SecurityScheme();
-    employeeSign.setType(Type.APIKEY);
-    employeeSign.setName("employee-sign");
-    employeeSign.setIn(In.QUERY);
-    employeeSign.setDescription("Enter sign from employee, e.g. kr");
+    SecurityScheme loginName = new SecurityScheme();
+    loginName.setType(Type.APIKEY);
+    loginName.setName("login-name");
+    loginName.setIn(In.QUERY);
+    loginName.setDescription("Enter sign from employee, e.g. kr");
 
     // see https://springdoc.org/faq.html
     return new OpenAPI()
@@ -52,8 +52,8 @@ public class LocalDevOpenApiConfiguration {
             .version(buildProperties.isPresent() ? buildProperties.get().getVersion() : "DEVELOPMENT")
             .description(openApiDescription.toString()))
         .externalDocs(new ExternalDocumentation().description("Confluence").url("https://hbteam.atlassian.net/wiki/spaces/SALAT/pages/1440481391/Rest+API"))
-        .schemaRequirement("employeeSign", employeeSign)
-        .security(of(new SecurityRequirement().addList("employeeSign")));
+        .schemaRequirement("loginName", loginName)
+        .security(of(new SecurityRequirement().addList("loginName")));
   }
 
 }

@@ -10,7 +10,7 @@ Steps to start Salat locally:
 
 1. Build the image: `./mvnw spring-boot:build-image`
 2. Run docker-compose: `docker-compose up -d` (in newer docker versions use `docker compose up -d`)
-3. That's it. Salat should now be running. To check, open in browser: <http://localhost:8080?employee-sign=tt>
+3. That's it. Salat should now be running. To check, open in browser: <http://localhost:8080?login-name=tt>
 
 Shutdown:
 1. Stop docker-compose: CTRL+C
@@ -18,12 +18,12 @@ Shutdown:
 3. If you want to remove the containers: `docker-compose down` (in newer docker versions use `docker compose down`)
 
 ### Login
-Open the URL <http://localhost:8080?employee-sign=<sign>>
+Open the URL <http://localhost:8080?login-name=<sign>>
 
-You can change the `employee-sign` parameter to login as a different user.
-It is even possible to append `?employee-sign=<sign>` to any URL, to log in the user.
+You can change the `login-name` parameter to login as a different user.
+It is even possible to append `?login-name=<sign>` to any URL, to log in the user.
 
-Valid employee-signs in the test-dataset are:
+Valid login-names in the test-dataset are:
   1. **admin**: Administrator
   2. **bm**: "Bossy Bossmann", Administrator
   3. **tt**: "Testy Testmann", Employee
@@ -100,5 +100,5 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
 Follow the step-by-step guide in docs/how-to-test-new-ui.md. Quick start:
 
 - Start the app (see Run locally above)
-- Open: http://localhost:8080/reporting/jobs2?employee-sign=tt
+- Open: http://localhost:8080/reporting/jobs2?login-name=tt
 - If the list is empty, create a scheduled job via legacy pages (e.g., /ShowReports) and refresh the page.
