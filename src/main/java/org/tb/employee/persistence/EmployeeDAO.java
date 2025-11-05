@@ -18,6 +18,7 @@ import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.domain.SalatUser;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class EmployeeDAO {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
+    private final SalatUserRepository salatUserRepository;
     private final AuthorizedUser authorizedUser;
     private final EmployeeAuthorization employeeAuthorization;
 
@@ -101,13 +103,16 @@ public class EmployeeDAO {
                 .collect(Collectors.toList());
         } else {
             var filterValue = "%" + filter.toUpperCase() + "%";
-            return employeeRepository.findAll((root, query, builder) -> builder.or(
-                builder.like(builder.upper(root.get(Employee_.loginname)), filterValue),
-                builder.like(builder.upper(root.get(Employee_.firstname)), filterValue),
-                builder.like(builder.upper(root.get(Employee_.lastname)), filterValue),
-                builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
-                builder.like(builder.upper(root.get(Employee_.status)), filterValue)
-            )).stream()
+            return employeeRepository.findAll((root, query, builder) -> {
+                var salatUserJoin = root.join("salatUser");
+                return builder.or(
+                    builder.like(builder.upper(salatUserJoin.get("loginname")), filterValue),
+                    builder.like(builder.upper(root.get(Employee_.firstname)), filterValue),
+                    builder.like(builder.upper(root.get(Employee_.lastname)), filterValue),
+                    builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
+                    builder.like(builder.upper(salatUserJoin.get("status")), filterValue)
+                );
+            }).stream()
                 .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());

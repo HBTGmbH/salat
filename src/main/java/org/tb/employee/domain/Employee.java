@@ -1,6 +1,9 @@
 package org.tb.employee.domain;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
 import java.io.Serializable;
 import lombok.Getter;
@@ -19,10 +22,6 @@ public class Employee extends AuditedEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * registration first and last name of the employee
-     */
-    private String loginname;
-    /**
      * first name of the employee
      */
     private String firstname;
@@ -38,12 +37,17 @@ public class Employee extends AuditedEntity implements Serializable {
      * gender of the employee
      */
     private char gender;
-    /**
-     * status of the employee (e.g., admin, ma, bl
-     */
-    private String status;
 
-    private transient Boolean restricted = null;
+    /**
+     * The SalatUser associated with this employee
+     */
+    @ManyToOne
+    @JoinTable(
+        name = "employee_salat_user",
+        joinColumns = @JoinColumn(name = "employee_id"),
+        inverseJoinColumns = @JoinColumn(name = "salat_user_id")
+    )
+    private SalatUser salatUser;
 
     public String getName() {
         return getFirstname() + " " + getLastname();
@@ -54,11 +58,32 @@ public class Employee extends AuditedEntity implements Serializable {
     }
 
     @Transient
-    public boolean isRestricted() {
-        if (this.restricted == null) {
-            this.restricted = GlobalConstants.EMPLOYEE_STATUS_RESTRICTED.equalsIgnoreCase(this.status);
+    public String getLoginname() {
+        return salatUser != null ? salatUser.getLoginname() : null;
+    }
+
+    @Transient
+    public void setLoginname(String loginname) {
+        if (salatUser != null) {
+            salatUser.setLoginname(loginname);
         }
-        return this.restricted;
+    }
+
+    @Transient
+    public String getStatus() {
+        return salatUser != null ? salatUser.getStatus() : null;
+    }
+
+    @Transient
+    public void setStatus(String status) {
+        if (salatUser != null) {
+            salatUser.setStatus(status);
+        }
+    }
+
+    @Transient
+    public boolean isRestricted() {
+        return salatUser != null && salatUser.isRestricted();
     }
 
 }

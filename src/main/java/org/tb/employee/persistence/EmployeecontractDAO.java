@@ -94,13 +94,17 @@ public class EmployeecontractDAO {
 
     private Specification<Employeecontract> filterMatches(String filter) {
         final var filterValue = ('%' + filter + '%').toUpperCase();
-        return (root, query, builder) -> builder.or(
-            builder.like(builder.upper(root.get(Employeecontract_.taskDescription)), filterValue),
-            builder.like(builder.upper(root.join(Employeecontract_.employee).get(Employee_.firstname)), filterValue),
-            builder.like(builder.upper(root.join(Employeecontract_.employee).get(Employee_.lastname)), filterValue),
-            builder.like(builder.upper(root.join(Employeecontract_.employee).get(Employee_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Employeecontract_.employee).get(Employee_.loginname)), filterValue)
-        );
+        return (root, query, builder) -> {
+            var employeeJoin = root.join(Employeecontract_.employee);
+            var salatUserJoin = employeeJoin.join("salatUser");
+            return builder.or(
+                builder.like(builder.upper(root.get(Employeecontract_.taskDescription)), filterValue),
+                builder.like(builder.upper(employeeJoin.get(Employee_.firstname)), filterValue),
+                builder.like(builder.upper(employeeJoin.get(Employee_.lastname)), filterValue),
+                builder.like(builder.upper(employeeJoin.get(Employee_.sign)), filterValue),
+                builder.like(builder.upper(salatUserJoin.get("loginname")), filterValue)
+            );
+        };
     }
 
     /**

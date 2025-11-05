@@ -21,9 +21,11 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.SalatUser;
 import org.tb.employee.event.EmployeeDeleteEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
+import org.tb.employee.persistence.SalatUserRepository;
 
 @Slf4j
 @Service
@@ -34,6 +36,7 @@ public class EmployeeService {
 
   private final ApplicationEventPublisher eventPublisher;
   private final EmployeeRepository employeeRepository;
+  private final SalatUserRepository salatUserRepository;
   private final EmployeeDAO employeeDAO;
   private final AuthorizedUser authorizedUser;
   private final EmployeeAuthorization employeeAuthorization;
@@ -103,7 +106,14 @@ public class EmployeeService {
         event.veto(allMessages);
       }
     }
+    
+    // Delete the employee first (this will remove the join table entry due to cascade)
     employeeRepository.deleteById(employeeId);
+    
+    // Delete the associated SalatUser if it exists
+    if (employee.getSalatUser() != null) {
+      salatUserRepository.delete(employee.getSalatUser());
+    }
   }
 
   @Authorized(requiresManager = true)
@@ -111,6 +121,13 @@ public class EmployeeService {
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
       throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());
     }
+    
+    // Ensure SalatUser is persisted before saving Employee
+    if (employee.getSalatUser() != null) {
+      SalatUser salatUser = employee.getSalatUser();
+      salatUserRepository.save(salatUser);
+    }
+    
     employeeRepository.save(employee);
   }
 }
