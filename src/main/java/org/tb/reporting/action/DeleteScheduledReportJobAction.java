@@ -7,21 +7,22 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
-import org.tb.reporting.service.ScheduledReportJobService;
 
+/**
+ * Legacy Struts action that redirects to the new Spring MVC controller.
+ * @deprecated Use {@link org.tb.reporting.web.ReportingJobsController} instead.
+ */
+@Deprecated
 @Component
 @RequiredArgsConstructor
 public class DeleteScheduledReportJobAction extends LoginRequiredAction<ScheduledReportJobForm> {
 
-  private final ScheduledReportJobService scheduledReportJobService;
-
   @Override
   protected ActionForward executeAuthenticated(ActionMapping mapping, ScheduledReportJobForm form,
       HttpServletRequest request, HttpServletResponse response) {
-
-    scheduledReportJobService.deleteJob(form.getId());
-
-    return mapping.findForward("success");
+    // Redirect to new Spring MVC endpoint - the new controller handles POST to /reporting/jobs/delete
+    // But since Struts actions typically come via GET, redirect to list page
+    return new ActionForward("/reporting/jobs", true);
   }
 
 }

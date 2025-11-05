@@ -5,7 +5,7 @@
   <div th:replace="~{fragments/master-table :: masterTable(
       title=${'Scheduled Report Jobs'},
       backHref=@{/ShowReports}, backLabel=${'Back to Reports'},
-      addHref=@{/CreateScheduledReportJob}, addLabel=${'Create New Scheduled Job'},
+      addHref=@{/reporting/jobs/create}, addLabel=${'Create New Scheduled Job'},
       thead=~{::theadContent}, tbody=~{::tbodyContent}
     )}">
 
@@ -30,8 +30,8 @@
         <td th:replace="~{fragments/master-table :: colYesNo(enabled=${job.enabled})}"></td>
         <td th:replace="~{fragments/master-table :: colTextAdd(text=${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}, additional=${cronDescriptions[job.id]})}"></td>
         <td th:replace="~{fragments/master-table :: colDate(date=${job.lastupdate})}"></td>
-        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/do/EditScheduledReportJob'(id=${job.id})})}"></td>
-        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/do/DeleteScheduledReportJob'})}"></td>
+        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/jobs/edit'(id=${job.id})})}"></td>
+        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/reporting/jobs/delete'})}"></td>
       </tr>
     </tbody>
 

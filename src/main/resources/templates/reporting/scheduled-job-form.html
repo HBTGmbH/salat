@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<main layout:fragment="content">
+
+  <div class="container-xl">
+    <div class="page-header d-print-none">
+      <div class="row g-2 align-items-center">
+        <div class="col">
+          <h2 class="page-title" th:text="${pageTitle}">Scheduled Report Job</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div class="container-xl">
+      <div class="card">
+        <div class="card-body">
+          <form th:action="@{/reporting/jobs/store}" th:object="${job}" method="post">
+            
+            <input type="hidden" th:field="*{id}" />
+            
+            <div class="mb-3">
+              <label class="form-label required" for="name">Job Name</label>
+              <input type="text" class="form-control" id="name" th:field="*{name}" 
+                     th:errorclass="is-invalid" maxlength="255" required />
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label required" for="reportDefinitionId">Report</label>
+              <select class="form-select" id="reportDefinitionId" th:field="*{reportDefinitionId}" 
+                      th:errorclass="is-invalid" required>
+                <option value="">-- Select Report --</option>
+                <option th:each="report : ${reportDefinitions}" 
+                        th:value="${report.id}" 
+                        th:text="${report.name}"></option>
+              </select>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('reportDefinitionId')}" th:errors="*{reportDefinitionId}"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="reportParameters">Report Parameters (JSON)</label>
+              <textarea class="form-control" id="reportParameters" th:field="*{reportParameters}" 
+                        rows="5" style="font-family: monospace;"></textarea>
+              <div class="form-text">Example: {"startDate": "2024-01-01", "endDate": "2024-12-31"}</div>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('reportParameters')}" th:errors="*{reportParameters}"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label required" for="recipientEmails">Recipient Emails</label>
+              <textarea class="form-control" id="recipientEmails" th:field="*{recipientEmails}" 
+                        th:errorclass="is-invalid" rows="3" required></textarea>
+              <div class="form-text">Comma or semicolon separated email addresses</div>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('recipientEmails')}" th:errors="*{recipientEmails}"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" th:field="*{enabled}" />
+                <span class="form-check-label">Enabled</span>
+              </label>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('enabled')}" th:errors="*{enabled}"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="cronExpression">Cron Expression (optional)</label>
+              <input type="text" class="form-control" id="cronExpression" th:field="*{cronExpression}" 
+                     maxlength="255" />
+              <div class="form-text">Leave empty for default schedule (Daily at 5:00 AM)</div>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('cronExpression')}" th:errors="*{cronExpression}"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="description">Description</label>
+              <textarea class="form-control" id="description" th:field="*{description}" rows="3"></textarea>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M14 4l0 4l-6 0l0 -4" /></svg>
+                Save Scheduled Job
+              </button>
+              <a th:href="@{/reporting/jobs}" class="btn btn-secondary">Cancel</a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</html>
