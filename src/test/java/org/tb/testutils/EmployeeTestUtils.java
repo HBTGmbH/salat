@@ -1,9 +1,9 @@
 package org.tb.testutils;
 
 import lombok.experimental.UtilityClass;
+import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.domain.SalatUser;
 
 /**
  * Helper methods for test cases concerning Employee-objects

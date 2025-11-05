@@ -1,4 +1,4 @@
-package org.tb.employee.domain;
+package org.tb.auth.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
@@ -19,7 +19,7 @@ public class SalatUser extends AuditedEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * registration first and last name of the user
+     * login name of the user
      */
     private String loginname;
     

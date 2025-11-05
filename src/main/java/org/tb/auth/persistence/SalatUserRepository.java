@@ -1,9 +1,9 @@
-package org.tb.employee.persistence;
+package org.tb.auth.persistence;
 
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import org.tb.employee.domain.SalatUser;
+import org.tb.auth.domain.SalatUser;
 
 @Repository
 public interface SalatUserRepository extends CrudRepository<SalatUser, Long> {

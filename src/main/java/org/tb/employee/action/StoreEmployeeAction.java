@@ -9,10 +9,10 @@ import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
+import org.tb.auth.domain.SalatUser;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.domain.SalatUser;
 import org.tb.employee.service.EmployeeService;
 
 /**
@@ -37,7 +37,6 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             // I.e., copy properties from the form into the employee before saving.
             long employeeId;
             Employee employee;
-            boolean create = false;
 
             if (request.getSession().getAttribute("emId") != null) {
                 // edited employee
@@ -46,7 +45,7 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
             } else {
                 // new report
                 employee = new Employee();
-                create = true;
+                employee.setSalatUser(new SalatUser());
             }
 
             ActionMessages errorMessages = validateFormData(request, emForm);
@@ -54,12 +53,8 @@ public class StoreEmployeeAction extends LoginRequiredAction<AddEmployeeForm> {
                 return mapping.getInputForward();
             }
 
-            // Create or update SalatUser
+            // update SalatUser
             SalatUser salatUser = employee.getSalatUser();
-            if (salatUser == null) {
-                salatUser = new SalatUser();
-                employee.setSalatUser(salatUser);
-            }
             salatUser.setLoginname(emForm.getLoginname());
             salatUser.setStatus(emForm.getStatus());
 

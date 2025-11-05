@@ -12,13 +12,12 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.auth.domain.AccessLevel;
-import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.domain.SalatUser_;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.domain.SalatUser;
 
 @Component
 @RequiredArgsConstructor
@@ -26,8 +25,6 @@ public class EmployeeDAO {
 
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
-    private final SalatUserRepository salatUserRepository;
-    private final AuthorizedUser authorizedUser;
     private final EmployeeAuthorization employeeAuthorization;
 
     /**
@@ -104,13 +101,13 @@ public class EmployeeDAO {
         } else {
             var filterValue = "%" + filter.toUpperCase() + "%";
             return employeeRepository.findAll((root, query, builder) -> {
-                var salatUserJoin = root.join("salatUser");
+                var salatUserJoin = root.join(Employee_.salatUser);
                 return builder.or(
-                    builder.like(builder.upper(salatUserJoin.get("loginname")), filterValue),
+                    builder.like(builder.upper(salatUserJoin.get(SalatUser_.loginname)), filterValue),
                     builder.like(builder.upper(root.get(Employee_.firstname)), filterValue),
                     builder.like(builder.upper(root.get(Employee_.lastname)), filterValue),
                     builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
-                    builder.like(builder.upper(salatUserJoin.get("status")), filterValue)
+                    builder.like(builder.upper(salatUserJoin.get(SalatUser_.status)), filterValue)
                 );
             }).stream()
                 .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
