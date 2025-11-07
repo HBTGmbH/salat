@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='orders',subSection='scheduled-report-jobs',title='Scheduled Report Jobs',sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/master-table :: masterTable(
-      title=${'Scheduled Report Jobs'},
-      backHref=@{/ShowReports}, backLabel=${'Back to Reports'},
-      addHref=@{/reporting/jobs/create}, addLabel=${'Create New Scheduled Job'},
+      addHref=@{/reporting/jobs/create}, addLabel=${'New'},
       thead=~{::theadContent}, tbody=~{::tbodyContent}
     )}">
 

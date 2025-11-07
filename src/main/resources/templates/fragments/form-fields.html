@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Generic form field fragments usable across modules -->
+  <div class="d-none">
+
+    <!-- 
+      Text input field
+      Usage: th:replace="~{fragments/form-fields :: textInput(
+        field='name', label='Job Name', required=true, maxlength=255
+      )}"
+    -->
+    <div th:fragment="textInput(field, label, required, maxlength)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <input type="text" class="form-control" th:id="${field}" th:field="*{__${field}__}"
+             th:errorclass="is-invalid" th:maxlength="${maxlength}" th:required="${required}" />
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+    <div th:fragment="textInputHelp(field, label, required, maxlength, helpText)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <input type="text" class="form-control" th:id="${field}" th:field="*{__${field}__}"
+             th:errorclass="is-invalid" th:maxlength="${maxlength}" th:required="${required}" />
+      <div class="form-text" th:if="${helpText}" th:text="${helpText}"></div>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+
+    <!-- 
+      Textarea field
+      Usage: th:replace="~{fragments/form-fields :: textareaInput(
+        field='description', label='Description', rows=3, helpText='Enter description'
+      )}"
+    -->
+    <div th:fragment="textareaInput(field, label, required, rows, monospace)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <textarea class="form-control" th:id="${field}" th:field="*{__${field}__}"
+                th:errorclass="is-invalid" th:rows="${rows ?: 3}" th:required="${required}"
+                th:style="${monospace ? 'font-family: monospace;' : ''}"></textarea>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+    <div th:fragment="textareaInputHelp(field, label, required, rows, helpText, monospace)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <textarea class="form-control" th:id="${field}" th:field="*{__${field}__}"
+                th:errorclass="is-invalid" th:rows="${rows ?: 3}" th:required="${required}"
+                th:style="${monospace ? 'font-family: monospace;' : ''}"></textarea>
+      <div class="form-text" th:if="${helpText}" th:text="${helpText}"></div>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+
+    <!-- 
+      Select dropdown field
+      Usage: th:replace="~{fragments/form-fields :: selectInput(
+        field='reportDefinitionId', label='Report', required=true, 
+        placeholder='-- Select Report --', options=${reportDefinitions}, 
+        optionValue='id', optionLabel='name'
+      )}"
+    -->
+    <div th:fragment="selectInput(field, label, required, placeholder, options, optionValue, optionLabel)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <select class="form-select" th:id="${field}" th:field="*{__${field}__}"
+              th:errorclass="is-invalid" th:required="${required}">
+        <option value="" th:if="${placeholder}" th:text="${placeholder}">-- Select --</option>
+        <option th:each="option : ${options}"
+                th:value="${optionValue != null ? option[optionValue] : option}"
+                th:text="${optionLabel != null ? option[optionLabel] : option}"></option>
+      </select>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+    <div th:fragment="selectInputHelp(field, label, required, placeholder, options, optionValue, optionLabel, helpText)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <select class="form-select" th:id="${field}" th:field="*{__${field}__}"
+              th:errorclass="is-invalid" th:required="${required}">
+        <option value="" th:if="${placeholder}" th:text="${placeholder}">-- Select --</option>
+        <option th:each="option : ${options}"
+                th:value="${optionValue != null ? option[optionValue] : option}"
+                th:text="${optionLabel != null ? option[optionLabel] : option}"></option>
+      </select>
+      <div class="form-text" th:if="${helpText}" th:text="${helpText}"></div>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+
+    <!-- 
+      Checkbox switch field
+      Usage: th:replace="~{fragments/form-fields :: checkboxSwitch(
+        field='enabled', label='Enabled'
+      )}"
+    -->
+    <div th:fragment="checkboxSwitch(field, label)" class="mb-3">
+      <label class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" th:field="*{__${field}__}" />
+        <span class="form-check-label" th:text="${label}">Label</span>
+      </label>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+
+    <!-- 
+      Form action buttons (Save and Cancel)
+      Usage: th:replace="~{fragments/form-fields :: formButtons(
+        saveLabel='Save Scheduled Job', cancelHref=@{/reporting/jobs}
+      )}"
+    -->
+    <div th:fragment="formButtons(saveLabel, cancelHref)" class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        <i class="icon ti ti-device-floppy"></i>
+        <span th:text="${saveLabel ?: 'Save'}">Save</span>
+      </button>
+      <a th:href="${cancelHref}" class="btn btn-secondary">Cancel</a>
+    </div>
+
+  </div>
+</body>
+</html>
