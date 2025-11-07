@@ -3,92 +3,139 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title th:text="${pageTitle}">Salat</title>
-  <link rel="stylesheet" href="/webjars/bootstrap/dist/css/bootstrap.min.css"/>
-  <link rel="stylesheet" href="/webjars/bootstrap-icons/font/bootstrap-icons.min.css"/>
-  <link rel="stylesheet" href="/webjars/tabler__core/dist/css/tabler.css" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <title th:text="'SALAT - ' + ${pageTitle}">Salat</title>
+  <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}"/>
+  <link rel="stylesheet" th:href="@{/webjars/tabler__core/dist/css/tabler.min.css}"/>
 </head>
 <body>
 <div class="page">
-  <!-- Left navigation (Tabler vertical navbar) -->
-  <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+  <!-- Sidebar -->
+  <aside class="navbar navbar-vertical navbar-expand-md" data-bs-theme="dark" id="salat-nav">
     <div class="container-fluid">
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+              data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false"
+              aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       <h1 class="navbar-brand navbar-brand-autodark">
-        <a th:href="@{/}" class="text-decoration-none text-reset">Salat</a>
+        <a href=".">
+          <img th:src="@{/images/logo-salat-neu.png}" width="110" height="32" alt="SALAT" class="navbar-brand-image">
+          SALAT
+        </a>
       </h1>
       <div class="collapse navbar-collapse" id="sidebar-menu">
         <ul class="navbar-nav pt-lg-3">
-          <!-- Timereports Section -->
+          <!-- Timereports -->
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#navbar-timereports" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
-              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-clock"></i></span>
-              <span class="nav-link-title" th:text="#{main.general.mainmenu.timereports.text}">Timereports</span>
+            <a class="nav-link dropdown-toggle" href="#navbar-timereports" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon bi bi-clock"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.timereports.text}">Buchungen</span>
             </a>
             <div class="dropdown-menu">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/CreateDailyReport}" th:text="#{main.general.mainmenu.newreport.text}">New Report</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowDailyReport}" th:text="#{main.general.mainmenu.daily.text}">Single overview</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowMatrix}" th:text="#{main.general.mainmenu.matrixmenu.text}">Matrix overview</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}">Overtime</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowTraining}" th:text="#{main.general.mainmenu.training.text}" th:if="${loginEmployee != null && !loginEmployee.restricted}">training overview</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowRelease}" th:text="#{main.general.mainmenu.release.title.text}">Release</a>
+                  <a class="dropdown-item" th:href="@{/do/CreateDailyReport}" th:text="#{main.general.mainmenu.newreport.text}">
+                    Neue Buchung
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowDailyReport}" th:text="#{main.general.mainmenu.daily.text}">
+                    Einzelübersicht
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowMatrix}" th:text="#{main.general.mainmenu.matrixmenu.text}">
+                    Matrixübersicht
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}">
+                    Überstunden
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowTraining}" th:text="#{main.general.mainmenu.training.text}"
+                     th:if="${not #authorization.expression('hasAuthority(''RESTRICTED'')')}">
+                    Fortbildung
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowRelease}" th:text="#{main.general.mainmenu.release.title.text}">
+                    Freigabe
+                  </a>
                 </div>
               </div>
             </div>
           </li>
-          
-          <!-- Employees Section (only for non-restricted users) -->
-          <li class="nav-item dropdown" th:if="${loginEmployee != null && !loginEmployee.restricted}">
-            <a class="nav-link dropdown-toggle" href="#navbar-employees" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
-              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-people"></i></span>
-              <span class="nav-link-title" th:text="#{main.general.mainmenu.employees.text}">Employees</span>
+
+          <!-- Employees (only for non-restricted users) -->
+          <li class="nav-item dropdown" th:if="${not #authorization.expression('hasAuthority(''RESTRICTED'')')}">
+            <a class="nav-link dropdown-toggle" href="#navbar-employees" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon bi bi-people"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.employees.text}">Mitarbeiter</span>
             </a>
             <div class="dropdown-menu">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/ShowEmployee}" th:text="#{main.general.mainmenu.employees.text}">Employees</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowEmployeecontract}" th:text="#{main.general.mainmenu.employeecontracts.text}">Employee Contracts</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowEmployeeorder}" th:text="#{main.general.mainmenu.employeeorders.text}">Employee Orders</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowEmployee}" th:text="#{main.general.mainmenu.employees.text}">
+                    Mitarbeiter
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowEmployeecontract}" th:text="#{main.general.mainmenu.employeecontracts.text}">
+                    Mitarbeiterverträge
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowEmployeeorder}" th:text="#{main.general.mainmenu.employeeorders.text}">
+                    Mitarbeiteraufträge
+                  </a>
                 </div>
               </div>
             </div>
           </li>
-          
-          <!-- Orders Section (only for non-restricted users) -->
-          <li class="nav-item dropdown" th:if="${loginEmployee != null && !loginEmployee.restricted}">
-            <a class="nav-link dropdown-toggle" href="#navbar-orders" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
-              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-briefcase"></i></span>
-              <span class="nav-link-title" th:text="#{main.general.mainmenu.orders.text}">Orders</span>
+
+          <!-- Orders (only for non-restricted users) -->
+          <li class="nav-item dropdown" th:if="${not #authorization.expression('hasAuthority(''RESTRICTED'')')}">
+            <a class="nav-link dropdown-toggle" href="#navbar-orders" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon bi bi-briefcase"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.orders.text}">Aufträge</span>
             </a>
             <div class="dropdown-menu">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/ShowCustomer}" th:text="#{main.general.mainmenu.customers.text}">Customers</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowCustomerorder}" th:text="#{main.general.mainmenu.customerorders.text}">Orders</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowSuborder}" th:text="#{main.general.mainmenu.suborders.text}">Suborders</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowInvoice}" th:text="#{main.general.mainmenu.invoice.title.text}" th:if="${authorizedUser != null && authorizedUser.backoffice}">Invoiceview</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowReports}" th:text="#{main.general.mainmenu.reporting.text}" th:if="${reportAuthViewHelper != null && reportAuthViewHelper.isReportMenuAvailable()}">Reports</a>
-                  <a class="dropdown-item" th:href="@{/reporting/jobs}" th:if="${authorizedUser != null && authorizedUser.manager}">Scheduled Reports</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowCustomer}" th:text="#{main.general.mainmenu.customers.text}">
+                    Auftraggeber
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowCustomerorder}" th:text="#{main.general.mainmenu.customerorders.text}">
+                    Aufträge
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowSuborder}" th:text="#{main.general.mainmenu.suborders.text}">
+                    Unteraufträge
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowInvoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
+                     th:if="${#authorization.expression('hasAuthority(''BACKOFFICE'')')}">
+                    Rechnungsanlage
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowReports}" th:text="#{main.general.mainmenu.reporting.text}"
+                     th:if="${reportAuthViewHelper != null and reportAuthViewHelper.isReportMenuAvailable()}">
+                    Reports
+                  </a>
+                  <a class="dropdown-item" th:href="@{/reporting/jobs}"
+                     th:if="${#authorization.expression('hasAuthority(''MANAGER'')')}">
+                    Scheduled Reports
+                  </a>
                 </div>
               </div>
             </div>
           </li>
-          
-          <!-- Management Section -->
+
+          <!-- Management -->
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#navbar-management" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
-              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="bi bi-gear"></i></span>
-              <span class="nav-link-title" th:text="#{main.general.mainmenu.management.text}">Management</span>
+            <a class="nav-link dropdown-toggle" href="#navbar-management" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon bi bi-gear"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.management.text}">Verwaltung</span>
             </a>
             <div class="dropdown-menu">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/ShowWelcome}" th:text="#{main.general.mainmenu.overview.text}">Overview</a>
-                  <a class="dropdown-item" th:href="@{/do/ShowSettings}" th:text="#{main.general.mainmenu.settings.text}">Settings</a>
+                  <a class="dropdown-item" th:href="@{/do/ShowWelcome}" th:text="#{main.general.mainmenu.overview.text}">
+                    Übersicht
+                  </a>
+                  <a class="dropdown-item" th:href="@{/do/ShowSettings}" th:text="#{main.general.mainmenu.settings.text}">
+                    Einstellungen
+                  </a>
                 </div>
               </div>
             </div>
@@ -105,7 +152,7 @@
         <div class="navbar-nav flex-row order-md-last">
           <!-- Optional header content (user, settings) -->
         </div>
-        <div class="navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
+        <div class="navbar-brand d-navbar-horizontal pe-0 pe-md-3">
           <a th:href="@{/}" class="text-decoration-none text-reset">Salat</a>
         </div>
       </div>
@@ -115,10 +162,42 @@
         <!-- page specific content -->
       </div>
     </div>
+    <footer class="footer footer-transparent d-print-none">
+      <div class="container-xl">
+        <div class="row text-center align-items-center flex-row-reverse">
+          <div class="col-lg-auto ms-lg-auto">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item"><a href="https://tabler.io/docs" target="_blank" class="link-secondary" rel="noopener">Documentation</a></li>
+              <li class="list-inline-item"><a href="./license.html" class="link-secondary">License</a></li>
+              <li class="list-inline-item"><a href="https://github.com/tabler/tabler" target="_blank" class="link-secondary" rel="noopener">Source code</a></li>
+              <li class="list-inline-item">
+                <a href="https://github.com/sponsors/codecalm" target="_blank" class="link-secondary" rel="noopener">
+                  <!-- Download SVG icon from http://tabler-icons.io/i/heart -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon text-pink icon-filled icon-inline" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /></svg>
+                  Sponsor
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item">
+                Copyright &copy; 2023
+                <a href="." class="link-secondary">Tabler</a>.
+                All rights reserved.
+              </li>
+              <li class="list-inline-item">
+                <a href="./changelog.html" class="link-secondary" rel="noopener">
+                  v1.0.0-beta20
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
 </div>
-
-<script src="/webjars/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/webjars/tabler__core/dist/js/tabler.min.js"></script>
+<script th:src="@{/webjars/tabler__core/dist/js/tabler.min.js}"></script>
 </body>
 </html>
