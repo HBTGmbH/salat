@@ -28,7 +28,7 @@ import org.tb.reporting.service.ScheduledReportJobService;
 @Controller
 @RequestMapping("/reporting/jobs")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('MANAGER')")
 public class ReportingJobsController {
 
   private final ScheduledReportJobService jobService;
