@@ -6,8 +6,6 @@
     <!--
       Usage example:
       <div th:replace="~{fragments/_master-table :: masterTable(
-          title=${'My Title'},
-          backHref=@{/Back}, backLabel=${'Back'},
           addHref=@{/Add}, addLabel=${'Add New'},
           thead=~{::theadContent}, tbody=~{::tbodyContent}
       )}">
@@ -15,21 +13,18 @@
         <tbody th:fragment="tbodyContent">...</tbody>
       </div>
     -->
-    <section th:fragment="masterTable(title, backHref, backLabel, addHref, addLabel, thead, tbody)">
-      <div class="d-flex align-items-center mb-3">
-        <h1 class="me-auto" th:text="${title}">Title</h1>
-        <a th:if="${backHref}" class="btn btn-primary" th:href="${backHref}"><i class="bi bi-arrow-left"></i> <span th:text="${backLabel}">Back</span></a>
-      </div>
-
+    <section th:fragment="masterTable(addHref, addLabel, thead, tbody)">
       <div class="table-responsive card">
+        <div class="card-header" th:if="${addHref}">
+          <a class="btn btn-primary" th:href="${addHref}"><i class="icon ti ti-library-plus"></i>[[${addLabel}]]</a>
+        </div>
         <table class="table table-vcenter card-table">
           <thead th:replace="${thead}"></thead>
           <tbody th:replace="${tbody}"></tbody>
         </table>
-      </div>
-
-      <div class="mt-3" th:if="${addHref}">
-        <a class="btn btn-success" th:href="${addHref}"><i class="bi bi-plus-lg"></i> <span th:text="${addLabel}">Add</span></a>
+        <div class="card-footer" th:if="${addHref}">
+          <a class="btn btn-primary" th:href="${addHref}"><i class="icon ti ti-library-plus"></i>[[${addLabel}]]</a>
+        </div>
       </div>
     </section>
 
@@ -44,8 +39,8 @@
     </td>
 
     <td th:fragment="colYesNo(enabled)">
-      <span th:if="${enabled}" class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
-      <span th:if="${!enabled}" class="text-danger"><i class="bi bi-x-circle"></i> No</span>
+      <span th:if="${enabled}" class="text-success"><i class="icon ti ti-circle-check"></i> Yes</span>
+      <span th:if="${!enabled}" class="text-danger"><i class="icon ti ti-circle-x"></i> No</span>
     </td>
 
     <td th:fragment="colCron(cronExpr, defCron, desc)">
@@ -56,13 +51,13 @@
     <td th:fragment="colDate(date)" th:text="${#temporals.format(date, 'yyyy-MM-dd HH:mm')}">2025-01-01 00:00</td>
 
     <td th:fragment="colEditLink(href)">
-      <a class="btn btn-sm btn-outline-secondary" th:href="${href}"><i class="bi bi-pencil"></i></a>
+      <a class="btn btn-outline-primary" th:href="${href}"><i class="icon ti ti-pencil" style="margin-right: 0; margin-left: 0"></i></a>
     </td>
 
     <td th:fragment="colDeleteForm(id, action)">
       <form th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
         <input type="hidden" name="id" th:value="${id}"/>
-        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash" style="margin-right: 0; margin-left: 0"></i></button>
       </form>
     </td>
 
