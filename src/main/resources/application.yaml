@@ -37,6 +37,10 @@ server:
 spring:
   profiles:
     default: local
+  messages:
+    basename: org/tb/web/MessageResources
+    encoding: ISO-8859-1
+    fallback-to-system-locale: false
   datasource:
     # driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     # url: jdbc:p6spy:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
