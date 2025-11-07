@@ -56,7 +56,9 @@ public class AuthService {
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
     Authentication authentication = event.getAuthentication();
     if(!authorizedUser.isAuthenticated() || !authorizedUser.getLoginSign().equals(authentication.getName())) {
-      authorizedUser.login(authentication.getName());
+      var loginname = authentication.getName();
+      var user = salatUserRepository.findByLoginname(loginname).orElseThrow();
+      authorizedUser.login(user);
       applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
     } else {
       // already logged in

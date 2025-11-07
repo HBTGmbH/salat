@@ -1,6 +1,5 @@
 package org.tb.employee.listener;
 
-import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,7 +50,7 @@ public class AuthorizedUserChangedListener {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
     }
 
-    authorizedUser.init(loginEmployee.getId(), loginEmployee.isRestricted(), loginEmployee.getStatus());
+    authorizedUser.init(loginEmployee.getId(), loginEmployee.getName());
 
     // no further stuff for REST API calls - all is just for struts and old web UI
     if(request.getRequestURL().toString().contains("/api/") || request.getRequestURL().toString().contains("/rest/")) return;

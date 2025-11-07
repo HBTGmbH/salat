@@ -43,7 +43,7 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<AuthorizedU
         log.error("No matching employee found for {}.", authorizedUser.getSign());
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getSign());
       }
-      authorizedUser.init(loginEmployee.getId(), TRUE == loginEmployee.isRestricted(), loginEmployee.getStatus());
+      authorizedUser.init(loginEmployee.getId(), loginEmployee.getName());
       Optional<Employeecontract> employeecontract = employeecontractService.getCurrentContract(loginEmployee.getId());
       if(employeecontract.isPresent()) {
         chicoreeSessionStore.setGreeting(getRandomGreeting());
