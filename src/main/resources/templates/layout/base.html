@@ -8,11 +8,27 @@
   <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}"/>
   <link rel="stylesheet" th:href="@{/webjars/tabler__core/dist/css/tabler.min.css}"/>
   <link rel="stylesheet" th:href="@{/webjars/tabler__icons-webfont/dist/tabler-icons.min.css}"/>
+  <link rel="stylesheet" th:href="@{/webjars/tom-select/dist/css/tom-select.bootstrap5.min.css}" />
   <style>
     @import url('https://rsms.me/inter/inter.css');
     :root {
       --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+      --bs-body-bg: var(--tblr-body-bg);
+      --bs-body-color: var(--tblr-body-color);
+      --bs-border-color: var(--tblr-border-color);
+      --bs-border-radius: var(--tblr-border-radius);
+      --bs-primary: var(--tblr-primary);
+      --bs-font-sans-serif: var(--tblr-font-sans-serif);
     }
+
+    .ts-control, .ts-dropdown-content {
+      color: var(--tblr-body-color);
+    }
+
+    .ts-dropdown-content > .active {
+      color: var(--tblr-primary)
+    }
+
     body {
       font-feature-settings: "cv03", "cv04", "cv11";
     }
@@ -231,10 +247,11 @@
           <div class="col-12 col-lg-auto mt-3 mt-lg-0">
             <ul class="list-inline list-inline-dots mb-0">
               <li class="list-inline-item text-body-tertiary">
-                Version:
                 [[${@buildProperties.version}]]
                 [[${@buildProperties.time}]]
-                Server Date/Time:
+                [[${@gitProperties.branch}]]
+                [[${@gitProperties.shortCommitId}]]
+                @
                 [[${@serverTimeHelper.serverTime}]]
               </li>
             </ul>
@@ -250,6 +267,18 @@
     localStorage.setItem('tabler-theme', theme)
     document.documentElement.setAttribute('data-bs-theme', theme)
   }
+</script>
+<script th:src="@{/webjars/tom-select/dist/js/tom-select.complete.min.js}"></script>
+<script>
+  // Initialize Tom Select for all elements with the 'tomselect' class
+  document.querySelectorAll('select.tomselect').forEach((el) => {
+    new TomSelect(el, {
+      create: false,
+      maxItems: 1,
+      sortField: { field: 'text', direction: 'asc' },
+      placeholder: el.getAttribute('placeholder') || 'Select an option...',
+    });
+  });
 </script>
 </body>
 </html>

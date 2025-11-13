@@ -56,7 +56,7 @@
     -->
     <div th:fragment="selectInput(field, label, required, placeholder, options, optionValue, optionLabel)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
-      <select class="form-select" th:id="${field}" th:field="*{__${field}__}"
+      <select class="form-select tomselect" th:id="${field}" th:field="*{__${field}__}"
               th:errorclass="is-invalid" th:required="${required}">
         <option value="" th:if="${placeholder}" th:text="${placeholder}">-- Select --</option>
         <option th:each="option : ${options}"
@@ -67,7 +67,7 @@
     </div>
     <div th:fragment="selectInputHelp(field, label, required, placeholder, options, optionValue, optionLabel, helpText)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
-      <select class="form-select" th:id="${field}" th:field="*{__${field}__}"
+      <select class="form-select tomselect" th:id="${field}" th:field="*{__${field}__}"
               th:errorclass="is-invalid" th:required="${required}">
         <option value="" th:if="${placeholder}" th:text="${placeholder}">-- Select --</option>
         <option th:each="option : ${options}"
