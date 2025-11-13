@@ -42,6 +42,7 @@
     <webjars-plotly.version>3.0.1</webjars-plotly.version>
     <webjars-tabler-io-core.version>1.4.0</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.35.0</webjars-tabler-io-icons.version>
+    <webjars-tomselect.version>2.4.3</webjars-tomselect.version>
   </properties>
 
   <dependencies>
@@ -227,6 +228,11 @@
       <artifactId>tabler__icons-webfont</artifactId>
       <version>${webjars-tabler-io-icons.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>tom-select</artifactId>
+      <version>${webjars-tomselect.version}</version>
+    </dependency>
 
     <!-- annotation processors -->
     <dependency>
@@ -316,7 +322,17 @@
         <version>${git-commit-id-plugin.version}</version>
         <configuration>
           <offline>true</offline>
+          <generateGitPropertiesFile>true</generateGitPropertiesFile>
+          <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+          <commitIdGenerationMode>full</commitIdGenerationMode>
         </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
