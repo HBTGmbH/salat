@@ -5,7 +5,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -99,9 +102,30 @@ public class AzureEasyAuthSecurityConfiguration {
 
   @Bean
   @Order(2)
-  public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      JwtAuthenticationConverter jwtAuthenticationConverter,
+      @Value("${salat.auth.principal-header-name}") String principleHeaderName,
+      @Value("${salat.auth.unauthenticated-redirect-uri}") String unauthenticatedRedirectUri
+  ) throws Exception {
     http.authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
+        .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
+          var easyAuthHeader = request.getHeader(principleHeaderName);
+          if ((easyAuthHeader == null || easyAuthHeader.isBlank())) {
+            String target = "/";
+            if ("GET".equalsIgnoreCase(request.getMethod())) {
+              String uri = request.getRequestURI();
+              String query = request.getQueryString();
+              String full = (query == null || query.isBlank()) ? uri : (uri + "?" + query);
+              target = URLEncoder.encode(full, StandardCharsets.UTF_8);
+            }
+            String redirect = String.format(unauthenticatedRedirectUri, target);
+            response.sendRedirect(redirect);
+          } else {
+            response.sendError(401);
+          }
+        }))
         .cors().disable()
         .csrf().disable();
     return http.build();

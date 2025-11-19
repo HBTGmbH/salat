@@ -107,6 +107,15 @@ public class LocalDevSecurityConfiguration {
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     http.addFilter(preAuthenticatedProcessingFilter(authenticationManager, true))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
+        .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
+          String loginName = request.getParameter("login-name");
+          Object sessionLogin = request.getSession(false) != null ? request.getSession(false).getAttribute("login-name") : null;
+          if ((loginName == null || loginName.isBlank()) && (sessionLogin == null || sessionLogin.toString().isBlank())) {
+            response.sendRedirect("/?login-name=bm");
+          } else {
+            response.sendError(401);
+          }
+        }))
         .cors().disable()
         .csrf().disable();
     return http.build();
