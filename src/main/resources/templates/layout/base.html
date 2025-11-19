@@ -174,10 +174,10 @@
           <div class="card-body p-4 text-center">
             <p class="text-secondary">Angemeldet als</p>
             <span class="avatar avatar-xl mb-3 rounded ti ti-user-circle"></span>
-            <h3 class="m-0 mb-1" th:text="${@authorizedUser.name}">Max Mustermann</h3>
+            <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
             <div class="text-secondary">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
-              <span th:if="${!(@authorizedUser.sign eq @authorizedUser.loginSign)}">acts as [[${@authorizedUser.sign}]]</span>
+              <span th:if="${@authorizedUser.impersonateLoginSign ne null}">acts as [[${@authorizedUser.impersonateLoginSign}]]</span>
             </div>
             <div class="mt-3">
               <span class="badge bg-purple-lt" th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>
