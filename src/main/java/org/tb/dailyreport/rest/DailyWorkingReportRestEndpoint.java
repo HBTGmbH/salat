@@ -44,7 +44,7 @@ import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
-import org.tb.employee.service.EmployeeService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeecontractService;
 
 @RestController
@@ -58,7 +58,7 @@ public class DailyWorkingReportRestEndpoint {
     private final WorkingdayService workingdayService;
     private final DailyWorkingReportService dailyWorkingReportService;
     private final AuthorizedUser authorizedUser;
-    private final EmployeeService employeeService;
+    private final AuthorizedEmployee authorizedEmployee;
 
     @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_WORKING_REPORT_VALUE})
     @ResponseStatus(OK)
@@ -90,8 +90,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var loginEmployee = employeeService.getLoginEmployee();
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), refDate);
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), refDate);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }

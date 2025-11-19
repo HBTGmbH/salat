@@ -45,7 +45,7 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-import org.tb.employee.service.EmployeeService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
@@ -54,9 +54,6 @@ import org.tb.order.service.EmployeeorderService;
 @io.swagger.v3.oas.annotations.media.Schema(hidden = true)
 public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List<DailyWorkingReportData>> {
 
-    private final EmployeeorderService employeeorderService;
-    private final AuthorizedUser authorizedUser;
-
     static final char COLUMN_SEPARATOR = ',';
     static final String TEXT_CSV_DAILY_WORKING_REPORT_VALUE = "text/csv+dailyworkingreport";
     static final MediaType TEXT_CSV_DAILY_WORKING_REPORT = new MediaType(
@@ -64,7 +61,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             TEXT_CSV_DAILY_WORKING_REPORT_VALUE.split("/")[1]
     );
 
-    private final EmployeeService employeeService;
+    private final EmployeeorderService employeeorderService;
+    private final AuthorizedUser authorizedUser;
+    private final AuthorizedEmployee authorizedEmployee;
 
     @Override
     public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
@@ -191,8 +190,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                     if(row.getEmployeeorderId() != null) {
                         employeeorder = employeeorderService.getEmployeeorderById(row.employeeorderId);
                     } else {
-                      var loginEmployee = employeeService.getLoginEmployee();
-                        employeeorder = employeeorderService.getEmployeeorderByEmployeeAndSuborder(loginEmployee.getSign(), row.getSuborderSign(), date);
+                        employeeorder = employeeorderService.getEmployeeorderByEmployeeAndSuborder(authorizedEmployee.getSign(), row.getSuborderSign(), date);
                     }
 
                     employeeorderId = employeeorder.getId();

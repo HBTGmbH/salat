@@ -9,8 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.Authorized;
-import org.tb.auth.domain.AuthorizedUser;
-import org.tb.employee.service.EmployeeService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.favorites.domain.Favorite;
 import org.tb.favorites.persistence.FavoriteRepository;
 
@@ -21,8 +20,7 @@ import org.tb.favorites.persistence.FavoriteRepository;
 public class FavoriteService {
 
   private final FavoriteRepository favoriteRepository;
-  private final AuthorizedUser authorizedUser;
-  private final EmployeeService employeeService;
+  private final AuthorizedEmployee authorizedEmployee;
 
   public List<Favorite> getFavorites(long employeeId) {
     return favoriteRepository.findAllByEmployeeId(employeeId);
@@ -33,8 +31,7 @@ public class FavoriteService {
   }
 
   public Favorite addFavorite(Favorite favorite) {
-    var loginEmployee = employeeService.getLoginEmployee();
-    favorite.setEmployeeId(loginEmployee.getId());
+    favorite.setEmployeeId(authorizedEmployee.getEmployeeId());
     try {
       return favoriteRepository.save(favorite);
     } catch (DataIntegrityViolationException e) {
@@ -48,8 +45,7 @@ public class FavoriteService {
     if (favorite.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Favorite not found for id " + id);
     }
-    var loginEmployee = employeeService.getLoginEmployee();
-    if (loginEmployee.getId().equals(favorite.get().getEmployeeId())) {
+    if (authorizedEmployee.getEmployeeId().equals(favorite.get().getEmployeeId())) {
       favoriteRepository.deleteById(id);
     } else {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not your Favorite (id=" + id + ")");

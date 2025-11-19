@@ -29,8 +29,8 @@ import org.springframework.http.HttpOutputMessage;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
@@ -47,7 +47,7 @@ class DailyWorkingReportCsvConverterTest {
     EmployeeorderService employeeorderService;
 
     @Mock
-    EmployeeService employeeService;
+    AuthorizedEmployee authorizedEmployee;
 
     @Mock
     AuthorizedUser authorizedUser;
@@ -133,7 +133,7 @@ class DailyWorkingReportCsvConverterTest {
         when(employeeorderService.getEmployeeorderByEmployeeAndSuborder(eq("testuser"), eq("111/01"), any())).thenReturn(employeeorder);
         when(authorizedUser.getLoginSign()).thenReturn("testuser");
         when(authorizedUser.isRestricted()).thenReturn(restricted);
-        when(employeeService.getLoginEmployee()).thenReturn(employee);
+        when(authorizedEmployee.getSign()).thenReturn(employee.getSign());
 
         // when
         var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8));

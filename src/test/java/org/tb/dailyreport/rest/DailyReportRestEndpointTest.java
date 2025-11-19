@@ -23,9 +23,9 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
@@ -39,7 +39,7 @@ class DailyReportRestEndpointTest {
     EmployeecontractService employeecontractService;
 
     @Mock
-    EmployeeService employeeService;
+    AuthorizedEmployee authorizedEmployee;
 
     @Mock
     TimereportService timereportService;
@@ -78,7 +78,7 @@ class DailyReportRestEndpointTest {
         var employee = employee();
         var employeeContract = employeeContract(employee);
 
-        when(employeeService.getLoginEmployee()).thenReturn(employee);
+        when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(employeecontractService.getEmployeeContractValidAt(employee.getId(), day))
                 .thenReturn(employeeContract);
@@ -104,7 +104,7 @@ class DailyReportRestEndpointTest {
         var employee = employee();
         var employeeContract = employeeContract(employee);
 
-        when(employeeService.getLoginEmployee()).thenReturn(employee);
+        when(authorizedEmployee.getEmployeeId()).thenReturn(employee.getId());
         when(authorizedUser.isAuthenticated()).thenReturn(true);
         when(employeecontractService.getEmployeeContractValidAt(eq(employee.getId()), dateArgumentCaptor.capture()))
                 .thenReturn(employeeContract);

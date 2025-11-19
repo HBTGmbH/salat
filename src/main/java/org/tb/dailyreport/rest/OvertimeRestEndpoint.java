@@ -18,8 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.service.OvertimeService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
 @RestController
@@ -31,7 +31,7 @@ public class OvertimeRestEndpoint {
   private final AuthorizedUser authorizedUser;
   private final OvertimeService overtimeService;
   private final EmployeecontractService employeecontractService;
-  private final EmployeeService employeeService;
+  private final AuthorizedEmployee authorizedEmployee;
 
   @GetMapping(path = "/status", produces = APPLICATION_JSON_VALUE)
   @ResponseStatus(OK)
@@ -74,9 +74,8 @@ public class OvertimeRestEndpoint {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
 
-    var loginEmployee = employeeService.getLoginEmployee();
     Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(
-        loginEmployee.getId(),
+        authorizedEmployee.getEmployeeId(),
         today()
     );
     if(employeecontract == null) {
