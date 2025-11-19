@@ -28,6 +28,8 @@ salat:
     access-token:
       header-name: x-ms-token-aad-access-token
       expires-on-header-name: x-ms-token-aad-expires-on
+    principal-header-name: x-ms-user-principal-name
+    unauthenticated-redirect-uri: /.auth/login/aad?post_login_redirect_uri=%s
     session-cookie-name: AppServiceAuthSession
     api-scope: api://865b95c4-f360-4ca2-ba20-4fe28e3ea4f6/user_impersonation
   auth-service:
