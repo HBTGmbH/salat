@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -51,7 +52,7 @@ public class OrderRestEndpoint {
   private final EmployeeorderService employeeorderService;
   private final SuborderService suborderService;
   private final AuthorizedUser authorizedUser;
-  private final EmployeeService employeeService;
+  private final AuthorizedEmployee authorizedEmployee;
 
   @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
   @ResponseStatus(OK)
@@ -77,9 +78,8 @@ public class OrderRestEndpoint {
     if (refDate == null) {
       refDate = DateUtils.today();
     }
-    var loginEmployee = employeeService.getLoginEmployee();
     Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(
-        loginEmployee.getId(), refDate);
+        authorizedEmployee.getEmployeeId(), refDate);
     if (employeecontract == null || employeecontract.getId() == null) {
       throw new ResponseStatusException(NOT_FOUND);
     }

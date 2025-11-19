@@ -23,9 +23,9 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.rest.DailyReportData;
 import org.tb.dailyreport.rest.DailyWorkingReportData;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
 
@@ -40,7 +40,7 @@ public class DailyWorkingReportService {
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
     private final TimereportDAO timereportDAO;
-    private final EmployeeService employeeService;
+    private final AuthorizedEmployee authorizedEmployee;
 
     public void createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
@@ -57,8 +57,8 @@ public class DailyWorkingReportService {
     private void doCreateReport(DailyWorkingReportData report, boolean upsert)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        var loginEmployee = employeeService.getLoginEmployee();
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), report.getDate());
+        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
+            authorizedEmployee.getEmployeeId(), report.getDate());
         if(employeecontract == null) {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
