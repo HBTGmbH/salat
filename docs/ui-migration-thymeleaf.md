@@ -23,7 +23,7 @@
 - Forms & Validation: Spring MVC binding with @ModelAttribute + Jakarta Validation annotations and BindingResult for errors (replacing Struts form beans).
 - I18n: Use Spring MessageSource with Thymeleaf’s #{key} syntax (replacing <bean:message/> tag usage).
 - Security: Keep the existing @Authorized approach; expose authorization flags to views via model attributes where needed or adopt Spring method security annotations.
-- Session: Continue using session-scoped AuthorizedUser; usable in controllers and templates (e.g., ${authorizedUser.sign}).
+- Session: Continue using session-scoped AuthorizedUser; usable in controllers and templates (e.g., ${authorizedUser.loginSign}).
 
 ---
 
