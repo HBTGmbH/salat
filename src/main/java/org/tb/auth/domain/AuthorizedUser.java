@@ -35,21 +35,14 @@ public class AuthorizedUser implements Serializable {
 
   public void impersonate(SalatUser user) {
     this.impersonateLoginSign = user.getLoginname();
+    setPermissions(user);
   }
 
   public void login(SalatUser user) {
     this.loginSign = user.getLoginname();
-    this.restricted = user.isRestricted();
-    this.loginStatus = user.getStatus();
     this.impersonateLoginSign = null;
-
-    boolean isAdmin = loginStatus.equals(EMPLOYEE_STATUS_ADM);
-    this.admin = isAdmin;
-    boolean isManager = loginStatus.equals(EMPLOYEE_STATUS_BL) || loginStatus.equals(EMPLOYEE_STATUS_PV);
-    this.manager = isAdmin || isManager;
-    boolean isBackoffice = loginStatus.equals(EMPLOYEE_STATUS_BO);
-    this.backoffice = isBackoffice || isManager || isAdmin;
     this.authenticated = true;
+    setPermissions(user);
   }
 
   public void initForJob() {
@@ -62,4 +55,16 @@ public class AuthorizedUser implements Serializable {
     backoffice = true;
     impersonateLoginSign = null;
   }
+
+  private void setPermissions(SalatUser user) {
+    this.restricted = user.isRestricted();
+    this.loginStatus = user.getStatus();
+    boolean isAdmin = loginStatus.equals(EMPLOYEE_STATUS_ADM);
+    this.admin = isAdmin;
+    boolean isManager = loginStatus.equals(EMPLOYEE_STATUS_BL) || loginStatus.equals(EMPLOYEE_STATUS_PV);
+    this.manager = isAdmin || isManager;
+    boolean isBackoffice = loginStatus.equals(EMPLOYEE_STATUS_BO);
+    this.backoffice = isBackoffice || isManager || isAdmin;
+  }
+
 }
