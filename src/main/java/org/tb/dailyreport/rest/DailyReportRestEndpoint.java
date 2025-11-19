@@ -42,6 +42,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
@@ -56,6 +57,7 @@ public class DailyReportRestEndpoint {
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
+    private final EmployeeService employeeService;
 
     @GetMapping(path = "/list", produces = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
     @ResponseStatus(OK)
@@ -82,7 +84,8 @@ public class DailyReportRestEndpoint {
     ) {
         checkAuthenticated();
         if (refDate == null) refDate = DateUtils.today();
-        var employeecontract = employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), refDate);
+        var loginEmployee = employeeService.getLoginEmployee();
+        var employeecontract = employeecontractService.getEmployeeContractValidAt(loginEmployee.getId(), refDate);
         if(employeecontract == null) {
             throw new ResponseStatusException(NOT_FOUND);
         }

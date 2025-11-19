@@ -42,10 +42,10 @@ public class EmployeeService {
   private final EmployeeAuthorization employeeAuthorization;
 
   public Employee getLoginEmployee() {
-    var loginEmployee = employeeDAO.getLoginEmployee(authorizedUser.getSign()); // do not use loginSign!!!
+    var loginEmployee = employeeDAO.getLoginEmployee(authorizedUser.getEffectiveLoginSign());
     var allowedLoginEmployees = getLoginEmployees();
     if(!allowedLoginEmployees.contains(loginEmployee)) {
-      log.warn("User {} tried to impersonate {}. This was not authorized!", authorizedUser.getLoginSign(), authorizedUser.getSign());
+      log.warn("User {} tried to impersonate {}. This was not authorized!", authorizedUser.getLoginSign(), authorizedUser.getImpersonateLoginSign());
       throw new AuthorizationException(AA_REQUIRED);
     }
     return loginEmployee;
@@ -88,7 +88,7 @@ public class EmployeeService {
     var employee = employeeDAO.getEmployeeById(employeeId);
 
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.DELETE)) {
-      throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getEmployeeId());
+      throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getLoginSign());
     }
 
     if(employee.isNew()) {
@@ -119,7 +119,7 @@ public class EmployeeService {
   @Authorized(requiresManager = true)
   public void createOrUpdate(Employee employee) {
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
-      throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getEmployeeId());
+      throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getLoginSign());
     }
     
     // Ensure SalatUser is persisted before saving Employee

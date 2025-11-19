@@ -20,14 +20,15 @@ public class EmployeeAuthorization {
   private final AuthorizedUser authorizedUser;
 
   public boolean isAuthorized(Employee employee, AccessLevel accessLevel) {
+
+    if(employee.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) return true;
+
     if(accessLevel == LOGIN) {
-      if(employee.getSign().equals(authorizedUser.getLoginSign())) return true;
-      return authService.isAuthorizedAnyObject(employee.getSign(), AUTH_CATEGORY_EMPLOYEE, today(), LOGIN, true);
+      return authService.isAuthorizedAnyObject(employee.getSalatUser().getLoginname(), AUTH_CATEGORY_EMPLOYEE, today(), LOGIN, true);
     }
 
     if(authorizedUser.isManager()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
-    if(employee.getSign().equals(authorizedUser.getSign())) return true;
     return false;
   }
 

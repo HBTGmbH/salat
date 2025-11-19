@@ -4,8 +4,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mock.Strictness.LENIENT;
 import static org.mockito.Mockito.when;
+import static org.mockito.quality.Strictness.LENIENT;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_EMPLOYEE_ORDER;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_START_BREAK_TIME;
@@ -24,25 +24,32 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.EmployeeorderService;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = LENIENT)
 class DailyWorkingReportCsvConverterTest {
 
-    @Mock(strictness = LENIENT)
+    @Mock
     HttpOutputMessage httpOutputMessage;
 
-    @Mock(strictness = LENIENT)
+    @Mock
     EmployeeorderService employeeorderService;
 
-    @Mock(strictness = LENIENT)
+    @Mock
+    EmployeeService employeeService;
+
+    @Mock
     AuthorizedUser authorizedUser;
 
     @InjectMocks
@@ -115,14 +122,18 @@ class DailyWorkingReportCsvConverterTest {
         suborder.setSign("01");
         suborder.setDescription("Stuhlpolsterung");
         suborder.setCustomerorder(customerorder);
+        var employee = new Employee();
+        ReflectionTestUtils.setField(employee, "id", 42L);
+        employee.setSign("testuser");
         var employeeorder = new Employeeorder();
         ReflectionTestUtils.setField(employeeorder, "id", 183209L);
         employeeorder.setSuborder(suborder);
 
         when(employeeorderService.getEmployeeorderById(eq(183209L))).thenReturn(employeeorder);
         when(employeeorderService.getEmployeeorderByEmployeeAndSuborder(eq("testuser"), eq("111/01"), any())).thenReturn(employeeorder);
-        when(authorizedUser.getSign()).thenReturn("testuser");
+        when(authorizedUser.getLoginSign()).thenReturn("testuser");
         when(authorizedUser.isRestricted()).thenReturn(restricted);
+        when(employeeService.getLoginEmployee()).thenReturn(employee);
 
         // when
         var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8));

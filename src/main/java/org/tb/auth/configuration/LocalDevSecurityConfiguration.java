@@ -70,7 +70,7 @@ public class LocalDevSecurityConfiguration {
   public MdcDataSource authenticationMdcDataSource() {
     return () -> {
       if(authorizedUser.isAuthenticated()) {
-        return Map.of("login-sign", authorizedUser.getLoginSign(), "user-sign", authorizedUser.getSign());
+        return Map.of("login-sign", authorizedUser.getLoginSign(), "effective-login-sign", authorizedUser.getEffectiveLoginSign());
       }
       return Map.<String, String>of();
     };

@@ -15,7 +15,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
@@ -26,6 +25,7 @@ import org.tb.dailyreport.rest.DailyReportData;
 import org.tb.dailyreport.rest.DailyWorkingReportData;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.persistence.EmployeeorderDAO;
 
@@ -39,8 +39,8 @@ public class DailyWorkingReportService {
     private final WorkingdayDAO workingdayDAO;
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
-    private final AuthorizedUser authorizedUser;
     private final TimereportDAO timereportDAO;
+    private final EmployeeService employeeService;
 
     public void createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
@@ -57,7 +57,8 @@ public class DailyWorkingReportService {
     private void doCreateReport(DailyWorkingReportData report, boolean upsert)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(authorizedUser.getEmployeeId(), report.getDate());
+        var loginEmployee = employeeService.getLoginEmployee();
+        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(loginEmployee.getId(), report.getDate());
         if(employeecontract == null) {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }

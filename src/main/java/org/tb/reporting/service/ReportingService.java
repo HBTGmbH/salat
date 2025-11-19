@@ -99,8 +99,8 @@ public class ReportingService {
 
     String sql = reportDefinition.get().getSql();
     if(sql != null) {
-      if (authorizedUser != null && authorizedUser.getSign() != null) {
-        sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getSign()); // ensure the sign is filled in as requested
+      if (authorizedUser != null && authorizedUser.getEffectiveLoginSign() != null) {
+        sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getEffectiveLoginSign()); // ensure the sign is filled in as requested
       }
       // Resolve reporting placeholders based only on today's date (no FROM/UNTIL)
       LocalDate today = LocalDate.now();

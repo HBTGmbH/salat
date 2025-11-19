@@ -3,6 +3,7 @@ package org.tb.auth.service;
 import static java.time.LocalDate.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+import static org.mockito.quality.Strictness.LENIENT;
 import static org.tb.auth.domain.AccessLevel.READ;
 
 import java.time.Duration;
@@ -15,12 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
 import org.tb.auth.domain.AuthorizationRule;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.common.SalatProperties;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class})
+@MockitoSettings(strictness = LENIENT)
 class AuthServiceTest {
 
     @Mock
@@ -40,7 +43,8 @@ class AuthServiceTest {
         var authServiceProps = new SalatProperties.AuthService();
         authServiceProps.setCacheExpiry(Duration.ofMillis(1000));
         when(salatProperties.getAuthService()).thenReturn(authServiceProps);
-        when(authorizedUser.getSign()).thenReturn("auth-sign");
+        when(authorizedUser.getLoginSign()).thenReturn("auth-sign");
+        when(authorizedUser.getEffectiveLoginSign()).thenReturn("auth-sign");
         authService.init();
     }
 

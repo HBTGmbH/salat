@@ -45,6 +45,7 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
@@ -62,6 +63,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             TEXT_CSV_DAILY_WORKING_REPORT_VALUE.split("/")[0],
             TEXT_CSV_DAILY_WORKING_REPORT_VALUE.split("/")[1]
     );
+
+    private final EmployeeService employeeService;
 
     @Override
     public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
@@ -188,7 +191,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                     if(row.getEmployeeorderId() != null) {
                         employeeorder = employeeorderService.getEmployeeorderById(row.employeeorderId);
                     } else {
-                        employeeorder = employeeorderService.getEmployeeorderByEmployeeAndSuborder(authorizedUser.getSign(), row.getSuborderSign(), date);
+                      var loginEmployee = employeeService.getLoginEmployee();
+                        employeeorder = employeeorderService.getEmployeeorderByEmployeeAndSuborder(loginEmployee.getSign(), row.getSuborderSign(), date);
                     }
 
                     employeeorderId = employeeorder.getId();

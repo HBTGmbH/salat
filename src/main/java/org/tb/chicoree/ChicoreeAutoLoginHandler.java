@@ -1,6 +1,5 @@
 package org.tb.chicoree;
 
-import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -26,6 +26,7 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<AuthorizedU
 
   public static final Random RANDOM = new Random();
   private final AuthorizedUser authorizedUser;
+  private final AuthorizedEmployee authorizedEmployee;
   private final ChicoreeSessionStore chicoreeSessionStore;
   private final EmployeecontractService employeecontractService;
   private final EmployeeService employeeService;
@@ -40,10 +41,10 @@ public class ChicoreeAutoLoginHandler implements ApplicationListener<AuthorizedU
     if(chicoreeSessionStore.getLoginEmployeecontractId().isEmpty()) {
       Employee loginEmployee = employeeService.getLoginEmployee();
       if(loginEmployee == null) {
-        log.error("No matching employee found for {}.", authorizedUser.getSign());
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getSign());
+        log.error("No matching employee found for {}.", authorizedUser.getEffectiveLoginSign());
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getEffectiveLoginSign());
       }
-      authorizedUser.init(loginEmployee.getId(), loginEmployee.getName());
+      authorizedEmployee.login(loginEmployee);
       Optional<Employeecontract> employeecontract = employeecontractService.getCurrentContract(loginEmployee.getId());
       if(employeecontract.isPresent()) {
         chicoreeSessionStore.setGreeting(getRandomGreeting());

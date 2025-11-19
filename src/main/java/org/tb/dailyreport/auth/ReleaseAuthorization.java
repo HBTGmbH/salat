@@ -20,7 +20,7 @@ public class ReleaseAuthorization {
   private final AuthService authService;
 
   public boolean isReleaseAuthorized(Employeecontract employeecontract, AccessLevel accessLevel) {
-    if(authorizedUser.getSign().equals(employeecontract.getEmployee().getSign())) return true;
+    if(authorizedUser.getEffectiveLoginSign().equals(employeecontract.getEmployee().getSalatUser().getLoginname())) return true;
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isAdmin()) return true;
     String grantorSign = employeecontract.getEmployee().getSign();
@@ -28,7 +28,7 @@ public class ReleaseAuthorization {
   }
 
   public boolean isAcceptAuthorized(Employeecontract employeecontract, AccessLevel accessLevel) {
-    if(authorizedUser.getSign().equals(employeecontract.getEmployee().getSign())) return false; // cannot accept own hours
+    if(authorizedUser.getEffectiveLoginSign().equals(employeecontract.getEmployee().getSalatUser().getLoginname())) return false; // cannot accept own hours
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isAdmin()) return true;
     String grantorSign = employeecontract.getEmployee().getSign();

@@ -2,6 +2,7 @@ package org.tb.reporting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 
 import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -14,6 +15,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.domain.SalatUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
@@ -42,7 +44,11 @@ public class ReportingServiceTest {
 
   @Test
   public void should_get_report_definitions() {
-    authorizedUser.setManager(true);
+    var manager = new SalatUser();
+    manager.setLoginname("test");
+    manager.setRestricted(false);
+    manager.setStatus(EMPLOYEE_STATUS_PV);
+    authorizedUser.login(manager);
 
     var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
@@ -56,7 +62,11 @@ public class ReportingServiceTest {
 
   @Test
   public void should_execute_report_definitions_without_parameters() {
-    authorizedUser.setManager(true);
+    var manager = new SalatUser();
+    manager.setLoginname("test");
+    manager.setRestricted(false);
+    manager.setStatus(EMPLOYEE_STATUS_PV);
+    authorizedUser.login(manager);
 
     var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
@@ -69,7 +79,11 @@ public class ReportingServiceTest {
 
   @Test
   public void should_execute_report_definitions_with_parameters_1() {
-    authorizedUser.setManager(true);
+    var manager = new SalatUser();
+    manager.setLoginname("test");
+    manager.setRestricted(false);
+    manager.setStatus(EMPLOYEE_STATUS_PV);
+    authorizedUser.login(manager);
 
     Employee employee = new Employee();
     employee.setFirstname("Klaus");
@@ -98,7 +112,11 @@ public class ReportingServiceTest {
 
   @Test
   public void should_execute_report_definitions_with_parameters_2() {
-    authorizedUser.setManager(true);
+    var manager = new SalatUser();
+    manager.setLoginname("test");
+    manager.setRestricted(false);
+    manager.setStatus(EMPLOYEE_STATUS_PV);
+    authorizedUser.login(manager);
 
     Employee employee = new Employee();
     employee.setFirstname("Klaus");
@@ -130,7 +148,11 @@ public class ReportingServiceTest {
 
   @Test
   public void should_respect_alias_names_in_queries() {
-    authorizedUser.setManager(true);
+    var manager = new SalatUser();
+    manager.setLoginname("test");
+    manager.setRestricted(false);
+    manager.setStatus(EMPLOYEE_STATUS_PV);
+    authorizedUser.login(manager);
 
     var defs = reportingService.getReportDefinitions();
     assertThat(defs).isEmpty();
@@ -145,7 +167,11 @@ public class ReportingServiceTest {
 
   @Test
   public void should_execute_report_with_duplicate_column_and_different_alias() {
-    authorizedUser.setManager(true);
+    var manager = new SalatUser();
+    manager.setLoginname("test");
+    manager.setRestricted(false);
+    manager.setStatus(EMPLOYEE_STATUS_PV);
+    authorizedUser.login(manager);
 
     Employee employee = new Employee();
     employee.setSign("kr");

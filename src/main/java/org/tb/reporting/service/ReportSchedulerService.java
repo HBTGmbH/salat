@@ -8,15 +8,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.Scope;
 import org.springframework.context.support.SimpleThreadScope;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.beans.factory.config.Scope;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.reporting.domain.ReportParameter;
-import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.domain.ScheduledReportExecutionHistory;
+import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.persistence.ScheduledReportExecutionHistoryRepository;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
@@ -99,13 +99,7 @@ public class ReportSchedulerService {
   private void initializeAuthorizedUserForJobExecution() {
     // Initialize a synthetic AuthorizedUser within this session scope
     AuthorizedUser systemUser = authorizedUserProvider.getObject();
-    systemUser.setAuthenticated(true);
-    systemUser.setLoginSign("SYSTEM");
-    systemUser.setSign("SYSTEM");
-    systemUser.setAdmin(false);
-    systemUser.setManager(true);
-    systemUser.setBackoffice(true);
-    systemUser.setRestricted(false);
+    systemUser.initForJob();
   }
 
   private void executeJob(ScheduledReportJob job) {

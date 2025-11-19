@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
@@ -42,6 +43,7 @@ public class EmployeeOrderRestEndpoint {
     private final EmployeeorderService employeeorderService;
     private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
+    private final EmployeeService employeeService;
 
     @GetMapping(path = "/list", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
@@ -66,8 +68,9 @@ public class EmployeeOrderRestEndpoint {
         }
 
         if (refDate == null) refDate = DateUtils.today();
+        var loginEmployee = employeeService.getLoginEmployee();
         Employeecontract employeecontract = employeecontractService.getEmployeeContractValidAt(
-            authorizedUser.getEmployeeId(),
+            loginEmployee.getId(),
             refDate
         );
         if(employeecontract == null) {
