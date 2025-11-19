@@ -47,7 +47,7 @@ public class EmployeeServiceTest {
 	public void initAuthorizedUser() {
 		when(authorizedUser.isAuthenticated()).thenReturn(true);
 		when(authorizedUser.isManager()).thenReturn(true);
-		when(authorizedUser.getSign()).thenReturn("test");
+		when(authorizedUser.getLoginSign()).thenReturn("test");
 	}
 
 	/**

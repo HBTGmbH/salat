@@ -31,7 +31,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
         if("switch-login".equals(request.getParameter("task"))) {
             var switchedToEmployee = employeeService.getEmployeeById(welcomeForm.getLoginEmployeeId());
-            authService.switchLogin(switchedToEmployee.getSign());
+            authService.switchLogin(switchedToEmployee.getLoginname());
         }
 
         // collect login contracts
@@ -63,7 +63,7 @@ public class ShowWelcomeAction extends DailyReportAction<ShowWelcomeForm> {
 
         refreshEmployeeSummaryData(request, employeecontract);
 
-        welcomeForm.setLoginEmployeeId(authorizedUser.getEmployeeId());
+        welcomeForm.setLoginEmployeeId(employeecontract.getEmployee().getId());
         welcomeForm.setEmployeeContractId(employeecontract.getId());
 
         boolean displayEmployeeInfo = true;

@@ -33,14 +33,14 @@ public class TimereportAuthorization {
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(authorizedUser.isManager()) return true;
-    if(timereport.getEmployeecontract().getEmployee().getSign().equals(authorizedUser.getSign())) return true;
+    if(timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) return true;
 
     if(accessLevel == READ) {
       // every project manager may see the time reports of her project
-      if(authorizedUser.getSign().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getSign())) {
+      if(authorizedUser.getEffectiveLoginSign().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getSalatUser().getLoginname())) {
         return true;
       }
-      if(authorizedUser.getSign().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getSign())) {
+      if(authorizedUser.getEffectiveLoginSign().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getSalatUser().getLoginname())) {
         return true;
       }
 
@@ -61,12 +61,12 @@ public class TimereportAuthorization {
         return false;
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
-         Objects.equals(authorizedUser.getEmployeeId(), timereport.getEmployeecontract().getEmployee().getId())) {
+         Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
         return false;
       }
       if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) &&
          !authorizedUser.isAdmin() &&
-         !Objects.equals(authorizedUser.getEmployeeId(), timereport.getEmployeecontract().getEmployee().getId())) {
+         !Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
         return false;
       }
     }
@@ -92,12 +92,12 @@ public class TimereportAuthorization {
           throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
         }
         if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
-           Objects.equals(authorizedUser.getEmployeeId(), timereport.getEmployeecontract().getEmployee().getId())) {
+           Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
           throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_NOT_SELF);
         }
         if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) &&
            !authorizedUser.isAdmin() &&
-           !Objects.equals(authorizedUser.getEmployeeId(), timereport.getEmployeecontract().getEmployee().getId())) {
+           !Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
           throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
         }
       }

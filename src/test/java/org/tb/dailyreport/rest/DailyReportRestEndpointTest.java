@@ -23,7 +23,9 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
@@ -35,6 +37,9 @@ class DailyReportRestEndpointTest {
 
     @Mock
     EmployeecontractService employeecontractService;
+
+    @Mock
+    EmployeeService employeeService;
 
     @Mock
     TimereportService timereportService;
@@ -70,11 +75,12 @@ class DailyReportRestEndpointTest {
         var timeReport2 = TimereportDTO.builder()
                 .duration(Duration.ofHours(2))
                 .build();
-        var employeeContract = employeeContract();
+        var employee = employee();
+        var employeeContract = employeeContract(employee);
 
-        when(authorizedUser.getEmployeeId()).thenReturn(1L);
+        when(employeeService.getLoginEmployee()).thenReturn(employee);
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(authorizedUser.getEmployeeId(), day))
+        when(employeecontractService.getEmployeeContractValidAt(employee.getId(), day))
                 .thenReturn(employeeContract);
         when(timereportService.getTimereportsByDateAndEmployeeContractId(employeeContract.getId(), day))
                 .thenReturn(List.of(timeReport1));
@@ -95,11 +101,12 @@ class DailyReportRestEndpointTest {
     void shouldGetBookingsForToday() {
         // given
         var today = DateUtils.today();
-        var employeeContract = employeeContract();
+        var employee = employee();
+        var employeeContract = employeeContract(employee);
 
-        when(authorizedUser.getEmployeeId()).thenReturn(1L);
+        when(employeeService.getLoginEmployee()).thenReturn(employee);
         when(authorizedUser.isAuthenticated()).thenReturn(true);
-        when(employeecontractService.getEmployeeContractValidAt(eq(authorizedUser.getEmployeeId()), dateArgumentCaptor.capture()))
+        when(employeecontractService.getEmployeeContractValidAt(eq(employee.getId()), dateArgumentCaptor.capture()))
                 .thenReturn(employeeContract);
         when(timereportService.getTimereportsByDateAndEmployeeContractId(eq(employeeContract.getId()),  dateArgumentCaptor.capture()))
                 .thenReturn(List.of());
@@ -126,7 +133,8 @@ class DailyReportRestEndpointTest {
     void shouldCreateBooking() {
         // given
         var day = DateUtils.parse("2024-07-06");
-        var employeeContract = employeeContract();
+        var employee = employee();
+        var employeeContract = employeeContract(employee);
         var employeeOrder = employeeOrder(employeeContract);
         var timeReport1 = TimereportDTO.builder()
                 .employeeorderId(1L).referenceday(day)
@@ -160,7 +168,8 @@ class DailyReportRestEndpointTest {
     void shouldCreateBookings() {
         // given
         var day = DateUtils.parse("2024-07-06");
-        var employeeContract = employeeContract();
+        var employee = employee();
+        var employeeContract = employeeContract(employee);
         var employeeOrder = employeeOrder(employeeContract);
         var timeReport1 = TimereportDTO.builder()
                 .employeeorderId(1L).referenceday(day)
@@ -194,7 +203,8 @@ class DailyReportRestEndpointTest {
     void shouldUpdateBookings() {
         // given
         var day = DateUtils.parse("2024-07-06");
-        var employeeContract = employeeContract();
+        var employee = employee();
+        var employeeContract = employeeContract(employee);
         var employeeOrder1 = employeeOrder(employeeContract);
         var timeReport1 = TimereportDTO.builder()
                 .employeeorderId(1L).referenceday(day)
@@ -239,9 +249,16 @@ class DailyReportRestEndpointTest {
 
     // fixtures
 
-    private Employeecontract employeeContract() {
+    private Employee employee() {
+        Employee res = new Employee();
+        ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+        return res;
+    }
+
+    private Employeecontract employeeContract(Employee employee) {
         Employeecontract res = new Employeecontract();
         ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+        res.setEmployee(employee);
         return res;
     }
 

@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.common.GlobalConstants;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractChangedEvent;
@@ -29,6 +30,7 @@ public class AuthorizedUserChangedListener {
 
   private final ApplicationEventPublisher eventPublisher;
   private final AuthorizedUser authorizedUser;
+  private final AuthorizedEmployee authorizedEmployee;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
   private final HttpServletRequest request;
@@ -39,8 +41,8 @@ public class AuthorizedUserChangedListener {
     Employee loginEmployee = employeeService.getLoginEmployee();
 
     if (loginEmployee == null) {
-      log.error("No matching employee found for {}.", authorizedUser.getSign());
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getSign());
+      log.error("No matching employee found for {}.", authorizedUser.getEffectiveLoginSign());
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No matching employee found for " + authorizedUser.getEffectiveLoginSign());
     }
 
     LocalDate today = today();
@@ -50,7 +52,7 @@ public class AuthorizedUserChangedListener {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
     }
 
-    authorizedUser.init(loginEmployee.getId(), loginEmployee.getName());
+    authorizedEmployee.login(loginEmployee);
 
     // no further stuff for REST API calls - all is just for struts and old web UI
     if(request.getRequestURL().toString().contains("/api/") || request.getRequestURL().toString().contains("/rest/")) return;

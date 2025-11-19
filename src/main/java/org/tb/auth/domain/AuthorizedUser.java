@@ -7,14 +7,14 @@ import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 
 import java.io.Serializable;
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
 @Component
 @Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
-@Data
+@Getter
 public class AuthorizedUser implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -27,31 +27,39 @@ public class AuthorizedUser implements Serializable {
   private boolean admin;
   private boolean manager;
 
-  // data of the currently selected employee
-  private String name;
-  private Long employeeId;
-  private String sign;
+  private String impersonateLoginSign;
+
+  public String getEffectiveLoginSign() {
+    return impersonateLoginSign != null ? impersonateLoginSign : loginSign;
+  }
+
+  public void impersonate(SalatUser user) {
+    this.impersonateLoginSign = user.getLoginname();
+  }
 
   public void login(SalatUser user) {
-    this.setLoginSign(user.getLoginname());
-    this.setSign(user.getLoginname());
-    this.setRestricted(user.isRestricted());
-    this.setLoginStatus(user.getStatus());
-    this.setEmployeeId(null);
-    this.setName(null);
+    this.loginSign = user.getLoginname();
+    this.restricted = user.isRestricted();
+    this.loginStatus = user.getStatus();
+    this.impersonateLoginSign = null;
 
     boolean isAdmin = loginStatus.equals(EMPLOYEE_STATUS_ADM);
-    this.setAdmin(isAdmin);
+    this.admin = isAdmin;
     boolean isManager = loginStatus.equals(EMPLOYEE_STATUS_BL) || loginStatus.equals(EMPLOYEE_STATUS_PV);
-    this.setManager(isAdmin || isManager);
+    this.manager = isAdmin || isManager;
     boolean isBackoffice = loginStatus.equals(EMPLOYEE_STATUS_BO);
-    this.setBackoffice(isBackoffice || isManager || isAdmin);
-    this.setAuthenticated(true);
+    this.backoffice = isBackoffice || isManager || isAdmin;
+    this.authenticated = true;
   }
 
-  public void init(long employeeId, String name) {
-    this.setEmployeeId(employeeId);
-    this.setName(name);
+  public void initForJob() {
+    authenticated = true;
+    loginSign = "SYSTEM";
+    loginStatus = "job";
+    restricted = false;
+    admin = false;
+    manager = true;
+    backoffice = true;
+    impersonateLoginSign = null;
   }
-
 }

@@ -17,7 +17,7 @@ public class AuthorizedUserAuditorAware implements AuditorAware<String> {
   @Override
   public Optional<String> getCurrentAuditor() {
     if(authorizedUser.isAuthenticated()) {
-      return Optional.of(authorizedUser.getSign());
+      return Optional.of(authorizedUser.getLoginSign());
     }
     return Optional.of(SYSTEM_SIGN);
   }

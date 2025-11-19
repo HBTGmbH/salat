@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.employee.service.EmployeeService;
 import org.tb.favorites.service.FavoriteService;
 
 @Slf4j
@@ -37,6 +38,7 @@ public class FavoriteRestEndpoint {
   private final FavoriteService favoriteService;
   private final FavoriteDtoMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDtoMapper.class);
   private final AuthorizedUser authorizedUser;
+  private final EmployeeService employeeService;
 
   @GetMapping(path = "", produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
@@ -44,7 +46,8 @@ public class FavoriteRestEndpoint {
     if(!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
-    return favoriteDtoMapper.map(favoriteService.getFavorites(authorizedUser.getEmployeeId()));
+    var loginEmployee = employeeService.getLoginEmployee();
+    return favoriteDtoMapper.map(favoriteService.getFavorites(loginEmployee.getId()));
   }
 
   @Operation(summary = "Fügt einen neuen Favoriten hinzu",

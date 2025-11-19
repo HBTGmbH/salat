@@ -152,7 +152,7 @@ public class EmployeecontractDAO {
         if (!authorizedUser.isManager()) {
             // may only see his own contracts
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
-                .filter(e -> e.getEmployee().getId().equals(authorizedUser.getEmployeeId()))
+                .filter(e -> e.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()))
                 .collect(Collectors.toList());
         } else {
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today());

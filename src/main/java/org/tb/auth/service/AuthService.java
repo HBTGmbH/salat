@@ -66,8 +66,9 @@ public class AuthService {
   }
 
   @Authorized
-  public void switchLogin(String sign) {
-    authorizedUser.setSign(sign);
+  public void switchLogin(String loginname) {
+    var user = salatUserRepository.findByLoginname(loginname).orElseThrow();
+    authorizedUser.impersonate(user);
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
 
@@ -79,7 +80,7 @@ public class AuthService {
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getEffectiveLoginSign().equals(rule.getGranteeId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
@@ -88,7 +89,7 @@ public class AuthService {
 
   public boolean isAuthorized(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getEffectiveLoginSign().equals(rule.getGranteeId())) return false;
       if(rule.getGrantorId() != null && !ANY_MATCH.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
@@ -102,7 +103,7 @@ public class AuthService {
 
   public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, boolean useLoginSign) {
     return anyRuleMatches(category, rule -> {
-      String userSign = useLoginSign ? authorizedUser.getLoginSign() : authorizedUser.getSign();
+      String userSign = useLoginSign ? authorizedUser.getLoginSign() : authorizedUser.getEffectiveLoginSign();
       if(!userSign.equals(rule.getGranteeId()) && !ANY_MATCH.equals(rule.getGranteeId())) return false;
       if(rule.getGrantorId() != null && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
@@ -113,7 +114,7 @@ public class AuthService {
 
   public boolean isAuthorizedAnyObject(String category, LocalDate date, AccessLevel accessLevel) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getSign().equals(rule.getGranteeId())) return false;
+      if(!authorizedUser.getEffectiveLoginSign().equals(rule.getGranteeId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return true;

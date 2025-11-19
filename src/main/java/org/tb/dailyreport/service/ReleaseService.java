@@ -102,7 +102,7 @@ public class ReleaseService {
         releaseDate
     );
     for (var timereport : timereports) {
-      releaseTimereport(timereport.getId(), authorizedUser.getSign());
+      releaseTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // store new release date in employee contract
@@ -122,7 +122,7 @@ public class ReleaseService {
     // set status in timereports
     var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
     for (var timereport : timereports) {
-      acceptTimereport(timereport.getId(), authorizedUser.getSign());
+      acceptTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // set new acceptance date in employee contract
@@ -301,7 +301,7 @@ public class ReleaseService {
   public void sendReleaseReminderMail(long employeeId) {
 
     var recipient = employeeService.getEmployeeById(employeeId);
-    var sender = employeeService.getEmployeeById(authorizedUser.getEmployeeId());
+    var sender = employeeService.getLoginEmployee();
 
     String subject = "SALAT: Erinnerung SALAT freigeben";
     StringBuilder message = new StringBuilder();
@@ -328,7 +328,7 @@ public class ReleaseService {
     var employeeContract = employeecontractService.getEmployeecontractById(employeecontracttoAcceptId);
     var coworker = employeeContract.getEmployee();
     var recipient = employeeContract.getSupervisor();
-    var sender = employeeService.getEmployeeById(authorizedUser.getEmployeeId());
+    var sender = employeeService.getLoginEmployee();
 
     String subject = "SALAT: Erinnerung SALAT-Freigabe abnehmen";
     StringBuilder message = new StringBuilder();

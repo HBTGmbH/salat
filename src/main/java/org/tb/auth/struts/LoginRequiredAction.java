@@ -40,14 +40,14 @@ public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAct
                 log.trace("leaving {}.{}() ...", getClass().getSimpleName(), Thread.currentThread().getStackTrace()[1].getMethodName());
             }
         } else if (authorizedUser.isAuthenticated()) {
-            log.warn("The user ('{}') tried to access the Action {}!", new Object[]{ authorizedUser.getSign(), getClass().getSimpleName()});
+            log.warn("The user ('{}') tried to access the Action {}!", new Object[]{ authorizedUser.getLoginSign(), getClass().getSimpleName()});
 
             MessageResources resources = getResources(request);
             Locale locale = RequestUtils.getUserLocale(request, null);
 
             Warning warning = new Warning();
             warning.setSort(resources.getMessage(locale, "main.authorization.access.restricted.sort"));
-            String text = MessageFormat.format(resources.getMessage(locale, "main.authorization.access.restricted.text"), authorizedUser.getSign(), mapping.getPath());
+            String text = MessageFormat.format(resources.getMessage(locale, "main.authorization.access.restricted.text"), authorizedUser.getLoginSign(), mapping.getPath());
             warning.setText(text);
             request.getSession().setAttribute("warnings", singletonList(warning));
             request.getSession().setAttribute("warningsPresent", true);
