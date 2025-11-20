@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='orders',subSection='reports',title='Reports',sectionTitle=#{main.general.mainmenu.reporting.text}">
+<main layout:fragment="content">
+
+  <div th:replace="~{fragments/master-table :: masterTable(
+      addHref=@{/reporting/reports/create}, addLabel=${'New Report'},
+      thead=~{::theadContent}, tbody=~{::tbodyContent}
+    )}">
+
+    <thead th:fragment="theadContent">
+      <tr>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Name'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated By'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+      </tr>
+    </thead>
+
+    <tbody th:fragment="tbodyContent">
+      <tr th:each="report : ${reports}">
+        <td th:replace="~{fragments/master-table :: colText(text=${report.name})}"></td>
+        <td th:replace="~{fragments/master-table :: colDate(date=${report.lastupdate})}"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${report.lastupdatedby})}"></td>
+        <td>
+          <a class="btn btn-outline-success" th:href="@{'/reporting/reports/execute'(id=${report.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+        </td>
+        <td th:replace="~{fragments/master-table :: colEditLinkIf(href=@{'/reporting/reports/edit'(id=${report.id})}, ifCondition=mayEdit[report.id])}"></td>
+        <td th:replace="~{fragments/master-table :: colDeleteFormIf(id=${report.id}, action=@{'/reporting/reports/delete'}, ifCondition=mayDelete[report.id])}"></td>
+      </tr>
+    </tbody>
+
+  </div>
+
+</main>
+</html>

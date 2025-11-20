@@ -54,8 +54,19 @@
       <a class="btn btn-outline-primary" th:href="${href}"><i class="icon ti ti-pencil" style="margin-right: 0; margin-left: 0"></i></a>
     </td>
 
+    <td th:fragment="colEditLinkIf(href, ifCondition)">
+      <a th:if="${ifCondition}" class="btn btn-outline-primary" th:href="${href}"><i class="icon ti ti-pencil" style="margin-right: 0; margin-left: 0"></i></a>
+    </td>
+
     <td th:fragment="colDeleteForm(id, action)">
       <form th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
+        <input type="hidden" name="id" th:value="${id}"/>
+        <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash" style="margin-right: 0; margin-left: 0"></i></button>
+      </form>
+    </td>
+
+    <td th:fragment="colDeleteFormIf(id, action, ifCondition)">
+      <form th:if="${ifCondition}" th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
         <input type="hidden" name="id" th:value="${id}"/>
         <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash" style="margin-right: 0; margin-left: 0"></i></button>
       </form>

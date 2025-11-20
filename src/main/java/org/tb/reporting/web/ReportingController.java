@@ -1,0 +1,266 @@
+package org.tb.reporting.web;
+
+import static java.lang.String.join;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.AccessLevel;
+import org.tb.reporting.auth.ReportAuthorization;
+import org.tb.reporting.domain.ReportDefinition;
+import org.tb.reporting.domain.ReportParameter;
+import org.tb.reporting.domain.ReportResult;
+import org.tb.reporting.service.ExcelExportService;
+import org.tb.reporting.service.ReportingService;
+
+@Slf4j
+@Controller
+@RequestMapping("/reporting/reports")
+@RequiredArgsConstructor
+public class ReportingController {
+
+  private final ReportingService reportingService;
+  private final ReportAuthorization reportAuthorization;
+  private final ExcelExportService excelExportService;
+
+  @GetMapping
+  public String list(Model model) {
+    var reports = reportingService.getReportDefinitions();
+    Map<Long, Boolean> mayEdit = new HashMap<>();
+    Map<Long, Boolean> mayDelete = new HashMap<>();
+    for (ReportDefinition r : reports) {
+      mayEdit.put(r.getId(), reportAuthorization.isAuthorized(r, AccessLevel.WRITE));
+      mayDelete.put(r.getId(), reportAuthorization.isAuthorized(r, AccessLevel.DELETE));
+    }
+    model.addAttribute("pageTitle", "Reports");
+    model.addAttribute("reports", reports);
+    model.addAttribute("mayEdit", mayEdit);
+    model.addAttribute("mayDelete", mayDelete);
+    return "reporting/reports-list";
+  }
+
+  @PreAuthorize("hasRole('MANAGER')")
+  @GetMapping("/create")
+  public String createForm(Model model) {
+    model.addAttribute("pageTitle", "Create Report");
+    model.addAttribute("report", new ReportForm());
+    model.addAttribute("isEdit", false);
+    return "reporting/report-form";
+  }
+
+  @GetMapping("/edit")
+  @PreAuthorize("hasRole('MANAGER')")
+  public String editForm(@RequestParam("id") Long id, Model model) {
+    var rd = reportingService.getReportDefinition(id);
+    var form = new ReportForm();
+    form.setId(rd.getId());
+    form.setName(rd.getName());
+    form.setSql(rd.getSql());
+    model.addAttribute("pageTitle", "Edit Report");
+    model.addAttribute("report", form);
+    model.addAttribute("isEdit", true);
+    model.addAttribute("reportAuthorizations", reportAuthorization.getAuthorizations(rd));
+    return "reporting/report-form";
+  }
+
+  @PostMapping("/store")
+  @PreAuthorize("hasRole('MANAGER')")
+  public String store(@ModelAttribute("report") ReportForm form,
+                      BindingResult bindingResult,
+                      Model model,
+                      RedirectAttributes redirectAttributes) {
+
+    if (form.getName() == null || form.getName().isBlank()) {
+      bindingResult.rejectValue("name", "error.name", "Name is required");
+    }
+    if (form.getSql() == null || form.getSql().isBlank()) {
+      bindingResult.rejectValue("sql", "error.sql", "SQL is required");
+    }
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("pageTitle", form.getId() != null ? "Edit Report" : "Create Report");
+      model.addAttribute("isEdit", form.getId() != null);
+      return "reporting/report-form";
+    }
+
+    if (form.getId() == null) {
+      reportingService.create(form.getName(), form.getSql());
+      redirectAttributes.addFlashAttribute("message", "Report created successfully");
+    } else {
+      reportingService.update(form.getId(), form.getName(), form.getSql());
+      redirectAttributes.addFlashAttribute("message", "Report updated successfully");
+    }
+
+    return "redirect:/reporting/reports";
+  }
+
+  @PostMapping("/delete")
+  @PreAuthorize("hasRole('MANAGER')")
+  public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+    reportingService.deleteReportDefinition(id);
+    redirectAttributes.addFlashAttribute("message", "Report deleted successfully");
+    return "redirect:/reporting/reports";
+  }
+
+  @GetMapping("/execute")
+  public String execute(@RequestParam("id") Long id,
+                        @RequestParam Map<String, String> allParams,
+                        Model model) {
+    var reportDefinition = reportingService.getReportDefinition(id);
+
+    var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, reportDefinition.getSql()));
+    var missingParameters = getMissingParameters(parametersFromRequest, reportDefinition.getSql());
+
+    if (!missingParameters.isEmpty()) {
+      var paramForm = new ExecuteForm();
+      paramForm.setReportId(id);
+      paramForm.initParameters(parametersFromRequest);
+      model.addAttribute("pageTitle", "Execute Report");
+      model.addAttribute("report", reportDefinition);
+      model.addAttribute("execute", paramForm);
+      model.addAttribute("missingParameters", missingParameters);
+      return "reporting/report-parameters";
+    } else {
+      ReportResult reportResult = reportingService.execute(id, parametersFromRequest);
+      model.addAttribute("pageTitle", "Report Result");
+      model.addAttribute("report", reportDefinition);
+      model.addAttribute("reportResult", reportResult);
+      model.addAttribute("params", parametersFromRequest);
+      return "reporting/report-result";
+    }
+  }
+
+  @PostMapping("/execute")
+  public String executeWithForm(@ModelAttribute("execute") ExecuteForm form) {
+    String queryParams = renderQueryParams(form.getParameters());
+    return "redirect:/reporting/reports/execute?id=" + form.getReportId() + queryParams;
+  }
+
+  @PostMapping("/export")
+  public void export(@RequestParam("id") Long id,
+                     @RequestParam Map<String, String> allParams,
+                     HttpServletResponse response) throws IOException {
+    var reportDefinition = reportingService.getReportDefinition(id);
+    var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, reportDefinition.getSql()));
+    ReportResult reportResult = reportingService.execute(id, parametersFromRequest);
+
+    var bytes = excelExportService.exportToExcel(reportResult);
+    response.setHeader("Content-disposition", "attachment; filename=" + createFileName(reportDefinition));
+    response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    response.setContentLength(bytes.length);
+    response.getOutputStream().write(bytes);
+  }
+
+  private static String renderQueryParams(List<ReportParameter> parameters) {
+    if (parameters == null || parameters.isEmpty()) {
+      return "";
+    }
+    var result = new StringBuilder();
+    for (ReportParameter parameter : nonEmpty(parameters)) {
+      if (parameter.getValue() != null && !parameter.getValue().isBlank()) {
+        result.append("&").append(parameter.getName()).append("=");
+        if (!"string".equals(parameter.getType())) {
+          result.append(parameter.getType()).append(",");
+        }
+        result.append(parameter.getValue());
+      }
+    }
+    return result.toString();
+  }
+
+  private static String createFileName(ReportDefinition reportDefinition) {
+    var fileName = "report-" + reportDefinition.getName() + ".xlsx";
+    return fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+  }
+
+  static List<ReportParameter> nonEmpty(List<ReportParameter> parameters) {
+    return parameters.stream().filter(p -> p.getName() != null && !p.getName().isBlank()).toList();
+  }
+
+  private static ReportParameter toReportParameter(String key, String value) {
+    if (value.indexOf(',') > 0) {
+      var parts = value.split(",", 2);
+      return ReportParameter.builder().name(key).type(parts[0].trim()).value(parts[1].trim()).build();
+    }
+    return ReportParameter.builder().name(key).type("string").value(value.trim()).build();
+  }
+
+  static List<ReportParameter> getParametersFromRequest(Map<String, String> params, String query) {
+    if (query == null) {
+      return emptyList();
+    }
+
+    return params.entrySet().stream()
+        .filter(e -> query.contains(":" + e.getKey()))
+        .map(e -> toReportParameter(e.getKey(), e.getValue()))
+        .toList();
+  }
+
+  static java.util.Set<String> getMissingParameters(List<ReportParameter> parameters, String query) {
+    if (query == null){
+      return emptySet();
+    }
+    var parameterNames = parameters.stream().map(ReportParameter::getName).toList();
+    return Pattern.compile(":\\w+")
+        .matcher(query)
+        .results()
+        .map(MatchResult::group)
+        .map(qp -> qp.substring(1))
+        .filter(not(parameterNames::contains))
+        .collect(toSet());
+  }
+
+  // Form classes
+  public static class ReportForm {
+    private Long id;
+    private String name;
+    private String sql;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getSql() { return sql; }
+    public void setSql(String sql) { this.sql = sql; }
+  }
+
+  public static class ExecuteForm {
+    private Long reportId;
+    private List<ReportParameter> parameters = List.of(
+        new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter()
+    );
+
+    public Long getReportId() { return reportId; }
+    public void setReportId(Long reportId) { this.reportId = reportId; }
+    public List<ReportParameter> getParameters() { return parameters; }
+    public void setParameters(List<ReportParameter> parameters) { this.parameters = parameters; }
+
+    public void initParameters(List<ReportParameter> preset) {
+      // ensure size 5
+      var list = new java.util.ArrayList<ReportParameter>();
+      if (preset != null) list.addAll(preset);
+      while (list.size() < 5) list.add(new ReportParameter());
+      this.parameters = list;
+    }
+  }
+}
