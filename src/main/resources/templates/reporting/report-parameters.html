@@ -4,16 +4,16 @@
       th:with="section='orders',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
   <div class="card">
-    <div class="card-header" style="display: block">
+    <div class="card-header">
       <div class="d-flex align-items-center gap-2">
         <h2 class="m-0" th:text="${report.name}">Report</h2>
       </div>
-      <div>
-        <details>
-          <summary>Show SQL</summary>
-          <code th:text="${report.sql}">SELECT ...</code>
-        </details>
-      </div>
+    </div>
+    <div class="card-header">
+      <details>
+        <summary>Show SQL</summary>
+        <code th:text="${report.sql}">SELECT ...</code>
+      </details>
     </div>
     <div class="card-body">
       <form th:action="@{/reporting/reports/execute}" th:object="${execute}" method="post">

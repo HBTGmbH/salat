@@ -7,6 +7,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.reporting.auth.ReportAuthorization;
@@ -37,6 +40,7 @@ import org.tb.reporting.service.ReportingService;
 @Controller
 @RequestMapping("/reporting/reports")
 @RequiredArgsConstructor
+@SessionAttributes("reportResult")
 public class ReportingController {
 
   private final ReportingService reportingService;
@@ -44,7 +48,9 @@ public class ReportingController {
   private final ExcelExportService excelExportService;
 
   @GetMapping
-  public String list(Model model) {
+  public String list(Model model, SessionStatus status) {
+    status.setComplete(); // remove old report result
+
     var reports = reportingService.getReportDefinitions();
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
@@ -125,13 +131,15 @@ public class ReportingController {
   @GetMapping("/execute")
   public String execute(@RequestParam("id") Long id,
                         @RequestParam Map<String, String> allParams,
-                        Model model) {
+                        Model model,
+                        SessionStatus status) {
     var reportDefinition = reportingService.getReportDefinition(id);
 
     var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, reportDefinition.getSql()));
     var missingParameters = getMissingParameters(parametersFromRequest, reportDefinition.getSql());
 
     if (!missingParameters.isEmpty()) {
+      status.setComplete();
       var paramForm = new ExecuteForm();
       paramForm.setReportId(id);
       paramForm.initParameters(parametersFromRequest, missingParameters);
@@ -142,6 +150,7 @@ public class ReportingController {
       return "reporting/report-parameters";
     } else {
       ReportResult reportResult = reportingService.execute(id, parametersFromRequest);
+      // Ergebnis in HTTP-Session ablegen, damit andere Endpunkte (z.B. Export) darauf zugreifen können
       model.addAttribute("pageTitle", "Report Result");
       model.addAttribute("report", reportDefinition);
       model.addAttribute("reportResult", reportResult);
@@ -158,12 +167,9 @@ public class ReportingController {
 
   @PostMapping("/export")
   public void export(@RequestParam("id") Long id,
-                     @RequestParam Map<String, String> allParams,
+                     @ModelAttribute("reportResult") ReportResult reportResult,
                      HttpServletResponse response) throws IOException {
     var reportDefinition = reportingService.getReportDefinition(id);
-    var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, reportDefinition.getSql()));
-    ReportResult reportResult = reportingService.execute(id, parametersFromRequest);
-
     var bytes = excelExportService.exportToExcel(reportResult);
     response.setHeader("Content-disposition", "attachment; filename=" + createFileName(reportDefinition));
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
