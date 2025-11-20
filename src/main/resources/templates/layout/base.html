@@ -134,7 +134,8 @@
                      th:if="${#authorization.expression('hasRole(''BACKOFFICE'')')}">
                     Rechnungsanlage
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowReports}" th:text="#{main.general.mainmenu.reporting.text}"
+                  <a class="dropdown-item" th:href="@{/reporting/reports}" th:text="#{main.general.mainmenu.reporting.text}"
+                     th:classappend="${subSection == 'reports'} ? 'active' : ''"
                      th:if="${@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable()}">
                     Reports
                   </a>

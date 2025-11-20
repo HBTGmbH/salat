@@ -91,9 +91,11 @@
 				</html:link></li>
 			</c:if>
 			<c:if test="${reportAuthViewHelper.isReportMenuAvailable()}">
-				<li><html:link styleClass="menu" action="/ShowReports">
-					<bean:message key="main.general.mainmenu.reporting.text" />
-				</html:link></li>
+                <li>
+                    <a class="menu" href="<c:url value='/reporting/reports' />">
+                        <bean:message key="main.general.mainmenu.reporting.text" />
+                    </a>
+                </li>
 			</c:if>
 			<c:if test="${authorizedUser.manager}">
 				<li><a class="menu" href="<c:url value='/reporting/jobs' />">
