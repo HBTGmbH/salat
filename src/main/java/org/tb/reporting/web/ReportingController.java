@@ -134,7 +134,7 @@ public class ReportingController {
     if (!missingParameters.isEmpty()) {
       var paramForm = new ExecuteForm();
       paramForm.setReportId(id);
-      paramForm.initParameters(parametersFromRequest);
+      paramForm.initParameters(parametersFromRequest, missingParameters);
       model.addAttribute("pageTitle", "Execute Report");
       model.addAttribute("report", reportDefinition);
       model.addAttribute("execute", paramForm);
@@ -256,9 +256,32 @@ public class ReportingController {
     public void setParameters(List<ReportParameter> parameters) { this.parameters = parameters; }
 
     public void initParameters(List<ReportParameter> preset) {
-      // ensure size 5
+      initParameters(preset, java.util.Set.of());
+    }
+
+    public void initParameters(List<ReportParameter> preset, java.util.Set<String> missingParameterNames) {
+      // ensure size 5 and prefill missing params with their names
       var list = new java.util.ArrayList<ReportParameter>();
       if (preset != null) list.addAll(preset);
+
+      // add placeholders for missing parameter names not yet present
+      var existingNames = list.stream()
+          .map(ReportParameter::getName)
+          .filter(n -> n != null && !n.isBlank())
+          .collect(toSet());
+
+      if (missingParameterNames != null) {
+        for (String name : missingParameterNames) {
+          if (!existingNames.contains(name)) {
+            var p = new ReportParameter();
+            p.setName(name);
+            p.setType("string");
+            p.setValue("");
+            list.add(p);
+          }
+        }
+      }
+
       while (list.size() < 5) list.add(new ReportParameter());
       this.parameters = list;
     }
