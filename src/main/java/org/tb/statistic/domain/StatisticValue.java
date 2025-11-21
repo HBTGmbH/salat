@@ -42,7 +42,6 @@ public class StatisticValue implements Persistable<Long> {
   @Column(name = "object_id")
   private long objectId;
 
-  @Setter
   private long value;
 
   @Column(length = 4000)
