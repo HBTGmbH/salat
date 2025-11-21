@@ -2,11 +2,11 @@ package org.tb.invoice.domain;
 
 import java.util.Map;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import org.tb.common.domain.AuditedEntity;
 
 @Builder
-@Data
+@Getter
 public class InvoiceSettings extends AuditedEntity {
 
   public enum ImageUrl { LOGO , CLAIM }
