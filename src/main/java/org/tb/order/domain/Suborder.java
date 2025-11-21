@@ -2,6 +2,7 @@ package org.tb.order.domain;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -23,8 +24,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.LocalDateRange;
@@ -51,12 +50,10 @@ public class Suborder extends AuditedEntity implements Serializable {
      * list of employeeorders, associated to this suborder
      */
     @OneToMany(mappedBy = "suborder")
-    @Cascade(CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Employeeorder> employeeorders;
 
-    @OneToMany(mappedBy = "parentorder")
-    @Cascade(CascadeType.PERSIST)
+    @OneToMany(mappedBy = "parentorder", cascade = CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Suborder> suborders;
 
