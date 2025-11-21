@@ -32,7 +32,7 @@
     <salat.image.name>ghcr.io/hbtgmbh/salat</salat.image.name>
     <salat.image.tag>latest</salat.image.tag>
     <spotbugs-maven-plugin.version>4.9.8.1</spotbugs-maven-plugin.version>
-    <springdoc-openapi-starter-webmvc-ui.version>2.8.14</springdoc-openapi-starter-webmvc-ui.version>
+    <springdoc-openapi-starter-webmvc-ui.version>3.0.0</springdoc-openapi-starter-webmvc-ui.version>
     <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <webjars-bootstrap-icons.version>1.13.1</webjars-bootstrap-icons.version>
