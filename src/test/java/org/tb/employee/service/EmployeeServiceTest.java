@@ -9,9 +9,9 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizedUserAuditorAware;
 import org.tb.auth.service.AuthService;
@@ -40,7 +40,7 @@ public class EmployeeServiceTest {
 	@Autowired
 	private EmployeeService employeeDAO;
 
-	@MockBean
+	@MockitoBean
 	private AuthorizedUser authorizedUser;
 
 	@BeforeEach
