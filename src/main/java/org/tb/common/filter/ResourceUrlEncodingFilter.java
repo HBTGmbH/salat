@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.springframework.web.servlet.resource.ResourceUrlProviderExposingInterceptor;
@@ -46,7 +46,6 @@ import org.springframework.web.servlet.resource.ResourceUrlProviderExposingInter
 public class ResourceUrlEncodingFilter extends GenericFilterBean {
 
 	private static final Log logger = LogFactory.getLog(ResourceUrlEncodingFilter.class);
-
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
