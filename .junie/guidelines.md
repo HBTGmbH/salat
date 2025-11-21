@@ -179,6 +179,8 @@ This generates the required `build-info.properties` file.
   - `action/` - Legacy Struts actions
   - `rest/` - REST controllers
   - `viewmodel/` - DTOs for UI
+  - `controller/` - Spring MVC controllers
+  - `viewhelper/` - presentation logic for UI
 
 ### Database Changes
 - **Always** use Liquibase for database changes
