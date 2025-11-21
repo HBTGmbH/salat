@@ -7,7 +7,7 @@
 ## Technology Stack
 
 - **Java**: 21 (LTS)
-- **Framework**: Spring Boot 3.5.6
+- **Framework**: Spring Boot 3.x
 - **Build Tool**: Maven (mvnw wrapper included)
 - **Database**: MySQL with Liquibase for migrations
 - **ORM**: Spring Data JPA with Hibernate
@@ -18,7 +18,8 @@
     - Do NOT use `.do` suffix format (e.g., `/ShowEmployee.do` is incorrect)
     - When linking from Thymeleaf: `th:href="@{/do/ActionName}"`
   - Modern UI: Thymeleaf with Tabler.io
-  - Frontend libraries: Bootstrap 5, jQuery, Plotly.js
+  - Frontend libraries: Bootstrap 5, Plotly.js
+    - Do NOT use jQuery
 - **Mapping**: MapStruct for DTO/Entity conversions
 - **Code Generation**: Lombok for reducing boilerplate
 - **Excel Export**: Apache POI
@@ -167,6 +168,7 @@ This generates the required `build-info.properties` file.
   - `*Mapper` for MapStruct interfaces
 - Use constructor injection over field injection
 - Prefer immutable objects where possible
+- Do NOT use interfaces for business logic services
 
 ### Package Organization
 - Group by feature/module (employee, order, customer, etc.)
