@@ -25,7 +25,7 @@ public class AccessLevelSetConverter implements AttributeConverter<Set<AccessLev
     String[] parts = flatString.split(",");
 
     // must be a modifiable Set
-    return new HashSet(Stream.of(parts).map(String::trim).map(AccessLevel::valueOf).toList());
+    return new HashSet<>(Stream.of(parts).map(String::trim).map(AccessLevel::valueOf).toList());
   }
 
 }
