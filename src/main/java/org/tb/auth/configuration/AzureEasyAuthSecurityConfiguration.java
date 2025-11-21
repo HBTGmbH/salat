@@ -79,11 +79,11 @@ public class AzureEasyAuthSecurityConfiguration {
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
     http.securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
-        .requestCache().disable()
-        .securityContext().disable()
-        .sessionManagement().disable()
-        .cors().disable()
-        .csrf().disable();
+        .requestCache(cache -> cache.disable())
+        .securityContext(security -> security.disable())
+        .sessionManagement(session -> session.disable())
+        .cors(cors -> cors.disable())
+        .csrf(csrf -> csrf.disable());
     return http.build();
   }
 
@@ -93,10 +93,10 @@ public class AzureEasyAuthSecurityConfiguration {
     http.securityMatcher("/api/**", "/rest/**")
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-        .requestCache().disable()
+        .requestCache(cache -> cache.disable())
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf().disable();
+        .csrf(csrf -> csrf.disable());
     return http.build();
   }
 
@@ -126,8 +126,8 @@ public class AzureEasyAuthSecurityConfiguration {
             response.sendError(401);
           }
         }))
-        .cors().disable()
-        .csrf().disable();
+        .cors(cors -> cors.disable())
+        .csrf(csrf -> csrf.disable());
     return http.build();
   }
 

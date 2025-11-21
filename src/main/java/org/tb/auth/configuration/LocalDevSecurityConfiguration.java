@@ -81,11 +81,11 @@ public class LocalDevSecurityConfiguration {
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
     http.securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
-        .requestCache().disable()
-        .securityContext().disable()
-        .sessionManagement().disable()
-        .cors().disable()
-        .csrf().disable();
+        .requestCache(cache -> cache.disable())
+        .securityContext(security -> security.disable())
+        .sessionManagement(session -> session.disable())
+        .cors(cors -> cors.disable())
+        .csrf(csrf -> csrf.disable());
     return http.build();
   }
 
@@ -96,9 +96,9 @@ public class LocalDevSecurityConfiguration {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
-        .requestCache().disable()
+        .requestCache(cache -> cache.disable())
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .csrf().disable();
+        .csrf(csrf -> csrf.disable());
     return http.build();
   }
 
@@ -116,8 +116,8 @@ public class LocalDevSecurityConfiguration {
             response.sendError(401);
           }
         }))
-        .cors().disable()
-        .csrf().disable();
+        .cors(cors -> cors.disable())
+        .csrf(csrf -> csrf.disable());
     return http.build();
   }
 
