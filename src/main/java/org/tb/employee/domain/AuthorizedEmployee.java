@@ -20,11 +20,13 @@ public class AuthorizedEmployee implements Serializable {
   private Long employeeId;
   @Getter
   private String sign;
+  @Getter
+  private String emailAddress;
 
   public void login(Employee employee) {
     this.name = employee.getName();
     this.employeeId = employee.getId();
     this.sign = employee.getSign();
+    this.emailAddress = employee.getEmailAddress();
   }
-
 }
