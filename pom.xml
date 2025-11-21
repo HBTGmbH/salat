@@ -14,7 +14,7 @@
 
   <properties>
     <maven.build.timestamp.format>dd.MM.yyyy HH:mm</maven.build.timestamp.format>
-    <java.version>23</java.version>
+    <java.version>25</java.version>
     <archunit.version>1.4.1</archunit.version>
     <cronutils.version>9.2.1</cronutils.version>
     <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
