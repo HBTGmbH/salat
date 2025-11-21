@@ -174,7 +174,7 @@
         <div class="card border-0">
           <div class="card-body p-4 text-center">
             <p class="text-secondary">Angemeldet als</p>
-            <span class="avatar avatar-xl mb-3 rounded ti ti-user-circle"></span>
+            <img class="avatar avatar-xl mb-3 rounded" th:src="${@gravatarViewHelper.gravatarUrl(@authorizedEmployee.emailAddress)}" alt="User avatar"/>
             <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
             <div class="text-secondary">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
