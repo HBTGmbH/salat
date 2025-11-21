@@ -22,7 +22,7 @@ public interface EmployeeorderRepository extends CrudRepository<Employeeorder, L
   @Query("""
       select count(distinct eo) from Employeeorder eo where
       eo.employeecontract.id = :employeeContractId and eo.suborder.id = :suborderId
-         """)
+      """)
   long countEmployeeorders(long employeeContractId, long suborderId);
 
   List<Employeeorder> findAllByEmployeecontractId(long employeeContractId);
