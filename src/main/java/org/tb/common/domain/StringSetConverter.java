@@ -24,7 +24,7 @@ public class StringSetConverter implements AttributeConverter<Set<String>, Strin
     String[] parts = flatString.split(",");
 
     // must be a modifiable Set
-    return new HashSet(Stream.of(parts).map(String::trim).toList());
+    return new HashSet<>(Stream.of(parts).map(String::trim).toList());
   }
 
 }
