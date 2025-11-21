@@ -17,8 +17,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.tb.common.LocalDateRange;
@@ -42,7 +40,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @ManyToOne
     @Fetch(FetchMode.SELECT)
     @JoinColumn(name = "SUPERVISOR_ID")
-    @Cascade(CascadeType.PERSIST)
     private Employee supervisor;
 
     private LocalDate validFrom;
@@ -69,14 +66,12 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Fetch(FetchMode.SELECT)
     @ManyToOne
     @JoinColumn(name = "EMPLOYEE_ID")
-    @Cascade(value = CascadeType.PERSIST)
     private Employee employee;
 
     /**
      * list of vacations, associated to this employeecontract
      */
     @OneToMany(mappedBy = "employeecontract")
-    @Cascade(value = CascadeType.PERSIST)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Vacation> vacations = new ArrayList<>();
 
