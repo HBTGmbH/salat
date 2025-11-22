@@ -23,11 +23,11 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
-          java-version: '21'
+          java-version: '25'
       - name: Build with Maven
         run: ./mvnw spring-boot:build-image --batch-mode --no-transfer-progress -Dsalat.image.tag=${{ env.BUILD_ID }}
       - name: Log in to the Container registry
