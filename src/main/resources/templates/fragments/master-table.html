@@ -13,18 +13,48 @@
         <tbody th:fragment="tbodyContent">...</tbody>
       </div>
     -->
-    <section th:fragment="masterTable(addHref, addLabel, thead, tbody)">
-      <div class="table-responsive card">
-        <div class="card-header" th:if="${addHref}">
-          <a class="btn btn-primary" th:href="${addHref}"><i class="icon ti ti-library-plus"></i>[[${addLabel}]]</a>
+    <section th:fragment="masterTable(addHref, addLabel, addIf, addIcon, thead, tbody)">
+      <div class="card mb-3" th:if="${addHref != '' && addIf}">
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-md-6"></div>
+            <div class="col-auto"></div>
+            <div class="col-auto ms-auto">
+              <a class="btn btn-success" th:href="${addHref}"><i class="icon ti" th:classappend="${addIcon}"></i> [[${addLabel}]]</a>
+            </div>
+          </div>
         </div>
+      </div>
+      <div class="table-responsive card">
         <table class="table table-vcenter card-table">
           <thead th:replace="${thead}"></thead>
           <tbody th:replace="${tbody}"></tbody>
         </table>
-        <div class="card-footer" th:if="${addHref}">
-          <a class="btn btn-primary" th:href="${addHref}"><i class="icon ti ti-library-plus"></i>[[${addLabel}]]</a>
+      </div>
+    </section>
+
+    <section th:fragment="masterTableFilter(addHref, addLabel, addIf, addIcon, filterHref, filterValue, thead, tbody)">
+      <div class="card mb-3">
+        <div class="card-body">
+          <form class="row g-2" method="get" th:action="${filterHref}">
+            <div class="col-md-6">
+              <input type="text" class="form-control" name="filter" placeholder="Filter"
+                     th:value="${filterValue}" />
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-primary" type="submit"><i class="icon ti ti-filter" style="margin-right: 0; margin-left: 0"></i></button>
+            </div>
+            <div class="col-auto ms-auto" th:if="${addHref != '' && addIf}">
+              <a class="btn btn-success" th:href="${addHref}"><i class="icon ti" th:classappend="${addIcon}"></i> [[${addLabel}]]</a>
+            </div>
+          </form>
         </div>
+      </div>
+      <div class="table-responsive card">
+        <table class="table table-vcenter card-table">
+          <thead th:replace="${thead}"></thead>
+          <tbody th:replace="${tbody}"></tbody>
+        </table>
       </div>
     </section>
 
