@@ -30,10 +30,6 @@ server:
         secure: true
   forward-headers-strategy: native # ensure correct handling of X-Forwarded-Host and X-Forwarded-Proto headers
   max-http-request-header-size: 256KB
-  error:
-    include-stacktrace: never
-    include-message: always
-    include-exception: false
 spring:
   profiles:
     default: local
@@ -85,6 +81,10 @@ spring:
         - /style/
         - /scripts/
         - /images/
+    error:
+      include-stacktrace: always
+      include-message: always
+      include-exception: true
   mail:
     host: ${salat.mail-host}
     port: 1025
