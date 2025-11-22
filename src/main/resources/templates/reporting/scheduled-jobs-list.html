@@ -6,8 +6,10 @@
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/master-table :: masterTable(
-      addHref=@{/reporting/jobs/create}, addLabel=${'New'},
-      thead=~{::theadContent}, tbody=~{::tbodyContent}
+      addHref=@{/reporting/jobs/create}, addLabel=${'Schedule Report'},
+      thead=~{::theadContent}, tbody=~{::tbodyContent},
+      addIf=${true},
+      addIcon='ti-clock-plus'
     )}">
 
     <thead th:fragment="theadContent">
