@@ -1,7 +1,10 @@
 package org.tb.common.configuration;
 
+import org.apache.catalina.core.StandardContext;
 import org.apache.struts.Globals;
 import org.apache.struts.action.ActionServlet;
+import org.springframework.boot.tomcat.ConfigurableTomcatWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +26,18 @@ public class StrutsConfiguration {
   @Bean
   public ServletContextInitializer addStrutsUrlMappingInfo() {
     return servletContext -> servletContext.setAttribute(Globals.SERVLET_KEY, "/do/*");
+  }
+
+  @Bean
+  public WebServerFactoryCustomizer<ConfigurableTomcatWebServerFactory> tomcatCustomizer() {
+    return factory -> factory.addContextCustomizers(context -> {
+      if (context instanceof StandardContext standardContext) {
+        // Setzt den Wert explizit auf false - ansonsten funktioniert DelegatingRequestProcessor
+        // nicht mit dem ContentCachingResponseWrapper, da nach einem Forward der Response suspended
+        // wird und damit das Kopieren des Cached Responses nicht mehr funktioniert.
+        standardContext.setSuspendWrappedResponseAfterForward(false);
+      }
+    });
   }
 
 }
