@@ -18,8 +18,9 @@
     - Do NOT use `.do` suffix format (e.g., `/ShowEmployee.do` is incorrect)
     - When linking from Thymeleaf: `th:href="@{/do/ActionName}"`
   - Modern UI: Thymeleaf with Tabler.io
+  - Use MessageResources for internationalization, see `src/main/resources/org/tb/web/MessageResources_*.properties`
   - Frontend libraries: Bootstrap 5, Plotly.js
-    - Do NOT use jQuery
+  - Do NOT use jQuery
 - **Mapping**: MapStruct for DTO/Entity conversions
 - **Code Generation**: Lombok for reducing boilerplate
 - **Excel Export**: Apache POI
