@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+  <title th:text="'SALAT - ' + ${pageTitle}">Customer</title>
+</head>
+<body>
+<section layout:fragment="page-title" th:text="${pageTitle}">Customer</section>
+
+<section layout:fragment="content">
+  <form th:action="@{/customers/store}" th:object="${customer}" method="post" class="card">
+    <div class="card-body">
+      <input type="hidden" th:field="*{id}" />
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput('shortName', 'Short Name', true, 50)}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput('name', 'Name', true, 255)}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <div th:replace="~{fragments/form-fields :: textareaInput('address', 'Address', false, 3, false)}"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <div th:replace="~{fragments/form-fields :: formButtons(${isEdit} ? 'Update Customer' : 'Create Customer', @{/customers})}"></div>
+    </div>
+  </form>
+</section>
+
+</body>
+</html>
