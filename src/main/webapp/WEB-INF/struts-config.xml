@@ -40,8 +40,7 @@
 		<form-bean name="addEmployeeForm" type="org.tb.employee.action.AddEmployeeForm" />
 		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
 
-		<form-bean name="addCustomerForm" type="org.tb.customer.action.AddCustomerForm" />
-		<form-bean name="showCustomerForm" type="org.tb.customer.action.ShowCustomerForm" />
+		<!-- customer Struts UI removed (migrated to Spring MVC) -->
 
 		<form-bean name="addCustomerOrderForm" type="org.tb.order.action.AddCustomerorderForm" />
 		<form-bean name="showCustomerOrderForm" type="org.tb.order.action.ShowCustomerorderForm" />
@@ -190,37 +189,7 @@
 			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
 		</action>
 
-		<!-- Customer -->
-		<action path="/CreateCustomer" validate="true" name="addCustomerForm"
-			type="org.tb.customer.action.CreateCustomerAction">
-			<forward name="success" path="/customer/addCustomer.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditCustomer" name="addCustomerForm" type="org.tb.customer.action.EditCustomerAction">
-			<forward name="success" path="/customer/addCustomer.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteCustomer" input="/customer/showCustomer.jsp" name="addCustomerForm"
-			type="org.tb.customer.action.DeleteCustomerAction">
-			<forward name="success" path="/customer/showCustomer.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowCustomer" name="showCustomerForm" type="org.tb.customer.action.ShowCustomerAction">
-			<forward name="success" path="/customer/showCustomer.jsp" />
-			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreCustomer" input="/customer/addCustomer.jsp" validate="true"
-			name="addCustomerForm" type="org.tb.customer.action.StoreCustomerAction">
-			<forward name="success" path="/customer/showCustomer.jsp" />
-			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
-			<forward name="reset" path="/customer/addCustomer.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
+		<!-- Customer Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 
 		<!-- Customerorder -->
 		<action path="/CreateCustomerorder" name="addCustomerOrderForm"
