@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='orders',subSection='customer',title=#{main.general.mainmenu.customers.text},sectionTitle=#{main.general.mainmenu.customerorders.text}">
+<section layout:fragment="content">
+  <div th:replace="~{fragments/master-table :: masterTableFilter(
+      addHref=@{/customers/create},
+      addLabel=#{main.general.button.createcustomer.text},
+      addIf=${#authorization.expression('hasRole(''MANAGER'')')},
+      addIcon='ti-building-plus',
+      filterHref=@{/customers},
+      filterValue=${filter},
+      thead=~{::theadContent},
+      tbody=~{::tbodyContent}
+    )}">
+    <thead th:fragment="theadContent">
+      <tr>
+        <th th:replace="~{fragments/master-table :: colHeader(#{main.customer.shortname.text})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(#{main.customer.name.text})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeader(#{main.customer.address.text})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+      </tr>
+    </thead>
+    <tbody th:fragment="tbodyContent">
+      <tr th:each="cu : ${customers}">
+        <td th:replace="~{fragments/master-table :: colText(${cu.shortName})}"></td>
+        <td th:replace="~{fragments/master-table :: colText(${cu.name})}"></td>
+        <td th:replace="~{fragments/master-table :: colText(${cu.address})}"></td>
+        <td th:replace="~{fragments/master-table :: colEditLinkIf(@{'/customers/edit'(id=${cu.id})}, ${#authorization.expression('hasRole(''MANAGER'')')})}"></td>
+        <td th:replace="~{fragments/master-table :: colDeleteFormIf(${cu.id}, @{/customers/delete}, ${#authorization.expression('hasRole(''MANAGER'')')})}"></td>
+      </tr>
+    </tbody>
+  </div>
+</section>
