@@ -75,10 +75,11 @@
 		</li>
 		<li><bean:message key="main.general.mainmenu.orders.text" />
 		<ul style="width: 100%">
-			<li class="first"><html:link styleClass="menu"
-				action="/ShowCustomer">
-				<bean:message key="main.general.mainmenu.customers.text" />
-			</html:link></li>
+   <li class="first">
+                <a class="menu" href="<c:url value='/customers' />">
+                    <bean:message key="main.general.mainmenu.customers.text" />
+                </a>
+            </li>
 			<li><html:link styleClass="menu" action="/ShowCustomerorder">
 				<bean:message key="main.general.mainmenu.customerorders.text" />
 			</html:link></li>

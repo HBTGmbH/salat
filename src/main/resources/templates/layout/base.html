@@ -121,7 +121,9 @@
             <div class="dropdown-menu" th:classappend="${section == 'orders'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/ShowCustomer}" th:text="#{main.general.mainmenu.customers.text}">
+                  <a class="dropdown-item" th:href="@{/customers}"
+                     th:classappend="${subSection == 'customer'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.customers.text}">
                     Auftraggeber
                   </a>
                   <a class="dropdown-item" th:href="@{/do/ShowCustomerorder}" th:text="#{main.general.mainmenu.customerorders.text}">
