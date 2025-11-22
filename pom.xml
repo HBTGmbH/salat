@@ -11,7 +11,7 @@
   <groupId>de.hbt.salat</groupId>
   <artifactId>tb</artifactId>
   <version>4.19.1-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <properties>
     <maven.build.timestamp.format>dd.MM.yyyy HH:mm</maven.build.timestamp.format>
