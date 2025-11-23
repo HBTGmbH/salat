@@ -14,7 +14,6 @@ import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -257,10 +256,7 @@ public class ReportingController {
 
     private Long reportId;
 
-    private List<ReportParameter> parameters = List.of(
-        new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(),
-        new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter()
-    );
+    private List<ReportParameter> parameters = List.of();
 
     public void initParameters(List<ReportParameter> preset, java.util.Set<String> missingParameterNames) {
       // ensure size 5 and prefill missing params with their names
@@ -285,7 +281,6 @@ public class ReportingController {
         }
       }
 
-      while (list.size() < parameters.size()) list.add(new ReportParameter());
       this.parameters = list;
     }
 
