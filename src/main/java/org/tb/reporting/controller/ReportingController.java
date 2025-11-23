@@ -2,17 +2,24 @@ package org.tb.reporting.controller;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Set.of;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -235,33 +242,25 @@ public class ReportingController {
   }
 
   // Form classes
+  @Setter
+  @Getter
   public static class ReportForm {
     private Long id;
     private String name;
     private String sql;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getSql() { return sql; }
-    public void setSql(String sql) { this.sql = sql; }
   }
 
+  @Setter
+  @Getter
   public static class ExecuteForm {
+
     private Long reportId;
+
     private List<ReportParameter> parameters = List.of(
+        new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(),
         new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter(), new ReportParameter()
     );
-
-    public Long getReportId() { return reportId; }
-    public void setReportId(Long reportId) { this.reportId = reportId; }
-    public List<ReportParameter> getParameters() { return parameters; }
-    public void setParameters(List<ReportParameter> parameters) { this.parameters = parameters; }
-
-    public void initParameters(List<ReportParameter> preset) {
-      initParameters(preset, java.util.Set.of());
-    }
 
     public void initParameters(List<ReportParameter> preset, java.util.Set<String> missingParameterNames) {
       // ensure size 5 and prefill missing params with their names
@@ -279,15 +278,39 @@ public class ReportingController {
           if (!existingNames.contains(name)) {
             var p = new ReportParameter();
             p.setName(name);
-            p.setType("string");
-            p.setValue("");
+            p.setType(getType(name));
+            p.setValue(getValue(name));
             list.add(p);
           }
         }
       }
 
-      while (list.size() < 5) list.add(new ReportParameter());
+      while (list.size() < parameters.size()) list.add(new ReportParameter());
       this.parameters = list;
     }
+
+    private String getType(String parameterName) {
+      if(of("jahr", "monat", "year", "month").contains(parameterName.toLowerCase())) {
+        return "number";
+      }
+      if(of("datum", "date", "from", "to", "von", "bis").contains(parameterName.toLowerCase())) {
+        return "date";
+      }
+      return "string";
+    }
+
+    private String getValue(String parameterName) {
+      if(of("jahr", "year").contains(parameterName.toLowerCase())) {
+        return Year.now().toString();
+      }
+      if(of("monat", "month").contains(parameterName.toLowerCase())) {
+        return Integer.toString(YearMonth.now().getMonthValue());
+      }
+      if(of("datum", "date", "from", "to", "von", "bis").contains(parameterName.toLowerCase())) {
+        return LocalDate.now().toString();
+      }
+      return "";
+    }
+
   }
 }
