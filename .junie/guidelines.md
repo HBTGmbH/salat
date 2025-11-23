@@ -6,8 +6,8 @@
 
 ## Technology Stack
 
-- **Java**: 21 (LTS)
-- **Framework**: Spring Boot 3.x
+- **Java**: 25 (LTS)
+- **Framework**: Spring Boot 4.x
 - **Build Tool**: Maven (mvnw wrapper included)
 - **Database**: MySQL with Liquibase for migrations
 - **ORM**: Spring Data JPA with Hibernate
@@ -221,6 +221,7 @@ This generates the required `build-info.properties` file.
 
 **Target UI Stack (Future Direction)**:
 - Spring Web MVC (controllers, validation, handler methods)
+- Use toast messages for sucess messages, use key `toastSuccess` for success messages 
 - Thymeleaf templates (server-side rendering)
 - Bootstrap 5 for styling and components
 - Tabler (tabler.io) design system layered on top of Bootstrap
