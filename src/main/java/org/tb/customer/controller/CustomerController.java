@@ -2,6 +2,7 @@ package org.tb.customer.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,11 +22,12 @@ import org.tb.customer.service.CustomerService;
 public class CustomerController {
 
   private final CustomerService customerService;
+  private final MessageSourceAccessor messageSourceAccessor;
 
   @GetMapping
   public String list(@RequestParam(value = "filter", required = false) String filter,
                      Model model) {
-    model.addAttribute("pageTitle", "Customers");
+    model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
     model.addAttribute("filter", filter);
     model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));
     return "customer/list";
@@ -34,7 +36,7 @@ public class CustomerController {
   @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/create")
   public String createForm(Model model) {
-    model.addAttribute("pageTitle", "Create Customer");
+    model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.addcustomer.text", "Create Customer"));
     model.addAttribute("isEdit", false);
     model.addAttribute("customer", CustomerDTO.builder().build());
     return "customer/form";
@@ -44,7 +46,7 @@ public class CustomerController {
   @GetMapping("/edit")
   public String editForm(@RequestParam("id") Long id, Model model) {
     var dto = customerService.getCustomerById(id);
-    model.addAttribute("pageTitle", "Edit Customer");
+    model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.editcustomer.text", "Edit Customer"));
     model.addAttribute("isEdit", true);
     model.addAttribute("customer", dto);
     return "customer/form";
@@ -58,20 +60,25 @@ public class CustomerController {
                       RedirectAttributes redirectAttributes) {
 
     if (form.getShortName() == null || form.getShortName().isBlank()) {
-      bindingResult.rejectValue("shortName", "error.shortName", "Short name is required");
+      bindingResult.rejectValue("shortName", "error.shortName",
+          messageSourceAccessor.getMessage("form.customer.error.shortname.required", "Short name is required"));
     }
     if (form.getName() == null || form.getName().isBlank()) {
-      bindingResult.rejectValue("name", "error.name", "Name is required");
+      bindingResult.rejectValue("name", "error.name",
+          messageSourceAccessor.getMessage("form.customer.error.name.required", "Name is required"));
     }
 
     if (bindingResult.hasErrors()) {
-      model.addAttribute("pageTitle", form.getId() == null ? "Create Customer" : "Edit Customer");
+      String titleKey = form.getId() == null ? "main.general.addcustomer.text" : "main.general.editcustomer.text";
+      String titleFallback = form.getId() == null ? "Create Customer" : "Edit Customer";
+      model.addAttribute("pageTitle", messageSourceAccessor.getMessage(titleKey, titleFallback));
       model.addAttribute("isEdit", form.getId() != null);
       return "customer/form";
     }
 
     customerService.createOrUpdate(form);
-    redirectAttributes.addFlashAttribute("toastSuccess", "Customer saved successfully");
+    redirectAttributes.addFlashAttribute("toastSuccess",
+        messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));
     return "redirect:/customers";
   }
 
@@ -79,7 +86,8 @@ public class CustomerController {
   @PostMapping("/delete")
   public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     customerService.deleteCustomerById(id);
-    redirectAttributes.addFlashAttribute("toastSuccess", "Customer deleted successfully");
+    redirectAttributes.addFlashAttribute("toastSuccess",
+        messageSourceAccessor.getMessage("form.customer.message.deleted", "Customer deleted successfully"));
     return "redirect:/customers";
   }
 }
