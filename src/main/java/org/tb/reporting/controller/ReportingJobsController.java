@@ -127,10 +127,10 @@ public class ReportingJobsController {
 
     if (isEdit) {
       jobService.updateJob(job);
-      redirectAttributes.addFlashAttribute("message", "Scheduled job updated successfully");
+      redirectAttributes.addFlashAttribute("toastSuccess", "Scheduled job updated successfully");
     } else {
       jobService.createJob(job);
-      redirectAttributes.addFlashAttribute("message", "Scheduled job created successfully");
+      redirectAttributes.addFlashAttribute("toastSuccess", "Scheduled job created successfully");
     }
 
     return "redirect:/reporting/jobs";
@@ -139,7 +139,7 @@ public class ReportingJobsController {
   @PostMapping("/delete")
   public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     jobService.deleteJob(id);
-    redirectAttributes.addFlashAttribute("message", "Scheduled job deleted successfully");
+    redirectAttributes.addFlashAttribute("toastSuccess", "Scheduled job deleted successfully");
     return "redirect:/reporting/jobs";
   }
 

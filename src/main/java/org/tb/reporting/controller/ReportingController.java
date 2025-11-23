@@ -109,10 +109,10 @@ public class ReportingController {
 
     if (form.getId() == null) {
       reportingService.create(form.getName(), form.getSql());
-      redirectAttributes.addFlashAttribute("message", "Report created successfully");
+      redirectAttributes.addFlashAttribute("toastSuccess", "Report created successfully");
     } else {
       reportingService.update(form.getId(), form.getName(), form.getSql());
-      redirectAttributes.addFlashAttribute("message", "Report updated successfully");
+      redirectAttributes.addFlashAttribute("toastSuccess", "Report updated successfully");
     }
 
     return "redirect:/reporting/reports";
@@ -122,7 +122,7 @@ public class ReportingController {
   @PreAuthorize("hasRole('MANAGER')")
   public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     reportingService.deleteReportDefinition(id);
-    redirectAttributes.addFlashAttribute("message", "Report deleted successfully");
+    redirectAttributes.addFlashAttribute("toastSuccess", "Report deleted successfully");
     return "redirect:/reporting/reports";
   }
 
