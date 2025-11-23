@@ -1,4 +1,4 @@
-package org.tb.reporting.web;
+package org.tb.reporting.controller;
 
 import com.cronutils.descriptor.CronDescriptor;
 import com.cronutils.model.Cron;
