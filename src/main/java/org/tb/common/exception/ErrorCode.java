@@ -19,6 +19,7 @@ public enum ErrorCode {
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
+  CU_DUPLICATE_SHORT_NAME("CU-0003", "customer with same short name already exists!"),
 
   EC_UPDATE_GOT_VETO("EC-0001", "employee contract cannot be changed due to veto"),
   EC_DELETE_GOT_VETO("EC-0002","employee contract suborder be deleted due to veto"),
