@@ -2,31 +2,26 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
       th:with="section='orders',subSection='customer',title=${pageTitle},sectionTitle=#{main.general.mainmenu.customerorders.text}">
-<section layout:fragment="content">
+<main layout:fragment="content">
   <form th:action="@{/customers/store}" th:object="${customer}" method="post" class="card">
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
 
-      <div class="row">
-        <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput('shortName', 'Short Name', true, 50)}"></div>
-        </div>
-        <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput('name', 'Name', true, 255)}"></div>
-        </div>
-      </div>
+      <div th:replace="~{fragments/form-fields :: textInput(
+        field='shortName', label=#{main.customer.shortname.text}, required=true, maxlength=12
+      )}"></div>
 
-      <div class="row">
-        <div class="col-12">
-          <div th:replace="~{fragments/form-fields :: textareaInput('address', 'Address', false, 3, false)}"></div>
-        </div>
-      </div>
+      <div th:replace="~{fragments/form-fields :: textInput(
+        field='name', label=#{main.customer.name.text}, required=true, maxlength=255
+      )}"></div>
+
+      <div th:replace="~{fragments/form-fields :: textareaInput(
+        field='address', label=#{main.customer.address.text}, required=true, rows=3, monospace=false
+      )}"></div>
     </div>
     <div class="card-footer">
-      <div th:replace="~{fragments/form-fields :: formButtons(${isEdit} ? 'Update Customer' : 'Create Customer', @{/customers})}"></div>
+      <div th:replace="~{fragments/form-fields :: formButtons(${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}, @{/customers})}"></div>
     </div>
   </form>
-</section>
-
-</body>
+</main>
 </html>
