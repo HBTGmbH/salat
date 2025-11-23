@@ -227,7 +227,22 @@
       </div>
     </header>
     <div class="page-body">
-      <div class="container-xl my-4" layout:fragment="content">
+      <div class="container-xl my-4" th:if="${not #strings.isEmpty(toastSuccess)}">
+        <div class="alert alert-success align-items-start gap-3" role="alert">
+          <div class="icon">
+            <i class="ti ti-circle-check"></i>
+          </div>
+          <div class="flex-fill">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h4 class="alert-title mb-1">Success</h4>
+                <div class="text-secondary">[[${toastSuccess}]]</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container-xl" layout:fragment="content">
         <!-- page specific content -->
       </div>
     </div>
