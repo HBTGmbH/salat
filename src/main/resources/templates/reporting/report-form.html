@@ -3,9 +3,8 @@
       layout:decorate="~{layout/base}"
       th:with="section='orders',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
-  <div class="card">
+  <form th:action="@{/reporting/reports/store}" th:object="${report}" method="post" class="card">
     <div class="card-body">
-      <form th:action="@{/reporting/reports/store}" th:object="${report}" method="post">
         <input type="hidden" th:field="*{id}" />
 
         <div th:replace="~{fragments/form-fields :: textInput(
@@ -15,34 +14,38 @@
         <div th:replace="~{fragments/form-fields :: textareaInputHelp(
           field='sql', label='SQL', required=true, rows=15, helpText=${'Use named parameters like :startDate, :endDate'}, monospace=true
         )}"></div>
+    </div>
 
-        <div class="mb-3" th:if="${isEdit}">
-          <h3 class="mb-2">Authorizations</h3>
-          <div class="table-responsive">
-            <table class="table table-sm">
-              <thead>
-              <tr>
-                <th>User</th>
-                <th>Access Level</th>
-                <th>Validity</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr th:each="auth : ${reportAuthorizations}">
-                <td th:text="${auth.userSign}">user</td>
-                <td th:text="${auth.accessLevel}">WRITE</td>
-                <td th:text="${auth.validity}">2024-01-01..</td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div th:replace="~{fragments/form-fields :: formButtons(
-          saveLabel=${isEdit ? 'Save Report' : 'Create Report'},
-          cancelHref=@{/reporting/reports}
-        )}"></div>
-      </form>
+    <div class="card-footer">
+      <div th:replace="~{fragments/form-fields :: formButtons(
+        saveLabel=${isEdit ? 'Save Report' : 'Create Report'},
+        cancelHref=@{/reporting/reports}
+      )}"></div>
+    </div>
+  </form>
+  <div class="card mt-4">
+    <div class="card-header">
+      <h3>Authorizations</h3>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+          <tr>
+            <th>User</th>
+            <th>Access Level</th>
+            <th>Validity</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="auth : ${reportAuthorizations}">
+            <td th:text="${auth.userSign}">user</td>
+            <td th:text="${auth.accessLevel}">WRITE</td>
+            <td th:text="${auth.validity}">2024-01-01..</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </main>
