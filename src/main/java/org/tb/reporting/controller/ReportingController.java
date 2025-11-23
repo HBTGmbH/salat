@@ -1,13 +1,11 @@
-package org.tb.reporting.web;
+package org.tb.reporting.controller;
 
-import static java.lang.String.join;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
