@@ -1,12 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}">
-<head>
-  <title th:text="'SALAT - ' + ${pageTitle}">Customer</title>
-</head>
-<body>
-<section layout:fragment="page-title" th:text="${pageTitle}">Customer</section>
-
+      layout:decorate="~{layout/base}"
+      th:with="section='orders',subSection='customer',title=${pageTitle},sectionTitle=#{main.general.mainmenu.customerorders.text}">
 <section layout:fragment="content">
   <form th:action="@{/customers/store}" th:object="${customer}" method="post" class="card">
     <div class="card-body">

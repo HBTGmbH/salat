@@ -3,6 +3,7 @@
       layout:decorate="~{layout/base}"
       th:with="section='orders',subSection='customer',title=#{main.general.mainmenu.customers.text},sectionTitle=#{main.general.mainmenu.customerorders.text}">
 <section layout:fragment="content">
+
   <div th:replace="~{fragments/master-table :: masterTableFilter(
       addHref=@{/customers/create},
       addLabel=#{main.general.button.createcustomer.text},
@@ -32,4 +33,5 @@
       </tr>
     </tbody>
   </div>
+
 </section>
