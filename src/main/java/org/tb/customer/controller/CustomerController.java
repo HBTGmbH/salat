@@ -1,5 +1,9 @@
 package org.tb.customer.controller;
 
+import static org.tb.common.GlobalConstants.CUSTOMERADDRESS_MAX_LENGTH;
+import static org.tb.common.GlobalConstants.CUSTOMERNAME_MAX_LENGTH;
+import static org.tb.common.GlobalConstants.CUSTOMERSHORTNAME_MAX_LENGTH;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -63,9 +67,25 @@ public class CustomerController {
       bindingResult.rejectValue("shortName", "error.shortName",
           messageSourceAccessor.getMessage("form.customer.error.shortname.required", "Short name is required"));
     }
+    if (form.getShortName() != null && form.getShortName().length() > CUSTOMERSHORTNAME_MAX_LENGTH) {
+      bindingResult.rejectValue("shortName", "error.shortName",
+          messageSourceAccessor.getMessage("form.customer.error.shortname.toolong", "Name is required"));
+    }
     if (form.getName() == null || form.getName().isBlank()) {
       bindingResult.rejectValue("name", "error.name",
           messageSourceAccessor.getMessage("form.customer.error.name.required", "Name is required"));
+    }
+    if (form.getName() != null && form.getName().length() > CUSTOMERNAME_MAX_LENGTH) {
+      bindingResult.rejectValue("name", "error.name",
+          messageSourceAccessor.getMessage("form.customer.error.name.toolong", "Name is required"));
+    }
+    if (form.getAddress() == null || form.getAddress().isBlank()) {
+      bindingResult.rejectValue("address", "error.address",
+          messageSourceAccessor.getMessage("form.customer.error.address.required", "Name is required"));
+    }
+    if (form.getAddress() != null && form.getAddress().length() > CUSTOMERADDRESS_MAX_LENGTH) {
+      bindingResult.rejectValue("address", "error.address",
+          messageSourceAccessor.getMessage("form.customer.error.address.toolong", "Name is required"));
     }
 
     if (bindingResult.hasErrors()) {
