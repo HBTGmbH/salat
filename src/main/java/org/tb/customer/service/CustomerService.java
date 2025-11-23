@@ -72,7 +72,6 @@ public class CustomerService {
           .orElseThrow(() -> new InvalidDataException(CU_NOT_FOUND));
     }
     customerDTO.copyTo(customer);
-    customerDTO.copyTo(customer);
     customerRepository.save(customer);
     customerDTO.setId(customer.getId());
   }
