@@ -1,12 +1,15 @@
 package org.tb.customer.service;
 
+import static java.util.stream.StreamSupport.stream;
 import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static org.tb.common.exception.ErrorCode.CU_DUPLICATE_SHORT_NAME;
 import static org.tb.common.exception.ErrorCode.CU_NOT_FOUND;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.StreamSupport;
+import java.util.Objects;
+import java.util.function.Predicate;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -41,8 +45,7 @@ public class CustomerService {
 
   @Transactional(readOnly = true)
   public List<CustomerDTO> getAllCustomerDTOs() {
-    return StreamSupport
-        .stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
+    return stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
         .map(CustomerDTO::from)
         .toList();
   }
@@ -71,6 +74,21 @@ public class CustomerService {
           .findById(customerDTO.getId())
           .orElseThrow(() -> new InvalidDataException(CU_NOT_FOUND));
     }
+
+    if(!Objects.equals(customer.getShortname(), customerDTO.getShortName())) {
+      // ensure name uniqueness
+      Predicate<Customer> notSameId = (Customer c) -> !Objects.equals(c.getId(), customerDTO.getId());
+      Predicate<Customer> sameShortName = (Customer c) -> Objects.equals(c.getShortname(), customerDTO.getShortName());
+      var duplicateFound = stream(customerRepository.findAll().spliterator(), false)
+          .filter(notSameId)
+          .filter(sameShortName)
+          .findAny()
+          .isPresent();
+      if(duplicateFound) {
+        throw new BusinessRuleException(CU_DUPLICATE_SHORT_NAME);
+      }
+    }
+
     customerDTO.copyTo(customer);
     customerRepository.save(customer);
     customerDTO.setId(customer.getId());
