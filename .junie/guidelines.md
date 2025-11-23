@@ -21,6 +21,7 @@
   - Use MessageResources for internationalization, see `src/main/resources/org/tb/web/MessageResources_*.properties`
   - Frontend libraries: Bootstrap 5, Plotly.js
   - Do NOT use jQuery
+  - Use icons from Tabler.io, example: `<i class="ti ti-user"></i>`
 - **Mapping**: MapStruct for DTO/Entity conversions
 - **Code Generation**: Lombok for reducing boilerplate
 - **Excel Export**: Apache POI
