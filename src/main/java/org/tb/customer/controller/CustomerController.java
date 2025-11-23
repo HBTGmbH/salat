@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.customer.domain.CustomerDTO;
 import org.tb.customer.service.CustomerService;
 
@@ -27,6 +29,7 @@ public class CustomerController {
 
   private final CustomerService customerService;
   private final MessageSourceAccessor messageSourceAccessor;
+  private final ErrorCodeViewHelper errorCodeViewHelper;
 
   @GetMapping
   public String list(@RequestParam(value = "filter", required = false) String filter,
@@ -62,7 +65,6 @@ public class CustomerController {
                       BindingResult bindingResult,
                       Model model,
                       RedirectAttributes redirectAttributes) {
-
     if (form.getShortName() == null || form.getShortName().isBlank()) {
       bindingResult.rejectValue("shortName", "error.shortName",
           messageSourceAccessor.getMessage("form.customer.error.shortname.required", "Short name is required"));
@@ -88,7 +90,18 @@ public class CustomerController {
           messageSourceAccessor.getMessage("form.customer.error.address.toolong", "Name is required"));
     }
 
-    if (bindingResult.hasErrors()) {
+    var errors = !bindingResult.getFieldErrors().isEmpty();
+
+    if(!errors) {
+      try {
+        customerService.createOrUpdate(form);
+      } catch(ErrorCodeException ex) {
+        model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
+        errors = true;
+      }
+    }
+
+    if (errors) {
       String titleKey = form.getId() == null ? "main.general.addcustomer.text" : "main.general.editcustomer.text";
       String titleFallback = form.getId() == null ? "Create Customer" : "Edit Customer";
       model.addAttribute("pageTitle", messageSourceAccessor.getMessage(titleKey, titleFallback));
@@ -96,7 +109,6 @@ public class CustomerController {
       return "customer/form";
     }
 
-    customerService.createOrUpdate(form);
     redirectAttributes.addFlashAttribute("toastSuccess",
         messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));
     return "redirect:/customers";
