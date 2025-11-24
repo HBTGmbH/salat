@@ -259,7 +259,6 @@ public class ReportingController {
     private List<ReportParameter> parameters = List.of();
 
     public void initParameters(List<ReportParameter> preset, java.util.Set<String> missingParameterNames) {
-      // ensure size 5 and prefill missing params with their names
       var list = new java.util.ArrayList<ReportParameter>();
       if (preset != null) list.addAll(preset);
 
