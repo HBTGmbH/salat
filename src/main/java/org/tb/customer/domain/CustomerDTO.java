@@ -2,11 +2,15 @@ package org.tb.customer.domain;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 
 @Builder
 @Data
+@Jacksonized
+@AllArgsConstructor
 public class CustomerDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;

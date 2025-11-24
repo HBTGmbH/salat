@@ -1,14 +1,18 @@
 package org.tb.dailyreport.rest;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
 @Getter
 @Builder
+@Jacksonized
+@AllArgsConstructor
 @Schema(description = "Arbeitstaginformationen zu einem Arbeitstag")
 public class WorkingDayData {
 

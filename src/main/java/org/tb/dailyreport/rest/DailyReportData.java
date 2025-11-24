@@ -1,6 +1,5 @@
 package org.tb.dailyreport.rest;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.opencsv.bean.CsvBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,8 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.extern.jackson.Jacksonized;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 
@@ -18,6 +17,8 @@ import org.tb.dailyreport.domain.TimereportDTO;
 @EqualsAndHashCode
 @ToString
 @Schema(description = "Zeitbuchung")
+@Jacksonized
+@AllArgsConstructor
 public class DailyReportData {
 
     @Schema(description = "Eindeutige ID der Zeitbuchung, wird vom System vergeben", example = "12345")
@@ -80,7 +81,7 @@ public class DailyReportData {
         return toBuilder().id(null).build();
     }
 
-  @JsonCreator
+  //@JsonCreator
   public static DailyReportData jacksonCreator(
       @JsonProperty("id") Long id,
       @JsonProperty("date") String date,

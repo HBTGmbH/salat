@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 @Getter
 @Builder
 @Jacksonized
+@AllArgsConstructor
 @EqualsAndHashCode
 @ToString
 @Schema(description = "Tägliche Zeiterfassungen mit Arbeitszeiten und zugehörigen Zeitbuchungen")
