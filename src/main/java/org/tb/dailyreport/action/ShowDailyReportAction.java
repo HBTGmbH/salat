@@ -69,8 +69,8 @@ import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.viewhelper.EmployeeViewHelper;
 import org.tb.favorites.domain.Favorite;
-import org.tb.favorites.rest.FavoriteDto;
-import org.tb.favorites.rest.FavoriteDtoMapper;
+import org.tb.favorites.rest.FavoriteDTO;
+import org.tb.favorites.rest.FavoriteDTOMapper;
 import org.tb.favorites.service.FavoriteService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
@@ -96,7 +96,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
   private final TimereportHelper timereportHelper;
   private final TimereportService timereportService;
   private final OvertimeService overtimeService;
-  private final FavoriteDtoMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDtoMapper.class);
+  private final FavoriteDTOMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDTOMapper.class);
   private final CustomerorderService customerorderService;
   private final EmployeecontractService employeecontractService;
   private final SuborderService suborderService;
@@ -697,7 +697,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
   }
 
   private void updateFavorites(HttpServletRequest request, Long employeeId) {
-    List<FavoriteDto> favorites = favoriteDtoMapper.map(favoriteService.getFavorites(employeeId));
+    List<FavoriteDTO> favorites = favoriteDtoMapper.map(favoriteService.getFavorites(employeeId));
     request.getSession().setAttribute("favorites", favorites);
   }
 

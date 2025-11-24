@@ -6,13 +6,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.jackson.Jacksonized;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Jacksonized
 @Schema(description = "Favorite für eine Zeitbuchung", name = "Favorite")
-public class FavoriteDto implements Serializable {
+public class FavoriteDTO implements Serializable {
   @Schema(description = "Eindeutige ID des Favoriten, wird vom System vergeben", example = "1")
   private Long id;
 

@@ -36,17 +36,17 @@ import org.tb.favorites.service.FavoriteService;
 public class FavoriteRestEndpoint {
 
   private final FavoriteService favoriteService;
-  private final FavoriteDtoMapper favoriteDtoMapper = Mappers.getMapper(FavoriteDtoMapper.class);
+  private final FavoriteDTOMapper mapper = Mappers.getMapper(FavoriteDTOMapper.class);
   private final AuthorizedUser authorizedUser;
   private final AuthorizedEmployee authorizedEmployee;
 
   @GetMapping(path = "", produces = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
-  public Collection<FavoriteDto> getFavorites() {
+  public Collection<FavoriteDTO> getFavorites() {
     if(!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
-    return favoriteDtoMapper.map(favoriteService.getFavorites(authorizedEmployee.getEmployeeId()));
+    return mapper.map(favoriteService.getFavorites(authorizedEmployee.getEmployeeId()));
   }
 
   @Operation(summary = "Fügt einen neuen Favoriten hinzu",
@@ -54,17 +54,17 @@ public class FavoriteRestEndpoint {
   @ApiResponses(value = {
       @ApiResponse(responseCode = "201", description = "Favorit erfolgreich gespeichert",
           content = @Content(mediaType = "application/json",
-              schema = @Schema(implementation = FavoriteDto.class))),
+              schema = @Schema(implementation = FavoriteDTO.class))),
       @ApiResponse(responseCode = "401", description = "Nicht authentifiziert", content = @Content)
   })
   @PutMapping(path = "", consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
-  public FavoriteDto addFavorite(@RequestBody @Parameter(description = "Der zu speichernde Favorit", 
-      required = true, schema = @Schema(implementation = FavoriteDto.class)) FavoriteDto favorite) {
+  public FavoriteDTO addFavorite(@RequestBody @Parameter(description = "Der zu speichernde Favorit",
+      required = true, schema = @Schema(implementation = FavoriteDTO.class)) FavoriteDTO favorite) {
     if (!authorizedUser.isAuthenticated()) {
       throw new ResponseStatusException(UNAUTHORIZED);
     }
-    return favoriteDtoMapper.map(favoriteService.addFavorite(favoriteDtoMapper.map(favorite)));
+    return mapper.map(favoriteService.addFavorite(mapper.map(favorite)));
   }
 
   @Operation(summary = "Löscht einen Favoriten",

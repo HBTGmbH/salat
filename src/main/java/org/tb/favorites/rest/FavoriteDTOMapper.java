@@ -10,10 +10,10 @@ import org.tb.favorites.domain.Favorite;
 @Mapper(collectionMappingStrategy = CollectionMappingStrategy.ADDER_PREFERRED,
     nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
     unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface FavoriteDtoMapper {
+public interface FavoriteDTOMapper {
 
-    FavoriteDto map(Favorite favorite);
-    Favorite map(FavoriteDto favorite);
-    List<FavoriteDto> map(List<Favorite> favorites);
+    FavoriteDTO map(Favorite favorite);
+    Favorite map(FavoriteDTO favorite);
+    List<FavoriteDTO> map(List<Favorite> favorites);
 
 }
