@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -256,7 +257,7 @@ public class ReportingController {
 
     private Long reportId;
 
-    private List<ReportParameter> parameters = List.of();
+    private List<ReportParameter> parameters = new ArrayList<>();
 
     public void initParameters(List<ReportParameter> preset, java.util.Set<String> missingParameterNames) {
       var list = new java.util.ArrayList<ReportParameter>();
