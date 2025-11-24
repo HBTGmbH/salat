@@ -1,10 +1,14 @@
 package org.tb.dailyreport.rest;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.opencsv.bean.CsvBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -75,4 +79,34 @@ public class DailyReportData {
     public DailyReportData withoutId(){
         return toBuilder().id(null).build();
     }
+
+  @JsonCreator
+  public static DailyReportData jacksonCreator(
+      @JsonProperty("id") Long id,
+      @JsonProperty("date") String date,
+      @JsonProperty("employeeorderId") long employeeorderId,
+      @JsonProperty("orderSign") String orderSign,
+      @JsonProperty("orderLabel") String orderLabel,
+      @JsonProperty("suborderSign") String suborderSign,
+      @JsonProperty("suborderLabel") String suborderLabel,
+      @JsonProperty("hours") long hours,
+      @JsonProperty("minutes") long minutes,
+      @JsonProperty("comment") String comment,
+      @JsonProperty("training") boolean training
+  ) {
+    return DailyReportData.builder()
+        .id(id)
+        .date(date)
+        .employeeorderId(employeeorderId)
+        .orderSign(orderSign)
+        .orderLabel(orderLabel)
+        .suborderSign(suborderSign)
+        .suborderLabel(suborderLabel)
+        .hours(hours)
+        .minutes(minutes)
+        .comment(comment)
+        .training(training)
+        .build();
+  }
+
 }
