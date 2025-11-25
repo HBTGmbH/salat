@@ -25,7 +25,7 @@
       <div class="mb-3" th:if="${params}">
         <div><strong>Parameters:</strong>
           <span th:each="p,iter : ${params}">
-            <span th:text="${p.name + '=' + (p.type != 'string' ? p.type + ',' : '') + p.value}">name=value</span>
+            <span th:text="${p.name + '=' + p.value}">name=value</span>
             <span th:if="${!iter.last}">, </span>
           </span>
         </div>
