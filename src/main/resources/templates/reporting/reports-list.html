@@ -5,11 +5,13 @@
       th:with="section='orders',subSection='reports',title='Reports',sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
 
-  <div th:replace="~{fragments/master-table :: masterTable(
+  <div th:replace="~{fragments/master-table :: masterTableFilter(
       addHref=@{/reporting/reports/create}, addLabel=${'New Report'},
       thead=~{::theadContent}, tbody=~{::tbodyContent},
       addIf=${#authorization.expression('hasRole(''MANAGER'')')},
-      addIcon='ti-file-plus'
+      addIcon='ti-file-plus',
+      filterHref=@{/reporting/reports},
+      filterValue=${filter}
     )}">
 
     <thead th:fragment="theadContent">
