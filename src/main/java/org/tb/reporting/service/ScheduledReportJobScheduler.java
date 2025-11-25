@@ -20,6 +20,8 @@ import com.cronutils.parser.CronParser;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.tb.reporting.domain.ScheduledReportJob;
+import org.tb.reporting.event.ReportScheduledEvent;
+import org.tb.reporting.event.ReportUnscheduledEvent;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
 /**
@@ -33,7 +35,7 @@ public class ScheduledReportJobScheduler {
 
   private final TaskScheduler taskScheduler;
   private final ScheduledReportJobRepository scheduledReportJobRepository;
-  private final ReportSchedulerService reportSchedulerService;
+  private final ScheduledReportJobService scheduledReportJobService;
 
   @Value("${salat.reporting.scheduler.cron:0 0 5 * * ?}")
   private String defaultCron;
@@ -63,7 +65,7 @@ public class ScheduledReportJobScheduler {
       ScheduledFuture<?> future = taskScheduler.schedule(
           () -> {
             try {
-              reportSchedulerService.executeScheduledReportJobById(job.getId());
+              scheduledReportJobService.executeScheduledReportJobById(job.getId());
             } catch (Exception e) {
               log.error("Error running ScheduledReportJob id={} name={}", job.getId(), job.getName(), e);
             }
@@ -79,7 +81,7 @@ public class ScheduledReportJobScheduler {
         log.warn("TaskScheduler returned null future when scheduling job id={} name='{}'", job.getId(), job.getName());
       }
     } catch (IllegalArgumentException ex) {
-      log.error("Invalid cron expression '{}' for job id={} name='{}'. Skipping scheduling.", cron, job.getId(), job.getName());
+      log.error("Invalid cron expression '{}' for job id={} name='{}'. Skipping scheduling.", cron, job.getId(), job.getName(), ex);
     }
   }
 
@@ -96,7 +98,13 @@ public class ScheduledReportJobScheduler {
     }
   }
 
-  public synchronized void unscheduleJob(Long jobId) {
+  @EventListener
+  synchronized void unscheduleJob(ReportUnscheduledEvent event) {
+    var jobId = event.getScheduledReportJob().getId();
+    unscheduleJob(jobId);
+  }
+
+  private synchronized void unscheduleJob(long jobId) {
     ScheduledFuture<?> existing = scheduledTasks.remove(jobId);
     if (existing != null) {
       existing.cancel(false);
@@ -104,7 +112,13 @@ public class ScheduledReportJobScheduler {
     }
   }
 
-  public void scheduleOrUnschedule(ScheduledReportJob job) {
+  @EventListener
+  void scheduleOrUnschedule(ReportScheduledEvent event) {
+    var job = event.getScheduledReportJob();
+    scheduleOrUnschedule(job);
+  }
+
+  private void scheduleOrUnschedule(ScheduledReportJob job) {
     if (job.isEnabled()) {
       scheduleJob(job);
     } else {
