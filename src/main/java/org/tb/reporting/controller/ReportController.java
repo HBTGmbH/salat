@@ -53,10 +53,10 @@ public class ReportController {
   private final ExcelExportService excelExportService;
 
   @GetMapping
-  public String list(Model model, SessionStatus status) {
+  public String list(@RequestParam(value = "filter", required = false) String filter, Model model, SessionStatus status) {
     status.setComplete(); // remove old report result
 
-    var reports = reportService.getReportDefinitions();
+    var reports = reportService.getReportDefinitionsByFilter(filter);
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
     for (ReportDefinition r : reports) {

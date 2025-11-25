@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IteratorUtils;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.Authorized;
@@ -47,7 +48,19 @@ public class ReportService {
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
-        reportDefinitionRepository.findAll(Sort.by(ReportDefinition_.NAME)).iterator()
+        reportDefinitionRepository.findAll(Sort.by(Order.by(ReportDefinition_.NAME).ignoreCase())).iterator()
+    ).stream().filter(r -> reportAuthorization.isAuthorized(r, EXECUTE)).toList();
+  }
+
+  public List<ReportDefinition> getReportDefinitionsByFilter(String filter) {
+    if (filter == null || filter.isBlank()) {
+      return getReportDefinitions();
+    }
+    return IteratorUtils.toList(
+        reportDefinitionRepository.findAllByFilter(
+            "%" + filter + "%",
+            Sort.by(Order.by(ReportDefinition_.NAME).ignoreCase())
+        ).iterator()
     ).stream().filter(r -> reportAuthorization.isAuthorized(r, EXECUTE)).toList();
   }
 
