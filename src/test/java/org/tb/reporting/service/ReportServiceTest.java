@@ -26,15 +26,15 @@ import org.tb.reporting.domain.ReportParameter;
 import org.tb.testutils.WebContextTestExecutionListener;
 
 @DataJpaTest
-@Import({ReportingService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class, ReportAuthorization.class, ReportingParameterResolver.class})
+@Import({ReportService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class, ReportAuthorization.class, ReportParameterResolver.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
 @WebAppConfiguration
 @TestExecutionListeners(listeners = WebContextTestExecutionListener.class, mergeMode = MERGE_WITH_DEFAULTS)
-public class ReportingServiceTest {
+public class ReportServiceTest {
 
   @Autowired
-  private ReportingService reportingService;
+  private ReportService reportService;
 
   @Autowired
   private EmployeeRepository employeeRepository;
@@ -50,13 +50,13 @@ public class ReportingServiceTest {
     manager.setStatus(EMPLOYEE_STATUS_PV);
     authorizedUser.login(manager);
 
-    var defs = reportingService.getReportDefinitions();
+    var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create("test", "select id, sign from employee");
+    var reportDefinition = reportService.create("test", "select id, sign from employee");
     assertThat(reportDefinition).isNotNull();
 
-    defs = reportingService.getReportDefinitions();
+    defs = reportService.getReportDefinitions();
     assertThat(defs).size().isEqualTo(1);
   }
 
@@ -68,12 +68,12 @@ public class ReportingServiceTest {
     manager.setStatus(EMPLOYEE_STATUS_PV);
     authorizedUser.login(manager);
 
-    var defs = reportingService.getReportDefinitions();
+    var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create("test", "select id, sign from employee");
+    var reportDefinition = reportService.create("test", "select id, sign from employee");
 
-    var result = reportingService.execute(reportDefinition.getId(), List.of());
+    var result = reportService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
   }
 
@@ -96,16 +96,16 @@ public class ReportingServiceTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employeeRepository.save(employee);
 
-    var defs = reportingService.getReportDefinitions();
+    var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create(
+    var reportDefinition = reportService.create(
             "test",
             "select id, sign from employee where firstname like :firstname"
     );
 
     var parameters = List.of(new ReportParameter("firstname", "string", "%Klaus%"));
-    var result = reportingService.execute(reportDefinition.getId(), parameters);
+    var result = reportService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getRows()).size().isEqualTo(1);
   }
@@ -129,16 +129,16 @@ public class ReportingServiceTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employeeRepository.save(employee);
 
-    var defs = reportingService.getReportDefinitions();
+    var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create(
+    var reportDefinition = reportService.create(
             "test",
             "select firstname from employee where lastname = :lastname order by firstname"
     );
 
     var parameters = List.of(new ReportParameter("lastname", "string", "Richarz"));
-    var result = reportingService.execute(reportDefinition.getId(), parameters);
+    var result = reportService.execute(reportDefinition.getId(), parameters);
     assertThat(result.getColumnHeaders()).size().isEqualTo(1);
     assertThat(result.getRows()).size().isEqualTo(2);
     var firstnameColumnName = result.getColumnHeaders().getFirst().getName();
@@ -154,12 +154,12 @@ public class ReportingServiceTest {
     manager.setStatus(EMPLOYEE_STATUS_PV);
     authorizedUser.login(manager);
 
-    var defs = reportingService.getReportDefinitions();
+    var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create("test", "select id, sign as sign_alias from employee");
+    var reportDefinition = reportService.create("test", "select id, sign as sign_alias from employee");
 
-    var result = reportingService.execute(reportDefinition.getId(), List.of());
+    var result = reportService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias"));
@@ -186,15 +186,15 @@ public class ReportingServiceTest {
     employee.setGender(GlobalConstants.GENDER_FEMALE);
     employeeRepository.save(employee);
 
-    var defs = reportingService.getReportDefinitions();
+    var defs = reportService.getReportDefinitions();
     assertThat(defs).isEmpty();
 
-    var reportDefinition = reportingService.create(
+    var reportDefinition = reportService.create(
             "test",
             "select id, sign as sign_alias_1, sign as sign_alias_2 from employee"
     );
 
-    var result = reportingService.execute(reportDefinition.getId(), List.of());
+    var result = reportService.execute(reportDefinition.getId(), List.of());
     assertThat(result.getColumnHeaders()).size().isEqualTo(3);
     assertThat(result.getRows()).size().isEqualTo(2);
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("id"));

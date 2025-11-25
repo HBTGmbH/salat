@@ -21,7 +21,7 @@ import org.tb.reporting.domain.ReportResult;
 public class ReportEmailService {
 
   private final ExcelExportService excelExportService;
-  private final ReportingService reportingService;
+  private final ReportService reportService;
   private final MailService mailService;
 
   @Value("${salat.reporting.email.from:noreply@salat.local}")
@@ -38,8 +38,8 @@ public class ReportEmailService {
       }
 
       log.info("Generating report {} with parameters: {}", reportDefinitionId, parameters);
-      ReportDefinition reportDefinition = reportingService.getReportDefinition(reportDefinitionId);
-      ReportResult reportResult = reportingService.execute(reportDefinitionId, parameters);
+      ReportDefinition reportDefinition = reportService.getReportDefinition(reportDefinitionId);
+      ReportResult reportResult = reportService.execute(reportDefinitionId, parameters);
 
       if(reportResult.getRows().isEmpty()) {
         log.info("Report id={}, name={} returned no rows. Skipping email.", reportDefinitionId, reportDefinition.getName());

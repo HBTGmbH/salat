@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * - intentionally does NOT resolve ${FROM} or ${UNTIL}
  */
 @Component
-public class ReportingParameterResolver {
+public class ReportParameterResolver {
 
   public String resolve(String sql, LocalDate today) {
     LocalDate refDate = today;

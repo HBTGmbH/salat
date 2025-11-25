@@ -22,17 +22,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.reporting.domain.ScheduledReportJob;
-import org.tb.reporting.service.ReportingService;
+import org.tb.reporting.service.ReportService;
 import org.tb.reporting.service.ScheduledReportJobService;
 
 @Controller
 @RequestMapping("/reporting/jobs")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('MANAGER')")
-public class ReportingJobsController {
+public class ScheduledReportJobController {
 
   private final ScheduledReportJobService jobService;
-  private final ReportingService reportingService;
+  private final ReportService reportService;
 
   @Value("${salat.reporting.scheduler.cron:0 0 5 * * ?}")
   private String defaultCron;
@@ -58,7 +58,7 @@ public class ReportingJobsController {
   public String createForm(Model model) {
     model.addAttribute("pageTitle", "Create Scheduled Report Job");
     model.addAttribute("job", new ScheduledReportJobForm());
-    model.addAttribute("reportDefinitions", reportingService.getReportDefinitions());
+    model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
     model.addAttribute("isEdit", false);
     return "reporting/scheduled-job-form";
   }
@@ -78,7 +78,7 @@ public class ReportingJobsController {
 
     model.addAttribute("pageTitle", "Edit Scheduled Report Job");
     model.addAttribute("job", form);
-    model.addAttribute("reportDefinitions", reportingService.getReportDefinitions());
+    model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
     model.addAttribute("isEdit", true);
     return "reporting/scheduled-job-form";
   }
@@ -101,7 +101,7 @@ public class ReportingJobsController {
     }
     
     if (bindingResult.hasErrors()) {
-      model.addAttribute("reportDefinitions", reportingService.getReportDefinitions());
+      model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
       boolean isEdit = form.getId() != null && form.getId() > 0;
       model.addAttribute("pageTitle", isEdit ? "Edit Scheduled Report Job" : "Create Scheduled Report Job");
       model.addAttribute("isEdit", isEdit);
@@ -116,7 +116,7 @@ public class ReportingJobsController {
       job = new ScheduledReportJob();
     }
 
-    var reportDefinition = reportingService.getReportDefinition(form.getReportDefinitionId());
+    var reportDefinition = reportService.getReportDefinition(form.getReportDefinitionId());
     job.setReportDefinition(reportDefinition);
     job.setName(form.getName());
     job.setReportParameters(form.getReportParameters());

@@ -37,13 +37,13 @@ import org.tb.reporting.persistence.ReportDefinitionRepository;
 @RequiredArgsConstructor
 @DependsOnDatabaseInitialization
 @Authorized
-public class ReportingService {
+public class ReportService {
 
   private final ReportDefinitionRepository reportDefinitionRepository;
   private final DataSource dataSource;
   private final ReportAuthorization reportAuthorization;
   private final AuthorizedUser authorizedUser;
-  private final ReportingParameterResolver reportingParameterResolver;
+  private final ReportParameterResolver reportParameterResolver;
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
@@ -104,7 +104,7 @@ public class ReportingService {
       }
       // Resolve reporting placeholders based only on today's date (no FROM/UNTIL)
       LocalDate today = LocalDate.now();
-      sql = reportingParameterResolver.resolve(sql, today);
+      sql = reportParameterResolver.resolve(sql, today);
     }
     final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, getParameterMap(parameters));
 

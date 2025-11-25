@@ -39,16 +39,16 @@ import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ReportResult;
 import org.tb.reporting.service.ExcelExportService;
-import org.tb.reporting.service.ReportingService;
+import org.tb.reporting.service.ReportService;
 
 @Slf4j
 @Controller
 @RequestMapping("/reporting/reports")
 @RequiredArgsConstructor
 @SessionAttributes("reportResult")
-public class ReportingController {
+public class ReportController {
 
-  private final ReportingService reportingService;
+  private final ReportService reportService;
   private final ReportAuthorization reportAuthorization;
   private final ExcelExportService excelExportService;
 
@@ -56,7 +56,7 @@ public class ReportingController {
   public String list(Model model, SessionStatus status) {
     status.setComplete(); // remove old report result
 
-    var reports = reportingService.getReportDefinitions();
+    var reports = reportService.getReportDefinitions();
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
     for (ReportDefinition r : reports) {
@@ -82,7 +82,7 @@ public class ReportingController {
   @GetMapping("/edit")
   @PreAuthorize("hasRole('MANAGER')")
   public String editForm(@RequestParam("id") Long id, Model model) {
-    var rd = reportingService.getReportDefinition(id);
+    var rd = reportService.getReportDefinition(id);
     var form = new ReportForm();
     form.setId(rd.getId());
     form.setName(rd.getName());
@@ -115,10 +115,10 @@ public class ReportingController {
     }
 
     if (form.getId() == null) {
-      reportingService.create(form.getName(), form.getSql());
+      reportService.create(form.getName(), form.getSql());
       redirectAttributes.addFlashAttribute("toastSuccess", "Report created successfully");
     } else {
-      reportingService.update(form.getId(), form.getName(), form.getSql());
+      reportService.update(form.getId(), form.getName(), form.getSql());
       redirectAttributes.addFlashAttribute("toastSuccess", "Report updated successfully");
     }
 
@@ -128,7 +128,7 @@ public class ReportingController {
   @PostMapping("/delete")
   @PreAuthorize("hasRole('MANAGER')")
   public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
-    reportingService.deleteReportDefinition(id);
+    reportService.deleteReportDefinition(id);
     redirectAttributes.addFlashAttribute("toastSuccess", "Report deleted successfully");
     return "redirect:/reporting/reports";
   }
@@ -138,7 +138,7 @@ public class ReportingController {
                         @RequestParam Map<String, String> allParams,
                         Model model,
                         SessionStatus status) {
-    var reportDefinition = reportingService.getReportDefinition(id);
+    var reportDefinition = reportService.getReportDefinition(id);
 
     var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, reportDefinition.getSql()));
     var missingParameters = getMissingParameters(parametersFromRequest, reportDefinition.getSql());
@@ -154,7 +154,7 @@ public class ReportingController {
       model.addAttribute("missingParameters", missingParameters);
       return "reporting/report-parameters";
     } else {
-      ReportResult reportResult = reportingService.execute(id, parametersFromRequest);
+      ReportResult reportResult = reportService.execute(id, parametersFromRequest);
       // Ergebnis in HTTP-Session ablegen, damit andere Endpunkte (z.B. Export) darauf zugreifen können
       model.addAttribute("pageTitle", "Report Result");
       model.addAttribute("report", reportDefinition);
@@ -174,7 +174,7 @@ public class ReportingController {
   public void export(@RequestParam("id") Long id,
                      @ModelAttribute("reportResult") ReportResult reportResult,
                      HttpServletResponse response) throws IOException {
-    var reportDefinition = reportingService.getReportDefinition(id);
+    var reportDefinition = reportService.getReportDefinition(id);
     var bytes = excelExportService.exportToExcel(reportResult);
     response.setHeader("Content-disposition", "attachment; filename=" + createFileName(reportDefinition));
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
