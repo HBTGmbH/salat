@@ -16,16 +16,16 @@
     )}">
     <thead th:fragment="theadContent">
       <tr>
-        <th th:replace="~{fragments/master-table :: colHeader(#{main.customer.shortname.text})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderPrimary(#{main.customer.shortname.text})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(#{main.customer.name.text})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(#{main.customer.address.text})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
       </tr>
     </thead>
     <tbody th:fragment="tbodyContent">
       <tr th:each="cu : ${customers}">
-        <td th:replace="~{fragments/master-table :: colText(${cu.shortName})}"></td>
+        <td th:replace="~{fragments/master-table :: colTextPrimary(${cu.shortName})}"></td>
         <td th:replace="~{fragments/master-table :: colText(${cu.name})}"></td>
         <td th:replace="~{fragments/master-table :: colText(${cu.address})}"></td>
         <td th:replace="~{fragments/master-table :: colEditLinkIf(@{'/customers/edit'(id=${cu.id})}, ${#authorization.expression('hasRole(''MANAGER'')')})}"></td>

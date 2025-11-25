@@ -14,20 +14,20 @@
 
     <thead th:fragment="theadContent">
       <tr>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Name'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderPrimary(label=${'Name'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Report'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Recipients'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Enabled'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Schedule'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
       </tr>
     </thead>
 
     <tbody th:fragment="tbodyContent">
       <tr th:each="job : ${jobs}">
-        <td th:replace="~{fragments/master-table :: colText(text=${job.name})}"></td>
+        <td th:replace="~{fragments/master-table :: colTextPrimary(text=${job.name})}"></td>
         <td th:replace="~{fragments/master-table :: colText(text=${job.reportDefinition != null ? job.reportDefinition.name : '—'})}"></td>
         <td th:replace="~{fragments/master-table :: colText(text=${job.recipientEmails})}"></td>
         <td th:replace="~{fragments/master-table :: colYesNo(enabled=${job.enabled})}"></td>

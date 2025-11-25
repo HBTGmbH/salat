@@ -16,20 +16,20 @@
 
     <thead th:fragment="theadContent">
       <tr>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Name'})}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderPrimary(label=${'Name'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated By'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderNarrow()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
       </tr>
     </thead>
 
     <tbody th:fragment="tbodyContent">
       <tr th:each="report : ${reports}">
-        <td th:replace="~{fragments/master-table :: colText(text=${report.name})}"></td>
-        <td th:replace="~{fragments/master-table :: colDate(date=${report.lastupdate})}"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${report.lastupdatedby})}"></td>
+        <td th:replace="~{fragments/master-table :: colTextPrimary(text=${report.name})}"></td>
+        <td th:replace="~{fragments/master-table :: colDate(date=${report.lastupdate})}" class="d-none d-sm-table-cell"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${report.lastupdatedby})}" class="d-none d-sm-table-cell"></td>
         <td>
           <a class="btn btn-success" th:href="@{'/reporting/reports/execute'(id=${report.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
         </td>
