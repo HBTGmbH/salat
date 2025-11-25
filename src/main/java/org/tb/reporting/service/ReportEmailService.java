@@ -60,7 +60,7 @@ public class ReportEmailService {
       }
 
       EmailRequest emailRequest = EmailRequest.builder()
-          .subject("Automated Report: " + reportDefinition.getName())
+          .subject("Report: " + reportDefinition.getName())
           .message(emailBody)
           .from(from)
           .to(primaryRecipient)
@@ -85,15 +85,14 @@ public class ReportEmailService {
   private String buildEmailBody(ReportDefinition reportDefinition, ReportResult reportResult, List<ReportParameter> parameters) {
     StringBuilder body = new StringBuilder();
     body.append("Guten Tag,\n\n");
-    body.append("anbei erhalten Sie den automatisch generierten Report: ").append(reportDefinition.getName()).append("\n\n");
+    body.append("anbei erhältst du den bestellten Report: ").append(reportDefinition.getName()).append("\n\n");
     body.append("Report-Details:\n");
-    body.append("- Anzahl Zeilen: ").append(reportResult.getRows().size()).append("\n");
-    body.append("- Generiert am: ").append(DateUtils.formatDateTime(DateUtils.now(), "dd.MM.yyyy HH:mm")).append("\n");
-
     if (!parameters.isEmpty()) {
       body.append("- Parameter:\n");
       parameters.forEach(parameter -> body.append("  * ").append(parameter.getName()).append(": ").append(parameter.getValue()).append("\n"));
     }
+    body.append("- Anzahl Zeilen: ").append(reportResult.getRows().size()).append("\n");
+    body.append("- Generiert am: ").append(DateUtils.formatDateTime(DateUtils.now(), "dd.MM.yyyy HH:mm")).append("\n");
 
     body.append("\nDie Ergebnisse befinden sich im angehängten Excel-Dokument.\n\n");
     body.append("Mit freundlichen Grüßen\n");
