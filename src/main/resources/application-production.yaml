@@ -20,7 +20,7 @@ salat:
       logout-url: /.auth/logout
     api-scope: api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation
     easy-auth:
-      principal-id-header-name: x-ms-user-principle-id
+      principal-id-header-name: x-ms-client-principle-id
       oidc-id-token:
         header-name: x-ms-token-aad-id-token
         principal-claim-name: mailnickname
