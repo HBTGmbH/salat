@@ -6,9 +6,13 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.Scope;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.context.support.SimpleThreadScope;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import com.cronutils.descriptor.CronDescriptor;
@@ -19,6 +23,8 @@ import com.cronutils.model.CronType;
 import com.cronutils.parser.CronParser;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.WebApplicationContext;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.event.ReportScheduledEvent;
 import org.tb.reporting.event.ReportUnscheduledEvent;
@@ -36,6 +42,8 @@ public class ScheduledReportJobScheduler {
   private final TaskScheduler taskScheduler;
   private final ScheduledReportJobRepository scheduledReportJobRepository;
   private final ScheduledReportJobService scheduledReportJobService;
+  private final ConfigurableListableBeanFactory beanFactory;
+  private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
 
   @Value("${salat.reporting.scheduler.cron:0 0 5 * * ?}")
   private String defaultCron;
@@ -64,11 +72,13 @@ public class ScheduledReportJobScheduler {
 
       ScheduledFuture<?> future = taskScheduler.schedule(
           () -> {
-            try {
-              scheduledReportJobService.executeScheduledReportJobById(job.getId());
-            } catch (Exception e) {
-              log.error("Error running ScheduledReportJob id={} name={}", job.getId(), job.getName(), e);
-            }
+            runInTemporarySessionScope(() -> {
+                try {
+                  scheduledReportJobService.executeScheduledReportJobById(job.getId());
+                } catch (Exception e) {
+                  log.error("Failed to execute scheduled report job: {} (ID: {})", job.getName(), job.getId(), e);
+                }
+            });
           },
           trigger
       );
@@ -125,4 +135,33 @@ public class ScheduledReportJobScheduler {
       unscheduleJob(job.getId());
     }
   }
+
+  private void runInTemporarySessionScope(Runnable task) {
+    // Initialize a temporary session scope for the duration of this scheduled execution
+    Scope previousSessionScope = beanFactory.getRegisteredScope(WebApplicationContext.SCOPE_SESSION);
+    var temporarySessionScope = new SimpleThreadScope();
+    beanFactory.registerScope(WebApplicationContext.SCOPE_SESSION, temporarySessionScope);
+
+    try {
+      initializeAuthorizedUserForJobExecution();
+      task.run();
+    } finally {
+      // Clean up session-scoped beans and restore original session scope
+      try {
+        beanFactory.destroyScopedBean("authorizedUser");
+      } catch (Exception ignored) {
+        // ignore cleanup issues
+      }
+      if (previousSessionScope != null) {
+        beanFactory.registerScope(WebApplicationContext.SCOPE_SESSION, previousSessionScope);
+      }
+    }
+  }
+
+  private void initializeAuthorizedUserForJobExecution() {
+    // Initialize a synthetic AuthorizedUser within this session scope
+    AuthorizedUser systemUser = authorizedUserProvider.getObject();
+    systemUser.initForJob();
+  }
+
 }
