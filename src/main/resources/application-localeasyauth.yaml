@@ -1,0 +1,15 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/0af2c34e-4e40-42d9-89ab-e095b8151308/v2.0
+salat:
+  auth:
+    api-scope: api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation
+    easy-auth:
+      principal-id-header-name: x-ms-user-principle-id
+      oidc-id-token:
+        header-name: x-ms-token-aad-id-token
+        principal-claim-name: mailnickname
+        principal-id-claim-name: oid

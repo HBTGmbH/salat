@@ -17,12 +17,15 @@ public class SalatProperties {
 
   @Data
   public static class Auth {
-    private String sessionCookieName;
     private String apiScope;
-    private OidcIdToken oidcIdToken;
-    private AccessToken accessToken;
+    private EasyAuth easyAuth;
     private Logout logout;
-    private Refresh refresh;
+
+    @Data
+    public static class EasyAuth {
+      private String principalIdHeaderName;
+      private OidcIdToken oidcIdToken;
+    }
 
     @Data
     public static class Logout {
@@ -31,21 +34,10 @@ public class SalatProperties {
     }
 
     @Data
-    public static class Refresh {
-      private boolean enabled;
-      private String refreshUrl;
-    }
-
-    @Data
     public static class OidcIdToken {
       private String principalClaimName;
+      private String principalIdClaimName;
       private String headerName;
-    }
-
-    @Data
-    public static class AccessToken {
-      private String headerName;
-      private String expiresOnHeaderName;
     }
   }
 

@@ -5,10 +5,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.boot.security.oauth2.server.resource.autoconfigure.OAuth2ResourceServerProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +19,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtTypeValidator;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,12 +40,14 @@ import org.tb.common.SalatProperties;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
 @Configuration
-@Profile({ "production", "staging" })
+@Profile({ "production", "staging", "localeasyauth" })
 @RequiredArgsConstructor
+@Slf4j
 public class AzureEasyAuthSecurityConfiguration {
 
   private final AuthorizedUser authorizedUser;
   private final Set<AuthViewHelper> authViewHelpers;
+  private final ObjectFactory<HttpServletRequest> requestProvider;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -104,28 +111,10 @@ public class AzureEasyAuthSecurityConfiguration {
   @Order(2)
   public SecurityFilterChain filterChain(
       HttpSecurity http,
-      JwtAuthenticationConverter jwtAuthenticationConverter,
-      @Value("${salat.auth.principal-header-name}") String principleHeaderName,
-      @Value("${salat.auth.unauthenticated-redirect-uri}") String unauthenticatedRedirectUri
-  ) throws Exception {
+      JwtAuthenticationConverter jwtAuthenticationConverter
+  ) {
     http.authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-        .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
-          var easyAuthHeader = request.getHeader(principleHeaderName);
-          if ((easyAuthHeader == null || easyAuthHeader.isBlank())) {
-            String target = "/";
-            if ("GET".equalsIgnoreCase(request.getMethod())) {
-              String uri = request.getRequestURI();
-              String query = request.getQueryString();
-              String full = (query == null || query.isBlank()) ? uri : (uri + "?" + query);
-              target = URLEncoder.encode(full, StandardCharsets.UTF_8);
-            }
-            String redirect = String.format(unauthenticatedRedirectUri, target);
-            response.sendRedirect(redirect);
-          } else {
-            response.sendError(401);
-          }
-        }))
         .cors(cors -> cors.disable())
         .csrf(csrf -> csrf.disable());
     return http.build();
@@ -134,7 +123,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   BearerTokenResolver bearerTokenResolver(SalatProperties salatProperties) {
     return new MultiHeaderBearerTokenResolver(
-        salatProperties.getAuth().getOidcIdToken().getHeaderName(),
+        salatProperties.getAuth().getEasyAuth().getOidcIdToken().getHeaderName(),
         "Authorization"
     );
   }
@@ -142,7 +131,7 @@ public class AzureEasyAuthSecurityConfiguration {
   @Bean
   public JwtAuthenticationConverter customJwtAuthenticationConverter(SalatProperties salatProperties, AuthService authService) {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-    String principalClaim = salatProperties.getAuth().getOidcIdToken().getPrincipalClaimName();
+    String principalClaim = salatProperties.getAuth().getEasyAuth().getOidcIdToken().getPrincipalClaimName();
     converter.setPrincipalClaimName(principalClaim);
     converter.setJwtGrantedAuthoritiesConverter(jwt -> {
       String sign = jwt.getClaimAsString(principalClaim);
@@ -164,6 +153,30 @@ public class AzureEasyAuthSecurityConfiguration {
       return authorities;
     });
     return converter;
+  }
+
+  @Bean
+  JwtDecoder jwtDecoder(SalatProperties salatProperties, OAuth2ResourceServerProperties resourceServerProperties) {
+    NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(resourceServerProperties.getJwt().getIssuerUri()).build();
+
+    // validate oid claim against easy auth header
+    String principalIdClaimName = salatProperties.getAuth().getEasyAuth().getOidcIdToken().getPrincipalIdClaimName();
+    var easyAuthPrincipalValidator = new JwtClaimValidator<>(principalIdClaimName, value -> {
+      String principalIdHeaderName = salatProperties.getAuth().getEasyAuth().getPrincipalIdHeaderName();
+      String clientPrincipalId = requestProvider.getObject().getHeader(principalIdHeaderName);
+      boolean valid = value != null && value.equals(clientPrincipalId);
+      if(!valid) {
+        log.warn(
+            "oid claim in jwt does not match easy auth header. jwt: {}={}, easy auth: {}={}",
+            principalIdClaimName, value, principalIdHeaderName, clientPrincipalId
+        );
+      }
+      return valid;
+    });
+
+    // skip expiration validations
+    decoder.setJwtValidator(new DelegatingOAuth2TokenValidator(JwtTypeValidator.jwt(), easyAuthPrincipalValidator));
+    return decoder;
   }
 
   public static class MultiHeaderBearerTokenResolver implements BearerTokenResolver {

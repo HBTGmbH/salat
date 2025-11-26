@@ -3,9 +3,6 @@ salat:
     logout:
       enabled: true
       logout-url: /?logout=true
-    refresh:
-      enabled: false
-      refresh-url: /.auth/refresh
   url: localhost
   mail-host: localhost
   auth-service:

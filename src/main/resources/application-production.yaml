@@ -18,19 +18,13 @@ salat:
     logout:
       enabled: true
       logout-url: /.auth/logout
-    refresh:
-      enabled: true
-      refresh-url: /.auth/refresh
-    oidc-id-token:
-      principal-claim-name: mailnickname
-      header-name: x-ms-token-aad-id-token
-    access-token:
-      header-name: x-ms-token-aad-access-token
-      expires-on-header-name: x-ms-token-aad-expires-on
-    principal-header-name: x-ms-user-principal-name
-    unauthenticated-redirect-uri: /.auth/login/aad?post_login_redirect_uri=%s
-    session-cookie-name: AppServiceAuthSession
     api-scope: api://dea20d63-0092-4fdd-8192-44e6743c6a71/user_impersonation
+    easy-auth:
+      principal-id-header-name: x-ms-user-principle-id
+      oidc-id-token:
+        header-name: x-ms-token-aad-id-token
+        principal-claim-name: mailnickname
+        principal-id-claim-name: oid
   auth-service:
     cache-expiry: 1h
   reporting:
