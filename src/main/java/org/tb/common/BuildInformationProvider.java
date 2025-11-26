@@ -4,11 +4,18 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.EnvironmentPostProcessor;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,6 +23,7 @@ import org.springframework.stereotype.Component;
 public class BuildInformationProvider implements ServletContextListener, InitializingBean {
 
   private final ServerTimeHelper serverTimeHelper;
+  private final ConfigurableEnvironment environment;
   private BuildProperties buildProperties;
   private GitProperties gitProperties;
 
@@ -51,6 +59,12 @@ public class BuildInformationProvider implements ServletContextListener, Initial
       entries.setProperty("build.time", "now");
       gitProperties = new GitProperties(entries);
     }
-  }
 
+    // add to environment
+    var gitProps = StreamSupport
+        .stream(gitProperties.spliterator(), false)
+        .collect(Collectors.toMap(entry -> "git." + entry.getKey(), entry -> (Object) entry.getValue()));
+    environment.getPropertySources().addLast(new MapPropertySource("git", gitProps));
+    environment.getPropertySources().addLast(buildProperties.toPropertySource());
+  }
 }
