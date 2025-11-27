@@ -24,8 +24,10 @@ public class AuthorizationAspect {
   }
 
   @Before("authorizedMethods()")
-  public void authenticate(JoinPoint joinPoint) throws Throwable {
+  public void authenticate(JoinPoint joinPoint) {
     var effectiveAnnotation = getAnnotation(joinPoint);
+
+    if(effectiveAnnotation.permitAll()) return; // anyone can access this method
 
     if(effectiveAnnotation.requiresAuthentication() && !authorizedUser.isAuthenticated()) {
       throw new AuthorizationException(ErrorCode.AA_REQUIRED);

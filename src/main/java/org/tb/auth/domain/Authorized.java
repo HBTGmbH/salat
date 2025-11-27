@@ -14,5 +14,6 @@ public @interface Authorized {
   boolean requiresAdmin() default false;
   boolean requiresBackoffice() default false;
   boolean requireUnrestricted() default false;
+  boolean permitAll() default false;
 
 }
