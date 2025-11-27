@@ -1,13 +1,6 @@
 package org.tb.reporting.controller;
 
-import com.cronutils.descriptor.CronDescriptor;
-import com.cronutils.model.Cron;
-import com.cronutils.model.CronType;
-import com.cronutils.model.definition.CronDefinition;
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.parser.CronParser;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +41,7 @@ public class ScheduledReportJobController {
     Map<Long, String> cronDescriptions = new HashMap<>();
     for (var job : jobs) {
       String cronExpr = (job.getCronExpression() == null || job.getCronExpression().isBlank()) ? defaultCron : job.getCronExpression();
-      cronDescriptions.put(job.getId(), getHumanReadableCron(cronExpr));
+      cronDescriptions.put(job.getId(), jobService.getHumanReadableCron(cronExpr));
     }
 
     model.addAttribute("pageTitle", "Scheduled Report Jobs");
@@ -152,20 +145,8 @@ public class ScheduledReportJobController {
     return "redirect:/reporting/jobs";
   }
 
-  private String getHumanReadableCron(String cronExpr) {
-    try {
-      CronDefinition def = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
-      CronParser parser = new CronParser(def);
-      Cron cron = parser.parse(cronExpr);
-      cron.validate();
-      CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
-      return descriptor.describe(cron);
-    } catch (Exception e) {
-      return "unrecognized/invalid cron pattern";
-    }
-  }
-  
-  // Form class for binding
+  @Getter
+  @Setter
   public static class ScheduledReportJobForm {
     private Long id;
     private Long reportDefinitionId;

@@ -21,23 +21,12 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.config.Scope;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.context.support.SimpleThreadScope;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
-import com.cronutils.descriptor.CronDescriptor;
-import com.cronutils.model.Cron;
-import com.cronutils.model.definition.CronDefinition;
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.model.CronType;
-import com.cronutils.parser.CronParser;
-import java.util.Locale;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.request.AbstractRequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.event.ReportScheduledEvent;
@@ -126,7 +115,7 @@ public class ScheduledReportJobScheduler {
 
       if (future != null) {
         scheduledTasks.add(new ScheduledReportJobCronTask(job.getId(), job.getCronExpression(), future));
-        String humanDesc = getHumanReadableCron(cron);
+        String humanDesc = scheduledReportJobService.getHumanReadableCron(cron);
         log.info("Scheduled job id={} name='{}' with cron '{}' ({})", job.getId(), job.getName(), cron, humanDesc);
       } else {
         log.warn("TaskScheduler returned null future when scheduling job id={} name='{}'", job.getId(), job.getName());
@@ -144,23 +133,10 @@ public class ScheduledReportJobScheduler {
     }
   }
 
-  private String getHumanReadableCron(String cronExpr) {
-    try {
-      CronDefinition def = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
-      CronParser parser = new CronParser(def);
-      Cron cron = parser.parse(cronExpr);
-      cron.validate();
-      CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
-      return descriptor.describe(cron);
-    } catch (Exception e) {
-      return "unrecognized/invalid cron pattern";
-    }
-  }
-
   private void runInTemporarySessionScope(Runnable task) {
     try {
       // Initialize a temporary session scope for the duration of this scheduled execution
-      setRequestAttributes(new SchedulerMockRequestAttributes());
+      setRequestAttributes(new SchedulerMockRequestAttributes(), true);
       initializeAuthorizedUserForJobExecution();
       task.run();
     } finally {

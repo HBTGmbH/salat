@@ -1,9 +1,16 @@
 package org.tb.reporting.service;
 
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.Cron;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -67,6 +74,20 @@ public class ScheduledReportJobService {
         log.info("Skipping disabled scheduled report job ID: {}", jobId);
       }
     });
+  }
+
+  @Authorized(permitAll = true)
+  public String getHumanReadableCron(String cronExpr) {
+    try {
+      CronDefinition def = CronDefinitionBuilder.instanceDefinitionFor(CronType.SPRING53);
+      CronParser parser = new CronParser(def);
+      Cron cron = parser.parse(cronExpr);
+      cron.validate();
+      CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
+      return descriptor.describe(cron);
+    } catch (Exception e) {
+      return "unrecognized/invalid cron pattern";
+    }
   }
 
   private void executeJob(ScheduledReportJob job) {
