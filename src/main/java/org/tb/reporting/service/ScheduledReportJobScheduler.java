@@ -114,7 +114,7 @@ public class ScheduledReportJobScheduler {
       );
 
       if (future != null) {
-        scheduledTasks.add(new ScheduledReportJobCronTask(job.getId(), job.getCronExpression(), future));
+        scheduledTasks.add(new ScheduledReportJobCronTask(job.getId(), cron, future));
         String humanDesc = scheduledReportJobService.getHumanReadableCron(cron);
         log.info("Scheduled job id={} name='{}' with cron '{}' ({})", job.getId(), job.getName(), cron, humanDesc);
       } else {
