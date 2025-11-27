@@ -21,6 +21,7 @@ import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ScheduledReportExecutionHistory;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.event.ReportScheduledEvent;
+import org.tb.reporting.event.ReportUnscheduledEvent;
 import org.tb.reporting.persistence.ScheduledReportExecutionHistoryRepository;
 import org.tb.reporting.persistence.ScheduledReportJobRepository;
 
@@ -59,8 +60,8 @@ public class ScheduledReportJobService {
 
   public void deleteJob(Long id) {
     ScheduledReportJob job = scheduledReportJobRepository.findById(id).orElseThrow();
-    applicationEventPublisher.publishEvent(new ReportScheduledEvent(this, job));
     scheduledReportJobRepository.deleteById(id);
+    applicationEventPublisher.publishEvent(new ReportUnscheduledEvent(this, job));
   }
 
   /**
