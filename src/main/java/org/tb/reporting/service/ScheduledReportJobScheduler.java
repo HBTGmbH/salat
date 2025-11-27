@@ -174,7 +174,7 @@ public class ScheduledReportJobScheduler {
       if (future != null && !future.isCancelled()) {
         long delay = future.getDelay(TimeUnit.SECONDS);
         if (delay > 0) {
-          return Instant.now().plusSeconds(delay);
+          return Instant.now().plusSeconds(delay + 1); // +1 helps with strange values
         }
       }
       return null;
