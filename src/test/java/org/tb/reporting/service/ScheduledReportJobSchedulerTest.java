@@ -38,12 +38,12 @@ public class ScheduledReportJobSchedulerTest {
   @Test
   void testScheduleAllJobsOnStartup_WithEnabledJobs() {
     // Arrange
-    ScheduledReportJob job1 = new ScheduledReportJob();
+    ScheduledReportJob job1 = new ScheduledReportJob(1L);
     job1.setName("Test Job 1");
     job1.setEnabled(true);
     job1.setCronExpression("0 0 * * * ?");
 
-    ScheduledReportJob job2 = new ScheduledReportJob();
+    ScheduledReportJob job2 = new ScheduledReportJob(2L);
     //job2.setId(2L);
     job2.setName("Test Job 2");
     job2.setCronExpression("0 15 * * * ?");
@@ -76,7 +76,7 @@ public class ScheduledReportJobSchedulerTest {
   @Test
   void testScheduleAllJobsOnStartup_JobWithInvalidCron() {
     // Arrange
-    ScheduledReportJob job = new ScheduledReportJob();
+    ScheduledReportJob job = new ScheduledReportJob(1L);
     job.setName("Invalid Cron Job");
     job.setEnabled(true);
     job.setCronExpression("invalid-cron");
@@ -94,7 +94,7 @@ public class ScheduledReportJobSchedulerTest {
   @Test
   void testScheduleAllJobsOnStartup_DefaultCronUsedForBlankCron() {
     // Arrange
-    ScheduledReportJob job = new ScheduledReportJob();
+    ScheduledReportJob job = new ScheduledReportJob(1L);
     job.setName("Blank Cron Job");
     job.setEnabled(true);
     job.setCronExpression("");

@@ -7,6 +7,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.tb.common.domain.AuditedEntity;
 
@@ -14,6 +15,7 @@ import org.tb.common.domain.AuditedEntity;
 @Getter
 @Setter
 @Table(name = "scheduled_report_job")
+@NoArgsConstructor
 public class ScheduledReportJob extends AuditedEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -39,5 +41,9 @@ public class ScheduledReportJob extends AuditedEntity implements Serializable {
 
   @Column(length = 1000)
   private String description;
+
+  public ScheduledReportJob(long id) {
+    super(id);
+  }
 
 }
