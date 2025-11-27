@@ -9,7 +9,9 @@ import com.cronutils.parser.CronParser;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -173,22 +175,5 @@ public class ScheduledReportJobController {
     private boolean enabled = true;
     private String cronExpression;
     private String description;
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getReportDefinitionId() { return reportDefinitionId; }
-    public void setReportDefinitionId(Long reportDefinitionId) { this.reportDefinitionId = reportDefinitionId; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getReportParameters() { return reportParameters; }
-    public void setReportParameters(String reportParameters) { this.reportParameters = reportParameters; }
-    public String getRecipientEmails() { return recipientEmails; }
-    public void setRecipientEmails(String recipientEmails) { this.recipientEmails = recipientEmails; }
-    public boolean isEnabled() { return enabled; }
-    public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public String getCronExpression() { return cronExpression; }
-    public void setCronExpression(String cronExpression) { this.cronExpression = cronExpression; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
   }
 }
