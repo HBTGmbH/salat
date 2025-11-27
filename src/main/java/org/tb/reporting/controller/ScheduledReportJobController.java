@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.service.ReportService;
+import org.tb.reporting.service.ScheduledReportJobScheduler;
 import org.tb.reporting.service.ScheduledReportJobService;
 
 @Controller
@@ -33,6 +34,7 @@ public class ScheduledReportJobController {
 
   private final ScheduledReportJobService jobService;
   private final ReportService reportService;
+  private final ScheduledReportJobScheduler scheduledReportJobScheduler;
 
   @Value("${salat.reporting.scheduler.cron:0 0 5 * * ?}")
   private String defaultCron;
@@ -80,6 +82,8 @@ public class ScheduledReportJobController {
     model.addAttribute("job", form);
     model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
     model.addAttribute("isEdit", true);
+    model.addAttribute("defaultCron", defaultCron);
+    model.addAttribute("scheduledTask", scheduledReportJobScheduler.getScheduledTask(id));
     return "reporting/scheduled-job-form";
   }
 
@@ -105,6 +109,9 @@ public class ScheduledReportJobController {
       boolean isEdit = form.getId() != null && form.getId() > 0;
       model.addAttribute("pageTitle", isEdit ? "Edit Scheduled Report Job" : "Create Scheduled Report Job");
       model.addAttribute("isEdit", isEdit);
+      if(isEdit) {
+        model.addAttribute("scheduledTask", scheduledReportJobScheduler.getScheduledTask(form.getId()));
+      }
       return "reporting/scheduled-job-form";
     }
 

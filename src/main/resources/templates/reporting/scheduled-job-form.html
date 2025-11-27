@@ -49,5 +49,11 @@
       </form>
     </div>
   </div>
+  <div class="card mt-4" th:if="${scheduledTask != null}">
+    <div class="card-body">
+      <h3>Next execution</h3>
+      <p th:text="${#temporals.format(scheduledTask.nextExecution, 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 05:00:00</p>
+    </div>
+  </div>
 </main>
 </html>
