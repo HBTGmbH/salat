@@ -35,6 +35,7 @@ import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
@@ -48,8 +49,9 @@ public class WorkingDayRestEndpoint {
     private final EmployeecontractService employeecontractService;
     private final WorkingdayService workingdayService;
     private final AuthorizedUser authorizedUser;
+    private final AuthorizedEmployee authorizedEmployee;
 
-    @PutMapping(path = "/{employeeSign}", consumes = APPLICATION_JSON_VALUE)
+    @PutMapping(path = { "/.me", "/{employeeSign}" }, consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
     @Operation(
         summary = "Erstellt oder aktualisiert Arbeitstaginformationen zu einem Arbeitstag",
@@ -92,13 +94,16 @@ public class WorkingDayRestEndpoint {
 
         @Parameter(
             description = "Kürzel des Mitarbeiters",
-            required = true,
+            required = false,
             example = "tst"
         )
-        @PathVariable String employeeSign) {
+        @PathVariable(required = false) String employeeSign) {
         if(!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
+
+        // fallback to authorized employee's sign
+        employeeSign = employeeSign != null ? employeeSign : authorizedEmployee.getSign();
 
         var date = ofNullable(data.getDate()).map(DateUtils::parse).orElseGet(DateUtils::today);
         var employee = employeeService.getEmployeeBySign(employeeSign);
@@ -126,7 +131,7 @@ public class WorkingDayRestEndpoint {
         }
     }
 
-    @GetMapping(path = "/{employeeSign}", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(path = { "/.me", "/{employeeSign}" }, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     @Operation(
         summary = "Gibt Arbeitstaginformationen zu heute zurück",
@@ -153,14 +158,14 @@ public class WorkingDayRestEndpoint {
     public WorkingDayData getToday(
         @Parameter(
             description = "Kürzel des Mitarbeiters",
-            required = true,
+            required = false,
             example = "tst"
         )
-        @PathVariable String employeeSign) {
+        @PathVariable(required = false) String employeeSign) {
         return doGet(today(), employeeSign);
     }
 
-    @GetMapping(path = "/{employeeSign}/{date}", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(path = { "/.me/{date}", "/{employeeSign}/{date}" }, produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(OK)
     @Operation(
         summary = "Gibt Arbeitstaginformationen zu einem Arbeitstag für ein bestimmtes Datum zurück",
@@ -187,10 +192,10 @@ public class WorkingDayRestEndpoint {
     public WorkingDayData get(
         @Parameter(
             description = "Kürzel des Mitarbeiters",
-            required = true,
+            required = false,
             example = "tst"
         )
-        @PathVariable String employeeSign, 
+        @PathVariable(required = false) String employeeSign,
 
         @Parameter(
             description = "Das Datum im Format yyyy-MM-dd",
@@ -206,6 +211,9 @@ public class WorkingDayRestEndpoint {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
 
+        // fallback to authorized employee's sign
+        employeeSign = employeeSign != null ? employeeSign : authorizedEmployee.getSign();
+
         var employee = employeeService.getEmployeeBySign(employeeSign);
         var employeecontract = employeecontractService.getEmployeeContractValidAt(employee.getId(), date);
         if(employeecontract == null) {
@@ -220,7 +228,7 @@ public class WorkingDayRestEndpoint {
         return WorkingDayData.valueOf(workingDay);
     }
 
-    @DeleteMapping("/{employeeSign}/{date}")
+    @DeleteMapping({ "/.me/{date}", "/{employeeSign}/{date}" })
     @ResponseStatus(OK)
     @Operation(
         summary = "Löscht Arbeitstaginformationen zu einem Arbeitstag",
@@ -251,10 +259,10 @@ public class WorkingDayRestEndpoint {
     public void delete(
         @Parameter(
             description = "Kürzel des Mitarbeiters",
-            required = true,
+            required = false,
             example = "tst"
         )
-        @PathVariable String employeeSign, 
+        @PathVariable(required = false) String employeeSign,
 
         @Parameter(
             description = "Das Datum im Format yyyy-MM-dd",
@@ -265,6 +273,9 @@ public class WorkingDayRestEndpoint {
         if (!authorizedUser.isAuthenticated()) {
             throw new ResponseStatusException(UNAUTHORIZED);
         }
+
+        // fallback to authorized employee's sign
+        employeeSign = employeeSign != null ? employeeSign : authorizedEmployee.getSign();
 
         var deleteDate = DateUtils.parse(date);
 
