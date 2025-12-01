@@ -81,33 +81,4 @@ public class DailyReportData {
         return toBuilder().id(null).build();
     }
 
-  //@JsonCreator
-  public static DailyReportData jacksonCreator(
-      @JsonProperty("id") Long id,
-      @JsonProperty("date") String date,
-      @JsonProperty("employeeorderId") long employeeorderId,
-      @JsonProperty("orderSign") String orderSign,
-      @JsonProperty("orderLabel") String orderLabel,
-      @JsonProperty("suborderSign") String suborderSign,
-      @JsonProperty("suborderLabel") String suborderLabel,
-      @JsonProperty("hours") long hours,
-      @JsonProperty("minutes") long minutes,
-      @JsonProperty("comment") String comment,
-      @JsonProperty("training") boolean training
-  ) {
-    return DailyReportData.builder()
-        .id(id)
-        .date(date)
-        .employeeorderId(employeeorderId)
-        .orderSign(orderSign)
-        .orderLabel(orderLabel)
-        .suborderSign(suborderSign)
-        .suborderLabel(suborderLabel)
-        .hours(hours)
-        .minutes(minutes)
-        .comment(comment)
-        .training(training)
-        .build();
-  }
-
 }
