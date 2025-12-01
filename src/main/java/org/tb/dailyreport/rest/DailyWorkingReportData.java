@@ -1,7 +1,10 @@
 package org.tb.dailyreport.rest;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -25,7 +28,7 @@ public class DailyWorkingReportData {
 
     @NonNull
     @JsonFormat(pattern="yyyy-MM-dd")
-    @Schema(description = "Leistungsdatum", example = "2025-09-09", required = true)
+    @Schema(description = "Leistungsdatum", example = "2025-09-09", requiredMode = REQUIRED)
     private LocalDate date;
 
     @JsonFormat(pattern="HH:mm")

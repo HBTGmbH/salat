@@ -1,5 +1,7 @@
 package org.tb.favorites.rest;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
@@ -18,13 +20,13 @@ public class FavoriteDTO implements Serializable {
   @Schema(description = "Eindeutige ID des Favoriten, wird vom System vergeben", example = "1")
   private Long id;
 
-  @Schema(description = "ID des zugehörigen Mitarbeiterauftrags", example = "42", required = true)
+  @Schema(description = "ID des zugehörigen Mitarbeiterauftrags", example = "42", requiredMode = REQUIRED)
   private Long employeeorderId;
 
-  @Schema(description = "Anzahl der Stunden für die Zeitbuchung", example = "8", minimum = "0", maximum = "24")
+  @Schema(description = "Anzahl der Stunden für die Zeitbuchung", example = "8", minimum = "0", maximum = "24", requiredMode = REQUIRED)
   private int hours;
 
-  @Schema(description = "Anzahl der Minuten für die Zeitbuchung", example = "30", minimum = "0", maximum = "59")
+  @Schema(description = "Anzahl der Minuten für die Zeitbuchung", example = "30", minimum = "0", maximum = "59", requiredMode = REQUIRED)
   private int minutes;
 
   @Schema(description = "Kommentar zur Zeitbuchung", example = "API-4511 Entwicklung neuer Features", maxLength = 255)

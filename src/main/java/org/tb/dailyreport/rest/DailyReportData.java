@@ -1,5 +1,7 @@
 package org.tb.dailyreport.rest;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.opencsv.bean.CsvBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,11 +27,15 @@ public class DailyReportData {
     private Long id;
 
     @CsvBindByPosition(position = 0)
-    @Schema(description = "Leistungsdatum der Zeitbuchung im Format YYYY-MM-DD", example = "2025-09-09")
+    @Schema(description = "Leistungsdatum der Zeitbuchung im Format YYYY-MM-DD",
+        example = "2025-09-09",
+        requiredMode = REQUIRED)
     private String date;
 
     @CsvBindByPosition(position = 1)
-    @Schema(description = "ID des Mitarbeiterauftrags", example = "78")
+    @Schema(description = "ID des Mitarbeiterauftrags",
+        example = "78",
+        requiredMode = REQUIRED)
     private long employeeorderId;
 
     @CsvBindByPosition(position = 2)
@@ -47,18 +53,24 @@ public class DailyReportData {
     private String suborderLabel;
 
     @CsvBindByPosition(position = 6)
-    @Schema(description = "Anzahl der gebuchten Stunden ohne Minuten", example = "4")
+    @Schema(description = "Anzahl der gebuchten Stunden ohne Minuten",
+        example = "4",
+        requiredMode = REQUIRED)
     private long hours;
 
     @CsvBindByPosition(position = 7)
-    @Schema(description = "Anzahl der gebuchten Minuten (zusätzlich zu den Stunden)", example = "30")
+    @Schema(description = "Anzahl der gebuchten Minuten (zusätzlich zu den Stunden)",
+        example = "30",
+        requiredMode = REQUIRED)
     private long minutes;
 
     @CsvBindByPosition(position = 8)
     @Schema(description = "Kommentar oder Beschreibung der durchgeführten Arbeit", example = "ERP-3032 Implementierung der REST-API für Zeiterfassung")
     private String comment;
 
-    @Schema(description = "Gibt an, ob in dieser Zeit eine besondere Lernleistung ähnlich einer Schulung stattgefunden hat", example = "false")
+    @Schema(description = "Gibt an, ob in dieser Zeit eine besondere Lernleistung ähnlich einer Schulung stattgefunden hat",
+        example = "false",
+        requiredMode = REQUIRED)
     private boolean training;
 
     public static DailyReportData valueOf(TimereportDTO timeReport) {
