@@ -1391,5 +1391,175 @@ databaseChangeLog:
         - dropColumn:
             tableName: employee
             columnName: status
+  - changeSet:
+      id: 42
+      author: kr
+      comment: Create tables for JIRA ticket replication
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: jira_replication_config
+      changes:
+        - createTable:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT AUTO_INCREMENT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_jira_replication_config
+              - column:
+                  name: customerorder_sign
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: base_url
+                  type: varchar(512)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: jql
+                  type: varchar(2000)
+              - column:
+                  name: parent_field_names
+                  type: varchar(512)
+                  remarks: comma-separated list of JIRA field names containing a parent key
+              - column:
+                  name: page_size
+                  type: INT
+                  defaultValueNumeric: 100
+              - column:
+                  name: enabled
+                  type: bit(1)
+                  defaultValueBoolean: true
+              - column:
+                  name: last_max_updated
+                  type: timestamp
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: jira_replication_config
+            columnNames: name
+            constraintName: uq_jira_rep_cfg_name
+        - createIndex:
+            tableName: jira_replication_config
+            indexName: idx_jira_rep_cfg_enabled
+            columns:
+              - column:
+                  name: enabled
+        - createTable:
+            tableName: jira_ticket
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT AUTO_INCREMENT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_jira_ticket
+              - column:
+                  name: customerorder_sign
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: jira_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: issue_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: summary
+                  type: varchar(1024)
+              - column:
+                  name: labels
+                  type: varchar(4000)
+              - column:
+                  name: issue_type
+                  type: varchar(128)
+              - column:
+                  name: parent_key
+                  type: varchar(64)
+              - column:
+                  name: top_leve_key
+                  type: varchar(64)
+              - column:
+                  name: created_ts
+                  type: timestamp
+              - column:
+                  name: updated_ts
+                  type: timestamp
+                  remarks: updated from JIRA
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        - addUniqueConstraint:
+            tableName: jira_ticket
+            columnNames: jira_id
+            constraintName: uq_jira_ticket_jiraid
+        - addUniqueConstraint:
+            tableName: jira_ticket
+            columnNames: issue_key
+            constraintName: uq_jira_ticket_issue_key
+        - createIndex:
+            tableName: jira_ticket
+            indexName: idx_jira_ticket_co_updated
+            columns:
+              - column:
+                  name: customerorder_sign
+              - column:
+                  name: updated_ts
+        - createIndex:
+            tableName: jira_ticket
+            indexName: idx_jira_ticket_key
+            columns:
+              - column:
+                  name: issue_key
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
