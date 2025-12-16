@@ -1515,7 +1515,7 @@ databaseChangeLog:
                   name: parent_key
                   type: varchar(64)
               - column:
-                  name: top_leve_key
+                  name: top_level_key
                   type: varchar(64)
               - column:
                   name: created_ts
