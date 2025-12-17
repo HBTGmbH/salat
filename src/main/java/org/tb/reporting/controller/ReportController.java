@@ -1,11 +1,13 @@
 package org.tb.reporting.controller;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Set.of;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.annotations.VisibleForTesting;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
+import org.tb.common.util.DateUtils;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
@@ -177,7 +180,8 @@ public class ReportController {
                      HttpServletResponse response) throws IOException {
     var reportDefinition = reportService.getReportDefinition(id);
     var bytes = excelExportService.exportToExcel(reportResult);
-    response.setHeader("Content-disposition", "attachment; filename=" + createFileName(reportDefinition));
+    var fileName = createFileName(reportDefinition, reportResult.getParameters());
+    response.setHeader("Content-disposition", "attachment; filename=" + fileName);
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     response.setContentLength(bytes.length);
     response.getOutputStream().write(bytes);
@@ -200,9 +204,30 @@ public class ReportController {
     return result.toString();
   }
 
-  private static String createFileName(ReportDefinition reportDefinition) {
-    var fileName = "report-" + reportDefinition.getName() + ".xlsx";
-    return fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+  @VisibleForTesting
+  static String createFileName(ReportDefinition reportDefinition, List<ReportParameter> parameters) {
+    var dateTime = DateUtils.now().truncatedTo(SECONDS).toString();
+    var fileName = "report-" + reportDefinition.getName() + "-" + toString(parameters) + "-" + dateTime + ".xlsx";
+    return normalizeToFileName(fileName);
+  }
+
+  private static String normalizeToFileName(String fileName) {
+    // may produce long ___ sequences
+    System.out.println(fileName);
+    var withoutSpecialChars = fileName.replaceAll("[^a-zA-Z0-9-_,\\.\\[\\]]", "_").trim();
+    // reduce ___ sequences to _
+    String result;
+    String reduced = withoutSpecialChars;
+    do {
+      result = reduced;
+      reduced = result.replace("__", "_");
+    } while (reduced.length() != result.length());
+    result = result.replace("-_", "-").replace("_-", "-").replace(",_", "-");
+    return result;
+  }
+
+  private static String toString(List<ReportParameter> parameters) {
+    return parameters.stream().map(ReportParameter::getValue).toList().toString();
   }
 
   static List<ReportParameter> nonEmpty(List<ReportParameter> parameters) {
