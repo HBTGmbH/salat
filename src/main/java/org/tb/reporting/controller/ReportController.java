@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
-import org.tb.common.util.DateUtils;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
@@ -206,7 +206,7 @@ public class ReportController {
 
   @VisibleForTesting
   static String createFileName(ReportDefinition reportDefinition, List<ReportParameter> parameters) {
-    var dateTime = DateUtils.now().truncatedTo(SECONDS).toString();
+    var dateTime = DateTimeUtils.now().truncatedTo(SECONDS).toString();
     var fileName = "report-" + reportDefinition.getName() + "-" + toString(parameters) + "-" + dateTime + ".xlsx";
     return normalizeToFileName(fileName);
   }

@@ -348,11 +348,11 @@ public class DateUtils {
     }
 
     public static int getCurrentMinutes() {
-        return now().getMinute();
+        return DateTimeUtils.now().getMinute();
     }
 
     public static int getCurrentHours() {
-        return now().getHour();
+        return DateTimeUtils.now().getHour();
     }
 
     public static YearMonth getYearMonth(LocalDate date) {
@@ -379,11 +379,7 @@ public class DateUtils {
         return LocalDate.now().withYear(year.getValue()).with(lastDayOfYear());
     }
 
-    public static LocalDateTime now() {
-        return LocalDateTime.now();
-    }
-
-    public static LocalDate max(LocalDate date1, LocalDate date2) {
+  public static LocalDate max(LocalDate date1, LocalDate date2) {
         if(date1 == null) {
             return date2;
         }

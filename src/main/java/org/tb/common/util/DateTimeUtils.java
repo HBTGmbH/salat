@@ -35,6 +35,7 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
@@ -226,4 +227,7 @@ public class DateTimeUtils {
     return theList;
   }
 
+  public static LocalDateTime now() {
+      return LocalDateTime.now();
+  }
 }

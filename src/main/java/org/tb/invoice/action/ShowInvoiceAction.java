@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.common.LocalDateRange;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.invoice.domain.InvoiceData;
 import org.tb.invoice.domain.InvoiceSettings;
@@ -197,7 +198,7 @@ public class ShowInvoiceAction extends LoginRequiredAction<ShowInvoiceForm> {
     var fileName = "rechnung-" + invoiceData.getCustomerOrderSign() +
                    "-" + DateUtils.format(invoiceData.getBillingPeriod().getFrom(), "dd.MM.yy") +
                    "-" + DateUtils.format(invoiceData.getBillingPeriod().getUntil(), "dd.MM.yy") +
-                   "-erzeugt-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
+                   "-erzeugt-" + DateUtils.formatDateTime(DateTimeUtils.now(), "dd-MM-yy-HHmm") +
                    ".xlsx";
     var sanitizedFileName = fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
     return sanitizedFileName;

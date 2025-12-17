@@ -10,6 +10,7 @@ import org.tb.common.service.MailService;
 import org.tb.common.service.MailService.EmailAttachment;
 import org.tb.common.service.MailService.EmailRequest;
 import org.tb.common.service.MailService.MailContact;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
@@ -92,7 +93,7 @@ public class ReportEmailService {
       parameters.forEach(parameter -> body.append("  * ").append(parameter.getName()).append(": ").append(parameter.getValue()).append("\n"));
     }
     body.append("- Anzahl Zeilen: ").append(reportResult.getRows().size()).append("\n");
-    body.append("- Generiert am: ").append(DateUtils.formatDateTime(DateUtils.now(), "dd.MM.yyyy HH:mm")).append("\n");
+    body.append("- Generiert am: ").append(DateUtils.formatDateTime(DateTimeUtils.now(), "dd.MM.yyyy HH:mm")).append("\n");
 
     body.append("\nDie Ergebnisse befinden sich im angehängten Excel-Dokument.\n\n");
     body.append("Mit freundlichen Grüßen\n");
@@ -103,7 +104,7 @@ public class ReportEmailService {
 
   private String createFileName(ReportDefinition reportDefinition) {
     var fileName = "report-" + reportDefinition.getName() +
-                   "-erzeugt-" + DateUtils.formatDateTime(DateUtils.now(), "dd-MM-yy-HHmm") +
+                   "-erzeugt-" + DateUtils.formatDateTime(DateTimeUtils.now(), "dd-MM-yy-HHmm") +
                    ".xlsx";
     return fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
   }

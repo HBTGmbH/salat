@@ -7,7 +7,7 @@ import static org.tb.common.util.DateTimeUtils.getMonthsToDisplay;
 import static org.tb.common.util.DateTimeUtils.getSerialDayList;
 import static org.tb.common.util.DateTimeUtils.getTimeReportHoursOptions;
 import static org.tb.common.util.DateTimeUtils.getTimeReportMinutesOptions;
-import static org.tb.common.util.DateUtils.now;
+import static org.tb.common.util.DateTimeUtils.now;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
