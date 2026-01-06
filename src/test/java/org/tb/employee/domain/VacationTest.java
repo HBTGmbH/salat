@@ -41,4 +41,26 @@ public class VacationTest {
     assertThat(vacation.getEffectiveEntitlement()).isEqualTo(Duration.ofHours(8 * 15).plusHours(10));
   }
 
+  @Test
+  public void should_deal_with_employee_contract_prolong() {
+    Employeecontract contract = new Employeecontract();
+    contract.setValidFrom(LocalDate.of(2021, 6, 16));
+    contract.setValidUntil(LocalDate.of(2026, 3, 31));
+    contract.setDailyWorkingTime(Duration.ofHours(8));
+
+    Vacation vacation1 = new Vacation();
+    vacation1.setEmployeecontract(contract);
+    vacation1.setYear(2025);
+    vacation1.setUsed(0);
+    vacation1.setEntitlement(30);
+    Vacation vacation2 = new Vacation();
+    vacation2.setEmployeecontract(contract);
+    vacation2.setYear(2026);
+    vacation2.setUsed(0);
+    vacation2.setEntitlement(30);
+
+    assertThat(vacation1.getEffectiveEntitlement()).isEqualTo(Duration.ofHours(8 * 30));
+    assertThat(vacation2.getEffectiveEntitlement()).isEqualTo(Duration.ofHours(8 * 30 / 4));
+  }
+
 }
