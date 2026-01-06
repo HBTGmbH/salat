@@ -46,13 +46,12 @@ public class TimereportHelper {
         reportForm.recalcDurationFromBeginAndEnd();
     }
 
-    /**
-     * refreshes period after change of hours
-     */
-    public boolean refreshPeriod(HttpServletRequest request, AddDailyReportForm reportForm) {
-        reportForm.recalcEndFromBeginAndDuration();
-        return true;
-    }
+  /**
+   * refreshes period after change of hours
+   */
+  public void refreshPeriod(AddDailyReportForm reportForm) {
+    reportForm.recalcEndFromBeginAndDuration();
+  }
 
     public ActionMessages validateNewDate(
             ActionMessages errors,

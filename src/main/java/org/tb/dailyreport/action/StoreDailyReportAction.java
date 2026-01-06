@@ -199,7 +199,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
         if (request.getParameter("task") != null && request.getParameter("task").equals("refreshPeriod")) {
             // refreshes the duration period after a change of begin/end times
-            timereportHelper.refreshPeriod(request, form);
+            timereportHelper.refreshPeriod(form);
         }
 
         if (refreshOrders) {
