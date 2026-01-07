@@ -2,14 +2,7 @@ package org.tb.dailyreport.action;
 
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
-import static org.tb.common.util.DateTimeUtils.getBreakHoursOptions;
-import static org.tb.common.util.DateTimeUtils.getDaysToDisplay;
-import static org.tb.common.util.DateTimeUtils.getHoursToDisplay;
-import static org.tb.common.util.DateTimeUtils.getMonthMMStringFromShortstring;
-import static org.tb.common.util.DateTimeUtils.getMonthsToDisplay;
-import static org.tb.common.util.DateTimeUtils.getTimeReportHoursOptions;
 import static org.tb.common.util.DateTimeUtils.getTimeReportMinutesOptions;
-import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.parse;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +18,6 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
@@ -308,115 +300,7 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
             Workingday workingday = workingdayService.getWorkingday(form.getEmployeeContractId(), referencedayRefDate);
 
             if (request.getParameter("continue") == null || !Boolean.parseBoolean(request.getParameter("continue"))) {
-                // FIXME geht das nicht leichter?
-                // set new ShowDailyReportForm with saved filter settings
-                ShowDailyReportForm continueForm = new ShowDailyReportForm();
-
-                LocalDate referenceday = DateUtils.parseOrDefault(form.getReferenceday(), DateUtils.today());
-                // TODO pruefen, warum diese Felder gebraucht werden
-                continueForm.setDay(DateUtils.getDayString(referenceday));
-                continueForm.setMonth(DateUtils.getMonthShortString(referenceday));
-                continueForm.setYear(DateUtils.getYearString(referenceday));
-
-                continueForm.setStartdate(continueForm.getYear() + "-" + getMonthMMStringFromShortstring(continueForm.getMonth()) + "-" + continueForm.getDay());
-                if (request.getSession().getAttribute("lastLastMonth") != null) {
-                    continueForm.setLastday((String) request.getSession().getAttribute("lastLastDay"));
-                    continueForm.setLastmonth((String) request.getSession().getAttribute("lastLastMonth"));
-                    continueForm.setLastyear((String) request.getSession().getAttribute("lastLastYear"));
-                } else {
-                    continueForm.setLastday(DateUtils.getDayString(referenceday));
-                    continueForm.setLastmonth(DateUtils.getMonthShortString(referenceday));
-                    continueForm.setLastyear(DateUtils.getYearString(referenceday));
-                }
-                continueForm.setEnddate(continueForm.getLastyear() + "-" + getMonthMMStringFromShortstring(continueForm.getLastmonth()) + "-"
-                        + continueForm.getLastday());
-                request.getSession().removeAttribute("lastCurrentDay");
-                request.getSession().removeAttribute("lastCurrentMonth");
-                request.getSession().removeAttribute("lastCurrentYear");
-                request.getSession().removeAttribute("lastLastDay");
-                request.getSession().removeAttribute("lastLastMonth");
-                request.getSession().removeAttribute("lastLastYear");
-
-                if (request.getSession().getAttribute("lastView") != null) {
-                    continueForm.setView((String) request.getSession().getAttribute("lastView"));
-                } else {
-                    continueForm.setView(GlobalConstants.VIEW_DAILY);
-                }
-                request.getSession().removeAttribute("lastView");
-                continueForm.setOrder((String) request.getSession().getAttribute("lastOrder"));
-                if (request.getSession().getAttribute("lastSuborderId") != null) {
-                    continueForm.setSuborderId((Long) request.getSession().getAttribute("lastSuborderId"));
-                } else {
-                    continueForm.setSuborderId(-1);
-                }
-                if (request.getSession().getAttribute("lastEmployeeContractId") != null) {
-                    continueForm.setEmployeeContractId((Long) request.getSession().getAttribute("lastEmployeeContractId"));
-                } else {
-                    continueForm.setEmployeeContractId(form.getEmployeeContractId());
-                }
-                request.getSession().removeAttribute("lastSuborderId");
-                request.getSession().removeAttribute("lastOrder");
-                request.getSession().removeAttribute("lastEmployeeContractId");
-
-                // get updated list of timereports from DB
-                refreshTimereports(
-                        request,
-                        continueForm,
-                        customerorderService,
-                        timereportService,
-                        employeecontractService,
-                        suborderService,
-                        employeeorderService
-                );
-
-                request.getSession().setAttribute("suborderFilerId", continueForm.getSuborderId());
-                List<TimereportDTO> timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
-
-                request.getSession().setAttribute("labortime", timereportHelper.calculateLaborTime(timereports));
-                request.getSession().setAttribute("maxlabortime", timereportHelper.checkLaborTimeMaximum(timereports, GlobalConstants.MAX_HOURS_PER_DAY));
-                request.getSession().setAttribute("quittingtime", timereportHelper.calculateQuittingTime(workingday, request));
-
-                //calculate Working Day End
-                request.getSession().setAttribute("workingDayEnds", timereportHelper.calculateWorkingDayEnds(workingday, request));
-
-                request.getSession().setAttribute("years", getYearsToDisplay());
-                request.getSession().setAttribute("days", getDaysToDisplay());
-                request.getSession().setAttribute("months", getMonthsToDisplay());
-                request.getSession().setAttribute("hours", getHoursToDisplay());
-                request.getSession().setAttribute("breakhours", getBreakHoursOptions());
-                request.getSession().setAttribute("breakminutes", getTimeReportMinutesOptions(false));
-                request.getSession().setAttribute("hoursDuration", getTimeReportHoursOptions());
-                request.getSession().setAttribute("minutes", getTimeReportMinutesOptions(form.isShowAllMinutes()));
-                request.getSession().setAttribute("currentEmployeeId", employeeContract.getEmployee().getId());
-                request.getSession().setAttribute("currentEmployeeContract", employeeContract);
-
-                // save values from the data base into form-bean, when working day != null
-                if (workingday != null) {
-                    // show break time, quitting time and working day ends on the
-                    // showdailyreport.jsp
-                    request.getSession().setAttribute("visibleworkingday", workingday.getType() != WorkingDayType.NOT_WORKED);
-                    continueForm.setSelectedWorkHourBegin(workingday.getStarttimehour());
-                    continueForm.setSelectedWorkMinuteBegin(workingday.getStarttimeminute());
-                    continueForm.setSelectedBreakHour(workingday.getBreakhours());
-                    continueForm.setSelectedBreakMinute(workingday.getBreakminutes());
-                    continueForm.setWorkingDayTypeTyped(workingday.getType());
-                } else {
-                    // don't show break time, quitting time and working day ends on
-                    // the showdailyreport.jsp
-                    request.getSession().setAttribute("visibleworkingday", false);
-                    continueForm.setSelectedWorkHourBegin(0);
-                    continueForm.setSelectedWorkMinuteBegin(0);
-                    continueForm.setSelectedBreakHour(0);
-                    continueForm.setSelectedBreakMinute(0);
-                    continueForm.setWorkingDayTypeTyped(WorkingDayType.WORKED);
-                }
-
-                // refresh overtime and vacation
-                var employeecontract = employeecontractService.getEmployeecontractById(form.getEmployeeContractId());
-                refreshEmployeeSummaryData(request, employeecontract);
-
                 return mapping.findForward("showDaily");
-
             } else { // Continue = true
 
                 LocalDate selectedDate = getSelectedDateFromRequest(request);

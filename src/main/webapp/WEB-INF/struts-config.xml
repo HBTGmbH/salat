@@ -134,8 +134,7 @@
 
 		<action path="/UpdateDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
 			name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportAction">
-			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
-			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
+      <forward name="success" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
 			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
 			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
 			<forward name="error" path="/error.jsp" />
@@ -149,7 +148,7 @@
 
 		<action path="/DeleteTimereportFromDailyDisplay" input="/dailyreport/showDailyReport.jsp"
 			name="showDailyReportForm" type="org.tb.dailyreport.action.DeleteTimereportFromDailyDisplayAction">
-			<forward name="success" path="/do/ShowDailyReport" redirect="true" />
+			<forward name="success" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
 			<forward name="error" path="/error.jsp" />
 		</action>
 
