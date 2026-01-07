@@ -21,6 +21,14 @@ public class ReportResult implements Serializable {
   @Singular
   private final List<ReportResultRow> rows;
 
+  // Error handling (e.g., SQL grammar issues)
+  private final boolean error; // true if an error occurred while executing the report
+  private final String errorClass; // exception class simple name
+  private final String errorMessage; // human readable message
+  private final String sql; // offending SQL if available
+  private final String sqlState; // JDBC SQL state if available
+  private final Integer errorCode; // vendor specific error code
+
   /**
    * Liefert ein JavaScript-kompatibles Array als String,
    * bei dem die Objekt-Keys nicht in Anführungszeichen stehen.

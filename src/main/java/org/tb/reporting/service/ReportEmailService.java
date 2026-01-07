@@ -41,6 +41,16 @@ public class ReportEmailService {
       log.info("Generating report {} with parameters: {}", reportDefinitionId, parameters);
       ReportDefinition reportDefinition = reportService.getReportDefinition(reportDefinitionId);
       ReportResult reportResult = reportService.execute(reportDefinitionId, parameters);
+      
+      if(reportResult.isError()) {
+        log.error(
+            "Report id={}, name={} produced an error. Skipping email. ErrorMessage: {}",
+            reportDefinitionId,
+            reportDefinition.getName(),
+            reportResult.getErrorMessage()
+        );
+        return;
+      }
 
       if(reportResult.getRows().isEmpty()) {
         log.info("Report id={}, name={} returned no rows. Skipping email.", reportDefinitionId, reportDefinition.getName());

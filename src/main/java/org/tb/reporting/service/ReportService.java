@@ -18,6 +18,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.Authorized;
@@ -110,43 +111,62 @@ public class ReportService {
 
     var resultBuilder = ReportResult.builder().parameters(parameters);
 
-    String sql = reportDefinition.get().getSql();
-    if(sql != null) {
+    String resolvedSql = reportDefinition.get().getSql();
+    if(resolvedSql != null) {
       if (authorizedUser != null && authorizedUser.getEffectiveLoginSign() != null) {
-        sql = sql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getEffectiveLoginSign()); // ensure the sign is filled in as requested
+        resolvedSql = resolvedSql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getEffectiveLoginSign()); // ensure the sign is filled in as requested
       }
       // Resolve reporting placeholders based only on today's date (no FROM/UNTIL)
       LocalDate today = LocalDate.now();
-      sql = reportParameterResolver.resolve(sql, today);
-    }
-    final var rowset = new NamedParameterJdbcTemplate(dataSource).queryForRowSet(sql, getParameterMap(parameters));
-
-    // get and create headers
-    var columnCount = rowset.getMetaData().getColumnCount();
-    var headers = IntStream.rangeClosed(1, columnCount)
-            .mapToObj(index -> rowset.getMetaData().getColumnLabel(index))
-            .map(ReportResultColumnHeader::new)
-            .collect(Collectors.toList());
-    resultBuilder.columnHeaders(headers);
-
-    // get and create rows
-    var rowAvailable = rowset.first();
-    while(rowAvailable) {
-      final var row = new ReportResultRow();
-      var values = headers.stream()
-          .collect(Collectors.toMap(ReportResultColumnHeader::getName, header -> {
-            var value = rowset.getObject(header.getName());
-            if(!rowset.wasNull() && value.getClass() == java.sql.Date.class) {
-              value = ((java.sql.Date) value).toLocalDate();
-            }
-            return new ReportResultColumnValue(value);
-          }));
-      row.getColumnValues().putAll(values);
-      resultBuilder.row(row);
-      rowAvailable = rowset.next();
+      resolvedSql = reportParameterResolver.resolve(resolvedSql, today);
     }
 
-    return resultBuilder.build();
+    try {
+      final var rowset = new NamedParameterJdbcTemplate(dataSource)
+          .queryForRowSet(resolvedSql, getParameterMap(parameters));
+
+      // get and create headers
+      var columnCount = rowset.getMetaData().getColumnCount();
+      var headers = IntStream.rangeClosed(1, columnCount)
+              .mapToObj(index -> rowset.getMetaData().getColumnLabel(index))
+              .map(ReportResultColumnHeader::new)
+              .collect(Collectors.toList());
+      resultBuilder.columnHeaders(headers);
+
+      // get and create rows
+      var rowAvailable = rowset.first();
+      while(rowAvailable) {
+        final var row = new ReportResultRow();
+        var values = headers.stream()
+            .collect(Collectors.toMap(ReportResultColumnHeader::getName, header -> {
+              var value = rowset.getObject(header.getName());
+              if(!rowset.wasNull() && value.getClass() == java.sql.Date.class) {
+                value = ((java.sql.Date) value).toLocalDate();
+              }
+              return new ReportResultColumnValue(value);
+            }));
+        row.getColumnValues().putAll(values);
+        resultBuilder.row(row);
+        rowAvailable = rowset.next();
+      }
+
+      return resultBuilder.error(false).sql(resolvedSql).build();
+    } catch (BadSqlGrammarException e) {
+      // capture detailed SQL error information in the result to display in UI
+      var sqlEx = e.getSQLException();
+      var msg = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage();
+      log.warn("Bad SQL grammar while executing report {}: {}", reportDefinitionId, msg);
+      return ReportResult.builder()
+          .parameters(parameters)
+          .columnHeaders(List.of())
+          .error(true)
+          .errorClass(e.getClass().getSimpleName())
+          .errorMessage(msg)
+          .sql(resolvedSql)
+          .sqlState(sqlEx != null ? sqlEx.getSQLState() : null)
+          .errorCode(sqlEx != null ? sqlEx.getErrorCode() : null)
+          .build();
+    }
   }
 
   private static Map<String, Object> getParameterMap(List<ReportParameter> parameters) {

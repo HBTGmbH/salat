@@ -22,6 +22,25 @@
       </details>
     </div>
     <div class="card-body">
+      <!-- Error Alert -->
+      <div th:if="${reportResult.error}" class="alert alert-danger" role="alert">
+        <div class="d-flex">
+          <div class="me-2"><i class="ti ti-alert-triangle"></i></div>
+          <div>
+            <div><strong th:text="${reportResult.errorClass}">BadSqlGrammarException</strong>: <span th:text="${reportResult.errorMessage}">SQL error message</span></div>
+            <div class="small text-muted mt-1">
+              <span th:if="${reportResult.sqlState != null}">SQLState: <code th:text="${reportResult.sqlState}">42000</code></span>
+              <span th:if="${reportResult.sqlState != null && reportResult.errorCode != null}">&nbsp;|&nbsp;</span>
+              <span th:if="${reportResult.errorCode != null}">ErrorCode: <code th:text="${reportResult.errorCode}">1064</code></span>
+            </div>
+            <details class="mt-2">
+              <summary>Show failing SQL</summary>
+              <pre class="mb-0"><code th:text="${reportResult.sql}">SELECT ...</code></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+
       <div class="mb-3" th:if="${params}">
         <div><strong>Parameters:</strong>
           <span th:each="p,iter : ${params}">
@@ -31,7 +50,7 @@
         </div>
       </div>
 
-      <div class="table-responsive">
+      <div class="table-responsive" th:if="${!reportResult.error}">
         <table class="table table-striped table-hover">
           <thead>
           <tr>
@@ -48,7 +67,7 @@
         </table>
       </div>
 
-      <div class="mt-2 text-muted" th:if="${#lists.isEmpty(reportResult.rows)}">
+      <div class="mt-2 text-muted" th:if="${!reportResult.error and #lists.isEmpty(reportResult.rows)}">
         No data found.
       </div>
     </div>
