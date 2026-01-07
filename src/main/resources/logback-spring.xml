@@ -9,11 +9,53 @@
   <property name="CONSOLE_LOG_CHARSET" value="${CONSOLE_LOG_CHARSET:-${file.encoding:-UTF-8}}"/>
   <property name="CONSOLE_LOG_THRESHOLD" value="${CONSOLE_LOG_THRESHOLD:-TRACE}"/>
 
-  <import class="ch.qos.logback.classic.encoder.JsonEncoder"/>
-
   <springProfile name="production | staging">
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-      <encoder class="JsonEncoder"/>
+      <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+        <providers>
+          <timestamp>
+            <fieldName>ts</fieldName>
+            <timeZone>Europe/Berlin</timeZone>
+            <pattern>yyyy-MM-dd'T'HH:mm:ss.SSS</pattern>
+          </timestamp>
+          <loggerName>
+            <fieldName>l</fieldName>
+            <shortenedLoggerNameLength>40</shortenedLoggerNameLength>
+          </loggerName>
+          <threadName>
+            <fieldName>th</fieldName>
+          </threadName>
+          <logLevel>
+            <fieldName>lvl</fieldName>
+          </logLevel>
+          <mdc/>
+          <message />
+          <stackTrace>
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+              <maxLength>4096</maxLength>
+              <shortenedClassNameLength>40</shortenedClassNameLength>
+              <!-- generated class names -->
+              <exclude>\$\$FastClassByCGLIB\$\$</exclude>
+              <exclude>\$\$EnhancerBySpringCGLIB\$\$</exclude>
+              <exclude>^sun\.reflect\..*\.invoke</exclude>
+              <!-- JDK internals -->
+              <exclude>^com\.sun\.</exclude>
+              <exclude>^sun\.net\.</exclude>
+              <!-- dynamic invocation -->
+              <exclude>^net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
+              <exclude>^org\.springframework\.cglib\.</exclude>
+              <exclude>^org\.springframework\.transaction\.</exclude>
+              <exclude>^org\.springframework\.validation\.</exclude>
+              <exclude>^org\.springframework\.app\.</exclude>
+              <exclude>^org\.springframework\.aop\.</exclude>
+              <exclude>^org\.springframework\.beans\.</exclude>
+              <exclude>^java\.lang\.reflect\.Method\.invoke</exclude>
+              <rootCauseFirst>true</rootCauseFirst>
+              <inlineHash>true</inlineHash>
+            </throwableConverter>
+          </stackTrace>
+        </providers>
+      </encoder>
     </appender>
   </springProfile>
 
