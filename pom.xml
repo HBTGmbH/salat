@@ -10,7 +10,7 @@
   </parent>
   <groupId>de.hbt.salat</groupId>
   <artifactId>tb</artifactId>
-  <version>4.22.0</version>
+  <version>4.22.1</version>
   <packaging>war</packaging>
 
   <properties>
@@ -325,6 +325,9 @@
         <configuration>
           <image>
             <name>${salat.image.name}:${salat.image.tag}</name>
+            <env>
+              <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
+            </env>
           </image>
         </configuration>
       </plugin>
