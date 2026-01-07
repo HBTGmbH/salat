@@ -157,34 +157,10 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
       sortColumn = "employee";
       request.getSession().setAttribute("timereportSortColumn", sortColumn);
     }
-    final ActionForward actionResult;
-    if ("sort".equals(task)) {
-      actionResult = doSort(mapping, request, sortModus, sortColumn);
-    } else if ("saveBegin".equals(task) || "saveBreak".equals(task) || "saveWorkingDayType".equals(task)) {
-      actionResult = doSaveWorkingDay(mapping, request, reportForm, ec, task);
-    } else if ("refreshTimereports".equals(task)) {
-      actionResult = doRefreshTimereports(mapping, request, reportForm, ec);
-    } else if ("refreshOrders".equals(task)) {
-      actionResult = doRefreshOrders(mapping, request, reportForm);
-    } else if ("refreshSuborders".equals(task)) {
-      actionResult = doRefreshSuborders(mapping, request, reportForm);
-    } else if ("print".equals(task)) {
-      actionResult = doPrint(mapping, request.getSession(), reportForm);
-    } else if ("back".equalsIgnoreCase(task)) {
-      // just go back to main menu
-      actionResult = mapping.findForward("backtomenu");
-    } else if ("addFavoriteAsReport".equalsIgnoreCase(task)) {
-      // just go back to main menu
-      actionResult = addFavoriteAsReport(mapping, request, reportForm, ec);
-    } else if ("deleteFavorite".equalsIgnoreCase(task)) {
-      // just go back to main menu
-      actionResult = deleteFavorite(mapping, request, ec);
-    } else if ("createFavorite".equalsIgnoreCase(task)) {
-      // just go back to main menu
-      actionResult = createFavorite(mapping, request, ec);
-    } else if (task != null) {
-      actionResult = mapping.findForward("success");
-    } else {
+    ActionForward actionResult = null;
+
+    // due to session timeout or because it is the initial display of the view, we need to trigger init
+    if(task == null || request.getSession().getAttribute("view") == null) {
       //*** initialisation ***
       var initForward = init(request, reportForm);
       if (initForward != null) {
@@ -213,6 +189,34 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
       }
       request.getSession().setAttribute("reportForm", reportForm);
       request.getSession().setAttribute("currentSuborderId", reportForm.getSuborderId());
+      actionResult = mapping.findForward("success");
+    }
+
+    if ("sort".equals(task)) {
+      actionResult = doSort(mapping, request, sortModus, sortColumn);
+    } else if ("saveBegin".equals(task) || "saveBreak".equals(task) || "saveWorkingDayType".equals(task)) {
+      actionResult = doSaveWorkingDay(mapping, request, reportForm, ec, task);
+    } else if ("refreshTimereports".equals(task)) {
+      actionResult = doRefreshTimereports(mapping, request, reportForm, ec);
+    } else if ("refreshOrders".equals(task)) {
+      actionResult = doRefreshOrders(mapping, request, reportForm);
+    } else if ("refreshSuborders".equals(task)) {
+      actionResult = doRefreshSuborders(mapping, request, reportForm);
+    } else if ("print".equals(task)) {
+      actionResult = doPrint(mapping, request.getSession(), reportForm);
+    } else if ("back".equalsIgnoreCase(task)) {
+      // just go back to main menu
+      actionResult = mapping.findForward("backtomenu");
+    } else if ("addFavoriteAsReport".equalsIgnoreCase(task)) {
+      // just go back to main menu
+      actionResult = addFavoriteAsReport(mapping, request, reportForm, ec);
+    } else if ("deleteFavorite".equalsIgnoreCase(task)) {
+      // just go back to main menu
+      actionResult = deleteFavorite(mapping, request, ec);
+    } else if ("createFavorite".equalsIgnoreCase(task)) {
+      // just go back to main menu
+      actionResult = createFavorite(mapping, request, ec);
+    } else if (task != null) {
       actionResult = mapping.findForward("success");
     }
 
