@@ -95,6 +95,8 @@
     <td th:fragment="colDeleteForm(id, action)">
       <form th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
         <input type="hidden" name="id" th:value="${id}"/>
+        <!-- preserve optional list filter across deletes if available -->
+        <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
         <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
       </form>
     </td>
@@ -102,6 +104,8 @@
     <td th:fragment="colDeleteFormIf(id, action, ifCondition)">
       <form th:if="${ifCondition}" th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
         <input type="hidden" name="id" th:value="${id}"/>
+        <!-- preserve optional list filter across deletes if available -->
+        <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
         <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
       </form>
     </td>

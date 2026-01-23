@@ -6,6 +6,8 @@
   <form th:action="@{/reporting/reports/store}" th:object="${report}" method="post" class="card">
     <div class="card-body">
         <input type="hidden" th:field="*{id}" />
+        <!-- preserve list filter across save/cancel navigation -->
+        <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
 
         <div th:replace="~{fragments/form-fields :: textInput(
           field='name', label='Report Name', required=true, maxlength=255
@@ -19,7 +21,7 @@
     <div class="card-footer">
       <div th:replace="~{fragments/form-fields :: formButtons(
         saveLabel=${isEdit ? 'Save Report' : 'Create Report'},
-        cancelHref=@{/reporting/reports}
+        cancelHref=@{'/reporting/reports'(filter=${filter})}
       )}"></div>
     </div>
   </form>

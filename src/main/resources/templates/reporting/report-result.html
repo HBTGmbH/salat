@@ -10,9 +10,11 @@
       </div>
       <div class="d-flex gap-2">
         <form th:action="@{'/reporting/reports/export'(id=${report.id})}" method="post">
+          <!-- filter is not used by export, but keep it for consistency if needed later -->
+          <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
           <button class="btn btn-outline-secondary" type="submit"><i class="icon ti ti-file-spreadsheet"></i> Export Excel</button>
         </form>
-        <a th:href="@{/reporting/reports}" class="btn btn-secondary">Back</a>
+        <a th:href="@{'/reporting/reports'(filter=${filter})}" class="btn btn-secondary">Back</a>
       </div>
     </div>
     <div class="card-header">

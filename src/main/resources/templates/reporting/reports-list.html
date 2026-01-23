@@ -6,7 +6,7 @@
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/master-table :: masterTableFilter(
-      addHref=@{/reporting/reports/create}, addLabel=${'New Report'},
+      addHref=@{'/reporting/reports/create'(filter=${filter})}, addLabel=${'New Report'},
       thead=~{::theadContent}, tbody=~{::tbodyContent},
       addIf=${#authorization.expression('hasRole(''MANAGER'')')},
       addIcon='ti-file-plus',
@@ -31,9 +31,9 @@
         <td th:replace="~{fragments/master-table :: colDate(date=${report.lastupdate})}" class="d-none d-sm-table-cell"></td>
         <td th:replace="~{fragments/master-table :: colText(text=${report.lastupdatedby})}" class="d-none d-sm-table-cell"></td>
         <td>
-          <a class="btn btn-success" th:href="@{'/reporting/reports/execute'(id=${report.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+          <a class="btn btn-success" th:href="@{'/reporting/reports/execute'(id=${report.id}, filter=${filter})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
         </td>
-        <td th:replace="~{fragments/master-table :: colEditLinkIf(href=@{'/reporting/reports/edit'(id=${report.id})}, ifCondition=mayEdit[report.id])}"></td>
+        <td th:replace="~{fragments/master-table :: colEditLinkIf(href=@{'/reporting/reports/edit'(id=${report.id}, filter=${filter})}, ifCondition=mayEdit[report.id])}"></td>
         <td th:replace="~{fragments/master-table :: colDeleteFormIf(id=${report.id}, action=@{'/reporting/reports/delete'}, ifCondition=mayDelete[report.id])}"></td>
       </tr>
     </tbody>

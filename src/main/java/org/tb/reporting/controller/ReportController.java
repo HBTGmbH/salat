@@ -76,16 +76,19 @@ public class ReportController {
 
   @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/create")
-  public String createForm(Model model) {
+  public String createForm(@RequestParam(value = "filter", required = false) String filter, Model model) {
     model.addAttribute("pageTitle", "Create Report");
     model.addAttribute("report", new ReportForm());
     model.addAttribute("isEdit", false);
+    model.addAttribute("filter", filter);
     return "reporting/report-form";
   }
 
   @GetMapping("/edit")
   @PreAuthorize("hasRole('MANAGER')")
-  public String editForm(@RequestParam("id") Long id, Model model) {
+  public String editForm(@RequestParam("id") Long id,
+                         @RequestParam(value = "filter", required = false) String filter,
+                         Model model) {
     var rd = reportService.getReportDefinition(id);
     var form = new ReportForm();
     form.setId(rd.getId());
@@ -95,6 +98,7 @@ public class ReportController {
     model.addAttribute("report", form);
     model.addAttribute("isEdit", true);
     model.addAttribute("reportAuthorizations", reportAuthorization.getAuthorizations(rd));
+    model.addAttribute("filter", filter);
     return "reporting/report-form";
   }
 
@@ -103,7 +107,8 @@ public class ReportController {
   public String store(@ModelAttribute("report") ReportForm form,
                       BindingResult bindingResult,
                       Model model,
-                      RedirectAttributes redirectAttributes) {
+                      RedirectAttributes redirectAttributes,
+                      @RequestParam(value = "filter", required = false) String filter) {
 
     if (form.getName() == null || form.getName().isBlank()) {
       bindingResult.rejectValue("name", "error.name", "Name is required");
@@ -115,6 +120,7 @@ public class ReportController {
     if (bindingResult.hasErrors()) {
       model.addAttribute("pageTitle", form.getId() != null ? "Edit Report" : "Create Report");
       model.addAttribute("isEdit", form.getId() != null);
+      model.addAttribute("filter", filter);
       return "reporting/report-form";
     }
 
@@ -126,15 +132,21 @@ public class ReportController {
       redirectAttributes.addFlashAttribute("toastSuccess", "Report updated successfully");
     }
 
-    return "redirect:/reporting/reports";
+    return filter == null || filter.isBlank()
+        ? "redirect:/reporting/reports"
+        : "redirect:/reporting/reports?filter=" + filter;
   }
 
   @PostMapping("/delete")
   @PreAuthorize("hasRole('MANAGER')")
-  public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+  public String delete(@RequestParam("id") Long id,
+                       @RequestParam(value = "filter", required = false) String filter,
+                       RedirectAttributes redirectAttributes) {
     reportService.deleteReportDefinition(id);
     redirectAttributes.addFlashAttribute("toastSuccess", "Report deleted successfully");
-    return "redirect:/reporting/reports";
+    return filter == null || filter.isBlank()
+        ? "redirect:/reporting/reports"
+        : "redirect:/reporting/reports?filter=" + filter;
   }
 
   @GetMapping("/execute")
@@ -156,6 +168,7 @@ public class ReportController {
       model.addAttribute("report", reportDefinition);
       model.addAttribute("execute", paramForm);
       model.addAttribute("missingParameters", missingParameters);
+      model.addAttribute("filter", allParams.get("filter"));
       return "reporting/report-parameters";
     } else {
       ReportResult reportResult = reportService.execute(id, parametersFromRequest);
@@ -164,14 +177,17 @@ public class ReportController {
       model.addAttribute("report", reportDefinition);
       model.addAttribute("reportResult", reportResult);
       model.addAttribute("params", parametersFromRequest);
+      model.addAttribute("filter", allParams.get("filter"));
       return "reporting/report-result";
     }
   }
 
   @PostMapping("/execute")
-  public String executeWithForm(@ModelAttribute("execute") ExecuteForm form) {
+  public String executeWithForm(@ModelAttribute("execute") ExecuteForm form,
+                                @RequestParam(value = "filter", required = false) String filter) {
     String queryParams = renderQueryParams(form.getParameters());
-    return "redirect:/reporting/reports/execute?id=" + form.getReportId() + queryParams;
+    String filterParam = (filter == null || filter.isBlank()) ? "" : "&filter=" + filter;
+    return "redirect:/reporting/reports/execute?id=" + form.getReportId() + queryParams + filterParam;
   }
 
   @PostMapping("/export")

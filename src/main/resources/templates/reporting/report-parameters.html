@@ -18,6 +18,8 @@
     <div class="card-body">
       <form th:action="@{/reporting/reports/execute}" th:object="${execute}" method="post">
         <input type="hidden" th:field="*{reportId}" />
+        <!-- preserve list filter across execute/back navigation -->
+        <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
 
         <div class="table-responsive">
           <table class="table table-vcenter">
@@ -52,7 +54,7 @@
           <button type="submit" class="btn btn-primary">
             <i class="icon ti ti-player-play"></i> Execute
           </button>
-          <a th:href="@{/reporting/reports}" class="btn btn-secondary">Back</a>
+          <a th:href="@{'/reporting/reports'(filter=${filter})}" class="btn btn-secondary">Back</a>
         </div>
       </form>
     </div>
