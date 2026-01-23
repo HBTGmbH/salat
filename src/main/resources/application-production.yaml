@@ -3,6 +3,7 @@ server:
     resource:
       allow-caching: true
       cache-ttl: 1d
+    max-parameter-count: 2000
 spring:
   web:
     resources:
