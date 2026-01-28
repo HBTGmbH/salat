@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.Warning;
 import org.tb.common.struts.TypedAction;
+import org.tb.employee.domain.AuthorizedEmployee;
 
 /**
  * Parent action class for the actions of an employee who is correctly logged in.
@@ -29,6 +30,9 @@ public abstract class LoginRequiredAction<F extends ActionForm> extends TypedAct
 
     @Autowired
     protected AuthorizedUser authorizedUser;
+
+    @Autowired
+    protected AuthorizedEmployee authorizedEmployee;
 
     @Override
     public final ActionForward executeWithForm(ActionMapping mapping, F form, HttpServletRequest request, HttpServletResponse response) throws Exception {

@@ -65,9 +65,8 @@ import org.tb.dailyreport.viewhelper.SuborderHelper;
 import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.dailyreport.viewhelper.EmployeeViewHelper;
 import org.tb.favorites.domain.Favorite;
 import org.tb.favorites.rest.FavoriteDTO;
 import org.tb.favorites.rest.FavoriteDTOMapper;
@@ -90,7 +89,6 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
   private final FavoriteService favoriteService;
   private final WorkingdayService workingdayService;
-  private final EmployeeService employeeService;
   private final SuborderHelper suborderHelper;
   private final CustomerorderHelper customerorderHelper;
   private final TimereportHelper timereportHelper;
@@ -101,6 +99,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
   private final EmployeecontractService employeecontractService;
   private final SuborderService suborderService;
   private final EmployeeorderService employeeorderService;
+  private final EmployeeViewHelper employeeViewHelper;
 
   @Override
   public ActionForward executeAuthenticated(ActionMapping mapping, ShowDailyReportForm reportForm,
@@ -812,8 +811,7 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
    */
   private String init(HttpServletRequest request, ShowDailyReportForm reportForm) {
     Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
-    Employeecontract ec = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeService,
-        employeecontractService);
+    Employeecontract ec = employeeViewHelper.getAndInitCurrentEmployee(request.getSession());
     List<Employeecontract> employeecontracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
     if (employeecontracts.isEmpty()) {
       request.setAttribute("errorMessage",

@@ -27,9 +27,8 @@ import org.tb.dailyreport.domain.TrainingOverview;
 import org.tb.dailyreport.service.TrainingService;
 import org.tb.dailyreport.viewhelper.TrainingHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.dailyreport.viewhelper.EmployeeViewHelper;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
@@ -44,9 +43,9 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
     private final static String TRAINING_ID = "i976";
     private final EmployeecontractService employeecontractService;
     private final TrainingService trainingService;
-    private final EmployeeService employeeService;
     private final CustomerorderService customerorderService;
     private final EmployeeorderService employeeorderService;
+    private final EmployeeViewHelper employeeViewHelper;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, ShowTrainingForm trainingForm, HttpServletRequest request, HttpServletResponse response) throws ParseException {
@@ -131,7 +130,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String forward = "success";
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
-        Employeecontract employeecontract = new EmployeeViewHelper().getAndInitCurrentEmployee(request, employeeService, employeecontractService);
+        Employeecontract employeecontract = employeeViewHelper.getAndInitCurrentEmployee(request.getSession());
         Customerorder trainingOrder = customerorderService.getCustomerorderBySign(TRAINING_ID);
         if (trainingOrder == null) {
             request.setAttribute("errorMessage", "No training customer order has been found matching " + TRAINING_ID + " - please call system administrator.");

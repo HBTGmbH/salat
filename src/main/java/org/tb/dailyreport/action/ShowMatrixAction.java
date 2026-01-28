@@ -23,22 +23,21 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.matrix.MatrixHelper;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.employee.viewhelper.EmployeeViewHelper;
+import org.tb.dailyreport.viewhelper.EmployeeViewHelper;
 
 @Component
 @RequiredArgsConstructor
 public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
     private final EmployeecontractService employeecontractService;
-    private final EmployeeService employeeService;
     private final MatrixHelper matrixHelper;
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
     private final AuthorizedUser authorizedUser;
     private final DailyWorkingReportCsvConverter dailyWorkingReportCsvConverter;
     private final DailyWorkingReportService dailyWorkingReportService;
+    private final EmployeeViewHelper employeeViewHelper;
 
     @Override
     @SneakyThrows
@@ -140,8 +139,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         // call on MatrixView without a parameter
 
         // no special task - prepare everything to show reports
-        EmployeeViewHelper eh = new EmployeeViewHelper();
-        Employeecontract ec = eh.getAndInitCurrentEmployee(request, employeeService, employeecontractService);
+        Employeecontract ec = employeeViewHelper.getAndInitCurrentEmployee(request.getSession());
 
         Map<String, Object> results = matrixHelper.handleNoArgs(
                 reportForm,
