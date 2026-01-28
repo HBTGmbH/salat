@@ -77,7 +77,7 @@ public class ReportService {
   public ReportDefinition getReportDefinition(long reportDefinitionId) {
     return reportDefinitionRepository.findById(reportDefinitionId)
         .filter(report -> reportAuthorization.isAuthorized(report, EXECUTE))
-        .orElseThrow();
+        .orElse(null);
   }
 
   @Authorized(requiresManager = true)

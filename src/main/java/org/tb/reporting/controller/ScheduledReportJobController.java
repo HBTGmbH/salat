@@ -6,10 +6,12 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -118,8 +120,10 @@ public class ScheduledReportJobController {
       job = new ScheduledReportJob();
     }
 
-    var reportDefinition = reportService.getReportDefinition(form.getReportDefinitionId());
-    job.setReportDefinition(reportDefinition);
+    var rd = reportService.getReportDefinition(form.getReportDefinitionId());
+    if(rd == null) throw new ErrorResponseException(HttpStatus.BAD_REQUEST);
+
+    job.setReportDefinition(rd);
     job.setName(form.getName());
     job.setReportParameters(form.getReportParameters());
     job.setRecipientEmails(form.getRecipientEmails());

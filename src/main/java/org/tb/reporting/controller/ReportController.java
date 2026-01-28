@@ -23,10 +23,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -90,6 +93,7 @@ public class ReportController {
                          @RequestParam(value = "filter", required = false) String filter,
                          Model model) {
     var rd = reportService.getReportDefinition(id);
+    if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
     var form = new ReportForm();
     form.setId(rd.getId());
     form.setName(rd.getName());
@@ -154,10 +158,11 @@ public class ReportController {
                         @RequestParam Map<String, String> allParams,
                         Model model,
                         SessionStatus status) {
-    var reportDefinition = reportService.getReportDefinition(id);
+    var rd = reportService.getReportDefinition(id);
+    if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
 
-    var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, reportDefinition.getSql()));
-    var missingParameters = getMissingParameters(parametersFromRequest, reportDefinition.getSql());
+    var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, rd.getSql()));
+    var missingParameters = getMissingParameters(parametersFromRequest, rd.getSql());
 
     if (!missingParameters.isEmpty()) {
       status.setComplete();
@@ -165,7 +170,7 @@ public class ReportController {
       paramForm.setReportId(id);
       paramForm.initParameters(parametersFromRequest, missingParameters);
       model.addAttribute("pageTitle", "Execute Report");
-      model.addAttribute("report", reportDefinition);
+      model.addAttribute("report", rd);
       model.addAttribute("execute", paramForm);
       model.addAttribute("missingParameters", missingParameters);
       model.addAttribute("filter", allParams.get("filter"));
@@ -174,7 +179,7 @@ public class ReportController {
       ReportResult reportResult = reportService.execute(id, parametersFromRequest);
       // Ergebnis in HTTP-Session ablegen, damit andere Endpunkte (z.B. Export) darauf zugreifen können
       model.addAttribute("pageTitle", "Report Result");
-      model.addAttribute("report", reportDefinition);
+      model.addAttribute("report", rd);
       model.addAttribute("reportResult", reportResult);
       model.addAttribute("params", parametersFromRequest);
       model.addAttribute("filter", allParams.get("filter"));
@@ -194,9 +199,10 @@ public class ReportController {
   public void export(@RequestParam("id") Long id,
                      @ModelAttribute("reportResult") ReportResult reportResult,
                      HttpServletResponse response) throws IOException {
-    var reportDefinition = reportService.getReportDefinition(id);
+    var rd = reportService.getReportDefinition(id);
+    if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
     var bytes = excelExportService.exportToExcel(reportResult);
-    var fileName = createFileName(reportDefinition, reportResult.getParameters());
+    var fileName = createFileName(rd, reportResult.getParameters());
     response.setHeader("Content-disposition", "attachment; filename=" + fileName);
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     response.setContentLength(bytes.length);
