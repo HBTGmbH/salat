@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.service.MailService;
 import org.tb.common.service.MailService.EmailAttachment;
 import org.tb.common.service.MailService.EmailRequest;
@@ -39,28 +41,29 @@ public class ReportEmailService {
       }
 
       log.info("Generating report {} with parameters: {}", reportDefinitionId, parameters);
-      ReportDefinition reportDefinition = reportService.getReportDefinition(reportDefinitionId);
+      ReportDefinition rd = reportService.getReportDefinition(reportDefinitionId);
+      if(rd == null) throw new InvalidDataException(ErrorCode.XX_DATA_MISSING, "No report definition found for ID: " + reportDefinitionId);
       ReportResult reportResult = reportService.execute(reportDefinitionId, parameters);
       
       if(reportResult.isError()) {
         log.error(
             "Report id={}, name={} produced an error. Skipping email. ErrorMessage: {}",
             reportDefinitionId,
-            reportDefinition.getName(),
+            rd.getName(),
             reportResult.getErrorMessage()
         );
         return;
       }
 
       if(reportResult.getRows().isEmpty()) {
-        log.info("Report id={}, name={} returned no rows. Skipping email.", reportDefinitionId, reportDefinition.getName());
+        log.info("Report id={}, name={} returned no rows. Skipping email.", reportDefinitionId, rd.getName());
         return;
       }
 
       byte[] excelBytes = excelExportService.exportToExcel(reportResult);
 
-      String emailBody = buildEmailBody(reportDefinition, reportResult, parameters);
-      String fileName = createFileName(reportDefinition);
+      String emailBody = buildEmailBody(rd, reportResult, parameters);
+      String fileName = createFileName(rd);
 
       MailContact from = new MailContact("Salat Reporting", fromAddress);
       MailContact primaryRecipient = new MailContact("", recipients[0].trim());
@@ -71,7 +74,7 @@ public class ReportEmailService {
       }
 
       EmailRequest emailRequest = EmailRequest.builder()
-          .subject("Report: " + reportDefinition.getName())
+          .subject("Report: " + rd.getName())
           .message(emailBody)
           .from(from)
           .to(primaryRecipient)
@@ -85,7 +88,7 @@ public class ReportEmailService {
           .build();
 
       mailService.sendEmail(emailRequest);
-      log.info("Report email sent successfully to {} recipients for report: {}", recipients.length, reportDefinition.getName());
+      log.info("Report email sent successfully to {} recipients for report: {}", recipients.length, rd.getName());
 
     } catch (Exception e) {
       log.error("Failed to send report email for report ID: {}", reportDefinitionId, e);
