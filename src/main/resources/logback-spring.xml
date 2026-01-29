@@ -36,20 +36,41 @@
               <shortenedClassNameLength>40</shortenedClassNameLength>
               <!-- generated class names -->
               <exclude>\$\$FastClassByCGLIB\$\$</exclude>
+              <exclude>\$\$SpringCGLIB\$\$</exclude>
               <exclude>\$\$EnhancerBySpringCGLIB\$\$</exclude>
               <exclude>^sun\.reflect\..*\.invoke</exclude>
               <!-- JDK internals -->
               <exclude>^com\.sun\.</exclude>
               <exclude>^sun\.net\.</exclude>
+              <exclude>^jdk\.internal</exclude>
               <!-- dynamic invocation -->
+              <exclude>^jakarta\.servlet\.http</exclude>
+              <exclude>^java\.lang\.reflect\.Method\.invoke</exclude>
               <exclude>^net\.sf\.cglib\.proxy\.MethodProxy\.invoke</exclude>
+              <exclude>^org\.apache\.catalina\.core\.ApplicationFilterChain</exclude>
+              <exclude>^org\.apache\.jasper</exclude>
+              <exclude>^org\.apache\.tomcat\.websocket\.server\.WsFilter</exclude>
+              <exclude>^org\.springframework\.aop\.</exclude>
+              <exclude>^org\.springframework\.app\.</exclude>
+              <exclude>^org\.springframework\.beans\.</exclude>
               <exclude>^org\.springframework\.cglib\.</exclude>
+              <exclude>^org\.springframework\.security\.web\.FilterChainProxy</exclude>
+              <exclude>^org\.springframework\.security\.web\.ObservationFilterChainDecorator</exclude>
+              <exclude>^org\.springframework\.security\.web\.access\.ExceptionTranslationFilter</exclude>
+              <exclude>^org\.springframework\.security\.web\.access\.intercept\.AuthorizationFilter</exclude>
+              <exclude>^org\.springframework\.security\.web\.authentication\.AnonymousAuthenticationFilter</exclude>
+              <exclude>^org\.springframework\.security\.web\.servletapi\.SecurityContextHolderAwareRequestFilter</exclude>
               <exclude>^org\.springframework\.transaction\.</exclude>
               <exclude>^org\.springframework\.validation\.</exclude>
-              <exclude>^org\.springframework\.app\.</exclude>
-              <exclude>^org\.springframework\.aop\.</exclude>
-              <exclude>^org\.springframework\.beans\.</exclude>
-              <exclude>^java\.lang\.reflect\.Method\.invoke</exclude>
+              <exclude>^org\.springframework\.web\.filter\.CompositeFilter</exclude>
+              <exclude>^org\.springframework\.web\.filter\.OncePerRequestFilter</exclude>
+              <exclude>^org\.springframework\.web\.method\.support\.InvocableHandlerMethod</exclude>
+              <exclude>^org\.springframework\.web\.servlet\.DispatcherServlet</exclude>
+              <exclude>^org\.springframework\.web\.servlet\.FrameworkServlet</exclude>
+              <exclude>^org\.springframework\.web\.servlet\.mvc\.method\.AbstractHandlerMethodAdapter</exclude>
+              <exclude>^org\.springframework\.web\.servlet\.mvc\.method\.annotation\.RequestMappingHandlerAdapter</exclude>
+              <exclude>^org\.springframework\.web\.servlet\.mvc\.method\.annotation\.ServletInvocableHandlerMethod</exclude>
+              <exclude>^org\.springframework\.web\.servlet\.resource\.ResourceUrlEncodingFilter</exclude>
               <rootCauseFirst>true</rootCauseFirst>
               <inlineHash>true</inlineHash>
             </throwableConverter>
