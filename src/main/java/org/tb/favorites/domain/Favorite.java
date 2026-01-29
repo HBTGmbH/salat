@@ -29,12 +29,16 @@ public class Favorite implements Persistable<Long> {
   @Setter(PRIVATE)
   private Long id;
 
+  @Column(nullable = false)
   private Long employeeId;
 
+  @Column(nullable = false)
   private Long employeeorderId;
 
+  @Column(nullable = false)
   private Integer hours;
 
+  @Column(nullable = false)
   private Integer minutes;
 
   @Lob

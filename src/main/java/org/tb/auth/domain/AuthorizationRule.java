@@ -15,19 +15,19 @@ import org.tb.common.domain.AuditedEntity;
 @Table(name = "authorization_rule")
 public class AuthorizationRule extends AuditedEntity {
 
-    @Column(name = "category")
+    @Column(name = "category", nullable = false)
     private String category;
 
     @Column(name = "grantor_id")
     private String grantorId;
 
-    @Column(name = "grantee_id")
+    @Column(name = "grantee_id", nullable = false)
     private Set<String> granteeId;
 
     @Column(name = "object_id")
     private Set<String> objectId;
 
-    @Column(name = "access_level", columnDefinition = "varchar")
+    @Column(name = "access_level", columnDefinition = "varchar", nullable = false)
     private Set<AccessLevel> accessLevels;
 
     @Column(name = "valid_from")

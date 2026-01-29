@@ -45,8 +45,8 @@ public class Employee extends AuditedEntity implements Serializable {
     @ManyToOne
     @JoinTable(
         name = "employee_salat_user",
-        joinColumns = @JoinColumn(name = "employee_id"),
-        inverseJoinColumns = @JoinColumn(name = "salat_user_id")
+        joinColumns = @JoinColumn(name = "employee_id", nullable = false),
+        inverseJoinColumns = @JoinColumn(name = "salat_user_id", nullable = false)
     )
     private SalatUser salatUser;
 

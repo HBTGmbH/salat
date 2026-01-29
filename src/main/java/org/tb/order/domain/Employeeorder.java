@@ -2,6 +2,7 @@ package org.tb.order.domain;
 
 import static org.tb.common.util.DateUtils.format;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -48,6 +49,7 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
+    @Column(nullable = false)
     private Duration debitMinutes = Duration.ZERO;
 
     private Byte debithoursunit;

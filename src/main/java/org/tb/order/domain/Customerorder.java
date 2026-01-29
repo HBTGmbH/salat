@@ -89,6 +89,7 @@ public class Customerorder extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
+    @Column(nullable = false)
     private Duration debitMinutes;
 
     private Byte debithoursunit;

@@ -1,5 +1,6 @@
 package org.tb.employee.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -33,6 +34,7 @@ public class Overtime extends AuditedEntity implements Serializable {
     private String comment;
 
     @Convert(converter = DurationMinutesConverter.class)
+    @Column(nullable = false)
     private Duration timeMinutes;
 
     private LocalDate effective;

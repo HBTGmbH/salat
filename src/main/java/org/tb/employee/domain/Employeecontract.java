@@ -2,6 +2,7 @@ package org.tb.employee.domain;
 
 import static org.tb.common.util.DateUtils.format;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -48,6 +49,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
+    @Column(nullable = false)
     private Duration dailyWorkingTimeMinutes = Duration.ZERO;
 
     private Boolean freelancer;
@@ -61,6 +63,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Convert(converter = DurationMinutesConverter.class)
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
+    @Column(nullable = false)
     private Duration overtimeStaticMinutes = Duration.ZERO;
 
     @Fetch(FetchMode.SELECT)
