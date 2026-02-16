@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+  <title th:text="${title}">Umsatz-/Kosten-Upload</title>
+</head>
+<body>
+<section layout:fragment="content">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="${title}">Umsatz-/Kosten-Upload</h3>
+    </div>
+    <div class="card-body">
+      <form th:action="@{/orders/revenue-upload/process}" method="post" enctype="multipart/form-data">
+
+        <div class="mb-3">
+          <label class="form-label">.xlsx-Datei</label>
+          <input class="form-control" type="file" name="file" accept=".xlsx" required>
+          <div class="form-hint" th:text="#{orderrevenue.upload.hint.file}">Nur eine .xlsx-Datei pro Upload.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" th:text="#{orderrevenue.upload.comment}">Kommentar (optional)</label>
+          <input class="form-control" type="text" name="comment" th:value="${comment}" maxlength="512">
+        </div>
+
+        <div th:if="${showMapping}">
+          <h4 class="mt-4" th:text="#{orderrevenue.upload.mapping.title}">Spalten zuordnen</h4>
+          <p class="text-secondary" th:text="#{orderrevenue.upload.mapping.info}">Ordnen Sie die Spalten den internen Feldern zu.</p>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+              <tr>
+                <th th:text="#{orderrevenue.upload.header.column}">Spaltenname</th>
+                <th th:text="#{orderrevenue.upload.header.field}">Feld</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="h : ${headers}">
+                <td th:text="${h}"></td>
+                <td>
+                  <select class="form-select" th:name="${'mapping[' + h + ']'}"
+                          th:value="${mapping[h]}">
+                    <option value="" th:text="#{orderrevenue.upload.field.none}">- keine -</option>
+                    <option value="order" th:selected="${mapping[h] == 'order'}" th:text="#{orderrevenue.upload.field.order}">Auftrag</option>
+                    <option value="date" th:selected="${mapping[h] == 'date'}" th:text="#{orderrevenue.upload.field.date}">Datum</option>
+                    <option value="type" th:selected="${mapping[h] == 'type'}" th:text="#{orderrevenue.upload.field.type}">Art</option>
+                    <option value="amount" th:selected="${mapping[h] == 'amount'}" th:text="#{orderrevenue.upload.field.amount}">Betrag</option>
+                  </select>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-upload" style="margin-right: .5em"></i>
+            <span th:text="#{orderrevenue.upload.start}">Upload starten</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <div class="card mt-4" th:if="${showResult}">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{orderrevenue.upload.result}">Ergebnis</h3>
+    </div>
+    <div class="card-body">
+      <div class="row mb-2">
+        <div class="col">
+          <span class="badge bg-green-lt" th:text="${'Erfolgreich: ' + result.successCount}">Erfolgreich</span>
+          <span class="badge bg-red-lt ms-2" th:text="${'Fehler: ' + result.errorCount}">Fehler</span>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+          <tr>
+            <th>#</th>
+            <th th:text="#{orderrevenue.upload.row}">Zeile</th>
+            <th th:text="#{orderrevenue.upload.status}">Status</th>
+            <th th:text="#{orderrevenue.upload.errors}">Fehler</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="rr : ${result.rowResults}">
+            <td th:text="${rr.rowIndex}"></td>
+            <td th:text="${rr.content}"></td>
+            <td>
+              <span th:if="${rr.success}" class="text-green"><i class="ti ti-check"></i> OK</span>
+              <span th:if="${!rr.success}" class="text-red"><i class="ti ti-alert-circle"></i> NOK</span>
+            </td>
+            <td>
+              <ul class="m-0">
+                <li th:each="e : ${rr.errors}" th:text="${e}"></li>
+              </ul>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+</body>
+</html>

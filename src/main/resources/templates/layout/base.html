@@ -149,6 +149,12 @@
                      th:if="${@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable()}">
                     Reports
                   </a>
+                  <a class="dropdown-item" th:href="@{/orders/revenue-upload}"
+                     th:if="${#authorization.expression('hasAnyRole(''BACKOFFICE'',''MANAGER'')')}"
+                     th:classappend="${subSection == 'revenue-upload'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.orderrevenue.upload.text}">
+                    Umsatz-/Kosten-Upload
+                  </a>
                   <a class="dropdown-item" th:href="@{/reporting/jobs}"
                      th:classappend="${subSection == 'scheduled-report-jobs'} ? 'active' : ''"
                      th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
