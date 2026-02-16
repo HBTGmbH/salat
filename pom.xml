@@ -141,6 +141,16 @@
       <groupId>io.github.weblegacy</groupId>
       <artifactId>struts-core</artifactId>
       <version>${struts-weblegacy.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.github.weblegacy</groupId>
@@ -209,6 +219,12 @@
       <groupId>org.webjars</groupId>
       <artifactId>webjars-locator</artifactId>
       <version>${webjars-locator.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-text</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.webjars</groupId>
