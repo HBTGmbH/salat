@@ -17,6 +17,8 @@ salat:
       enabled: true
       from: noreply@salat.local
 server:
+  tomcat:
+    max-part-count: 100
   servlet:
     session:
       persistent: false
