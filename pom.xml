@@ -39,7 +39,7 @@
     <webjars-bootstrap-icons.version>1.13.1</webjars-bootstrap-icons.version>
     <webjars-bootstrap.version>5.3.8</webjars-bootstrap.version>
     <webjars-jquery.version>4.0.0</webjars-jquery.version>
-    <webjars-locator.version>0.52</webjars-locator.version>
+    <webjars-locator-lite.version>1.1.0</webjars-locator-lite.version>
     <webjars-plotly.version>3.3.1</webjars-plotly.version>
     <webjars-tabler-io-core.version>1.4.0</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.35.0</webjars-tabler-io-icons.version>
@@ -217,8 +217,8 @@
     <!-- web jars -->
     <dependency>
       <groupId>org.webjars</groupId>
-      <artifactId>webjars-locator</artifactId>
-      <version>${webjars-locator.version}</version>
+      <artifactId>webjars-locator-lite</artifactId>
+      <version>${webjars-locator-lite.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.commons</groupId>
