@@ -219,12 +219,6 @@
       <groupId>org.webjars</groupId>
       <artifactId>webjars-locator-lite</artifactId>
       <version>${webjars-locator-lite.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-text</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.webjars</groupId>
