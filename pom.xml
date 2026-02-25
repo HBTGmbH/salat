@@ -43,7 +43,7 @@
     <webjars-plotly.version>3.3.1</webjars-plotly.version>
     <webjars-tabler-io-core.version>1.4.0</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.35.0</webjars-tabler-io-icons.version>
-    <webjars-tomselect.version>2.5.1</webjars-tomselect.version>
+    <webjars-tomselect.version>2.5.2</webjars-tomselect.version>
   </properties>
 
   <dependencies>
