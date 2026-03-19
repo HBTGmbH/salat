@@ -20,7 +20,7 @@
     <cronutils.version>9.2.1</cronutils.version>
     <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
     <guava.version>33.5.0-jre</guava.version>
-    <jettison.version>1.5.4</jettison.version>
+    <jettison.version>1.5.5</jettison.version>
     <jsp-api.version>3.1.1</jsp-api.version>
     <jstl-api.version>3.0.2</jstl-api.version>
     <jstl.version>3.0.1</jstl.version>
