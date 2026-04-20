@@ -35,6 +35,7 @@
     <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
     <springdoc-openapi-starter-webmvc-ui.version>3.0.3</springdoc-openapi-starter-webmvc-ui.version>
     <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
+    <thymeleaf-layout-dialect.version>4.0.1</thymeleaf-layout-dialect.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <webjars-bootstrap-icons.version>1.13.1</webjars-bootstrap-icons.version>
     <webjars-bootstrap.version>5.3.8</webjars-bootstrap.version>
