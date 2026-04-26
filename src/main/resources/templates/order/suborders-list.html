@@ -6,43 +6,68 @@
 <main layout:fragment="content">
 
   <!-- Filter card -->
-  <div class="card mb-3">
+  <div class="card mb-3" th:with="hasAdvancedFilter=${(filter != null and !#strings.isEmpty(filter)) or show == true or showActualHours == true}">
     <div class="card-body">
-      <form class="row g-2 align-items-end" method="get" th:action="@{/orders/suborders}">
-        <div class="col-md-4">
-          <label class="form-label" th:text="#{main.customerorder.order.text}">Customer Order</label>
-          <select class="form-select tomselect" name="customerOrderId">
-            <option value="-1" th:text="#{main.general.allorders.text}">All Orders</option>
-            <option th:each="co : ${visibleCustomerOrders}"
-                    th:value="${co.id}"
-                    th:text="${co.sign + ' - ' + co.shortdescription}"
-                    th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
-          </select>
+      <form method="get" th:action="@{/orders/suborders}">
+
+        <!-- Primary filter row -->
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <label class="form-label" th:text="#{main.customerorder.order.text}">Customer Order</label>
+            <select class="form-select tomselect" name="customerOrderId">
+              <option value="-1" th:text="#{main.general.allorders.text}">All Orders</option>
+              <option th:each="co : ${visibleCustomerOrders}"
+                      th:value="${co.id}"
+                      th:text="${co.sign + ' - ' + co.shortdescription}"
+                      th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
+            </select>
+          </div>
+          <div class="col-auto align-self-end">
+            <button type="button"
+                    class="btn"
+                    th:classappend="${hasAdvancedFilter} ? 'btn-secondary' : 'btn-outline-secondary'"
+                    data-bs-toggle="collapse" data-bs-target="#advanced-filters"
+                    th:attr="aria-expanded=${hasAdvancedFilter}">
+              <i class="icon ti ti-adjustments-horizontal"></i>
+              <span th:text="#{main.general.advanced.text}">Advanced</span>
+              <span th:if="${hasAdvancedFilter}" class="badge bg-blue ms-1">•</span>
+            </button>
+          </div>
+          <div class="col-auto ms-auto align-self-end" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <a class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null})}">
+              <i class="icon ti ti-plus"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
+            </a>
+          </div>
         </div>
-        <div class="col-md-3">
-          <label class="form-label" th:text="#{main.general.filter.text}">Filter</label>
-          <input type="text" class="form-control" name="filter" th:value="${filter}" />
+
+        <!-- Advanced filters (collapsed by default, open when any advanced filter is active) -->
+        <div class="collapse mt-3 pt-3 border-top" id="advanced-filters"
+             th:classappend="${hasAdvancedFilter} ? 'show' : ''">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label" th:text="#{main.general.filter.text}">Filter</label>
+              <input type="text" class="form-control" name="filter" th:value="${filter}" />
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-primary" type="submit" title="Apply text filter">
+                <i class="icon ti ti-filter m-0"></i>
+              </button>
+            </div>
+            <div class="col-auto ms-2">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
+                <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
+              </label>
+            </div>
+            <div class="col-auto">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
+                <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
+              </label>
+            </div>
+          </div>
         </div>
-        <div class="col-auto">
-          <label class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
-            <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
-          </label>
-        </div>
-        <div class="col-auto">
-          <label class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
-            <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
-          </label>
-        </div>
-        <div class="col-auto">
-          <button class="btn btn-primary" type="submit"><i class="icon ti ti-filter m-0"></i></button>
-        </div>
-        <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-          <a class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null})}">
-            <i class="icon ti ti-plus"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
-          </a>
-        </div>
+
       </form>
     </div>
   </div>
@@ -172,6 +197,17 @@
               th:text="#{main.suborder.button.hideoutdated.text}">Hide outdated</button>
     </form>
   </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('.card.mb-3 form[method="get"]');
+      if (!form) return;
+      // Auto-submit on dropdown and checkbox changes; text input requires button/Enter
+      form.querySelectorAll('select, input[type="checkbox"]').forEach(function (el) {
+        el.addEventListener('change', function () { form.submit(); });
+      });
+    });
+  </script>
 
 </main>
 </html>
