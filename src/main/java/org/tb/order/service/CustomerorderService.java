@@ -24,6 +24,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.CustomerorderDTO;
 import org.tb.order.domain.OrderType;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
@@ -48,59 +49,16 @@ public class CustomerorderService {
   }
 
   @Authorized(requiresManager = true)
-  public void create(long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
-      String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
-      String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, Boolean hide, OrderType orderType) {
-    createOrUpdate(
-        null,
-        customerId,
-        fromDate,
-        untilDate,
-        sign,
-        description,
-        shortdescription,
-        orderCustomer,
-        responsibleCustomerContractually,
-        responsibleCustomerTechnical,
-        responsibleHbtId,
-        respEmpHbtContractId,
-        debithours,
-        debithoursunit,
-        hide,
-        orderType
-    );
+  public void create(CustomerorderDTO dto) {
+    createOrUpdate(null, dto);
   }
 
   @Authorized(requiresManager = true)
-  public void update(long customerorderId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
-      String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
-      String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, Boolean hide, OrderType orderType) {
-    createOrUpdate(
-        customerorderId,
-        customerId,
-        fromDate,
-        untilDate,
-        sign,
-        description,
-        shortdescription,
-        orderCustomer,
-        responsibleCustomerContractually,
-        responsibleCustomerTechnical,
-        responsibleHbtId,
-        respEmpHbtContractId,
-        debithours,
-        debithoursunit,
-        hide,
-        orderType
-    );
+  public void update(long customerorderId, CustomerorderDTO dto) {
+    createOrUpdate(customerorderId, dto);
   }
 
-  private void createOrUpdate(Long coId, long customerId, LocalDate fromDate, LocalDate untilDate, String sign,
-      String description, String shortdescription, String orderCustomer, String responsibleCustomerContractually,
-      String responsibleCustomerTechnical, long responsibleHbtId, long respEmpHbtContractId, String debithours,
-      Byte debithoursunit, Boolean hide, OrderType orderType) {
+  private void createOrUpdate(Long coId, CustomerorderDTO dto) {
 
     Customerorder co;
     if (coId != null) {
@@ -111,37 +69,37 @@ public class CustomerorderService {
     }
 
     /* set attributes */
-    co.setCustomer(customerDAO.getCustomerById(customerId));
+    co.setCustomer(customerDAO.getCustomerById(dto.customerId()));
 
-    co.setUntilDate(untilDate);
-    co.setFromDate(fromDate);
+    co.setUntilDate(dto.untilDate());
+    co.setFromDate(dto.fromDate());
 
-    co.setSign(sign);
-    co.setDescription(description);
-    co.setShortdescription(shortdescription);
-    co.setOrder_customer(orderCustomer);
+    co.setSign(dto.sign());
+    co.setDescription(dto.description());
+    co.setShortdescription(dto.shortdescription());
+    co.setOrder_customer(dto.orderCustomer());
 
-    co.setResponsible_customer_contractually(responsibleCustomerContractually);
-    co.setResponsible_customer_technical(responsibleCustomerTechnical);
+    co.setResponsible_customer_contractually(dto.responsibleCustomerContractually());
+    co.setResponsible_customer_technical(dto.responsibleCustomerTechnical());
 
-    Employee responsibleHbt = employeeDAO.getEmployeeById(responsibleHbtId);
-    Employee respEmpHbtContract = employeeDAO.getEmployeeById(respEmpHbtContractId);
+    Employee responsibleHbt = employeeDAO.getEmployeeById(dto.responsibleHbtId());
+    Employee respEmpHbtContract = employeeDAO.getEmployeeById(dto.respEmpHbtContractId());
     co.setResponsible_hbt(responsibleHbt);
     co.setRespEmpHbtContract(respEmpHbtContract);
 
-    if (debithours == null
-        || debithours.isEmpty()
-        || DurationUtils.parseDuration(debithours).isZero()) {
+    if (dto.debithours() == null
+        || dto.debithours().isEmpty()
+        || DurationUtils.parseDuration(dto.debithours()).isZero()) {
       co.setDebithours(Duration.ZERO);
       co.setDebithoursunit(null);
     } else {
-      co.setDebithours(DurationUtils.parseDuration(debithours));
-      co.setDebithoursunit(debithoursunit);
+      co.setDebithours(DurationUtils.parseDuration(dto.debithours()));
+      co.setDebithoursunit(dto.debithoursunit());
     }
 
-    co.setHide(hide);
+    co.setHide(dto.hide());
 
-    co.setOrderType(orderType);
+    co.setOrderType(dto.orderType());
 
     if(!co.isNew()) {
       var event = new CustomerorderUpdateEvent(co);

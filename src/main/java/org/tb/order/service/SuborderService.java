@@ -21,9 +21,9 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
-import org.tb.order.action.AddSuborderForm;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.SuborderDTO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
@@ -48,69 +48,69 @@ public class SuborderService {
   }
 
   @Authorized(requiresManager = true)
-  public void create(AddSuborderForm addSuborderForm, Customerorder customerorder) {
-    createOrUpdate(null, addSuborderForm, customerorder);
+  public void create(SuborderDTO suborderData, Customerorder customerorder) {
+    createOrUpdate(null, suborderData, customerorder);
   }
 
   @Authorized(requiresManager = true)
-  public void update(long suborderId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
-    createOrUpdate(suborderId, addSuborderForm, customerorder);
+  public void update(long suborderId, SuborderDTO suborderData, Customerorder customerorder) {
+    createOrUpdate(suborderId, suborderData, customerorder);
   }
 
   public List<Suborder> getStandardSuborders() {
     return suborderDAO.getStandardSuborders();
   }
 
-  private void createOrUpdate(Long soId, AddSuborderForm addSuborderForm, Customerorder customerorder) {
+  private void createOrUpdate(Long soId, SuborderDTO data, Customerorder customerorder) {
     Suborder so;
     if (soId != null) {
       // edited suborder
       so = suborderDAO.getSuborderById(soId);
     } else {
-      // new report
+      // new suborder
       so = new Suborder();
     }
     so.acceptVisitor(suborder -> suborder.setCustomerorder(customerorder));
-    so.setSign(addSuborderForm.getSign());
-    so.setSuborder_customer(addSuborderForm.getSuborder_customer());
-    so.setDescription(addSuborderForm.getDescription());
-    so.setShortdescription(addSuborderForm.getShortdescription());
-    so.setInvoice(addSuborderForm.getInvoice());
-    so.setStandard(addSuborderForm.getStandard());
-    so.setCommentnecessary(addSuborderForm.getCommentnecessary());
-    so.setFixedPrice(addSuborderForm.getFixedPrice());
-    so.setTrainingFlag(addSuborderForm.getTrainingFlag());
-    so.setOrderType(addSuborderForm.getOrderType());
+    so.setSign(data.sign());
+    so.setSuborder_customer(data.suborder_customer());
+    so.setDescription(data.description());
+    so.setShortdescription(data.shortdescription());
+    so.setInvoice(data.invoice());
+    so.setStandard(data.standard());
+    so.setCommentnecessary(data.commentnecessary());
+    so.setFixedPrice(data.fixedPrice());
+    so.setTrainingFlag(data.trainingFlag());
+    so.setOrderType(data.orderType());
 
-    if (addSuborderForm.getValidFrom() != null && !addSuborderForm.getValidFrom().trim().isEmpty()) {
-      LocalDate fromDate = DateUtils.parseOrNull(addSuborderForm.getValidFrom());
+    if (data.validFrom() != null && !data.validFrom().trim().isEmpty()) {
+      LocalDate fromDate = DateUtils.parseOrNull(data.validFrom());
       so.setFromDate(fromDate);
     } else {
       so.setFromDate(so.getCustomerorder().getFromDate());
     }
-    if (addSuborderForm.getValidUntil() != null && !addSuborderForm.getValidUntil().trim().isEmpty()) {
-      LocalDate untilDate = DateUtils.parseOrNull(addSuborderForm.getValidUntil());
+    if (data.validUntil() != null && !data.validUntil().trim().isEmpty()) {
+      LocalDate untilDate = DateUtils.parseOrNull(data.validUntil());
       so.setUntilDate(untilDate);
     } else {
       so.setUntilDate(null);
     }
 
-    if (addSuborderForm.getDebithours() == null
-        || addSuborderForm.getDebithours().isEmpty()
-        || DurationUtils.parseDuration(addSuborderForm.getDebithours()).isZero()) {
+    if (data.debithours() == null
+        || data.debithours().isEmpty()
+        || DurationUtils.parseDuration(data.debithours()).isZero()) {
       so.setDebithours(Duration.ZERO);
       so.setDebithoursunit(null);
     } else {
-      so.setDebithours(DurationUtils.parseDuration(addSuborderForm.getDebithours()));
-      so.setDebithoursunit(addSuborderForm.getDebithoursunit());
+      so.setDebithours(DurationUtils.parseDuration(data.debithours()));
+      so.setDebithoursunit(data.debithoursunit());
     }
 
-    so.setHide(addSuborderForm.getHide());
-    Suborder parentOrderCandidate = suborderDAO.getSuborderById(addSuborderForm.getParentId());
+    so.setHide(data.hide());
+    Suborder parentOrderCandidate = suborderDAO.getSuborderById(data.parentId());
     // Falls die Suborder nicht zum Customerorder passt (Kollision der IDs), ist sie kein geeigneter Kandidat (HACK, da UI die ID manchmal auch mit CustomerOrderID besetzt)
-    if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() != addSuborderForm.getCustomerorderId()) {
-      if (!addSuborderForm.getParentId().equals(addSuborderForm.getCustomerorderId())) {
-        throw new IllegalStateException("parentId is neither a valid suborderId nor the customerorderId, but: " + addSuborderForm.getParentId());
+    if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() != data.customerorderId()) {
+      if (!data.parentId().equals(data.customerorderId())) {
+        throw new IllegalStateException("parentId is neither a valid suborderId nor the customerorderId, but: " + data.parentId());
       }
       parentOrderCandidate = null;
     }
@@ -173,46 +173,36 @@ public class SuborderService {
     var resultingValidity = existingValidity.intersection(newValidity);
     var newFrom = resultingValidity.getFrom();
     var newUntil = resultingValidity.getUntil();
-    AddSuborderForm soForm = createForm(suborder, newFrom, newUntil);
-    createOrUpdate(suborderId, soForm, suborder.getCustomerorder());
+    SuborderDTO data = createSuborderDTO(suborder, newFrom, newUntil);
+    createOrUpdate(suborderId, data, suborder.getCustomerorder());
   }
 
-  @Deprecated
-  private AddSuborderForm createForm(Suborder so, LocalDate newFrom, LocalDate newUntil) {
-    AddSuborderForm soForm = new AddSuborderForm();
-    soForm.setCustomerorderId(so.getCustomerorder().getId());
-    soForm.setSign(so.getSign());
-    soForm.setDescription(so.getDescription());
-    soForm.setShortdescription(so.getShortdescription());
-    soForm.setInvoice(so.getInvoice());
-    soForm.setStandard(so.getStandard());
-    soForm.setCommentnecessary(so.getCommentnecessary());
-    soForm.setTrainingFlag(so.getTrainingFlag());
-    soForm.setFixedPrice(so.getFixedPrice());
-    soForm.setSuborder_customer(so.getSuborder_customer());
-    if (so.getParentorder() != null) {
-      soForm.setParentId(so.getParentorder().getId());
-    } else {
-      soForm.setParentId(so.getCustomerorder().getId());
-    }
-    soForm.setValidFrom(DateUtils.format(newFrom));
-    if (newUntil != null) {
-      soForm.setValidUntil(DateUtils.format(newUntil));
-    } else {
-      soForm.setValidUntil("");
-    }
-
-    if (so.getDebithours() != null && !so.getDebithours().isZero()) {
-      soForm.setDebithours(DurationUtils.format(so.getDebithours()));
-      soForm.setDebithoursunit(so.getDebithoursunit());
-    } else {
-      soForm.setDebithours(null);
-      soForm.setDebithoursunit(null);
-    }
-    soForm.setHide(so.isHide());
-    soForm.setOrderType(so.getOrderType());
-
-    return soForm;
+  private SuborderDTO createSuborderDTO(Suborder so, LocalDate newFrom, LocalDate newUntil) {
+    Long parentId = so.getParentorder() != null ? so.getParentorder().getId() : so.getCustomerorder().getId();
+    String validUntil = newUntil != null ? DateUtils.format(newUntil) : "";
+    String debithours = (so.getDebithours() != null && !so.getDebithours().isZero())
+        ? DurationUtils.format(so.getDebithours()) : null;
+    Byte debithoursunit = (so.getDebithours() != null && !so.getDebithours().isZero())
+        ? so.getDebithoursunit() : null;
+    return new SuborderDTO(
+        so.getCustomerorder().getId(),
+        so.getSign(),
+        so.getDescription(),
+        so.getShortdescription(),
+        so.getSuborder_customer(),
+        so.getInvoice(),
+        so.getStandard(),
+        so.getCommentnecessary(),
+        so.getFixedPrice(),
+        so.getTrainingFlag(),
+        so.getOrderType(),
+        DateUtils.format(newFrom),
+        validUntil,
+        debithours,
+        debithoursunit,
+        so.isHide(),
+        parentId
+    );
   }
 
   @Authorized(requiresManager = true)

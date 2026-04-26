@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='orders',subSection='customerorders',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
+<main layout:fragment="content">
+
+  <form th:action="@{/orders/customerorders/store}" th:object="${customerorderForm}" method="post" class="card">
+    <div class="card-body">
+      <input type="hidden" th:field="*{id}" />
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='sign', label=#{main.customerorder.sign.text}, required=true, maxlength=30
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:for="customerId" th:text="#{main.customerorder.customer.text}">Customer</label>
+            <select class="form-select tomselect" id="customerId" th:field="*{customerId}"
+                    th:errorclass="is-invalid" required>
+              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+              <option th:each="c : ${customers}"
+                      th:value="${c.id}"
+                      th:text="${c.shortname + ' - ' + c.name}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('customerId')}" th:errors="*{customerId}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div th:replace="~{fragments/form-fields :: textareaInput(
+        field='description', label=#{main.customerorder.description.text}, required=true, rows=3, monospace=false
+      )}"></div>
+
+      <div th:replace="~{fragments/form-fields :: textInput(
+        field='shortdescription', label=#{main.customerorder.shortdescription.text}, required=false, maxlength=70
+      )}"></div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='validFrom', label=#{main.customerorder.validfrom.text}, required=true, maxlength=10
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='validUntil', label=#{main.customerorder.validuntil.text}, required=false, maxlength=10
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='responsibleCustomerTechnical', label=#{main.customerorder.responsiblecustomer.tech.text}, required=true, maxlength=30
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='responsibleCustomerContractually', label=#{main.customerorder.responsiblecustomer.contract.text}, required=true, maxlength=30
+          )}"></div>
+        </div>
+      </div>
+
+      <div th:replace="~{fragments/form-fields :: textInput(
+        field='orderCustomer', label=#{main.customerorder.ordercustomer.text}, required=false, maxlength=30
+      )}"></div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:for="employeeId" th:text="#{main.customerorder.responsiblehbt.text}">Resp. HBT (DV)</label>
+            <select class="form-select tomselect" id="employeeId" th:field="*{employeeId}" th:errorclass="is-invalid">
+              <option th:each="e : ${employees}"
+                      th:value="${e.id}"
+                      th:text="${e.name}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:for="respContrEmployeeId" th:text="#{main.customerorder.responsiblehbt.contract.text}">Resp. HBT (AV)</label>
+            <select class="form-select tomselect" id="respContrEmployeeId" th:field="*{respContrEmployeeId}" th:errorclass="is-invalid">
+              <option th:each="e : ${employees}"
+                      th:value="${e.id}"
+                      th:text="${e.name}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('respContrEmployeeId')}" th:errors="*{respContrEmployeeId}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
+          )}"></div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.general.debithoursunit.text}">Debit Unit</label>
+            <select class="form-select" id="debithoursunit" th:field="*{debithoursunit}">
+              <option value="" th:text="#{main.general.selectone.text}">--</option>
+              <option value="0" th:text="#{main.general.totaltime.text}">Total</option>
+              <option value="1" th:text="#{main.general.year.text}">Year</option>
+              <option value="12" th:text="#{main.general.month.text}">Month</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.customerorder.orderType.text}">Order Type</label>
+            <select class="form-select" id="orderType" th:field="*{orderType}">
+              <option th:each="ot : ${orderTypes}"
+                      th:value="${ot.name()}"
+                      th:text="#{${ot.label}}"></option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+        field='hide', label=#{main.general.hide}
+      )}"></div>
+    </div>
+
+    <div class="card-footer">
+      <div th:with="saveLabel=${isEdit} ? #{main.general.button.save.text} : #{main.general.button.create.text}"
+           th:replace="~{fragments/form-fields :: formButtons(
+             saveLabel=${saveLabel},
+             cancelHref=@{/orders/customerorders}
+           )}"></div>
+    </div>
+  </form>
+
+</main>
+</html>

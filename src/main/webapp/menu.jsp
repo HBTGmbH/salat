@@ -79,12 +79,12 @@
                     <bean:message key="main.general.mainmenu.customers.text" />
                 </a>
             </li>
-			<li><html:link styleClass="menu" action="/ShowCustomerorder">
+			<li><a class="menu" href="<c:url value='/orders/customerorders' />">
 				<bean:message key="main.general.mainmenu.customerorders.text" />
-			</html:link></li>
-			<li><html:link styleClass="menu" action="/ShowSuborder">
+			</a></li>
+			<li><a class="menu" href="<c:url value='/orders/suborders' />">
 				<bean:message key="main.general.mainmenu.suborders.text" />
-			</html:link></li>
+			</a></li>
 			<c:if test="${authorizedUser.backoffice}">
 				<li><html:link styleClass="menu" action="/ShowInvoice">
 					<bean:message key="main.general.mainmenu.invoice.title.text" />
