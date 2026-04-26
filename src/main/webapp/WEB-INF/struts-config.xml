@@ -41,11 +41,8 @@
 		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
 
 		<!-- customer Struts UI removed (migrated to Spring MVC) -->
+		<!-- customerorder/suborder Struts UI removed (migrated to Spring MVC) -->
 
-		<form-bean name="addCustomerOrderForm" type="org.tb.order.action.AddCustomerorderForm" />
-		<form-bean name="showCustomerOrderForm" type="org.tb.order.action.ShowCustomerorderForm" />
-		<form-bean name="addSuborderForm" type="org.tb.order.action.AddSuborderForm" />
-		<form-bean name="showSuborderForm" type="org.tb.order.action.ShowSuborderForm" />
 		<form-bean name="addEmployeeOrderForm" type="org.tb.order.action.AddEmployeeOrderForm" />
 		<form-bean name="showEmployeeOrderForm" type="org.tb.order.action.ShowEmployeeOrderForm" />
 
@@ -189,73 +186,7 @@
 		</action>
 
 		<!-- Customer Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
-
-		<!-- Customerorder -->
-		<action path="/CreateCustomerorder" name="addCustomerOrderForm"
-			type="org.tb.order.action.CreateCustomerorderAction">
-			<forward name="success" path="/order/addCustomerOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditCustomerorder" name="addCustomerOrderForm"
-			type="org.tb.order.action.EditCustomerorderAction">
-			<forward name="success" path="/order/addCustomerOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteCustomerorder" input="/order/showCustomerOrder.jsp"
-			name="showCustomerOrderForm" type="org.tb.order.action.DeleteCustomerorderAction">
-			<forward name="success" path="/order/showCustomerOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowCustomerorder" name="showCustomerOrderForm"
-			type="org.tb.order.action.ShowCustomerorderAction">
-			<forward name="success" path="/order/showCustomerOrder.jsp" />
-			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreCustomerorder" input="/order/addCustomerOrder.jsp" validate="true"
-			name="addCustomerOrderForm" type="org.tb.order.action.StoreCustomerorderAction">
-			<forward name="success" path="/order/showCustomerOrder.jsp" />
-			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
-			<forward name="reset" path="/order/addCustomerOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<!-- Suborder -->
-		<action path="/CreateSuborder" validate="true" name="addSuborderForm"
-			type="org.tb.order.action.CreateSuborderAction">
-			<forward name="success" path="/order/addSuborder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditSuborder" name="addSuborderForm"
-			type="org.tb.order.action.EditSuborderAction">
-			<forward name="success" path="/order/addSuborder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteSuborder" input="/order/showSuborder.jsp" name="showSuborderForm"
-			type="org.tb.order.action.DeleteSuborderAction">
-			<forward name="success" path="/order/showSuborder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowSuborder" name="showSuborderForm" type="org.tb.order.action.ShowSuborderAction">
-			<forward name="success" path="/order/showSuborder.jsp" />
-			<forward name="backtomenu" path="/dailyreport/showWelcome.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreSuborder" input="/order/addSuborder.jsp" validate="true"
-			name="addSuborderForm" type="org.tb.order.action.StoreSuborderAction">
-			<forward name="success" path="/do/ShowSuborder" redirect="true" />
-			<forward name="cancel" path="/dailyreport/showWelcome.jsp" />
-			<forward name="reset" path="/order/addSuborder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
+		<!-- Customerorder/Suborder Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 
 		<!-- Employeeorder -->
 		<action path="/CreateEmployeeorder" validate="true" name="addEmployeeOrderForm"

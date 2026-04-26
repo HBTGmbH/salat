@@ -134,10 +134,14 @@
                      th:text="#{main.general.mainmenu.customers.text}">
                     Auftraggeber
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowCustomerorder}" th:text="#{main.general.mainmenu.customerorders.text}">
+                  <a class="dropdown-item" th:href="@{/orders/customerorders}"
+                     th:classappend="${subSection == 'customerorders'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.customerorders.text}">
                     Aufträge
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowSuborder}" th:text="#{main.general.mainmenu.suborders.text}">
+                  <a class="dropdown-item" th:href="@{/orders/suborders}"
+                     th:classappend="${subSection == 'suborders'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.suborders.text}">
                     Unteraufträge
                   </a>
                   <a class="dropdown-item" th:href="@{/do/ShowInvoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
