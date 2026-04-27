@@ -42,11 +42,10 @@
                 data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
 
         <!-- Advanced filters -->
-        <div class="collapse mt-3 pt-3 border-top" id="advanced-filters"
+        <div class="collapse mt-3" id="advanced-filters"
              th:attr="data-server-open=${hasAdvancedFilter}">
           <div class="row g-2 align-items-end">
             <div class="col-md-4">
-              <label class="form-label" th:text="#{main.general.filter.text}">Filter</label>
               <input type="text" class="form-control" name="filter" th:value="${filter}" />
             </div>
             <div class="col-auto">
@@ -118,7 +117,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'text-muted' : ''">
+          <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <input class="form-check-input" type="checkbox" name="suborderIds" th:value="${so.id}" />
             </td>
