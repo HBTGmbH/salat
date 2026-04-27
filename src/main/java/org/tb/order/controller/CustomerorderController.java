@@ -45,7 +45,6 @@ public class CustomerorderController {
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final AuthorizedEmployee authorizedEmployee;
-  private final AuthorizedUser authorizedUser;
 
   @GetMapping
   public String list(

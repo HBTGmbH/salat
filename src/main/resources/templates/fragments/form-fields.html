@@ -78,7 +78,23 @@
       <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
     </div>
 
-    <!-- 
+    <!--
+      Date input field with Litepicker
+      Usage: th:replace="~{fragments/form-fields :: dateInput(
+        field='validFrom', label='Valid From', required=true
+      )}"
+    -->
+    <div th:fragment="dateInput(field, label, required)" class="mb-3">
+      <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
+      <div class="input-icon">
+        <input type="text" class="form-control" th:id="${field}" th:field="*{__${field}__}"
+               th:errorclass="is-invalid" th:required="${required}" data-litepicker="true" />
+        <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+      </div>
+      <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
+    </div>
+
+    <!--
       Checkbox switch field
       Usage: th:replace="~{fragments/form-fields :: checkboxSwitch(
         field='enabled', label='Enabled'
