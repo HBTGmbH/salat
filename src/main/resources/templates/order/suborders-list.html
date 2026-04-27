@@ -151,12 +151,12 @@
               <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
             </td>
             <td class="d-none d-lg-table-cell">
-              <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.yes.text}">&euro;</span>
-              <span th:if="${so.standard}" class="badge bg-blue-lt" th:text="#{main.suborder.standard.short}" th:title="#{main.suborder.standard.text}">S</span>
-              <span th:if="${so.commentnecessary}" class="badge bg-yellow-lt" th:text="#{main.suborder.commentnecessary.short}" th:title="#{main.suborder.commentnecessary.text}">C</span>
-              <span th:if="${so.fixedPrice}" class="badge bg-green-lt" th:text="#{main.suborder.fixedprice.short}" th:title="#{main.suborder.fixedprice.text}">F</span>
-              <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:text="#{main.suborder.training.short}" th:title="#{main.suborder.trainingflag.text}">T</span>
-              <span th:if="${so.hide}" class="badge bg-red-lt" th:text="#{main.general.hide}">H</span>
+              <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.text}"><i class="bi-cash-stack"></i></span>
+              <span th:if="${so.standard}" class="badge bg-blue-lt" th:title="#{main.suborder.standard.text}"><i class="bi-gear-fill"></i></span>
+              <span th:if="${so.commentnecessary}" class="badge bg-yellow-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-left-text"></i></span>
+              <span th:if="${so.fixedPrice}" class="badge bg-green-lt" th:title="#{main.suborder.fixedprice.text}"><i class="bi bi-bag-check-fill"></i></span>
+              <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-chat-left-text"></i></span>
+              <span th:if="${so.hide}" class="badge bg-red-lt"><i class="bi bi-x-circle-fill"></i></span>
             </td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <a class="btn btn-outline-primary btn-sm" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
