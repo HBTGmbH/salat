@@ -6,43 +6,71 @@
 <main layout:fragment="content">
 
   <!-- Filter card -->
-  <div class="card mb-3">
+  <div class="card mb-3" th:with="hasAdvancedFilter=${(filter != null and !#strings.isEmpty(filter)) or show == true or showActualHours == true}">
     <div class="card-body">
-      <form class="row g-2 align-items-end" method="get" th:action="@{/orders/suborders}">
-        <div class="col-md-4">
-          <label class="form-label" th:text="#{main.customerorder.order.text}">Customer Order</label>
-          <select class="form-select tomselect" name="customerOrderId">
-            <option value="-1" th:text="#{main.general.allorders.text}">All Orders</option>
-            <option th:each="co : ${visibleCustomerOrders}"
-                    th:value="${co.id}"
-                    th:text="${co.sign + ' - ' + co.shortdescription}"
-                    th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
-          </select>
+      <form method="get" th:action="@{/orders/suborders}" data-filter-form="so">
+
+        <!-- Primary filter row -->
+        <div class="row g-2 align-items-end">
+          <div class="col">
+            <label class="form-label" th:text="#{main.general.filter.text}">Filter</label>
+            <select class="form-select tomselect" name="customerOrderId">
+              <option value="-1" th:text="#{main.general.allorders.text}">All Orders</option>
+              <option th:each="co : ${visibleCustomerOrders}"
+                      th:value="${co.id}"
+                      th:text="${co.sign + ' - ' + co.shortdescription}"
+                      th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
+            </select>
+          </div>
+          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <a class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null})}">
+              <i class="icon ti ti-plus"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
+            </a>
+          </div>
         </div>
-        <div class="col-md-3">
-          <label class="form-label" th:text="#{main.general.filter.text}">Filter</label>
-          <input type="text" class="form-control" name="filter" th:value="${filter}" />
+
+        <!-- Advanced toggle (below main filter) -->
+        <div class="mt-2">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="advanced-toggle" role="switch">
+            <label class="form-check-label text-muted small" for="advanced-toggle" th:text="#{main.general.filter.advanced.text}">Erweiterter Filter</label>
+          </div>
         </div>
-        <div class="col-auto">
-          <label class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
-            <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
-          </label>
+
+        <!-- Hidden collapse trigger (Bootstrap data-API handles animation without needing window.bootstrap) -->
+        <button type="button" class="d-none" id="advanced-collapse-trigger"
+                data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
+
+        <!-- Advanced filters -->
+        <div class="collapse mt-3 pt-3 border-top" id="advanced-filters"
+             th:attr="data-server-open=${hasAdvancedFilter}">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label" th:text="#{main.general.filter.text}">Filter</label>
+              <input type="text" class="form-control" name="filter" th:value="${filter}" />
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-primary" type="submit" title="Apply text filter">
+                <i class="icon ti ti-filter m-0"></i>
+              </button>
+            </div>
+          </div>
+          <div class="row g-2 align-items-end mt-3">
+            <div class="col-auto ms-2">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
+                <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
+              </label>
+            </div>
+            <div class="col-auto">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
+                <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
+              </label>
+            </div>
+          </div>
         </div>
-        <div class="col-auto">
-          <label class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
-            <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
-          </label>
-        </div>
-        <div class="col-auto">
-          <button class="btn btn-primary" type="submit"><i class="icon ti ti-filter m-0"></i></button>
-        </div>
-        <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-          <a class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null})}">
-            <i class="icon ti ti-plus"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
-          </a>
-        </div>
+
       </form>
     </div>
   </div>
@@ -78,8 +106,8 @@
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
             <th th:text="#{main.suborder.sign.text}">Sign</th>
             <th th:text="#{main.customerorder.order.text}">Customer Order</th>
-            <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.validfrom.text}">From / Until</th>
-            <th class="d-none d-md-table-cell" th:text="#{main.suborder.invoice.text}">Invoice</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.customerorder.shortdescription.text}">Short description</th>
+            <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
             <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
             <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
             <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.difference.text}">Diff</th>
@@ -99,6 +127,7 @@
               <small class="text-muted" th:text="${so.shortdescription}">Short description</small>
             </td>
             <td th:text="${so.customerorder.sign}">Customer Order</td>
+            <td class="d-none d-md-table-cell" th:text="${so.customerorder.shortdescription}"></td>
             <td class="d-none d-sm-table-cell">
               <div th:text="${so.fromDate}">From</div>
               <small class="text-muted">
@@ -107,30 +136,28 @@
               </small>
             </td>
             <td class="d-none d-md-table-cell">
-              <span th:if="${so.invoice == 'Y'}" class="badge bg-success-lt" th:text="#{main.general.yes}">Yes</span>
-              <span th:if="${so.invoice == 'N'}" class="badge bg-danger-lt" th:text="#{main.general.no}">No</span>
-              <span th:if="${so.invoice == 'U'}" class="badge bg-secondary-lt">-</span>
-            </td>
-            <td class="d-none d-md-table-cell">
               <span th:if="${so.debithours != null and !so.debithours.zero}">
-                <span th:text="${so.debithours}">0:00</span>
+                <span th:text="${@durationUtils.format(so.debithours)}">0:00</span>
                 <span th:if="${so.debithoursunit == 0}" th:text="' / ' + #{main.general.totaltime.text}"></span>
                 <span th:if="${so.debithoursunit == 1}" th:text="' / ' + #{main.general.year.text}"></span>
                 <span th:if="${so.debithoursunit == 12}" th:text="' / ' + #{main.general.month.text}"></span>
               </span>
             </td>
             <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
-              <span th:text="${so.duration}">0:00</span>
+              <span th:text="${@durationUtils.format(so.duration)}">0:00</span>
             </td>
             <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
-              <span th:if="${so.difference != null and so.difference.negative}" class="text-danger" th:text="${so.difference}">0:00</span>
-              <span th:if="${so.difference != null and !so.difference.negative}" th:text="${so.difference}">0:00</span>
+              <span th:if="${so.difference != null and so.difference.negative}" class="text-danger" th:text="${@durationUtils.format(so.difference)}">0:00</span>
+              <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
             </td>
             <td class="d-none d-lg-table-cell">
-              <span th:if="${so.standard}" class="badge bg-blue-lt" th:text="#{main.suborder.standard.short}">S</span>
-              <span th:if="${so.commentnecessary}" class="badge bg-yellow-lt" th:text="#{main.suborder.commentnecessary.short}">C</span>
-              <span th:if="${so.fixedPrice}" class="badge bg-green-lt" th:text="#{main.suborder.fixedprice.short}">FP</span>
-              <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:text="#{main.suborder.training.short}">T</span>
+              <span th:if="${so.invoice == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.yes.text}">Y</span>
+              <span th:if="${so.invoice == 'N'}" class="badge bg-danger-lt" th:title="#{main.suborder.invoice.no.text}">N</span>
+              <span th:if="${so.invoice == 'U'}" class="badge bg-secondary-lt" th:title="#{main.suborder.invoice.undefined.text}">?</span>
+              <span th:if="${so.standard}" class="badge bg-blue-lt" th:text="#{main.suborder.standard.short}" th:title="#{main.suborder.standard.text}">S</span>
+              <span th:if="${so.commentnecessary}" class="badge bg-yellow-lt" th:text="#{main.suborder.commentnecessary.short}" th:title="#{main.suborder.commentnecessary.text}">C</span>
+              <span th:if="${so.fixedPrice}" class="badge bg-green-lt" th:text="#{main.suborder.fixedprice.short}" th:title="#{main.suborder.fixedprice.text}">F</span>
+              <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:text="#{main.suborder.training.short}" th:title="#{main.suborder.trainingflag.text}">T</span>
               <span th:if="${so.hide}" class="badge bg-red-lt" th:text="#{main.general.hide}">H</span>
             </td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
@@ -172,6 +199,47 @@
               th:text="#{main.suborder.button.hideoutdated.text}">Hide outdated</button>
     </form>
   </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form[data-filter-form]');
+      if (!form) return;
+
+      const STORAGE_KEY = form.dataset.filterForm + '-advanced-open';
+      const toggleInput = document.getElementById('advanced-toggle');
+      const panel = document.getElementById('advanced-filters');
+      const collapseTrigger = document.getElementById('advanced-collapse-trigger');
+      if (!toggleInput || !panel || !collapseTrigger) return;
+
+      // Restore initial open state by adding 'show' directly (no animation, before Bootstrap lazy-inits)
+      const serverOpen = panel.dataset.serverOpen === 'true';
+      const localOpen = localStorage.getItem(STORAGE_KEY) === 'true';
+      if (serverOpen || localOpen) {
+        panel.classList.add('show');
+        toggleInput.checked = true;
+      }
+
+      // Switch delegates to hidden Bootstrap data-API trigger — no window.bootstrap reference needed
+      toggleInput.addEventListener('change', function () {
+        collapseTrigger.click();
+      });
+
+      // Persist state via Bootstrap's own collapse events
+      panel.addEventListener('show.bs.collapse', function () {
+        toggleInput.checked = true;
+        localStorage.setItem(STORAGE_KEY, 'true');
+      });
+      panel.addEventListener('hide.bs.collapse', function () {
+        toggleInput.checked = false;
+        localStorage.setItem(STORAGE_KEY, 'false');
+      });
+
+      // Auto-submit on select/named-checkbox changes; text input requires button/Enter
+      form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.submit(); });
+      });
+    });
+  </script>
 
 </main>
 </html>
