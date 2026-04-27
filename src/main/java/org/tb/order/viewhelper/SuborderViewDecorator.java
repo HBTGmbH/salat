@@ -26,23 +26,22 @@ public class SuborderViewDecorator extends Suborder {
             this.durationNotInvoiceable = Duration.ZERO;
         } else {
             List<Long> descendants = new ArrayList<>();
-            generateListOfDescendants(suborder, true, descendants);
+            generateListOfDescendants(suborder, true, descendants, suborderService);
             this.duration = suborderService.getTotalDuration(descendants);
             descendants.clear();
-            generateListOfDescendants(suborder, false, descendants);
+            generateListOfDescendants(suborder, false, descendants, suborderService);
             this.durationNotInvoiceable = suborderService.getTotalDuration(descendants);
         }
     }
 
-    private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents) {
+    private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents, SuborderService suborderService) {
         if (isInvoiceable != (so.getInvoice() == YESNO_YES)) {
             return;
         }
         listOfDescendents.add(so.getId());
-        if (so.getSuborders() != null) {
-            for (Suborder child : so.getSuborders()) {
-                generateListOfDescendants(child, isInvoiceable, listOfDescendents);
-            }
+        var children = suborderService.getSuborderChildren(so.getId());
+        for (Suborder child : children) {
+            generateListOfDescendants(child, isInvoiceable, listOfDescendents, suborderService);
         }
     }
 
