@@ -151,9 +151,7 @@
               <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
             </td>
             <td class="d-none d-lg-table-cell">
-              <span th:if="${so.invoice == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.yes.text}">Y</span>
-              <span th:if="${so.invoice == 'N'}" class="badge bg-danger-lt" th:title="#{main.suborder.invoice.no.text}">N</span>
-              <span th:if="${so.invoice == 'U'}" class="badge bg-secondary-lt" th:title="#{main.suborder.invoice.undefined.text}">?</span>
+              <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.yes.text}">&euro;</span>
               <span th:if="${so.standard}" class="badge bg-blue-lt" th:text="#{main.suborder.standard.short}" th:title="#{main.suborder.standard.text}">S</span>
               <span th:if="${so.commentnecessary}" class="badge bg-yellow-lt" th:text="#{main.suborder.commentnecessary.short}" th:title="#{main.suborder.commentnecessary.text}">C</span>
               <span th:if="${so.fixedPrice}" class="badge bg-green-lt" th:text="#{main.suborder.fixedprice.short}" th:title="#{main.suborder.fixedprice.text}">F</span>
