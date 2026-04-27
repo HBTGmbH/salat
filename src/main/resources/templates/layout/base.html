@@ -9,6 +9,7 @@
   <link rel="stylesheet" th:href="@{/webjars/tabler__core/dist/css/tabler.min.css}"/>
   <link rel="stylesheet" th:href="@{/webjars/tabler__icons-webfont/dist/tabler-icons.min.css}"/>
   <link rel="stylesheet" th:href="@{/webjars/tom-select/dist/css/tom-select.bootstrap5.min.css}" />
+  <link rel="stylesheet" th:href="@{/webjars/litepicker/dist/css/litepicker.css}" />
   <style>
     @import url('https://rsms.me/inter/inter.css');
     :root {
@@ -332,6 +333,20 @@
       maxItems: 1,
       sortField: { field: 'text', direction: 'asc' },
       placeholder: el.getAttribute('placeholder') || 'Select an option...',
+    });
+  });
+</script>
+<script th:src="@{/webjars/litepicker/dist/litepicker.js}"></script>
+<script>
+  // Initialize Litepicker for all elements with the data-litepicker attribute
+  document.querySelectorAll('input[data-litepicker]').forEach((el) => {
+    new Litepicker({
+      element: el,
+      format: 'YYYY-MM-DD',
+      buttonText: {
+        previousMonth: '<i class="ti ti-chevron-left"></i>',
+        nextMonth: '<i class="ti ti-chevron-right"></i>',
+      },
     });
   });
 </script>

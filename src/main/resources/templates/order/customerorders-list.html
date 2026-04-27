@@ -93,7 +93,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="co : ${customerorders}" th:classappend="${!co.currentlyValid} ? 'text-muted' : ''">
+        <tr th:each="co : ${customerorders}" th:classappend="${!co.currentlyValid} ? 'table-danger' : ''">
           <td th:text="${co.customer.shortname}">Customer</td>
           <td>
             <div th:text="${co.sign}">Sign</div>
@@ -102,7 +102,7 @@
             <div th:text="${co.shortdescription}">Short description</div>
           </td>
           <td>
-            <div th:text="${co.fromDate}">From</div>
+            <div th:text="${co.fromDate}" class="text-nowrap">From</div>
             <small class="text-muted">
               <span th:if="${co.untilDate == null}" th:text="#{main.general.open.text}">open</span>
               <span th:if="${co.untilDate != null}" th:text="${co.untilDate}">Until</span>

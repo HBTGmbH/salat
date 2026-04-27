@@ -188,7 +188,7 @@ public class CustomerorderService {
         .orderIds(List.of(customerorderId))
         .build();
     commandPublisher.publish(command);
-    return command.getResult().get(customerorderId);
+    return command.getResult().getOrDefault(customerorderId, Duration.ZERO);
   }
 
 }
