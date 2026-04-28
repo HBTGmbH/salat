@@ -331,7 +331,7 @@
     new TomSelect(el, {
       create: false,
       maxItems: 1,
-      sortField: { field: 'text', direction: 'asc' },
+      sortField: [{ field: '$order' }],
       placeholder: el.getAttribute('placeholder') || 'Select an option...',
     });
   });
