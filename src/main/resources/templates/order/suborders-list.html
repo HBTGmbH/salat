@@ -159,12 +159,12 @@
               <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
             </td>
             <td class="d-none d-lg-table-cell">
-              <span th:if="${so.invoiceString == 'Y'}" class="badge bg-green-lt" th:title="#{main.suborder.invoice.text}"><i class="bi-cash-stack"></i></span>
-              <span th:if="${so.standard}" class="badge bg-blue-lt" th:title="#{main.suborder.standard.text}"><i class="bi-gear"></i></span>
-              <span th:if="${so.commentnecessary}" class="badge bg-yellow-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-left-text"></i></span>
-              <span th:if="${so.fixedPrice}" class="badge bg-cyan-lt" th:title="#{main.suborder.fixedprice.text}"><i class="bi bi-bag-check"></i></span>
+              <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.text}"><i class="bi-cash-stack"></i></span>
+              <span th:if="${so.standard}" class="badge bg-warning-lt" th:title="#{main.suborder.standard.text}"><i class="bi-bookmark-star-fill"></i></span>
+              <span th:if="${so.commentnecessary}" class="badge bg-danger-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-square-text"></i></span>
+              <span th:if="${so.fixedPrice}" class="badge bg-primary-lt" th:title="#{main.suborder.fixedprice.text}"><i class="bi bi-tag-fill"></i></span>
               <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
-              <span th:if="${so.hide}" class="badge bg-red-lt"><i class="bi bi-x-circle-fill"></i></span>
+              <span th:if="${so.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
             </td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <a class="btn btn-outline-primary btn-sm" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
