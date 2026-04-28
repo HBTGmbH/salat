@@ -109,11 +109,11 @@
           </td>
           <td class="d-none d-md-table-cell">
             <div>
-              <span class="badge bg-blue-lt me-1" th:title="#{main.customerorder.responsiblehbt.execution.text}"><i class="bi-hammer"></i></span>
+              <span class="badge bg-primary-lt me-1" th:title="#{main.customerorder.responsiblehbt.execution.text}"><i class="bi-diagram-3"></i></span>
               <span th:text="${co.responsible_hbt != null ? co.responsible_hbt.name : ''}"></span>
             </div>
             <div class="mt-1">
-              <span class="badge bg-azure-lt me-1" th:title="#{main.customerorder.responsiblehbt.contract.text}"><i class="bi-file-text-fill"></i></span>
+              <span class="badge bg-primary-lt me-1" th:title="#{main.customerorder.responsiblehbt.contract.text}"><i class="bi-shield-check"></i></span>
               <small class="text-muted" th:text="${co.respEmpHbtContract != null ? co.respEmpHbtContract.name : ''}"></small>
             </div>
           </td>
