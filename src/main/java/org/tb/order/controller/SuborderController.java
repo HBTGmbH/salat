@@ -139,7 +139,6 @@ public class SuborderController {
     boolean hasErrors = bindingResult.hasErrors();
     if (!hasErrors) {
       try {
-        Customerorder customerorder = customerorderService.getCustomerorderById(form.getCustomerorderId());
         char invoice = (form.getInvoice() != null && !form.getInvoice().isEmpty())
             ? form.getInvoice().charAt(0) : YESNO_YES;
         SuborderDTO data = new SuborderDTO(
@@ -162,9 +161,9 @@ public class SuborderController {
             form.getParentId()
         );
         if (form.getId() == null) {
-          suborderService.create(data, customerorder);
+          suborderService.create(data, form.getCustomerorderId());
         } else {
-          suborderService.update(form.getId(), data, customerorder);
+          suborderService.update(form.getId(), data, form.getCustomerorderId());
         }
       } catch (ErrorCodeException ex) {
         model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
@@ -459,6 +458,12 @@ public class SuborderController {
     }
     model.addAttribute("customerorders", customerorders);
     // Suborders of the current customer order for parent dropdown
+    // If no customer order is selected yet, pre-select the first available one
+    if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
+      Customerorder first = customerorders.get(0);
+      form.setCustomerorderId(first.getId());
+      form.setParentId(first.getId());
+    }
     if (form.getCustomerorderId() != null) {
       model.addAttribute("parentSuborders",
           suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()));

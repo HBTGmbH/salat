@@ -10,22 +10,15 @@
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
 
-      <!-- Customer Order selection with "Change" button -->
+      <!-- Customer Order selection -->
       <div class="mb-3">
         <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
-        <div class="d-flex gap-2 align-items-start">
-          <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
-                  th:errorclass="is-invalid" required>
-            <option th:each="co : ${customerorders}"
-                    th:value="${co.id}"
-                    th:text="${co.sign + ' - ' + co.shortdescription}"></option>
-          </select>
-          <!-- Change button submits to change-customerorder endpoint to reload parent dropdown -->
-          <button type="submit"
-                  th:formaction="@{/orders/suborders/change-customerorder}"
-                  class="btn btn-outline-secondary flex-shrink-0"
-                  th:text="#{main.general.button.change.text}">Change</button>
-        </div>
+        <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
+                th:errorclass="is-invalid" required>
+          <option th:each="co : ${customerorders}"
+                  th:value="${co.id}"
+                  th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+        </select>
         <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
       </div>
 
@@ -191,8 +184,14 @@
 
   </div>
 
-  <!-- JavaScript for sign generation -->
+  <!-- JavaScript for customer order auto-submit and sign generation -->
   <script th:inline="javascript">
+    document.getElementById('customerorderId').addEventListener('change', function() {
+      const form = this.closest('form');
+      form.action = /*[[@{/orders/suborders/change-customerorder}]]*/ '/orders/suborders/change-customerorder';
+      form.submit();
+    });
+
     document.getElementById('generateSignBtn').addEventListener('click', function() {
       const customerorderId = document.getElementById('customerorderId').value;
       const parentId = document.getElementById('parentIdHidden').value;
