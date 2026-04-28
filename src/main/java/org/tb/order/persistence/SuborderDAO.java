@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.customer.domain.Customer_;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
@@ -145,10 +146,15 @@ public class SuborderDAO {
         return (root, query, builder) -> builder.equal(root.join(Suborder_.customerorder).get(Customerorder_.id), customerorderId);
     }
 
+    private Specification<Suborder> matchingCustomerId(long customerId) {
+        return (root, query, builder) -> builder.equal(
+            root.join(Suborder_.customerorder).join(Customerorder_.customer).get(Customer_.id), customerId);
+    }
+
     /**
      * Get a list of all suborders fitting to the given filters ordered by their sign.
      */
-    public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerorderId) {
+    public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerorderId, Long customerId) {
         return suborderRepository.findAll((root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
             if(!TRUE.equals(showInvalid)) {
@@ -156,6 +162,9 @@ public class SuborderDAO {
             }
             if(customerorderId != null && customerorderId > 0) {
                 predicates.add(matchingCustomerorderId(customerorderId).toPredicate(root, query, builder));
+            }
+            if(customerId != null && customerId > 0) {
+                predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()

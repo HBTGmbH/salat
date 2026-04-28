@@ -32,6 +32,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
@@ -48,6 +49,7 @@ public class SuborderController {
 
   private final SuborderService suborderService;
   private final CustomerorderService customerorderService;
+  private final CustomerService customerService;
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final AuthorizedEmployee authorizedEmployee;
@@ -57,11 +59,12 @@ public class SuborderController {
   public String list(
       @RequestParam(required = false) String filter,
       @RequestParam(required = false, defaultValue = "-1") Long customerOrderId,
+      @RequestParam(required = false) Long customerId,
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
       Model model) {
     Long filterCustomerOrderId = customerOrderId != null && customerOrderId == -1 ? null : customerOrderId;
-    var suborders = suborderService.getSubordersByFilters(show, filter, filterCustomerOrderId);
+    var suborders = suborderService.getSubordersByFilters(show, filter, filterCustomerOrderId, customerId);
     if (Boolean.TRUE.equals(showActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {
@@ -71,8 +74,16 @@ public class SuborderController {
     } else {
       model.addAttribute("suborders", suborders);
     }
-    model.addAttribute("visibleCustomerOrders", customerorderService.getVisibleCustomerorders());
+    var visibleCustomerOrders = customerorderService.getVisibleCustomerorders();
+    if (customerId != null && customerId > 0) {
+      visibleCustomerOrders = visibleCustomerOrders.stream()
+          .filter(co -> co.getCustomer().getId().equals(customerId))
+          .toList();
+    }
+    model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
+    model.addAttribute("visibleCustomerOrders", visibleCustomerOrders);
     model.addAttribute("filter", filter);
+    model.addAttribute("customerId", customerId);
     model.addAttribute("customerOrderId", customerOrderId);
     model.addAttribute("show", show);
     model.addAttribute("showActualHours", Boolean.TRUE.equals(showActualHours));
@@ -249,7 +260,7 @@ public class SuborderController {
       @RequestParam(required = false) Boolean show,
       RedirectAttributes redirectAttributes) {
     Long filterCustomerOrderId = customerOrderId != null && customerOrderId == -1 ? null : customerOrderId;
-    var suborders = suborderService.getSubordersByFilters(show, filter, filterCustomerOrderId);
+    var suborders = suborderService.getSubordersByFilters(show, filter, filterCustomerOrderId, null);
     var today = today();
     var idsToHide = suborders.stream()
         .filter(so -> !Boolean.TRUE.equals(so.getHide()))
