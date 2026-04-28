@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -22,7 +23,6 @@ import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
-import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.SuborderDTO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.CustomerorderDeleteEvent;
@@ -42,26 +42,28 @@ public class SuborderService {
   private final CommandPublisher commandPublisher;
   private final SuborderDAO suborderDAO;
   private final SuborderRepository suborderRepository;
+  private final CustomerorderService customerorderService;
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
   }
 
   @Authorized(requiresManager = true)
-  public void create(SuborderDTO suborderData, Customerorder customerorder) {
+  public void create(SuborderDTO suborderData, Long customerorder) {
     createOrUpdate(null, suborderData, customerorder);
   }
 
   @Authorized(requiresManager = true)
-  public void update(long suborderId, SuborderDTO suborderData, Customerorder customerorder) {
-    createOrUpdate(suborderId, suborderData, customerorder);
+  public void update(long suborderId, SuborderDTO suborderData, Long customerorderId) {
+    createOrUpdate(suborderId, suborderData, customerorderId);
   }
 
   public List<Suborder> getStandardSuborders() {
     return suborderDAO.getStandardSuborders();
   }
 
-  private void createOrUpdate(Long soId, SuborderDTO data, Customerorder customerorder) {
+  private void createOrUpdate(Long soId, SuborderDTO data, Long customerorderId) {
+    var customerorder = customerorderService.getCustomerorderById(customerorderId);
     Suborder so;
     if (soId != null) {
       // edited suborder
@@ -108,7 +110,7 @@ public class SuborderService {
     so.setHide(data.hide());
     Suborder parentOrderCandidate = suborderDAO.getSuborderById(data.parentId());
     // Falls die Suborder nicht zum Customerorder passt (Kollision der IDs), ist sie kein geeigneter Kandidat (HACK, da UI die ID manchmal auch mit CustomerOrderID besetzt)
-    if (parentOrderCandidate != null && parentOrderCandidate.getCustomerorder().getId() != data.customerorderId()) {
+    if (parentOrderCandidate != null && !Objects.equals(parentOrderCandidate.getCustomerorder(), customerorder)) {
       if (!data.parentId().equals(data.customerorderId())) {
         throw new IllegalStateException("parentId is neither a valid suborderId nor the customerorderId, but: " + data.parentId());
       }
@@ -174,7 +176,7 @@ public class SuborderService {
     var newFrom = resultingValidity.getFrom();
     var newUntil = resultingValidity.getUntil();
     SuborderDTO data = createSuborderDTO(suborder, newFrom, newUntil);
-    createOrUpdate(suborderId, data, suborder.getCustomerorder());
+    createOrUpdate(suborderId, data, suborder.getCustomerorder().getId());
   }
 
   private SuborderDTO createSuborderDTO(Suborder so, LocalDate newFrom, LocalDate newUntil) {
