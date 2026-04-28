@@ -5,7 +5,8 @@
       th:with="section='orders',subSection='suborders',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
 
-  <form th:action="@{/orders/suborders/store}" th:object="${suborderForm}" method="post" class="card">
+  <div class="card">
+  <form th:action="@{/orders/suborders/store}" th:object="${suborderForm}" method="post">
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
 
@@ -165,17 +166,6 @@
         field='hide', label=#{main.general.hide}
       )}"></div>
 
-      <!-- Edit-only actions: Copy and Fit Dates -->
-      <div class="d-flex gap-2 mt-3" th:if="${isEdit and suborderForm.id != null}">
-        <form th:action="@{'/orders/suborders/' + ${suborderForm.id} + '/copy'}" method="post">
-          <button type="submit" class="btn btn-outline-secondary btn-sm"
-                  th:text="#{main.suborder.button.copy.text}">Copy</button>
-        </form>
-        <form th:action="@{'/orders/suborders/' + ${suborderForm.id} + '/fit-dates'}" method="post">
-          <button type="submit" class="btn btn-outline-secondary btn-sm"
-                  th:text="#{main.suborder.button.fitdates.text}">Fit Dates</button>
-        </form>
-      </div>
     </div>
 
     <div class="card-footer">
@@ -186,6 +176,20 @@
            )}"></div>
     </div>
   </form>
+
+  <!-- Edit-only actions: Copy and Fit Dates (outside the main form to avoid nested forms) -->
+  <div class="card-footer border-top-0 pt-0 d-flex gap-2" th:if="${isEdit and suborderForm.id != null}">
+    <form th:action="@{'/orders/suborders/' + ${suborderForm.id} + '/copy'}" method="post">
+      <button type="submit" class="btn btn-outline-secondary btn-sm"
+              th:text="#{main.suborder.button.copy.text}">Copy</button>
+    </form>
+    <form th:action="@{'/orders/suborders/' + ${suborderForm.id} + '/fit-dates'}" method="post">
+      <button type="submit" class="btn btn-outline-secondary btn-sm"
+              th:text="#{main.suborder.button.fitdates.text}">Fit Dates</button>
+    </form>
+  </div>
+
+  </div>
 
   <!-- JavaScript for sign generation -->
   <script th:inline="javascript">
