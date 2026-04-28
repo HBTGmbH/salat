@@ -254,8 +254,8 @@ public class SuborderService {
     suborderRepository.deleteById(suborderId);
   }
 
-  public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId) {
-    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId);
+  public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId, Long customerId) {
+    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId, customerId);
   }
 
   public List<Suborder> getSubordersByValidity(Boolean showOnlyValid) {
