@@ -200,7 +200,7 @@
         <div class="card border-0">
           <div class="card-body p-4 text-center">
             <p class="text-secondary">Angemeldet als</p>
-            <img class="avatar avatar-xl mb-3 rounded" th:src="${@gravatarViewHelper.gravatarUrl(@authorizedEmployee.emailAddress)}" alt="User avatar"/>
+            <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@authorizedEmployee.emailAddress)}" th:src="${url}" alt="User avatar"/>
             <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
             <div class="text-secondary">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
@@ -211,7 +211,7 @@
             </div>
           </div>
           <div class="d-flex" th:if="${@salatProperties.auth.logout.enabled}">
-            <a th:href="${@salatProperties.auth.logout.logoutUrl}" class="card-btn">
+            <a th:with="url=${@salatProperties.auth.logout.logoutUrl}" th:href="${url}" class="card-btn">
               <i class="ti ti-logout" style="margin-right: 0.5em"></i>
               Logout
             </a>

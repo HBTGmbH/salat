@@ -6,7 +6,7 @@
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/master-table :: masterTableFilter(
-      addHref=@{'/reporting/reports/create'(filter=${filter})}, addLabel=${'New Report'},
+      addHref=@{'/reporting/reports/create'(filter=${filter})}, addLabel='New Report',
       thead=~{::theadContent}, tbody=~{::tbodyContent},
       addIf=${#authorization.expression('hasRole(''MANAGER'')')},
       addIcon='ti-file-plus',
