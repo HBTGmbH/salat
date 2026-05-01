@@ -9,6 +9,7 @@ import org.tb.order.domain.OrderType;
 public class SuborderForm {
 
   private Long id;
+  private Long customerId;
   private Long customerorderId;
   private String sign;
   private String description;
