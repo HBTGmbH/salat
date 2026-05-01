@@ -251,59 +251,6 @@ public class SuborderController {
     return "order/suborder-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
-  @PostMapping("/hide-outdated")
-  public String hideOutdated(
-      @RequestParam(required = false) String filter,
-      @RequestParam(required = false, defaultValue = "-1") Long customerOrderId,
-      @RequestParam(required = false) Boolean show,
-      RedirectAttributes redirectAttributes) {
-    Long filterCustomerOrderId = customerOrderId != null && customerOrderId == -1 ? null : customerOrderId;
-    var suborders = suborderService.getSubordersByFilters(show, filter, filterCustomerOrderId, null);
-    var today = today();
-    var idsToHide = suborders.stream()
-        .filter(so -> !Boolean.TRUE.equals(so.getHide()))
-        .filter(so -> so.getValidity().isBefore(today))
-        .map(Suborder::getId)
-        .toList();
-    suborderService.hideSuborders(idsToHide);
-    redirectAttributes.addFlashAttribute("toastSuccess",
-        messages.getMessage("form.suborder.message.hid.outdated", "Outdated suborders hidden"));
-    String redirectUrl = "redirect:/orders/suborders?customerOrderId=" + customerOrderId;
-    if (filter != null) redirectUrl += "&filter=" + filter;
-    if (show != null) redirectUrl += "&show=" + show;
-    return redirectUrl;
-  }
-
-  @PreAuthorize("hasRole('MANAGER')")
-  @PostMapping("/bulk-action")
-  public String bulkAction(
-      @RequestParam List<Long> suborderIds,
-      @RequestParam String action,
-      @RequestParam(required = false) String suborderCustomerValue,
-      RedirectAttributes redirectAttributes) {
-    if ("delete".equals(action)) {
-      for (Long id : suborderIds) {
-        suborderService.deleteSuborderById(id);
-      }
-      redirectAttributes.addFlashAttribute("toastSuccess",
-          messages.getMessage("form.suborder.message.deleted", "Suborders deleted"));
-    } else if ("altersubordercustomer".equals(action)) {
-      if (suborderCustomerValue != null
-          && suborderCustomerValue.length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
-        redirectAttributes.addFlashAttribute("toastError",
-            messages.getMessage("form.suborder.error.suborder_customer.toolong", "Suborder customer value is too long"));
-        return "redirect:/orders/suborders";
-      }
-      for (Long id : suborderIds) {
-        suborderService.changeSuborder_customer(id, suborderCustomerValue);
-      }
-      redirectAttributes.addFlashAttribute("toastSuccess",
-          messages.getMessage("form.suborder.message.altered", "Suborders updated"));
-    }
-    return "redirect:/orders/suborders";
-  }
-
   private void validateForm(SuborderForm form, BindingResult bindingResult) {
     // Sign
     if (form.getSign() == null || form.getSign().isEmpty()) {

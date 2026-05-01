@@ -82,128 +82,87 @@
       </form>
     </div>
   </div>
-
-  <!-- Bulk action form wraps the table -->
-  <form id="bulk-form" th:action="@{/orders/suborders/bulk-action}" method="post">
-    <div class="card mb-3" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-      <div class="card-body">
-        <div class="row g-2 align-items-end">
-          <div class="col-auto">
-            <select class="form-select" name="action">
-              <option value="delete" th:text="#{main.general.button.delete.text}">Delete</option>
-              <option value="altersubordercustomer" th:text="#{form.suborder.bulk.altersubordercustomer.text}">Change Suborder Customer</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <input type="text" class="form-control" name="suborderCustomerValue"
-                   th:placeholder="#{main.suborder.suborder_customer.text}" />
-          </div>
-          <div class="col-auto">
-            <button type="submit" class="btn btn-warning"
-                    th:onclick="|return confirm('#{main.general.confirmdelete.text}');|"
-                    th:text="#{main.general.button.apply.text}">Apply</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="table-responsive card">
-      <table class="table table-vcenter card-table">
-        <thead>
-          <tr>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-            <th th:text="#{main.suborder.sign.text}">Sign</th>
-            <th th:text="#{main.customerorder.order.text}">Customer Order</th>
-            <th class="d-none d-md-table-cell" th:text="#{main.customerorder.shortdescription.text}">Short description</th>
-            <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
-            <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
-            <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
-            <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.difference.text}">Diff</th>
-            <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <input class="form-check-input" type="checkbox" name="suborderIds" th:value="${so.id}" />
-            </td>
-            <td>
-              <div th:text="${so.completeOrderSign}">Sign</div>
-              <small class="text-muted" th:text="${so.shortdescription}">Short description</small>
-            </td>
-            <td th:text="${so.customerorder.sign}">Customer Order</td>
-            <td class="d-none d-md-table-cell" th:text="${so.customerorder.shortdescription}"></td>
-            <td class="d-none d-sm-table-cell">
-              <div th:text="${so.fromDate}">From</div>
-              <small class="text-muted">
-                <span th:if="${so.untilDate == null}" th:text="#{main.general.open.text}">open</span>
-                <span th:if="${so.untilDate != null}" th:text="${so.untilDate}">Until</span>
-              </small>
-            </td>
-            <td class="d-none d-md-table-cell">
-              <span th:if="${so.debithours != null and !so.debithours.zero}">
-                <span th:text="${@durationUtils.format(so.debithours)}">0:00</span>
-                <span th:if="${so.debithoursunit == 0}" th:text="' / ' + #{main.general.totaltime.text}"></span>
-                <span th:if="${so.debithoursunit == 1}" th:text="' / ' + #{main.general.year.text}"></span>
-                <span th:if="${so.debithoursunit == 12}" th:text="' / ' + #{main.general.month.text}"></span>
-              </span>
-            </td>
-            <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
-              <span th:text="${@durationUtils.format(so.duration)}">0:00</span>
-            </td>
-            <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
-              <span th:if="${so.difference != null and so.difference.negative}" class="text-danger" th:text="${@durationUtils.format(so.difference)}">0:00</span>
-              <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
-            </td>
-            <td class="d-none d-lg-table-cell">
-              <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.text}"><i class="bi-cash-stack"></i></span>
-              <span th:if="${so.standard}" class="badge bg-warning-lt" th:title="#{main.suborder.standard.text}"><i class="bi-bookmark-star-fill"></i></span>
-              <span th:if="${so.commentnecessary}" class="badge bg-danger-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-square-text"></i></span>
-              <span th:if="${so.fixedPrice}" class="badge bg-primary-lt" th:title="#{main.suborder.fixedprice.text}"><i class="bi bi-tag-fill"></i></span>
-              <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
-              <span th:if="${so.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <a class="btn btn-outline-primary btn-sm" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
-                <i class="icon ti ti-pencil m-0"></i>
-              </a>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <form th:action="@{'/orders/suborders/' + ${so.id} + '/copy'}" method="post">
-                <button type="submit" class="btn btn-outline-secondary btn-sm" title="Copy">
-                  <i class="icon ti ti-copy m-0"></i>
-                </button>
-              </form>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <form th:action="@{'/orders/suborders/' + ${so.id} + '/delete'}" method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="icon ti ti-trash m-0"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-          <tr th:if="${#lists.isEmpty(suborders)}">
-            <td colspan="12" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </form>
-
-  <!-- Hide outdated button -->
-  <div class="mt-3" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-    <form th:action="@{/orders/suborders/hide-outdated}" method="post">
-      <input type="hidden" name="customerOrderId" th:value="${customerOrderId}" />
-      <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
-      <input type="hidden" name="show" th:if="${show}" th:value="${show}" />
-      <button type="submit" class="btn btn-outline-warning btn-sm"
-              th:text="#{main.suborder.button.hideoutdated.text}">Hide outdated</button>
-    </form>
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.suborder.sign.text}">Sign</th>
+          <th th:text="#{main.customerorder.order.text}">Customer Order</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.customerorder.shortdescription.text}">Short description</th>
+          <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
+          <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
+          <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.difference.text}">Diff</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
+          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
+          <td>
+            <div th:text="${so.completeOrderSign}">Sign</div>
+            <small class="text-muted" th:text="${so.shortdescription}">Short description</small>
+          </td>
+          <td th:text="${so.customerorder.sign}">Customer Order</td>
+          <td class="d-none d-md-table-cell" th:text="${so.customerorder.shortdescription}"></td>
+          <td class="d-none d-sm-table-cell">
+            <div th:text="${so.fromDate}">From</div>
+            <small class="text-muted">
+              <span th:if="${so.untilDate == null}" th:text="#{main.general.open.text}">open</span>
+              <span th:if="${so.untilDate != null}" th:text="${so.untilDate}">Until</span>
+            </small>
+          </td>
+          <td class="d-none d-md-table-cell">
+            <span th:if="${so.debithours != null and !so.debithours.zero}">
+              <span th:text="${@durationUtils.format(so.debithours)}">0:00</span>
+              <span th:if="${so.debithoursunit == 0}" th:text="' / ' + #{main.general.totaltime.text}"></span>
+              <span th:if="${so.debithoursunit == 1}" th:text="' / ' + #{main.general.year.text}"></span>
+              <span th:if="${so.debithoursunit == 12}" th:text="' / ' + #{main.general.month.text}"></span>
+            </span>
+          </td>
+          <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
+            <span th:text="${@durationUtils.format(so.duration)}">0:00</span>
+          </td>
+          <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
+            <span th:if="${so.difference != null and so.difference.negative}" class="text-danger" th:text="${@durationUtils.format(so.difference)}">0:00</span>
+            <span th:if="${so.difference != null and !so.difference.negative}" th:text="${@durationUtils.format(so.difference)}">0:00</span>
+          </td>
+          <td class="d-none d-lg-table-cell">
+            <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.text}"><i class="bi-cash-stack"></i></span>
+            <span th:if="${so.standard}" class="badge bg-warning-lt" th:title="#{main.suborder.standard.text}"><i class="bi-bookmark-star-fill"></i></span>
+            <span th:if="${so.commentnecessary}" class="badge bg-danger-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-square-text"></i></span>
+            <span th:if="${so.fixedPrice}" class="badge bg-primary-lt" th:title="#{main.suborder.fixedprice.text}"><i class="bi bi-tag-fill"></i></span>
+            <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+            <span th:if="${so.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
+          </td>
+          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <a class="btn btn-outline-primary btn-sm" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <form th:action="@{'/orders/suborders/' + ${so.id} + '/copy'}" method="post">
+              <button type="submit" class="btn btn-outline-secondary btn-sm" title="Copy">
+                <i class="icon ti ti-copy m-0"></i>
+              </button>
+            </form>
+          </td>
+          <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <form th:action="@{'/orders/suborders/' + ${so.id} + '/delete'}" method="post"
+                  th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(suborders)}">
+          <td colspan="12" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <script th:inline="none">
