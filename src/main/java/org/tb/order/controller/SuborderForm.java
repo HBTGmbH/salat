@@ -14,8 +14,7 @@ public class SuborderForm {
   private String description;
   private String shortdescription;
   private String suborder_customer;
-  /** Invoice: "Y" = yes, "N" = no, "U" = undefined. String avoids primitive char binding issues. */
-  private String invoice;
+  private Boolean invoice;
   private Boolean standard;
   private Boolean commentnecessary;
   private Boolean fixedPrice;
