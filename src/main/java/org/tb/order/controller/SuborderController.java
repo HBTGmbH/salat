@@ -204,15 +204,6 @@ public class SuborderController {
   }
 
   @PreAuthorize("hasRole('MANAGER')")
-  @PostMapping("/{id}/fit-dates")
-  public String fitDates(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    suborderService.fitValidityOfChildren(id);
-    redirectAttributes.addFlashAttribute("toastSuccess",
-        messages.getMessage("form.suborder.message.fitdates", "Child dates adjusted successfully"));
-    return "redirect:/orders/suborders/" + id + "/edit";
-  }
-
-  @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/sign")
   @ResponseBody
   public String generateSign(
