@@ -21,8 +21,8 @@ public class Customer extends AuditedEntity implements Serializable {
     private String address;
 
     public String getShortname() {
-        if (shortname == null || shortname.equals("")) {
-            if (name.length() > 12) {
+        if (shortname == null || shortname.isEmpty()) {
+            if (name != null && name.length() > 12) {
                 return name.substring(0, 9) + "...";
             } else {
                 return name;
