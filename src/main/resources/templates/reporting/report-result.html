@@ -44,13 +44,33 @@
       </div>
 
       <div class="mb-3" th:if="${params}">
-        <div><strong>Parameters:</strong>
+        <div>
+          <strong>Parameters:</strong>
           <span th:each="p,iter : ${params}">
             <span th:text="${p.name + '=' + p.value}">name=value</span>
             <span th:if="${!iter.last}">, </span>
           </span>
+          <a href="#" class="ms-2 small" id="copyParamsAsJsonLink" onclick="copyParamsAsJson(event)">copy as json</a>
+          <span th:each="p : ${params}" class="d-none report-param"
+                th:data-name="${p.name}" th:data-type="${p.type}" th:data-value="${p.value}"></span>
         </div>
       </div>
+      <script>
+        function copyParamsAsJson(e) {
+          e.preventDefault();
+          const params = [...document.querySelectorAll('.report-param')].map(el => ({
+            name: el.dataset.name,
+            type: el.dataset.type,
+            value: el.dataset.value
+          }));
+          navigator.clipboard.writeText(JSON.stringify(params)).then(() => {
+            const link = document.getElementById('copyParamsAsJsonLink');
+            const original = link.textContent;
+            link.textContent = 'copied!';
+            setTimeout(() => link.textContent = original, 1500);
+          });
+        }
+      </script>
 
       <div class="table-responsive" th:if="${!reportResult.error}">
         <table class="table table-striped table-hover">
