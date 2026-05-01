@@ -1,7 +1,6 @@
 package org.tb.order.controller;
 
 import static org.tb.common.GlobalConstants.YESNO_NO;
-import static org.tb.common.GlobalConstants.YESNO_UNDEFINED;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
@@ -100,7 +99,7 @@ public class SuborderController {
       @RequestParam(required = false) Long customerOrderId,
       Model model) {
     var form = new SuborderForm();
-    form.setInvoice(String.valueOf(YESNO_YES));
+    form.setInvoice(true);
     form.setStandard(false);
     form.setCommentnecessary(false);
     form.setFixedPrice(false);
@@ -139,8 +138,7 @@ public class SuborderController {
     boolean hasErrors = bindingResult.hasErrors();
     if (!hasErrors) {
       try {
-        char invoice = (form.getInvoice() != null && !form.getInvoice().isEmpty())
-            ? form.getInvoice().charAt(0) : YESNO_YES;
+        char invoice = form.getInvoice() != null && form.getInvoice() ? YESNO_YES : YESNO_NO;
         SuborderDTO data = new SuborderDTO(
             form.getCustomerorderId(),
             form.getSign(),
@@ -282,18 +280,6 @@ public class SuborderController {
           messages.getMessage("form.suborder.error.suborder_customer.toolong", "Suborder customer is too long"));
     }
 
-    // Invoice
-    if (form.getInvoice() == null || form.getInvoice().isEmpty()) {
-      bindingResult.rejectValue("invoice", "error.invoice",
-          messages.getMessage("form.suborder.error.invoice.invalid", "Invalid invoice value"));
-    } else {
-      char inv = form.getInvoice().charAt(0);
-      if (inv != YESNO_YES && inv != YESNO_NO && inv != YESNO_UNDEFINED) {
-        bindingResult.rejectValue("invoice", "error.invoice",
-            messages.getMessage("form.suborder.error.invoice.invalid", "Invalid invoice value"));
-      }
-    }
-
     // Dates
     LocalDate suborderFromDate = null;
     if (DateUtils.validateDate(form.getValidFrom())) {
@@ -407,7 +393,7 @@ public class SuborderController {
     // Suborders of the current customer order for parent dropdown
     // If no customer order is selected yet, pre-select the first available one
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
-      Customerorder first = customerorders.get(0);
+      Customerorder first = customerorders.getFirst();
       form.setCustomerorderId(first.getId());
       form.setParentId(first.getId());
     }
@@ -433,7 +419,7 @@ public class SuborderController {
     form.setDescription(so.getDescription());
     form.setShortdescription(so.getShortdescription());
     form.setSuborder_customer(so.getSuborder_customer());
-    form.setInvoice(String.valueOf(so.getInvoice()));
+    form.setInvoice(YESNO_YES == so.getInvoice());
     form.setStandard(so.getStandard());
     form.setCommentnecessary(so.getCommentnecessary());
     form.setFixedPrice(so.getFixedPrice());

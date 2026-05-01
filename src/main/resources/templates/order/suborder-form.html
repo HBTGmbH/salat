@@ -10,82 +10,83 @@
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
 
-      <!-- Customer Order selection -->
-      <div class="mb-3">
-        <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
-        <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
-                th:errorclass="is-invalid" required>
-          <option th:each="co : ${customerorders}"
-                  th:value="${co.id}"
-                  th:text="${co.sign + ' - ' + co.shortdescription}"></option>
-        </select>
-        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
-      </div>
-
-      <!-- Parent selection (customer order itself or a parent suborder) -->
-      <div class="mb-3">
-        <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
-        <input type="hidden" th:field="*{parentId}" id="parentIdHidden" />
-        <select class="form-select" id="parentSelect"
-                onchange="document.getElementById('parentIdHidden').value = this.value">
-          <!-- The current customer order as top-level (no parent suborder) -->
-          <option th:if="${currentCustomerorder != null}"
-                  th:value="${currentCustomerorder.id}"
-                  th:text="${currentCustomerorder.signAndDescription}"
-                  th:selected="${suborderForm.parentId != null and suborderForm.parentId == currentCustomerorder.id}">
-          </option>
-          <!-- All suborders of the selected customer order as optional parent -->
-          <option th:each="pso : ${parentSuborders}"
-                  th:value="${pso.id}"
-                  th:text="${'  > ' + pso.completeOrderSignAndDescription}"
-                  th:selected="${suborderForm.parentId != null and suborderForm.parentId == pso.id}">
-          </option>
-        </select>
-      </div>
-
-      <!-- Sign with "Generate" button -->
-      <div class="mb-3">
-        <label class="form-label required" th:for="sign" th:text="#{main.suborder.sign.text}">Sign</label>
-        <div class="d-flex gap-2">
-          <input type="text" class="form-control" id="sign" th:field="*{sign}"
-                 th:errorclass="is-invalid" required maxlength="30" />
-          <button type="button" class="btn btn-outline-secondary flex-shrink-0"
-                  id="generateSignBtn"
-                  th:text="#{main.suborder.generatesign.text}">Generate</button>
+      <div class="row mb-3">
+        <!-- Customer Order selection -->
+        <div class="col-md-6">
+          <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
+          <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
+                  th:errorclass="is-invalid" required>
+            <option th:each="co : ${customerorders}"
+                    th:value="${co.id}"
+                    th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+          </select>
+          <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
         </div>
-        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('sign')}" th:errors="*{sign}"></div>
+
+        <!-- Parent selection (customer order itself or a parent suborder) -->
+        <div class="col-md-6">
+          <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
+          <input type="hidden" th:field="*{parentId}" id="parentIdHidden" />
+          <select class="form-select" id="parentSelect"
+                  onchange="document.getElementById('parentIdHidden').value = this.value">
+            <!-- The current customer order as top-level (no parent suborder) -->
+            <option th:if="${currentCustomerorder != null}"
+                    th:value="${currentCustomerorder.id}"
+                    th:text="${currentCustomerorder.signAndDescription}"
+                    th:selected="${suborderForm.parentId != null and suborderForm.parentId == currentCustomerorder.id}">
+            </option>
+            <!-- All suborders of the selected customer order as optional parent -->
+            <option th:each="pso : ${parentSuborders}"
+                    th:value="${pso.id}"
+                    th:text="${'  > ' + pso.completeOrderSignAndDescription}"
+                    th:selected="${suborderForm.parentId != null and suborderForm.parentId == pso.id}">
+            </option>
+          </select>
+        </div>
       </div>
 
-      <div th:replace="~{fragments/form-fields :: textareaInput(
-        field='description', label=#{main.customerorder.description.text}, required=true, rows=3, monospace=false
-      )}"></div>
-
-      <div th:replace="~{fragments/form-fields :: textInput(
-        field='shortdescription', label=#{main.customerorder.shortdescription.text}, required=false, maxlength=70
-      )}"></div>
-
-      <div th:replace="~{fragments/form-fields :: textInput(
-        field='suborder_customer', label=#{main.suborder.suborder_customer.text}, required=false, maxlength=30
-      )}"></div>
-
-      <!-- Invoice radio buttons -->
-      <div class="mb-3">
-        <label class="form-label" th:text="#{main.suborder.invoice.text}">Invoice</label>
-        <div class="d-flex gap-3">
-          <label class="form-check">
-            <input class="form-check-input" type="radio" th:field="*{invoice}" value="Y" />
-            <span class="form-check-label" th:text="#{main.general.yes}">Yes</span>
-          </label>
-          <label class="form-check">
-            <input class="form-check-input" type="radio" th:field="*{invoice}" value="N" />
-            <span class="form-check-label" th:text="#{main.general.no}">No</span>
-          </label>
-          <label class="form-check">
-            <input class="form-check-input" type="radio" th:field="*{invoice}" value="U" />
-            <span class="form-check-label">-</span>
-          </label>
+      <div class="row">
+        <!-- Sign with "Generate" button -->
+        <div class="col-md-6">
+          <label class="form-label required" th:for="sign" th:text="#{main.suborder.sign.text}">Sign</label>
+          <div class="d-flex gap-2">
+            <input type="text" class="form-control" id="sign" th:field="*{sign}"
+                   th:errorclass="is-invalid" required maxlength="30" />
+            <button type="button" class="btn btn-outline-secondary flex-shrink-0"
+                    id="generateSignBtn"
+                    th:title="#{main.suborder.generatesign.text}"><i class="bi bi-hash"></i></button>
+          </div>
+          <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('sign')}" th:errors="*{sign}"></div>
         </div>
-        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('invoice')}" th:errors="*{invoice}"></div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.customerorder.orderType.text}">Order Type</label>
+            <select class="form-select" id="orderType" th:field="*{orderType}">
+              <option value="" th:text="#{main.general.selectone.text}">--</option>
+              <option th:each="ot : ${orderTypes}"
+                      th:value="${ot.name()}"
+                      th:text="#{${ot.label}}"></option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='description', label=#{main.customerorder.description.text}, required=true, maxlength=255
+          )}"></div>
+        </div>
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='shortdescription', label=#{main.customerorder.shortdescription.text}, required=false, maxlength=70
+          )}"></div>
+        </div>
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='suborder_customer', label=#{main.suborder.suborder_customer.text}, required=false, maxlength=30
+          )}"></div>
+        </div>
       </div>
 
       <div class="row">
@@ -101,13 +102,42 @@
         </div>
       </div>
 
+      <!-- Flags -->
       <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-2">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='invoice', label=#{main.suborder.invoice.text}
+          )}"></div>
+        </div>
+        <div class="col-md-2">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='standard', label=#{main.suborder.standard.text}
+          )}"></div>
+        </div>
+        <div class="col-md-2">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='commentnecessary', label=#{main.suborder.commentnecessary.text}
+          )}"></div>
+        </div>
+        <div class="col-md-2">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='fixedPrice', label=#{main.suborder.fixedprice.text}
+          )}"></div>
+        </div>
+        <div class="col-md-2">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='trainingFlag', label=#{main.suborder.trainingflag.text}
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: textInput(
             field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
           )}"></div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
           <div class="mb-3">
             <label class="form-label" th:text="#{main.general.debithoursunit.text}">Debit Unit</label>
             <select class="form-select" id="debithoursunit" th:field="*{debithoursunit}">
@@ -117,41 +147,6 @@
               <option value="12" th:text="#{main.general.month.text}">Month</option>
             </select>
           </div>
-        </div>
-        <div class="col-md-4">
-          <div class="mb-3">
-            <label class="form-label" th:text="#{main.customerorder.orderType.text}">Order Type</label>
-            <select class="form-select" id="orderType" th:field="*{orderType}">
-              <option value="" th:text="#{main.general.selectone.text}">--</option>
-              <option th:each="ot : ${orderTypes}"
-                      th:value="${ot.name()}"
-                      th:text="#{${ot.label}}"></option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Flags -->
-      <div class="row">
-        <div class="col-md-3">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
-            field='standard', label=#{main.suborder.standard.text}
-          )}"></div>
-        </div>
-        <div class="col-md-3">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
-            field='commentnecessary', label=#{main.suborder.commentnecessary.text}
-          )}"></div>
-        </div>
-        <div class="col-md-3">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
-            field='fixedPrice', label=#{main.suborder.fixedprice.text}
-          )}"></div>
-        </div>
-        <div class="col-md-3">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
-            field='trainingFlag', label=#{main.suborder.trainingflag.text}
-          )}"></div>
         </div>
       </div>
 
