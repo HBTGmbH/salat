@@ -86,8 +86,8 @@
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
-          <th th:text="#{main.suborder.sign.text}">Sign</th>
           <th th:text="#{main.customerorder.order.text}">Customer Order</th>
+          <th th:text="#{main.suborder.sign.text}">Sign</th>
           <th class="d-none d-md-table-cell" th:text="#{main.customerorder.shortdescription.text}">Short description</th>
           <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
           <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
@@ -102,11 +102,11 @@
       <tbody>
         <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
           <td>
-            <div th:text="${so.completeOrderSign}">Sign</div>
-            <small class="text-muted" th:text="${so.shortdescription}">Short description</small>
+            <div th:text="${so.customerorder.sign}">Customer Order</div>
+            <small class="text-muted" th:text="${so.customerorder.shortdescription}">Customer order short description</small>
           </td>
-          <td th:text="${so.customerorder.sign}">Customer Order</td>
-          <td class="d-none d-md-table-cell" th:text="${so.customerorder.shortdescription}"></td>
+          <td th:text="${so.completeOrderSign}">Sign</td>
+          <td class="d-none d-md-table-cell" th:text="${so.shortdescription}">Short description</td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.fromDate}">From</div>
             <small class="text-muted">
