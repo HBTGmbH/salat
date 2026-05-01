@@ -97,6 +97,7 @@ public class SuborderController {
   @GetMapping("/create")
   public String createForm(
       @RequestParam(required = false) Long customerOrderId,
+      @RequestParam(required = false) Long customerId,
       Model model) {
     var form = new SuborderForm();
     form.setInvoice(true);
@@ -107,11 +108,13 @@ public class SuborderController {
     form.setHide(false);
     if (customerOrderId != null) {
       Customerorder co = customerorderService.getCustomerorderById(customerOrderId);
+      form.setCustomerId(co.getCustomer().getId());
       form.setCustomerorderId(customerOrderId);
       form.setParentId(customerOrderId);
       form.setValidFrom(format(co.getFromDate()));
       form.setValidUntil(co.getUntilDate() != null ? format(co.getUntilDate()) : "");
     } else {
+      form.setCustomerId(customerId);
       form.setValidFrom(format(today()));
     }
     addFormModel(model, form, false);
@@ -227,6 +230,15 @@ public class SuborderController {
       }
     }
     return df.format(version);
+  }
+
+  @PreAuthorize("hasRole('MANAGER')")
+  @PostMapping("/change-customer")
+  public String changeCustomer(@ModelAttribute("suborderForm") SuborderForm form, Model model) {
+    form.setCustomerorderId(null);
+    form.setParentId(null);
+    addFormModel(model, form, form.getId() != null);
+    return "order/suborder-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -380,7 +392,13 @@ public class SuborderController {
       customerorders = customerorderService.getVisibleCustomerOrdersByResponsibleEmployeeId(
           authorizedEmployee.getEmployeeId());
     }
+    if (form.getCustomerId() != null) {
+      customerorders = customerorders.stream()
+          .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
+          .toList();
+    }
     model.addAttribute("customerorders", customerorders);
+    model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
     // Suborders of the current customer order for parent dropdown
     // If no customer order is selected yet, pre-select the first available one
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
@@ -405,6 +423,7 @@ public class SuborderController {
   private SuborderForm toForm(Suborder so) {
     var form = new SuborderForm();
     form.setId(so.getId());
+    form.setCustomerId(so.getCustomerorder().getCustomer().getId());
     form.setCustomerorderId(so.getCustomerorder().getId());
     form.setSign(so.getSign());
     form.setDescription(so.getDescription());

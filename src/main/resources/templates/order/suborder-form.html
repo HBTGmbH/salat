@@ -11,8 +11,19 @@
       <input type="hidden" th:field="*{id}" />
 
       <div class="row mb-3">
+        <!-- Customer filter -->
+        <div class="col-md-4">
+          <label class="form-label" th:for="customerId" th:text="#{main.customerorder.customer.text}">Customer</label>
+          <select class="form-select tomselect" id="customerId" th:field="*{customerId}">
+            <option value="" th:text="#{main.general.allcustomers.text}">All Customers</option>
+            <option th:each="c : ${customers}"
+                    th:value="${c.id}"
+                    th:text="${c.shortname + ' - ' + c.name}"></option>
+          </select>
+        </div>
+
         <!-- Customer Order selection -->
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
           <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
                   th:errorclass="is-invalid" required>
@@ -24,7 +35,7 @@
         </div>
 
         <!-- Parent selection (customer order itself or a parent suborder) -->
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
           <input type="hidden" th:field="*{parentId}" id="parentIdHidden" />
           <select class="form-select" id="parentSelect"
@@ -168,8 +179,14 @@
 
   </div>
 
-  <!-- JavaScript for customer order auto-submit and sign generation -->
+  <!-- JavaScript for auto-submit on customer/customer-order change and sign generation -->
   <script th:inline="javascript">
+    document.getElementById('customerId').addEventListener('change', function() {
+      const form = this.closest('form');
+      form.action = /*[[@{/orders/suborders/change-customer}]]*/ '/orders/suborders/change-customer';
+      form.submit();
+    });
+
     document.getElementById('customerorderId').addEventListener('change', function() {
       const form = this.closest('form');
       form.action = /*[[@{/orders/suborders/change-customerorder}]]*/ '/orders/suborders/change-customerorder';
