@@ -73,26 +73,16 @@
 
       <div class="row">
         <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label" th:for="employeeId" th:text="#{main.customerorder.responsiblehbt.text}">Resp. HBT (DV)</label>
-            <select class="form-select tomselect" id="employeeId" th:field="*{employeeId}" th:errorclass="is-invalid">
-              <option th:each="e : ${employees}"
-                      th:value="${e.id}"
-                      th:text="${e.name}"></option>
-            </select>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
-          </div>
+          <div th:replace="~{fragments/form-fields :: selectInput(
+            field='employeeId', label=#{main.customerorder.responsiblehbt.text}, required=true,
+            placeholder=null, options=${employees}, optionValue='id', optionLabel='name'
+          )}"></div>
         </div>
         <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label" th:for="respContrEmployeeId" th:text="#{main.customerorder.responsiblehbt.contract.text}">Resp. HBT (AV)</label>
-            <select class="form-select tomselect" id="respContrEmployeeId" th:field="*{respContrEmployeeId}" th:errorclass="is-invalid">
-              <option th:each="e : ${employees}"
-                      th:value="${e.id}"
-                      th:text="${e.name}"></option>
-            </select>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('respContrEmployeeId')}" th:errors="*{respContrEmployeeId}"></div>
-          </div>
+          <div th:replace="~{fragments/form-fields :: selectInput(
+            field='respContrEmployeeId', label=#{main.customerorder.responsiblehbt.contract.text}, required=true,
+            placeholder=null, options=${employees}, optionValue='id', optionLabel='name'
+          )}"></div>
         </div>
       </div>
 
