@@ -115,6 +115,7 @@ public class CustomerorderController {
     validateForm(form, bindingResult);
 
     boolean hasErrors = bindingResult.hasErrors();
+    Long newId = null;
     if (!hasErrors) {
       try {
         LocalDate fromDate = DateUtils.parseOrNull(form.getValidFrom());
@@ -127,7 +128,7 @@ public class CustomerorderController {
             form.getEmployeeId(), form.getRespContrEmployeeId(),
             form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType());
         if (form.getId() == null) {
-          customerorderService.create(dto);
+          newId = customerorderService.create(dto).getId();
         } else {
           customerorderService.update(form.getId(), dto);
         }
@@ -144,6 +145,11 @@ public class CustomerorderController {
 
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"));
+    if (newId != null) {
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerOrderId=" + newId);
+      redirectAttributes.addFlashAttribute("toastActionLabel",
+          messages.getMessage("main.general.button.add.suborder.text", "Add Suborder"));
+    }
     return "redirect:/orders/customerorders";
   }
 

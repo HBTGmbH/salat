@@ -49,8 +49,8 @@ public class CustomerorderService {
   }
 
   @Authorized(requiresManager = true)
-  public void create(CustomerorderDTO dto) {
-    createOrUpdate(null, dto);
+  public Customerorder create(CustomerorderDTO dto) {
+    return createOrUpdate(null, dto);
   }
 
   @Authorized(requiresManager = true)
@@ -58,7 +58,7 @@ public class CustomerorderService {
     createOrUpdate(customerorderId, dto);
   }
 
-  private void createOrUpdate(Long coId, CustomerorderDTO dto) {
+  private Customerorder createOrUpdate(Long coId, CustomerorderDTO dto) {
 
     Customerorder co;
     if (coId != null) {
@@ -116,7 +116,7 @@ public class CustomerorderService {
         event.veto(allMessages);
       }
     }
-    customerorderRepository.save(co);
+    return customerorderRepository.save(co);
   }
 
   public Customerorder getCustomerorderBySign(String selectedOrder) {

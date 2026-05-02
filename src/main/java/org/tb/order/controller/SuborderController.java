@@ -139,6 +139,8 @@ public class SuborderController {
     validateForm(form, bindingResult);
 
     boolean hasErrors = bindingResult.hasErrors();
+    boolean isCreate = form.getId() == null;
+    Long customerorderId = form.getCustomerorderId();
     if (!hasErrors) {
       try {
         char invoice = form.getInvoice() != null && form.getInvoice() ? YESNO_YES : YESNO_NO;
@@ -161,7 +163,7 @@ public class SuborderController {
             form.getHide(),
             form.getParentId()
         );
-        if (form.getId() == null) {
+        if (isCreate) {
           suborderService.create(data, form.getCustomerorderId());
         } else {
           suborderService.update(form.getId(), data, form.getCustomerorderId());
@@ -179,6 +181,11 @@ public class SuborderController {
 
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"));
+    if (isCreate && customerorderId != null) {
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerOrderId=" + customerorderId);
+      redirectAttributes.addFlashAttribute("toastActionLabel",
+          messages.getMessage("main.general.button.add.another.suborder.text", "Add Another Suborder"));
+    }
     return "redirect:/orders/suborders";
   }
 
