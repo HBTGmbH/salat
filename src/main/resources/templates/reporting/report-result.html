@@ -14,6 +14,9 @@
           <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
           <button class="btn btn-outline-secondary" type="submit"><i class="icon ti ti-file-spreadsheet"></i> Export Excel</button>
         </form>
+        <button class="btn btn-outline-primary" type="button"
+                th:data-report-id="${report.id}"
+                onclick="scheduleReport(this)"><i class="icon ti ti-clock"></i> Schedule</button>
         <a th:href="@{'/reporting/reports'(filter=${filter})}" class="btn btn-secondary">Back</a>
       </div>
     </div>
@@ -50,25 +53,36 @@
             <span th:text="${p.name + '=' + p.value}">name=value</span>
             <span th:if="${!iter.last}">, </span>
           </span>
-          <a href="#" class="ms-2 small" id="copyParamsAsJsonLink" onclick="copyParamsAsJson(event)">copy as json</a>
           <span th:each="p : ${params}" class="d-none report-param"
                 th:data-name="${p.name}" th:data-type="${p.type}" th:data-value="${p.value}"></span>
         </div>
       </div>
       <script>
-        function copyParamsAsJson(e) {
-          e.preventDefault();
-          const params = [...document.querySelectorAll('.report-param')].map(el => ({
-            name: el.dataset.name,
-            type: el.dataset.type,
-            value: el.dataset.value
-          }));
-          navigator.clipboard.writeText(JSON.stringify(params)).then(() => {
-            const link = document.getElementById('copyParamsAsJsonLink');
-            const original = link.textContent;
-            link.textContent = 'copied!';
-            setTimeout(() => link.textContent = original, 1500);
-          });
+        function scheduleReport(btn) {
+          const reportId = btn.dataset.reportId;
+          const paramEls = document.querySelectorAll('.report-param');
+          const form = document.createElement('form');
+          form.method = 'post';
+          form.action = '/reporting/jobs/create';
+          const idInput = document.createElement('input');
+          idInput.type = 'hidden';
+          idInput.name = 'reportDefinitionId';
+          idInput.value = reportId;
+          form.appendChild(idInput);
+          if (paramEls.length > 0) {
+            const params = [...paramEls].map(el => ({
+              name: el.dataset.name,
+              type: el.dataset.type,
+              value: el.dataset.value
+            }));
+            const paramsInput = document.createElement('input');
+            paramsInput.type = 'hidden';
+            paramsInput.name = 'reportParameters';
+            paramsInput.value = JSON.stringify(params);
+            form.appendChild(paramsInput);
+          }
+          document.body.appendChild(form);
+          form.submit();
         }
       </script>
 

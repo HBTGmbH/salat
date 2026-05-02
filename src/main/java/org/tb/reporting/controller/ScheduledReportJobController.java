@@ -62,6 +62,20 @@ public class ScheduledReportJobController {
     return "reporting/scheduled-job-form";
   }
 
+  @PostMapping("/create")
+  public String createFormPrefilled(@RequestParam(value = "reportDefinitionId", required = false) Long reportDefinitionId,
+                                    @RequestParam(value = "reportParameters", required = false) String reportParameters,
+                                    Model model) {
+    var form = new ScheduledReportJobForm();
+    form.setReportDefinitionId(reportDefinitionId);
+    form.setReportParameters(reportParameters);
+    model.addAttribute("pageTitle", "Create Scheduled Report Job");
+    model.addAttribute("job", form);
+    model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
+    model.addAttribute("isEdit", false);
+    return "reporting/scheduled-job-form";
+  }
+
   @GetMapping("/edit")
   public String editForm(@RequestParam("id") Long id, Model model) {
     var job = jobService.getJob(id);
