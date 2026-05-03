@@ -116,6 +116,7 @@ public class SuborderController {
     } else {
       form.setCustomerId(customerId);
       form.setValidFrom(format(today()));
+      form.setOrderType(OrderType.STANDARD);
     }
     addFormModel(model, form, false);
     return "order/suborder-form";
