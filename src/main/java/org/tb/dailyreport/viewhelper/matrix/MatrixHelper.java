@@ -208,7 +208,7 @@ public class MatrixHelper {
         var dates = dateFirst.datesUntil(dateLast.plusDays(1)).toList(); // to include the last date too
         int day = 1;
         for(var date: dates) {
-            var dayTotal = new MatrixDayTotal(date, day, ZERO, contract != null ? contract.getDailyWorkingTime() : ZERO);
+            var dayTotal = new MatrixDayTotal(date, day, ZERO, contract != null ? contract.getDailyWorkingTime() : ZERO, ZERO);
 
             // mark weekends
             var dayOfWeek = dayTotal.getDate().getDayOfWeek();
@@ -295,7 +295,8 @@ public class MatrixHelper {
                 suborderData,
                 taskdescription,
                 timeReport.getReferenceday(),
-                timeReport.getDuration()
+                timeReport.getDuration(),
+                timeReport.getOrderType()
             )
         );
     }

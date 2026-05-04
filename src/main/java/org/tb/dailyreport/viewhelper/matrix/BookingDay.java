@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import org.tb.common.util.DurationUtils;
+import org.tb.order.domain.OrderType;
 
 @Getter
 @Setter
@@ -12,6 +13,7 @@ public class BookingDay implements Comparable<BookingDay> {
 
     private final LocalDate date;
     private Duration duration;
+    private Duration workDuration;
     private String taskdescription;
     private boolean satSun;
     private boolean publicHoliday;
@@ -20,19 +22,29 @@ public class BookingDay implements Comparable<BookingDay> {
     public BookingDay(LocalDate date) {
         this.date = date;
         duration = Duration.ZERO;
+        workDuration = Duration.ZERO;
         satSun = false;
         publicHoliday = false;
         this.taskdescription = "";
         bookingCount = 0;
     }
 
-    public BookingDay(LocalDate date, Duration duration, String taskdescription) {
+    public BookingDay(LocalDate date, Duration duration, String taskdescription, OrderType orderType) {
         this.date = date;
-        this.duration = duration;
         satSun = false;
         publicHoliday = false;
         this.taskdescription = taskdescription;
         bookingCount = 1;
+        duration = Duration.ZERO;
+        workDuration = Duration.ZERO;
+        addDuration(duration, orderType);
+    }
+
+    private void addDuration(Duration amount, OrderType orderType) {
+        if(orderType == OrderType.STANDARD) {
+            workDuration = workDuration.plus(amount);
+        }
+        duration = duration.plus(amount);
     }
 
     public int compareTo(BookingDay o) {
@@ -60,8 +72,8 @@ public class BookingDay implements Comparable<BookingDay> {
         return DurationUtils.format(duration, bookingCount > 0);
     }
 
-    public void addBooking(Duration duration, String taskdescription) {
-        this.duration = this.duration.plus(duration);
+    public void addBooking(Duration duration, String taskdescription, OrderType orderType) {
+        addDuration(duration, orderType);
         this.taskdescription += "\n" + taskdescription;
         bookingCount++;
     }
