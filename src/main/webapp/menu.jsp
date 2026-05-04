@@ -86,9 +86,9 @@
 				<bean:message key="main.general.mainmenu.suborders.text" />
 			</a></li>
 			<c:if test="${authorizedUser.backoffice}">
-				<li><html:link styleClass="menu" action="/ShowInvoice">
+				<li><a class="menu" href="/invoice">
 					<bean:message key="main.general.mainmenu.invoice.title.text" />
-				</html:link></li>
+				</a></li>
 			</c:if>
 			<c:if test="${reportAuthViewHelper.isReportMenuAvailable()}">
                 <li>
