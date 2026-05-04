@@ -150,7 +150,8 @@
                      th:text="#{main.general.mainmenu.suborders.text}">
                     Unteraufträge
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowInvoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
+                  <a class="dropdown-item" th:href="@{/invoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
+                     th:classappend="${subSection == 'invoice'} ? 'active' : ''"
                      th:if="${#authorization.expression('hasRole(''BACKOFFICE'')')}">
                     Rechnungsanlage
                   </a>

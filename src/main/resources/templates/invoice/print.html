@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="#{main.general.mainmenu.invoice.title.text} + ' / ' + ${invoiceData.customer.name} + ' / ' + ${invoiceData.customerOrderSign}">Invoice</title>
+  <link rel="stylesheet" th:href="@{/style/print.css}" media="print"/>
+  <link rel="stylesheet" th:href="@{/style/invoiceprint.css}" media="all"/>
+  <style th:utext="${customCss}"></style>
+</head>
+<body>
+  <div style="width: 95%; margin: 0 auto">
+    <form onsubmit="javascript:window.print();return false;" class="hiddencontent">
+      <div align="right">
+        <input class="hiddencontent" type="submit" value="Drucken"/>
+      </div>
+      <div class="invoice_hint">
+        <span th:text="#{main.invoice.scroll.text}"></span>
+      </div>
+    </form>
+    <div>
+      <img th:src="@{${logoUrl}}" class="hbt_logo" alt="Logo"/>
+      <img th:src="@{${claimUrl}}" class="hbt_claim" alt="Claim"/>
+    </div>
+    <table style="clear: both; float: left">
+      <tr>
+        <td class="invoice_title" th:text="${invoiceForm.titleinvoiceattachment}"></td>
+      </tr>
+      <tr>
+        <td class="invoice_address_line"></td>
+      </tr>
+      <tr>
+        <td class="invoice_address_line" th:text="${invoiceForm.customername}"></td>
+      </tr>
+      <tr>
+        <td class="invoice_address_line" th:utext="${invoiceForm.customeraddressFormatted}"></td>
+      </tr>
+      <tr>
+        <td class="invoice_address_line"></td>
+      </tr>
+      <tr>
+        <td class="invoice_time_reference">
+          <span th:text="#{main.invoice.daterange}">Zeitraum</span>:
+          <span th:text="${#temporals.format(invoiceData.billingPeriod.from, 'dd.MM.yyyy')}"></span> -
+          <span th:text="${#temporals.format(invoiceData.billingPeriod.until, 'dd.MM.yyyy')}"></span>
+        </td>
+      </tr>
+    </table>
+    <span style="float: right" class="invoice_date">Stand: <span th:text="${#temporals.format(today, 'dd.MM.yyyy')}"></span></span>
+    <br style="clear: both"/>
+    <table width="100%" style="border-collapse: collapse">
+      <th:block th:each="invoiceSuborder : ${invoiceData.suborders}">
+        <tbody th:if="${invoiceSuborder.visible}">
+          <tr class="invoice_suborder_row">
+            <td class="invoice_suborder_row wrap" th:colspan="${dynamicColumnCount + 2}">
+              <span th:text="${invoiceSuborder.orderDescription}"></span>
+              <th:block th:if="${targethoursbox and invoiceSuborder.budget != null}">
+                / <span th:text="#{main.invoice.budget}">Budget</span>: <span th:text="${@durationUtils.format(invoiceSuborder.budget)}"></span>
+              </th:block>
+            </td>
+          </tr>
+          <tr class="invoice_header">
+            <th:block th:if="${invoiceForm.timereportsbox}">
+              <th class="invoice_header" th:text="${invoiceForm.titledatetext}"></th>
+              <th th:if="${invoiceForm.employeesignbox}" class="invoice_header" th:text="${invoiceForm.titleemployeesigntext}"></th>
+              <th th:if="${invoiceForm.timereportdescriptionbox}" class="invoice_header" width="100%" th:text="${invoiceForm.titledescriptiontext}"></th>
+            </th:block>
+            <th class="invoice_header right" th:text="${invoiceForm.titleactualdurationtext}"></th>
+            <th class="invoice_header right" th:text="${invoiceForm.titleactualhourstext}"></th>
+          </tr>
+          <th:block th:each="invoiceTimereport, iterStat : ${invoiceSuborder.timereports}">
+            <tr th:if="${invoiceTimereport.visible}"
+                th:classappend="${iterStat.last} ? 'invoice_booking_row last_timereport' : 'invoice_booking_row'">
+              <td th:classappend="${iterStat.last} ? 'invoice_booking_row nonproportional last_timereport' : 'invoice_booking_row nonproportional'"
+                  th:text="${#temporals.format(invoiceTimereport.referenceDay, 'dd.MM.yyyy')}"></td>
+              <td th:if="${invoiceForm.employeesignbox}"
+                  th:classappend="${iterStat.last} ? 'invoice_booking_row last_timereport' : 'invoice_booking_row'"
+                  th:text="${invoiceTimereport.employeeName}"></td>
+              <td th:if="${invoiceForm.timereportdescriptionbox}"
+                  th:classappend="${iterStat.last} ? 'invoice_booking_row wrap last_timereport' : 'invoice_booking_row wrap'"
+                  style="width: 100%"
+                  th:text="${invoiceTimereport.taskDescription}"></td>
+              <td th:classappend="${iterStat.last} ? 'invoice_booking_row nonproportional right last_timereport' : 'invoice_booking_row nonproportional right'"
+                  style="min-width: 2cm"
+                  th:text="${@durationUtils.format(invoiceTimereport.duration)}"></td>
+              <td th:classappend="${iterStat.last} ? 'invoice_booking_row nonproportional right last_timereport' : 'invoice_booking_row nonproportional right'"
+                  style="min-width: 2cm"></td>
+            </tr>
+          </th:block>
+          <tr class="invoice_subordersum_row">
+            <td class="invoice_subordersum_row right" th:colspan="${dynamicColumnCount}" style="width: 100%" th:text="#{main.invoice.suborder.sum.text}"></td>
+            <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(invoiceSuborder.totalDurationVisible)}"></td>
+            <td class="invoice_subordersum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(invoiceSuborder.totalHoursVisible, 1, 2)}"></td>
+          </tr>
+        </tbody>
+      </th:block>
+      <tbody>
+        <tr class="invoice_totalsum_row">
+          <td class="invoice_totalsum_row right" style="width: 100%" th:colspan="${dynamicColumnCount}" th:text="#{main.invoice.overall.text}"></td>
+          <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${@durationUtils.format(invoiceData.totalDurationVisible)}"></td>
+          <td class="invoice_totalsum_row nonproportional right" style="min-width: 2cm" th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisible, 1, 2)}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

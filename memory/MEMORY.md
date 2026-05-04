@@ -1,5 +1,16 @@
 # Project Memory
 
+## Invoice Thymeleaf Migration (branch: 592-migrate-invoice-to-thymeleaf)
+- New Spring MVC controller: `org/tb/invoice/controller/InvoiceController.java` at `/invoice`
+- New form DTO: `org/tb/invoice/controller/InvoiceForm.java` (implements `InvoiceColumnHeaders`)
+- New templates: `templates/invoice/show.html` (uses base layout) and `templates/invoice/print.html` (standalone)
+- Print template is standalone (no base layout) to preserve exact printable invoice layout
+- Session stores `invoiceData` (key `"invoiceData"`) between generate/print/export
+- POST `/invoice` = updateOptions, POST `/invoice/generate` = generate, POST `/invoice/print` = print, POST `/invoice/export` = Excel
+- JS `submitUpdate()` / `submitPrint()` / `submitExport()` change form action before submit
+- Nav link in `layout/base.html` updated to `@{/invoice}`
+- Duration formatting in templates: `${@durationUtils.format(value)}` (bean `DurationUtilsBean`)
+
 ## Message Resource Files
 
 - Files: `src/main/resources/org/tb/web/MessageResources.properties` (DE) and `MessageResources_en.properties` (EN)
