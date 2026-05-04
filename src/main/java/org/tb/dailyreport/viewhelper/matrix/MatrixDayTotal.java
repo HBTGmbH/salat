@@ -62,8 +62,9 @@ public class MatrixDayTotal {
         return breakMinutes != null ? timeFormatMinutes(breakMinutes) : null;
     }
 
-    public void addWorkingTime(Duration workingTime) {
+    public void addWorkingTime(Duration workingTime, Duration netWorkingTime) {
         this.workingTime = this.workingTime.plus(workingTime);
+        this.netWorkingTime = this.netWorkingTime.plus(netWorkingTime);
     }
 
     public boolean isZeroWorkingTime() {
