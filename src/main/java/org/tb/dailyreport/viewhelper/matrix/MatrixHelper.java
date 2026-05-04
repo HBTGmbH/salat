@@ -272,7 +272,7 @@ public class MatrixHelper {
         for (MatrixLine matrixLine : matrixLines) {
             for (BookingDay bookingDay : matrixLine.getBookingDays()) {
                 MatrixDayTotal matrixDayTotal = dayTotalsMap.get(bookingDay.getDate());
-                matrixDayTotal.addWorkingTime(bookingDay.getDuration());
+                matrixDayTotal.addWorkingTime(bookingDay.getDuration(), bookingDay.getWorkDuration());
             }
         }
     }

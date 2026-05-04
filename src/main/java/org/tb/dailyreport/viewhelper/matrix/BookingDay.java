@@ -35,13 +35,13 @@ public class BookingDay implements Comparable<BookingDay> {
         publicHoliday = false;
         this.taskdescription = taskdescription;
         bookingCount = 1;
-        duration = Duration.ZERO;
+        this.duration = Duration.ZERO;
         workDuration = Duration.ZERO;
         addDuration(duration, orderType);
     }
 
     private void addDuration(Duration amount, OrderType orderType) {
-        if(orderType == OrderType.STANDARD) {
+        if(orderType == OrderType.STANDARD || orderType == null) {
             workDuration = workDuration.plus(amount);
         }
         duration = duration.plus(amount);
