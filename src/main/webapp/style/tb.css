@@ -151,7 +151,7 @@ td.matrix.weekend {
 }
 
 td.matrix.holiday {
-	background-color: #C1C1C1;
+	background-color: lightyellow;
 }
 
 td.matrix.invalid {

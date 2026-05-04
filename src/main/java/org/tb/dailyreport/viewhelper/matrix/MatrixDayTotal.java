@@ -47,6 +47,11 @@ public class MatrixDayTotal {
         return startOfWorkMinute != null ? timeFormatMinutes(startOfWorkMinute) : null;
     }
 
+    public String getEndOfWorkString() {
+        Long endOfWorkMinute = startOfWorkMinute != null ? startOfWorkMinute + workingTime.toMinutes() : null;
+        return startOfWorkMinute != null ? timeFormatMinutes(endOfWorkMinute) : null;
+    }
+
     public String getBreakDurationString() {
         return breakMinutes != null ? timeFormatMinutes(breakMinutes) : null;
     }
