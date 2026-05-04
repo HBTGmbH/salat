@@ -16,6 +16,7 @@ public class MatrixDayTotal {
 
     private int day;
     private Duration workingTime;
+    private Duration netWorkingTime; // time without any leave like sick or holiday
     private LocalDate date;
     private boolean publicHoliday;
     private boolean satSun;
@@ -28,11 +29,12 @@ public class MatrixDayTotal {
     private WorkingDayType workingDayType;
     private Duration contractWorkingTime;
 
-    public MatrixDayTotal(LocalDate date, int day, Duration workingTime, Duration contractWorkingTime) {
+    public MatrixDayTotal(LocalDate date, int day, Duration workingTime, Duration contractWorkingTime, Duration netWorkingTime) {
         this.date = date;
         this.day = day;
         this.workingTime = workingTime;
         this.contractWorkingTime = contractWorkingTime;
+        this.netWorkingTime = netWorkingTime;
     }
 
     public String getWorkingTimeString() {
@@ -48,8 +50,12 @@ public class MatrixDayTotal {
     }
 
     public String getEndOfWorkString() {
-        Long endOfWorkMinute = startOfWorkMinute != null ? startOfWorkMinute + workingTime.toMinutes() : null;
+        Long endOfWorkMinute = startOfWorkMinute != null ? startOfWorkMinute + netWorkingTime.toMinutes() + orZero(breakMinutes) : null;
         return startOfWorkMinute != null ? timeFormatMinutes(endOfWorkMinute) : null;
+    }
+
+    private long orZero(Long breakMinutes) {
+        return breakMinutes != null ? breakMinutes : 0;
     }
 
     public String getBreakDurationString() {
