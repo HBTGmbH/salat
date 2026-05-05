@@ -483,7 +483,7 @@ public class MatrixHelper {
         }
         reportForm.setEmployeeContractId(ec.getId());
 
-        List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
+        List<Employeecontract> employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
         if (employeeContracts == null || employeeContracts.isEmpty()) {
             results.put(HANDLING_RESULTED_IN_ERROR_ERRORMESSAGE, "No employees with valid contracts found - please call system administrator.");

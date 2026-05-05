@@ -35,7 +35,7 @@ public class EmployeeViewHelper {
         .orElse(null);
     var employeeOptionList = employeeService.getAllEmployees();
     var employeeWithContractList = employeeService.getEmployeesWithContracts();
-    var employeeContracts = employeecontractService.getViewableEmployeeContractsValidAt(today());
+    var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
     if (currentEmployeeContract == null) {
       currentEmployeeContract = loginEmployeeContract;
