@@ -55,7 +55,7 @@ public class InvoiceController {
         var form = createInitialForm();
         model.addAttribute("invoiceForm", form);
         addCommonModel(model, form);
-        return "invoice/form";
+        return "invoice/invoice-form";
     }
 
     @PostMapping
@@ -63,7 +63,7 @@ public class InvoiceController {
                                 SessionStatus sessionStatus, Model model) {
         sessionStatus.setComplete();
         addCommonModel(model, form);
-        return "invoice/form";
+        return "invoice/invoice-form";
     }
 
     @PostMapping("/generate")
@@ -93,7 +93,7 @@ public class InvoiceController {
         }
         model.addAttribute("invoiceForm", form);
         addCommonModel(model, form);
-        return "invoice/form";
+        return "invoice/invoice-form";
     }
 
     @PostMapping("/print")
@@ -115,7 +115,7 @@ public class InvoiceController {
         model.addAttribute("today", today());
         model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form));
         model.addAttribute("targethoursbox", form.isTargethoursbox());
-        return "invoice/print";
+        return "invoice/invoice-print";
     }
 
     @PostMapping("/export")

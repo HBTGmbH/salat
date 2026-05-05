@@ -37,7 +37,7 @@ public class CustomerController {
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
     model.addAttribute("filter", filter);
     model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));
-    return "customer/list";
+    return "customer/customer-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -46,7 +46,7 @@ public class CustomerController {
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.addcustomer.text", "Create Customer"));
     model.addAttribute("isEdit", false);
     model.addAttribute("customer", CustomerDTO.builder().build());
-    return "customer/form";
+    return "customer/customer-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -56,7 +56,7 @@ public class CustomerController {
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.editcustomer.text", "Edit Customer"));
     model.addAttribute("isEdit", true);
     model.addAttribute("customer", dto);
-    return "customer/form";
+    return "customer/customer-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -106,7 +106,7 @@ public class CustomerController {
       String titleFallback = form.getId() == null ? "Create Customer" : "Edit Customer";
       model.addAttribute("pageTitle", messageSourceAccessor.getMessage(titleKey, titleFallback));
       model.addAttribute("isEdit", form.getId() != null);
-      return "customer/form";
+      return "customer/customer-form";
     }
 
     redirectAttributes.addFlashAttribute("toastSuccess",

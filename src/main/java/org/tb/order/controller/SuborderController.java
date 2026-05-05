@@ -90,7 +90,7 @@ public class SuborderController {
     model.addAttribute("subSection", "suborders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    return "order/suborders-list";
+    return "order/sub-orders-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -119,7 +119,7 @@ public class SuborderController {
       form.setOrderType(OrderType.STANDARD);
     }
     addFormModel(model, form, false);
-    return "order/suborder-form";
+    return "order/sub-order-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -128,7 +128,7 @@ public class SuborderController {
     Suborder so = suborderService.getSuborderById(id);
     var form = toForm(so);
     addFormModel(model, form, true);
-    return "order/suborder-form";
+    return "order/sub-order-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -177,7 +177,7 @@ public class SuborderController {
 
     if (hasErrors) {
       addFormModel(model, form, form.getId() != null);
-      return "order/suborder-form";
+      return "order/sub-order-form";
     }
 
     redirectAttributes.addFlashAttribute("toastSuccess",
@@ -246,7 +246,7 @@ public class SuborderController {
     form.setCustomerorderId(null);
     form.setParentId(null);
     addFormModel(model, form, form.getId() != null);
-    return "order/suborder-form";
+    return "order/sub-order-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -257,7 +257,7 @@ public class SuborderController {
     form.setValidFrom(format(co.getFromDate()));
     form.setValidUntil(co.getUntilDate() != null ? format(co.getUntilDate()) : "");
     addFormModel(model, form, form.getId() != null);
-    return "order/suborder-form";
+    return "order/sub-order-form";
   }
 
   private void validateForm(SuborderForm form, BindingResult bindingResult) {

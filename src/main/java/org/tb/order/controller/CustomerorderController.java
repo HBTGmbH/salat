@@ -72,7 +72,7 @@ public class CustomerorderController {
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.customerorders.text", "Customer Orders"));
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    return "order/customerorders-list";
+    return "order/customer-orders-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -85,7 +85,7 @@ public class CustomerorderController {
     form.setRespContrEmployeeId(authorizedEmployee.getEmployeeId());
     form.setHide(false);
     addFormModel(model, form, false);
-    return "order/customerorder-form";
+    return "order/customer-order-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -103,7 +103,7 @@ public class CustomerorderController {
       employees.add(co.getResponsible_hbt());
     }
     model.addAttribute("employees", employees);
-    return "order/customerorder-form";
+    return "order/customer-order-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
@@ -140,7 +140,7 @@ public class CustomerorderController {
 
     if (hasErrors) {
       addFormModel(model, form, form.getId() != null);
-      return "order/customerorder-form";
+      return "order/customer-order-form";
     }
 
     redirectAttributes.addFlashAttribute("toastSuccess",
