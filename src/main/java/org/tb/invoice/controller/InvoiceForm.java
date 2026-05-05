@@ -1,9 +1,11 @@
 package org.tb.invoice.controller;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.tb.invoice.service.ExcelExportService.InvoiceColumnHeaders;
 
 @Getter
@@ -13,12 +15,18 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     private Long orderId;
     private Long suborderId;
     private String invoiceview = "month";
-    private String fromDay;
-    private String fromMonth;
-    private String fromYear;
-    private String untilDay;
-    private String untilMonth;
-    private String untilYear;
+
+    /** Monthly mode: value from {@code <input type="month">}, format {@code yyyy-MM}. */
+    private String fromYearMonth;
+
+    /** Custom range: from date, bound from {@code <input type="date">} via ISO format. */
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate fromDate;
+
+    /** Custom range: until date, bound from {@code <input type="date">} via ISO format. */
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate untilDate;
+
     private String suborderdescription = "longdescription";
     private boolean timereportsbox = true;
     private boolean customeridbox;

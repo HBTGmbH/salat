@@ -67,7 +67,8 @@
             <th class="invoice_header right" th:text="${invoiceForm.titleactualdurationtext}"></th>
             <th class="invoice_header right" th:text="${invoiceForm.titleactualhourstext}"></th>
           </tr>
-          <th:block th:each="invoiceTimereport, iterStat : ${invoiceSuborder.timereports}">
+          <th:block th:if="${invoiceForm.timereportsbox}"
+                    th:each="invoiceTimereport, iterStat : ${invoiceSuborder.timereports}">
             <tr th:if="${invoiceTimereport.visible}"
                 th:classappend="${iterStat.last} ? 'invoice_booking_row last_timereport' : 'invoice_booking_row'">
               <td th:classappend="${iterStat.last} ? 'invoice_booking_row nonproportional last_timereport' : 'invoice_booking_row nonproportional'"
@@ -83,7 +84,8 @@
                   style="min-width: 2cm"
                   th:text="${@durationUtils.format(invoiceTimereport.duration)}"></td>
               <td th:classappend="${iterStat.last} ? 'invoice_booking_row nonproportional right last_timereport' : 'invoice_booking_row nonproportional right'"
-                  style="min-width: 2cm"></td>
+                  style="min-width: 2cm"
+                  th:text="${#numbers.formatDecimal(invoiceTimereport.hours, 1, 2)}"></td>
             </tr>
           </th:block>
           <tr class="invoice_subordersum_row">
