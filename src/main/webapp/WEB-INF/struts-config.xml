@@ -48,8 +48,7 @@
 		<form-bean name="executeReportForm" type="org.tb.reporting.action.ExecuteReportForm" />
 		<form-bean name="createEditDeleteReportForm" type="org.tb.reporting.action.CreateEditDeleteReportForm" />
 
-		<form-bean name="showSettingsForm" type="org.tb.user.ShowSettingsForm" />
-		<form-bean name="showWelcomeForm" type="org.tb.dailyreport.action.ShowWelcomeForm" />
+<form-bean name="showWelcomeForm" type="org.tb.dailyreport.action.ShowWelcomeForm" />
 
 	</form-beans>
 
@@ -311,12 +310,6 @@
 		</action>
 
 		<!-- other -->
-		<action path="/ShowSettings" input="/user/showSettings.jsp" validate="true"
-			name="showSettingsForm" type="org.tb.user.ShowSettingsAction">
-			<forward name="success" path="/user/showSettings.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
 		<action path="/ShowWelcome" input="/dailyreport/showWelcome.jsp" validate="true"
 			name="showWelcomeForm" type="org.tb.dailyreport.action.ShowWelcomeAction">
 			<forward name="success" path="/dailyreport/showWelcome.jsp" />

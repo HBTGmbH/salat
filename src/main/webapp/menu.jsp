@@ -115,9 +115,6 @@
 		<li class="first"><html:link styleClass="menu" action="/ShowWelcome">
 			<bean:message key="main.general.mainmenu.overview.text" />
 		</html:link></li>
-		<li><html:link styleClass="menu" action="/ShowSettings">
-			<bean:message key="main.general.mainmenu.settings.text" />
-		</html:link></li>
 	</ul>
 	</li>
 	<li id="last">
