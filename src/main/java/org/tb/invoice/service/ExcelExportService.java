@@ -77,9 +77,9 @@ public class ExcelExportService {
         };
     }
 
-    public byte[] exportToExcel(InvoiceData invoiceData, InvoiceColumnHeaders headers) throws IOException {
+    public byte[] exportToExcel(InvoiceData invoiceData, InvoiceOptions displayOptions, InvoiceColumnHeaders headers) throws IOException {
         var factory = getXSSFFactory();
-        try(Workbook workbook = createInvoiceExcel(invoiceData, headers, factory);
+        try(Workbook workbook = createInvoiceExcel(invoiceData, displayOptions, headers, factory);
             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             workbook.write(out);
             return out.toByteArray();
@@ -87,28 +87,26 @@ public class ExcelExportService {
     }
 
     @SuppressWarnings("unchecked")
-    private static Workbook createInvoiceExcel(InvoiceData invoiceData, InvoiceColumnHeaders headers, InstanceFactory factory) {
+    private static Workbook createInvoiceExcel(InvoiceData invoiceData, InvoiceOptions displayOptions, InvoiceColumnHeaders headers, InstanceFactory factory) {
         Workbook workbook = factory.createWorkbook();
         createCellStyles(workbook);
         workbook.createSheet(INVOICE_EXCEL_SHEET_NAME);
-        addTitleRow(workbook, invoiceData.getInvoiceOptions(), headers, factory);
+        addTitleRow(workbook, displayOptions, headers, factory);
         int rowIndex = 1;
         var invoiceSuborders = invoiceData.getSuborders();
         for (var invoiceSuborder : invoiceSuborders) {
             if (invoiceSuborder.isVisible()) {
-                rowIndex = addSuborderDataRow(workbook, rowIndex, invoiceSuborder, invoiceData.getInvoiceOptions(), factory);
-                // ab hier ggf. Timereports ausgeben
-                List<InvoiceTimereport> invoiceTimereports = invoiceSuborder.getTimereports();
-                if (invoiceData.getInvoiceOptions().isShowTimereports()) {
-                    for (var invoiceTimereport : invoiceTimereports) {
-                        if(invoiceTimereport.isVisible()) {
-                            rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereport, invoiceData.getInvoiceOptions(), factory);
+                rowIndex = addSuborderDataRow(workbook, rowIndex, invoiceSuborder, displayOptions, factory);
+                if (displayOptions.isShowTimereports()) {
+                    for (var invoiceTimereport : invoiceSuborder.getTimereports()) {
+                        if (invoiceTimereport.isVisible()) {
+                            rowIndex = addTimereportDataRow(workbook, rowIndex, invoiceTimereport, displayOptions, factory);
                         }
                     }
                 }
             }
         }
-        addSumRow(workbook, rowIndex, invoiceData);
+        addSumRow(workbook, rowIndex, invoiceData, displayOptions);
         setColumnWidths(workbook.getSheet(INVOICE_EXCEL_SHEET_NAME), factory);
         return workbook;
     }
@@ -306,16 +304,15 @@ public class ExcelExportService {
         cell.setCellStyle(workbook.getCellStyleAt(cellStyleIndexes.get("title")));
     }
 
-    private static void addSumRow(Workbook workbook, int rowIndex, InvoiceData invoiceData) {
-        var options = invoiceData.getInvoiceOptions();
+    private static void addSumRow(Workbook workbook, int rowIndex, InvoiceData invoiceData, InvoiceOptions displayOptions) {
         Row row = workbook.getSheet(INVOICE_EXCEL_SHEET_NAME).createRow(rowIndex);
         int colIndex = 1;
-        if (options.isShowTimereports()) {
+        if (displayOptions.isShowTimereports()) {
             colIndex++;
-            if (options.isShowEmployee()) {
+            if (displayOptions.isShowEmployee()) {
                 colIndex++;
             }
-            if (options.isShowTaskdescriptions()) {
+            if (displayOptions.isShowTaskdescriptions()) {
                 colIndex++;
             }
         }

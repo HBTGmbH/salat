@@ -5,303 +5,306 @@
       th:with="section='orders',subSection='invoice',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
 
+  <style>
+    .col-hidden { display: none !important; }
+    .row-excluded { opacity: 0.35; }
+    .invoice-row { cursor: pointer; }
+    .table .invoice-last-row > * { border-bottom-width: 0; }
+  </style>
+
   <form id="invoice-form" th:action="@{/invoice/generate}" th:object="${invoiceForm}" method="post">
 
-    <div class="row g-3 mb-3">
+    <!-- ═══════════════════════════════════════════════════════════════
+         PHASE 1 — Data selection  (3-column grid throughout)
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title mb-0" th:text="#{main.invoice.dataset.text}">Datensatz</h3>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 align-items-start">
 
-      <!-- Dataset options card -->
-      <div class="col-12 col-lg-auto">
-        <div class="card h-100">
-          <div class="card-header">
-            <h3 class="card-title" th:text="#{main.invoice.dataset.text}">Datensatz</h3>
+          <!-- Col 1: Order -->
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-semibold" th:text="#{main.monthlyreport.customerorder.text}">Auftrag</label>
+            <select class="form-select tomselect" id="orderId" th:field="*{orderId}" onchange="submitUpdate()">
+              <option value="" th:text="#{main.invoice.choose.text}">-- Bitte wählen --</option>
+              <option th:each="order : ${orders}"
+                      th:value="${order.id}"
+                      th:text="${order.signAndDescription}"></option>
+            </select>
           </div>
-          <div class="card-body">
 
-            <!-- Order -->
-            <div class="mb-3">
-              <label class="form-label" th:text="#{main.monthlyreport.customerorder.text}">Auftrag</label>
-              <select class="form-select tomselect" id="orderId" th:field="*{orderId}" onchange="submitUpdate()">
-                <option value="" th:text="#{main.invoice.choose.text}">-- Bitte wählen --</option>
-                <option th:each="order : ${orders}"
-                        th:value="${order.id}"
-                        th:text="${order.signAndDescription}"></option>
-              </select>
+          <!-- Col 2: Suborder -->
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-semibold" th:text="#{main.monthlyreport.suborder.text}">Unterauftrag</label>
+            <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}">
+              <option value="" th:text="#{main.general.allsuborders.text}">-- Alle --</option>
+              <option th:each="so : ${suborders}"
+                      th:value="${so.id}"
+                      th:text="${so.completeOrderSignAndDescription}"></option>
+            </select>
+            <div class="form-check mt-1">
+              <input class="form-check-input" type="checkbox" id="showOnlyValid"
+                     th:field="*{showOnlyValid}" onchange="submitUpdate()">
+              <label class="form-check-label small text-muted" for="showOnlyValid"
+                     th:text="#{main.general.show.only.valid.text}">Nur gültige</label>
+            </div>
+          </div>
+
+          <!-- Col 3: Period -->
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-semibold" th:text="#{main.invoice.daterange}">Zeitraum</label>
+            <select class="form-select" id="invoiceview" th:field="*{invoiceview}"
+                    onchange="updateDateVisibility()">
+              <option value="month" th:text="#{main.general.timereport.view.monthly.text}">Monatsansicht</option>
+              <option value="custom" th:text="#{main.general.timereport.view.custom.text}">Zeitraum</option>
+            </select>
+
+            <!-- Monthly mode: single month picker -->
+            <div class="mt-2" id="month-picker"
+                 th:classappend="*{invoiceview == 'custom'} ? 'd-none' : ''">
+              <input type="month" class="form-control" th:field="*{fromYearMonth}">
             </div>
 
-            <!-- Suborder -->
-            <div class="mb-3">
-              <label class="form-label" th:text="#{main.monthlyreport.suborder.text}">Unterauftrag</label>
-              <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}" onchange="submitUpdate()">
-                <option value="" th:text="#{main.general.allsuborders.text}">-- Alle --</option>
-                <option th:each="so : ${suborders}"
-                        th:value="${so.id}"
-                        th:text="${so.completeOrderSignAndDescription}"></option>
-              </select>
-              <div class="form-check mt-1">
-                <input class="form-check-input" type="checkbox" id="showOnlyValid" th:field="*{showOnlyValid}" onchange="submitUpdate()">
-                <label class="form-check-label" for="showOnlyValid" th:text="#{main.general.show.only.valid.text}">Nur gültige</label>
+            <!-- Custom mode: date range -->
+            <div class="mt-2" id="date-range-picker"
+                 th:classappend="*{invoiceview != 'custom'} ? 'd-none' : ''">
+              <div class="mb-2">
+                <label class="form-label text-muted small" th:text="#{main.general.from.text}">von</label>
+                <input type="date" class="form-control" th:field="*{fromDate}">
+              </div>
+              <div>
+                <label class="form-label text-muted small" th:text="#{main.general.to.text}">bis</label>
+                <input type="date" class="form-control" th:field="*{untilDate}">
               </div>
             </div>
+          </div>
 
-            <!-- View mode -->
-            <div class="mb-3">
-              <label class="form-label" th:text="#{main.general.timereport.view.text}">Ansicht</label>
-              <select class="form-select" id="invoiceview" th:field="*{invoiceview}" onchange="submitUpdate()">
-                <option value="month" th:text="#{main.general.timereport.view.monthly.text}">Monat</option>
-                <option value="custom" th:text="#{main.general.timereport.view.custom.text}">Zeitraum</option>
-              </select>
-            </div>
+        </div>
 
-            <!-- From date -->
-            <div class="mb-3">
-              <label class="form-label">
-                <span th:if="*{invoiceview == 'month'}" th:text="#{main.monthlyreport.monthyear.text}">Monat/Jahr</span>
-                <span th:if="*{invoiceview == 'custom'}" th:text="#{main.monthlyreport.daymonthyear.text}">Von</span>
-              </label>
-              <div class="d-flex gap-1">
-                <select th:if="*{invoiceview == 'custom'}" class="form-select form-select-sm" id="fromDay" th:field="*{fromDay}" onchange="submitUpdate()">
-                  <option th:each="d : ${days}" th:value="${d.value}" th:text="${d.label}"></option>
-                </select>
-                <select class="form-select form-select-sm" id="fromMonth" th:field="*{fromMonth}" onchange="submitUpdate()">
-                  <option value="Jan" th:text="#{main.timereport.select.month.jan.text}">Jan</option>
-                  <option value="Feb" th:text="#{main.timereport.select.month.feb.text}">Feb</option>
-                  <option value="Mar" th:text="#{main.timereport.select.month.mar.text}">Mär</option>
-                  <option value="Apr" th:text="#{main.timereport.select.month.apr.text}">Apr</option>
-                  <option value="May" th:text="#{main.timereport.select.month.may.text}">Mai</option>
-                  <option value="Jun" th:text="#{main.timereport.select.month.jun.text}">Jun</option>
-                  <option value="Jul" th:text="#{main.timereport.select.month.jul.text}">Jul</option>
-                  <option value="Aug" th:text="#{main.timereport.select.month.aug.text}">Aug</option>
-                  <option value="Sep" th:text="#{main.timereport.select.month.sep.text}">Sep</option>
-                  <option value="Oct" th:text="#{main.timereport.select.month.oct.text}">Okt</option>
-                  <option value="Nov" th:text="#{main.timereport.select.month.nov.text}">Nov</option>
-                  <option value="Dec" th:text="#{main.timereport.select.month.dec.text}">Dez</option>
-                </select>
-                <select class="form-select form-select-sm" id="fromYear" th:field="*{fromYear}" onchange="submitUpdate()">
-                  <option th:each="y : ${years}" th:value="${y.value}" th:text="${y.label}"></option>
-                </select>
-              </div>
-            </div>
+        <!-- Advanced options toggle -->
+        <div class="mt-2">
+          <a class="text-muted small text-decoration-none" role="button"
+             data-bs-toggle="collapse" href="#advanced-options" aria-expanded="false"
+             aria-controls="advanced-options">
+            <span th:text="#{main.invoice.advanced.text}">Erweitert</span>
+            <span class="ms-1">▾</span>
+          </a>
+        </div>
 
-            <!-- Until date (custom only) -->
-            <div class="mb-3" th:if="*{invoiceview == 'custom'}">
-              <label class="form-label" th:text="#{main.monthlyreport.daymonthyear.text}">Bis</label>
-              <div class="d-flex gap-1">
-                <select class="form-select form-select-sm" id="untilDay" th:field="*{untilDay}" onchange="submitUpdate()">
-                  <option th:each="d : ${days}" th:value="${d.value}" th:text="${d.label}"></option>
-                </select>
-                <select class="form-select form-select-sm" id="untilMonth" th:field="*{untilMonth}" onchange="submitUpdate()">
-                  <option value="Jan" th:text="#{main.timereport.select.month.jan.text}">Jan</option>
-                  <option value="Feb" th:text="#{main.timereport.select.month.feb.text}">Feb</option>
-                  <option value="Mar" th:text="#{main.timereport.select.month.mar.text}">Mär</option>
-                  <option value="Apr" th:text="#{main.timereport.select.month.apr.text}">Apr</option>
-                  <option value="May" th:text="#{main.timereport.select.month.may.text}">Mai</option>
-                  <option value="Jun" th:text="#{main.timereport.select.month.jun.text}">Jun</option>
-                  <option value="Jul" th:text="#{main.timereport.select.month.jul.text}">Jul</option>
-                  <option value="Aug" th:text="#{main.timereport.select.month.aug.text}">Aug</option>
-                  <option value="Sep" th:text="#{main.timereport.select.month.sep.text}">Sep</option>
-                  <option value="Oct" th:text="#{main.timereport.select.month.oct.text}">Okt</option>
-                  <option value="Nov" th:text="#{main.timereport.select.month.nov.text}">Nov</option>
-                  <option value="Dec" th:text="#{main.timereport.select.month.dec.text}">Dez</option>
-                </select>
-                <select class="form-select form-select-sm" id="untilYear" th:field="*{untilYear}" onchange="submitUpdate()">
-                  <option th:each="y : ${years}" th:value="${y.value}" th:text="${y.label}"></option>
-                </select>
-              </div>
-            </div>
+        <!-- Collapsible advanced options -->
+        <div class="collapse" id="advanced-options">
+          <div class="row g-3 align-items-start mt-1">
 
-            <!-- Suborder description -->
-            <div class="mb-3">
-              <label class="form-label" th:text="#{main.invoice.suborderdescription.text}">Beschreibung</label>
-              <select class="form-select" id="suborderdescription" th:field="*{suborderdescription}" onchange="submitUpdate()">
+            <!-- Auftragsbezeichnung -->
+            <div class="col-12 col-md-4">
+              <label class="form-label" th:text="#{main.invoice.suborderdescription.text}">Auftragsbezeichnung</label>
+              <select class="form-select" id="suborderdescription" th:field="*{suborderdescription}">
                 <option value="longdescription" th:text="#{main.invoice.suborderdescription.long.text}">Lang</option>
                 <option value="shortdescription" th:text="#{main.invoice.suborderdescription.short.text}">Kurz</option>
               </select>
             </div>
 
-            <!-- Customer sign -->
-            <div class="mb-3">
+            <!-- Content filters -->
+            <div class="col-12 col-md-4 d-flex flex-column gap-2 justify-content-end">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="customeridbox" th:field="*{customeridbox}" onchange="submitUpdate()">
-                <label class="form-check-label" for="customeridbox" th:text="#{main.invoice.customersign.text}">Kundenkennzeichen</label>
+                <input class="form-check-input" type="checkbox" id="customeridbox" th:field="*{customeridbox}">
+                <label class="form-check-label" for="customeridbox"
+                       th:text="#{main.invoice.customersign.text}">Kundenkennungen verwenden</label>
               </div>
-            </div>
-
-            <!-- Show invoice -->
-            <div class="mb-3">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="invoicebox" th:field="*{invoicebox}" onchange="submitUpdate()">
-                <label class="form-check-label" for="invoicebox" th:text="#{main.invoice.invoice.text}">Rechnung</label>
+                <input class="form-check-input" type="checkbox" id="invoicebox" th:field="*{invoicebox}">
+                <label class="form-check-label" for="invoicebox"
+                       th:text="#{main.invoice.invoice.text}">Nicht fakturierbar</label>
               </div>
-            </div>
-
-            <!-- Fixed price -->
-            <div class="mb-3">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="fixedpricebox" th:field="*{fixedpricebox}" onchange="submitUpdate()">
-                <label class="form-check-label" for="fixedpricebox" th:text="#{main.invoice.fixedprice.text}">Festpreis</label>
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary" th:text="#{main.invoice.button.createmaximumview.text}">Erstellen</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Show/hide options card -->
-      <div class="col-12 col-lg-auto">
-        <div class="card h-100">
-          <div class="card-header">
-            <h3 class="card-title" th:text="#{main.invoice.showhide.text}">Anzeige</h3>
-          </div>
-          <div class="card-body">
-
-            <!-- Timereports -->
-            <div class="mb-3">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="timereportsbox" th:field="*{timereportsbox}" onchange="submitUpdate()">
-                <label class="form-check-label" for="timereportsbox" th:text="#{main.invoice.timereports.text}">Buchungen</label>
-              </div>
-            </div>
-
-            <div th:if="*{timereportsbox}" class="ms-3">
-              <!-- Timereport description -->
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="timereportdescriptionbox" th:field="*{timereportdescriptionbox}" onchange="submitUpdate()">
-                  <label class="form-check-label" for="timereportdescriptionbox" th:text="#{main.invoice.timreportdescription.text}">Buchungsbeschreibung</label>
-                </div>
-              </div>
-              <!-- Employee sign -->
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="employeesignbox" th:field="*{employeesignbox}" onchange="submitUpdate()">
-                  <label class="form-check-label" for="employeesignbox" th:text="#{main.invoice.employeesign.text}">Mitarbeiterkürzel</label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Target hours -->
-            <div class="mb-3">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="targethoursbox" th:field="*{targethoursbox}" onchange="submitUpdate()">
-                <label class="form-check-label" for="targethoursbox" th:text="#{main.invoice.targethours.text}">Soll-Stunden</label>
+                <input class="form-check-input" type="checkbox" id="fixedpricebox" th:field="*{fixedpricebox}">
+                <label class="form-check-label" for="fixedpricebox"
+                       th:text="#{main.invoice.fixedprice.text}">Festpreis</label>
               </div>
             </div>
 
           </div>
         </div>
+
+        <!-- Generate button on its own row -->
+        <div class="row mt-3">
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary"
+                    th:text="#{main.invoice.button.createmaximumview.text}">Daten laden</button>
+          </div>
+        </div>
+
+        </div>
       </div>
 
-    </div>
-
-    <!-- Invoice data section (only visible when invoiceData is present) -->
+    <!-- ═══════════════════════════════════════════════════════════════
+         PHASE 2 — Review & configure (only when data is loaded)
+         ═══════════════════════════════════════════════════════════════ -->
     <div th:if="${invoiceData != null}">
 
+      <!-- ─── 2A: Display options (client-side only, 3-column grid) ─── -->
       <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0" th:text="#{main.invoice.showhide.text}">Anzeige</h3>
+        </div>
         <div class="card-body">
-          <p class="text-secondary mb-2"><em>Hinweis: Bearbeiten der Anzeigeoptionen setzt die Änderung der Adresse zurück</em></p>
-          <div class="row g-3">
-            <div class="col-12 col-md-4">
-              <label class="form-label" th:text="#{main.invoice.addresshead.text}">Rechnungsanhang</label>
-              <input type="text" class="form-control" th:field="*{titleinvoiceattachment}">
-            </div>
-            <div class="col-12 col-md-4">
-              <label class="form-label" th:text="#{main.customerorder.customer.text}">Kunde</label>
-              <input type="text" class="form-control" th:field="*{customername}">
-            </div>
-            <div class="col-12 col-md-4">
-              <label class="form-label">Adresse</label>
-              <textarea class="form-control" th:field="*{customeraddress}" rows="4"></textarea>
-            </div>
-          </div>
+          <input type="hidden" name="timereportsbox" value="true">
+          <div class="row g-3 align-items-center">
 
-          <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
-            <button type="button" class="btn btn-primary" onclick="submitPrint()" th:text="#{main.general.button.printpreview.text}">Druckvorschau</button>
-            <button type="button" class="btn btn-secondary" onclick="submitExport()" th:text="#{main.general.button.excelexport.new.text}">Excel-Export</button>
-            <select id="invoice-settings-select" class="form-select w-auto">
-              <option th:each="s : ${invoiceSettings}" th:value="${s.name}" th:text="${s.name}"></option>
-            </select>
+            <!-- Col 1: Mitarbeiternamen -->
+            <div class="col-12 col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="employeesignbox"
+                       th:field="*{employeesignbox}" onchange="updateColumnVisibility()">
+                <label class="form-check-label" for="employeesignbox"
+                       th:text="#{main.invoice.employeesign.text}">Mitarbeiternamen</label>
+              </div>
+            </div>
+
+            <!-- Col 2: Kommentare -->
+            <div class="col-12 col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="timereportdescriptionbox"
+                       th:field="*{timereportdescriptionbox}" onchange="updateColumnVisibility()">
+                <label class="form-check-label" for="timereportdescriptionbox"
+                       th:text="#{main.invoice.timreportdescription.text}">Kommentare</label>
+              </div>
+            </div>
+
+            <!-- Col 3: SOLL-Stunden -->
+            <div class="col-12 col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="targethoursbox"
+                       th:field="*{targethoursbox}" onchange="updateColumnVisibility()">
+                <label class="form-check-label" for="targethoursbox"
+                       th:text="#{main.invoice.targethours.text}">SOLL-Stunden</label>
+              </div>
+            </div>
+
           </div>
+          <p class="text-muted small mt-2 mb-0">
+            Spaltenüberschriften können direkt in der Tabellenkopfzeile bearbeitet werden.
+          </p>
         </div>
       </div>
 
-      <!-- Invoice table -->
-      <div class="card">
+      <!-- ─── 2B: Entry selection table ─── -->
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">Einträge</h3>
+          <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-secondary" onclick="selectAll()">Alle</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="deselectAll()">Keine</button>
+          </div>
+        </div>
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0">
+            <table class="table table-hover mb-0">
               <thead>
                 <tr>
-                  <th></th>
-                  <th><input type="text" class="form-control form-control-sm" th:field="*{titlesubordertext}"></th>
-                  <th th:if="*{timereportsbox}"><input type="text" class="form-control form-control-sm" th:field="*{titledatetext}"></th>
-                  <th th:if="*{employeesignbox and timereportsbox}"><input type="text" class="form-control form-control-sm" th:field="*{titleemployeesigntext}"></th>
-                  <th th:if="*{timereportdescriptionbox and timereportsbox}"><input type="text" class="form-control form-control-sm" th:field="*{titledescriptiontext}"></th>
-                  <th th:if="*{targethoursbox}"><input type="text" class="form-control form-control-sm" th:field="*{titletargethourstext}"></th>
-                  <th><input type="text" class="form-control form-control-sm" th:field="*{titleactualdurationtext}"></th>
-                  <th><input type="text" class="form-control form-control-sm" th:field="*{titleactualhourstext}"></th>
+                  <th class="col-selection" style="width: 2.5rem"></th>
+                  <th class="col-suborder">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titlesubordertext}">
+                  </th>
+                  <th class="col-date">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titledatetext}">
+                  </th>
+                  <th class="col-employee">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titleemployeesigntext}">
+                  </th>
+                  <th class="col-description">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titledescriptiontext}">
+                  </th>
+                  <th class="col-budget">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titletargethourstext}">
+                  </th>
+                  <th class="col-duration">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titleactualdurationtext}">
+                  </th>
+                  <th class="col-hours">
+                    <input type="text" class="form-control form-control-sm" th:field="*{titleactualhourstext}">
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <th:block th:each="invoiceSuborder : ${invoiceData.suborders}">
-                  <!-- Suborder row -->
-                  <tr>
-                    <td>
-                      <input type="checkbox" name="suborderIdArray"
+                  <!-- Suborder row — full row is clickable -->
+                  <tr class="invoice-row"
+                      th:classappend="${!invoiceForm.suborderIdArray.contains(invoiceSuborder.id)} ? ' row-excluded' : ''"
+                      th:attr="data-suborder-id=${invoiceSuborder.id}"
+                      onclick="handleRowClick(event, this)">
+                    <td class="col-selection align-middle">
+                      <input class="form-check-input" type="checkbox" name="suborderIdArray"
                              th:value="${invoiceSuborder.id}"
-                             th:checked="${invoiceForm.suborderIdArray.contains(invoiceSuborder.id)}">
+                             th:checked="${invoiceForm.suborderIdArray.contains(invoiceSuborder.id)}"
+                             onchange="toggleSuborder(this)">
                     </td>
-                    <td th:text="${invoiceSuborder.orderDescription}"></td>
-                    <td th:if="*{timereportsbox}"></td>
-                    <td th:if="*{employeesignbox and timereportsbox}"></td>
-                    <td th:if="*{timereportdescriptionbox and timereportsbox}"></td>
-                    <td th:if="*{targethoursbox}" class="text-end" th:text="${@durationUtils.format(invoiceSuborder.budget)}"></td>
-                    <td class="text-end" th:text="${@durationUtils.format(invoiceSuborder.totalDuration)}"></td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(invoiceSuborder.totalHours, 1, 2)}"></td>
+                    <td class="col-suborder fw-bold align-middle"
+                        th:text="${invoiceSuborder.orderDescription}"></td>
+                    <td class="col-date"></td>
+                    <td class="col-employee"></td>
+                    <td class="col-description"></td>
+                    <td class="col-budget text-end align-middle"
+                        th:text="${invoiceSuborder.budget != null ? @durationUtils.format(invoiceSuborder.budget) : ''}"></td>
+                    <td class="col-duration text-end align-middle"
+                        th:text="${@durationUtils.format(invoiceSuborder.totalDuration)}"></td>
+                    <td class="col-hours text-end align-middle"
+                        th:text="${#numbers.formatDecimal(invoiceSuborder.totalHours, 1, 2)}"></td>
                   </tr>
-                  <!-- Timereport rows -->
-                  <th:block th:if="*{timereportsbox}" th:each="invoiceTimereport : ${invoiceSuborder.timereports}">
-                    <tr>
-                      <td></td>
-                      <td class="text-end">
-                        <input type="checkbox" name="timereportIdArray"
-                               th:value="${invoiceTimereport.id}"
-                               th:checked="${invoiceForm.timereportIdArray.contains(invoiceTimereport.id)}">
-                      </td>
-                      <td th:text="${#temporals.format(invoiceTimereport.referenceDay, 'dd.MM.yyyy')}"></td>
-                      <td th:if="*{employeesignbox}" th:text="${invoiceTimereport.employeeName}"></td>
-                      <td th:if="*{timereportdescriptionbox}" th:text="${invoiceTimereport.taskDescription}"></td>
-                      <td th:if="*{targethoursbox}"></td>
-                      <td class="text-end" th:text="${@durationUtils.format(invoiceTimereport.duration)}"></td>
-                      <td class="text-end" th:text="${#numbers.formatDecimal(invoiceTimereport.hours, 1, 2)}"></td>
-                    </tr>
-                  </th:block>
+                  <!-- Timereport rows — full row is clickable -->
+                  <tr class="invoice-row"
+                      th:each="invoiceTimereport : ${invoiceSuborder.timereports}"
+                      th:classappend="${!invoiceForm.timereportIdArray.contains(invoiceTimereport.id)} ? ' row-excluded' : ''"
+                      th:attr="data-parent-suborder=${invoiceSuborder.id},data-minutes=${invoiceTimereport.duration.toMinutes()}"
+                      onclick="handleRowClick(event, this)">
+                    <td class="col-selection align-middle">
+                      <input class="form-check-input" type="checkbox" name="timereportIdArray"
+                             th:value="${invoiceTimereport.id}"
+                             th:checked="${invoiceForm.timereportIdArray.contains(invoiceTimereport.id)}"
+                             onchange="toggleRowExclusion(this)">
+                    </td>
+                    <td class="col-suborder"></td>
+                    <td class="col-date align-middle"
+                        th:text="${#temporals.format(invoiceTimereport.referenceDay, 'dd.MM.yyyy')}"></td>
+                    <td class="col-employee align-middle" th:text="${invoiceTimereport.employeeName}"></td>
+                    <td class="col-description align-middle" th:text="${invoiceTimereport.taskDescription}"></td>
+                    <td class="col-budget"></td>
+                    <td class="col-duration text-end align-middle"
+                        th:text="${@durationUtils.format(invoiceTimereport.duration)}"></td>
+                    <td class="col-hours text-end align-middle"
+                        th:text="${#numbers.formatDecimal(invoiceTimereport.hours, 1, 2)}"></td>
+                  </tr>
                 </th:block>
               </tbody>
-              <tfoot>
-                <tr>
-                  <th></th>
-                  <th></th>
-                  <th th:if="*{timereportsbox}"></th>
-                  <th th:if="*{employeesignbox and timereportsbox}"></th>
-                  <th th:if="*{timereportdescriptionbox and timereportsbox}">
-                    <span th:if="not *{targethoursbox}" th:text="#{main.invoice.overall.text}"></span>
-                  </th>
-                  <th th:if="*{targethoursbox}" class="text-end" th:text="#{main.invoice.overall.text}"></th>
-                  <th class="text-end" th:text="${@durationUtils.format(invoiceData.totalDurationVisible)}"></th>
-                  <th class="text-end" th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisible, 1, 2)}"></th>
+              <tfoot th:attr="data-total-minutes=${invoiceData.totalDuration.toMinutes()}">
+                <tr class="fw-bold">
+                  <th class="col-selection"></th>
+                  <th class="col-suborder text-end" th:text="#{main.invoice.overall.text}"></th>
+                  <th class="col-date"></th>
+                  <th class="col-employee"></th>
+                  <th class="col-description"></th>
+                  <th class="col-budget"></th>
+                  <th class="col-duration text-end" id="footer-total-duration"
+                      th:text="${@durationUtils.format(invoiceData.totalDurationVisible)}"></th>
+                  <th class="col-hours text-end" id="footer-total-hours"
+                      th:text="${#numbers.formatDecimal(invoiceData.totalHoursVisible, 1, 2)}"></th>
                 </tr>
-                <tr th:if="${invoiceData.totalDurationVisible != invoiceData.totalDuration}">
-                  <td></td>
-                  <td></td>
-                  <td th:if="*{timereportsbox}"></td>
-                  <td th:if="*{employeesignbox and timereportsbox}"></td>
-                  <td th:if="*{timereportdescriptionbox and timereportsbox}"></td>
-                  <td th:if="*{targethoursbox}"></td>
-                  <td class="text-end text-secondary">
+                <tr id="footer-gesamt-row"
+                    th:classappend="${invoiceData.totalDurationVisible == invoiceData.totalDuration} ? 'd-none' : ''">
+                  <td class="col-selection"></td>
+                  <td class="col-suborder text-end text-secondary small">
+                    <span th:text="#{main.invoice.overall.text}"></span> (gesamt)
+                  </td>
+                  <td class="col-date"></td>
+                  <td class="col-employee"></td>
+                  <td class="col-description"></td>
+                  <td class="col-budget"></td>
+                  <td class="col-duration text-end text-secondary">
                     (<span th:text="${@durationUtils.format(invoiceData.totalDuration)}"></span>)
                   </td>
-                  <td class="text-end text-secondary">
+                  <td class="col-hours text-end text-secondary">
                     (<span th:text="${#numbers.formatDecimal(invoiceData.totalHours, 1, 2)}"></span>)
                   </td>
                 </tr>
@@ -311,11 +314,178 @@
         </div>
       </div>
 
+      <!-- ─── 2C: Document & Export ─── -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Dokument &amp; Export</h3>
+        </div>
+        <div class="card-body">
+          <p class="text-muted small mb-3">
+            Geladener Zeitraum:
+            <strong th:text="${#temporals.format(invoiceData.billingPeriod.from, 'dd.MM.yyyy')}"></strong>
+            –
+            <strong th:text="${#temporals.format(invoiceData.billingPeriod.until, 'dd.MM.yyyy')}"></strong>
+          </p>
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+              <label class="form-label" th:text="#{main.invoice.addresshead.text}">Rechnungsanhang</label>
+              <input type="text" class="form-control" th:field="*{titleinvoiceattachment}">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label" th:text="#{main.customerorder.customer.text}">Auftraggeber</label>
+              <input type="text" class="form-control" th:field="*{customername}">
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">Adresse</label>
+              <textarea class="form-control" th:field="*{customeraddress}" rows="4"></textarea>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <label class="form-label mb-0">Format:</label>
+            <select id="invoice-settings-select" class="form-select w-auto">
+              <option th:each="s : ${invoiceSettings}" th:value="${s.name}" th:text="${s.name}"></option>
+            </select>
+            <button type="button" class="btn btn-primary" onclick="submitPrint()"
+                    th:text="#{main.general.button.printpreview.text}">Druckansicht</button>
+            <button type="button" class="btn btn-secondary" onclick="submitExport()"
+                    th:text="#{main.general.button.excelexport.new.text}">Excel-Export</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </form>
 
   <script>
+    // ── Date section visibility ─────────────────────────────────────────
+    function updateDateVisibility() {
+      const isCustom = document.getElementById('invoiceview').value === 'custom';
+      document.getElementById('month-picker').classList.toggle('d-none', isCustom);
+      document.getElementById('date-range-picker').classList.toggle('d-none', !isCustom);
+    }
+
+    // ── Column visibility (client-side, no server round-trip) ──────────
+    function updateColumnVisibility() {
+      const empEl  = document.getElementById('employeesignbox');
+      const descEl = document.getElementById('timereportdescriptionbox');
+      const budEl  = document.getElementById('targethoursbox');
+      if (!empEl) return; // phase 2 not rendered yet
+
+      setColVisible('col-employee',    empEl.checked);
+      setColVisible('col-description', descEl.checked);
+      setColVisible('col-budget',      budEl.checked);
+    }
+
+    function setColVisible(cls, visible) {
+      document.querySelectorAll('.' + cls).forEach(el => {
+        el.classList.toggle('col-hidden', !visible);
+      });
+    }
+
+    // ── Row click: toggle checkbox by clicking anywhere on the row ──────
+    function handleRowClick(event, row) {
+      if (event.target.tagName === 'INPUT') return; // checkbox handles itself
+      const cb = row.querySelector('input[name="suborderIdArray"], input[name="timereportIdArray"]');
+      if (!cb) return;
+      cb.checked = !cb.checked;
+      if (cb.name === 'suborderIdArray') {
+        toggleSuborder(cb);
+      } else {
+        toggleRowExclusion(cb);
+      }
+    }
+
+    // ── Last visible row border ─────────────────────────────────────────
+    function updateLastRowBorder() {
+      ['tbody', 'tfoot'].forEach(section => {
+        const el = document.querySelector(`#invoice-form ${section}`);
+        if (!el) return;
+        el.querySelectorAll('tr').forEach(r => r.classList.remove('invoice-last-row'));
+        const visible = [...el.querySelectorAll('tfoot > tr:not(.d-none)')];
+        if (visible.length) visible[visible.length - 1].classList.add('invoice-last-row');
+      });
+    }
+
+    // ── Totals helpers ──────────────────────────────────────────────────
+    function fmtDuration(minutes) {
+      const h = Math.floor(Math.abs(minutes) / 60);
+      const m = Math.abs(minutes) % 60;
+      return (minutes < 0 ? '-' : '') + h + ':' + String(m).padStart(2, '0');
+    }
+
+    function fmtHours(minutes) {
+      return (minutes / 60).toFixed(2).replace('.', ',');
+    }
+
+    function recomputeTotals() {
+      let grandMinutes = 0;
+
+      document.querySelectorAll('tr[data-suborder-id]').forEach(suborderRow => {
+        const suborderId = suborderRow.dataset.suborderId;
+        let suborderMinutes = 0;
+        document.querySelectorAll(`tr[data-parent-suborder="${suborderId}"] input[name="timereportIdArray"]`).forEach(cb => {
+          if (cb.checked) {
+            suborderMinutes += parseInt(cb.closest('tr').dataset.minutes || '0', 10);
+          }
+        });
+        suborderRow.querySelector('.col-duration').textContent = fmtDuration(suborderMinutes);
+        suborderRow.querySelector('.col-hours').textContent = fmtHours(suborderMinutes);
+        grandMinutes += suborderMinutes;
+      });
+
+      document.getElementById('footer-total-duration').textContent = fmtDuration(grandMinutes);
+      document.getElementById('footer-total-hours').textContent = fmtHours(grandMinutes);
+
+      const totalMinutes = parseInt(document.querySelector('tfoot').dataset.totalMinutes || '0', 10);
+      document.getElementById('footer-gesamt-row').classList.toggle('d-none', grandMinutes === totalMinutes);
+    }
+
+    // ── Row exclusion feedback ──────────────────────────────────────────
+    function toggleRowExclusion(checkbox) {
+      checkbox.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
+      recomputeTotals();
+      updateLastRowBorder();
+    }
+
+    function toggleSuborder(checkbox) {
+      const row = checkbox.closest('tr');
+      row.classList.toggle('row-excluded', !checkbox.checked);
+      document.querySelectorAll(`tr[data-parent-suborder="${row.dataset.suborderId}"]`).forEach(trRow => {
+        const cb = trRow.querySelector('input[name="timereportIdArray"]');
+        if (cb) {
+          cb.checked = checkbox.checked;
+          trRow.classList.toggle('row-excluded', !checkbox.checked);
+        }
+      });
+      recomputeTotals();
+      updateLastRowBorder();
+    }
+
+    // ── Bulk select / deselect ──────────────────────────────────────────
+    function selectAll() {
+      document.querySelectorAll(
+        'input[name="timereportIdArray"], input[name="suborderIdArray"]'
+      ).forEach(cb => {
+        cb.checked = true;
+        cb.closest('tr').classList.remove('row-excluded');
+      });
+      recomputeTotals();
+      updateLastRowBorder();
+    }
+
+    function deselectAll() {
+      document.querySelectorAll(
+        'input[name="timereportIdArray"], input[name="suborderIdArray"]'
+      ).forEach(cb => {
+        cb.checked = false;
+        cb.closest('tr').classList.add('row-excluded');
+      });
+      recomputeTotals();
+      updateLastRowBorder();
+    }
+
+    // ── Form submission ─────────────────────────────────────────────────
     function submitUpdate() {
       const form = document.getElementById('invoice-form');
       form.action = /*[[@{/invoice}]]*/ '/invoice';
@@ -324,7 +494,6 @@
 
     function submitPrint() {
       const form = document.getElementById('invoice-form');
-      // Inject selected invoice settings
       const settingsValue = document.getElementById('invoice-settings-select').value;
       let hidden = document.getElementById('invoice-settings-hidden');
       if (!hidden) {
@@ -336,20 +505,25 @@
       }
       hidden.value = settingsValue;
       form.target = '_blank';
-      form.action = /*[[@{/invoice/print}]]*/ '/invoice/print';
+      form.action = '[[@{/invoice/print}]]';
       form.submit();
-      // Reset target so future submits stay in the same tab
       form.target = '_self';
-      form.action = /*[[@{/invoice/generate}]]*/ '/invoice/generate';
+      form.action = '[[@{/invoice/generate}]]';
     }
 
     function submitExport() {
       const form = document.getElementById('invoice-form');
       form.target = '_self';
-      form.action = /*[[@{/invoice/export}]]*/ '/invoice/export';
+      form.action = '[[@{/invoice/export}]]';
       form.submit();
-      form.action = /*[[@{/invoice/generate}]]*/ '/invoice/generate';
+      form.action = '[[@{/invoice/generate}]]';
     }
+
+    // ── Initialize on page load ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      updateColumnVisibility();
+      updateLastRowBorder();
+    });
   </script>
 
 </main>

@@ -1,15 +1,13 @@
 package org.tb.invoice.controller;
 
 import static java.util.Optional.ofNullable;
-import static org.tb.common.util.DateTimeUtils.getDaysToDisplay;
-import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
-import static org.tb.common.util.DateUtils.getDateFormStrings;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.invoice.domain.InvoiceSettings.ImageUrl.CLAIM;
 import static org.tb.invoice.domain.InvoiceSettings.ImageUrl.LOGO;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -125,7 +123,13 @@ public class InvoiceController {
                        @ModelAttribute("invoiceData") InvoiceData invoiceData,
                        HttpServletResponse response) throws Exception {
         updateVisibleFlags(form, invoiceData);
-        var bytes = excelExportService.exportToExcel(invoiceData, form);
+        var displayOptions = InvoiceOptions.builder()
+            .showTimereports(form.isTimereportsbox())
+            .showEmployee(form.isEmployeesignbox())
+            .showTaskdescriptions(form.isTimereportdescriptionbox())
+            .showBudget(form.isTargethoursbox())
+            .build();
+        var bytes = excelExportService.exportToExcel(invoiceData, displayOptions, form);
         var fileName = createFileName(invoiceData);
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
@@ -136,12 +140,10 @@ public class InvoiceController {
     private InvoiceForm createInitialForm() {
         var form = new InvoiceForm();
         var today = today();
-        form.setFromDay("1");
-        form.setFromMonth(DateUtils.getMonthShortString(today));
-        form.setFromYear(DateUtils.getYearString(today));
-        form.setUntilDay(DateUtils.getLastDayOfMonth(today));
-        form.setUntilMonth(DateUtils.getMonthShortString(today));
-        form.setUntilYear(DateUtils.getYearString(today));
+        var currentYearMonth = YearMonth.from(today);
+        form.setFromYearMonth(currentYearMonth.toString()); // "yyyy-MM"
+        form.setFromDate(today.withDayOfMonth(1));
+        form.setUntilDate(today.withDayOfMonth(today.lengthOfMonth()));
         form.setInvoiceview(GlobalConstants.VIEW_MONTHLY);
         form.setTimereportsbox(true);
         form.setTimereportdescriptionbox(true);
@@ -169,8 +171,6 @@ public class InvoiceController {
                 .sorted(SubOrderComparator.INSTANCE)
                 .toList())
             .orElse(List.of()));
-        model.addAttribute("days", getDaysToDisplay());
-        model.addAttribute("years", getYearsToDisplay());
         model.addAttribute("invoiceSettings", invoiceSettingsService.getAllSettings());
         model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form));
         model.addAttribute("section", "orders");
@@ -193,12 +193,13 @@ public class InvoiceController {
 
         switch (form.getInvoiceview()) {
             case GlobalConstants.VIEW_MONTHLY -> {
-                dateFirst = getDateFormStrings("1", form.getFromMonth(), form.getFromYear(), false);
-                dateLast = DateUtils.getEndOfMonth(dateFirst);
+                var yearMonth = YearMonth.parse(form.getFromYearMonth());
+                dateFirst = yearMonth.atDay(1);
+                dateLast = yearMonth.atEndOfMonth();
             }
             case GlobalConstants.VIEW_CUSTOM -> {
-                dateFirst = getDateFormStrings(form.getFromDay(), form.getFromMonth(), form.getFromYear(), false);
-                dateLast = getDateFormStrings(form.getUntilDay(), form.getUntilMonth(), form.getUntilYear(), false);
+                dateFirst = form.getFromDate();
+                dateLast = form.getUntilDate();
             }
             default -> {
                 dateFirst = today();
