@@ -101,23 +101,24 @@
           </li>
 
           <!-- Employees (only for non-restricted users) -->
-          <li class="nav-item dropdown" th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
+          <li class="nav-item dropdown" th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}" th:classappend="${section == 'employees'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-employees" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button">
               <i class="nav-link-icon bi bi-people"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.employees.text}">Mitarbeiter</span>
             </a>
-            <div class="dropdown-menu">
+            <div class="dropdown-menu" th:classappend="${section == 'employees'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/ShowEmployee}" th:text="#{main.general.mainmenu.employees.text}">
+                  <a class="dropdown-item" th:href="@{/employees}"
+                     th:classappend="${subSection == 'employees'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.employees.text}">
                     Mitarbeiter
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowEmployeecontract}" th:text="#{main.general.mainmenu.employeecontracts.text}">
+                  <a class="dropdown-item" th:href="@{/employees/contracts}"
+                     th:classappend="${subSection == 'contracts'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.employeecontracts.text}">
                     Mitarbeiterverträge
-                  </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowEmployeeorder}" th:text="#{main.general.mainmenu.employeeorders.text}">
-                    Mitarbeiteraufträge
                   </a>
                 </div>
               </div>
@@ -148,6 +149,11 @@
                      th:classappend="${subSection == 'suborders'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.suborders.text}">
                     Unteraufträge
+                  </a>
+                  <a class="dropdown-item" th:href="@{/orders/employeeorders}"
+                     th:classappend="${subSection == 'employeeorders'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.employeeorders.text}">
+                    Mitarbeiteraufträge
                   </a>
                   <a class="dropdown-item" th:href="@{/invoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
                      th:classappend="${subSection == 'invoice'} ? 'active' : ''"

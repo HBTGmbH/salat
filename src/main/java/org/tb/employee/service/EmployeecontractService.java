@@ -451,6 +451,25 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId);
   }
 
+  public List<EmployeecontractView> getEmployeeContractViewsByFilters(Boolean showInvalid, String filter,
+      Long filterEmployeeId) {
+    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId).stream()
+        .filter(ec -> !ec.getEmployee().getLastname().startsWith("z_"))
+        .map(ec -> new EmployeecontractView(
+            ec.getId(),
+            ec.getEmployee().getName(),
+            ec.getTaskDescription(),
+            ec.getSupervisor() != null ? ec.getSupervisor().getName() : null,
+            ec.getValidFrom(),
+            ec.getValidUntil(),
+            Boolean.TRUE.equals(ec.getFreelancer()),
+            ec.getDailyWorkingTime(),
+            ec.getVacationEntitlement(),
+            ec.getCurrentlyValid()
+        ))
+        .toList();
+  }
+
   public Employeecontract getEmployeeContractWithVacationsById(long employeeContractId) {
     return employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
   }
@@ -491,5 +510,18 @@ public class EmployeecontractService {
     }
 
   }
+
+  public record EmployeecontractView(
+      Long id,
+      String employeeName,
+      String taskDescription,
+      String supervisorName,
+      LocalDate validFrom,
+      LocalDate validUntil,
+      boolean freelancer,
+      Duration dailyWorkingTime,
+      int vacationEntitlement,
+      boolean currentlyValid
+  ) {}
 
 }

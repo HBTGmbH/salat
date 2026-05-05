@@ -23,6 +23,36 @@
 - `base.html` nav link updated to `/welcome`
 - Deleted: `ShowWelcomeAction.java`, `ShowWelcomeForm.java`, `WelcomeViewHelper.java`, `showWelcome.jsp`
 
+## Employee Module Thymeleaf Migration (branch: 598-migrate-employee-employeecontract-and-employeeorder-to-thymeleaf)
+
+### Employee CRUD (`/employees`)
+- Controller: `org/tb/employee/controller/EmployeeController.java`
+- Form DTO: `org/tb/employee/controller/EmployeeForm.java`
+- Templates: `templates/employee/employee-list.html`, `templates/employee/employee-form.html`
+- `@PreAuthorize("hasRole('MANAGER')")` on create/edit/delete; list is open
+- Filter employees with `z_` prefix from all lists/dropdowns (internal accounts)
+- Prevents deleting self (uses `employeeService.getLoginEmployee()`)
+
+### Employee Contract CRUD (`/employees/contracts`)
+- Controller: `org/tb/employee/controller/EmployeecontractController.java`
+- Form DTO: `org/tb/employee/controller/EmployeecontractForm.java` (has typed getters)
+- Templates: `templates/employee/employee-contract-list.html`, `templates/employee/employee-contract-form.html`
+- `ContractStoredInfo.getLog()` returns conflict resolution log messages → flash attribute `logs` on list page
+- Overtime management: POST `/{id}/overtime`, adjusts effective date if before contract start
+- Supervisors: `employeeService.getEmployeesWithValidContracts()` (not all employees)
+
+### Employee Order CRUD (`/orders/employeeorders`)
+- Controller: `org/tb/order/controller/EmployeeorderController.java`
+- Form DTO: `org/tb/order/controller/EmployeeorderForm.java` (has typed getters)
+- Templates: `templates/order/employee-order-list.html`, `templates/order/employee-order-form.html`
+- Manager check: `authorizedUser.isManager()` → all orders; else `getCustomerOrdersByResponsibleEmployeeId(authorizedEmployee.getEmployeeId())`
+- Cascading dropdowns: form GET re-submit with `orderId` to refresh suborders server-side
+- "Adjust dates" bulk action: POST `/adjust-dates` adjusts/deletes mismatched employee orders
+- `showActualHours` toggle wraps results in `EmployeeOrderViewDecorator` (adds `duration` + `getDifference()`)
+- Suborders filtered: `!so.isHide()` and optionally `so.getCurrentlyValid()`
+- Deleted: all Struts action classes in `org/tb/employee/action/` and `org/tb/order/action/` (employee order ones)
+- Deleted JSPs: `employee/{addEmployee,showEmployee,addEmployeeContract,showEmployeeContract}.jsp`, `order/{addEmployeeOrder,showEmployeeOrder}.jsp`
+
 ## Message Resource Files
 
 - Files: `src/main/resources/org/tb/web/MessageResources.properties` (DE) and `MessageResources_en.properties` (EN)
