@@ -52,13 +52,17 @@ public class EmployeeorderController {
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) Long employeeContractId,
-            @RequestParam(required = false) Long orderId,
-            @RequestParam(required = false) Long suborderId,
+            @RequestParam(required = false, defaultValue = "-1") Long employeeContractId,
+            @RequestParam(required = false, defaultValue = "-1") Long orderId,
+            @RequestParam(required = false, defaultValue = "-1") Long suborderId,
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             @RequestParam(required = false) Boolean showActualHours,
             Model model) {
+
+        Long filterEmployeeContractId = employeeContractId == -1 ? null : employeeContractId;
+        Long filterOrderId = orderId == -1 ? null : orderId;
+        Long filterSuborderId = suborderId == -1 ? null : suborderId;
 
         var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         var orders = customerorderService.getAllCustomerorders();
@@ -66,17 +70,17 @@ public class EmployeeorderController {
         List<?> employeeOrders;
         if (Boolean.TRUE.equals(showActualHours)) {
             employeeOrders = employeeorderService
-                    .getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId)
+                    .getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId)
                     .stream()
                     .map(eo -> new EmployeeOrderViewDecorator(employeeorderService, eo))
                     .toList();
         } else {
-            employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+            employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId);
         }
 
         List<Suborder> suborders = List.of();
-        if (orderId != null) {
-            suborders = suborderService.getSubordersByCustomerorderId(orderId);
+        if (filterOrderId != null) {
+            suborders = suborderService.getSubordersByCustomerorderId(filterOrderId);
         }
 
         model.addAttribute("employeecontracts", employeeContracts);
@@ -221,14 +225,17 @@ public class EmployeeorderController {
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/adjust-dates")
     public String adjustDates(
-            @RequestParam(required = false) Long employeeContractId,
-            @RequestParam(required = false) Long orderId,
-            @RequestParam(required = false) Long suborderId,
+            @RequestParam(required = false, defaultValue = "-1") Long employeeContractId,
+            @RequestParam(required = false, defaultValue = "-1") Long orderId,
+            @RequestParam(required = false, defaultValue = "-1") Long suborderId,
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             RedirectAttributes redirectAttributes) {
 
-        var employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+        Long filterEmployeeContractId = employeeContractId == -1 ? null : employeeContractId;
+        Long filterOrderId = orderId == -1 ? null : orderId;
+        Long filterSuborderId = suborderId == -1 ? null : suborderId;
+        var employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId);
         for (Employeeorder employeeorder : employeeOrders) {
             if (!employeeorder.getFitsToSuperiorObjects()) {
                 boolean changed = false;
