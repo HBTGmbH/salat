@@ -63,6 +63,9 @@ public class WelcomeController {
         boolean displayEmployeeInfo = !TRUE.equals(employeecontract.getFreelancer());
 
         model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.overview.text"));
+        model.addAttribute("section", "management");
+        model.addAttribute("subSection", "welcome");
+        model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.management.text"));
         model.addAttribute("employeecontracts", employeecontracts);
         model.addAttribute("loginEmployees", loginEmployees);
         model.addAttribute("currentEmployeeContractId", employeecontract.getId());

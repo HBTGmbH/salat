@@ -155,21 +155,27 @@
                      th:text="#{main.general.mainmenu.employeeorders.text}">
                     Mitarbeiteraufträge
                   </a>
-                  <a class="dropdown-item" th:href="@{/invoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
-                     th:classappend="${subSection == 'invoice'} ? 'active' : ''"
-                     th:if="${#authorization.expression('hasRole(''BACKOFFICE'')')}">
-                    Rechnungsanlage
-                  </a>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <!-- Reports -->
+          <li class="nav-item dropdown"
+              th:if="${(#authorization.expression('hasRole(''MANAGER'')')) or (@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable())}"
+              th:classappend="${section == 'reports'} ? 'active' : ''">
+            <a class="nav-link dropdown-toggle" href="#navbar-reports" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon bi bi-bar-chart"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.reporting.text}">Reports</span>
+            </a>
+            <div class="dropdown-menu" th:classappend="${section == 'reports'} ? 'show' : ''">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
                   <a class="dropdown-item" th:href="@{/reporting/reports}" th:text="#{main.general.mainmenu.reporting.text}"
                      th:classappend="${subSection == 'reports'} ? 'active' : ''"
                      th:if="${@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable()}">
                     Reports
-                  </a>
-                  <a class="dropdown-item" th:href="@{/orders/revenue-upload}"
-                     th:if="${#authorization.expression('hasAnyRole(''BACKOFFICE'',''MANAGER'')')}"
-                     th:classappend="${subSection == 'revenue-upload'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.orderrevenue.upload.text}">
-                    Umsatz-/Kosten-Upload
                   </a>
                   <a class="dropdown-item" th:href="@{/reporting/jobs}"
                      th:classappend="${subSection == 'scheduled-report-jobs'} ? 'active' : ''"
@@ -181,17 +187,46 @@
             </div>
           </li>
 
+          <!-- Backoffice -->
+          <li class="nav-item dropdown"
+              th:if="${#authorization.expression('hasAnyRole(''BACKOFFICE'',''MANAGER'')')}"
+              th:classappend="${section == 'backoffice'} ? 'active' : ''">
+            <a class="nav-link dropdown-toggle" href="#navbar-backoffice" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
+              <i class="nav-link-icon bi bi-building"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.backoffice.text}">Backoffice</span>
+            </a>
+            <div class="dropdown-menu" th:classappend="${section == 'backoffice'} ? 'show' : ''">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/invoice}" th:text="#{main.general.mainmenu.invoice.title.text}"
+                     th:classappend="${subSection == 'invoice'} ? 'active' : ''"
+                     th:if="${#authorization.expression('hasRole(''BACKOFFICE'')')}">
+                    Rechnungsanlage
+                  </a>
+                  <a class="dropdown-item" th:href="@{/orders/revenue-upload}"
+                     th:classappend="${subSection == 'revenue-upload'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.orderrevenue.upload.text}">
+                    Umsatz-/Kosten-Upload
+                  </a>
+                </div>
+              </div>
+            </div>
+          </li>
+
           <!-- Management -->
-          <li class="nav-item dropdown">
+          <li class="nav-item dropdown" th:classappend="${section == 'management'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-management" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button">
               <i class="nav-link-icon bi bi-gear"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.management.text}">Verwaltung</span>
             </a>
-            <div class="dropdown-menu">
+            <div class="dropdown-menu" th:classappend="${section == 'management'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/welcome}" th:text="#{main.general.mainmenu.overview.text}">
+                  <a class="dropdown-item" th:href="@{/welcome}"
+                     th:classappend="${subSection == 'welcome'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.overview.text}">
                     Übersicht
                   </a>
                 </div>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
-      th:with="section='orders',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
+      th:with="section='reports',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
   <form th:action="@{/reporting/reports/store}" th:object="${report}" method="post" class="card">
     <div class="card-body">

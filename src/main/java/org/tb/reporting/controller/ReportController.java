@@ -70,6 +70,9 @@ public class ReportController {
       mayDelete.put(r.getId(), reportAuthorization.isAuthorized(r, AccessLevel.DELETE));
     }
     model.addAttribute("pageTitle", "Reports");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "reports");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("reports", reports);
     model.addAttribute("mayEdit", mayEdit);
     model.addAttribute("mayDelete", mayDelete);
@@ -81,6 +84,9 @@ public class ReportController {
   @GetMapping("/create")
   public String createForm(@RequestParam(value = "filter", required = false) String filter, Model model) {
     model.addAttribute("pageTitle", "Create Report");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "reports");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("report", new ReportForm());
     model.addAttribute("isEdit", false);
     model.addAttribute("filter", filter);
@@ -99,6 +105,9 @@ public class ReportController {
     form.setName(rd.getName());
     form.setSql(rd.getSql());
     model.addAttribute("pageTitle", "Edit Report");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "reports");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("report", form);
     model.addAttribute("isEdit", true);
     model.addAttribute("reportAuthorizations", reportAuthorization.getAuthorizations(rd));
@@ -123,6 +132,9 @@ public class ReportController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("pageTitle", form.getId() != null ? "Edit Report" : "Create Report");
+      model.addAttribute("section", "reports");
+      model.addAttribute("subSection", "reports");
+      model.addAttribute("sectionTitle", "Reports");
       model.addAttribute("isEdit", form.getId() != null);
       model.addAttribute("filter", filter);
       return "reporting/report-form";
@@ -170,6 +182,9 @@ public class ReportController {
       paramForm.setReportId(id);
       paramForm.initParameters(parametersFromRequest, missingParameters);
       model.addAttribute("pageTitle", "Execute Report");
+      model.addAttribute("section", "reports");
+      model.addAttribute("subSection", "reports");
+      model.addAttribute("sectionTitle", "Reports");
       model.addAttribute("report", rd);
       model.addAttribute("execute", paramForm);
       model.addAttribute("missingParameters", missingParameters);
@@ -179,6 +194,9 @@ public class ReportController {
       ReportResult reportResult = reportService.execute(id, parametersFromRequest);
       // Ergebnis in HTTP-Session ablegen, damit andere Endpunkte (z.B. Export) darauf zugreifen können
       model.addAttribute("pageTitle", "Report Result");
+      model.addAttribute("section", "reports");
+      model.addAttribute("subSection", "reports");
+      model.addAttribute("sectionTitle", "Reports");
       model.addAttribute("report", rd);
       model.addAttribute("reportResult", reportResult);
       model.addAttribute("params", parametersFromRequest);

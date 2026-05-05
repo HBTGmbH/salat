@@ -13,7 +13,6 @@
         <div class="row g-3 align-items-end">
 
           <div class="col-12 col-md-6">
-            <label class="form-label" th:text="#{main.general.mainmenu.employeecontracts.text}">Mitarbeitervertrag</label>
             <select name="employeeContractId" class="form-select tomselect" onchange="submitWelcomeTask('refresh')">
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
@@ -24,7 +23,6 @@
           </div>
 
           <div class="col-12 col-md-4" th:if="${loginEmployees.size() > 1}">
-            <label class="form-label" th:text="#{main.welcome.switchlogin.text}">Als einloggen</label>
             <select name="loginEmployeeId" class="form-select tomselect" onchange="submitWelcomeTask('switch-login')">
               <option th:each="emp : ${loginEmployees}"
                       th:value="${emp.id}"
