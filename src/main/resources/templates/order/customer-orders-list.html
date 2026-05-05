@@ -13,7 +13,6 @@
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
           <div class="col">
-            <label class="form-label" th:text="#{main.general.filter.text}">Customer</label>
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
               <option value="-1" th:text="#{main.general.allcustomers.text}">All Customers</option>
               <option th:each="c : ${customers}"
