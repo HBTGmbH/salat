@@ -47,6 +47,9 @@ public class ScheduledReportJobController {
     }
 
     model.addAttribute("pageTitle", "Scheduled Report Jobs");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "scheduled-report-jobs");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("jobs", jobs);
     model.addAttribute("defaultCron", defaultCron);
     model.addAttribute("cronDescriptions", cronDescriptions);
@@ -56,6 +59,9 @@ public class ScheduledReportJobController {
   @GetMapping("/create")
   public String createForm(Model model) {
     model.addAttribute("pageTitle", "Create Scheduled Report Job");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "scheduled-report-jobs");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("job", new ScheduledReportJobForm());
     model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
     model.addAttribute("isEdit", false);
@@ -70,6 +76,9 @@ public class ScheduledReportJobController {
     form.setReportDefinitionId(reportDefinitionId);
     form.setReportParameters(reportParameters);
     model.addAttribute("pageTitle", "Create Scheduled Report Job");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "scheduled-report-jobs");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("job", form);
     model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
     model.addAttribute("isEdit", false);
@@ -90,6 +99,9 @@ public class ScheduledReportJobController {
     form.setDescription(job.getDescription());
 
     model.addAttribute("pageTitle", "Edit Scheduled Report Job");
+    model.addAttribute("section", "reports");
+    model.addAttribute("subSection", "scheduled-report-jobs");
+    model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("job", form);
     model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
     model.addAttribute("isEdit", true);
@@ -116,9 +128,12 @@ public class ScheduledReportJobController {
     }
     
     if (bindingResult.hasErrors()) {
-      model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
       boolean isEdit = form.getId() != null && form.getId() > 0;
       model.addAttribute("pageTitle", isEdit ? "Edit Scheduled Report Job" : "Create Scheduled Report Job");
+      model.addAttribute("section", "reports");
+      model.addAttribute("subSection", "scheduled-report-jobs");
+      model.addAttribute("sectionTitle", "Reports");
+      model.addAttribute("reportDefinitions", reportService.getReportDefinitions());
       model.addAttribute("isEdit", isEdit);
       if(isEdit) {
         model.addAttribute("scheduledTask", scheduledReportJobScheduler.getScheduledTask(form.getId()));

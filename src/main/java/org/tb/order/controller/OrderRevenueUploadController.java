@@ -37,9 +37,9 @@ public class OrderRevenueUploadController {
     @GetMapping
     @PreAuthorize("hasAnyRole('BACKOFFICE','MANAGER')")
     public String uploadForm(Model model) {
-        model.addAttribute("section", "orders");
+        model.addAttribute("section", "backoffice");
         model.addAttribute("subSection", "revenue-upload");
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text", "Backoffice"));
         model.addAttribute("title", messages.getMessage("orderrevenue.upload.title", "Umsatz-/Kosten-Upload"));
         model.addAttribute("comment", "");
         model.addAttribute("mapping", new HashMap<String, String>());
@@ -53,9 +53,9 @@ public class OrderRevenueUploadController {
             Model model,
             BindingResult bindingResult
     ) throws IOException {
-        model.addAttribute("section", "orders");
+        model.addAttribute("section", "backoffice");
         model.addAttribute("subSection", "revenue-upload");
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text", "Backoffice"));
 
         var file = uploadForm.getFile();
         var comment = uploadForm.getComment();

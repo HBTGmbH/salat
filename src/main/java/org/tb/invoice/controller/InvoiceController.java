@@ -173,9 +173,9 @@ public class InvoiceController {
             .orElse(List.of()));
         model.addAttribute("invoiceSettings", invoiceSettingsService.getAllSettings());
         model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form));
-        model.addAttribute("section", "orders");
+        model.addAttribute("section", "backoffice");
         model.addAttribute("subSection", "invoice");
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text", "Backoffice"));
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.invoice.title.text", "Invoice"));
     }
 
