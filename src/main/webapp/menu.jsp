@@ -60,16 +60,15 @@
 	<c:when test="${not loginEmployee.restricted}">
 		<li><bean:message key="main.general.mainmenu.employees.text" />
 		<ul style="width: 100%">
-			<li class="first"><html:link styleClass="menu"
-				action="/ShowEmployee">
+			<li class="first"><a class="menu" href="<c:url value='/employees' />">
 				<bean:message key="main.general.mainmenu.employees.text" />
-			</html:link></li>
-			<li><html:link styleClass="menu" action="/ShowEmployeecontract">
+			</a></li>
+			<li><a class="menu" href="<c:url value='/employees/contracts' />">
 				<bean:message key="main.general.mainmenu.employeecontracts.text" />
-			</html:link></li>
-			<li><html:link styleClass="menu" action="/ShowEmployeeorder">
+			</a></li>
+			<li><a class="menu" href="<c:url value='/orders/employeeorders' />">
 				<bean:message key="main.general.mainmenu.employeeorders.text" />
-			</html:link></li>
+			</a></li>
 		</ul>
 		</li>
 		<li><bean:message key="main.general.mainmenu.orders.text" />
