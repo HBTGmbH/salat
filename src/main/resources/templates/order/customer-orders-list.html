@@ -23,7 +23,7 @@
           </div>
           <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a class="btn btn-success" th:href="@{/orders/customerorders/create}">
-              <i class="icon ti ti-plus"></i> <span th:text="#{main.general.button.createcustomerorder.text}">New Customer Order</span>
+              <i class="icon ti ti-briefcase"></i> <span th:text="#{main.general.button.createcustomerorder.text}">New Customer Order</span>
             </a>
           </div>
         </div>

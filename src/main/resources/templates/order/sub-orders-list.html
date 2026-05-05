@@ -32,7 +32,7 @@
           </div>
           <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null}, customerId=${customerId != null and customerId > 0 ? customerId : null})}">
-              <i class="icon ti ti-plus"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
+              <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
             </a>
           </div>
         </div>

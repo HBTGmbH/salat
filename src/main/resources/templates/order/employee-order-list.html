@@ -12,27 +12,27 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-center">
-          <div class="col-md-3">
+          <div class="col">
             <select class="form-select tomselect" name="employeeContractId">
-              <option value="" th:text="#{main.general.allemployees.text}">All Employees</option>
+              <option value="-1" th:selected="${employeeContractId == null or employeeContractId == -1}" th:text="#{main.general.allemployees.text}">All Employees</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:text="${ec.employee.name}"
                       th:selected="${employeeContractId != null and employeeContractId == ec.id}"></option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col">
             <select class="form-select tomselect" name="orderId">
-              <option value="" th:text="#{main.general.allorders.text}">All Orders</option>
+              <option value="-1" th:selected="${orderId == null or orderId == -1}" th:text="#{main.general.allorders.text}">All Orders</option>
               <option th:each="co : ${orders}"
                       th:value="${co.id}"
                       th:text="${co.sign + ' - ' + co.shortdescription}"
                       th:selected="${orderId != null and orderId == co.id}"></option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col">
             <select class="form-select tomselect" name="suborderId">
-              <option value="" th:text="#{main.general.allsuborders.text}">All Suborders</option>
+              <option value="-1" th:selected="${suborderId == null or suborderId == -1}" th:text="#{main.general.allsuborders.text}">All Suborders</option>
               <option th:each="so : ${suborders}"
                       th:value="${so.id}"
                       th:text="${so.completeOrderSign}"
@@ -40,8 +40,8 @@
             </select>
           </div>
           <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a class="btn btn-primary" th:href="@{/orders/employeeorders/create}">
-              <i class="icon ti ti-plus"></i>
+            <a class="btn btn-success" th:href="@{/orders/employeeorders/create}">
+              <i class="icon ti ti-file-plus"></i>
               <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
             </a>
           </div>
