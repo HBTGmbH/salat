@@ -39,6 +39,11 @@ public class VacationViewHelper implements Serializable {
         return usedVacationMinutes > budget.toMinutes();
     }
 
+    public int getUsedPercent() {
+        if (budget == null || budget.toMinutes() == 0) return 0;
+        return (int) Math.min(100, usedVacationMinutes * 100L / budget.toMinutes());
+    }
+
     public String getUsedVacationString() {
         StringBuilder usedVacation = new StringBuilder();
         usedVacation.append(timeFormatMinutes(this.usedVacationMinutes));

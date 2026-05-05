@@ -11,6 +11,18 @@
 - Nav link in `layout/base.html` updated to `@{/invoice}`
 - Duration formatting in templates: `${@durationUtils.format(value)}` (bean `DurationUtilsBean`)
 
+## Welcome Page Thymeleaf Migration (branch: 596-migrate-showwelcome-to-thymeleaf)
+- New Spring MVC controller: `org/tb/dailyreport/controller/WelcomeController.java` at `/welcome`
+- New template: `templates/dailyreport/welcome.html` (uses base layout)
+- `TimereportService` has new overloaded `createTimeReportWarnings(long, MessageSourceAccessor)` method
+- POST `/welcome?task=refresh` = update selected employee contract (redirect to GET)
+- POST `/welcome?task=switch-login` = switch login employee (redirect to GET)
+- Session attrs still set (for Struts compatibility): `currentEmployeeContract`, `currentEmployeeId`, `loginEmployees`, `employeecontracts`, warnings, overtime, vacation
+- Struts global forward `showWelcome` now redirects to `/welcome` (used by `LoginRequiredAction`)
+- `backtomenu` and `cancel` Struts forwards updated from JSP path to `/welcome` redirect
+- `base.html` nav link updated to `/welcome`
+- Deleted: `ShowWelcomeAction.java`, `ShowWelcomeForm.java`, `WelcomeViewHelper.java`, `showWelcome.jsp`
+
 ## Message Resource Files
 
 - Files: `src/main/resources/org/tb/web/MessageResources.properties` (DE) and `MessageResources_en.properties` (EN)

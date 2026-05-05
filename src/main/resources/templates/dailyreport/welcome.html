@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=#{main.general.mainmenu.management.text}">
+<section layout:fragment="content">
+
+  <form th:action="@{/welcome}" method="post" id="welcomeForm">
+    <input type="hidden" name="task" id="welcomeTask" value=""/>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+
+          <div class="col-12 col-md-6">
+            <label class="form-label" th:text="#{main.general.mainmenu.employeecontracts.text}">Mitarbeitervertrag</label>
+            <select name="employeeContractId" class="form-select tomselect" onchange="submitWelcomeTask('refresh')">
+              <option th:each="ec : ${employeecontracts}"
+                      th:value="${ec.id}"
+                      th:selected="${ec.id == currentEmployeeContractId}"
+                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' offen' : '') + ')'}">
+              </option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-4" th:if="${loginEmployees.size() > 1}">
+            <label class="form-label" th:text="#{main.welcome.switchlogin.text}">Als einloggen</label>
+            <select name="loginEmployeeId" class="form-select tomselect" onchange="submitWelcomeTask('switch-login')">
+              <option th:each="emp : ${loginEmployees}"
+                      th:value="${emp.id}"
+                      th:selected="${emp.id == currentLoginEmployeeId}"
+                      th:text="${emp.name + ' | ' + emp.sign}">
+              </option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- Employee summary info -->
+  <div class="row g-3 mb-3" th:if="${displayEmployeeInfo}">
+
+    <!-- Reports card -->
+    <div class="col-12 col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="bi bi-calendar-check me-2 text-muted"></i>
+            <span th:text="#{main.welcome.reports.text}">Buchungen</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="text-muted small mb-1" th:text="#{main.release.released.until.text}">Freigegeben bis</div>
+            <span class="badge fs-5 px-3 py-2"
+                  th:classappend="'bg-' + ${releaseColorClass} + '-lt text-' + ${releaseColorClass}"
+                  th:text="${releasedUntil}"></span>
+          </div>
+          <div>
+            <div class="text-muted small mb-1" th:text="#{main.release.accepted.until.text}">Akzeptiert bis</div>
+            <span class="badge fs-5 px-3 py-2"
+                  th:classappend="'bg-' + ${acceptanceColorClass} + '-lt text-' + ${acceptanceColorClass}"
+                  th:text="${acceptedUntil}"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overtime card -->
+    <div class="col-12 col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="bi bi-clock me-2 text-muted"></i>
+            <span th:text="#{main.welcome.overtime.text}">Überstunden</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="text-muted small mb-1" th:text="#{main.welcome.total.text}">Gesamt</div>
+            <div class="d-flex align-items-center gap-2">
+              <i th:if="${overtimeIsNegative}"
+                 class="bi bi-arrow-down-circle-fill fs-4"
+                 th:classappend="'text-' + ${overtimeColorClass}"></i>
+              <i th:unless="${overtimeIsNegative}"
+                 class="bi bi-arrow-up-circle-fill fs-4"
+                 th:classappend="'text-' + ${overtimeColorClass}"></i>
+              <span class="h3 mb-0"
+                    th:classappend="'text-' + ${overtimeColorClass}"
+                    th:text="${overtime}">0:00</span>
+            </div>
+          </div>
+          <div th:if="${not #strings.isEmpty(overtimeMonth)}">
+            <div class="text-muted small mb-1" th:text="${overtimeMonth}"></div>
+            <div class="d-flex align-items-center gap-2">
+              <i th:if="${monthlyOvertimeIsNegative}" class="bi bi-dash-circle text-danger"></i>
+              <i th:unless="${monthlyOvertimeIsNegative}" class="bi bi-plus-circle text-success"></i>
+              <span th:classappend="${monthlyOvertimeIsNegative} ? 'text-danger' : 'text-success'"
+                    th:text="${monthlyOvertime}">0:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vacation card -->
+    <div class="col-12 col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="bi bi-sun me-2 text-muted"></i>
+            <span th:text="#{main.welcome.vacation.text}">Urlaub</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <div th:each="v : ${vacations}" class="mb-3">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <span class="fw-semibold small" th:text="${v.suborderSign}">Urlaub 2025</span>
+              <span class="small"
+                    th:classappend="${v.vacationBudgetExceeded} ? 'text-danger fw-bold' : 'text-muted'"
+                    th:title="#{main.welcome.vacation.title.text}"
+                    th:text="${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>
+            </div>
+            <div class="progress" style="height: 8px;" th:title="#{main.welcome.vacation.title.text}">
+              <div class="progress-bar"
+                   th:classappend="${v.vacationBudgetExceeded} ? 'bg-danger' : (${v.usedPercent >= 80} ? 'bg-warning' : 'bg-success')"
+                   th:style="'width: ' + ${v.usedPercent} + '%'">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Warnings -->
+  <div class="card border-danger mb-3" th:if="${not #lists.isEmpty(warnings)}">
+    <div class="card-header bg-danger-lt">
+      <h4 class="card-title text-danger mb-0" th:text="#{main.info.headline.warning}">Warnungen</h4>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <tbody>
+          <tr th:each="w : ${warnings}">
+            <td class="text-danger fw-bold" style="width: 30%" th:text="${w.sort + ':'}"></td>
+            <td>
+              <a th:if="${not #strings.isEmpty(w.link)}" th:href="${w.link}" class="text-danger" th:text="${w.text}"></a>
+              <span th:unless="${not #strings.isEmpty(w.link)}" th:text="${w.text}"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function submitWelcomeTask(task) {
+      document.getElementById('welcomeTask').value = task;
+      document.getElementById('welcomeForm').submit();
+    }
+  </script>
+
+</section>
+</html>

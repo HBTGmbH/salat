@@ -71,6 +71,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.util.MessageResources;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -548,6 +549,40 @@ public class TimereportService {
     for (TimereportDTO timereport : timereports) {
       Warning warning = new Warning();
       warning.setSort(resources.getMessage(locale, "main.info.warning.timereport.noduration"));
+      warning.setText(timereport.getTimeReportAsString());
+      warning.setLink(absoluteUrl("/do/EditDailyReport?trId=" + timereport.getId(), servletContext));
+      warnings.add(warning);
+    }
+
+    return warnings;
+  }
+
+  public List<Warning> createTimeReportWarnings(long employeecontractId, MessageSourceAccessor messages) {
+
+    var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
+
+    List<Warning> warnings = new ArrayList<>();
+
+    List<TimereportDTO> timereports = getTimereportsOutOfRangeForEmployeeContract(employeecontract.getId());
+    for (TimereportDTO timereport : timereports) {
+      Warning warning = new Warning();
+      warning.setSort(messages.getMessage("main.info.warning.timereportnotinrange"));
+      warning.setText(timereport.getTimeReportAsString());
+      warnings.add(warning);
+    }
+
+    timereports = getTimereportsOutOfRangeForEmployeeOrder(employeecontract.getId());
+    for (TimereportDTO timereport : timereports) {
+      Warning warning = new Warning();
+      warning.setSort(messages.getMessage("main.info.warning.timereportnotinrangeforeo"));
+      warning.setText(timereport.getTimeReportAsString() + " " + timereport.getEmployeeOrderAsString());
+      warnings.add(warning);
+    }
+
+    timereports = getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
+    for (TimereportDTO timereport : timereports) {
+      Warning warning = new Warning();
+      warning.setSort(messages.getMessage("main.info.warning.timereport.noduration"));
       warning.setText(timereport.getTimeReportAsString());
       warning.setLink(absoluteUrl("/do/EditDailyReport?trId=" + timereport.getId(), servletContext));
       warnings.add(warning);

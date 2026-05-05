@@ -112,9 +112,9 @@
 	</c:choose>
 	<li><bean:message key="main.general.mainmenu.management.text" />
 	<ul style="width: 100%">
-		<li class="first"><html:link styleClass="menu" action="/ShowWelcome">
+		<li class="first"><a class="menu" href="/welcome">
 			<bean:message key="main.general.mainmenu.overview.text" />
-		</html:link></li>
+		</a></li>
 	</ul>
 	</li>
 	<li id="last">
