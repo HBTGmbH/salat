@@ -102,13 +102,13 @@
 
       <div class="row">
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='validFrom', label=#{main.customerorder.validfrom.text}, required=true, maxlength=10
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validFrom', label=#{main.customerorder.validfrom.text}, required=true
           )}"></div>
         </div>
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='validUntil', label=#{main.customerorder.validuntil.text}, required=false, maxlength=10
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validUntil', label=#{main.customerorder.validuntil.text}, required=false
           )}"></div>
         </div>
       </div>
