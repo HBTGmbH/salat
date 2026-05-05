@@ -34,16 +34,9 @@
 		<form-bean name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseForm" />
 		<form-bean name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingForm" />
 
-		<form-bean name="addEmployeeContractForm" type="org.tb.employee.action.AddEmployeeContractForm" />
-		<form-bean name="showEmployeeContractForm" type="org.tb.employee.action.ShowEmployeeContractForm" />
-		<form-bean name="addEmployeeForm" type="org.tb.employee.action.AddEmployeeForm" />
-		<form-bean name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeForm" />
-
+		<!-- employee/contract/order Struts UI removed (migrated to Spring MVC) -->
 		<!-- customer Struts UI removed (migrated to Spring MVC) -->
 		<!-- customerorder/suborder Struts UI removed (migrated to Spring MVC) -->
-
-		<form-bean name="addEmployeeOrderForm" type="org.tb.order.action.AddEmployeeOrderForm" />
-		<form-bean name="showEmployeeOrderForm" type="org.tb.order.action.ShowEmployeeOrderForm" />
 
 		<form-bean name="executeReportForm" type="org.tb.reporting.action.ExecuteReportForm" />
 		<form-bean name="createEditDeleteReportForm" type="org.tb.reporting.action.CreateEditDeleteReportForm" />
@@ -185,107 +178,7 @@
 		<!-- Customer Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 		<!-- Customerorder/Suborder Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 
-		<!-- Employeeorder -->
-		<action path="/CreateEmployeeorder" validate="true" name="addEmployeeOrderForm"
-			type="org.tb.order.action.CreateEmployeeorderAction">
-			<forward name="success" path="/order/addEmployeeOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditEmployeeorder" name="addEmployeeOrderForm"
-			type="org.tb.order.action.EditEmployeeorderAction">
-			<forward name="success" path="/order/addEmployeeOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteEmployeeorder" input="/order/showEmployeeOrder.jsp"
-			name="showEmployeeOrderForm" type="org.tb.order.action.DeleteEmployeeorderAction">
-			<forward name="success" path="/order/showEmployeeOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowEmployeeorder" name="showEmployeeOrderForm"
-			type="org.tb.order.action.ShowEmployeeorderAction">
-			<forward name="success" path="/order/showEmployeeOrder.jsp" />
-			<forward name="backtomenu" path="/welcome" redirect="true" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreEmployeeorder" input="/order/addEmployeeOrder.jsp" validate="true"
-			name="addEmployeeOrderForm" type="org.tb.order.action.StoreEmployeeorderAction">
-			<forward name="success" path="/order/showEmployeeOrder.jsp" />
-			<forward name="cancel" path="/welcome" redirect="true" />
-			<forward name="reset" path="/order/addEmployeeOrder.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<!-- Employeecontract -->
-		<action path="/CreateEmployeecontract" name="addEmployeeContractForm" validate="false"
-			type="org.tb.employee.action.CreateEmployeecontractAction">
-			<forward name="success" path="/employee/addEmployeeContract.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditEmployeecontract" name="addEmployeeContractForm" validate="false"
-			type="org.tb.employee.action.EditEmployeecontractAction">
-			<forward name="success" path="/employee/addEmployeeContract.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteEmployeecontract" input="/employee/showEmployeeContract.jsp" validate="false"
-			name="addEmployeeContractForm" type="org.tb.employee.action.DeleteEmployeecontractAction">
-			<forward name="success" path="/employee/showEmployeeContract.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowEmployeecontract" name="showEmployeeContractForm"
-			type="org.tb.employee.action.ShowEmployeecontractAction">
-			<forward name="success" path="/employee/showEmployeeContract.jsp" />
-			<forward name="backtomenu" path="/welcome" redirect="true" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreEmployeecontract" input="/employee/addEmployeeContract.jsp" validate="true"
-			name="addEmployeeContractForm" type="org.tb.employee.action.StoreEmployeecontractAction">
-			<forward name="success" path="/employee/showEmployeeContract.jsp" />
-			<forward name="cancel" path="/welcome" redirect="true" />
-			<forward name="reset" path="/employee/addEmployeeContract.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<!-- Employee -->
-		<action path="/CreateEmployee" validate="true" name="addEmployeeForm"
-			type="org.tb.employee.action.CreateEmployeeAction">
-			<forward name="success" path="/employee/addEmployee.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditEmployee" name="addEmployeeForm"
-			type="org.tb.employee.action.EditEmployeeAction">
-			<forward name="success" path="/employee/addEmployee.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteEmployee" input="/employee/showEmployee.jsp" name="addEmployeeForm"
-			type="org.tb.employee.action.DeleteEmployeeAction">
-			<forward name="success" path="/employee/showEmployee.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowEmployee" name="showEmployeeForm" type="org.tb.employee.action.ShowEmployeeAction">
-			<forward name="success" path="/employee/showEmployee.jsp" />
-			<forward name="backtomenu" path="/welcome" redirect="true" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreEmployee" input="/employee/addEmployee.jsp" validate="true"
-			type="org.tb.employee.action.StoreEmployeeAction" name="addEmployeeForm">
-			<forward name="success" path="/employee/showEmployee.jsp" />
-			<forward name="cancel" path="/welcome" redirect="true" />
-			<forward name="reset" path="/employee/addEmployee.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
+		<!-- Employee/EmployeeContract/EmployeeOrder Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 
 		<!-- reporting -->
 		<action path="/ShowReports" type="org.tb.reporting.action.ShowReportsAction">

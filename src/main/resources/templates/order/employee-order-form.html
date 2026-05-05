@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='orders',subSection='employeeorders',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <form th:action="@{/orders/employeeorders/store}" th:object="${employeeorderForm}" method="post" class="card mb-3">
+    <div class="card-body">
+      <input type="hidden" th:field="*{id}" />
+
+      <!-- Global errors (e.g. overlap) -->
+      <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger mb-3">
+        <ul class="mb-0">
+          <li th:each="err : ${#fields.globalErrors()}" th:text="${err}"></li>
+        </ul>
+      </div>
+      <div th:if="${errors != null}" class="alert alert-danger mb-3">
+        <ul class="mb-0">
+          <li th:each="err : ${errors}" th:text="${err}"></li>
+        </ul>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:text="#{main.employeeorder.employeecontract.text}">Employee Contract</label>
+            <select class="form-select tomselect" id="employeeContractId" th:field="*{employeeContractId}"
+                    th:errorclass="is-invalid"
+                    onchange="this.form.method='get'; this.form.action='/orders/employeeorders/' + (this.form.querySelector('[name=id]').value ? 'edit' : 'create'); this.form.submit()">
+              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+              <option th:each="ec : ${employeecontracts}"
+                      th:value="${ec.id}"
+                      th:text="${ec.employee.name}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeContractId')}" th:errors="*{employeeContractId}"></div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:text="#{main.employeeorder.customerorder.text}">Customer Order</label>
+            <select class="form-select tomselect" id="orderId" th:field="*{orderId}"
+                    th:errorclass="is-invalid"
+                    onchange="submitFormAsGet(this.form, this.value)">
+              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+              <option th:each="co : ${orders}"
+                      th:value="${co.id}"
+                      th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('orderId')}" th:errors="*{orderId}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
+            <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}"
+                    th:errorclass="is-invalid">
+              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+              <option th:each="so : ${suborders}"
+                      th:value="${so.id}"
+                      th:text="${so.completeOrderSign}"></option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('suborderId')}" th:errors="*{suborderId}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validFrom', label=#{main.employeecontract.validfrom.text}, required=true
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validUntil', label=#{main.employeecontract.validuntil.text}, required=false
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.general.debithoursunit.text}">Debit Unit</label>
+            <select class="form-select" id="debithoursunit" th:field="*{debithoursunit}">
+              <option value="" th:text="#{main.general.selectone.text}">--</option>
+              <option value="0" th:text="#{main.general.totaltime.text}">Total</option>
+              <option value="1" th:text="#{main.general.year.text}">Year</option>
+              <option value="12" th:text="#{main.general.month.text}">Month</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <div th:with="saveLabel=${isEdit} ? #{main.general.button.save.text} : #{main.general.button.create.text}"
+           th:replace="~{fragments/form-fields :: formButtons(
+             saveLabel=${saveLabel},
+             cancelHref=@{/orders/employeeorders}
+           )}"></div>
+    </div>
+  </form>
+
+  <script th:inline="none">
+    function submitFormAsGet(form, orderId) {
+      var isEdit = form.querySelector('[name=id]') && form.querySelector('[name=id]').value;
+      var base = isEdit ? '/orders/employeeorders/edit' : '/orders/employeeorders/create';
+      var params = new URLSearchParams();
+      var ecId = form.querySelector('[name=employeeContractId]');
+      if (ecId && ecId.value) params.set('employeeContractId', ecId.value);
+      if (orderId) params.set('orderId', orderId);
+      var id = form.querySelector('[name=id]');
+      if (id && id.value) params.set('id', id.value);
+      window.location.href = base + '?' + params.toString();
+    }
+  </script>
+
+</main>
+</html>

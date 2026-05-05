@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='employees',subSection='contracts',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <form th:action="@{/employees/contracts/store}" th:object="${employeecontractForm}" method="post" class="card mb-3">
+    <div class="card-body">
+      <input type="hidden" th:field="*{id}" />
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='resolveConflicts', label=#{main.employeecontract.resolveconflicts.text}
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:text="#{main.employeecontract.employee.text}">Employee</label>
+            <!-- On create: show dropdown. On edit: show static name -->
+            <div th:if="${!isEdit}">
+              <select class="form-select tomselect" id="employeeId" th:field="*{employeeId}"
+                      th:errorclass="is-invalid">
+                <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+                <option th:each="employee : ${employees}"
+                        th:value="${employee.id}"
+                        th:text="${employee.name + ' | ' + employee.sign}"></option>
+              </select>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
+            </div>
+            <div th:if="${isEdit}">
+              <input type="hidden" th:field="*{employeeId}" />
+              <p class="form-control-plaintext fw-bold" th:text="${currentEmployee}"></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: selectInput(
+            field='supervisorId', label=#{main.employeecontract.supervisor.text}, required=true,
+            placeholder=#{main.general.selectone.text}, options=${supervisors}, optionValue='id', optionLabel='name'
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <div th:replace="~{fragments/form-fields :: textareaInput(
+            field='taskdescription', label=#{main.employeecontract.taskdescription.text}, required=false, rows=4, monospace=false
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validFrom', label=#{main.employeecontract.validfrom.text}, required=true
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validUntil', label=#{main.employeecontract.validuntil.text}, required=false
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='freelancer', label=#{main.employeecontract.freelancer.text}
+          )}"></div>
+        </div>
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='dailyWorkingTime', label=#{main.employeecontract.dailyworkingtime.text}, required=true, maxlength=10
+          )}"></div>
+        </div>
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='yearlyVacation', label=#{main.employeecontract.yearlyvacation.text}, required=true, maxlength=5
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row" th:if="${!isEdit}">
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='initialOvertime', label=#{main.employeecontract.initialovertime.text}, required=false, maxlength=10
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='hide', label=#{main.general.hideinselectboxes.text}
+          )}"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <div th:with="saveLabel=${isEdit} ? #{main.general.button.save.text} : #{main.general.button.create.text}"
+           th:replace="~{fragments/form-fields :: formButtons(
+             saveLabel=${saveLabel},
+             cancelHref=@{/employees/contracts}
+           )}"></div>
+    </div>
+  </form>
+
+  <!-- Overtime section (edit only) -->
+  <div th:if="${isEdit}" class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.employeecontract.overtime.headline.text}">Overtime Adjustments</h3>
+    </div>
+    <div class="card-body">
+      <div class="row mb-2">
+        <div class="col-auto fw-bold" th:text="#{main.employeecontract.overtime.total.text}">Total:</div>
+        <div class="col-auto" th:text="${totalovertime}"></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th th:text="#{main.employeecontract.overtime.date.text}">Date</th>
+              <th th:text="#{main.employeecontract.overtime.duration.text}">Duration</th>
+              <th th:text="#{main.employeecontract.overtime.comment.text}">Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(overtimes)}">
+              <td colspan="3" class="text-center text-muted" th:text="#{main.general.nodata.text}">No entries</td>
+            </tr>
+            <tr th:each="ot : ${overtimes}">
+              <td th:text="${ot.effective}"></td>
+              <td th:text="${@durationUtils.format(ot.timeMinutes)}"></td>
+              <td th:text="${ot.comment}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer">
+      <form th:action="@{/employees/contracts/{id}/overtime(id=${employeecontractForm.id})}"
+            th:object="${employeecontractForm}" method="post">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label" th:text="#{main.employeecontract.overtime.date.text}">Date</label>
+            <input type="date" class="form-control" th:field="*{newOvertimeEffective}" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label" th:text="#{main.employeecontract.overtime.duration.text}">Duration</label>
+            <input type="text" class="form-control" th:field="*{newOvertime}" placeholder="e.g. 1:30" />
+          </div>
+          <div class="col-md-5">
+            <label class="form-label" th:text="#{main.employeecontract.overtime.comment.text}">Comment</label>
+            <input type="text" class="form-control" th:field="*{newOvertimeComment}" maxlength="255" />
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary">
+              <i class="icon ti ti-plus"></i>
+              <span th:text="#{main.general.button.save.text}">Save</span>
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="row mt-2">
+        <div class="col-auto fw-bold" th:text="#{main.employeecontract.overtime.total.text}">Total:</div>
+        <div class="col-auto" th:text="${totalovertime}"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</html>

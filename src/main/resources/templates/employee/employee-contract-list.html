@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='employees',subSection='contracts',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <div th:if="${logs != null and !#lists.isEmpty(logs)}" class="card mb-3">
+    <div class="card-body">
+      <h5 th:text="#{main.employeecontract.log.headline.text}">Conflict resolution log</h5>
+      <div th:each="log : ${logs}" class="text-muted small" th:text="${log}"></div>
+    </div>
+  </div>
+
+  <!-- Filter card -->
+  <div class="card mb-3" th:with="hasAdvancedFilter=${(filter != null and !#strings.isEmpty(filter)) or show == true}">
+    <div class="card-body">
+      <form method="get" th:action="@{/employees/contracts}" data-filter-form="ec">
+
+        <!-- Primary filter row -->
+        <div class="row g-2 align-items-end">
+          <div class="col">
+            <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
+            <select class="form-select tomselect" name="employeeId">
+              <option value="-1" th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                      th:selected="${employeeId == -1 or employeeId == null}"
+                      th:text="#{main.general.allemployees.text}">All employees</option>
+              <option th:each="employee : ${employees}"
+                      th:value="${employee.id}"
+                      th:selected="${employeeId == employee.id}"
+                      th:text="${employee.name + ' | ' + employee.sign}"></option>
+            </select>
+          </div>
+          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <a th:href="@{/employees/contracts/create}" class="btn btn-success">
+              <i class="icon ti ti-file-certificate"></i>
+              <span th:text="#{main.general.button.createemployeecontract.text}">Create Contract</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Advanced toggle -->
+        <div class="mt-2">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="advanced-toggle" role="switch">
+            <label class="form-check-label text-muted small" for="advanced-toggle" th:text="#{main.general.filter.advanced.text}">Advanced Filter</label>
+          </div>
+        </div>
+        <button type="button" class="d-none" id="advanced-collapse-trigger"
+                data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
+
+        <!-- Advanced filters -->
+        <div class="collapse mt-3" id="advanced-filters"
+             th:attr="data-server-open=${hasAdvancedFilter}">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+              <input type="text" class="form-control" name="filter" th:value="${filter}"
+                     th:placeholder="#{main.general.filter.text}" />
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-primary" type="submit">
+                <i class="icon ti ti-filter m-0"></i>
+              </button>
+            </div>
+          </div>
+          <div class="row g-2 align-items-end mt-2">
+            <div class="col-auto ms-2">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
+                <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:title="#{main.headlinedescription.employeecontracts.employeename.text}" th:text="#{main.employeecontract.employee.text}">Employee</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.validfrom.text}" th:text="#{main.employeecontract.validfrom.text}">Valid From</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.validuntil.text}" th:text="#{main.employeecontract.validuntil.text}">Valid Until</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.freelancer.text}" th:text="#{main.employeecontract.freelancer.text}">Freelancer</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(employeecontracts)}">
+            <td colspan="10" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No contracts found</td>
+          </tr>
+          <tr th:each="ec : ${employeecontracts}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
+            <td th:text="${ec.employeeName}"></td>
+            <td th:text="${ec.taskDescription}"></td>
+            <td th:text="${ec.supervisorName}"></td>
+            <td th:text="${ec.validFrom}"></td>
+            <td>
+              <span th:if="${ec.validUntil == null}" th:text="#{main.general.open.text}">open</span>
+              <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}"></span>
+            </td>
+            <td>
+              <input type="checkbox" class="form-check-input" th:checked="${ec.freelancer}" disabled />
+            </td>
+            <td th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
+            <td th:text="${ec.vacationEntitlement}"></td>
+            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+              <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary btn-sm"
+                 th:title="#{main.headlinedescription.employeecontracts.edit.text}">
+                <i class="icon ti ti-pencil m-0"></i>
+              </a>
+            </td>
+            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+              <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        th:title="#{main.headlinedescription.employeecontracts.delete.text}">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form[data-filter-form]');
+      if (!form) return;
+
+      const STORAGE_KEY = form.dataset.filterForm + '-advanced-open';
+      const toggleInput = document.getElementById('advanced-toggle');
+      const panel = document.getElementById('advanced-filters');
+      const collapseTrigger = document.getElementById('advanced-collapse-trigger');
+      if (!toggleInput || !panel || !collapseTrigger) return;
+
+      const serverOpen = panel.dataset.serverOpen === 'true';
+      const localOpen = localStorage.getItem(STORAGE_KEY) === 'true';
+      if (serverOpen || localOpen) {
+        panel.classList.add('show');
+        toggleInput.checked = true;
+      }
+
+      toggleInput.addEventListener('change', function () {
+        collapseTrigger.click();
+      });
+
+      panel.addEventListener('show.bs.collapse', function () {
+        toggleInput.checked = true;
+        localStorage.setItem(STORAGE_KEY, 'true');
+      });
+      panel.addEventListener('hide.bs.collapse', function () {
+        toggleInput.checked = false;
+        localStorage.setItem(STORAGE_KEY, 'false');
+      });
+
+      form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.submit(); });
+      });
+    });
+  </script>
+
+</main>
+</html>

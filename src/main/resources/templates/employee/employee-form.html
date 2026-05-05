@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='employees',subSection='employees',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <form th:action="@{/employees/store}" th:object="${employeeForm}" method="post" class="card">
+    <div class="card-body">
+      <input type="hidden" th:field="*{id}" />
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='firstname', label=#{main.employee.firstname.text}, required=true, maxlength=255
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='lastname', label=#{main.employee.lastname.text}, required=true, maxlength=255
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='sign', label=#{main.employee.sign.text}, required=true, maxlength=5
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: textInput(
+            field='loginname', label=#{main.employee.loginname.text}, required=true, maxlength=5
+          )}"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:for="status" th:text="#{main.employee.status.text}">Status</label>
+            <select class="form-select" id="status" th:field="*{status}" th:errorclass="is-invalid">
+              <option value="ma" th:text="#{main.employee.status.ma}">ma</option>
+              <option value="bo" th:text="#{main.employee.status.bo}">bo</option>
+              <option value="bl" th:text="#{main.employee.status.bl}">bl</option>
+              <option value="pv" th:text="#{main.employee.status.pv}">pv</option>
+              <option value="restricted" th:text="#{main.employee.status.restricted}">restricted</option>
+              <option value="adm" th:text="#{main.employee.status.adm}">adm</option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label required" th:for="gender" th:text="#{main.employee.gender.text}">Gender</label>
+            <select class="form-select" id="gender" th:field="*{gender}" th:errorclass="is-invalid">
+              <option value="m" th:text="#{main.general.employee.gender.male}">Male</option>
+              <option value="f" th:text="#{main.general.employee.gender.female}">Female</option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <div th:with="saveLabel=${isEdit} ? #{main.general.button.save.text} : #{main.general.button.create.text}"
+           th:replace="~{fragments/form-fields :: formButtons(
+             saveLabel=${saveLabel},
+             cancelHref=@{/employees}
+           )}"></div>
+    </div>
+  </form>
+
+</main>
+</html>

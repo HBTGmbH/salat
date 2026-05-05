@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='employees',subSection='employees',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" th:action="@{/employees}" class="row g-2">
+        <div class="col-md-6">
+          <input type="text" class="form-control" name="filter" th:value="${filter}" />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary"><i class="icon ti ti-filter m-0"></i></button>
+        </div>
+        <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <a th:href="@{/employees/create}" class="btn btn-success">
+            <i class="icon ti ti-user-plus"></i>
+            <span th:text="#{main.general.button.createemployee.text}">Create Employee</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:title="#{main.headlinedescription.employees.lastname.text}" th:text="#{main.employee.lastname.text}">Last Name</th>
+            <th th:title="#{main.headlinedescription.employees.fristname.text}" th:text="#{main.employee.firstname.text}">First Name</th>
+            <th th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
+            <th th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
+            <th th:title="#{main.headlinedescription.employees.status.text}" th:text="#{main.employee.status.text}">Status</th>
+            <th th:title="#{main.headlinedescription.employees.gender.text}" th:text="#{main.employee.gender.text}">Gender</th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(employees)}">
+            <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No employees found</td>
+          </tr>
+          <tr th:each="employee : ${employees}">
+            <td th:text="${employee.lastname}"></td>
+            <td th:text="${employee.firstname}"></td>
+            <td th:text="${employee.sign}"></td>
+            <td th:text="${employee.loginname}"></td>
+            <td th:text="${employee.status}"></td>
+            <td th:text="${employee.gender}"></td>
+            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+              <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary btn-sm"
+                 th:title="#{main.headlinedescription.employees.edit.text}">
+                <i class="icon ti ti-pencil m-0"></i>
+              </a>
+            </td>
+            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+              <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        th:title="#{main.headlinedescription.employees.delete.text}">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</html>
