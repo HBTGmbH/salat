@@ -114,8 +114,7 @@
         <tr>
           <th th:text="#{main.employeeorder.employee.text}">Employee</th>
           <th th:text="#{main.employeeorder.suborder.text}">Suborder</th>
-          <th th:text="#{main.employeecontract.validfrom.text}">Valid From</th>
-          <th th:text="#{main.employeecontract.validuntil.text}">Valid Until</th>
+          <th th:text="#{main.employeeorder.valid.text}">Valid</th>
           <th th:text="#{main.general.debithours.text}">Debit Hours</th>
           <th th:if="${showActualHoursToggle}" th:text="#{main.general.showactualhours.text}">Actual</th>
           <th th:if="${showActualHoursToggle}" th:text="#{main.general.difference.text}">Diff</th>
@@ -130,10 +129,12 @@
         <tr th:each="eo : ${employeeorders}" th:classappend="${!eo.currentlyValid} ? 'table-danger' : ((!eo.fitsToSuperiorObjects) ? 'table-warning' : '')">
           <td th:text="${eo.employeecontract.employee.name}"></td>
           <td th:text="${eo.suborder.completeOrderSign}"></td>
-          <td th:text="${eo.fromDate}"></td>
           <td>
-            <span th:if="${eo.untilDate == null}" th:text="#{main.general.open.text}">open</span>
-            <span th:if="${eo.untilDate != null}" th:text="${eo.untilDate}"></span>
+            <div th:text="${eo.fromDate}" class="text-nowrap">From</div>
+            <small class="text-muted">
+              <span th:if="${eo.untilDate == null}" th:text="#{main.general.open.text}">open</span>
+              <span th:if="${eo.untilDate != null}" th:text="${eo.untilDate}">Until</span>
+            </small>
           </td>
           <td>
             <span th:if="${eo.debithours != null and !eo.debithours.zero}">
