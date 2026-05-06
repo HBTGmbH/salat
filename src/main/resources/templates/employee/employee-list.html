@@ -48,7 +48,7 @@
             <td th:text="${employee.firstname}"></td>
             <td th:text="${employee.sign}"></td>
             <td th:text="${employee.loginname}"></td>
-            <td th:text="${employee.status}"></td>
+            <td th:text="#{${'main.employee.status.' + employee.status}}"></td>
             <td th:text="${employee.gender}"></td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary btn-sm"
