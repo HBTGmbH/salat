@@ -116,9 +116,9 @@ Example list page using the layout:
         </td>
         <td th:text="${#temporals.format(job.lastupdate, 'dd.MM.yyyy HH:mm')}"></td>
         <td class="text-end">
-          <a class="btn btn-sm btn-outline-secondary" th:href="@{'/reporting/jobs2/' + ${job.id} + '/edit'}"><i class="bi bi-pencil"></i></a>
+          <a class="btn btn-outline-secondary" th:href="@{'/reporting/jobs2/' + ${job.id} + '/edit'}"><i class="bi bi-pencil"></i></a>
           <form th:action="@{'/reporting/jobs2/' + ${job.id} + '/delete'}" method="post" class="d-inline">
-            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></button>
+            <button class="btn btn-outline-danger" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></button>
           </form>
         </td>
       </tr>

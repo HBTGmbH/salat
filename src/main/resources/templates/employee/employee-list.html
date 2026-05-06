@@ -34,7 +34,6 @@
             <th th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
             <th th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
             <th th:title="#{main.headlinedescription.employees.status.text}" th:text="#{main.employee.status.text}">Status</th>
-            <th th:title="#{main.headlinedescription.employees.gender.text}" th:text="#{main.employee.gender.text}">Gender</th>
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
           </tr>
@@ -49,9 +48,8 @@
             <td th:text="${employee.sign}"></td>
             <td th:text="${employee.loginname}"></td>
             <td th:text="#{${'main.employee.status.' + employee.status}}"></td>
-            <td th:text="${employee.gender}"></td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary btn-sm"
+              <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary"
                  th:title="#{main.headlinedescription.employees.edit.text}">
                 <i class="icon ti ti-pencil m-0"></i>
               </a>
@@ -59,7 +57,7 @@
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post"
                     th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
-                <button type="submit" class="btn btn-outline-danger btn-sm"
+                <button type="submit" class="btn btn-outline-danger"
                         th:title="#{main.headlinedescription.employees.delete.text}">
                   <i class="icon ti ti-trash m-0"></i>
                 </button>

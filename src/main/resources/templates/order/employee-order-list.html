@@ -153,14 +153,14 @@
                   th:text="${@durationUtils.format(eo.difference)}">0:00</span>
           </td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a th:href="@{/orders/employeeorders/edit(id=${eo.id})}" class="btn btn-outline-primary btn-sm">
+            <a th:href="@{/orders/employeeorders/edit(id=${eo.id})}" class="btn btn-outline-primary">
               <i class="icon ti ti-pencil m-0"></i>
             </a>
           </td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <form th:action="@{/orders/employeeorders/{id}/delete(id=${eo.id})}" method="post"
                   th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
-              <button type="submit" class="btn btn-outline-danger btn-sm">
+              <button type="submit" class="btn btn-outline-danger">
                 <i class="icon ti ti-trash m-0"></i>
               </button>
             </form>
