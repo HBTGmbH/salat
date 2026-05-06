@@ -60,7 +60,6 @@
 	<!-- =========================================== Global Forward Definitions -->
 
 	<global-forwards>
-		<forward name="showWelcome" path="/welcome" redirect="true" />
 		<forward name="unauthorized" path="/auth/unauthorized.jsp" />
 	</global-forwards>
 
@@ -69,7 +68,9 @@
 	<action-mappings>
 
 		<!-- legacy redirect -->
-		<action path="/ShowWelcome" forward="showWelcome" />
+		<action path="/ShowWelcome" type="org.tb.common.struts.RedirectAction">
+			<forward name="redirect" path="/welcome" redirect="true" />
+		</action>
 
 		<!-- chicoree -->
 		<action path="/chicoree/ShowDashboard" type="org.tb.chicoree.ShowDashboardAction">
