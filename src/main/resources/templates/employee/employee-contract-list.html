@@ -84,8 +84,7 @@
             <th th:title="#{main.headlinedescription.employeecontracts.employeename.text}" th:text="#{main.employeecontract.employee.text}">Employee</th>
             <th th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
             <th th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.validfrom.text}" th:text="#{main.employeecontract.validfrom.text}">Valid From</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.validuntil.text}" th:text="#{main.employeecontract.validuntil.text}">Valid Until</th>
+            <th th:title="#{main.headlinedescription.employeecontracts.valid.text}" th:text="#{main.employeecontract.valid.text}">Valid</th>
             <th th:title="#{main.headlinedescription.employeecontracts.freelancer.text}" th:text="#{main.employeecontract.freelancer.text}">Freelancer</th>
             <th th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
             <th th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
@@ -101,10 +100,12 @@
             <td th:text="${ec.employeeName}"></td>
             <td th:text="${ec.taskDescription}"></td>
             <td th:text="${ec.supervisorName}"></td>
-            <td th:text="${ec.validFrom}"></td>
             <td>
-              <span th:if="${ec.validUntil == null}" th:text="#{main.general.open.text}">open</span>
-              <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}"></span>
+              <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
+              <small class="text-muted">
+                <span th:if="${ec.validUntil == null}" th:text="#{main.general.open.text}">open</span>
+                <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}">Until</span>
+              </small>
             </td>
             <td>
               <input type="checkbox" class="form-check-input" th:checked="${ec.freelancer}" disabled />
