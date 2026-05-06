@@ -34,8 +34,8 @@
             <th th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
             <th th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
             <th th:title="#{main.headlinedescription.employees.status.text}" th:text="#{main.employee.status.text}">Status</th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           </tr>
         </thead>
         <tbody>

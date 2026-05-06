@@ -21,52 +21,42 @@
         </ul>
       </div>
 
-      <div class="row">
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label required" th:text="#{main.employeeorder.employeecontract.text}">Employee Contract</label>
-            <select class="form-select tomselect" id="employeeContractId" th:field="*{employeeContractId}"
-                    th:errorclass="is-invalid"
-                    onchange="this.form.method='get'; this.form.action='/orders/employeeorders/' + (this.form.querySelector('[name=id]').value ? 'edit' : 'create'); this.form.submit()">
-              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
-              <option th:each="ec : ${employeecontracts}"
-                      th:value="${ec.id}"
-                      th:text="${ec.employee.name}"></option>
-            </select>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeContractId')}" th:errors="*{employeeContractId}"></div>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label required" th:text="#{main.employeeorder.customerorder.text}">Customer Order</label>
-            <select class="form-select tomselect" id="orderId" th:field="*{orderId}"
-                    th:errorclass="is-invalid"
-                    onchange="submitFormAsGet(this.form, this.value)">
-              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
-              <option th:each="co : ${orders}"
-                      th:value="${co.id}"
-                      th:text="${co.sign + ' - ' + co.shortdescription}"></option>
-            </select>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('orderId')}" th:errors="*{orderId}"></div>
-          </div>
-        </div>
+      <div class="mb-3">
+        <label class="form-label required" th:text="#{main.employeeorder.employee.text}">Employee</label>
+        <select class="form-select tomselect" id="employeeContractId" th:field="*{employeeContractId}"
+                th:errorclass="is-invalid"
+                onchange="this.form.method='get'; this.form.action='/orders/employeeorders/' + (this.form.querySelector('[name=id]').value ? 'edit' : 'create'); this.form.submit()">
+          <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+          <option th:each="ec : ${employeecontracts}"
+                  th:value="${ec.id}"
+                  th:text="${ec.employee.name}"></option>
+        </select>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeContractId')}" th:errors="*{employeeContractId}"></div>
       </div>
 
-      <div class="row">
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label required" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
-            <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}"
-                    th:errorclass="is-invalid">
-              <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
-              <option th:each="so : ${suborders}"
-                      th:value="${so.id}"
-                      th:text="${so.completeOrderSign}"></option>
-            </select>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('suborderId')}" th:errors="*{suborderId}"></div>
-          </div>
-        </div>
+      <div class="mb-3">
+        <label class="form-label required" th:text="#{main.employeeorder.customerorder.text}">Customer Order</label>
+        <select class="form-select tomselect" id="orderId" th:field="*{orderId}"
+                th:errorclass="is-invalid"
+                onchange="submitFormAsGet(this.form, this.value)">
+          <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+          <option th:each="co : ${orders}"
+                  th:value="${co.id}"
+                  th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+        </select>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('orderId')}" th:errors="*{orderId}"></div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label required" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
+        <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}"
+                th:errorclass="is-invalid">
+          <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+          <option th:each="so : ${suborders}"
+                  th:value="${so.id}"
+                  th:text="${so.completeOrderSign}"></option>
+        </select>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('suborderId')}" th:errors="*{suborderId}"></div>
       </div>
 
       <div class="row">
@@ -83,7 +73,7 @@
       </div>
 
       <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: textInput(
             field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
           )}"></div>
