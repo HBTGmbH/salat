@@ -376,7 +376,7 @@ public class EmployeeorderController {
         model.addAttribute("section", "orders");
         model.addAttribute("subSection", "employeeorders");
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-        String titleKey = isEdit ? "main.general.editemployeeorder.text" : "main.general.addemployeeorder.text";
+        String titleKey = isEdit ? "main.employeeorder.modify.text" : "main.employeeorder.new.text";
         model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Employee Order" : "Create Employee Order"));
     }
 
