@@ -283,7 +283,7 @@ public class EmployeecontractController {
         model.addAttribute("section", "employees");
         model.addAttribute("subSection", "contracts");
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.employees.text", "Employees"));
-        String titleKey = isEdit ? "main.general.editemployeecontract.text" : "main.general.addemployeecontract.text";
+        String titleKey = isEdit ? "main.employeecontract.modify.text" : "main.employeecontract.new.text";
         model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Employee Contract" : "Create Employee Contract"));
     }
 

@@ -52,6 +52,7 @@ public class InvoiceController {
     @GetMapping
     public String createForm(Model model, SessionStatus sessionStatus) {
         sessionStatus.setComplete();
+        model.addAttribute("invoiceData", null);
         var form = createInitialForm();
         model.addAttribute("invoiceForm", form);
         addCommonModel(model, form);
@@ -62,6 +63,7 @@ public class InvoiceController {
     public String updateOptions(@ModelAttribute("invoiceForm") InvoiceForm form,
                                 SessionStatus sessionStatus, Model model) {
         sessionStatus.setComplete();
+        model.addAttribute("invoiceData", null);
         addCommonModel(model, form);
         return "invoice/invoice-form";
     }
