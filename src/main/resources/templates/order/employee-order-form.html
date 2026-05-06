@@ -29,7 +29,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="ec : ${employeecontracts}"
                   th:value="${ec.id}"
-                  th:text="${ec.employee.name}"></option>
+                  th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeContractId')}" th:errors="*{employeeContractId}"></div>
       </div>

@@ -12,12 +12,12 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-center">
-          <div class="col">
+          <div class="col-md-4">
             <select class="form-select tomselect" name="employeeContractId">
               <option value="-1" th:selected="${employeeContractId == null or employeeContractId == -1}" th:text="#{main.general.allemployees.text}">All Employees</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
-                      th:text="${ec.employee.name}"
+                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}"
                       th:selected="${employeeContractId != null and employeeContractId == ec.id}"></option>
             </select>
           </div>

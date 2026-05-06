@@ -17,7 +17,7 @@
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:selected="${ec.id == currentEmployeeContractId}"
-                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' offen' : '') + ')'}">
+                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}">
               </option>
             </select>
           </div>
