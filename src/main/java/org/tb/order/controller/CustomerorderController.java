@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -53,7 +52,8 @@ public class CustomerorderController {
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
       Model model) {
-    var customerorders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
+    var filterSet = (filter != null && !filter.isEmpty()) || customerId != null;
+    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(show, filter, customerId) : List.<Customerorder>of();
     if (Boolean.TRUE.equals(showActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
       for (Customerorder co : customerorders) {
