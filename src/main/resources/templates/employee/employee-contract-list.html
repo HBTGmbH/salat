@@ -88,8 +88,8 @@
             <th th:title="#{main.headlinedescription.employeecontracts.freelancer.text}" th:text="#{main.employeecontract.freelancer.text}">Freelancer</th>
             <th th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
             <th th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           </tr>
         </thead>
         <tbody>

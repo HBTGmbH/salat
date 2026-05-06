@@ -86,8 +86,8 @@
           <th class="d-none d-lg-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
           <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
           <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.difference.text}">Diff</th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
-          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}"></th>
+          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+          <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
         </tr>
       </thead>
       <tbody>
