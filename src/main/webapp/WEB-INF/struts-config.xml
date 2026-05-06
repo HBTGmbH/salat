@@ -68,6 +68,9 @@
 
 	<action-mappings>
 
+		<!-- legacy redirect -->
+		<action path="/ShowWelcome" forward="showWelcome" />
+
 		<!-- chicoree -->
 		<action path="/chicoree/ShowDashboard" type="org.tb.chicoree.ShowDashboardAction">
 			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
