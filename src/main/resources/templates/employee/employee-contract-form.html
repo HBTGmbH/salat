@@ -6,53 +6,41 @@
 <main layout:fragment="content">
 
   <form th:action="@{/employees/contracts/store}" th:object="${employeecontractForm}" method="post" class="card mb-3">
+
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
 
-      <div class="row">
-        <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+      <div th:replace="~{fragments/form-fields :: checkboxSwitch(
             field='resolveConflicts', label=#{main.employeecontract.resolveconflicts.text}
           )}"></div>
+
+      <div class="mb-3">
+        <label class="form-label required" th:text="#{main.employeecontract.employee.text}">Employee</label>
+        <!-- On create: show dropdown. On edit: show static name -->
+        <div th:if="${!isEdit}">
+          <select class="form-select tomselect" id="employeeId" th:field="*{employeeId}"
+                  th:errorclass="is-invalid">
+            <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
+            <option th:each="employee : ${employees}"
+                    th:value="${employee.id}"
+                    th:text="${employee.name + ' | ' + employee.sign}"></option>
+          </select>
+          <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
+        </div>
+        <div th:if="${isEdit}">
+          <input type="hidden" th:field="*{employeeId}" />
+          <p class="form-control-plaintext fw-bold" th:text="${currentEmployee}"></p>
         </div>
       </div>
 
-      <div class="row">
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label required" th:text="#{main.employeecontract.employee.text}">Employee</label>
-            <!-- On create: show dropdown. On edit: show static name -->
-            <div th:if="${!isEdit}">
-              <select class="form-select tomselect" id="employeeId" th:field="*{employeeId}"
-                      th:errorclass="is-invalid">
-                <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
-                <option th:each="employee : ${employees}"
-                        th:value="${employee.id}"
-                        th:text="${employee.name + ' | ' + employee.sign}"></option>
-              </select>
-              <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
-            </div>
-            <div th:if="${isEdit}">
-              <input type="hidden" th:field="*{employeeId}" />
-              <p class="form-control-plaintext fw-bold" th:text="${currentEmployee}"></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: selectInput(
-            field='supervisorId', label=#{main.employeecontract.supervisor.text}, required=true,
-            placeholder=#{main.general.selectone.text}, options=${supervisors}, optionValue='id', optionLabel='name'
-          )}"></div>
-        </div>
-      </div>
+      <div th:replace="~{fragments/form-fields :: selectInput(
+        field='supervisorId', label=#{main.employeecontract.supervisor.text}, required=true,
+        placeholder=#{main.general.selectone.text}, options=${supervisors}, optionValue='id', optionLabel='name'
+      )}"></div>
 
-      <div class="row">
-        <div class="col-12">
-          <div th:replace="~{fragments/form-fields :: textareaInput(
-            field='taskdescription', label=#{main.employeecontract.taskdescription.text}, required=false, rows=4, monospace=false
-          )}"></div>
-        </div>
-      </div>
+      <div th:replace="~{fragments/form-fields :: textareaInput(
+        field='taskdescription', label=#{main.employeecontract.taskdescription.text}, required=false, rows=4, monospace=false
+      )}"></div>
 
       <div class="row">
         <div class="col-md-6">
@@ -67,39 +55,23 @@
         </div>
       </div>
 
-      <div class="row">
-        <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
-            field='freelancer', label=#{main.employeecontract.freelancer.text}
-          )}"></div>
-        </div>
-        <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='dailyWorkingTime', label=#{main.employeecontract.dailyworkingtime.text}, required=true, maxlength=10
-          )}"></div>
-        </div>
-        <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='yearlyVacation', label=#{main.employeecontract.yearlyvacation.text}, required=true, maxlength=5
-          )}"></div>
-        </div>
-      </div>
+      <div th:replace="~{fragments/form-fields :: textInput(
+        field='dailyWorkingTime', label=#{main.employeecontract.dailyworkingtime.text}, required=true, maxlength=10
+      )}"></div>
+      <div th:replace="~{fragments/form-fields :: textInput(
+        field='yearlyVacation', label=#{main.employeecontract.yearlyvacation.text}, required=true, maxlength=5
+      )}"></div>
 
-      <div class="row" th:if="${!isEdit}">
-        <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: textInput(
-            field='initialOvertime', label=#{main.employeecontract.initialovertime.text}, required=false, maxlength=10
-          )}"></div>
-        </div>
-      </div>
+      <div th:if="${!isEdit}" th:replace="~{fragments/form-fields :: textInput(
+        field='initialOvertime', label=#{main.employeecontract.initialovertime.text}, required=false, maxlength=10
+      )}"></div>
 
-      <div class="row">
-        <div class="col-md-4">
-          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
-            field='hide', label=#{main.general.hideinselectboxes.text}
-          )}"></div>
-        </div>
-      </div>
+      <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+        field='freelancer', label=#{main.employeecontract.freelancer.text}
+      )}"></div>
+      <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+        field='hide', label=#{main.general.hideinselectboxes.text}
+      )}"></div>
 
     </div>
 
