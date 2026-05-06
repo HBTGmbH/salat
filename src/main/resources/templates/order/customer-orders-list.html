@@ -14,7 +14,7 @@
         <div class="row g-2 align-items-end">
           <div class="col">
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
-              <option value="" th:text="#{main.general.select.please}">--- Please select ---</option>
+              <option value=" " th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
                       th:text="${c.shortname}"

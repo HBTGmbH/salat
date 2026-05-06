@@ -52,35 +52,35 @@ public class EmployeeorderController {
 
     @GetMapping
     public String list(
-            @RequestParam(required = false, defaultValue = "-1") Long employeeContractId,
-            @RequestParam(required = false, defaultValue = "-1") Long orderId,
-            @RequestParam(required = false, defaultValue = "-1") Long suborderId,
+            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long orderId,
+            @RequestParam(required = false) Long suborderId,
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             @RequestParam(required = false) Boolean showActualHours,
             Model model) {
 
-        Long filterEmployeeContractId = employeeContractId == -1 ? null : employeeContractId;
-        Long filterOrderId = orderId == -1 ? null : orderId;
-        Long filterSuborderId = suborderId == -1 ? null : suborderId;
-
         var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         var orders = customerorderService.getAllCustomerorders();
 
-        List<?> employeeOrders;
-        if (Boolean.TRUE.equals(showActualHours)) {
-            employeeOrders = employeeorderService
-                    .getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId)
+        var filterSet = (filter != null && !filter.isEmpty()) || employeeContractId != null || orderId != null || suborderId != null;
+
+        List<?> employeeOrders = List.of();
+        if(filterSet) {
+            if (Boolean.TRUE.equals(showActualHours)) {
+                employeeOrders = employeeorderService
+                    .getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId)
                     .stream()
                     .map(eo -> new EmployeeOrderViewDecorator(employeeorderService, eo))
                     .toList();
-        } else {
-            employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId);
+            } else {
+                employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
+            }
         }
 
         List<Suborder> suborders = List.of();
-        if (filterOrderId != null) {
-            suborders = suborderService.getSubordersByCustomerorderId(filterOrderId);
+        if (orderId != null) {
+            suborders = suborderService.getSubordersByCustomerorderId(orderId);
         }
 
         model.addAttribute("employeecontracts", employeeContracts);

@@ -14,7 +14,7 @@
         <div class="row g-2 align-items-center">
           <div class="col-md-4">
             <select class="form-select tomselect" name="employeeContractId">
-              <option value="-1" th:selected="${employeeContractId == null or employeeContractId == -1}" th:text="#{main.general.allemployees.text}">All Employees</option>
+              <option value=" " th:text="#{main.employee.select.please}">--- Please select ---</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}"
@@ -23,7 +23,7 @@
           </div>
           <div class="col">
             <select class="form-select tomselect" name="orderId">
-              <option value="-1" th:selected="${orderId == null or orderId == -1}" th:text="#{main.general.allorders.text}">All Orders</option>
+              <option value=" " th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${orders}"
                       th:value="${co.id}"
                       th:text="${co.sign + ' - ' + co.shortdescription}"
@@ -32,7 +32,7 @@
           </div>
           <div class="col">
             <select class="form-select tomselect" name="suborderId">
-              <option value="-1" th:selected="${suborderId == null or suborderId == -1}" th:text="#{main.general.allsuborders.text}">All Suborders</option>
+              <option value=" " th:text="#{main.suborder.select.please}">--- Please select ---</option>
               <option th:each="so : ${suborders}"
                       th:value="${so.id}"
                       th:text="${so.completeOrderSign}"

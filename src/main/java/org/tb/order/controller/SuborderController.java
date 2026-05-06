@@ -57,13 +57,13 @@ public class SuborderController {
   @GetMapping
   public String list(
       @RequestParam(required = false) String filter,
-      @RequestParam(required = false, defaultValue = "-1") Long customerOrderId,
+      @RequestParam(required = false) Long customerOrderId,
       @RequestParam(required = false) Long customerId,
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
       Model model) {
-    Long filterCustomerOrderId = customerOrderId != null && customerOrderId == -1 ? null : customerOrderId;
-    var suborders = suborderService.getSubordersByFilters(show, filter, filterCustomerOrderId, customerId);
+    var filterSet = (filter != null && !filter.isEmpty()) || customerId != null || customerOrderId != null;
+    var suborders = filterSet ? suborderService.getSubordersByFilters(show, filter, customerOrderId, customerId) : List.<Suborder>of();
     if (Boolean.TRUE.equals(showActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {

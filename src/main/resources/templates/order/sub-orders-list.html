@@ -14,7 +14,7 @@
         <div class="row g-2 align-items-center">
           <div class="col">
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
-              <option value="-1" th:text="#{main.general.allcustomers.text}">All Customers</option>
+              <option value=" " th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
                       th:text="${c.shortname}"
@@ -23,7 +23,7 @@
           </div>
           <div class="col">
             <select class="form-select tomselect" name="customerOrderId">
-              <option value="-1" th:text="#{main.general.allorders.text}">All Orders</option>
+              <option value=" " th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${visibleCustomerOrders}"
                       th:value="${co.id}"
                       th:text="${co.sign + ' - ' + co.shortdescription}"
