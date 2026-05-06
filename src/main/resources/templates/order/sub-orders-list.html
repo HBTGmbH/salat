@@ -137,13 +137,13 @@
             <span th:if="${so.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
           </td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a class="btn btn-outline-primary btn-sm" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
+            <a class="btn btn-outline-primary" th:href="@{'/orders/suborders/' + ${so.id} + '/edit'}">
               <i class="icon ti ti-pencil m-0"></i>
             </a>
           </td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <form th:action="@{'/orders/suborders/' + ${so.id} + '/copy'}" method="post">
-              <button type="submit" class="btn btn-outline-secondary btn-sm" title="Copy">
+              <button type="submit" class="btn btn-outline-secondary" title="Copy">
                 <i class="icon ti ti-copy m-0"></i>
               </button>
             </form>
@@ -151,7 +151,7 @@
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <form th:action="@{'/orders/suborders/' + ${so.id} + '/delete'}" method="post"
                   th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
-              <button type="submit" class="btn btn-outline-danger btn-sm">
+              <button type="submit" class="btn btn-outline-danger">
                 <i class="icon ti ti-trash m-0"></i>
               </button>
             </form>

@@ -112,7 +112,7 @@
             <td th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
             <td th:text="${ec.vacationEntitlement}"></td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary btn-sm"
+              <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
                  th:title="#{main.headlinedescription.employeecontracts.edit.text}">
                 <i class="icon ti ti-pencil m-0"></i>
               </a>
@@ -120,7 +120,7 @@
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
                     th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
-                <button type="submit" class="btn btn-outline-danger btn-sm"
+                <button type="submit" class="btn btn-outline-danger"
                         th:title="#{main.headlinedescription.employeecontracts.delete.text}">
                   <i class="icon ti ti-trash m-0"></i>
                 </button>
