@@ -20,10 +20,9 @@
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
           <div class="col">
+            <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
             <select class="form-select tomselect" name="employeeId">
-              <option value="-1" th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-                      th:selected="${employeeId == -1 or employeeId == null}"
-                      th:text="#{main.general.allemployees.text}">All employees</option>
+              <option value="">Text</option>
               <option th:each="employee : ${employees}"
                       th:value="${employee.id}"
                       th:selected="${employeeId == employee.id}"

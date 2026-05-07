@@ -11,10 +11,11 @@
       <form method="get" th:action="@{/orders/suborders}" data-filter-form="so">
 
         <!-- Primary filter row -->
-        <div class="row g-2 align-items-center">
+        <div class="row g-2 align-items-end">
           <div class="col">
+            <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
-              <option value=" " th:text="#{main.customer.select.please}">--- Please select ---</option>
+              <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
                       th:text="${c.shortname}"
@@ -22,8 +23,9 @@
             </select>
           </div>
           <div class="col">
+            <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
             <select class="form-select tomselect" name="customerOrderId">
-              <option value=" " th:text="#{main.customerorder.select.please}">--- Please select ---</option>
+              <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${visibleCustomerOrders}"
                       th:value="${co.id}"
                       th:text="${co.sign + ' - ' + co.shortdescription}"
