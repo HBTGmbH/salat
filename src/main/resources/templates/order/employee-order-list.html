@@ -12,7 +12,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
             <select class="form-select tomselect" name="employeeContractId">
               <option value="" th:text="#{main.employee.select.please}">--- Please select ---</option>
@@ -22,7 +22,7 @@
                       th:selected="${employeeContractId != null and employeeContractId == ec.id}"></option>
             </select>
           </div>
-          <div class="col">
+          <div class="col-md-3">
             <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
             <select class="form-select tomselect" name="orderId">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -32,7 +32,7 @@
                       th:selected="${orderId != null and orderId == co.id}"></option>
             </select>
           </div>
-          <div class="col">
+          <div class="col-md-3">
             <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
             <select class="form-select tomselect" name="suborderId">
               <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
@@ -42,7 +42,7 @@
                       th:selected="${suborderId != null and suborderId == so.id}"></option>
             </select>
           </div>
-          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a class="btn btn-success" th:href="@{/orders/employeeorders/create}">
               <i class="icon ti ti-file-plus"></i>
               <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
@@ -100,12 +100,12 @@
       <thead>
         <tr>
           <th th:text="#{main.employeeorder.employee.text}">Employee</th>
-          <th th:text="#{main.employeeorder.customerorder.text}">Order</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.employeeorder.customerorder.text}">Order</th>
           <th th:text="#{main.employeeorder.suborder.text}">Suborder</th>
-          <th th:text="#{main.employeeorder.valid.text}">Valid</th>
-          <th th:text="#{main.general.debithours.text}">Debit Hours</th>
-          <th th:if="${showActualHoursToggle}" th:text="#{main.general.showactualhours.text}">Actual</th>
-          <th th:if="${showActualHoursToggle}" th:text="#{main.general.difference.text}">Diff</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.employeeorder.valid.text}">Valid</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
+          <th class="d-none d-md-table-cell" th:if="${showActualHoursToggle}" th:text="#{main.general.showactualhours.text}">Actual</th>
+          <th class="d-none d-md-table-cell" th:if="${showActualHoursToggle}" th:text="#{main.general.difference.text}">Diff</th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
         </tr>
@@ -116,7 +116,7 @@
         </tr>
         <tr th:each="eo : ${employeeorders}" th:classappend="${!eo.currentlyValid} ? 'table-danger' : ((!eo.fitsToSuperiorObjects) ? 'table-warning' : '')">
           <td th:text="${eo.employeeName}"></td>
-          <td>
+          <td class="d-none d-md-table-cell">
             <div th:text="${eo.customerOrderSign}" class="text-nowrap">Customer Order</div>
             <small class="text-muted" th:text="${eo.customerOrderDescription}">Customer order description</small>
           </td>
@@ -124,24 +124,24 @@
             <div th:text="${eo.completeOrderSign}" class="text-nowrap">Suborder</div>
             <small class="text-muted" th:text="${eo.subOrderDescription}">Suborder description</small>
           </td>
-          <td>
+          <td class="d-none d-md-table-cell">
             <div th:text="${eo.fromDate}" class="text-nowrap">From</div>
             <small class="text-muted">
               <span th:if="${eo.untilDate == null}" th:text="#{main.general.open.text}">open</span>
               <span th:if="${eo.untilDate != null}" th:text="${eo.untilDate}">Until</span>
             </small>
           </td>
-          <td>
+          <td class="d-none d-md-table-cell">
             <span th:if="${eo.debithours != null and !eo.debithours.zero}">
               <span th:text="${@durationUtils.format(eo.debithours)}">0:00</span>
               <span th:if="${eo.debithoursunit == 1}" class="badge bg-warning-lt" th:title="#{main.general.year.text}"><i class="icon bi-arrow-clockwise"></i></span>
               <span th:if="${eo.debithoursunit == 12}" class="badge bg-warning-lt" th:title="#{main.general.month.text}"><i class="icon bi-calendar-date"></i></span>
             </span>
           </td>
-          <td th:if="${showActualHoursToggle}">
+          <td class="d-none d-md-table-cell" th:if="${showActualHoursToggle}">
             <span th:text="${@durationUtils.format(eo.duration)}">0:00</span>
           </td>
-          <td th:if="${showActualHoursToggle}">
+          <td class="d-none d-md-table-cell" th:if="${showActualHoursToggle}">
             <span th:if="${eo.difference != null and eo.difference.negative}" class="text-danger"
                   th:text="${@durationUtils.format(eo.difference)}">0:00</span>
             <span th:if="${eo.difference != null and !eo.difference.negative}"

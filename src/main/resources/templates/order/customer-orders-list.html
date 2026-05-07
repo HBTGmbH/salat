@@ -12,7 +12,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col">
+          <div class="col-md-6">
             <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
@@ -22,7 +22,7 @@
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
-          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a class="btn btn-success" th:href="@{/orders/customerorders/create}">
               <i class="icon ti ti-briefcase"></i> <span th:text="#{main.general.button.createcustomerorder.text}">New Customer Order</span>
             </a>
@@ -79,9 +79,9 @@
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
-          <th th:text="#{main.customerorder.customer.text}">Customer</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.customerorder.customer.text}">Customer</th>
           <th th:text="#{main.customerorder.order.text}">Order</th>
-          <th th:text="#{main.customerorder.valid.text}">Valid</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
           <th class="d-none d-md-table-cell" th:text="#{main.customerorder.table.responsiblehbt.text}">Responsible HBT</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
           <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
@@ -92,12 +92,12 @@
       </thead>
       <tbody>
         <tr th:each="co : ${customerorders}" th:classappend="${!co.currentlyValid} ? 'table-danger' : ''">
-          <td th:text="${co.customer.shortname}">Customer</td>
+          <td class="d-none d-md-table-cell" th:text="${co.customer.shortname}">Customer</td>
           <td>
             <div th:text="${co.sign}" class="text-nowrap">SignCustomer Order</div>
             <small class="text-muted" th:text="${co.description}">Description</small>
           </td>
-          <td>
+          <td class="d-none d-md-table-cell">
             <div th:text="${co.fromDate}" class="text-nowrap">From</div>
             <small class="text-muted">
               <span th:if="${co.untilDate == null}" th:text="#{main.general.open.text}">open</span>
