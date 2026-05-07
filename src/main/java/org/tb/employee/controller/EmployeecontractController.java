@@ -38,6 +38,7 @@ import org.tb.employee.service.EmployeecontractService.ContractStoredInfo;
 @Controller
 @RequestMapping("/employees/contracts")
 @RequiredArgsConstructor
+@PreAuthorize("not hasRole('RESTRICTED')")
 public class EmployeecontractController {
 
     private final EmployeecontractService employeecontractService;

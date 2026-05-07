@@ -39,6 +39,7 @@ import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 @Controller
 @RequestMapping("/orders/employeeorders")
 @RequiredArgsConstructor
+@PreAuthorize("not hasRole('RESTRICTED')")
 public class EmployeeorderController {
 
     private final EmployeeorderService employeeorderService;

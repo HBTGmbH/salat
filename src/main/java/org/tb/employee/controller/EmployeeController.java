@@ -25,6 +25,7 @@ import org.tb.employee.service.EmployeeService;
 @Controller
 @RequestMapping("/employees")
 @RequiredArgsConstructor
+@PreAuthorize("not hasRole('RESTRICTED')")
 public class EmployeeController {
 
     private final EmployeeService employeeService;

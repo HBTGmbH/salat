@@ -25,6 +25,7 @@ import org.tb.customer.service.CustomerService;
 @Controller
 @RequestMapping("/customers")
 @RequiredArgsConstructor
+@PreAuthorize("not hasRole('RESTRICTED')")
 public class CustomerController {
 
   private final CustomerService customerService;

@@ -165,9 +165,11 @@ public class LocalDevSecurityConfiguration {
         }
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        boolean isRestricted = GlobalConstants.EMPLOYEE_STATUS_RESTRICTED.equalsIgnoreCase(status);
         boolean isAdmin = GlobalConstants.EMPLOYEE_STATUS_ADM.equalsIgnoreCase(status);
         boolean isManager = isAdmin || GlobalConstants.EMPLOYEE_STATUS_BL.equalsIgnoreCase(status) || GlobalConstants.EMPLOYEE_STATUS_PV.equalsIgnoreCase(status);
         boolean isBackoffice = isManager || GlobalConstants.EMPLOYEE_STATUS_BO.equalsIgnoreCase(status);
+        if (isRestricted) authorities.add(new SimpleGrantedAuthority("ROLE_RESTRICTED"));
         if (isAdmin) authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         if (isManager) authorities.add(new SimpleGrantedAuthority("ROLE_MANAGER"));
         if (isBackoffice) authorities.add(new SimpleGrantedAuthority("ROLE_BACKOFFICE"));

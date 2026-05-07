@@ -44,6 +44,7 @@ import org.tb.order.viewhelper.SuborderViewDecorator;
 @Controller
 @RequestMapping("/orders/suborders")
 @RequiredArgsConstructor
+@PreAuthorize("not hasRole('RESTRICTED')")
 public class SuborderController {
 
   private final SuborderService suborderService;

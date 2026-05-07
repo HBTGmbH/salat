@@ -36,6 +36,7 @@ import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 @Controller
 @RequestMapping("/orders/customerorders")
 @RequiredArgsConstructor
+@PreAuthorize("not hasRole('RESTRICTED')")
 public class CustomerorderController {
 
   private final CustomerorderService customerorderService;
