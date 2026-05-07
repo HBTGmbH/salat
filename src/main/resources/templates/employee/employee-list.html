@@ -31,9 +31,9 @@
           <tr>
             <th th:title="#{main.headlinedescription.employees.lastname.text}" th:text="#{main.employee.lastname.text}">Last Name</th>
             <th th:title="#{main.headlinedescription.employees.fristname.text}" th:text="#{main.employee.firstname.text}">First Name</th>
-            <th th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
-            <th th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
-            <th th:title="#{main.headlinedescription.employees.status.text}" th:text="#{main.employee.status.text}">Status</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.status.text}" th:text="#{main.employee.status.text}">Status</th>
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           </tr>
@@ -45,9 +45,9 @@
           <tr th:each="employee : ${employees}">
             <td th:text="${employee.lastname}"></td>
             <td th:text="${employee.firstname}"></td>
-            <td th:text="${employee.sign}"></td>
-            <td th:text="${employee.loginname}"></td>
-            <td th:text="#{${'main.employee.status.' + employee.status}}"></td>
+            <td class="d-none d-md-table-cell" th:text="${employee.sign}"></td>
+            <td class="d-none d-md-table-cell" th:text="${employee.loginname}"></td>
+            <td class="d-none d-md-table-cell" th:text="#{${'main.employee.status.' + employee.status}}"></td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary"
                  th:title="#{main.headlinedescription.employees.edit.text}">

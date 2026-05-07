@@ -19,7 +19,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col">
+          <div class="col-md-6">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
             <select class="form-select tomselect" name="employeeId">
               <option value="">Text</option>
@@ -29,7 +29,7 @@
                       th:text="${employee.name + ' | ' + employee.sign}"></option>
             </select>
           </div>
-          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a th:href="@{/employees/contracts/create}" class="btn btn-success">
               <i class="icon ti ti-file-certificate"></i>
               <span th:text="#{main.general.button.createemployeecontract.text}">Create Contract</span>
@@ -81,12 +81,12 @@
         <thead>
           <tr>
             <th th:title="#{main.headlinedescription.employeecontracts.employeename.text}" th:text="#{main.employeecontract.employee.text}">Employee</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
             <th th:title="#{main.headlinedescription.employeecontracts.valid.text}" th:text="#{main.employeecontract.valid.text}">Valid</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.freelancer.text}" th:text="#{main.employeecontract.freelancer.text}">Freelancer</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.freelancer.text}" th:text="#{main.employeecontract.freelancer.text}">Freelancer</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
+            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
             <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           </tr>
@@ -97,8 +97,8 @@
           </tr>
           <tr th:each="ec : ${employeecontracts}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
             <td th:text="${ec.employeeName}"></td>
-            <td th:text="${ec.taskDescription}"></td>
-            <td th:text="${ec.supervisorName}"></td>
+            <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
+            <td class="d-none d-md-table-cell" th:text="${ec.supervisorName}"></td>
             <td>
               <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
               <small class="text-muted">
@@ -106,11 +106,11 @@
                 <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}">Until</span>
               </small>
             </td>
-            <td>
+            <td class="d-none d-md-table-cell">
               <input type="checkbox" class="form-check-input" th:checked="${ec.freelancer}" disabled />
             </td>
-            <td th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
-            <td th:text="${ec.vacationEntitlement}"></td>
+            <td class="d-none d-md-table-cell" th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
+            <td class="d-none d-md-table-cell" th:text="${ec.vacationEntitlement}"></td>
             <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
               <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
                  th:title="#{main.headlinedescription.employeecontracts.edit.text}">
