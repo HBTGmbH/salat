@@ -52,15 +52,14 @@ public class EmployeecontractController {
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Boolean show,
             Model model) {
-        Long filterEmployeeId = (employeeId != null && employeeId == -1) ? null : employeeId;
-        var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, filterEmployeeId);
+        var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId);
         var employees = employeeService.getAllEmployees().stream()
                 .filter(e -> !e.getLastname().startsWith("z_"))
                 .toList();
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("employees", employees);
         model.addAttribute("filter", filter);
-        model.addAttribute("employeeId", employeeId != null ? employeeId : -1L);
+        model.addAttribute("employeeId", employeeId);
         model.addAttribute("show", show);
         addListModel(model);
         return "employee/employee-contract-list";

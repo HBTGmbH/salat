@@ -38,6 +38,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.domain.EmployeecontractListItemDTO;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.domain.Vacation;
@@ -451,11 +452,11 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId);
   }
 
-  public List<EmployeecontractView> getEmployeeContractViewsByFilters(Boolean showInvalid, String filter,
+  public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInvalid, String filter,
       Long filterEmployeeId) {
     return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId).stream()
         .filter(ec -> !ec.getEmployee().getLastname().startsWith("z_"))
-        .map(ec -> new EmployeecontractView(
+        .map(ec -> new EmployeecontractListItemDTO(
             ec.getId(),
             ec.getEmployee().getName(),
             ec.getTaskDescription(),
@@ -510,18 +511,5 @@ public class EmployeecontractService {
     }
 
   }
-
-  public record EmployeecontractView(
-      Long id,
-      String employeeName,
-      String taskDescription,
-      String supervisorName,
-      LocalDate validFrom,
-      LocalDate validUntil,
-      boolean freelancer,
-      Duration dailyWorkingTime,
-      int vacationEntitlement,
-      boolean currentlyValid
-  ) {}
 
 }
