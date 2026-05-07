@@ -91,12 +91,17 @@
                     th:text="${overtime}">0:00</span>
             </div>
           </div>
-          <div th:if="${not #strings.isEmpty(overtimeMonth)}">
-            <div class="text-muted small mb-1" th:text="${overtimeMonth}"></div>
+          <div class="mb-3" th:if="${not #strings.isEmpty(overtimeMonth)}">
+            <div class="text-muted small mb-1" th:text="${overtimeMonth}">2026-01</div>
             <div class="d-flex align-items-center gap-2">
-              <i th:if="${monthlyOvertimeIsNegative}" class="bi bi-dash-circle text-danger"></i>
-              <i th:unless="${monthlyOvertimeIsNegative}" class="bi bi-plus-circle text-success"></i>
-              <span th:classappend="${monthlyOvertimeIsNegative} ? 'text-danger' : 'text-success'"
+              <i th:if="${monthlyOvertimeIsNegative}"
+                 class="bi bi-arrow-down-circle-fill fs-4"
+                 th:classappend="'text-' + ${monthlyOvertimeColorClass}"></i>
+              <i th:unless="${monthlyOvertimeIsNegative}"
+                 class="bi bi-arrow-up-circle-fill fs-4"
+                 th:classappend="'text-' + ${monthlyOvertimeColorClass}"></i>
+              <span class="h3 mb-0"
+                    th:classappend="'text-' + ${monthlyOvertimeColorClass}"
                     th:text="${monthlyOvertime}">0:00</span>
             </div>
           </div>

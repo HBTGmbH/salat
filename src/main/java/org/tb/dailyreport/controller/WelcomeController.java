@@ -81,6 +81,7 @@ public class WelcomeController {
         model.addAttribute("overtimeColorClass", overtimeColorClass(employeecontract.getId()));
         model.addAttribute("monthlyOvertime", session.getAttribute("monthlyOvertime"));
         model.addAttribute("monthlyOvertimeIsNegative", session.getAttribute("monthlyOvertimeIsNegative"));
+        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(employeecontract.getId()));
         model.addAttribute("overtimeMonth", session.getAttribute("overtimeMonth"));
         model.addAttribute("vacations", session.getAttribute("vacations"));
 
@@ -133,6 +134,19 @@ public class WelcomeController {
                 long signedHours = status.getTotal().isNegative() ? -hours : hours;
                 if (signedHours > 80 || signedHours < -40) return "danger";
                 if (signedHours > 40 || signedHours < -20) return "warning";
+                return "success";
+            })
+            .orElse("success");
+    }
+
+    /** Returns "success", "warning", or "danger" based on monthly overtime thresholds (in hours). */
+    private String monthlyOvertimeColorClass(long employeecontractId) {
+        return overtimeService.calculateOvertime(employeecontractId, true)
+            .map(status -> {
+                long hours = status.getTotal().getDuration().toHours();
+                long signedHours = status.getTotal().isNegative() ? -hours : hours;
+                if (signedHours > 30 || signedHours < -30) return "danger";
+                if (signedHours > 15 || signedHours < -15) return "warning";
                 return "success";
             })
             .orElse("success");
