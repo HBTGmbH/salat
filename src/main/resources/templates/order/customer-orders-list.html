@@ -81,7 +81,6 @@
         <tr>
           <th th:text="#{main.customerorder.customer.text}">Customer</th>
           <th th:text="#{main.customerorder.order.text}">Order</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.customerorder.shortdescription.text}">Short description</th>
           <th th:text="#{main.customerorder.valid.text}">Valid</th>
           <th class="d-none d-md-table-cell" th:text="#{main.customerorder.table.responsiblehbt.text}">Responsible HBT</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
@@ -95,10 +94,8 @@
         <tr th:each="co : ${customerorders}" th:classappend="${!co.currentlyValid} ? 'table-danger' : ''">
           <td th:text="${co.customer.shortname}">Customer</td>
           <td>
-            <div th:text="${co.sign}">Sign</div>
-          </td>
-          <td>
-            <div th:text="${co.shortdescription}">Short description</div>
+            <div th:text="${co.sign}" class="text-nowrap">SignCustomer Order</div>
+            <small class="text-muted" th:text="${co.description}">Description</small>
           </td>
           <td>
             <div th:text="${co.fromDate}" class="text-nowrap">From</div>

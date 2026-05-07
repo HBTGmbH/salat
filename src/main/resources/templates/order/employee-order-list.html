@@ -100,6 +100,7 @@
       <thead>
         <tr>
           <th th:text="#{main.employeeorder.employee.text}">Employee</th>
+          <th th:text="#{main.employeeorder.customerorder.text}">Order</th>
           <th th:text="#{main.employeeorder.suborder.text}">Suborder</th>
           <th th:text="#{main.employeeorder.valid.text}">Valid</th>
           <th th:text="#{main.general.debithours.text}">Debit Hours</th>
@@ -115,7 +116,14 @@
         </tr>
         <tr th:each="eo : ${employeeorders}" th:classappend="${!eo.currentlyValid} ? 'table-danger' : ((!eo.fitsToSuperiorObjects) ? 'table-warning' : '')">
           <td th:text="${eo.employeeName}"></td>
-          <td th:text="${eo.completeOrderSign}"></td>
+          <td>
+            <div th:text="${eo.customerOrderSign}" class="text-nowrap">Customer Order</div>
+            <small class="text-muted" th:text="${eo.customerOrderDescription}">Customer order description</small>
+          </td>
+          <td>
+            <div th:text="${eo.completeOrderSign}" class="text-nowrap">Suborder</div>
+            <small class="text-muted" th:text="${eo.subOrderDescription}">Suborder description</small>
+          </td>
           <td>
             <div th:text="${eo.fromDate}" class="text-nowrap">From</div>
             <small class="text-muted">
