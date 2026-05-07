@@ -12,7 +12,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col">
+          <div class="col-md-4">
             <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
@@ -22,7 +22,7 @@
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
-          <div class="col">
+          <div class="col-md-4">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
             <select class="form-select tomselect" name="customerOrderId">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -32,7 +32,7 @@
                       th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
             </select>
           </div>
-          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null}, customerId=${customerId != null and customerId > 0 ? customerId : null})}">
               <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
             </a>
@@ -87,8 +87,8 @@
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
-          <th th:text="#{main.customerorder.customer.text}">Customer</th>
-          <th th:text="#{main.customerorder.order.text}">Customer Order</th>
+          <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.customer.text}">Customer</th>
+          <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.order.text}">Customer Order</th>
           <th th:text="#{main.suborder.suborder.text}">Sub Order</th>
           <th class="d-none d-sm-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
           <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
@@ -102,7 +102,7 @@
       </thead>
       <tbody>
         <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
-          <td th:text="${so.customerorder.customer.shortname}">Customer</td>
+          <td class="d-none d-sm-table-cell" th:text="${so.customerorder.customer.shortname}">Customer</td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.customerorder.sign}">Customer Order</div>
             <small class="text-muted" th:text="${so.customerorder.shortdescription}">Customer order short description</small>
