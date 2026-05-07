@@ -3,6 +3,8 @@ package org.tb.order.controller;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +54,20 @@ public class CustomerorderController {
       @RequestParam(required = false) Long customerId,
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
+      HttpServletRequest request,
+      HttpSession session,
       Model model) {
+    if (request.getParameterMap().containsKey("filter")) {
+      session.setAttribute("orders.customerorders.filter", filter);
+      session.setAttribute("orders.customerorders.customerId", customerId);
+      session.setAttribute("orders.customerorders.show", show);
+      session.setAttribute("orders.customerorders.showActualHours", showActualHours);
+    } else {
+      filter = (String) session.getAttribute("orders.customerorders.filter");
+      customerId = (Long) session.getAttribute("orders.customerorders.customerId");
+      show = (Boolean) session.getAttribute("orders.customerorders.show");
+      showActualHours = (Boolean) session.getAttribute("orders.customerorders.showActualHours");
+    }
     var filterSet = (filter != null && !filter.isEmpty()) || customerId != null;
     var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(show, filter, customerId) : List.<Customerorder>of();
     if (Boolean.TRUE.equals(showActualHours)) {

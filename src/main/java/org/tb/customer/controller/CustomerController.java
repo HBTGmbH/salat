@@ -4,6 +4,8 @@ import static org.tb.common.GlobalConstants.CUSTOMERADDRESS_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.CUSTOMERNAME_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.CUSTOMERSHORTNAME_MAX_LENGTH;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -34,7 +36,14 @@ public class CustomerController {
 
   @GetMapping
   public String list(@RequestParam(value = "filter", required = false) String filter,
+                     HttpServletRequest request,
+                     HttpSession session,
                      Model model) {
+    if (request.getParameterMap().containsKey("filter")) {
+      session.setAttribute("customers.filter", filter);
+    } else {
+      filter = (String) session.getAttribute("customers.filter");
+    }
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
     model.addAttribute("filter", filter);
     model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));

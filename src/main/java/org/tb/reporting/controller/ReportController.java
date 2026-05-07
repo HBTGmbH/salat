@@ -8,7 +8,9 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 
 import com.google.common.annotations.VisibleForTesting;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Year;
@@ -59,8 +61,14 @@ public class ReportController {
   private final ExcelExportService excelExportService;
 
   @GetMapping
-  public String list(@RequestParam(value = "filter", required = false) String filter, Model model, SessionStatus status) {
+  public String list(@RequestParam(value = "filter", required = false) String filter, Model model, SessionStatus status,
+                     HttpServletRequest request, HttpSession session) {
     status.setComplete(); // remove old report result
+    if (request.getParameterMap().containsKey("filter")) {
+      session.setAttribute("reporting.reports.filter", filter);
+    } else {
+      filter = (String) session.getAttribute("reporting.reports.filter");
+    }
 
     var reports = reportService.getReportDefinitionsByFilter(filter);
     Map<Long, Boolean> mayEdit = new HashMap<>();

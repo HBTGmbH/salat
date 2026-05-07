@@ -6,6 +6,8 @@ import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DurationUtils.parseDuration;
 import static org.tb.common.util.DurationUtils.validateDuration;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +53,18 @@ public class EmployeecontractController {
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Boolean show,
+            HttpServletRequest request,
+            HttpSession session,
             Model model) {
+        if (request.getParameterMap().containsKey("filter")) {
+            session.setAttribute("employees.contracts.filter", filter);
+            session.setAttribute("employees.contracts.employeeId", employeeId);
+            session.setAttribute("employees.contracts.show", show);
+        } else {
+            filter = (String) session.getAttribute("employees.contracts.filter");
+            employeeId = (Long) session.getAttribute("employees.contracts.employeeId");
+            show = (Boolean) session.getAttribute("employees.contracts.show");
+        }
         var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId);
         var employees = employeeService.getAllEmployees().stream()
                 .filter(e -> !e.getLastname().startsWith("z_"))

@@ -1,5 +1,7 @@
 package org.tb.employee.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -36,7 +38,14 @@ public class EmployeeController {
     @GetMapping
     public String list(
             @RequestParam(required = false) String filter,
+            HttpServletRequest request,
+            HttpSession session,
             Model model) {
+        if (request.getParameterMap().containsKey("filter")) {
+            session.setAttribute("employees.filter", filter);
+        } else {
+            filter = (String) session.getAttribute("employees.filter");
+        }
         var employees = employeeService.getEmployeesByFilter(filter);
         employees.sort(Comparator.comparing(Employee::getLastname).thenComparing(Employee::getFirstname));
         model.addAttribute("employees", employees);

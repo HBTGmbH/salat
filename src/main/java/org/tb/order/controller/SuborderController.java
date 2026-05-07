@@ -5,6 +5,8 @@ import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -62,7 +64,22 @@ public class SuborderController {
       @RequestParam(required = false) Long customerId,
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
+      HttpServletRequest request,
+      HttpSession session,
       Model model) {
+    if (request.getParameterMap().containsKey("filter")) {
+      session.setAttribute("orders.suborders.filter", filter);
+      session.setAttribute("orders.suborders.customerOrderId", customerOrderId);
+      session.setAttribute("orders.suborders.customerId", customerId);
+      session.setAttribute("orders.suborders.show", show);
+      session.setAttribute("orders.suborders.showActualHours", showActualHours);
+    } else {
+      filter = (String) session.getAttribute("orders.suborders.filter");
+      customerOrderId = (Long) session.getAttribute("orders.suborders.customerOrderId");
+      customerId = (Long) session.getAttribute("orders.suborders.customerId");
+      show = (Boolean) session.getAttribute("orders.suborders.show");
+      showActualHours = (Boolean) session.getAttribute("orders.suborders.showActualHours");
+    }
     var filterSet = (filter != null && !filter.isEmpty()) || customerId != null || customerOrderId != null;
     var suborders = filterSet ? suborderService.getSubordersByFilters(show, filter, customerOrderId, customerId) : List.<Suborder>of();
     if (Boolean.TRUE.equals(showActualHours)) {
@@ -75,9 +92,10 @@ public class SuborderController {
       model.addAttribute("suborders", suborders);
     }
     var visibleCustomerOrders = customerorderService.getVisibleCustomerorders();
+    final var fcustomerId = customerId;
     if (customerId != null && customerId > 0) {
       visibleCustomerOrders = visibleCustomerOrders.stream()
-          .filter(co -> co.getCustomer().getId().equals(customerId))
+          .filter(co -> co.getCustomer().getId().equals(fcustomerId))
           .toList();
     }
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());

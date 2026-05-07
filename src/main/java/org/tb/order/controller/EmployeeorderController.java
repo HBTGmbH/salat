@@ -5,6 +5,8 @@ import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.validateDuration;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -59,7 +61,24 @@ public class EmployeeorderController {
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             @RequestParam(required = false) Boolean showActualHours,
+            HttpServletRequest request,
+            HttpSession session,
             Model model) {
+        if (request.getParameterMap().containsKey("filter")) {
+            session.setAttribute("orders.employeeorders.filter", filter);
+            session.setAttribute("orders.employeeorders.employeeContractId", employeeContractId);
+            session.setAttribute("orders.employeeorders.orderId", orderId);
+            session.setAttribute("orders.employeeorders.suborderId", suborderId);
+            session.setAttribute("orders.employeeorders.show", show);
+            session.setAttribute("orders.employeeorders.showActualHours", showActualHours);
+        } else {
+            filter = (String) session.getAttribute("orders.employeeorders.filter");
+            employeeContractId = (Long) session.getAttribute("orders.employeeorders.employeeContractId");
+            orderId = (Long) session.getAttribute("orders.employeeorders.orderId");
+            suborderId = (Long) session.getAttribute("orders.employeeorders.suborderId");
+            show = (Boolean) session.getAttribute("orders.employeeorders.show");
+            showActualHours = (Boolean) session.getAttribute("orders.employeeorders.showActualHours");
+        }
 
         var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         var orders = customerorderService.getAllCustomerorders();
