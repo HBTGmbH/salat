@@ -9,7 +9,6 @@ import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVa
 import jakarta.servlet.http.HttpSession;
 import java.time.DayOfWeek;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -75,8 +74,8 @@ public class WelcomeController {
 
         session.setAttribute("releaseWarning", employeecontract.getReleaseWarning());
         session.setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
-        session.setAttribute("releasedUntil", employeecontract.getReportReleaseDateString());
-        session.setAttribute("acceptedUntil", employeecontract.getReportAcceptanceDateString());
+        session.setAttribute("releasedUntil", employeecontract.getReportReleaseDate());
+        session.setAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
         session.setAttribute("warnings", warnings);
         session.setAttribute("warningsPresent", !warnings.isEmpty());
 
@@ -92,10 +91,10 @@ public class WelcomeController {
         model.addAttribute("currentLoginEmployeeId", employeecontract.getEmployee().getId());
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
         model.addAttribute("warnings", warnings);
-        model.addAttribute("releasedUntil", employeecontract.getReportReleaseDateString());
+        model.addAttribute("releasedUntil", employeecontract.getReportReleaseDate());
         model.addAttribute("releaseColorClass", employeecontract.getReleaseWarning() ? "danger" : "success");
-        model.addAttribute("acceptedUntil", employeecontract.getReportAcceptanceDateString());
-        model.addAttribute("acceptanceColorClass", acceptanceColorClass(employeecontract.getReportAcceptanceDate()));
+        model.addAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
+        model.addAttribute("acceptanceColorClass", employeecontract.getAcceptanceWarning() ? "danger" : "success");
         model.addAttribute("overtime", session.getAttribute("overtime"));
         model.addAttribute("overtimeIsNegative", session.getAttribute("overtimeIsNegative"));
         model.addAttribute("overtimeColorClass", overtimeColorClass(employeecontract.getId()));
@@ -192,7 +191,7 @@ public class WelcomeController {
         model.addAttribute("monthTarget", DurationUtils.format(monthTarget));
         model.addAttribute("monthPercent", monthPercent);
         model.addAttribute("monthPercentCapped", Math.min(100, monthPercent));
-        model.addAttribute("lastLogDate", lastLogOpt.map(Object::toString).orElse(null));
+        model.addAttribute("lastLogDate", lastLogOpt.orElse(null));
         model.addAttribute("businessDaysLagging", businessDaysLagging);
         model.addAttribute("lastLogIsLagging", businessDaysLagging > 1);
         model.addAttribute("orderHours", orderHours);
@@ -221,25 +220,11 @@ public class WelcomeController {
         return contract;
     }
 
-    /** Returns "success", "warning", or "danger" based on how far the acceptance date lags behind. */
-    private String acceptanceColorClass(LocalDate acceptanceDate) {
-        if (acceptanceDate == null) {
-            return "success";
-        }
-        LocalDate firstOfCurrentMonth = today().withDayOfMonth(1);
-        LocalDate firstOfPreviousMonth = firstOfCurrentMonth.minusMonths(1);
-        if (acceptanceDate.isBefore(firstOfPreviousMonth)) {
-            return "danger";   // 2+ months behind
-        } else if (acceptanceDate.isBefore(firstOfCurrentMonth)) {
-            return "warning";  // exactly 1 month behind
-        }
-        return "success";
-    }
-
     /** Returns "success", "warning", or "danger" based on total overtime thresholds (in hours). */
     private String overtimeColorClass(long employeecontractId) {
         return overtimeService.calculateOvertime(employeecontractId, true)
             .map(status -> {
+                if(status.getTotal() == null) return "success";
                 long hours = status.getTotal().getDuration().toHours();
                 long signedHours = status.getTotal().isNegative() ? -hours : hours;
                 if (signedHours > 80 || signedHours < -40) return "danger";
@@ -253,6 +238,7 @@ public class WelcomeController {
     private String monthlyOvertimeColorClass(long employeecontractId) {
         return overtimeService.calculateOvertime(employeecontractId, true)
             .map(status -> {
+                if(status.getCurrentMonth() == null) return "success";
                 long hours = status.getCurrentMonth().getDuration().toHours();
                 long signedHours = status.getTotal().isNegative() ? -hours : hours;
                 if (signedHours > 30 || signedHours < -30) return "danger";

@@ -96,15 +96,12 @@
       <div class="card h-100 w-100">
         <div class="card-body d-flex flex-column">
           <p class="subheader mb-2" th:text="#{main.welcome.kpi.lastlog.text}">Letzte Buchung</p>
-          <div class="h1 mb-2" th:text="${lastLogDate != null ? lastLogDate : '—'}">—</div>
-          <span th:if="${lastLogDate != null}"
-                class="badge fs-6 px-2 py-1"
-                th:classappend="${lastLogIsLagging} ? 'bg-danger-lt text-danger' : (${businessDaysLagging > 0} ? 'bg-warning-lt text-warning' : 'bg-success-lt text-success')">
-            <th:block th:if="${businessDaysLagging == 0}" th:text="#{main.welcome.kpi.lastlog.today.text}">Heute</th:block>
-            <th:block th:unless="${businessDaysLagging == 0}" th:text="${businessDaysLagging} + ' ' + #{main.welcome.kpi.lastlog.days.text}">1 Tag(e)</th:block>
-          </span>
-          <span th:unless="${lastLogDate != null}" class="badge fs-6 px-2 py-1 bg-danger-lt text-danger"
-                th:text="#{main.welcome.kpi.lastlog.never.text}">Keine Buchung</span>
+          <div class="h1 mb-3 badge" th:if="${lastLogDate != null}"
+               th:classappend="${lastLogIsLagging} ? 'bg-danger-lt text-danger' : (${businessDaysLagging > 0} ? 'bg-warning-lt text-warning' : 'bg-success-lt text-success')"
+               th:text="#{main.welcome.kpi.lastlog.days.text(${businessDaysLagging})}">Gestern
+          </div>
+          <div class="h1 mb-3 badge bg-danger-lt text-danger" th:unless="${lastLogDate != null}"
+               th:text="#{main.welcome.kpi.lastlog.never.text}">Keine Buchung</div>
         </div>
       </div>
     </div>
@@ -113,30 +110,22 @@
     <div class="col-12 col-sm-6 col-xl-3 d-flex">
       <div class="card h-100 w-100">
         <div class="card-body d-flex flex-column">
-          <p class="subheader mb-2" th:text="#{main.welcome.reports.text}">Buchungen</p>
-          <div class="mb-3">
-            <div class="text-muted small mb-1" th:text="#{main.release.released.until.text}">Freigegeben bis</div>
-            <span class="badge fs-5 px-3 py-2"
-                  th:classappend="'bg-' + ${releaseColorClass} + '-lt text-' + ${releaseColorClass}"
-                  th:text="${releasedUntil}"></span>
-          </div>
-          <div>
-            <div class="text-muted small mb-1" th:text="#{main.release.accepted.until.text}">Akzeptiert bis</div>
-            <span class="badge fs-5 px-3 py-2"
-                  th:classappend="'bg-' + ${acceptanceColorClass} + '-lt text-' + ${acceptanceColorClass}"
-                  th:text="${acceptedUntil}"></span>
-          </div>
+          <p class="subheader mb-2" th:text="#{main.release.released.until.text}">Freigegeben bis</p>
+          <div class="h1 mb-3 badge" th:if="${releasedUntil != null}"
+               th:classappend="'bg-' + ${releaseColorClass} + '-lt text-' + ${releaseColorClass}"
+               th:text="${#temporals.format(releasedUntil,'dd.MM.yyyy')}">11.10.2022</div>
+          <div class="h1 mb-3 badge bg-warning-lt text-warning" th:if="${releasedUntil == null}"
+            th:text="#{main.release.released.never.text}">nie</div>
         </div>
       </div>
     </div>
-
   </div>
 
   <!-- Overtime + Vacation row -->
   <div class="row g-3 mb-3" th:if="${displayEmployeeInfo}">
 
     <!-- Total Overtime -->
-    <div class="col-12 col-md-4 d-flex">
+    <div class="col-12 col-md-4 d-flex" th:if="${not #strings.isEmpty(overtime)}">
       <div class="card h-100 w-100">
         <div class="card-body d-flex flex-column">
           <p class="subheader mb-2" th:text="#{main.welcome.overtime.text}">Überstunden</p>
@@ -182,7 +171,7 @@
     </div>
 
     <!-- Vacation -->
-    <div class="col-12 col-md-4 d-flex">
+    <div class="col-12 col-md-4 d-flex" th:if="${not #lists.isEmpty(vacations)}">
       <div class="card h-100 w-100">
         <div class="card-header">
           <h3 class="card-title">
