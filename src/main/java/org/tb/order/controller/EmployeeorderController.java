@@ -30,11 +30,11 @@ import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.EmployeeorderListItemDTO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
-import org.tb.order.viewhelper.EmployeeOrderViewDecorator;
 
 @Controller
 @RequestMapping("/orders/employeeorders")
@@ -66,17 +66,10 @@ public class EmployeeorderController {
 
         var filterSet = (filter != null && !filter.isEmpty()) || employeeContractId != null || orderId != null || suborderId != null;
 
-        List<?> employeeOrders = List.of();
+        List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
-            if (Boolean.TRUE.equals(showActualHours)) {
-                employeeOrders = employeeorderService
-                    .getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId)
-                    .stream()
-                    .map(eo -> new EmployeeOrderViewDecorator(employeeorderService, eo))
-                    .toList();
-            } else {
-                employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, employeeContractId, orderId, suborderId);
-            }
+            employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
+                show, filter, employeeContractId, orderId, suborderId, Boolean.TRUE.equals(showActualHours));
         }
 
         List<Suborder> suborders = List.of();

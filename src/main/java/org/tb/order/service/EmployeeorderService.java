@@ -37,6 +37,7 @@ import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.EmployeeorderListItemDTO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.event.EmployeeorderConflictResolutionEvent;
 import org.tb.order.event.EmployeeorderDeleteEvent;
@@ -290,6 +291,35 @@ public class EmployeeorderService {
 
   public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId) {
     return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId);
+  }
+
+  public List<EmployeeorderListItemDTO> getEmployeeorderListItemsByFilters(Boolean showInvalid, String filter,
+      Long employeeContractId, Long customerOrderId, Long suborderId, boolean showActualHours) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId)
+        .stream()
+        .map(eo -> {
+          Duration duration = showActualHours ? getTotalDuration(eo.getId()) : null;
+          Duration difference = null;
+          if (showActualHours && duration != null
+              && eo.getDebithours() != null && eo.getDebithours().toMinutes() > 0
+              && (eo.getDebithoursunit() == null || eo.getDebithoursunit() == GlobalConstants.DEBITHOURS_UNIT_TOTALTIME)) {
+            difference = eo.getDebithours().minus(duration);
+          }
+          return new EmployeeorderListItemDTO(
+              eo.getId(),
+              eo.getCurrentlyValid(),
+              eo.getFitsToSuperiorObjects(),
+              eo.getEmployeecontract().getEmployee().getName(),
+              eo.getSuborder().getCompleteOrderSign(),
+              eo.getFromDate(),
+              eo.getUntilDate(),
+              eo.getDebithours(),
+              eo.getDebithoursunit(),
+              duration,
+              difference
+          );
+        })
+        .toList();
   }
 
   public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId,

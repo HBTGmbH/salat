@@ -111,8 +111,8 @@
           <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
         </tr>
         <tr th:each="eo : ${employeeorders}" th:classappend="${!eo.currentlyValid} ? 'table-danger' : ((!eo.fitsToSuperiorObjects) ? 'table-warning' : '')">
-          <td th:text="${eo.employeecontract.employee.name}"></td>
-          <td th:text="${eo.suborder.completeOrderSign}"></td>
+          <td th:text="${eo.employeeName}"></td>
+          <td th:text="${eo.completeOrderSign}"></td>
           <td>
             <div th:text="${eo.fromDate}" class="text-nowrap">From</div>
             <small class="text-muted">
