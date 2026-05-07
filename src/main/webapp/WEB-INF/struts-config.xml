@@ -60,6 +60,7 @@
 	<!-- =========================================== Global Forward Definitions -->
 
 	<global-forwards>
+		<forward name="showWelcome" path="/welcome" redirect="true" />
 		<forward name="unauthorized" path="/auth/unauthorized.jsp" />
 	</global-forwards>
 
