@@ -444,6 +444,19 @@
     // ── Row exclusion feedback ──────────────────────────────────────────
     function toggleRowExclusion(checkbox) {
       checkbox.closest('tr').classList.toggle('row-excluded', !checkbox.checked);
+      if (checkbox.checked) {
+        const parentSuborderId = checkbox.closest('tr').dataset.parentSuborder;
+        if (parentSuborderId) {
+          const suborderRow = document.querySelector(`tr[data-suborder-id="${parentSuborderId}"]`);
+          if (suborderRow) {
+            const suborderCb = suborderRow.querySelector('input[name="suborderIdArray"]');
+            if (suborderCb && !suborderCb.checked) {
+              suborderCb.checked = true;
+              suborderRow.classList.remove('row-excluded');
+            }
+          }
+        }
+      }
       recomputeTotals();
       updateLastRowBorder();
     }
