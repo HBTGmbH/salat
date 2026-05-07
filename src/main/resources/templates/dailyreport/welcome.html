@@ -12,17 +12,19 @@
       <div class="card-body">
         <div class="row g-3 align-items-end">
 
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-6" th:if="${employeecontracts.size() > 1}">
+            <label class="form-label" th:text="#{main.employeecontract.employee.text}"></label>
             <select name="employeeContractId" class="form-select tomselect" onchange="submitWelcomeTask('refresh')">
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:selected="${ec.id == currentEmployeeContractId}"
-                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}">
+                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'}">
               </option>
             </select>
           </div>
 
           <div class="col-12 col-md-4" th:if="${loginEmployees.size() > 1}">
+            <label class="form-label" th:text="#{main.welcome.switchlogin.text}"></label>
             <select name="loginEmployeeId" class="form-select tomselect" onchange="submitWelcomeTask('switch-login')">
               <option th:each="emp : ${loginEmployees}"
                       th:value="${emp.id}"
@@ -38,19 +40,80 @@
 
   </form>
 
-  <!-- Employee summary info -->
+  <!-- KPI row: week hours, month hours, last log, reports status -->
   <div class="row g-3 mb-3" th:if="${displayEmployeeInfo}">
 
-    <!-- Reports card -->
-    <div class="col-12 col-md-4">
-      <div class="card h-100">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="bi bi-calendar-check me-2 text-muted"></i>
-            <span th:text="#{main.welcome.reports.text}">Buchungen</span>
-          </h3>
+    <!-- Hours this week -->
+    <div class="col-12 col-sm-6 col-xl-3 d-flex">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <p class="subheader mb-2" th:text="#{main.welcome.kpi.week.text}">Diese Woche</p>
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <div class="h1 mb-0" th:text="${weekLogged}">0:00</div>
+            <div class="text-muted" th:text="'/ ' + ${weekTarget}">/ 40:00</div>
+            <div class="ms-auto">
+              <span class="fw-semibold"
+                    th:classappend="${weekPercent >= 100} ? 'text-success' : (${weekPercent >= 75} ? 'text-warning' : 'text-secondary')"
+                    th:text="${weekPercent} + '%'">0%</span>
+            </div>
+          </div>
+          <div class="progress" style="height: 6px;">
+            <div class="progress-bar"
+                 th:classappend="${weekPercent >= 100} ? 'bg-success' : 'bg-azure'"
+                 th:style="'width: ' + ${weekPercentCapped} + '%'">
+            </div>
+          </div>
         </div>
-        <div class="card-body">
+      </div>
+    </div>
+
+    <!-- Hours this month -->
+    <div class="col-12 col-sm-6 col-xl-3 d-flex">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <p class="subheader mb-2" th:text="#{main.welcome.kpi.month.text}">Dieser Monat</p>
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <div class="h1 mb-0" th:text="${monthLogged}">0:00</div>
+            <div class="text-muted" th:text="'/ ' + ${monthTarget}">/ 160:00</div>
+            <div class="ms-auto">
+              <span class="fw-semibold"
+                    th:classappend="${monthPercent >= 100} ? 'text-success' : (${monthPercent >= 75} ? 'text-warning' : 'text-secondary')"
+                    th:text="${monthPercent} + '%'">0%</span>
+            </div>
+          </div>
+          <div class="progress" style="height: 6px;">
+            <div class="progress-bar"
+                 th:classappend="${monthPercent >= 100} ? 'bg-success' : 'bg-azure'"
+                 th:style="'width: ' + ${monthPercentCapped} + '%'">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last log indicator -->
+    <div class="col-12 col-sm-6 col-xl-3 d-flex">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <p class="subheader mb-2" th:text="#{main.welcome.kpi.lastlog.text}">Letzte Buchung</p>
+          <div class="h1 mb-2" th:text="${lastLogDate != null ? lastLogDate : '—'}">—</div>
+          <span th:if="${lastLogDate != null}"
+                class="badge fs-6 px-2 py-1"
+                th:classappend="${lastLogIsLagging} ? 'bg-danger-lt text-danger' : (${businessDaysLagging > 0} ? 'bg-warning-lt text-warning' : 'bg-success-lt text-success')">
+            <th:block th:if="${businessDaysLagging == 0}" th:text="#{main.welcome.kpi.lastlog.today.text}">Heute</th:block>
+            <th:block th:unless="${businessDaysLagging == 0}" th:text="${businessDaysLagging} + ' ' + #{main.welcome.kpi.lastlog.days.text}">1 Tag(e)</th:block>
+          </span>
+          <span th:unless="${lastLogDate != null}" class="badge fs-6 px-2 py-1 bg-danger-lt text-danger"
+                th:text="#{main.welcome.kpi.lastlog.never.text}">Keine Buchung</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Released / Accepted -->
+    <div class="col-12 col-sm-6 col-xl-3 d-flex">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <p class="subheader mb-2" th:text="#{main.welcome.reports.text}">Buchungen</p>
           <div class="mb-3">
             <div class="text-muted small mb-1" th:text="#{main.release.released.until.text}">Freigegeben bis</div>
             <span class="badge fs-5 px-3 py-2"
@@ -67,51 +130,60 @@
       </div>
     </div>
 
-    <!-- Overtime card -->
-    <div class="col-12 col-md-4">
-      <div class="card h-100">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="bi bi-clock me-2 text-muted"></i>
-            <span th:text="#{main.welcome.overtime.text}">Überstunden</span>
-          </h3>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <div class="text-muted small mb-1" th:text="#{main.welcome.total.text}">Gesamt</div>
-            <div class="d-flex align-items-center gap-2">
-              <i th:if="${overtimeIsNegative}"
-                 class="bi bi-arrow-down-circle-fill fs-4"
-                 th:classappend="'text-' + ${overtimeColorClass}"></i>
-              <i th:unless="${overtimeIsNegative}"
-                 class="bi bi-arrow-up-circle-fill fs-4"
-                 th:classappend="'text-' + ${overtimeColorClass}"></i>
-              <span class="h3 mb-0"
-                    th:classappend="'text-' + ${overtimeColorClass}"
-                    th:text="${overtime}">0:00</span>
-            </div>
+  </div>
+
+  <!-- Overtime + Vacation row -->
+  <div class="row g-3 mb-3" th:if="${displayEmployeeInfo}">
+
+    <!-- Total Overtime -->
+    <div class="col-12 col-md-4 d-flex">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <p class="subheader mb-2" th:text="#{main.welcome.overtime.text}">Überstunden</p>
+          <div class="d-flex align-items-center gap-3">
+            <i th:if="${overtimeIsNegative}"
+               class="bi bi-arrow-down-circle-fill"
+               style="font-size: 2.5rem;"
+               th:classappend="'text-' + ${overtimeColorClass}"></i>
+            <i th:unless="${overtimeIsNegative}"
+               class="bi bi-arrow-up-circle-fill"
+               style="font-size: 2.5rem;"
+               th:classappend="'text-' + ${overtimeColorClass}"></i>
+            <span class="display-5 fw-bold lh-1"
+                  th:classappend="'text-' + ${overtimeColorClass}"
+                  th:text="${overtime}">0:00</span>
           </div>
-          <div class="mb-3" th:if="${not #strings.isEmpty(overtimeMonth)}">
-            <div class="text-muted small mb-1" th:text="${overtimeMonth}">2026-01</div>
-            <div class="d-flex align-items-center gap-2">
-              <i th:if="${monthlyOvertimeIsNegative}"
-                 class="bi bi-arrow-down-circle-fill fs-4"
-                 th:classappend="'text-' + ${monthlyOvertimeColorClass}"></i>
-              <i th:unless="${monthlyOvertimeIsNegative}"
-                 class="bi bi-arrow-up-circle-fill fs-4"
-                 th:classappend="'text-' + ${monthlyOvertimeColorClass}"></i>
-              <span class="h3 mb-0"
-                    th:classappend="'text-' + ${monthlyOvertimeColorClass}"
-                    th:text="${monthlyOvertime}">0:00</span>
-            </div>
-          </div>
+          <div class="text-muted small mt-2" th:text="#{main.welcome.total.text}">gesamt</div>
         </div>
       </div>
     </div>
 
-    <!-- Vacation card -->
-    <div class="col-12 col-md-4">
-      <div class="card h-100">
+    <!-- Monthly Overtime -->
+    <div class="col-12 col-md-4 d-flex" th:if="${not #strings.isEmpty(overtimeMonth)}">
+      <div class="card h-100 w-100">
+        <div class="card-body d-flex flex-column">
+          <p class="subheader mb-2" th:text="#{main.welcome.monthly.overtime.text}">Monat</p>
+          <div class="d-flex align-items-center gap-3">
+            <i th:if="${monthlyOvertimeIsNegative}"
+               class="bi bi-arrow-down-circle-fill"
+               style="font-size: 2.5rem;"
+               th:classappend="'text-' + ${monthlyOvertimeColorClass}"></i>
+            <i th:unless="${monthlyOvertimeIsNegative}"
+               class="bi bi-arrow-up-circle-fill"
+               style="font-size: 2.5rem;"
+               th:classappend="'text-' + ${monthlyOvertimeColorClass}"></i>
+            <span class="display-5 fw-bold lh-1"
+                  th:classappend="'text-' + ${monthlyOvertimeColorClass}"
+                  th:text="${monthlyOvertime}">0:00</span>
+          </div>
+          <div class="text-muted small mt-2" th:text="${overtimeMonth}">2026-05</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vacation -->
+    <div class="col-12 col-md-4 d-flex">
+      <div class="card h-100 w-100">
         <div class="card-header">
           <h3 class="card-title">
             <i class="bi bi-sun me-2 text-muted"></i>
@@ -136,6 +208,102 @@
           </div>
         </div>
       </div>
+    </div>
+
+  </div>
+
+  <!-- Hours by order this month -->
+  <div class="card mb-3" th:if="${displayEmployeeInfo and orderHours != null and not #lists.isEmpty(orderHours)}">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="bi bi-bar-chart-line me-2 text-muted"></i>
+        <span th:text="#{main.welcome.orderhours.text}">Stunden nach Auftrag (Monat)</span>
+      </h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.customer.name.text}">Kunde</th>
+            <th>Auftrag</th>
+            <th class="text-end">Stunden</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="o : ${orderHours}">
+            <td class="text-muted" th:text="${o.customer}"></td>
+            <td><code th:text="${o.orderSign}"></code></td>
+            <td class="text-end fw-medium" th:text="${o.hoursString}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row g-3 mb-3">
+
+    <div class="col-12 col-sm-4 d-flex">
+      <a th:href="@{/do/CreateDailyReport}" class="card card-link h-100 w-100 text-decoration-none">
+        <div class="card-body">
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <span class="avatar avatar-rounded bg-azure-lt text-azure" style="font-size: 1.4rem;">
+                <i class="bi bi-plus-circle"></i>
+              </span>
+            </div>
+            <div class="col">
+              <div class="fw-medium" th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</div>
+              <div class="text-muted small" th:text="#{main.welcome.action.logwork.subtitle.text}">Arbeitszeit erfassen</div>
+            </div>
+            <div class="col-auto text-muted">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-12 col-sm-4 d-flex">
+      <a th:href="@{/do/ShowMatrix}" class="card card-link h-100 w-100 text-decoration-none">
+        <div class="card-body">
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <span class="avatar avatar-rounded bg-indigo-lt text-indigo" style="font-size: 1.4rem;">
+                <i class="bi bi-grid-3x3-gap"></i>
+              </span>
+            </div>
+            <div class="col">
+              <div class="fw-medium" th:text="#{main.general.mainmenu.matrixmenu.text}">Matrixübersicht</div>
+              <div class="text-muted small" th:text="#{main.welcome.action.matrix.subtitle.text}">Buchungsmatrix anzeigen</div>
+            </div>
+            <div class="col-auto text-muted">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-12 col-sm-4 d-flex">
+      <a th:href="@{/do/ShowRelease}" class="card card-link h-100 w-100 text-decoration-none">
+        <div class="card-body">
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <span class="avatar avatar-rounded bg-green-lt text-green" style="font-size: 1.4rem;">
+                <i class="bi bi-check-circle"></i>
+              </span>
+            </div>
+            <div class="col">
+              <div class="fw-medium" th:text="#{main.general.mainmenu.release.title.text}">Freigabe</div>
+              <div class="text-muted small" th:text="#{main.welcome.action.release.subtitle.text}">Buchungen freigeben</div>
+            </div>
+            <div class="col-auto text-muted">
+              <i class="bi bi-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      </a>
     </div>
 
   </div>
