@@ -253,7 +253,7 @@ public class WelcomeController {
     private String monthlyOvertimeColorClass(long employeecontractId) {
         return overtimeService.calculateOvertime(employeecontractId, true)
             .map(status -> {
-                long hours = status.getTotal().getDuration().toHours();
+                long hours = status.getCurrentMonth().getDuration().toHours();
                 long signedHours = status.getTotal().isNegative() ? -hours : hours;
                 if (signedHours > 30 || signedHours < -30) return "danger";
                 if (signedHours > 15 || signedHours < -15) return "warning";
