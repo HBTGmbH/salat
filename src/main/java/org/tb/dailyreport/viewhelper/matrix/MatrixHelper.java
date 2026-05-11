@@ -157,19 +157,13 @@ public class MatrixHelper {
 
         Duration totalWorkingTimeTarget = null;
         Duration totalWorkingTimeDiff = null;
-        Duration totalOvertimeCompensation = null;
-        Duration totalWorkingTimeDiffWithCompensation = null;
 
         if(method == MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES && employeecontract != null) {
             //calculate target working time
             totalWorkingTimeTarget = overtimeService.calculateWorkingTimeTarget(employeecontract.getId(), dateFirst, dateLast);
 
-            // calculate overtime compensation
-            totalOvertimeCompensation = overtimeService.calculateOvertimeCompensation(employeecontract.getId(), dateFirst, dateLast);
-
             //calculate totals
             totalWorkingTimeDiff = totalWorkingTime.minus(totalWorkingTimeTarget);
-            totalWorkingTimeDiffWithCompensation = totalWorkingTimeDiff.plus(totalOvertimeCompensation);
         }
 
         return new Matrix(
@@ -177,9 +171,7 @@ public class MatrixHelper {
             dayTotals,
             totalWorkingTime,
             totalWorkingTimeTarget,
-            totalWorkingTimeDiff,
-            totalOvertimeCompensation,
-            totalWorkingTimeDiffWithCompensation
+            totalWorkingTimeDiff
         );
     }
 
@@ -452,10 +444,6 @@ public class MatrixHelper {
         results.put("totalworkingtimetargetstring", matrix.getTotalWorkingTimeTargetString());
         results.put("totalworkingtimediff", matrix.getTotalWorkingTimeDiff());
         results.put("totalworkingtimediffstring", matrix.getTotalWorkingTimeDiffString());
-        results.put("totalovertimecompensation", matrix.getTotalOvertimeCompensation());
-        results.put("totalovertimecompensationstring", matrix.getTotalOvertimeCompensationString());
-        results.put("totalworkingtimediffwithcompensation", matrix.getTotalWorkingTimeDiffWithCompensation());
-        results.put("totalworkingtimediffwithcompensationstring", matrix.getTotalWorkingTimeDiffWithCompensationString());
         results.put("currentOrder", sOrder == null ? "ALL ORDERS" : sOrder);
         results.put("currentDay", reportForm.getFromDay());
         results.put("currentMonth", reportForm.getFromMonth());
@@ -596,10 +584,6 @@ public class MatrixHelper {
         results.put("totalworkingtimetargetstring", matrix.getTotalWorkingTimeTargetString());
         results.put("totalworkingtimediff", matrix.getTotalWorkingTimeDiff());
         results.put("totalworkingtimediffstring", matrix.getTotalWorkingTimeDiffString());
-        results.put("totalovertimecompensation", matrix.getTotalOvertimeCompensation());
-        results.put("totalovertimecompensationstring", matrix.getTotalOvertimeCompensationString());
-        results.put("totalworkingtimediffwithcompensation", matrix.getTotalWorkingTimeDiffWithCompensation());
-        results.put("totalworkingtimediffwithcompensationstring", matrix.getTotalWorkingTimeDiffWithCompensationString());
         results.put("daysofmonth", maxDays);
         results.put("showStartAndBreakTime", reportForm.getStartAndBreakTime());
         results.put("csvDownloadUrl", getCsvDownloadUrl(reportForm, ec.getEmployee().getSign()));

@@ -13,7 +13,6 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,8 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.domain.AuditedEntity;
-import org.tb.common.exception.ErrorCode;
-import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.domain.OvertimeReportMonth;
@@ -35,14 +32,11 @@ import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent.TimereportDeleteId;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
@@ -59,7 +53,6 @@ public class OvertimeService {
   private final EmployeecontractDAO employeecontractDAO;
   private final PublicholidayDAO publicholidayDAO;
   private final TimereportDAO timereportDAO;
-  private final WorkingdayDAO workingdayDAO;
   private final EmployeecontractService employeecontractService;
   private final TimereportService timereportService;
   private final EmployeeorderService employeeorderService;
@@ -116,61 +109,11 @@ public class OvertimeService {
     }
     if (!monthEndDate.isBefore(monthBeginDate)) {
       var monthOvertimeInfo = calculateOvertime(monthBeginDate, monthEndDate, employeecontract, false);
-      var compensatedOvertime = calculateOvertimeCompensation(employeecontractId, monthBeginDate, monthEndDate);
-      var monthOvertime = monthOvertimeInfo.getDiff().plus(compensatedOvertime);
+      var monthOvertime = monthOvertimeInfo.getDiff();
       status.setCurrentMonth(toStatusInfo(monthBeginDate, monthEndDate, monthOvertime, employeecontract.getDailyWorkingTime()));
     }
 
     return Optional.of(status);
-  }
-
-  /**
-   * Calculates the (fictive) amount of time that results from reported overtime compensations in the given time period.
-   *
-   * @param begin begin of time period
-   * @param end end of time period (inclusive)
-   */
-  public Duration calculateOvertimeCompensation(long employeecontractId, LocalDate begin, LocalDate end) {
-
-    Employeecontract contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
-    if(contract == null) {
-      throw new InvalidDataException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND);
-    }
-
-    var timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, begin, end);
-
-    // add dates with not worked or partially worked days
-    var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, begin, end);
-    var dates = workingDays
-        .stream()
-        .filter(workingday -> workingday.getType() == WorkingDayType.OVERTIME_COMPENSATED)
-        .map(Workingday::getRefday)
-        .distinct()
-        .collect(Collectors.toSet());
-
-    // sum reported time for every date with an overtime compensation
-    var reportedMinutesPerDate = timereports
-        .stream()
-        .filter(timereport -> dates.contains(timereport.getReferenceday()))
-        .collect(Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.summingLong(timereport -> timereport.getDuration().toMinutes())));
-    reportedMinutesPerDate = new HashMap<>(reportedMinutesPerDate);
-    for(var date : dates) {
-      // ensure overtime is calculated for all dates, even if not time was logged - thats the case when WorkingDayType is used
-      if(!reportedMinutesPerDate.containsKey(date)) {
-        reportedMinutesPerDate.put(date, 0L);
-      }
-    }
-
-    var dailyWorkingTime = contract.getDailyWorkingTime();
-
-    var compensatedOvertime = reportedMinutesPerDate.values()
-        .stream()
-        .map(Duration::ofMinutes)
-        .map(duration -> dailyWorkingTime.minus(duration))
-        .filter(duration -> duration.isPositive()) // just use positive compensations
-        .collect(Collectors.summingLong(Duration::toMinutes));
-
-    return Duration.ofMinutes(compensatedOvertime);
   }
 
   private OvertimeStatusInfo toStatusInfo(LocalDate beginDate, LocalDate endDate, Duration overtime, Duration dailyWorkingTime) {

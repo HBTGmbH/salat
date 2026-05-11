@@ -16,8 +16,6 @@ public class Matrix {
     private final Duration totalWorkingTime;
     private final Duration totalWorkingTimeTarget;
     private final Duration totalWorkingTimeDiff;
-    private final Duration totalOvertimeCompensation;
-    private final Duration totalWorkingTimeDiffWithCompensation;
 
     public String getTotalWorkingTimeString() {
         return format(totalWorkingTime);
@@ -27,16 +25,8 @@ public class Matrix {
         return format(totalWorkingTimeTarget);
     }
 
-    public String getTotalOvertimeCompensationString() {
-        return format(totalOvertimeCompensation);
-    }
-
     public String getTotalWorkingTimeDiffString() {
         return format(totalWorkingTimeDiff);
-    }
-
-    public String getTotalWorkingTimeDiffWithCompensationString() {
-        return format(totalWorkingTimeDiffWithCompensation);
     }
 
 }

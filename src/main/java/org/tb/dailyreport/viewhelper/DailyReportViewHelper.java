@@ -17,7 +17,6 @@ public class DailyReportViewHelper implements Serializable {
   private final boolean useFavorites;
   private final boolean displayWorkingDayStartBreak;
   private final boolean displayTraining;
-  private final boolean displayOvertimeCompensation;
   private final boolean displayTargetHours;
 
   public boolean containsMinuteOption(List<OptionItem> items, int minutes) {

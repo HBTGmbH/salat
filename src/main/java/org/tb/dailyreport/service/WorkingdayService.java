@@ -1,18 +1,13 @@
 package org.tb.dailyreport.service;
 
-import static java.time.DayOfWeek.SATURDAY;
-import static java.time.DayOfWeek.SUNDAY;
 import static org.tb.auth.domain.AccessLevel.WRITE;
 import static org.tb.common.exception.ErrorCode.WD_DELETE_REQ_EMPLOYEE_OR_MANAGER;
-import static org.tb.common.exception.ErrorCode.WD_HOLIDAY_NO_WORKED;
 import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_OUTSIDE_CONTRACT;
 import static org.tb.common.exception.ErrorCode.WD_READ_REQ_EMPLOYEE_OR_MANAGER;
-import static org.tb.common.exception.ErrorCode.WD_SATSUN_NOT_WORKED;
 import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -78,16 +73,6 @@ public class WorkingdayService {
     if(workingday.getType() == NOT_WORKED) {
       var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday());
       BusinessRuleCheckUtils.empty(timereports, WD_NOT_WORKED_TIMEREPORTS_FOUND);
-    }
-    if(workingday.getType() == OVERTIME_COMPENSATED) {
-      BusinessRuleCheckUtils.isFalse(
-          workingday.getRefday().getDayOfWeek() == SATURDAY || workingday.getRefday().getDayOfWeek() == SUNDAY,
-          WD_SATSUN_NOT_WORKED
-      );
-      BusinessRuleCheckUtils.isFalse(
-          publicholidayRepository.findByRefdate(workingday.getRefday()).isPresent(),
-          WD_HOLIDAY_NO_WORKED
-      );
     }
 
     workingdayRepository.save(workingday);

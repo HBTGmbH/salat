@@ -3,7 +3,6 @@ package org.tb.dailyreport.viewhelper.matrix;
 import static java.time.Duration.ZERO;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.OVERTIME_COMPENSATED;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -75,18 +74,4 @@ public class MatrixDayTotal {
         return workingDayType == NOT_WORKED;
     }
 
-    public boolean isOvertimeCompensated() {
-        return workingDayType == OVERTIME_COMPENSATED;
-    }
-
-    public Duration getEffectiveOvertime() {
-        var effectiveOvertime = ZERO;
-        if(workingDayType == OVERTIME_COMPENSATED) {
-            effectiveOvertime = contractWorkingTime.minus(workingTime);
-        }
-        if(effectiveOvertime.isNegative()) {
-            effectiveOvertime = ZERO;
-        }
-        return effectiveOvertime;
-    }
 }

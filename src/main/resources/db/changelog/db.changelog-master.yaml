@@ -1662,5 +1662,24 @@ databaseChangeLog:
             tableName: excel_import_mapping
             columnNames: employee_id, target_field
             constraintName: uq_excel_import_mapping_employee_field
+  - changeSet:
+      id: 44
+      author: kr
+      comment: Change all values from OVERTIME_COMPENSATED to WORKED in column type of table workingday
+      changes:
+        - update:
+            tableName: workingday
+            columns:
+              - column:
+                  name: type
+                  value: WORKED
+            where: type = 'OVERTIME_COMPENSATED' and starttimehour > 0
+        - update:
+            tableName: workingday
+            columns:
+              - column:
+                  name: type
+                  value: NOT_WORKED
+            where: type = 'OVERTIME_COMPENSATED' and starttimehour = 0
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

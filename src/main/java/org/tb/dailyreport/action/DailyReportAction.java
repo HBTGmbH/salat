@@ -59,7 +59,6 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
         boolean displayEmployeeInfo = false;
         boolean useFavorites = false;
         boolean displayTraining = false;
-        boolean displayOvertimeCompensation = false;
         boolean displayTargetHours = false;
         var currentContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
         if(currentContract != null) {
@@ -71,7 +70,6 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
                 displayEmployeeInfo = true;
                 displayTraining = true;
                 useFavorites = true;
-                displayOvertimeCompensation = true;
                 displayTargetHours = true;
             } else if(authorizedUser.isManager()) {
                 createTimereports = true;
@@ -86,7 +84,6 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
                 displayWorkingDayStartBreak = false;
                 displayEmployeeInfo = false;
                 displayTraining = false;
-                displayOvertimeCompensation = false;
                 displayTargetHours = false;
             }
         }
@@ -99,7 +96,6 @@ public abstract class DailyReportAction<F extends ActionForm> extends LoginRequi
             useFavorites,
             displayWorkingDayStartBreak,
             displayTraining,
-            displayOvertimeCompensation,
             displayTargetHours
         );
         request.getSession().setAttribute("dailyReportViewHelper", helper);

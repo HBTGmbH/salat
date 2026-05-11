@@ -37,7 +37,6 @@ public class SuborderHelper {
 
         // initial with empty values in case of an error
         request.getSession().removeAttribute("suborders");
-        request.getSession().removeAttribute("overtimeCompensation");
         request.getSession().removeAttribute("currentSuborderId");
 
         String dateString = reportForm.getReferenceday();

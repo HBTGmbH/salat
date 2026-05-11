@@ -385,20 +385,6 @@
 			</c:forEach>
 			<td class="matrix bold" style="border-top: 2px black solid;" align="right"><c:out value="${totalworkingtimestring}"></c:out></td>
 		</tr>
-        <c:if test="${dailyReportViewHelper.displayOvertimeCompensation and totalovertimecompensation != null and not totalovertimecompensation.zero}">
-		<tr class="matrix">
-			<td colspan="2" class="matrix bold"	align="right"><bean:message key="main.matrixoverview.table.overtimecompensation.text" />
-			</td>
-			<c:forEach var="matrixdaytotal" items="${matrixdaytotals}">
-				<td class="matrix bold${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
-					style="font-size: 7pt;"
-					align="right">
-					<java8:formatDuration value="${matrixdaytotal.effectiveOvertime}" printZero="false" />
-				</td>
-			</c:forEach>
-			<td class="matrix bold" align="right"><c:out value="${totalovertimecompensationstring}"></c:out></td>
-		</tr>
-		</c:if>
 
 		<c:if test="${dailyReportViewHelper.displayWorkingDayStartBreak and showStartAndBreakTime}">
 			<tr class="matrix">
@@ -432,7 +418,7 @@
 					<td class="matrix${matrixdaytotal.publicHoliday ? ' holiday' : (matrixdaytotal.satSun ? ' weekend' : '')}"
 						style="font-size: 7pt; border-top: 1x black solid;"
 						align="center">
-						<c:out value="${matrixdaytotal.notWorked ? 'x' : matrixdaytotal.overtimeCompensated ? '(x)' : ' '}"></c:out>
+						<c:out value="${matrixdaytotal.notWorked ? 'x' : ' '}"></c:out>
 					</td>
 				</c:forEach>
 				<td class="matrix" align="right">&nbsp;</td>
@@ -456,16 +442,6 @@
 								<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.difference.text" /></td>
 								<td class="matrix" style="border-style:none;text-align: right;<c:if test="${totalworkingtimediff.negative}">color:#FF0000;</c:if>"><c:out value="${totalworkingtimediffstring}" /></td>
 							</tr>
-							<c:if test="${dailyReportViewHelper.displayOvertimeCompensation and not totalovertimecompensation.zero}">
-								<tr class="matrix">
-									<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.overtimecompensation.text" /></td>
-									<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalovertimecompensationstring}" /></td>
-								</tr>
-								<tr class="matrix">
-									<td class="matrix" style="border-style: none;"><bean:message key="main.matrixoverview.headline.differencewithovertimecompensation.text" /></td>
-									<td class="matrix" style="border-style:none;text-align: right"><c:out value="${totalworkingtimediffwithcompensationstring}" /></td>
-								</tr>
-							</c:if>
 						</c:if>
 					</table>
 				</td>
