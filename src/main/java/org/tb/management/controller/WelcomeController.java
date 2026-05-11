@@ -1,4 +1,4 @@
-package org.tb.dailyreport.controller;
+package org.tb.management.controller;
 
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.getWorkingDayDistance;
@@ -108,7 +108,7 @@ public class WelcomeController {
             calculateEmployeeInfo(model, employeecontract);
         }
 
-        return "dailyreport/welcome";
+        return "management/welcome";
     }
 
     private void calculateEmployeeInfo(Model model, Employeecontract employeecontract) {

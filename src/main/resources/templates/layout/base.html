@@ -229,6 +229,11 @@
                      th:text="#{main.general.mainmenu.overview.text}">
                     Übersicht
                   </a>
+                  <a class="dropdown-item" th:href="@{/my-accounts}"
+                     th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
+                     th:text="#{main.my.accounts.title}">
+                    Meine Konten
+                  </a>
                 </div>
               </div>
             </div>
