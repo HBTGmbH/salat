@@ -127,7 +127,14 @@
             </span>
           </td>
           <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
-            <span th:text="${@durationUtils.format(so.duration)}">0:00</span>
+            <div th:if="${so.invoiceString == 'Y'}">
+              <span class="badge bg-success-lt me-1" th:title="#{main.general.showactualhours.invoiceable.text}"><i class="bi-file-earmark-check"></i></span>
+              <span th:text="${@durationUtils.format(so.duration)}"></span>
+            </div>
+            <div class="mt-1" th:if="${so.invoiceString == 'N' or so.durationNotInvoiceable.positive}">
+              <span class="badge bg-danger-lt me-1" th:title="#{main.general.showactualhours.not.invoiceable.text}"><i class="bi-file-earmark-x"></i></span>
+              <small class="text-muted" th:text="${@durationUtils.format(so.durationNotInvoiceable)}"></small>
+            </div>
           </td>
           <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
             <span th:if="${so.difference != null and so.difference.negative}" class="text-danger" th:text="${@durationUtils.format(so.difference)}">0:00</span>

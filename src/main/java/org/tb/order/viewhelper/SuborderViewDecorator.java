@@ -23,7 +23,9 @@ public class SuborderViewDecorator extends Suborder {
         this.suborder = suborder;
         if (suborder.getInvoice() == YESNO_NO) {
             this.duration = Duration.ZERO;
-            this.durationNotInvoiceable = Duration.ZERO;
+            List<Long> descendants = new ArrayList<>();
+            generateListOfDescendants(suborder, false, descendants, suborderService);
+            this.durationNotInvoiceable = suborderService.getTotalDuration(descendants);
         } else {
             List<Long> descendants = new ArrayList<>();
             generateListOfDescendants(suborder, true, descendants, suborderService);
@@ -35,10 +37,9 @@ public class SuborderViewDecorator extends Suborder {
     }
 
     private static void generateListOfDescendants(Suborder so, boolean isInvoiceable, List<Long> listOfDescendents, SuborderService suborderService) {
-        if (isInvoiceable != (so.getInvoice() == YESNO_YES)) {
-            return;
+        if (isInvoiceable == (so.getInvoice() == YESNO_YES)) {
+            listOfDescendents.add(so.getId());
         }
-        listOfDescendents.add(so.getId());
         var children = suborderService.getSuborderChildren(so.getId());
         for (Suborder child : children) {
             generateListOfDescendants(child, isInvoiceable, listOfDescendents, suborderService);
