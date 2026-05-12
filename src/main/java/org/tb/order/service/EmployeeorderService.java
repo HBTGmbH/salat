@@ -364,6 +364,10 @@ public class EmployeeorderService {
     return employeeorderDAO.getVacationEmployeeOrdersByEmployeeContractIdAndDate(employeecontractId, today());
   }
 
+  public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, final LocalDateRange range) {
+    return employeeorderDAO.getVacationEmployeeOrders(employeecontractId, range);
+  }
+
   public List<Employeeorder> getAllEmployeeOrders() {
     return employeeorderDAO.getEmployeeorders();
   }

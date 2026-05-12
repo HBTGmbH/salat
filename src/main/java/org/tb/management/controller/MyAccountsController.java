@@ -22,6 +22,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
@@ -139,7 +140,7 @@ public class MyAccountsController {
         int usedPercent = 0;
 
         long dailyWorkingMinutes = contract.getDailyWorkingTime().toMinutes();
-        var vacationOrders = employeeorderService.getVacationEmployeeOrders(contract.getId());
+        var vacationOrders = employeeorderService.getVacationEmployeeOrders(contract.getId(), new LocalDateRange(yearStart, yearEnd));
         var vacationMonthLabels = new ArrayList<String>();
         var vacationMonthDays = new ArrayList<Double>();
 
@@ -149,6 +150,26 @@ public class MyAccountsController {
             for (var order : vacationOrders) {
                 Duration budget = order.getDebithours();
                 if (budget == null || budget.isZero()) continue;
+
+                // if vacation was not taken in the validity, make budget fit the actual taken time
+                // because the rest will not be available anymore for the employee
+                if(order.getValidity().getUntil().isBefore(today())) {
+                    budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForSuborder(
+                        order.getSuborder().getId(), yearStart, today));
+                } else if (!currentYearSign.equals(order.getSuborder().getSign())) {
+                    // only use remaining from last year
+
+                    // calculate remaining budget for this year = budget - taken vacation last year
+                    LocalDate previousYearStart = yearStart.minusYears(1);
+                    LocalDate previousYearEnd = yearEnd.minusYears(1);
+                    long takenMinutes = timereportService.getTotalDurationMinutesForSuborder(
+                        order.getSuborder().getId(),
+                        previousYearStart,
+                        previousYearEnd
+                    );
+                    budget = budget.minusMinutes(takenMinutes);
+                }
+
                 double budgetDays = (double) budget.toMinutes() / dailyWorkingMinutes;
                 if (currentYearSign.equals(order.getSuborder().getSign())) {
                     annualEntitlementDays += budgetDays;
@@ -160,7 +181,7 @@ public class MyAccountsController {
             for (var order : vacationOrders) {
                 long suborderId = order.getSuborder().getId();
                 takenDays += (double) timereportService.getTotalDurationMinutesForSuborder(
-                        suborderId, LocalDate.of(2000, 1, 1), today) / dailyWorkingMinutes;
+                        suborderId, yearStart, today) / dailyWorkingMinutes;
                 plannedDays += (double) timereportService.getTotalDurationMinutesForSuborder(
                         suborderId, today.plusDays(1), today.plusYears(2)) / dailyWorkingMinutes;
             }

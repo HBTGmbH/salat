@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
@@ -47,6 +48,15 @@ public class EmployeeorderDAO {
             customerOrderSigns
         );
         return employeeorders.stream().filter(eo -> eo.isValidAt(date)).collect(Collectors.toList());
+    }
+
+    public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, final LocalDateRange range) {
+        var customerOrderSigns = of(CUSTOMERORDER_SIGN_VACATION);
+        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
+            employeecontractId,
+            customerOrderSigns
+        );
+        return employeeorders.stream().filter(eo -> eo.getValidity().overlaps(range)).collect(Collectors.toList());
     }
 
     /**
