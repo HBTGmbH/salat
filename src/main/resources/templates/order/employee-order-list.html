@@ -8,7 +8,8 @@
   <!-- Filter card -->
   <div class="card mb-3">
     <div class="card-body">
-      <form method="get" th:action="@{/orders/employeeorders}" data-filter-form="eo">
+      <form method="get" th:action="@{/orders/employeeorders}" data-filter-form="eo"
+            th:hx-get="@{/orders/employeeorders}" hx-target="#results-container" hx-push-url="true">
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
@@ -32,9 +33,9 @@
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-3" id="order-select-wrapper">
             <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
-            <select class="form-select tomselect" name="orderId">
+            <select class="form-select tomselect" name="orderId" th:attr="data-value=${orderId}">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${orders}"
                       th:value="${co.id}"
@@ -74,9 +75,9 @@
             </div>
           </div>
           <div class="row g-2 align-items-end mt-2">
-            <div class="col-md-4">
+            <div class="col-md-4" id="suborder-select-wrapper">
               <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
-              <select class="form-select tomselect" name="suborderId">
+              <select class="form-select tomselect" name="suborderId" th:attr="data-value=${suborderId}">
                 <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
                 <option th:each="so : ${suborders}"
                         th:value="${so.id}"
@@ -106,6 +107,7 @@
   </div>
 
   <!-- Table -->
+  <div id="results-container" th:fragment="results">
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
       <thead>
@@ -175,6 +177,29 @@
       </tbody>
     </table>
   </div>
+  <div th:if="${htmxRequest}">
+    <div id="order-select-wrapper" class="col-md-3" hx-swap-oob="true">
+      <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
+      <select class="form-select tomselect" name="orderId" th:attr="data-value=${orderId}" onchange="form.requestSubmit()">
+        <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
+        <option th:each="co : ${orders}"
+                th:value="${co.id}"
+                th:text="${co.sign + ' - ' + co.shortdescription}"
+                th:selected="${orderId != null and orderId == co.id}"></option>
+      </select>
+    </div>
+    <div id="suborder-select-wrapper" class="col-md-4" hx-swap-oob="true">
+      <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
+      <select class="form-select tomselect" name="suborderId" th:attr="data-value=${suborderId}" onchange="form.requestSubmit()">
+        <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
+        <option th:each="so : ${suborders}"
+                th:value="${so.id}"
+                th:text="${so.completeOrderSign + ' - ' + so.shortdescription}"
+                th:selected="${suborderId != null and suborderId == so.id}"></option>
+      </select>
+    </div>
+  </div>
+  </div>
 
   <script th:inline="none">
     document.addEventListener('DOMContentLoaded', function () {
@@ -208,7 +233,7 @@
       });
 
       form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
-        el.addEventListener('change', function () { form.submit(); });
+        el.addEventListener('change', function () { form.requestSubmit(); });
       });
     });
   </script>

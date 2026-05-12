@@ -8,7 +8,8 @@
   <!-- Filter card -->
   <div class="card mb-3">
     <div class="card-body">
-      <form method="get" th:action="@{/orders/customerorders}" data-filter-form="co">
+      <form method="get" th:action="@{/orders/customerorders}" data-filter-form="co"
+            hx-get="/orders/customerorders" hx-target="#results-container" hx-push-url="true">
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
@@ -74,6 +75,7 @@
   </div>
 
   <!-- Table -->
+  <div id="results-container" th:fragment="results">
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
       <thead>
@@ -154,6 +156,7 @@
       </tbody>
     </table>
   </div>
+  </div>
 
   <script th:inline="none">
     document.addEventListener('DOMContentLoaded', function () {
@@ -191,7 +194,7 @@
 
       // Auto-submit on select/named-checkbox changes; text input requires button/Enter
       form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
-        el.addEventListener('change', function () { form.submit(); });
+        el.addEventListener('change', function () { form.requestSubmit(); });
       });
     });
   </script>

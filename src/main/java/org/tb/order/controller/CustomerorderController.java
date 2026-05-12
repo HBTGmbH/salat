@@ -88,7 +88,9 @@ public class CustomerorderController {
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.customerorders.text", "Customer Orders"));
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    return "order/customer-order-list";
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    return htmxRequest ? "order/customer-order-list :: results" : "order/customer-order-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")

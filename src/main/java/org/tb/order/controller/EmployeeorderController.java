@@ -87,12 +87,16 @@ public class EmployeeorderController {
         var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
 
-        var filterSet = (filter != null && !filter.isEmpty()) || employeeContractId != null || orderId != null || suborderId != null;
+        var filterSet = (filter != null && !filter.isEmpty()) ||
+                        customerId != null ||
+                        employeeContractId != null ||
+                        orderId != null ||
+                        suborderId != null;
 
         List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
             employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                show, filter, employeeContractId, orderId, suborderId, Boolean.TRUE.equals(showActualHours));
+                show, filter, employeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(showActualHours));
         }
 
         List<Suborder> suborders = List.of();
@@ -113,7 +117,9 @@ public class EmployeeorderController {
         model.addAttribute("showActualHours", showActualHours);
         model.addAttribute("showActualHoursToggle", Boolean.TRUE.equals(showActualHours));
         addListModel(model);
-        return "order/employee-order-list";
+        boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+        model.addAttribute("htmxRequest", htmxRequest);
+        return htmxRequest ? "order/employee-order-list :: results" : "order/employee-order-list";
     }
 
     @PreAuthorize("hasRole('MANAGER')")

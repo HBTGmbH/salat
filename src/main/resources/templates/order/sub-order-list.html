@@ -8,7 +8,8 @@
   <!-- Filter card -->
   <div class="card mb-3">
     <div class="card-body">
-      <form method="get" th:action="@{/orders/suborders}" data-filter-form="so">
+      <form method="get" th:action="@{/orders/suborders}" data-filter-form="so"
+            th:hx-get="@{/orders/suborders}" hx-target="#results-container" hx-push-url="true">
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
@@ -22,7 +23,7 @@
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-4" id="order-select-wrapper">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
             <select class="form-select tomselect" name="customerOrderId">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -82,6 +83,7 @@
       </form>
     </div>
   </div>
+  <div id="results-container" th:fragment="results">
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
       <thead>
@@ -174,6 +176,19 @@
       </tbody>
     </table>
   </div>
+  <div th:if="${htmxRequest}">
+    <div id="order-select-wrapper" class="col-md-4" hx-swap-oob="true">
+      <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
+      <select class="form-select tomselect" name="customerOrderId">
+        <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
+        <option th:each="co : ${visibleCustomerOrders}"
+                th:value="${co.id}"
+                th:text="${co.sign + ' - ' + co.shortdescription}"
+                th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
+      </select>
+    </div>
+  </div>
+  </div>
 
   <script th:inline="none">
     document.addEventListener('DOMContentLoaded', function () {
@@ -211,7 +226,7 @@
 
       // Auto-submit on select/named-checkbox changes; text input requires button/Enter
       form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
-        el.addEventListener('change', function () { form.submit(); });
+        el.addEventListener('change', function () { form.requestSubmit(); });
       });
     });
   </script>

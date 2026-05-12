@@ -284,18 +284,13 @@ public class EmployeeorderService {
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
-  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, long employeeContractId,
-      Long customerOrderId) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId);
-  }
-
   public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId);
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, null, customerOrderId, suborderId);
   }
 
   public List<EmployeeorderListItemDTO> getEmployeeorderListItemsByFilters(Boolean showInvalid, String filter,
-      Long employeeContractId, Long customerOrderId, Long suborderId, boolean showActualHours) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, suborderId)
+      Long employeeContractId, Long customerId, Long customerOrderId, Long suborderId, boolean showActualHours) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerId, customerOrderId, suborderId)
         .stream()
         .map(eo -> {
           Duration duration = showActualHours ? getTotalDuration(eo.getId()) : null;

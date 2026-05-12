@@ -19,6 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
+import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder_;
@@ -181,6 +182,16 @@ public class EmployeeorderDAO {
         );
     }
 
+    private Specification<Employeeorder> matchingCustomerId(long customerId) {
+        return (root, query, builder) -> builder.equal(
+            root.join(Employeeorder_.suborder)
+                .join(Suborder_.customerorder)
+                .join(Customerorder_.customer)
+                .get(Customer_.id),
+            customerId
+        );
+    }
+
     private Specification<Employeeorder> matchingSuborderId(long suborderId) {
         return (root, query, builder) -> builder.equal(
             root.join(Employeeorder_.suborder).get(Suborder_.id),
@@ -206,7 +217,7 @@ public class EmployeeorderDAO {
     /**
      * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, and suborder.
      */
-    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long customerSuborderId) {
+    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId) {
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
                 if(!TRUE.equals(showInvalid)) {
@@ -214,6 +225,9 @@ public class EmployeeorderDAO {
                 }
                 if(employeeContractId != null && employeeContractId > 0) {
                     predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
+                }
+                if(customerId != null && customerId > 0) {
+                    predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
                 }
                 if(customerOrderId != null && customerOrderId > 0) {
                     predicates.add(matchingCustomerorderId(customerOrderId).toPredicate(root, query, builder));
@@ -232,15 +246,6 @@ public class EmployeeorderDAO {
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
                 .thenComparing(Employeeorder::getFromDate))
             .collect(Collectors.toList());
-    }
-
-    /**
-     * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, suborder.
-     *
-     * @return List<Employeeorder>
-     */
-    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId) {
-        return getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerOrderId, null);
     }
 
     public List<Employeeorder> getEmployeeordersByEmployeeContractIdAndValidAt(long employeeContractId,

@@ -109,7 +109,9 @@ public class SuborderController {
     model.addAttribute("subSection", "suborders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    return "order/sub-order-list";
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    return htmxRequest ? "order/sub-order-list :: results" : "order/sub-order-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
