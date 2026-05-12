@@ -88,7 +88,7 @@ public class CustomerorderController {
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.customerorders.text", "Customer Orders"));
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    return "customer-order-list";
+    return "order/customer-order-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
