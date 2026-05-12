@@ -23,6 +23,16 @@
             </select>
           </div>
           <div class="col-md-3">
+            <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
+            <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
+              <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
+              <option th:each="c : ${customers}"
+                      th:value="${c.id}"
+                      th:text="${c.shortname}"
+                      th:selected="${customerId != null and customerId == c.id}"></option>
+            </select>
+          </div>
+          <div class="col-md-3">
             <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
             <select class="form-select tomselect" name="orderId">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -30,16 +40,6 @@
                       th:value="${co.id}"
                       th:text="${co.sign + ' - ' + co.shortdescription}"
                       th:selected="${orderId != null and orderId == co.id}"></option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
-            <select class="form-select tomselect" name="suborderId">
-              <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
-              <option th:each="so : ${suborders}"
-                      th:value="${so.id}"
-                      th:text="${so.completeOrderSign}"
-                      th:selected="${suborderId != null and suborderId == so.id}"></option>
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
@@ -72,6 +72,18 @@
               <button class="btn btn-primary" type="submit">
                 <i class="icon ti ti-filter m-0"></i>
               </button>
+            </div>
+          </div>
+          <div class="row g-2 align-items-end mt-2">
+            <div class="col-md-4">
+              <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
+              <select class="form-select tomselect" name="suborderId">
+                <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
+                <option th:each="so : ${suborders}"
+                        th:value="${so.id}"
+                        th:text="${so.completeOrderSign + ' - ' + so.shortdescription}"
+                        th:selected="${suborderId != null and suborderId == so.id}"></option>
+              </select>
             </div>
           </div>
           <div class="row g-2 align-items-end mt-2">

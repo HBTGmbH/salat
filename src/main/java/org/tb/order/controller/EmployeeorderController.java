@@ -25,9 +25,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
-import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
@@ -45,6 +45,7 @@ import org.tb.order.service.SuborderService;
 public class EmployeeorderController {
 
     private final EmployeeorderService employeeorderService;
+    private final CustomerService customerService;
     private final EmployeecontractService employeecontractService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
@@ -56,6 +57,7 @@ public class EmployeeorderController {
     @GetMapping
     public String list(
             @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) Long orderId,
             @RequestParam(required = false) Long suborderId,
             @RequestParam(required = false) String filter,
@@ -66,6 +68,7 @@ public class EmployeeorderController {
             Model model) {
         if (request.getParameterMap().containsKey("filter")) {
             session.setAttribute("orders.employeeorders.filter", filter);
+            session.setAttribute("orders.employeeorders.customerId", customerId);
             session.setAttribute("orders.employeeorders.employeeContractId", employeeContractId);
             session.setAttribute("orders.employeeorders.orderId", orderId);
             session.setAttribute("orders.employeeorders.suborderId", suborderId);
@@ -74,6 +77,7 @@ public class EmployeeorderController {
         } else {
             filter = (String) session.getAttribute("orders.employeeorders.filter");
             employeeContractId = (Long) session.getAttribute("orders.employeeorders.employeeContractId");
+            customerId = (Long) session.getAttribute("orders.employeeorders.customerId");
             orderId = (Long) session.getAttribute("orders.employeeorders.orderId");
             suborderId = (Long) session.getAttribute("orders.employeeorders.suborderId");
             show = (Boolean) session.getAttribute("orders.employeeorders.show");
@@ -81,7 +85,7 @@ public class EmployeeorderController {
         }
 
         var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
-        var orders = customerorderService.getAllCustomerorders();
+        var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
 
         var filterSet = (filter != null && !filter.isEmpty()) || employeeContractId != null || orderId != null || suborderId != null;
 
@@ -96,6 +100,7 @@ public class EmployeeorderController {
             suborders = suborderService.getSubordersByCustomerorderId(orderId);
         }
 
+        model.addAttribute("customerId", customerId);
         model.addAttribute("employeecontracts", employeeContracts);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
@@ -394,6 +399,7 @@ public class EmployeeorderController {
     }
 
     private void addListModel(Model model) {
+        model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
         model.addAttribute("section", "orders");
         model.addAttribute("subSection", "employeeorders");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.employeeorders.text", "Employee Orders"));

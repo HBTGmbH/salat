@@ -10,6 +10,7 @@ import org.tb.common.util.DurationUtils;
 public class EmployeeorderForm {
 
     private Long id;
+    private Long customerId;
     private Long employeeContractId;
     private Long orderId;
     private Long suborderId;
