@@ -1,5 +1,6 @@
 package org.tb.dailyreport.action;
 
+import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_TRAINING;
 import static org.tb.common.util.DateTimeUtils.getYearsToDisplay;
 import static org.tb.common.util.DateUtils.getCurrentYear;
 import static org.tb.common.util.DateUtils.getYear;
@@ -40,7 +41,6 @@ import org.tb.order.service.EmployeeorderService;
 @RequiredArgsConstructor
 public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
 
-    private final static String TRAINING_ID = "i976";
     private final EmployeecontractService employeecontractService;
     private final TrainingService trainingService;
     private final CustomerorderService customerorderService;
@@ -88,7 +88,7 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         long employeeContractId = trainingForm.getEmployeeContractId();
         request.getSession().setAttribute("showTrainingForm", trainingForm);
 
-        Customerorder trainingOrder = customerorderService.getCustomerorderBySign(TRAINING_ID);
+        Customerorder trainingOrder = customerorderService.getCustomerorderBySign(CUSTOMERORDER_SIGN_TRAINING);
         long orderID = trainingOrder.getId();
         List<TrainingOverview> trainingOverviews;
 
@@ -131,9 +131,9 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         String year = trainingForm.getYear();
         long employeeContractId = trainingForm.getEmployeeContractId();
         Employeecontract employeecontract = employeeViewHelper.getAndInitCurrentEmployee(request.getSession());
-        Customerorder trainingOrder = customerorderService.getCustomerorderBySign(TRAINING_ID);
+        Customerorder trainingOrder = customerorderService.getCustomerorderBySign(CUSTOMERORDER_SIGN_TRAINING);
         if (trainingOrder == null) {
-            request.setAttribute("errorMessage", "No training customer order has been found matching " + TRAINING_ID + " - please call system administrator.");
+            request.setAttribute("errorMessage", "No training customer order has been found matching " + CUSTOMERORDER_SIGN_TRAINING + " - please call system administrator.");
             forward = "error";
             return forward;
         }

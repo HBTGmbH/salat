@@ -166,6 +166,7 @@ public class GlobalConstants {
 
     public static final int DEFAULT_WORK_DAY_START = 9;
     public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
+    public static final String CUSTOMERORDER_SIGN_TRAINING = "i976";
 
     public static final int MAX_TIME_REPORT_HOUR = 24;
     public static final int MIN_TIME_REPORT_HOUR = 0;
