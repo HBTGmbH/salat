@@ -55,6 +55,7 @@ public class MyAccountsController {
         var today = today();
         var currentYear = today.getYear();
         var yearStart = LocalDate.of(currentYear, 1, 1);
+        var yearEnd = LocalDate.of(currentYear, 12, 31);
 
         model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.my.accounts.title"));
         model.addAttribute("section", "management");
@@ -65,7 +66,7 @@ public class MyAccountsController {
         populateWorkingTimeTab(model, contract, today, currentYear);
 
         // --- Tab 2: Vacation account ---
-        populateVacationTab(session, model, contract, today, currentYear, yearStart);
+        populateVacationTab(session, model, contract, today, currentYear, yearStart, yearEnd);
 
         // --- Tab 3: Training ---
         populateTrainingTab(model, contract, today, yearStart);
@@ -125,7 +126,7 @@ public class MyAccountsController {
     }
 
     private void populateVacationTab(HttpSession session, Model model, Employeecontract contract,
-            LocalDate today, int currentYear, LocalDate yearStart) {
+            LocalDate today, int currentYear, LocalDate yearStart, LocalDate yearEnd) {
         calculateAndSetVacations(session, contract, employeeorderService, timereportService);
         @SuppressWarnings("unchecked")
         var vacations = (List<VacationViewHelper>) session.getAttribute("vacations");
@@ -167,12 +168,12 @@ public class MyAccountsController {
             usedPercent = totalBudget > 0
                     ? (int) Math.min(100, (takenDays + plannedDays) * 100 / totalBudget) : 0;
 
-            // Monthly breakdown for current year (past dates only)
+            // Monthly breakdown for current year
             var monthMinutes = new TreeMap<Integer, Long>();
-            for (int m = 1; m <= today.getMonthValue(); m++) monthMinutes.put(m, 0L);
+            for (int m = 1; m <= 12; m++) monthMinutes.put(m, 0L);
             for (var order : vacationOrders) {
                 var reports = timereportService.getTimereportsByDatesAndSuborderId(
-                        yearStart, today, order.getSuborder().getId());
+                        yearStart, yearEnd, order.getSuborder().getId());
                 for (var report : reports) {
                     monthMinutes.merge(report.getReferenceday().getMonthValue(),
                             report.getDuration().toMinutes(), Long::sum);
