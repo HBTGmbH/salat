@@ -109,7 +109,7 @@ public class SuborderController {
     model.addAttribute("subSection", "suborders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    return "order/sub-orders-list";
+    return "sub-order-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
