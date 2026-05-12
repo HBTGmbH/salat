@@ -1,5 +1,6 @@
 package org.tb.management.controller;
 
+import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_TRAINING;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
@@ -205,7 +206,7 @@ public class MyAccountsController {
         var allReports = timereportService.getTimereportsByDatesAndEmployeeContractId(
                 contract.getId(), contractStart, today);
 
-        var trainingReports = allReports.stream().filter(TimereportDTO::isTraining).toList();
+        var trainingReports = allReports.stream().filter(this::isTraining).toList();
         long totalTrainingMinutes = trainingReports.stream()
                 .mapToLong(t -> t.getDuration().toMinutes()).sum();
         long totalWorkMinutes = allReports.stream()
@@ -251,6 +252,10 @@ public class MyAccountsController {
         model.addAttribute("trainingBookings", bookings);
         model.addAttribute("trainingChartLabels", trainingChartLabels);
         model.addAttribute("trainingChartHours", trainingChartHours);
+    }
+
+    private boolean isTraining(TimereportDTO timereport) {
+        return timereport.isTraining() || CUSTOMERORDER_SIGN_TRAINING.equals(timereport.getCustomerorderSign());
     }
 
     private Employeecontract currentContract(HttpSession session) {
