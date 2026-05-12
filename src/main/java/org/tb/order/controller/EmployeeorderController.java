@@ -379,7 +379,7 @@ public class EmployeeorderController {
 
         List<Suborder> suborders = List.of();
         if (selectedOrderId != null) {
-            suborders = getVisibleSuborders(selectedOrderId, true);
+            suborders = getVisibleSuborders(selectedOrderId, false);
         }
 
         model.addAttribute("employeecontracts", employeeContracts);
