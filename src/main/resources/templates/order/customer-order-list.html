@@ -6,7 +6,7 @@
 <main layout:fragment="content">
 
   <!-- Filter card -->
-  <div class="card mb-3" th:with="hasAdvancedFilter=${(filter != null and !#strings.isEmpty(filter)) or show == true or showActualHours == true}">
+  <div class="card mb-3">
     <div class="card-body">
       <form method="get" th:action="@{/orders/customerorders}" data-filter-form="co">
 
@@ -42,8 +42,7 @@
                 data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
 
         <!-- Advanced filters -->
-        <div class="collapse mt-3" id="advanced-filters"
-             th:attr="data-server-open=${hasAdvancedFilter}">
+        <div class="collapse mt-3" id="advanced-filters">
           <div class="row g-2 align-items-end">
             <div class="col-md-4">
               <input type="text" class="form-control" name="filter" th:value="${filter}" />
