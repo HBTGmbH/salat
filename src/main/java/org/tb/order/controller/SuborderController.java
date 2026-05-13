@@ -263,21 +263,28 @@ public class SuborderController {
 
   @PreAuthorize("hasRole('MANAGER')")
   @PostMapping("/change-customer")
-  public String changeCustomer(@ModelAttribute("suborderForm") SuborderForm form, Model model) {
+  public String changeCustomer(@ModelAttribute("suborderForm") SuborderForm form, Model model,
+                               HttpServletRequest request) {
     form.setCustomerorderId(null);
     form.setParentId(null);
     addFormModel(model, form, form.getId() != null);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("customerIdChanged", true);
     return "order/sub-order-form";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
   @PostMapping("/change-customerorder")
-  public String changeCustomerorder(@ModelAttribute("suborderForm") SuborderForm form, Model model) {
+  public String changeCustomerorder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
+                                    HttpServletRequest request) {
     Customerorder co = customerorderService.getCustomerorderById(form.getCustomerorderId());
     form.setParentId(form.getCustomerorderId());
     form.setValidFrom(format(co.getFromDate()));
     form.setValidUntil(co.getUntilDate() != null ? format(co.getUntilDate()) : "");
     addFormModel(model, form, form.getId() != null);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("includeDatesOob", htmxRequest);
     return "order/sub-order-form";
   }
 
