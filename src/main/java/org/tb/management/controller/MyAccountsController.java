@@ -201,7 +201,7 @@ public class MyAccountsController {
             for (int m = 1; m <= 12; m++) monthMinutes.put(m, 0L);
             for (var order : vacationOrders) {
                 var reports = timereportService.getTimereportsByDatesAndEmployeeorderId(
-                        yearStart, yearEnd, order.getSuborder().getId());
+                        yearStart, yearEnd, order.getId());
                 for (var report : reports) {
                     monthMinutes.merge(report.getReferenceday().getMonthValue(),
                             report.getDuration().toMinutes(), Long::sum);
