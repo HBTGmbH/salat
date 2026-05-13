@@ -24,12 +24,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.customer.domain.Customer;
 import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeecontractService;
@@ -52,7 +50,6 @@ public class EmployeeorderController {
     private final EmployeecontractService employeecontractService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
-    private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
@@ -87,7 +84,7 @@ public class EmployeeorderController {
             showActualHours = (Boolean) session.getAttribute("orders.employeeorders.showActualHours");
         }
 
-        var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
+        var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
         var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
 
         var filterSet = (filter != null && !filter.isEmpty()) ||
@@ -139,13 +136,11 @@ public class EmployeeorderController {
         form.setCustomerId(customerId);
         form.setOrderId(orderId);
         form.setSuborderId(suborderId);
-
         form.setValidFrom(format(today()));
+
+        addFormModel(model, form, false);
         prefillValidity(form);
         prefillDebitHours(form);
-
-        model.addAttribute("employeeorderForm", form);
-        addFormModel(model, form, false);
         return "order/employee-order-form";
     }
 
@@ -154,7 +149,6 @@ public class EmployeeorderController {
     public String editForm(@RequestParam Long id, Model model) {
         Employeeorder eo = employeeorderService.getEmployeeorderById(id);
         var form = toForm(eo);
-        model.addAttribute("employeeorderForm", form);
         addFormModel(model, form, true);
         return "order/employee-order-form";
     }
@@ -163,12 +157,13 @@ public class EmployeeorderController {
     @PostMapping("/change-employeecontract")
     public String changeEmployeecontract(@ModelAttribute("employeeorderForm") EmployeeorderForm form, Model model,
         HttpServletRequest request) {
-        prefillValidity(form);
         addFormModel(model, form, form.getId() != null);
+        prefillValidity(form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
-        model.addAttribute("customerIdChanged", true);
-        return "order/sub-order-form";
+        model.addAttribute("employeecontractIdChanged", true);
+        model.addAttribute("includeDatesOob", htmxRequest);
+        return "order/employee-order-form";
     }
 
     @PreAuthorize("hasRole('MANAGER')")
@@ -178,10 +173,14 @@ public class EmployeeorderController {
         form.setOrderId(null);
         form.setSuborderId(null);
         addFormModel(model, form, form.getId() != null);
+        prefillValidity( form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
         model.addAttribute("customerIdChanged", true);
-        return "order/sub-order-form";
+        model.addAttribute("orderIdChanged", true);
+        model.addAttribute("suborderIdChanged", true);
+        model.addAttribute("includeDatesOob", htmxRequest);
+        return "order/employee-order-form";
     }
 
     @PreAuthorize("hasRole('MANAGER')")
@@ -190,9 +189,13 @@ public class EmployeeorderController {
         HttpServletRequest request) {
         form.setSuborderId(null);
         addFormModel(model, form, form.getId() != null);
+        prefillValidity( form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+        model.addAttribute("htmxRequest", htmxRequest);
+        model.addAttribute("orderIdChanged", true);
+        model.addAttribute("suborderIdChanged", true);
         model.addAttribute("includeDatesOob", htmxRequest);
-        return "order/sub-order-form";
+        return "order/employee-order-form";
     }
 
     @PreAuthorize("hasRole('MANAGER')")
@@ -202,9 +205,12 @@ public class EmployeeorderController {
         prefillValidity(form);
         prefillDebitHours(form);
         addFormModel(model, form, form.getId() != null);
+        prefillValidity( form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+        model.addAttribute("htmxRequest", htmxRequest);
+        model.addAttribute("suborderIdChanged", true);
         model.addAttribute("includeDatesOob", htmxRequest);
-        return "order/sub-order-form";
+        return "order/employee-order-form";
     }
 
     private void prefillValidity(EmployeeorderForm form) {
@@ -423,23 +429,43 @@ public class EmployeeorderController {
     }
 
     private void addFormModel(Model model, EmployeeorderForm form, boolean isEdit) {
-        var employeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
-        List<Customerorder> orders;
-        if (authorizedUser.isManager()) {
-            orders = customerorderService.getAllCustomerorders();
-        } else {
-            orders = customerorderService.getCustomerOrdersByResponsibleEmployeeId(authorizedEmployee.getEmployeeId());
+        model.addAttribute("employeeorderForm", form);
+
+        var customers = customerService.getCustomersOrderedByShortName();
+        model.addAttribute("customers", customers);
+        if (form.getCustomerId() == null && !customers.isEmpty()) {
+            form.setCustomerId(customers.getFirst().getId());
+        }
+
+        var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
+        model.addAttribute("employeecontracts", employeeContracts);
+        if (form.getEmployeeContractId() == null && !employeeContracts.isEmpty()) {
+            form.setEmployeeContractId(employeeContracts.getFirst().getId());
+        }
+        var validity = !employeeContracts.isEmpty() ? employeeContracts.getFirst().getValidity() : null;
+
+        List<Customerorder> orders = customerorderService.getVisibleCustomerorders();
+        orders = orders.stream()
+            .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
+            .filter(co -> co.getValidity().overlaps(validity))
+            .toList();
+        model.addAttribute("orders", orders);
+        if (form.getOrderId() == null && !orders.isEmpty()) {
+            form.setOrderId(orders.getFirst().getId());
         }
 
         List<Suborder> suborders = List.of();
-        if (form.getOrderId() != null) {
-            suborders = getVisibleSuborders(form.getOrderId(), false);
+        if(form.getOrderId() != null) {
+            suborders = getVisibleSuborders(form.getOrderId(), false)
+                .stream()
+                .filter(so -> so.getValidity().overlaps(validity))
+                .toList();
+            if (form.getSuborderId() == null && !suborders.isEmpty()) {
+                form.setSuborderId(suborders.getFirst().getId());
+            }
         }
-
-        model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
-        model.addAttribute("employeecontracts", employeeContracts);
-        model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
+
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("section", "orders");
         model.addAttribute("subSection", "employeeorders");

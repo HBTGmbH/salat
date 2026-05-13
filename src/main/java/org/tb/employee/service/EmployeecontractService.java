@@ -407,6 +407,10 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
   }
 
+  public List<Employeecontract> getVisibleEmployeeContracts() {
+    return employeecontractDAO.getVisibleEmployeeContracts();
+  }
+
   public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate validAt) {
     return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(validAt);
   }

@@ -2,11 +2,13 @@ package org.tb.employee.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -188,5 +190,12 @@ public class EmployeecontractDAO {
     public List<Employeecontract> getEmployeeContractsByEmployeeId(Long employeeId) {
         return employeecontractRepository.findAllByEmployeeId(employeeId);
     }
+
+  public List<Employeecontract> getVisibleEmployeeContracts() {
+    return employeecontractRepository.findAllNotHidden()
+        .stream()
+        .filter(ec -> !Objects.equals(ec.getEmployee().getStatus(), EMPLOYEE_STATUS_ADM))
+        .toList();
+  }
 
 }

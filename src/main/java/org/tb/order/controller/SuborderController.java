@@ -3,7 +3,6 @@ package org.tb.order.controller;
 import static org.tb.common.GlobalConstants.YESNO_NO;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.format;
-import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -26,16 +25,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.LocalDateRange;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.customer.domain.Customer;
 import org.tb.customer.service.CustomerService;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
@@ -55,8 +51,6 @@ public class SuborderController {
   private final CustomerService customerService;
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
-  private final AuthorizedEmployee authorizedEmployee;
-  private final AuthorizedUser authorizedUser;
 
   @GetMapping
   public String list(
@@ -452,29 +446,21 @@ public class SuborderController {
 
     var customers = customerService.getCustomersOrderedByShortName();
     model.addAttribute("customers", customers);
-
-    // Customer orders for the dropdown (all visible if manager, else only responsible ones)
-    List<Customerorder> customerorders = List.of();
-
-    if (form.getCustomerId() == null) {
+    if (form.getCustomerId() == null && !customers.isEmpty()) {
       form.setCustomerId(customers.getFirst().getId());
     }
 
-    if (authorizedUser.isManager()) {
-      customerorders = customerorderService.getVisibleCustomerorders();
-    } else {
-      customerorders = customerorderService.getVisibleCustomerOrdersByResponsibleEmployeeId(
-          authorizedEmployee.getEmployeeId());
-    }
+    // Customer orders for the dropdown (all visible if manager, else only responsible ones)
+    List<Customerorder> customerorders = customerorderService.getVisibleCustomerorders();
     customerorders = customerorders.stream()
         .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
         .toList();
-
     model.addAttribute("customerorders", customerorders);
-
-    if (form.getCustomerorderId() == null) {
+    if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
       form.setCustomerorderId(customerorders.getFirst().getId());
       form.setParentId(form.getCustomerorderId());
+    } else {
+      form.setParentId(null);
     }
 
     // Suborders of the current customer order for parent dropdown

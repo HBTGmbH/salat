@@ -40,4 +40,9 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
 
   List<Employeecontract> findAllByEmployeeId(Long employeeId);
 
+  @Query("""
+      select e from Employeecontract e where e.hide = false or e.hide is null
+      """)
+  List<Employeecontract> findAllNotHidden();
+
 }
