@@ -24,7 +24,7 @@
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a class="btn btn-success" th:href="@{/orders/customerorders/create}">
+            <a id="create-button" class="btn btn-success" th:href="@{/orders/customerorders/create(customerId=${customerId})}" hx-swap-oob="true">
               <i class="icon ti ti-briefcase"></i> <span th:text="#{main.general.button.createcustomerorder.text}">New Customer Order</span>
             </a>
           </div>

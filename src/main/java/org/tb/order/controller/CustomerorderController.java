@@ -95,12 +95,13 @@ public class CustomerorderController {
 
   @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/create")
-  public String createForm(Model model) {
+  public String createForm(@RequestParam(required = false) Long customerId, Model model) {
     var form = new CustomerorderForm();
     form.setValidFrom(format(today()));
     form.setOrderType(OrderType.STANDARD);
     form.setEmployeeId(authorizedEmployee.getEmployeeId());
     form.setRespContrEmployeeId(authorizedEmployee.getEmployeeId());
+    form.setCustomerId(customerId);
     form.setHide(false);
     addFormModel(model, form, false);
     return "order/customer-order-form";
