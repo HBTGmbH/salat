@@ -120,16 +120,23 @@
     </div>
 
     <div class="card-footer">
-      <div th:with="saveLabel=${isEdit} ? #{main.general.button.save.text} : #{main.general.button.create.text}"
-           th:replace="~{fragments/form-fields :: formButtons(
-             saveLabel=${saveLabel},
-             cancelHref=@{/orders/employeeorders}
-           )}"></div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="icon ti ti-device-floppy"></i>
+          <span th:text="${isEdit} ? #{main.general.button.save.text} : #{main.general.button.create.text}">Save</span>
+        </button>
+        <button th:if="${!isEdit}" type="submit" name="saveAndNew" value="" class="btn btn-secondary">
+          <i class="icon ti ti-device-floppy"></i>
+          <span th:text="#{main.general.button.saveandcontinue.text}">Save &amp; New</span>
+        </button>
+        <a th:href="@{/orders/employeeorders}" class="btn btn-secondary"
+           th:text="#{main.general.button.cancel.text}">Cancel</a>
+      </div>
     </div>
 
     <div th:if="${htmxRequest}">
 
-      <div class="mb-3" id="customerorderIdInput" th:hx-swap-oob="${customerIdChanged}">
+      <div class="mb-3" id="customerorderIdInput" th:hx-swap-oob="${ordersChanged}">
         <label class="form-label required" th:text="#{main.employeeorder.customerorder.text}">Customer Order</label>
         <select class="form-select tomselect" id="orderId" th:field="*{orderId}"
                 th:errorclass="is-invalid"
@@ -145,7 +152,7 @@
         <div class="invalid-feedback" th:if="${#fields.hasErrors('orderId')}" th:errors="*{orderId}"></div>
       </div>
 
-      <div class="mb-3" id="suborderIdInput" th:hx-swap-oob="${orderIdChanged}">
+      <div class="mb-3" id="suborderIdInput" th:hx-swap-oob="${subordersChanged}">
         <label class="form-label required" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
         <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}"
                 th:errorclass="is-invalid"
@@ -161,7 +168,7 @@
         <div class="invalid-feedback" th:if="${#fields.hasErrors('suborderId')}" th:errors="*{suborderId}"></div>
       </div>
 
-      <div class="row" id="suborder-dates" th:hx-swap-oob="${includeDatesOob}">
+      <div class="row" id="suborder-dates" th:hx-swap-oob="${datesChanged}">
         <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: dateInput(
             field='validFrom', label=#{main.employeecontract.validfrom.text}, required=true

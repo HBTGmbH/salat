@@ -30,6 +30,7 @@ import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
@@ -131,12 +132,15 @@ public class EmployeeorderController {
             @RequestParam(required = false) Long suborderId,
             Model model) {
 
-        var form = new EmployeeorderForm();
-        form.setEmployeeContractId(employeeContractId);
-        form.setCustomerId(customerId);
-        form.setOrderId(orderId);
-        form.setSuborderId(suborderId);
-        form.setValidFrom(format(today()));
+        var form = (EmployeeorderForm) model.asMap().get("prefillForm");
+        if (form == null) {
+            form = new EmployeeorderForm();
+            form.setEmployeeContractId(employeeContractId);
+            form.setCustomerId(customerId);
+            form.setOrderId(orderId);
+            form.setSuborderId(suborderId);
+            form.setValidFrom(format(today()));
+        }
 
         addFormModel(model, form, false);
         prefillValidity(form);
@@ -161,8 +165,9 @@ public class EmployeeorderController {
         prefillValidity(form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
-        model.addAttribute("employeecontractIdChanged", true);
-        model.addAttribute("includeDatesOob", htmxRequest);
+        model.addAttribute("ordersChanged", true);
+        model.addAttribute("subordersChanged", true);
+        model.addAttribute("datesChanged", true);
         return "order/employee-order-form";
     }
 
@@ -176,10 +181,9 @@ public class EmployeeorderController {
         prefillValidity( form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
-        model.addAttribute("customerIdChanged", true);
-        model.addAttribute("orderIdChanged", true);
-        model.addAttribute("suborderIdChanged", true);
-        model.addAttribute("includeDatesOob", htmxRequest);
+        model.addAttribute("ordersChanged", true);
+        model.addAttribute("subordersChanged", true);
+        model.addAttribute("datesChanged", true);
         return "order/employee-order-form";
     }
 
@@ -192,9 +196,8 @@ public class EmployeeorderController {
         prefillValidity( form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
-        model.addAttribute("orderIdChanged", true);
-        model.addAttribute("suborderIdChanged", true);
-        model.addAttribute("includeDatesOob", htmxRequest);
+        model.addAttribute("subordersChanged", true);
+        model.addAttribute("datesChanged", true);
         return "order/employee-order-form";
     }
 
@@ -208,8 +211,7 @@ public class EmployeeorderController {
         prefillValidity( form);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
-        model.addAttribute("suborderIdChanged", true);
-        model.addAttribute("includeDatesOob", htmxRequest);
+        model.addAttribute("datesChanged", true);
         return "order/employee-order-form";
     }
 
@@ -230,7 +232,8 @@ public class EmployeeorderController {
             @ModelAttribute("employeeorderForm") EmployeeorderForm form,
             BindingResult bindingResult,
             Model model,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            @RequestParam(required = false) String saveAndNew) {
 
         validateForm(form, bindingResult);
 
@@ -277,6 +280,11 @@ public class EmployeeorderController {
 
         redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("form.employeeorder.message.stored", "Employee order saved successfully"));
+        if (saveAndNew != null) {
+            form.setId(null);
+            redirectAttributes.addFlashAttribute("prefillForm", form);
+            return "redirect:/orders/employeeorders/create";
+        }
         return "redirect:/orders/employeeorders";
     }
 
@@ -442,7 +450,11 @@ public class EmployeeorderController {
         if (form.getEmployeeContractId() == null && !employeeContracts.isEmpty()) {
             form.setEmployeeContractId(employeeContracts.getFirst().getId());
         }
-        var validity = !employeeContracts.isEmpty() ? employeeContracts.getFirst().getValidity() : null;
+        var validity = employeeContracts.stream()
+            .filter(ec -> Objects.equals(ec.getId(), form.getEmployeeContractId()))
+            .findFirst()
+            .map(Employeecontract::getValidity)
+            .orElse(null);
 
         List<Customerorder> orders = customerorderService.getVisibleCustomerorders();
         orders = orders.stream()
