@@ -19,7 +19,6 @@
                   hx-swap="none"
                   hx-include="closest form"
                   hx-trigger="change">
-            <option value="" th:text="#{main.general.allcustomers.text}">All Customers</option>
             <option th:each="c : ${customers}"
                     th:value="${c.id}"
                     th:text="${c.shortname}"></option>
@@ -27,13 +26,12 @@
         </div>
 
         <!-- Customer Order selection -->
-        <div class="col-md-4" id="customerorderIdInput" th:hx-swap-oob="${htmxRequest == true && customerIdChanged == true}">
+        <div class="col-md-4" id="customerorderIdInput">
           <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
           <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
                   th:errorclass="is-invalid" required
                   th:hx-post="@{/orders/suborders/change-customerorder}"
-                  hx-target="#cascade-row"
-                  hx-select="#cascade-row"
+                  hx-swap="none"
                   hx-include="closest form"
                   hx-trigger="change">
             <option th:each="co : ${customerorders}"
@@ -44,40 +42,24 @@
         </div>
 
         <!-- Parent selection (customer order itself or a parent suborder) -->
-        <div class="col-md-4" id="parentIdInput" th:hx-swap-oob="${htmxRequest == true && customerIdChanged == true}">
+        <div class="col-md-4" id="parentIdInput">
           <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
-          <input type="hidden" th:field="*{parentId}" id="parentIdHidden" />
-          <select class="form-select" id="parentSelect"
-                  onchange="document.getElementById('parentIdHidden').value = this.value">
+          <select class="form-select tomselect" id="parentId" th:field="*{parentId}"
+                  th:hx-post="@{/orders/suborders/change-parent-order}"
+                  hx-swap="none"
+                  hx-include="closest form"
+                  hx-trigger="change">
             <!-- The current customer order as top-level (no parent suborder) -->
             <option th:if="${currentCustomerorder != null}"
                     th:value="${currentCustomerorder.id}"
-                    th:text="${currentCustomerorder.signAndDescription}"
-                    th:selected="${suborderForm.parentId != null and suborderForm.parentId == currentCustomerorder.id}">
+                    th:text="${currentCustomerorder.signAndDescription}">
             </option>
             <!-- All suborders of the selected customer order as optional parent -->
             <option th:each="pso : ${parentSuborders}"
                     th:value="${pso.id}"
-                    th:text="${'  > ' + pso.completeOrderSignAndDescription}"
-                    th:selected="${suborderForm.parentId != null and suborderForm.parentId == pso.id}">
+                    th:text="${'  > ' + pso.completeOrderSignAndDescription}">
             </option>
           </select>
-        </div>
-
-        <!-- OOB date update — only included in changeCustomerorder HTMX responses -->
-        <div th:if="${includeDatesOob}" id="suborder-dates" hx-swap-oob="true">
-          <div class="row">
-            <div class="col-md-6">
-              <div th:replace="~{fragments/form-fields :: dateInput(
-                field='validFrom', label=#{main.customerorder.validfrom.text}, required=true
-              )}"></div>
-            </div>
-            <div class="col-md-6">
-              <div th:replace="~{fragments/form-fields :: dateInput(
-                field='validUntil', label=#{main.customerorder.validuntil.text}, required=false
-              )}"></div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -199,6 +181,59 @@
            )}">
       </div>
     </div>
+
+    <div th:if="${htmxRequest}">
+
+      <div class="col-md-4" id="customerorderIdInput" th:hx-swap-oob="${customerIdChanged}">
+        <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
+        <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
+                th:errorclass="is-invalid" required
+                th:hx-post="@{/orders/suborders/change-customerorder}"
+                hx-swap="none"
+                hx-include="closest form"
+                hx-trigger="change">
+          <option th:each="co : ${customerorders}"
+                  th:value="${co.id}"
+                  th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+        </select>
+        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
+      </div>
+
+      <div class="col-md-4" id="parentIdInput" th:hx-swap-oob="${customerorderIdChanged}">
+        <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
+        <select class="form-select tomselect" id="parentId" th:field="*{parentId}"
+                th:hx-post="@{/orders/suborders/change-parent-order}"
+                hx-swap="none"
+                hx-include="closest form"
+                hx-trigger="change">
+          <!-- The current customer order as top-level (no parent suborder) -->
+          <option th:if="${currentCustomerorder != null}"
+                  th:value="${currentCustomerorder.id}"
+                  th:text="${currentCustomerorder.signAndDescription}">
+          </option>
+          <!-- All suborders of the selected customer order as optional parent -->
+          <option th:each="pso : ${parentSuborders}"
+                  th:value="${pso.id}"
+                  th:text="${'  > ' + pso.completeOrderSignAndDescription}">
+          </option>
+        </select>
+      </div>
+
+      <div class="row" id="suborder-dates" th:hx-swap-oob="${includeDatesOob}">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validFrom', label=#{main.customerorder.validfrom.text}, required=true
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validUntil', label=#{main.customerorder.validuntil.text}, required=false
+          )}"></div>
+        </div>
+      </div>
+
+    </div>
+
   </form>
 
   </div>
@@ -207,8 +242,8 @@
   <script th:inline="javascript">
     document.getElementById('generateSignBtn').addEventListener('click', function() {
       const customerorderId = document.getElementById('customerorderId').value;
-      const parentId = document.getElementById('parentIdHidden').value;
-      const currentId = /*[[${suborderForm.id}]]*/ null;
+      const parentId = document.getElementById('parentId').value;
+      const currentId = [[${suborderForm.id}]];
       let url = `/orders/suborders/sign?customerorderId=${customerorderId}&parentId=${parentId}`;
       if (currentId) url += `&currentId=${currentId}`;
       fetch(url)

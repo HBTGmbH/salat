@@ -33,6 +33,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.customer.domain.Customer;
 import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.order.domain.Customerorder;
@@ -123,24 +124,15 @@ public class SuborderController {
     var form = new SuborderForm();
     form.setInvoice(true);
     form.setStandard(false);
-    form.setCommentnecessary(false);
+    form.setCommentnecessary(true);
     form.setFixedPrice(false);
     form.setTrainingFlag(false);
     form.setHide(false);
     form.setOrderType(OrderType.STANDARD);
-    if (customerOrderId != null) {
-      Customerorder co = customerorderService.getCustomerorderById(customerOrderId);
-      form.setCustomerId(co.getCustomer().getId());
-      form.setCustomerorderId(customerOrderId);
-      form.setParentId(customerOrderId);
-      form.setValidFrom(format(co.getFromDate()));
-      form.setValidUntil(co.getUntilDate() != null ? format(co.getUntilDate()) : "");
-    } else {
-      form.setCustomerId(customerId);
-      form.setValidFrom(format(today()));
-      form.setOrderType(OrderType.STANDARD);
-    }
+    form.setCustomerId(customerId);
+    form.setCustomerorderId(customerOrderId);
     addFormModel(model, form, false);
+    prefillValidity(form);
     return "order/sub-order-form";
   }
 
@@ -269,9 +261,13 @@ public class SuborderController {
     form.setCustomerorderId(null);
     form.setParentId(null);
     addFormModel(model, form, form.getId() != null);
+    prefillValidity(form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
     model.addAttribute("customerIdChanged", true);
+    model.addAttribute("customerorderIdChanged", true);
+    model.addAttribute("parentIdChanged", true);
+    model.addAttribute("includeDatesOob", htmxRequest);
     return "order/sub-order-form";
   }
 
@@ -279,14 +275,46 @@ public class SuborderController {
   @PostMapping("/change-customerorder")
   public String changeCustomerorder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
                                     HttpServletRequest request) {
-    Customerorder co = customerorderService.getCustomerorderById(form.getCustomerorderId());
     form.setParentId(form.getCustomerorderId());
-    form.setValidFrom(format(co.getFromDate()));
-    form.setValidUntil(co.getUntilDate() != null ? format(co.getUntilDate()) : "");
     addFormModel(model, form, form.getId() != null);
+    prefillValidity(form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("customerorderIdChanged", true);
+    model.addAttribute("parentIdChanged", true);
     model.addAttribute("includeDatesOob", htmxRequest);
     return "order/sub-order-form";
+  }
+
+  @PreAuthorize("hasRole('MANAGER')")
+  @PostMapping("/change-parent-order")
+  public String changeParentOrder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
+      HttpServletRequest request) {
+    addFormModel(model, form, form.getId() != null);
+    prefillValidity(form);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("parentOrderIdChanged", true);
+    model.addAttribute("includeDatesOob", htmxRequest);
+    return "order/sub-order-form";
+  }
+
+  private void prefillValidity(SuborderForm form) {
+    if(form.getParentId() != null) {
+      if(Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+        var order = customerorderService.getCustomerorderById(form.getCustomerorderId());
+        var from = order.getFromDate();
+        var until = order.getUntilDate();
+        form.setValidFrom(format(from));
+        form.setValidUntil(until != null ? format(until) : "");
+      } else {
+        Suborder order = suborderService.getSuborderById(form.getParentId());
+        var from = order.getFromDate();
+        var until = order.getUntilDate();
+        form.setValidFrom(format(from));
+        form.setValidUntil(until != null ? format(until) : "");
+      }
+    }
   }
 
   private void validateForm(SuborderForm form, BindingResult bindingResult) {
@@ -421,34 +449,40 @@ public class SuborderController {
   private void addFormModel(Model model, SuborderForm form, boolean isEdit) {
     model.addAttribute("suborderForm", form);
     model.addAttribute("orderTypes", OrderType.values());
+
+    var customers = customerService.getCustomersOrderedByShortName();
+    model.addAttribute("customers", customers);
+
     // Customer orders for the dropdown (all visible if manager, else only responsible ones)
-    List<Customerorder> customerorders;
+    List<Customerorder> customerorders = List.of();
+
+    if (form.getCustomerId() == null) {
+      form.setCustomerId(customers.getFirst().getId());
+    }
+
     if (authorizedUser.isManager()) {
       customerorders = customerorderService.getVisibleCustomerorders();
     } else {
       customerorders = customerorderService.getVisibleCustomerOrdersByResponsibleEmployeeId(
           authorizedEmployee.getEmployeeId());
     }
-    if (form.getCustomerId() != null) {
-      customerorders = customerorders.stream()
-          .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
-          .toList();
-    }
+    customerorders = customerorders.stream()
+        .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
+        .toList();
+
     model.addAttribute("customerorders", customerorders);
-    model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
+
+    if (form.getCustomerorderId() == null) {
+      form.setCustomerorderId(customerorders.getFirst().getId());
+      form.setParentId(form.getCustomerorderId());
+    }
+
     // Suborders of the current customer order for parent dropdown
-    // If no customer order is selected yet, pre-select the first available one
-    if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
-      Customerorder first = customerorders.getFirst();
-      form.setCustomerorderId(first.getId());
-      form.setParentId(first.getId());
-    }
-    if (form.getCustomerorderId() != null) {
-      model.addAttribute("parentSuborders",
-          suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()));
-      model.addAttribute("currentCustomerorder",
-          customerorderService.getCustomerorderById(form.getCustomerorderId()));
-    }
+    model.addAttribute("parentSuborders",
+        suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()));
+    model.addAttribute("currentCustomerorder",
+        customerorderService.getCustomerorderById(form.getCustomerorderId()));
+
     model.addAttribute("isEdit", isEdit);
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "suborders");
