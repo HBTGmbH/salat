@@ -399,5 +399,20 @@
     });
   });
 </script>
+<script>
+  function applyFormTabOrder() {
+    var wrapper = document.querySelector('.page-body');
+    if (!wrapper) return;
+    var els = wrapper.querySelectorAll(
+      'a[href]:not([disabled]), button:not([disabled]), input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]):not([readonly])'
+    );
+    if (!els.length) return;
+    els.forEach(function (el, i) {
+      (el.tomselect ? el.tomselect.control_input : el).tabIndex = i + 1;
+    });
+  }
+  applyFormTabOrder();
+  document.addEventListener('htmx:afterSettle', applyFormTabOrder);
+</script>
 </body>
 </html>
