@@ -128,7 +128,10 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId")
   List<Timereport> findAllByEmployeecontractId(long employeecontractId);
 
-  @Query("select t from Timereport t where t.deleted = false and t.employeeorder.id = :employeeorderId and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)")
+  @Query("""
+      select t from Timereport t where t.deleted = false and t.employeeorder.id = :employeeorderId 
+      and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
+  """)
   List<Timereport> findAllByEmployeeorderIdAndReferencedayRefdate(long employeeorderId, LocalDate refDate);
 
   @Query("""
@@ -153,4 +156,10 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   @NativeQuery("DELETE FROM timereport WHERE employeeorder_id = :employeeorderId and deleted = true")
   int hardDeleteSoftDeletedByEmployeeorderId(long employeeorderId);
 
+  @Query("""
+      select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
+      where tr.deleted = false and tr.employeeorder.id = :employeeorderId
+      and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
+  """)
+  Optional<Long> getReportedMinutesForEmployeeorder(long employeeorderId, LocalDate begin, LocalDate end);
 }

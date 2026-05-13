@@ -154,16 +154,16 @@ public class MyAccountsController {
                 // if vacation was not taken in the validity, make budget fit the actual taken time
                 // because the rest will not be available anymore for the employee
                 if(order.getValidity().getUntil().isBefore(today())) {
-                    budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForSuborder(
-                        order.getSuborder().getId(), yearStart, today));
+                    budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForEmployeeOrder(
+                        order.getId(), yearStart, today));
                 } else if (!currentYearSign.equals(order.getSuborder().getSign())) {
                     // only use remaining from last year
 
                     // calculate remaining budget for this year = budget - taken vacation last year
                     LocalDate previousYearStart = yearStart.minusYears(1);
                     LocalDate previousYearEnd = yearEnd.minusYears(1);
-                    long takenMinutes = timereportService.getTotalDurationMinutesForSuborder(
-                        order.getSuborder().getId(),
+                    long takenMinutes = timereportService.getTotalDurationMinutesForEmployeeOrder(
+                        order.getId(),
                         previousYearStart,
                         previousYearEnd
                     );
@@ -179,11 +179,17 @@ public class MyAccountsController {
             }
 
             for (var order : vacationOrders) {
-                long suborderId = order.getSuborder().getId();
-                takenDays += (double) timereportService.getTotalDurationMinutesForSuborder(
-                        suborderId, yearStart, today) / dailyWorkingMinutes;
-                plannedDays += (double) timereportService.getTotalDurationMinutesForSuborder(
-                        suborderId, today.plusDays(1), today.plusYears(2)) / dailyWorkingMinutes;
+                long employeeorderId = order.getId();
+                takenDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                    employeeorderId,
+                    yearStart,
+                    today
+                ) / dailyWorkingMinutes;
+                plannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                    employeeorderId,
+                    today.plusDays(1),
+                    today.plusYears(2)
+                ) / dailyWorkingMinutes;
             }
 
             double totalBudget = annualEntitlementDays + previousYearCarryoverDays;
@@ -194,7 +200,7 @@ public class MyAccountsController {
             var monthMinutes = new TreeMap<Integer, Long>();
             for (int m = 1; m <= 12; m++) monthMinutes.put(m, 0L);
             for (var order : vacationOrders) {
-                var reports = timereportService.getTimereportsByDatesAndSuborderId(
+                var reports = timereportService.getTimereportsByDatesAndEmployeeorderId(
                         yearStart, yearEnd, order.getSuborder().getId());
                 for (var report : reports) {
                     monthMinutes.merge(report.getReferenceday().getMonthValue(),

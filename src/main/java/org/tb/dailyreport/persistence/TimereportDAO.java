@@ -403,6 +403,26 @@ public class TimereportDAO {
         return toDaoList(allTimereports);
     }
 
+    public List<TimereportDTO> getTimereportsByDatesAndEmployeeorderId(LocalDate begin, LocalDate end, long employeeorderId) {
+        List<Timereport> allTimereports;
+        if (begin.equals(end)) {
+            allTimereports = timereportRepository.findAll(
+                where(reportedAt(begin))
+                    .and(notDeleted())
+                    .and(matchesEmployeeorderId(employeeorderId))
+                    .and(orderedBySequencenumber())
+            );
+        } else {
+            allTimereports = timereportRepository.findAll(
+                where(reportedBetween(begin, end))
+                    .and(notDeleted())
+                    .and(matchesEmployeeorderId(employeeorderId))
+                    .and(orderedByCustomerorder())
+            );
+        }
+        return toDaoList(allTimereports);
+    }
+
     public List<TimereportDTO> getTimereportsByEmployeeorderIdInvalidForDates(long employeeorderId, LocalDate begin, LocalDate end) {
         if (end == null) {
             return toDaoList(timereportRepository.findAll(

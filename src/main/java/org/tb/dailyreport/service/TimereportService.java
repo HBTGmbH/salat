@@ -761,6 +761,10 @@ public class TimereportService {
     return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndSuborderId(employeecontractId, beginDate, endDate, suborderId);
   }
 
+  public List<TimereportDTO> getTimereportsByDatesAndEmployeeorderId(LocalDate beginDate, LocalDate endDate, long employeeorderId) {
+    return timereportDAO.getTimereportsByDatesAndEmployeeorderId(beginDate, endDate, employeeorderId);
+  }
+
   public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
     return timereportDAO.getTimereportsByDate(date);
   }
@@ -800,6 +804,13 @@ public class TimereportService {
    */
   public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
     return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
+  }
+
+  /**
+   * Gets the sum of all duration minutes WITH considering the hours.
+   */
+  public long getTotalDurationMinutesForEmployeeOrder(long eoId, LocalDate fromDate, LocalDate untilDate) {
+    return timereportRepository.getReportedMinutesForEmployeeorder(eoId, fromDate, untilDate).orElse(0L);
   }
 
   /**
