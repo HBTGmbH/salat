@@ -44,8 +44,8 @@
                       th:value="${so.id}"
                       th:text="${so.completeOrderSignAndDescription}"></option>
             </select>
-            <div class="form-check mt-1">
-              <input class="form-check-input" type="checkbox" id="showOnlyValid"
+            <div class="form-check mt-1 form-switch">
+              <input class="form-check-input" type="checkbox" id="showOnlyValid" role="switch"
                      th:field="*{showOnlyValid}" onchange="submitUpdate()">
               <label class="form-check-label small text-muted" for="showOnlyValid"
                      th:text="#{main.general.show.only.valid.text}">Nur gültige</label>
@@ -85,13 +85,14 @@
 
         <!-- Advanced options toggle -->
         <div class="mt-2">
-          <a class="text-muted small text-decoration-none" role="button"
-             data-bs-toggle="collapse" href="#advanced-options" aria-expanded="false"
-             aria-controls="advanced-options">
-            <span th:text="#{main.invoice.advanced.text}">Erweitert</span>
-            <span class="ms-1">▾</span>
-          </a>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="advanced-toggle" role="switch">
+            <label class="form-check-label text-muted small" th:text="#{main.invoice.advanced.text}">Erweitert</label>
+          </div>
         </div>
+        <button type="button" class="d-none" id="advanced-collapse-trigger"
+                data-bs-toggle="collapse" data-bs-target="#advanced-options">
+        </button>
 
         <!-- Collapsible advanced options -->
         <div class="collapse" id="advanced-options">
@@ -108,18 +109,17 @@
 
             <!-- Content filters -->
             <div class="col-12 col-md-4 d-flex flex-column gap-2 justify-content-end">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="customeridbox" th:field="*{customeridbox}">
-                <label class="form-check-label" for="customeridbox"
-                       th:text="#{main.invoice.customersign.text}">Kundenkennungen verwenden</label>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="customeridbox" th:field="*{customeridbox}" role="switch">
+                <label class="form-check-label" for="customeridbox" th:text="#{main.invoice.customersign.text}">Kundenkennungen verwenden</label>
               </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="invoicebox" th:field="*{invoicebox}">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="invoicebox" th:field="*{invoicebox}" role="switch">
                 <label class="form-check-label" for="invoicebox"
                        th:text="#{main.invoice.invoice.text}">Nicht fakturierbar</label>
               </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="fixedpricebox" th:field="*{fixedpricebox}">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="fixedpricebox" th:field="*{fixedpricebox}" role="switch">
                 <label class="form-check-label" for="fixedpricebox"
                        th:text="#{main.invoice.fixedprice.text}">Festpreis</label>
               </div>
@@ -154,20 +154,22 @@
           <div class="row g-3 align-items-center">
 
             <!-- Col 1: Mitarbeiternamen -->
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4 form-switch">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="employeesignbox"
-                       th:field="*{employeesignbox}" onchange="updateColumnVisibility()">
+                       th:field="*{employeesignbox}" role="switch"
+                       onchange="updateColumnVisibility()">
                 <label class="form-check-label" for="employeesignbox"
                        th:text="#{main.invoice.employeesign.text}">Mitarbeiternamen</label>
               </div>
             </div>
 
             <!-- Col 2: Kommentare -->
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4 form-switch">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="timereportdescriptionbox"
-                       th:field="*{timereportdescriptionbox}" onchange="updateColumnVisibility()">
+                       th:field="*{timereportdescriptionbox}" role="switch"
+                       onchange="updateColumnVisibility()">
                 <label class="form-check-label" for="timereportdescriptionbox"
                        th:text="#{main.invoice.timreportdescription.text}">Kommentare</label>
               </div>
@@ -175,9 +177,10 @@
 
             <!-- Col 3: SOLL-Stunden -->
             <div class="col-12 col-md-4">
-              <div class="form-check">
+              <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="targethoursbox"
-                       th:field="*{targethoursbox}" onchange="updateColumnVisibility()">
+                       th:field="*{targethoursbox}" role="switch"
+                       onchange="updateColumnVisibility()">
                 <label class="form-check-label" for="targethoursbox"
                        th:text="#{main.invoice.targethours.text}">SOLL-Stunden</label>
               </div>
@@ -536,6 +539,39 @@
     document.addEventListener('DOMContentLoaded', () => {
       updateColumnVisibility();
       updateLastRowBorder();
+    });
+  </script>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const STORAGE_KEY = 'invoice-advanced-open';
+      const toggleInput = document.getElementById('advanced-toggle');
+      const panel = document.getElementById('advanced-options');
+      const collapseTrigger = document.getElementById('advanced-collapse-trigger');
+      if (!toggleInput || !panel || !collapseTrigger) return;
+
+      // Restore initial open state by adding 'show' directly (no animation, before Bootstrap lazy-inits)
+      const serverOpen = panel.dataset.serverOpen === 'true';
+      const localOpen = localStorage.getItem(STORAGE_KEY) === 'true';
+      if (serverOpen || localOpen) {
+        panel.classList.add('show');
+        toggleInput.checked = true;
+      }
+
+      // Switch delegates to hidden Bootstrap data-API trigger — no window.bootstrap reference needed
+      toggleInput.addEventListener('change', function () {
+        collapseTrigger.click();
+      });
+
+      // Persist state via Bootstrap's own collapse events
+      panel.addEventListener('show.bs.collapse', function () {
+        toggleInput.checked = true;
+        localStorage.setItem(STORAGE_KEY, 'true');
+      });
+      panel.addEventListener('hide.bs.collapse', function () {
+        toggleInput.checked = false;
+        localStorage.setItem(STORAGE_KEY, 'false');
+      });
     });
   </script>
 
