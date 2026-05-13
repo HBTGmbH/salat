@@ -127,6 +127,7 @@ public class SuborderController {
     form.setFixedPrice(false);
     form.setTrainingFlag(false);
     form.setHide(false);
+    form.setOrderType(OrderType.STANDARD);
     if (customerOrderId != null) {
       Customerorder co = customerorderService.getCustomerorderById(customerOrderId);
       form.setCustomerId(co.getCustomer().getId());
