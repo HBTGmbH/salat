@@ -229,17 +229,14 @@ public class MyAccountsController {
     }
 
     private void populateTrainingTab(Model model, Employeecontract contract, LocalDate today, LocalDate yearStart) {
-        var contractStart = contract.getValidFrom().isAfter(yearStart) ? contract.getValidFrom() : yearStart;
-        var allReports = timereportService.getTimereportsByDatesAndEmployeeContractId(
-                contract.getId(), contractStart, today);
+        var from = contract.getValidFrom().isAfter(yearStart) ? contract.getValidFrom() : yearStart;
+        var until = today();
+        var allReports = timereportService.getTimereportsByDatesAndEmployeeContractId(contract.getId(), from, until);
 
         var trainingReports = allReports.stream().filter(this::isTraining).toList();
-        long totalTrainingMinutes = trainingReports.stream()
-                .mapToLong(t -> t.getDuration().toMinutes()).sum();
-        long totalWorkMinutes = allReports.stream()
-                .mapToLong(t -> t.getDuration().toMinutes()).sum();
-        int trainingSharePercent = totalWorkMinutes > 0
-                ? (int) Math.round(totalTrainingMinutes * 100.0 / totalWorkMinutes) : 0;
+        long totalTrainingMinutes = trainingReports.stream().mapToLong(t -> t.getDuration().toMinutes()).sum();
+        long totalWorkMinutes = allReports.stream().mapToLong(t -> t.getDuration().toMinutes()).sum();
+        int trainingSharePercent = totalWorkMinutes > 0 ? (int) Math.round(totalTrainingMinutes * 100.0 / totalWorkMinutes) : 0;
 
         var bookings = trainingReports.stream()
                 .sorted(Comparator.comparing(TimereportDTO::getReferenceday).reversed())
@@ -253,7 +250,7 @@ public class MyAccountsController {
 
         // Monthly bar chart
         var monthMinutes = new TreeMap<String, Long>();
-        var cur = contractStart.withDayOfMonth(1);
+        var cur = from.withDayOfMonth(1);
         while (!cur.isAfter(today)) {
             monthMinutes.put(cur.getYear() + "-" + String.format("%02d", cur.getMonthValue()), 0L);
             cur = cur.plusMonths(1);
