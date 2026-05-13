@@ -1,6 +1,7 @@
 package org.tb.dailyreport.persistence;
 
 import static java.util.Comparator.comparing;
+import static java.util.function.Predicate.not;
 import static org.springframework.data.jpa.domain.Specification.where;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
@@ -55,6 +56,10 @@ public class TimereportDAO {
      */
     public long getTotalDurationMinutesForEmployeeOrder(long eoId) {
         return timereportRepository.getReportedMinutesForEmployeeorder(eoId).orElse(0L);
+    }
+
+    public long getTotalDurationMinutesForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
+        return timereportRepository.getReportedMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate).orElse(0L);
     }
 
     /**
@@ -195,6 +200,11 @@ public class TimereportDAO {
             builder.equal(root.join(Timereport_.employeeorder).get(Employeeorder_.id), employeeorderId);
     }
 
+    private Specification<Timereport> notDeleted() {
+        return (root, query, builder) ->
+            builder.equal(root.get(Timereport_.deleted), false);
+    }
+
     private Specification<Timereport> orderedBySequencenumber() {
         return (root, query, builder) -> {
             var orderList = new ArrayList<Order>();
@@ -238,6 +248,7 @@ public class TimereportDAO {
         if (begin.equals(end)) {
             allTimereports = timereportRepository.findAll(
                 where(matchesEmployeecontractId(contractId))
+                    .and(notDeleted())
                     .and(reportedAt(begin))
                     .and(matchesCustomerorderId(customerOrderId))
                     .and(orderedBySequencenumber())
@@ -245,6 +256,7 @@ public class TimereportDAO {
         } else {
             allTimereports = timereportRepository.findAll(
                 where(matchesEmployeecontractId(contractId))
+                    .and(notDeleted())
                     .and(reportedBetween(begin, end))
                     .and(matchesCustomerorderId(customerOrderId))
                     .and(orderedByCustomerorder())
@@ -261,6 +273,7 @@ public class TimereportDAO {
         if (end == null) {
             allTimereports = timereportRepository.findAll(
                 where(matchesEmployeecontractId(contractId))
+                    .and(notDeleted())
                     .and(reportedNotBefore(begin))
                     .and(matchesEmployeecontractId(contractId))
                     .and(matchesSuborderId(suborderId))
@@ -270,6 +283,7 @@ public class TimereportDAO {
             if (begin.equals(end)) {
                 allTimereports = timereportRepository.findAll(
                     where(matchesEmployeecontractId(contractId))
+                        .and(notDeleted())
                         .and(reportedAt(begin))
                         .and(matchesEmployeecontractId(contractId))
                         .and(matchesSuborderId(suborderId))
@@ -278,6 +292,7 @@ public class TimereportDAO {
             } else {
                 allTimereports = timereportRepository.findAll(
                     where(matchesEmployeecontractId(contractId))
+                        .and(notDeleted())
                         .and(reportedBetween(begin, end))
                         .and(matchesEmployeecontractId(contractId))
                         .and(matchesSuborderId(suborderId))
@@ -294,6 +309,7 @@ public class TimereportDAO {
     public List<TimereportDTO> getTimereportsByDateAndEmployeeOrderId(LocalDate date, long employeeOrderId) {
         return toDaoList(timereportRepository.findAll(
             where(matchesEmployeeorderId(employeeOrderId).and(reportedAt(date)))
+                .and(notDeleted())
                 .and(orderedByCustomerorder())
         ));
     }
@@ -304,6 +320,7 @@ public class TimereportDAO {
     public List<TimereportDTO> getTimereportsByEmployeeOrderId(long employeeOrderId) {
         return toDaoList(timereportRepository.findAll(
             where(matchesEmployeeorderId(employeeOrderId))
+                .and(notDeleted())
                 .and(orderedByCustomerorder())
         ));
     }
@@ -314,6 +331,7 @@ public class TimereportDAO {
     public List<TimereportDTO> getTimereportsByDate(LocalDate date) {
         return toDaoList(timereportRepository.findAll(
             where(reportedAt(date))
+                .and(notDeleted())
                 .and(orderedBySequencenumber())
         ));
     }
@@ -326,11 +344,13 @@ public class TimereportDAO {
         if (begin.equals(end)) {
             allTimereports = timereportRepository.findAll(
                 where(reportedAt(begin))
+                    .and(notDeleted())
                     .and(orderedBySequencenumber())
             );
         } else {
             allTimereports = timereportRepository.findAll(
                 where(reportedBetween(begin, end))
+                    .and(notDeleted())
                     .and(orderedByCustomerorder())
             );
         }
@@ -345,12 +365,14 @@ public class TimereportDAO {
         if (begin.equals(end)) {
             allTimereports = timereportRepository.findAll(
                 where(reportedAt(begin))
+                    .and(notDeleted())
                     .and(matchesCustomerorderId(coId))
                     .and(orderedBySequencenumber())
             );
         } else {
             allTimereports = timereportRepository.findAll(
                 where(reportedBetween(begin, end))
+                    .and(notDeleted())
                     .and(matchesCustomerorderId(coId))
                     .and(orderedByCustomerorder())
             );
@@ -366,12 +388,14 @@ public class TimereportDAO {
         if (begin.equals(end)) {
             allTimereports = timereportRepository.findAll(
                 where(reportedAt(begin))
+                    .and(notDeleted())
                     .and(matchesSuborderId(suborderId))
                     .and(orderedBySequencenumber())
             );
         } else {
             allTimereports = timereportRepository.findAll(
                 where(reportedBetween(begin, end))
+                    .and(notDeleted())
                     .and(matchesSuborderId(suborderId))
                     .and(orderedByCustomerorder())
             );
@@ -383,6 +407,7 @@ public class TimereportDAO {
         if (end == null) {
             return toDaoList(timereportRepository.findAll(
                 where(matchesEmployeeorderId(employeeorderId))
+                    .and(notDeleted())
                     .and(reportedBefore(begin))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
@@ -390,6 +415,7 @@ public class TimereportDAO {
         } else {
             return toDaoList(timereportRepository.findAll(
                 where(matchesEmployeeorderId(employeeorderId))
+                    .and(notDeleted())
                     .and(reportedNotBetween(begin, end))
                     .and(orderedByReferenceday())
                     .and(orderedByCustomerorder())
@@ -444,6 +470,7 @@ public class TimereportDAO {
     private List<TimereportDTO> toDaoList(List<Timereport> timereports) {
         return timereports.stream()
             .filter(this::accessible)
+            .filter(not(Timereport::isDeleted))
             .map(this::toDao)
             .collect(Collectors.toList());
     }

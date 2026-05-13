@@ -187,11 +187,9 @@ public class OvertimeService {
     }
 
     var workingTimeTarget = calculateWorkingTimeTarget(employeecontract.getId(), requestedStart, requestedEnd);
-    var actualWorkingTime = timereportDAO
-        .getTimereportsByDatesAndEmployeeContractId(employeecontract.getId(), requestedStart, requestedEnd)
-        .stream()
-        .map(TimereportDTO::getDuration)
-        .reduce(Duration.ZERO, Duration::plus);
+    var actualWorkingTime = Duration.ofMinutes(
+        timereportDAO.getTotalDurationMinutesForEmployeeContract(employeecontract.getId(), requestedStart, requestedEnd)
+    );
     var overtimeAdjustment = Duration.ZERO;
 
     Duration overtime = actualWorkingTime.minus(workingTimeTarget);
