@@ -1,5 +1,6 @@
 package org.tb.order.service;
 
+import static java.util.function.Predicate.not;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.SUB;
 
@@ -16,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.common.command.CommandPublisher;
-import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
@@ -207,20 +207,16 @@ public class SuborderService {
     );
   }
 
-  @Authorized(requiresManager = true)
-  public void fitValidityOfChildren(long suborderId) throws BusinessRuleException {
-    var parent = suborderDAO.getSuborderById(suborderId);
-    for (Suborder child : parent.getAllChildren()) {
-      adjustValidity(child.getId(), new LocalDateRange(parent.getFromDate(), parent.getUntilDate()));
-    }
-  }
-
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
-    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false);
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
+        .filter(not(Suborder::isHide))
+        .toList();
   }
 
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showOnlyValid) {
-    return suborderDAO.getSubordersByCustomerorderId(customerorderId, showOnlyValid);
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId, showOnlyValid).stream()
+        .filter(not(Suborder::isHide))
+        .toList();
   }
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(Long employeeContractId, long customerorderId,
@@ -257,11 +253,10 @@ public class SuborderService {
   }
 
   public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId, Long customerId) {
-    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId, customerId);
-  }
-
-  public List<Suborder> getSubordersByValidity(Boolean showOnlyValid) {
-    return suborderDAO.getSuborders(showOnlyValid);
+    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId, customerId)
+        .stream()
+        .filter(not(Suborder::isHide))
+        .toList();
   }
 
   public List<Suborder> getSuborderChildren(Long parentSuborderId) {
