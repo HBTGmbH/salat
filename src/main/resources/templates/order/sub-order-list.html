@@ -34,7 +34,7 @@
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a id="create-button" class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null}, customerId=${customerId != null and customerId > 0 ? customerId : null})}">
+            <a id="create-button" class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId}, customerId=${customerId})}">
               <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
             </a>
           </div>
@@ -189,7 +189,7 @@
     </div>
     <a id="create-button"
        class="btn btn-success"
-       th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId != -1 ? customerOrderId : null}, customerId=${customerId != null and customerId > 0 ? customerId : null})}"
+       th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId}, customerId=${customerId})}"
        hx-swap-oob="true">
       <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
     </a>

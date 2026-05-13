@@ -13,7 +13,7 @@
 
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
-          <div class="col-md-3">
+          <div class="col-md-8">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
             <select class="form-select tomselect" name="employeeContractId">
               <option value="" th:text="#{main.employee.select.please}">--- Please select ---</option>
@@ -23,7 +23,16 @@
                       th:selected="${employeeContractId != null and employeeContractId == ec.id}"></option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+            <a id="create-button" class="btn btn-success" th:href="@{/orders/employeeorders/create(orderId=${orderId}, employeeContractId=${employeeContractId}, customerId=${customerId}, suborderId=${suborderId})}">
+              <i class="icon ti ti-file-plus"></i>
+              <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="row g-2 mt-2">
+          <div class="col-md-4">
             <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
             <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
@@ -33,7 +42,7 @@
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
-          <div class="col-md-3" id="order-select-wrapper">
+          <div class="col-md-4" id="order-select-wrapper">
             <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
             <select class="form-select tomselect" name="orderId" th:attr="data-value=${orderId}">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -42,12 +51,6 @@
                       th:text="${co.sign + ' - ' + co.shortdescription}"
                       th:selected="${orderId != null and orderId == co.id}"></option>
             </select>
-          </div>
-          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a class="btn btn-success" th:href="@{/orders/employeeorders/create}">
-              <i class="icon ti ti-file-plus"></i>
-              <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
-            </a>
           </div>
         </div>
 
@@ -177,7 +180,7 @@
     </table>
   </div>
   <div th:if="${htmxRequest}">
-    <div id="order-select-wrapper" class="col-md-3" hx-swap-oob="true">
+    <div id="order-select-wrapper" class="col-md-4" hx-swap-oob="true">
       <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
       <select class="form-select tomselect" name="orderId" th:attr="data-value=${orderId}" onchange="form.requestSubmit()">
         <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
@@ -197,6 +200,13 @@
                 th:selected="${suborderId != null and suborderId == so.id}"></option>
       </select>
     </div>
+    <a id="create-button"
+       class="btn btn-success"
+       th:href="@{/orders/employeeorders/create(orderId=${orderId}, employeeContractId=${employeeContractId}, customerId=${customerId}, suborderId=${suborderId})}"
+       hx-swap-oob="true">
+      <i class="icon ti ti-file-plus"></i>
+      <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
+    </a>
   </div>
   </div>
 
