@@ -258,10 +258,9 @@ public class SuborderController {
     prefillValidity(form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
-    model.addAttribute("customerIdChanged", true);
-    model.addAttribute("customerorderIdChanged", true);
-    model.addAttribute("parentIdChanged", true);
-    model.addAttribute("includeDatesOob", htmxRequest);
+    model.addAttribute("customerordersChanged", true);
+    model.addAttribute("parentSubordersChanged", true);
+    model.addAttribute("datesChanged", true);
     return "order/sub-order-form";
   }
 
@@ -274,9 +273,8 @@ public class SuborderController {
     prefillValidity(form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
-    model.addAttribute("customerorderIdChanged", true);
-    model.addAttribute("parentIdChanged", true);
-    model.addAttribute("includeDatesOob", htmxRequest);
+    model.addAttribute("parentSubordersChanged", true);
+    model.addAttribute("datesChanged", true);
     return "order/sub-order-form";
   }
 
@@ -288,8 +286,7 @@ public class SuborderController {
     prefillValidity(form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
-    model.addAttribute("parentOrderIdChanged", true);
-    model.addAttribute("includeDatesOob", htmxRequest);
+    model.addAttribute("datesChanged", true);
     return "order/sub-order-form";
   }
 

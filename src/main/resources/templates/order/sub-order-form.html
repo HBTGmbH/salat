@@ -184,7 +184,7 @@
 
     <div th:if="${htmxRequest}">
 
-      <div class="col-md-4" id="customerorderIdInput" th:hx-swap-oob="${customerIdChanged}">
+      <div class="col-md-4" id="customerorderIdInput" th:hx-swap-oob="${customerordersChanged}">
         <label class="form-label required" th:for="customerorderId" th:text="#{main.customerorder.order.text}">Customer Order</label>
         <select class="form-select tomselect" id="customerorderId" th:field="*{customerorderId}"
                 th:errorclass="is-invalid" required
@@ -199,7 +199,7 @@
         <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
       </div>
 
-      <div class="col-md-4" id="parentIdInput" th:hx-swap-oob="${customerorderIdChanged}">
+      <div class="col-md-4" id="parentIdInput" th:hx-swap-oob="${parentSubordersChanged}">
         <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
         <select class="form-select tomselect" id="parentId" th:field="*{parentId}"
                 th:hx-post="@{/orders/suborders/change-parent-order}"
@@ -219,7 +219,7 @@
         </select>
       </div>
 
-      <div class="row" id="suborder-dates" th:hx-swap-oob="${includeDatesOob}">
+      <div class="row" id="suborder-dates" th:hx-swap-oob="${datesChanged}">
         <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: dateInput(
             field='validFrom', label=#{main.customerorder.validfrom.text}, required=true
