@@ -1,6 +1,6 @@
 package org.tb.management.controller;
 
-import static org.tb.common.GlobalConstants.CUSTOMERORDER_SIGN_TRAINING;
+import static org.tb.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
@@ -279,7 +279,7 @@ public class MyAccountsController {
     }
 
     private boolean isTraining(TimereportDTO timereport) {
-        return timereport.isTraining() || CUSTOMERORDER_SIGN_TRAINING.equals(timereport.getCustomerorderSign());
+        return timereport.isTraining() || COMPLETE_ORDER_SIGN_TRAINING.equals(timereport.getCompleteOrderSign());
     }
 
     private Employeecontract currentContract(HttpSession session) {
