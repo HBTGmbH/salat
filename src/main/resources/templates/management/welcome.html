@@ -8,7 +8,7 @@
   <form th:action="@{/welcome}" method="post" id="welcomeForm">
     <input type="hidden" name="task" id="welcomeTask" value=""/>
 
-    <div class="card mb-3">
+    <div class="card mb-3" th:if="${employeecontracts.size() > 1 || loginEmployees.size() > 1}">
       <div class="card-body">
         <div class="row g-3 align-items-end">
 
