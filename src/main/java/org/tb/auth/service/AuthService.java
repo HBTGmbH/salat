@@ -4,6 +4,9 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toSet;
+import static org.tb.auth.domain.AccessLevel.LOGIN;
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static org.tb.common.util.DateUtils.today;
 
 import jakarta.annotation.PostConstruct;
 import java.time.Clock;
@@ -30,6 +33,7 @@ import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.LocalDateRange;
 import org.tb.common.SalatProperties;
+import org.tb.common.exception.AuthorizationException;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +71,12 @@ public class AuthService {
 
   @Authorized
   public void switchLogin(String loginname) {
+    // check if switch login is allowed
+    if(!authorizedUser.getLoginSign().equals(loginname)) {
+      if(!isAuthorizedAnyObject(loginname, "EMPLOYEE", today(), LOGIN, true)) {
+        throw new AuthorizationException(AA_NOT_ATHORIZED);
+      }
+    }
     var user = salatUserRepository.findByLoginname(loginname).orElseThrow();
     authorizedUser.impersonate(user);
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));

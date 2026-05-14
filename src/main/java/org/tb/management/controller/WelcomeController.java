@@ -21,12 +21,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -54,6 +56,7 @@ public class WelcomeController {
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
     private final MessageSourceAccessor messageSourceAccessor;
+    private final AuthorizedUser authorizedUser;
 
     @GetMapping
     public String welcome(HttpSession session, Model model) {
@@ -89,6 +92,7 @@ public class WelcomeController {
         model.addAttribute("loginEmployees", loginEmployees);
         model.addAttribute("currentEmployeeContractId", employeecontract.getId());
         model.addAttribute("currentLoginEmployeeId", employeecontract.getEmployee().getId());
+        model.addAttribute("effectiveLoginSign", authorizedUser.getEffectiveLoginSign());
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
         model.addAttribute("warnings", warnings);
         model.addAttribute("releasedUntil", employeecontract.getReportReleaseDate());
@@ -206,7 +210,7 @@ public class WelcomeController {
     }
 
     @PostMapping(params = "task=switch-login")
-    public String switchLogin(@RequestParam Long loginEmployeeId, HttpSession session) {
+    public String switchLogin(@RequestParam Long loginEmployeeId) {
         var switchedToEmployee = employeeService.getEmployeeById(loginEmployeeId);
         authService.switchLogin(switchedToEmployee.getLoginname());
         return "redirect:/welcome";

@@ -7,6 +7,8 @@ import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 
 import java.io.Serializable;
+import java.util.Objects;
+
 import lombok.Getter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
@@ -36,6 +38,9 @@ public class AuthorizedUser implements Serializable {
   public void impersonate(SalatUser user) {
     this.impersonateLoginSign = user.getLoginname();
     setPermissions(user);
+    if(Objects.equals(loginSign, impersonateLoginSign)) {
+      impersonateLoginSign = null;
+    }
   }
 
   public void login(SalatUser user) {
