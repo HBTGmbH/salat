@@ -127,7 +127,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
   @Query("""
-      select new org.tb.dailyreport.persistence.MonthlyReportedMinutes(
+      select new org.tb.dailyreport.domain.MonthlyReportedMinutes(
              extract(year from tr.referenceday.refdate),
              extract(month from tr.referenceday.refdate),
              sum(tr.durationminutes) + 60 * sum(tr.durationhours))
