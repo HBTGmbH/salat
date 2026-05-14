@@ -1,6 +1,7 @@
 package org.tb.management.controller;
 
 import static org.tb.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
+import static org.tb.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
@@ -136,6 +137,7 @@ public class MyAccountsController {
         double annualEntitlementDays = 0;
         double previousYearCarryoverDays = 0;
         double takenDays = 0;
+        double specialDays = 0;
         double plannedDays = 0;
         int usedPercent = 0;
 
@@ -148,48 +150,61 @@ public class MyAccountsController {
             var currentYearSign = String.valueOf(currentYear);
 
             for (var order : vacationOrders) {
-                Duration budget = order.getDebithours();
-                if (budget == null || budget.isZero()) continue;
+                var isRegularVacation = !SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
+                if(isRegularVacation) {
+                    Duration budget = order.getDebithours();
+                    if (budget == null || budget.isZero()) continue;
 
-                // if vacation was not taken in the validity, make budget fit the actual taken time
-                // because the rest will not be available anymore for the employee
-                if(order.getValidity().getUntil().isBefore(today())) {
-                    budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForEmployeeOrder(
-                        order.getId(), yearStart, today));
-                } else if (!currentYearSign.equals(order.getSuborder().getSign())) {
-                    // only use remaining from last year
+                    // if vacation was not taken in the validity, make budget fit the actual taken time
+                    // because the rest will not be available anymore for the employee
+                    if(order.getValidity().getUntil().isBefore(today())) {
+                        budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForEmployeeOrder(
+                                order.getId(), yearStart, today));
+                    } else if (!currentYearSign.equals(order.getSuborder().getSign())) {
+                        // only use remaining from last year
 
-                    // calculate remaining budget for this year = budget - taken vacation last year
-                    LocalDate previousYearStart = yearStart.minusYears(1);
-                    LocalDate previousYearEnd = yearEnd.minusYears(1);
-                    long takenMinutes = timereportService.getTotalDurationMinutesForEmployeeOrder(
-                        order.getId(),
-                        previousYearStart,
-                        previousYearEnd
-                    );
-                    budget = budget.minusMinutes(takenMinutes);
-                }
+                        // calculate remaining budget for this year = budget - taken vacation last year
+                        LocalDate previousYearStart = yearStart.minusYears(1);
+                        LocalDate previousYearEnd = yearEnd.minusYears(1);
+                        long takenMinutes = timereportService.getTotalDurationMinutesForEmployeeOrder(
+                                order.getId(),
+                                previousYearStart,
+                                previousYearEnd
+                        );
+                        budget = budget.minusMinutes(takenMinutes);
+                    }
 
-                double budgetDays = (double) budget.toMinutes() / dailyWorkingMinutes;
-                if (currentYearSign.equals(order.getSuborder().getSign())) {
-                    annualEntitlementDays += budgetDays;
-                } else {
-                    previousYearCarryoverDays += budgetDays;
+                    double budgetDays = (double) budget.toMinutes() / dailyWorkingMinutes;
+                    if (currentYearSign.equals(order.getSuborder().getSign())) {
+                        annualEntitlementDays += budgetDays;
+                    } else {
+                        previousYearCarryoverDays += budgetDays;
+                    }
                 }
             }
 
             for (var order : vacationOrders) {
-                long employeeorderId = order.getId();
-                takenDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
-                    employeeorderId,
-                    yearStart,
-                    today
-                ) / dailyWorkingMinutes;
-                plannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
-                    employeeorderId,
-                    today.plusDays(1),
-                    today.plusYears(2)
-                ) / dailyWorkingMinutes;
+                var isRegularVacation = !SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
+                if(isRegularVacation) {
+                    long employeeorderId = order.getId();
+                    takenDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                            employeeorderId,
+                            yearStart,
+                            today
+                    ) / dailyWorkingMinutes;
+                    plannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                            employeeorderId,
+                            today.plusDays(1),
+                            today.plusYears(2)
+                    ) / dailyWorkingMinutes;
+                } else {
+                    long employeeorderId = order.getId();
+                    specialDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                            employeeorderId,
+                            yearStart,
+                            today
+                    ) / dailyWorkingMinutes;
+                }
             }
 
             double totalBudget = annualEntitlementDays + previousYearCarryoverDays;
@@ -221,6 +236,8 @@ public class MyAccountsController {
         model.addAttribute("annualEntitlementDays", String.format(Locale.GERMAN, "%.1f", annualEntitlementDays));
         model.addAttribute("previousYearCarryoverDays", String.format(Locale.GERMAN, "%.1f", previousYearCarryoverDays));
         model.addAttribute("takenDays", String.format(Locale.GERMAN, "%.1f", takenDays));
+        model.addAttribute("hasSpecialDays", specialDays > 0);
+        model.addAttribute("specialDays", String.format(Locale.GERMAN, "%.1f", specialDays));
         model.addAttribute("plannedDays", String.format(Locale.GERMAN, "%.1f", plannedDays));
         model.addAttribute("remainingDays", String.format(Locale.GERMAN, "%.1f", remainingDays));
         model.addAttribute("vacationUsedPercent", usedPercent);

@@ -124,6 +124,10 @@
                         <td th:text="#{main.my.accounts.vacation.remaining}">Verbleibend</td>
                         <td class="text-end" th:text="${remainingDays + ' ' + #messages.msg('main.my.accounts.vacation.days')}"></td>
                       </tr>
+                      <tr th:if="${hasSpecialDays}">
+                        <td class="text-muted" th:text="#{main.my.accounts.vacation.special}">Sonderurlaub</td>
+                        <td class="text-end fw-medium" th:text="${specialDays + ' ' + #messages.msg('main.my.accounts.vacation.days')}"></td>
+                      </tr>
                     </tbody>
                   </table>
                   <!-- Progress bar -->

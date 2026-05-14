@@ -168,6 +168,7 @@ public class GlobalConstants {
     public static final String CUSTOMERORDER_SIGN_VACATION = "URLAUB";
     public static final String CUSTOMERORDER_SIGN_TRAINING = "i976";
     public static final String SUBRORDER_SIGN_TRAINING = "FORTBILDUNG";
+    public static final String SUBRORDER_SIGN_VACATION_SPECIAL = "Sonderurlaub";
     public static final String COMPLETE_ORDER_SIGN_TRAINING = CUSTOMERORDER_SIGN_TRAINING + "/" + SUBRORDER_SIGN_TRAINING;
 
     public static final int MAX_TIME_REPORT_HOUR = 24;

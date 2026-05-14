@@ -2,6 +2,7 @@ package org.tb.dailyreport.viewhelper;
 
 import static java.math.RoundingMode.DOWN;
 import static java.util.Locale.GERMAN;
+import static org.tb.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
 import static org.tb.common.util.TimeFormatUtils.timeFormatMinutes;
 
 import jakarta.servlet.http.HttpSession;
@@ -95,6 +96,8 @@ public class VacationViewHelper implements Serializable {
         List<VacationViewHelper> vacations = new ArrayList<VacationViewHelper>();
         List<Employeeorder> orders = employeeorderService.getVacationEmployeeOrders(employeecontract.getId());
         for (Employeeorder employeeorder : orders) {
+            var isRegularVacation = !SUBRORDER_SIGN_VACATION_SPECIAL.equals(employeeorder.getSuborder().getSign());
+            if(!isRegularVacation) continue;
             VacationViewHelper vacationView = new VacationViewHelper(employeecontract);
             vacationView.setSuborderSign(employeeorder.getSuborder().getSign());
             if (employeeorder.getDebithours() != null) {
