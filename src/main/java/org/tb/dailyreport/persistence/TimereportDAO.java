@@ -18,10 +18,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.dailyreport.auth.TimereportAuthorization;
-import org.tb.dailyreport.domain.Referenceday_;
-import org.tb.dailyreport.domain.Timereport;
-import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.domain.Timereport_;
+import org.tb.dailyreport.domain.*;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder;
@@ -60,6 +57,10 @@ public class TimereportDAO {
 
     public long getTotalDurationMinutesForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
         return timereportRepository.getReportedMinutesForEmployeecontractAndBetween(ecId, fromDate, untilDate).orElse(0L);
+    }
+
+    public List<MonthlyReportedMinutes> getReportedMinutesByMonthForEmployeeContract(long ecId, LocalDate fromDate, LocalDate untilDate) {
+        return timereportRepository.getReportedMinutesByMonthForEmployeecontract(ecId, fromDate, untilDate);
     }
 
     /**

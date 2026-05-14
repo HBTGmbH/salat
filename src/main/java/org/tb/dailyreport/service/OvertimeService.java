@@ -13,7 +13,9 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -211,13 +213,64 @@ public class OvertimeService {
            !overtime.getEffective().isBefore(start);
   }
 
+  private OvertimeInfo calculateMonthlyOvertime(LocalDate begin, LocalDate end, YearMonth month,
+      Duration dailyWorkingTime, List<LocalDate> holidayWeekdays, List<Overtime> adjustments,
+      Map<YearMonth, Long> minutesByMonth) {
+
+    long weekdayHolidayCount = holidayWeekdays.stream()
+        .filter(d -> !d.isBefore(begin) && !d.isAfter(end))
+        .count();
+    long workingDays = DateUtils.getWorkingDayDistance(begin, end) - weekdayHolidayCount;
+    Duration target = dailyWorkingTime.multipliedBy(workingDays);
+
+    long actualMinutes = minutesByMonth.getOrDefault(month, 0L);
+    Duration actual = Duration.ofMinutes(actualMinutes);
+
+    Duration adjustment = adjustments.stream()
+        .filter(o -> isOvertimeEffectiveBetween(begin, end, o))
+        .map(Overtime::getTimeMinutes)
+        .reduce(Duration.ZERO, Duration::plus);
+
+    Duration diff = actual.minus(target).plus(adjustment);
+    return new OvertimeInfo(actual, adjustment, actual.plus(adjustment), target, diff);
+  }
+
   public OvertimeReport createDetailedReportForEmployee(long employeecontractId) {
     var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
 
     // iterate over the months of the contract until today - calc overtime for every month seperately
     var today = DateUtils.today();
     var months = new ArrayList<OvertimeReportMonth>();
-    var begin = contract.getValidFrom();
+    var rangeStart = contract.getValidFrom();
+    var rangeEnd = today;
+    if (contract.getValidUntil() != null && contract.getValidUntil().isBefore(rangeEnd)) {
+      rangeEnd = contract.getValidUntil();
+    }
+
+    // Pre-fetch all data needed across the whole range in a small fixed number of queries
+    // instead of N queries per month (holidays, adjustments, reported minutes).
+    final List<LocalDate> holidayWeekdays;
+    final List<Overtime> adjustments;
+    final Map<YearMonth, Long> minutesByMonth;
+    if (!rangeEnd.isBefore(rangeStart)) {
+      holidayWeekdays = publicholidayDAO.getPublicHolidaysBetween(rangeStart, rangeEnd)
+          .stream()
+          .map(Publicholiday::getRefdate)
+          .filter(d -> d.getDayOfWeek() != SATURDAY && d.getDayOfWeek() != SUNDAY)
+          .toList();
+      adjustments = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(contract.getId());
+      minutesByMonth = new HashMap<>();
+      for (var row : timereportDAO.getReportedMinutesByMonthForEmployeeContract(contract.getId(), rangeStart, rangeEnd)) {
+        minutesByMonth.put(YearMonth.of(row.year(), row.month()), row.minutes() == null ? 0L : row.minutes());
+      }
+    } else {
+      holidayWeekdays = List.of();
+      adjustments = List.of();
+      minutesByMonth = Map.of();
+    }
+
+    var dailyWorkingTime = contract.getDailyWorkingTime();
+    var begin = rangeStart;
     var diffCumulative = Duration.ZERO;
     do {
       // if the month begin date is in the future, the related month should not be part of the report
@@ -241,7 +294,8 @@ public class OvertimeService {
         end = contract.getValidUntil();
       }
 
-      var overtimeInfo = calculateOvertime(begin, end, contract, true);
+      var overtimeInfo = calculateMonthlyOvertime(begin, end, month, dailyWorkingTime,
+          holidayWeekdays, adjustments, minutesByMonth);
       diffCumulative = diffCumulative.plus(overtimeInfo.getDiff());
       months.add(
           OvertimeReportMonth.builder()

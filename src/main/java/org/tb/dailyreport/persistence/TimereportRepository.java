@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import org.tb.dailyreport.domain.MonthlyReportedMinutes;
 import org.tb.dailyreport.domain.Timereport;
 
 @Repository
@@ -124,6 +125,18 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
   """)
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
+
+  @Query("""
+      select new org.tb.dailyreport.persistence.MonthlyReportedMinutes(
+             extract(year from tr.referenceday.refdate),
+             extract(month from tr.referenceday.refdate),
+             sum(tr.durationminutes) + 60 * sum(tr.durationhours))
+      from Timereport tr
+      where tr.deleted = false and tr.employeecontract.id = :employeecontractId
+      and tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+      group by extract(year from tr.referenceday.refdate), extract(month from tr.referenceday.refdate)
+  """)
+  List<MonthlyReportedMinutes> getReportedMinutesByMonthForEmployeecontract(long employeecontractId, LocalDate begin, LocalDate end);
 
   @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId")
   List<Timereport> findAllByEmployeecontractId(long employeecontractId);
