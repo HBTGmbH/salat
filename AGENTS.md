@@ -144,7 +144,7 @@ Each module uses a consistent sub-package structure:
 The `hide` boolean flag is a UX feature: it removes an entity from all dropdown select inputs in forms, keeping the app compact when a customer, order, or suborder is no longer actively used but must not be deleted (e.g. historical records still referenced by time reports). Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.
 
 Rules:
-- Entities with a `hide` flag: `Customer`, `Customerorder`, `Suborder`.
+- Entities with a `hide` flag: `Customer`, `Customerorder`, `Suborder`, `Employee`, `Employeecontract`.
 - `Employeeorder` has no own `hide` — it inherits visibility from its parent `Suborder` and `Customerorder`.
 - All service/DAO methods that populate dropdowns must exclude hidden records by default (apply `notHidden()` spec or equivalent).
 - The list management view exposes a “Show hidden” toggle so managers can still see and edit hidden records.
@@ -303,11 +303,63 @@ Rules:
 - Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-tag-fill` (fixed price), `bi-mortarboard` (training)
 - Do not put flag badges inline in the primary/name column — use the flags column instead
 
+### Grouped List View Pattern
+When a list should be partitioned by a categorical field, render one card+table per group instead of a single flat table.
+
+**Ordered groups (3+ values)** — iterate over a literal key list so order is explicit:
+```html
+<th:block th:each="statusKey : ${ {'bl','pv','bo','ma','restricted','adm'} }"
+          th:with="group=${employees.?[status == '__${statusKey}__']}">
+  <div th:if="${not #lists.isEmpty(group)}" class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{${'main.employee.status.' + statusKey}}">Status</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">...</table>
+    </div>
+  </div>
+</th:block>
+```
+
+**Two groups** — use two explicit `th:block` sections (clearer than iterating):
+```html
+<th:block th:with="group=${contracts.?[freelancer != true]}">
+  <div th:if="${not #lists.isEmpty(group)}" class="card mb-3">
+    <div class="card-header"><h3 class="card-title" th:text="#{main.employeecontract.group.internal.text}">Internal Staff</h3></div>
+    ...
+  </div>
+</th:block>
+<th:block th:with="group=${contracts.?[freelancer == true]}">
+  <div th:if="${not #lists.isEmpty(group)}" class="card mb-3">
+    <div class="card-header"><h3 class="card-title" th:text="#{main.employeecontract.group.contractors.text}">Contractors</h3></div>
+    ...
+  </div>
+</th:block>
+```
+
+Rules:
+- The card header conveys the group value — remove the corresponding column from the table header and rows.
+- Hide empty groups with `th:if="${not #lists.isEmpty(group)}"`.
+- Show the global empty-state card only when the entire list is empty (place it before the group blocks).
+- SpEL selection syntax: `list.?[field == value]` or `list.?[field != true]`.
+
 ### i18n Message Bundles
-- Files: `src/main/resources/org/tb/web/MessageResources.properties` (German) and `MessageResources_en.properties` (English)
-- **Encoding**: both files are **ISO-8859-1**. Never write non-ASCII characters directly into these files using a UTF-8 editor or tool — doing so corrupts the file. Write the raw ISO-8859-1 bytes explicitly (e.g. via Python with `encoding='iso-8859-1'`).
-- **Key order**: keys are sorted alphabetically. Always sort the lines after appending keys.
-- When adding a new feature, add matching keys to **both** bundles.
+- **The application is German-first.** German is the primary/default language.
+- Files: `src/main/resources/org/tb/web/MessageResources.properties` (German, default) and `MessageResources_en.properties` (English)
+  - Both files contain the full set of `main.*` Thymeleaf keys as well as legacy Struts/chicoree keys.
+  - `MessageResources.properties` is the German default bundle; it is served for `de_DE` and any locale that has no specific bundle.
+  - `MessageResources_en.properties` is served for the `en` locale.
+- **Encoding**: both files are **ISO-8859-1**. Never use the Edit/Write tools on these files — they write UTF-8 and corrupt the content. Always use Python with `encoding='iso-8859-1'`.
+- **Key order**: keys are sorted alphabetically. The correct workflow: append new key(s) to the file, then sort all lines. Never try to find the insertion point manually.
+  ```python
+  path = 'src/main/resources/org/tb/web/MessageResources.properties'
+  with open(path, encoding='iso-8859-1') as f:
+      lines = set(l for l in f.read().splitlines() if l.strip())
+  lines.add('new.key=Value')
+  with open(path, 'w', encoding='iso-8859-1') as f:
+      f.write('\n'.join(sorted(lines)) + '\n')
+  ```
+- When adding a new feature, add matching keys to **both** bundles — German translation in `MessageResources.properties`, English in `MessageResources_en.properties`.
 
 ### Database Migration Convention
 - Single Liquibase YAML file: `src/main/resources/db/changelog/db.changelog-master.yaml` — always append; never edit existing changesets
