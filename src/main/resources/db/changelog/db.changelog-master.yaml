@@ -1717,5 +1717,39 @@ databaseChangeLog:
                   name: hide
                   type: bit(1)
                   defaultValueBoolean: false
+  - changeSet:
+      id: 47
+      author: kr
+      comment: Set hide=true on employees whose lastname starts with z_ (replaced by hide flag)
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employee
+            columnName: hide
+      changes:
+        - update:
+            tableName: employee
+            columns:
+              - column:
+                  name: hide
+                  valueBoolean: true
+            where: "lastname LIKE 'z\\_%'"
+  - changeSet:
+      id: 48
+      author: kr
+      comment: Set hide=true on employeecontracts of z_ employees
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employeecontract
+            columnName: hide
+      changes:
+        - update:
+            tableName: employeecontract
+            columns:
+              - column:
+                  name: hide
+                  valueBoolean: true
+            where: "EMPLOYEE_ID IN (SELECT id FROM employee WHERE lastname LIKE 'z\\_%')"
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

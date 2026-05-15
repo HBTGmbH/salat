@@ -469,7 +469,6 @@ public class EmployeecontractService {
   public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInvalid, String filter,
       Long filterEmployeeId, Boolean showHidden) {
     return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId, showHidden).stream()
-        .filter(ec -> !ec.getEmployee().getLastname().startsWith("z_"))
         .map(ec -> new EmployeecontractListItemDTO(
             ec.getId(),
             ec.getEmployee().getName(),

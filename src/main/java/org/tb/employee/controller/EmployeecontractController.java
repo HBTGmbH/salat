@@ -69,9 +69,7 @@ public class EmployeecontractController {
             showHidden = (Boolean) session.getAttribute("employees.contracts.showHidden");
         }
         var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId, showHidden);
-        var employees = employeeService.getAllEmployees().stream()
-                .filter(e -> !e.getLastname().startsWith("z_"))
-                .toList();
+        var employees = employeeService.getAllEmployees();
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("employees", employees);
         model.addAttribute("filter", filter);
@@ -284,12 +282,8 @@ public class EmployeecontractController {
     }
 
     private void addFormModel(Model model, boolean isEdit, List<Overtime> overtimes, String totalOvertime) {
-        var employees = employeeService.getAllEmployees().stream()
-                .filter(e -> !e.getLastname().startsWith("z_"))
-                .toList();
-        var supervisors = employeeService.getEmployeesWithValidContracts().stream()
-                .filter(e -> !e.getLastname().startsWith("z_"))
-                .toList();
+        var employees = employeeService.getAllEmployees();
+        var supervisors = employeeService.getEmployeesWithValidContracts();
         model.addAttribute("employees", employees);
         model.addAttribute("supervisors", supervisors);
         model.addAttribute("isEdit", isEdit);
