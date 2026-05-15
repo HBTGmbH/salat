@@ -4,7 +4,9 @@
       "Bash(mvn compile:*)",
       "Bash(xargs cat)",
       "Bash(./mvnw -q compile -T1)",
-      "Bash(jenv exec ./mvnw *)"
+      "Bash(jenv exec ./mvnw *)",
+      "Bash(grep *)",
+      "Bash(sed -n '*p' *)"
     ]
   }
 }
