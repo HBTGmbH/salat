@@ -64,6 +64,7 @@ public class EmployeeorderController {
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             @RequestParam(required = false) Boolean showActualHours,
+            @RequestParam(required = false) Boolean showHidden,
             HttpServletRequest request,
             HttpSession session,
             Model model) {
@@ -75,6 +76,7 @@ public class EmployeeorderController {
             session.setAttribute("orders.employeeorders.suborderId", suborderId);
             session.setAttribute("orders.employeeorders.show", show);
             session.setAttribute("orders.employeeorders.showActualHours", showActualHours);
+            session.setAttribute("orders.employeeorders.showHidden", showHidden);
         } else {
             filter = (String) session.getAttribute("orders.employeeorders.filter");
             employeeContractId = (Long) session.getAttribute("orders.employeeorders.employeeContractId");
@@ -83,10 +85,11 @@ public class EmployeeorderController {
             suborderId = (Long) session.getAttribute("orders.employeeorders.suborderId");
             show = (Boolean) session.getAttribute("orders.employeeorders.show");
             showActualHours = (Boolean) session.getAttribute("orders.employeeorders.showActualHours");
+            showHidden = (Boolean) session.getAttribute("orders.employeeorders.showHidden");
         }
 
         var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
-        var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId);
+        var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId, showHidden);
 
         var filterSet = (filter != null && !filter.isEmpty()) ||
                         customerId != null ||
@@ -97,7 +100,7 @@ public class EmployeeorderController {
         List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
             employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                show, filter, employeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(showActualHours));
+                show, filter, employeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(showActualHours), showHidden);
         }
 
         List<Suborder> suborders = List.of();
@@ -115,6 +118,7 @@ public class EmployeeorderController {
         model.addAttribute("suborderId", suborderId);
         model.addAttribute("filter", filter);
         model.addAttribute("show", show);
+        model.addAttribute("showHidden", showHidden);
         model.addAttribute("showActualHours", showActualHours);
         model.addAttribute("showActualHoursToggle", Boolean.TRUE.equals(showActualHours));
         addListModel(model);
@@ -316,7 +320,7 @@ public class EmployeeorderController {
         Long filterEmployeeContractId = employeeContractId == -1 ? null : employeeContractId;
         Long filterOrderId = orderId == -1 ? null : orderId;
         Long filterSuborderId = suborderId == -1 ? null : suborderId;
-        var employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId);
+        var employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId, null);
         for (Employeeorder employeeorder : employeeOrders) {
             if (!employeeorder.getFitsToSuperiorObjects()) {
                 boolean changed = false;

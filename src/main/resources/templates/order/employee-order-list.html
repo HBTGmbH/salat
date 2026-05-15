@@ -98,6 +98,12 @@
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+                <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
+              </label>
+            </div>
+            <div class="col-auto">
+              <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
                 <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
               </label>
@@ -122,6 +128,7 @@
           <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
           <th class="d-none d-md-table-cell" th:if="${showActualHoursToggle}" th:text="#{main.general.showactualhours.text}">Actual</th>
           <th class="d-none d-md-table-cell" th:if="${showActualHoursToggle}" th:text="#{main.general.difference.text}">Diff</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
         </tr>
@@ -161,6 +168,9 @@
                   th:text="${@durationUtils.format(eo.difference)}">0:00</span>
             <span th:if="${eo.difference != null and !eo.difference.negative}"
                   th:text="${@durationUtils.format(eo.difference)}">0:00</span>
+          </td>
+          <td class="d-none d-lg-table-cell">
+            <span th:if="${eo.hidden}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
           </td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a th:href="@{/orders/employeeorders/edit(id=${eo.id})}" class="btn btn-outline-primary">

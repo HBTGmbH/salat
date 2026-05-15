@@ -7,6 +7,7 @@ public record EmployeeorderListItemDTO(
     Long id,
     boolean currentlyValid,
     boolean fitsToSuperiorObjects,
+    boolean hidden,
     String customerShortName,
     String employeeName,
     String completeOrderSign,

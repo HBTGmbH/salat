@@ -158,12 +158,17 @@ public class EmployeeorderDAO {
     }
 
     private Specification<Employeeorder> showOnlyValid(LocalDate date) {
-        return (root, query, builder) -> {
-            return builder.or(
-                builder.isNull(root.get(Employeeorder_.untilDate)),
-                builder.greaterThanOrEqualTo(root.get(Employeeorder_.untilDate), date)
-            );
-        };
+        return (root, query, builder) -> builder.or(
+            builder.isNull(root.get(Employeeorder_.untilDate)),
+            builder.greaterThanOrEqualTo(root.get(Employeeorder_.untilDate), date)
+        );
+    }
+
+    private Specification<Employeeorder> notHidden() {
+        return (root, query, builder) -> builder.and(
+            builder.notEqual(root.join(Employeeorder_.suborder).get(Suborder_.hide), TRUE),
+            builder.notEqual(root.join(Employeeorder_.suborder).join(Suborder_.customerorder).get(Customerorder_.hide), TRUE)
+        );
     }
 
     private Specification<Employeeorder> matchingEmployeecontractId(long employeecontractId) {
@@ -217,11 +222,14 @@ public class EmployeeorderDAO {
     /**
      * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, and suborder.
      */
-    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId) {
+    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
                 if(!TRUE.equals(showInvalid)) {
                     predicates.add(showOnlyValid(DateUtils.today()).toPredicate(root, query, builder));
+                }
+                if(!TRUE.equals(showHidden)) {
+                    predicates.add(notHidden().toPredicate(root, query, builder));
                 }
                 if(employeeContractId != null && employeeContractId > 0) {
                     predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
