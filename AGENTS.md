@@ -269,22 +269,83 @@ Two stacked layers provide defence in depth:
 ### Thymeleaf Fragment Catalogue
 Reusable fragments live in `src/main/resources/templates/fragments/`.
 
+**Fragment mechanics:**
+- All declared parameters must be supplied on every call — no default values.
+- Scalar optional parameters (e.g. `helpText`): pass `null`; guard with `th:if="${param}"` inside the fragment.
+- Fragment-slot parameters (markup passed as `~{::localName}`): use `_` (no-op token) to pass nothing; render inside the fragment with `th:replace="${param}"` or `<th:block th:replace="${param}"/>`.
+
 **`form-fields.html`**
-- `textInput(field, label, required, maxlength)` — text input with inline validation
-- `textInputHelp(field, label, required, maxlength, helpText)` — text input with help text
-- `textareaInput(field, label, required, rows, monospace)` — textarea
-- `textareaInputHelp(field, label, required, rows, helpText, monospace)` — textarea with help text
-- `selectInput(field, label, required, placeholder, options, optionValue, optionLabel)` — select dropdown
-- `checkboxSwitch(field, label)` — Bootstrap 5 toggle switch
-- `dateInput(field, label, required)` — date picker input
-- `formButtons(saveLabel, cancelHref)` — save + cancel footer buttons
+
+| Fragment | Parameters | Notes |
+|---|---|---|
+| `textInput` | `field, label, required, maxlength` | **deprecated** — use new `textInput(…, helpText)` |
+| `textInputHelp` | `field, label, required, maxlength, helpText` | **deprecated** — will be merged into new `textInput` |
+| `textareaInput` | `field, label, required, rows, monospace` | **deprecated** — use new `textareaInput(…, helpText)` |
+| `textareaInputHelp` | `field, label, required, rows, helpText, monospace` | **deprecated** — will be merged |
+| `selectInput` | `field, label, required, placeholder, options, optionValue, optionLabel` | **deprecated** — use new `selectInput(…, helpText)` |
+| `selectInputHelp` | `field, label, required, placeholder, options, optionValue, optionLabel, helpText` | **deprecated** — will be merged |
+| `checkboxSwitch` | `field, label` | — |
+| `dateInput` | `field, label, required` | — |
+| `formButtons` | `saveLabel, cancelHref` | save + cancel footer buttons |
+
+Target API (to be introduced in a future refactor — old variants renamed to `*Legacy` when new ones land):
+- `textInput(field, label, required, maxlength, helpText)` — pass `null` for no help text
+- `textareaInput(field, label, required, rows, monospace, helpText)` — pass `null` for no help text
+- `selectInput(field, label, required, placeholder, options, optionValue, optionLabel, helpText)` — pass `null` for no help text
 
 **`master-table.html`**
-- `masterTable(addHref, addLabel, addIf, addIcon, thead, tbody)` — table with optional add button
-- `masterTableFilter(addHref, addLabel, addIf, addIcon, filterHref, filterValue, thead, tbody)` — table with a text-only filter form; for advanced filters (checkboxes, extra dropdowns) write the filter form inline (see `customer-order-list.html` or `employee-contract-list.html` as examples)
-- Column helpers: `colTextPrimary`, `colText`, `colTextAdd`, `colYesNo`, `colEditLink`, `colEditLinkIf`, `colDeleteForm`, `colDeleteFormIf`
+
+| Fragment | Parameters | Notes |
+|---|---|---|
+| `masterTable` | `addHref, addLabel, addIf, addIcon, thead, tbody` | table with optional add button; `thead`/`tbody` are fragment slots |
+| `masterTableFilter` | `addHref, addLabel, addIf, addIcon, filterHref, filterValue, thead, tbody` | table with a text-only filter form; for advanced filters write the filter form inline (see `customer-order-list.html` as reference) |
+| `colHeaderPrimary` | `label` | `<th>` always visible |
+| `colHeader` | `label` | `<th>` hidden on xs (`d-none d-sm-table-cell`) |
+| `colHeaderActionIcon` | — | action-icon column header (`w-1`) |
+| `colTextPrimary` | `text` | **deprecated** — use new `colText(text, null)` |
+| `colText` | `text` | **deprecated** — use new `colText(text, 'sm')` |
+| `colTextAdd` | `text, additional` | **deprecated** — use new `colTextAdd(text, additional, 'sm')` |
+| `colYesNo` | `enabled` | yes/no status cell |
+| `colCron` | `cronExpr, defCron, desc` | cron expression + description cell |
+| `colDate` | `date` | datetime cell formatted `yyyy-MM-dd HH:mm` |
+| `colEditLink` | `href` | **deprecated** — use new `colEditLink(href, true)` |
+| `colEditLinkIf` | `href, ifCondition` | **deprecated** — use new `colEditLink(href, ifCondition)` |
+| `colDeleteForm` | `id, action` | **deprecated** — use new `colDeleteForm(id, action, true)` |
+| `colDeleteFormIf` | `id, action, ifCondition` | **deprecated** — use new `colDeleteForm(id, action, ifCondition)` |
+
+Target API (to be added in a future refactor alongside the deprecated variants until all callers are migrated):
+
+| Fragment | Parameters | Description |
+|---|---|---|
+| `colText` | `text, responsive` | `responsive` = `null`/`''` always-visible; `'sm'`/`'md'`/`'lg'` hidden below that breakpoint. Replaces `colTextPrimary` + `colText`. |
+| `colTextAdd` | `text, additional, responsive` | Two-line text cell; same `responsive` convention. |
+| `colEditLink` | `href, ifCondition` | Pass `true` for always-visible; expression for conditional. Replaces `colEditLink` + `colEditLinkIf`. |
+| `colDeleteForm` | `id, action, ifCondition` | Pass `true` for always-visible; expression for conditional. Replaces `colDeleteForm` + `colDeleteFormIf`. |
+| `colDateRange` | `fromDate, untilDate` | from-date + `#{main.general.open.text}` fallback when `untilDate` is null. Seen in 3 list templates. |
+| `colSlot` | `content, responsive` | Wraps a fragment slot in a `<td>` with responsive class. `responsive` same convention as `colText`. Pass `_` for empty slot. Usage: `colSlot(content=~{::cellContent}, responsive='lg')` with `<th:block th:fragment="cellContent">…</th:block>` in the caller. |
 
 **`layout/base.html`** — full page shell: navbar, section/subSection active state, toast message rendering.
+
+### Fragment Candidates
+Patterns identified across existing templates that should become reusable fragments. Creating the files and migrating the templates is a separate change.
+
+**`fragments/filter-card.html`** — advanced list filter card
+The filter card + advanced-collapse + localStorage-persistence JS block is duplicated verbatim in `customer-order-list.html`, `sub-order-list.html`, `employee-contract-list.html`, `employee-order-list.html`.
+
+Parameters:
+- `formKey` — `data-filter-form` attribute value (used as localStorage key prefix)
+- `formAction` — `th:action` on the form
+- `primaryFilters` — fragment slot (`~{::primaryFilters}`) for the main filter row
+- `advancedFilters` — fragment slot (`~{::advancedFilters}`) for the collapse panel content
+
+**`fragments/danger-zone.html`** — destructive action card + confirmation modal
+Pattern found in `employee-form.html`; establishes the convention for any future edit form with an irreversible action.
+
+Parameters:
+- `cardTitle`, `description`, `buttonLabel` — card content
+- `modalId`, `modalTitle`, `warningMessage`, `submitLabel` — modal content
+- `formAction` — POST target for the confirmation form
+- `modalBody` — fragment slot (`~{::modalBody}`) for confirmation inputs (e.g. double-entry sign confirmation)
 
 ### Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!--
+    Danger zone card + confirmation modal fragment.
+    Use on edit forms for irreversible destructive actions.
+
+    Parameters:
+      cardTitle      - card header title (string)
+      description    - descriptive text shown before the trigger button (string)
+      buttonLabel    - label on the trigger button (string)
+      modalId        - unique id for the modal element (string, e.g. 'anonymizeModal')
+      modalTitle     - modal header title (string)
+      warningMessage - alert text inside the modal body (string)
+      formAction     - POST URL for the confirmation form
+      modalBody      - fragment slot: confirmation inputs (~{::modalBody})
+                       rendered inside the modal body after the warning alert
+      submitLabel    - label on the modal submit button (string)
+
+    Usage:
+      <div th:replace="~{fragments/danger-zone :: dangerZone(
+          cardTitle=#{form.employee.anonymize.dangerzone.title},
+          description=#{form.employee.anonymize.dangerzone.description},
+          buttonLabel=#{form.employee.anonymize.button},
+          modalId='anonymizeModal',
+          modalTitle=#{form.employee.anonymize.modal.title},
+          warningMessage=#{form.employee.anonymize.modal.warning},
+          formAction=@{/employees/{id}/anonymize(id=${employeeForm.id})},
+          modalBody=~{::modalBody},
+          submitLabel=#{form.employee.anonymize.modal.submit}
+      )}">
+        <th:block th:fragment="modalBody">
+          ... confirmation inputs ...
+        </th:block>
+      </div>
+  -->
+  <div th:fragment="dangerZone(cardTitle, description, buttonLabel, modalId, modalTitle, warningMessage, formAction, modalBody, submitLabel)"
+       class="card mt-3 border-danger">
+    <div class="card-header">
+      <h4 class="card-title text-danger" th:text="${cardTitle}">Danger Zone</h4>
+    </div>
+    <div class="card-body">
+      <p class="text-muted" th:text="${description}"></p>
+      <button type="button" class="btn btn-danger"
+              th:data-bs-target="'#' + ${modalId}"
+              data-bs-toggle="modal"
+              th:text="${buttonLabel}">Action</button>
+    </div>
+  </div>
+
+  <div th:fragment="dangerZoneModal(modalId, modalTitle, warningMessage, formAction, modalBody, submitLabel)"
+       class="modal modal-blur fade" th:id="${modalId}" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <form th:action="${formAction}" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title" th:text="${modalTitle}">Confirm</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-danger" role="alert">
+              <div class="d-flex">
+                <div><i class="bi bi-exclamation-triangle-fill me-2"></i></div>
+                <div th:text="${warningMessage}"></div>
+              </div>
+            </div>
+            <th:block th:replace="${modalBody}"/>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link link-secondary me-auto"
+                    data-bs-dismiss="modal" th:text="#{main.general.button.cancel.text}">Cancel</button>
+            <button type="submit" class="btn btn-danger" th:text="${submitLabel}">Confirm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -10,12 +10,14 @@
         field='name', label='Job Name', required=true, maxlength=255
       )}"
     -->
+    <!-- @deprecated: use textInput(field, label, required, maxlength, helpText) once templates are migrated -->
     <div th:fragment="textInput(field, label, required, maxlength)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
       <input type="text" class="form-control" th:id="${field}" th:field="*{__${field}__}"
              th:errorclass="is-invalid" th:maxlength="${maxlength}" th:required="${required}" />
       <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
     </div>
+    <!-- @deprecated: will be merged into textInput(field, label, required, maxlength, helpText) -->
     <div th:fragment="textInputHelp(field, label, required, maxlength, helpText)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
       <input type="text" class="form-control" th:id="${field}" th:field="*{__${field}__}"
@@ -30,6 +32,7 @@
         field='description', label='Description', rows=3, helpText='Enter description'
       )}"
     -->
+    <!-- @deprecated: use textareaInput(field, label, required, rows, monospace, helpText) once templates are migrated -->
     <div th:fragment="textareaInput(field, label, required, rows, monospace)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
       <textarea class="form-control" th:id="${field}" th:field="*{__${field}__}"
@@ -37,6 +40,7 @@
                 th:style="${monospace ? 'font-family: monospace;' : ''}"></textarea>
       <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
     </div>
+    <!-- @deprecated: will be merged into textareaInput(field, label, required, rows, monospace, helpText) -->
     <div th:fragment="textareaInputHelp(field, label, required, rows, helpText, monospace)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
       <textarea class="form-control" th:id="${field}" th:field="*{__${field}__}"
@@ -54,6 +58,7 @@
         optionValue='id', optionLabel='name'
       )}"
     -->
+    <!-- @deprecated: use selectInput(field, label, required, placeholder, options, optionValue, optionLabel, helpText) once templates are migrated -->
     <div th:fragment="selectInput(field, label, required, placeholder, options, optionValue, optionLabel)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
       <select class="form-select tomselect" th:id="${field}" th:field="*{__${field}__}"
@@ -65,6 +70,7 @@
       </select>
       <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
     </div>
+    <!-- @deprecated: will be merged into selectInput(field, label, required, placeholder, options, optionValue, optionLabel, helpText) -->
     <div th:fragment="selectInputHelp(field, label, required, placeholder, options, optionValue, optionLabel, helpText)" class="mb-3">
       <label class="form-label" th:classappend="${required ? 'required' : ''}" th:for="${field}" th:text="${label}">Label</label>
       <select class="form-select tomselect" th:id="${field}" th:field="*{__${field}__}"

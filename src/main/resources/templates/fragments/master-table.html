@@ -63,10 +63,13 @@
 
     <th th:fragment="colHeaderActionIcon()" class="w-1"></th>
 
+    <!-- @deprecated: use colText(text, null) -->
     <td th:fragment="colTextPrimary(text)" th:text="${text}">Text</td>
 
+    <!-- @deprecated: use colText(text, 'sm') -->
     <td th:fragment="colText(text)" th:text="${text}" class="d-none d-sm-table-cell">Text</td>
 
+    <!-- @deprecated: use colTextAdd(text, additional, 'sm') -->
     <td th:fragment="colTextAdd(text, additional)" class="d-none d-sm-table-cell">
       <div th:text="${text}">text</div>
       <small class="text-muted" th:text="${additional}">description</small>
@@ -84,14 +87,17 @@
 
     <td th:fragment="colDate(date)" th:text="${#temporals.format(date, 'yyyy-MM-dd HH:mm')}" class="d-none d-sm-table-cell">2025-01-01 00:00</td>
 
+    <!-- @deprecated: use colEditLink(href, true) -->
     <td th:fragment="colEditLink(href)">
       <a class="btn btn-outline-primary" th:href="${href}"><i class="icon ti ti-pencil m-0"></i></a>
     </td>
 
+    <!-- @deprecated: use colEditLink(href, ifCondition) -->
     <td th:fragment="colEditLinkIf(href, ifCondition)">
       <a th:if="${ifCondition}" class="btn btn-outline-primary" th:href="${href}"><i class="icon ti ti-pencil m-0"></i></a>
     </td>
 
+    <!-- @deprecated: use colDeleteForm(id, action, true) -->
     <td th:fragment="colDeleteForm(id, action)">
       <form th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
         <input type="hidden" name="id" th:value="${id}"/>
@@ -101,6 +107,7 @@
       </form>
     </td>
 
+    <!-- @deprecated: use colDeleteForm(id, action, ifCondition) -->
     <td th:fragment="colDeleteFormIf(id, action, ifCondition)">
       <form th:if="${ifCondition}" th:action="${action}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
         <input type="hidden" name="id" th:value="${id}"/>
@@ -108,6 +115,29 @@
         <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
         <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
       </form>
+    </td>
+
+    <td th:fragment="colDateRange(fromDate, untilDate)">
+      <div th:text="${fromDate}" class="text-nowrap">From</div>
+      <small class="text-muted">
+        <span th:if="${untilDate == null}" th:text="#{main.general.open.text}">open</span>
+        <span th:if="${untilDate != null}" th:text="${untilDate}">Until</span>
+      </small>
+    </td>
+
+    <!--
+      Generic slot-based column cell.
+      responsive: null/'' = always visible; 'sm'/'md'/'lg' = hidden below that breakpoint.
+      Usage:
+        <td th:replace="~{fragments/master-table :: colSlot(content=~{::cellContent}, responsive='lg')}">
+          <th:block th:fragment="cellContent">
+            ... custom markup ...
+          </th:block>
+        </td>
+    -->
+    <td th:fragment="colSlot(content, responsive)"
+        th:class="${#strings.isEmpty(responsive) ? '' : 'd-none d-' + responsive + '-table-cell'}">
+      <th:block th:replace="${content}"/>
     </td>
 
   </div>
