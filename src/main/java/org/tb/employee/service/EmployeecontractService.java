@@ -42,6 +42,7 @@ import org.tb.employee.domain.EmployeecontractListItemDTO;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.employee.domain.Overtime;
 import org.tb.employee.domain.Vacation;
+import org.tb.employee.event.EmployeeAnonymizedEvent;
 import org.tb.employee.event.EmployeeDeleteEvent;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
@@ -392,6 +393,15 @@ public class EmployeecontractService {
       ));
       allMessages.addAll(e.getMessages());
       event.veto(allMessages);
+    }
+  }
+
+  @EventListener
+  void onEmployeeAnonymized(EmployeeAnonymizedEvent event) {
+    var contracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getEmployeeId());
+    for (var contract : contracts) {
+      contract.setHide(true);
+      employeecontractRepository.save(contract);
     }
   }
 

@@ -1,7 +1,9 @@
 package org.tb.employee.service;
 
 import static org.tb.auth.domain.AccessLevel.LOGIN;
+import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static org.tb.common.exception.ErrorCode.AA_REQUIRED;
+import static org.tb.common.exception.ErrorCode.EM_ANONYMIZE_WRONG_SIGN;
 import static org.tb.common.exception.ErrorCode.EM_DELETE_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
@@ -19,10 +21,12 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.SalatUser;
 import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
+import org.tb.employee.event.EmployeeAnonymizedEvent;
 import org.tb.employee.event.EmployeeDeleteEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
@@ -114,6 +118,26 @@ public class EmployeeService {
     if (employee.getSalatUser() != null) {
       salatUserRepository.delete(employee.getSalatUser());
     }
+  }
+
+  @Authorized(requiresManager = true)
+  public void anonymizeEmployee(long employeeId, String confirmSign) {
+    if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
+    var employee = employeeDAO.getEmployeeById(employeeId);
+    if (!employee.getSign().equals(confirmSign)) {
+      throw new InvalidDataException(EM_ANONYMIZE_WRONG_SIGN, employee.getSign());
+    }
+    String pseudo = Long.toString(employeeId, 36);
+    employee.setFirstname("Anonymized");
+    employee.setLastname("User");
+    employee.setSign(pseudo.toUpperCase());
+    employee.setHide(true);
+    eventPublisher.publishEvent(new EmployeeAnonymizedEvent(employeeId));
+    if (employee.getSalatUser() != null) {
+      employee.getSalatUser().setLoginname(pseudo);
+      salatUserRepository.save(employee.getSalatUser());
+    }
+    employeeRepository.save(employee);
   }
 
   @Authorized(requiresManager = true)

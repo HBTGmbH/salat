@@ -32,6 +32,7 @@ public enum ErrorCode {
   EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT("EC-0009", "employee contract does not clearly overlap an existing but results in a split."),
 
   EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
+  EM_ANONYMIZE_WRONG_SIGN("EM-0002", "confirm sign does not match the employee sign"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),

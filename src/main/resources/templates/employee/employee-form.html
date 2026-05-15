@@ -73,5 +73,78 @@
     </div>
   </form>
 
+  <!-- Anonymize danger zone (edit only) -->
+  <div th:if="${isEdit}" class="card mt-3 border-danger">
+    <div class="card-header">
+      <h4 class="card-title text-danger" th:text="#{form.employee.anonymize.dangerzone.title}">Danger Zone</h4>
+    </div>
+    <div class="card-body">
+      <p class="text-muted" th:text="#{form.employee.anonymize.dangerzone.description}">Anonymize all personal data of this employee. This action cannot be undone.</p>
+      <button type="button" class="btn btn-danger"
+              data-bs-toggle="modal" data-bs-target="#anonymizeModal"
+              th:text="#{form.employee.anonymize.button}">Anonymize Employee</button>
+    </div>
+  </div>
+
+  <!-- Anonymize confirmation modal -->
+  <div th:if="${isEdit}" class="modal modal-blur fade" id="anonymizeModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <form th:action="@{/employees/{id}/anonymize(id=${employeeForm.id})}" method="post"
+              id="anonymizeForm" th:attr="data-employee-sign=${employeeForm.sign}">
+          <div class="modal-header">
+            <h5 class="modal-title" th:text="#{form.employee.anonymize.modal.title}">Anonymize Employee</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-danger" role="alert">
+              <div class="d-flex">
+                <div>
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                </div>
+                <div th:text="#{form.employee.anonymize.modal.warning}">This will irreversibly overwrite all personal data. This action cannot be undone.</div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label required" for="confirmSign1" th:text="#{form.employee.anonymize.modal.sign1.label}">Enter employee sign</label>
+              <input type="text" class="form-control" id="confirmSign1" autocomplete="off" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label required" for="confirmSign2" th:text="#{form.employee.anonymize.modal.sign2.label}">Confirm employee sign</label>
+              <input type="text" class="form-control" name="confirmSign" id="confirmSign2" autocomplete="off" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link link-secondary me-auto"
+                    data-bs-dismiss="modal" th:text="#{main.general.button.cancel.text}">Cancel</button>
+            <button type="submit" class="btn btn-danger" id="anonymizeSubmitBtn" disabled
+                    th:text="#{form.employee.anonymize.modal.submit}">Anonymize</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script th:if="${isEdit}">
+    (function () {
+      var form = document.getElementById('anonymizeForm');
+      if (!form) return;
+      var sign = form.getAttribute('data-employee-sign');
+      var input1 = document.getElementById('confirmSign1');
+      var input2 = document.getElementById('confirmSign2');
+      var btn = document.getElementById('anonymizeSubmitBtn');
+      function check() {
+        btn.disabled = !(input1.value === sign && input2.value === sign);
+      }
+      input1.addEventListener('input', check);
+      input2.addEventListener('input', check);
+      document.getElementById('anonymizeModal').addEventListener('show.bs.modal', function () {
+        input1.value = '';
+        input2.value = '';
+        btn.disabled = true;
+      });
+    })();
+  </script>
+
 </main>
 </html>

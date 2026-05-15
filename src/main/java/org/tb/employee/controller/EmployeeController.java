@@ -122,6 +122,24 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasRole('MANAGER')")
+    @PostMapping("/{id}/anonymize")
+    public String anonymize(@PathVariable Long id,
+                            @RequestParam String confirmSign,
+                            RedirectAttributes redirectAttributes) {
+        try {
+            employeeService.anonymizeEmployee(id, confirmSign);
+            redirectAttributes.addFlashAttribute("toastSuccess",
+                    messages.getMessage("form.employee.message.anonymized", "Employee anonymized successfully"));
+            return "redirect:/employees";
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                    errorCodeViewHelper.toViewMessages(ex).stream()
+                            .map(Object::toString).findFirst().orElse("Error anonymizing employee"));
+            return "redirect:/employees/edit?id=" + id;
+        }
+    }
+
+    @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Employee loginEmployee = employeeService.getLoginEmployee();
