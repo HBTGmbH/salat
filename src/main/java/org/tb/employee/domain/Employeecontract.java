@@ -57,6 +57,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     private LocalDate fixedUntil;
     private LocalDate reportAcceptanceDate;
     private LocalDate reportReleaseDate;
+    @Getter(AccessLevel.NONE)
     private Boolean hide;
 
     /** static overtime ranging from begin of employeecontract to reportAcceptanceDate */
@@ -77,6 +78,10 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @OneToMany(mappedBy = "employeecontract")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<Vacation> vacations = new ArrayList<>();
+
+    public Boolean getHide() {
+        return hide != null && hide;
+    }
 
     public Boolean getFreelancer() {
         if (freelancer == null) {

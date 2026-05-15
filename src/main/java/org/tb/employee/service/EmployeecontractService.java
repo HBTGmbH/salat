@@ -452,13 +452,13 @@ public class EmployeecontractService {
   }
 
   public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter,
-      Long filterEmployeeId) {
-    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId);
+      Long filterEmployeeId, Boolean showHidden) {
+    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId, showHidden);
   }
 
   public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInvalid, String filter,
-      Long filterEmployeeId) {
-    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId).stream()
+      Long filterEmployeeId, Boolean showHidden) {
+    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId, showHidden).stream()
         .filter(ec -> !ec.getEmployee().getLastname().startsWith("z_"))
         .map(ec -> new EmployeecontractListItemDTO(
             ec.getId(),
@@ -470,7 +470,8 @@ public class EmployeecontractService {
             Boolean.TRUE.equals(ec.getFreelancer()),
             ec.getDailyWorkingTime(),
             ec.getVacationEntitlement(),
-            ec.getCurrentlyValid()
+            ec.getCurrentlyValid(),
+            ec.getHide()
         ))
         .toList();
   }

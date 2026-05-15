@@ -53,6 +53,7 @@ public class EmployeecontractController {
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Boolean show,
+            @RequestParam(required = false) Boolean showHidden,
             HttpServletRequest request,
             HttpSession session,
             Model model) {
@@ -60,12 +61,14 @@ public class EmployeecontractController {
             session.setAttribute("employees.contracts.filter", filter);
             session.setAttribute("employees.contracts.employeeId", employeeId);
             session.setAttribute("employees.contracts.show", show);
+            session.setAttribute("employees.contracts.showHidden", showHidden);
         } else {
             filter = (String) session.getAttribute("employees.contracts.filter");
             employeeId = (Long) session.getAttribute("employees.contracts.employeeId");
             show = (Boolean) session.getAttribute("employees.contracts.show");
+            showHidden = (Boolean) session.getAttribute("employees.contracts.showHidden");
         }
-        var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId);
+        var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId, showHidden);
         var employees = employeeService.getAllEmployees().stream()
                 .filter(e -> !e.getLastname().startsWith("z_"))
                 .toList();
@@ -74,6 +77,7 @@ public class EmployeecontractController {
         model.addAttribute("filter", filter);
         model.addAttribute("employeeId", employeeId);
         model.addAttribute("show", show);
+        model.addAttribute("showHidden", showHidden);
         addListModel(model);
         return "employee/employee-contract-list";
     }

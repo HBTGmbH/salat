@@ -80,14 +80,14 @@ public class EmployeecontractDAO {
 
     private Specification<Employeecontract> showOnlyValid() {
         LocalDate now = DateUtils.today();
-        return (root, query, builder) -> {
-            var untilDateNullOrGreater = builder.or(
-                builder.isNull(root.get(Employeecontract_.validUntil)),
-                builder.greaterThanOrEqualTo(root.get(Employeecontract_.validUntil), now)
-            );
-            var notHidden = builder.notEqual(root.get(Employeecontract_.hide), TRUE);
-            return builder.and(untilDateNullOrGreater, notHidden);
-        };
+        return (root, query, builder) -> builder.or(
+            builder.isNull(root.get(Employeecontract_.validUntil)),
+            builder.greaterThanOrEqualTo(root.get(Employeecontract_.validUntil), now)
+        );
+    }
+
+    private Specification<Employeecontract> notHidden() {
+        return (root, query, builder) -> builder.notEqual(root.get(Employeecontract_.hide), TRUE);
     }
 
     private Specification<Employeecontract> matchingEmployeeId(long employeeId) {
@@ -114,24 +114,27 @@ public class EmployeecontractDAO {
      *
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId) {
+    public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId, Boolean showHidden) {
         return employeecontractRepository.findAll((Specification<Employeecontract>) (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
-            if(!TRUE.equals(showInvalid)) {
+            if (!TRUE.equals(showInvalid)) {
                 predicates.add(showOnlyValid().toPredicate(root, query, builder));
             }
-            if(employeeId != null && employeeId > 0) {
+            if (!TRUE.equals(showHidden)) {
+                predicates.add(notHidden().toPredicate(root, query, builder));
+            }
+            if (employeeId != null && employeeId > 0) {
                 predicates.add(matchingEmployeeId(employeeId).toPredicate(root, query, builder));
             }
             boolean isFilter = filter != null && !filter.trim().isEmpty();
-            if(isFilter) {
+            if (isFilter) {
                 predicates.add(filterMatches(filter).toPredicate(root, query, builder));
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
             .filter(c -> employeeAuthorization.isAuthorized(c.getEmployee(), AccessLevel.READ))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
-                .collect(Collectors.toList());
+            .collect(Collectors.toList());
     }
 
     /**

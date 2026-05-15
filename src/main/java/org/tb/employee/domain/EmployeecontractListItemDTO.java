@@ -13,5 +13,6 @@ public record EmployeecontractListItemDTO(
     boolean freelancer,
     Duration dailyWorkingTime,
     int vacationEntitlement,
-    boolean currentlyValid
+    boolean currentlyValid,
+    boolean hide
 ) {}
