@@ -140,6 +140,52 @@ Each module uses a consistent sub-package structure:
 - Form validation errors: call the service inside `try/catch(ErrorCodeException)`, convert via `ErrorCodeViewHelper.toViewMessages(ex)`, add to model, and re-render the form view (do not redirect)
 - HTMX partial updates: use `th:hx-post`, `hx-swap=”none”`, `hx-include=”closest form”`, `hx-trigger=”change”` on select/input elements; detect `HX-Request` header in the controller and return `”view :: fragmentName”` for partial responses
 
+### The `hide` Flag (UX Declutter)
+The `hide` boolean flag is a UX feature: it removes an entity from all dropdown select inputs in forms, keeping the app compact when a customer, order, or suborder is no longer actively used but must not be deleted (e.g. historical records still referenced by time reports). Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.
+
+Rules:
+- Entities with a `hide` flag: `Customer`, `Customerorder`, `Suborder`.
+- `Employeeorder` has no own `hide` — it inherits visibility from its parent `Suborder` and `Customerorder`.
+- All service/DAO methods that populate dropdowns must exclude hidden records by default (apply `notHidden()` spec or equivalent).
+- The list management view exposes a “Show hidden” toggle so managers can still see and edit hidden records.
+
+### Validity Ranges (Time-Bounded Entities)
+Many entities carry a validity range (`fromDate` / `untilDate`) that defines the period during which they are usable. An entity is *currently valid* when today's date falls within its range. Outside that range it is *expired* (or not yet active), and it is often unusable — e.g. you cannot book time on a customer order whose validity ended last month.
+
+This is a separate UX concern from `hide`:
+- `hide` is an explicit, manual decision to remove an entry from dropdowns regardless of its dates.
+- Validity is automatic and time-driven: an order expires when its `untilDate` passes.
+
+Default behaviour in dropdowns and service methods: show only currently valid entities (`untilDate` is null or ≥ today). The `show` filter toggle in list views lets managers override this to also see expired or future records for auditing and management purposes.
+
+Entities with validity ranges (non-exhaustive): `Customerorder`, `Suborder`, `Employeeorder`, `Employeecontract`.
+
+The `showOnlyValid()` JPA `Specification` (present in the DAO of each such entity) encodes the date check:
+```java
+builder.or(
+    builder.isNull(root.get(Entity_.untilDate)),
+    builder.greaterThanOrEqualTo(root.get(Entity_.untilDate), today())
+)
+```
+Keep this predicate separate from `notHidden()` — they are independent concerns.
+
+### List View Filter Toggles
+List views that support both validity and visibility filtering expose two independent boolean toggles in the advanced filter section:
+- `show` (`Boolean`) — when `true`, includes expired/invalid records; default `null`/`false` shows only currently valid
+- `showHidden` (`Boolean`) — when `true`, includes records whose `hide` flag is set; default `null`/`false` excludes hidden records
+
+**DAO layer**: these are separate `Specification` predicates — never bundle `notHidden` inside `showOnlyValid()`. Apply each independently:
+```java
+if (!TRUE.equals(showInvalid)) predicates.add(showOnlyValid().toPredicate(root, query, builder));
+if (!TRUE.equals(showHidden))  predicates.add(notHidden().toPredicate(root, query, builder));
+```
+
+**Entity without own `hide` field** (e.g. `Employeeorder`): filter on the parent's flag via a join — `notHidden()` checks `suborder.hide` and `suborder.customerorder.hide`.
+
+**Session keys**: store both flags in session alongside other filter state; session key names follow the pattern `<module>.<entity>.show` and `<module>.<entity>.showHidden`.
+
+**Template**: add both as `form-check form-switch` checkboxes in the advanced filter row, using `name=”show”` / `name=”showHidden”` with `value=”true”` and `th:checked`; the auto-submit script picks them up automatically.
+
 ### DTO Pattern
 - Class annotations: `@Builder @Data @Jacksonized @AllArgsConstructor`
 - Static factory method `from(Entity)` maps entity → DTO (include all audit fields)
