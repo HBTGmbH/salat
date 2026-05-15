@@ -43,21 +43,22 @@
           <th th:text="#{main.customer.shortname.text}">Short Name</th>
           <th class="d-none d-sm-table-cell" th:text="#{main.customer.name.text}">Name</th>
           <th class="d-none d-sm-table-cell" th:text="#{main.customer.address.text}">Address</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
           <th class="w-1"></th>
           <th class="w-1"></th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(customers)}">
-          <td colspan="5" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
+          <td colspan="6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
         </tr>
         <tr th:each="cu : ${customers}">
-          <td>
-            <span th:text="${cu.shortName}"></span>
-            <span th:if="${cu.hide}" class="badge bg-warning-lt ms-1" th:text="#{main.customer.hidden.badge}">Hidden</span>
-          </td>
+          <td th:text="${cu.shortName}"></td>
           <td class="d-none d-sm-table-cell" th:text="${cu.name}"></td>
           <td class="d-none d-sm-table-cell" th:text="${cu.address}"></td>
+          <td class="d-none d-lg-table-cell">
+            <span th:if="${cu.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
+          </td>
           <td>
             <a th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
                class="btn btn-outline-primary"
