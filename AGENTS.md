@@ -211,8 +211,53 @@ RuntimeException
     ├── InvalidDataException          — entity not found, bad input
     └── VetoedException               — carries the VetoableEvent with listener messages
 ```
-- Error codes are defined in `ErrorCode` enum (`common/exception/ErrorCode.java`); format: prefix + number per module (e.g. `CU-0001` for customer)
-- `ServiceFeedbackMessage` (`common/exception/ServiceFeedbackMessage.java`) wraps an `ErrorCode` + severity + optional arguments; used to accumulate messages when building veto responses
+- All business and authorization errors **must** use a typed `ErrorCodeException` subclass — never throw a raw `RuntimeException` for business errors.
+- Choose the subclass by intent:
+  - `InvalidDataException` — bad input, entity not found, precondition on data not met
+  - `BusinessRuleException` — domain rule violated (e.g. overlapping dates, budget exceeded)
+  - `AuthorizationException` — caller lacks the required role or ownership
+  - `VetoedException` — raised by an event listener to block a destructive operation
+- Error codes are defined in `ErrorCode` enum (`common/exception/ErrorCode.java`).
+  - Format: two-letter module prefix + four-digit number, e.g. `CU-0001` for customer.
+  - Module prefixes in use: `AA` (auth), `CO` (customer order), `CU` (customer), `EC` (employee contract), `EM` (employee), `EO` (employee order), `SO` (suborder), `TR` (time report), `RL` (release), `WD` (working day), `ETL`, `XX` (generic).
+  - When adding a new error code, append it to the enum; never reuse or renumber existing codes.
+- `ServiceFeedbackMessage` (`common/exception/ServiceFeedbackMessage.java`) wraps an `ErrorCode` + severity + optional positional arguments (`{0}`, `{1}`, …); used to accumulate messages when building veto responses.
+  - Factory methods: `ServiceFeedbackMessage.error(errorCode, args…)` / `.warning(…)`.
+
+### Error Reporting to the User
+Errors surface through two distinct UI patterns depending on whether the operation redirects or re-renders:
+
+**Redirect flows (delete, anonymize, and other non-form POSTs)**
+```java
+// controller
+try {
+    service.doSomething(id);
+    redirectAttributes.addFlashAttribute("toastSuccess",
+        messages.getMessage("form.xyz.message.done", "Done"));
+    return "redirect:/list";
+} catch (ErrorCodeException ex) {
+    redirectAttributes.addFlashAttribute("toastError",
+        errorCodeViewHelper.toViewMessages(ex).stream()
+            .map(Object::toString).findFirst().orElse("Error"));
+    return "redirect:/back";
+}
+```
+- `toastSuccess` / `toastError` flash attributes are rendered as dismissible toast notifications by `layout/base.html`.
+- `ErrorCodeViewHelper.toViewMessages(ex)` translates each `ServiceFeedbackMessage` inside the exception into a `ViewMessage` by looking up the i18n key `errorcode.<prefix>.<number>` (e.g. `EM-0002` → `errorcode.em.0002`) and formatting it with the stored arguments.
+- **Every `ErrorCode` must therefore have a matching `errorcode.*` key in both message bundles.**
+
+**Form re-render flows (create/edit forms with validation)**
+```java
+// controller
+try {
+    service.save(entity);
+} catch (ErrorCodeException ex) {
+    model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
+    // fall through to re-render the form
+}
+```
+- The `errors` model attribute is a `List<ErrorCodeViewHelper.ViewMessage>`; templates iterate over it and display `viewMessage.resolved()`.
+- Spring MVC `BindingResult` validation errors (field-level) are separate: they use `bindingResult.rejectValue(…)` and are rendered via `th:errors` on the form fields.
 
 ### Security Layers
 Two stacked layers provide defence in depth:
@@ -257,6 +302,12 @@ Rules:
   ```
 - Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-tag-fill` (fixed price), `bi-mortarboard` (training)
 - Do not put flag badges inline in the primary/name column — use the flags column instead
+
+### i18n Message Bundles
+- Files: `src/main/resources/org/tb/web/MessageResources.properties` (German) and `MessageResources_en.properties` (English)
+- **Encoding**: both files are **ISO-8859-1**. Never write non-ASCII characters directly into these files using a UTF-8 editor or tool — doing so corrupts the file. Write the raw ISO-8859-1 bytes explicitly (e.g. via Python with `encoding='iso-8859-1'`).
+- **Key order**: keys are sorted alphabetically. Always sort the lines after appending keys.
+- When adding a new feature, add matching keys to **both** bundles.
 
 ### Database Migration Convention
 - Single Liquibase YAML file: `src/main/resources/db/changelog/db.changelog-master.yaml` — always append; never edit existing changesets
