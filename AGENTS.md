@@ -195,6 +195,23 @@ Reusable fragments live in `src/main/resources/templates/fragments/`.
 
 **`layout/base.html`** — full page shell: navbar, section/subSection active state, toast message rendering.
 
+### Flags Column Pattern
+List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.
+
+Rules:
+- Column header: `th:text="#{main.general.flags.text}"`, class `d-none d-lg-table-cell` (hidden on small screens)
+- Each flag is a `<span class="badge bg-<color>-lt" th:title="#{...}">` containing a Bootstrap Icon `<i class="bi bi-..."></i>`
+- The **hide** flag always uses `bg-secondary-lt` and `bi-eye-slash`:
+  ```html
+  <td class="d-none d-lg-table-cell">
+    <span th:if="${item.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
+      <i class="bi bi-eye-slash"></i>
+    </span>
+  </td>
+  ```
+- Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-tag-fill` (fixed price), `bi-mortarboard` (training)
+- Do not put flag badges inline in the primary/name column — use the flags column instead
+
 ### Database Migration Convention
 - Single Liquibase YAML file: `src/main/resources/db/changelog/db.changelog-master.yaml` — always append; never edit existing changesets
 - Always guard with `preConditions: onFail: MARK_RAN` and a `columnExists` / `tableExists` check
