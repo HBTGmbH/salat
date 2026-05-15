@@ -80,66 +80,123 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-vcenter card-table">
-        <thead>
-          <tr>
-            <th th:title="#{main.headlinedescription.employeecontracts.employeename.text}" th:text="#{main.employeecontract.employee.text}">Employee</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
-            <th th:title="#{main.headlinedescription.employeecontracts.valid.text}" th:text="#{main.employeecontract.valid.text}">Valid</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.freelancer.text}" th:text="#{main.employeecontract.freelancer.text}">Freelancer</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
-            <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:if="${#lists.isEmpty(employeecontracts)}">
-            <td colspan="10" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No contracts found</td>
-          </tr>
-          <tr th:each="ec : ${employeecontracts}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
-            <td th:text="${ec.employeeName}"></td>
-            <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
-            <td class="d-none d-md-table-cell" th:text="${ec.supervisorName}"></td>
-            <td>
-              <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
-              <small class="text-muted">
-                <span th:if="${ec.validUntil == null}" th:text="#{main.general.open.text}">open</span>
-                <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}">Until</span>
-              </small>
-            </td>
-            <td class="d-none d-md-table-cell">
-              <input type="checkbox" class="form-check-input" th:checked="${ec.freelancer}" disabled />
-            </td>
-            <td class="d-none d-md-table-cell" th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
-            <td class="d-none d-md-table-cell" th:text="${ec.vacationEntitlement}"></td>
-            <td class="d-none d-lg-table-cell">
-              <span th:if="${ec.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
-                 th:title="#{main.headlinedescription.employeecontracts.edit.text}">
-                <i class="icon ti ti-pencil m-0"></i>
-              </a>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
-                <button type="submit" class="btn btn-outline-danger"
-                        th:title="#{main.headlinedescription.employeecontracts.delete.text}">
-                  <i class="icon ti ti-trash m-0"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div th:if="${#lists.isEmpty(employeecontracts)}" class="card">
+    <div class="card-body text-center text-muted py-4" th:text="#{main.general.norecords.text}">No contracts found</div>
   </div>
+
+  <th:block th:with="group=${employeecontracts.?[freelancer != true]}">
+    <div th:if="${not #lists.isEmpty(group)}" class="card mb-3">
+      <div class="card-header border-0">
+        <h3 class="card-title"><i class="bi bi-building me-2 text-muted"></i><span th:text="#{main.employeecontract.group.internal.text}">Internal Staff</span></h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th th:title="#{main.headlinedescription.employeecontracts.employeename.text}" th:text="#{main.employeecontract.employee.text}">Employee</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
+              <th th:title="#{main.headlinedescription.employeecontracts.valid.text}" th:text="#{main.employeecontract.valid.text}">Valid</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.dailyworkingtime.text}" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.vacationdaysperyear.text}" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation/Year</th>
+              <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
+              <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+              <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="ec : ${group}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
+              <td th:text="${ec.employeeName}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.supervisorName}"></td>
+              <td>
+                <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
+                <small class="text-muted">
+                  <span th:if="${ec.validUntil == null}" th:text="#{main.general.open.text}">open</span>
+                  <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}">Until</span>
+                </small>
+              </td>
+              <td class="d-none d-md-table-cell" th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.vacationEntitlement}"></td>
+              <td class="d-none d-lg-table-cell">
+                <span th:if="${ec.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
+              </td>
+              <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
+                   th:title="#{main.headlinedescription.employeecontracts.edit.text}">
+                  <i class="icon ti ti-pencil m-0"></i>
+                </a>
+              </td>
+              <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
+                      th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                  <button type="submit" class="btn btn-outline-danger"
+                          th:title="#{main.headlinedescription.employeecontracts.delete.text}">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </th:block>
+
+  <th:block th:with="group=${employeecontracts.?[freelancer == true]}">
+    <div th:if="${not #lists.isEmpty(group)}" class="card mb-3">
+      <div class="card-header border-0">
+        <h3 class="card-title"><i class="bi bi-briefcase me-2 text-muted"></i><span th:text="#{main.employeecontract.group.contractors.text}">Contractors</span></h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th th:title="#{main.headlinedescription.employeecontracts.employeename.text}" th:text="#{main.employeecontract.employee.text}">Employee</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.taskdescription.text}" th:text="#{main.employeecontract.taskdescription.text}">Task Description</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employeecontracts.headofdepartment.text}" th:text="#{main.employeecontract.supervisor.text}">Supervisor</th>
+              <th th:title="#{main.headlinedescription.employeecontracts.valid.text}" th:text="#{main.employeecontract.valid.text}">Valid</th>
+              <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
+              <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+              <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="ec : ${group}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
+              <td th:text="${ec.employeeName}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.supervisorName}"></td>
+              <td>
+                <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
+                <small class="text-muted">
+                  <span th:if="${ec.validUntil == null}" th:text="#{main.general.open.text}">open</span>
+                  <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}">Until</span>
+                </small>
+              </td>
+              <td class="d-none d-lg-table-cell">
+                <span th:if="${ec.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
+              </td>
+              <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
+                   th:title="#{main.headlinedescription.employeecontracts.edit.text}">
+                  <i class="icon ti ti-pencil m-0"></i>
+                </a>
+              </td>
+              <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
+                      th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                  <button type="submit" class="btn btn-outline-danger"
+                          th:title="#{main.headlinedescription.employeecontracts.delete.text}">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </th:block>
 
   <script th:inline="none">
     document.addEventListener('DOMContentLoaded', function () {

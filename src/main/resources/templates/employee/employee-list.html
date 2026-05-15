@@ -38,55 +38,59 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-vcenter card-table">
-        <thead>
-          <tr>
-            <th th:title="#{main.headlinedescription.employees.lastname.text}" th:text="#{main.employee.lastname.text}">Last Name</th>
-            <th th:title="#{main.headlinedescription.employees.fristname.text}" th:text="#{main.employee.firstname.text}">First Name</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
-            <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.status.text}" th:text="#{main.employee.status.text}">Status</th>
-            <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-            <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:if="${#lists.isEmpty(employees)}">
-            <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No employees found</td>
-          </tr>
-          <tr th:each="employee : ${employees}">
-            <td th:text="${employee.lastname}"></td>
-            <td th:text="${employee.firstname}"></td>
-            <td class="d-none d-md-table-cell" th:text="${employee.sign}"></td>
-            <td class="d-none d-md-table-cell" th:text="${employee.loginname}"></td>
-            <td class="d-none d-md-table-cell" th:text="#{${'main.employee.status.' + employee.status}}"></td>
-            <td class="d-none d-lg-table-cell">
-              <span th:if="${employee.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary"
-                 th:title="#{main.headlinedescription.employees.edit.text}">
-                <i class="icon ti ti-pencil m-0"></i>
-              </a>
-            </td>
-            <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-              <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
-                <button type="submit" class="btn btn-outline-danger"
-                        th:title="#{main.headlinedescription.employees.delete.text}">
-                  <i class="icon ti ti-trash m-0"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div th:if="${#lists.isEmpty(employees)}" class="card">
+    <div class="card-body text-center text-muted py-4" th:text="#{main.general.norecords.text}">No employees found</div>
   </div>
 
+  <th:block th:each="statusKey : ${ {'bl','pv','bo','ma','restricted','adm'} }"
+            th:with="group=${employees.?[status == '__${statusKey}__']}">
+    <div th:if="${not #lists.isEmpty(group)}" class="card mb-3">
+      <div class="card-header border-0">
+        <h3 class="card-title"><i class="bi bi-people-fill me-2 text-muted"></i><span th:text="#{${'main.employee.status.' + statusKey}}">Status</span></h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th th:title="#{main.headlinedescription.employees.lastname.text}" th:text="#{main.employee.lastname.text}">Last Name</th>
+              <th th:title="#{main.headlinedescription.employees.fristname.text}" th:text="#{main.employee.firstname.text}">First Name</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.sign.text}" th:text="#{main.employee.sign.text}">Sign</th>
+              <th class="d-none d-md-table-cell" th:title="#{main.headlinedescription.employees.loginname.text}" th:text="#{main.employee.loginname.text}">Login</th>
+              <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
+              <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+              <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="employee : ${group}">
+              <td th:text="${employee.lastname}"></td>
+              <td th:text="${employee.firstname}"></td>
+              <td class="d-none d-md-table-cell" th:text="${employee.sign}"></td>
+              <td class="d-none d-md-table-cell" th:text="${employee.loginname}"></td>
+              <td class="d-none d-lg-table-cell">
+                <span th:if="${employee.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
+              </td>
+              <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary"
+                   th:title="#{main.headlinedescription.employees.edit.text}">
+                  <i class="icon ti ti-pencil m-0"></i>
+                </a>
+              </td>
+              <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post"
+                      th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                  <button type="submit" class="btn btn-outline-danger"
+                          th:title="#{main.headlinedescription.employees.delete.text}">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </th:block>
 
   <script th:inline="none">
     document.addEventListener('DOMContentLoaded', function () {
