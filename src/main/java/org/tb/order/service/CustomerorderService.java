@@ -170,8 +170,8 @@ public class CustomerorderService {
     customerorderRepository.deleteById(customerOrderId);
   }
 
-  public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId) {
-    return customerorderDAO.getCustomerordersByFilters(showInvalid, filter, customerId);
+  public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId, Boolean showHidden) {
+    return customerorderDAO.getCustomerordersByFilters(showInvalid, filter, customerId, showHidden);
   }
 
   @EventListener

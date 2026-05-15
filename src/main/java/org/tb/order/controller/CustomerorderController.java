@@ -54,6 +54,7 @@ public class CustomerorderController {
       @RequestParam(required = false) Long customerId,
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
+      @RequestParam(required = false) Boolean showHidden,
       HttpServletRequest request,
       HttpSession session,
       Model model) {
@@ -62,14 +63,16 @@ public class CustomerorderController {
       session.setAttribute("orders.customerorders.customerId", customerId);
       session.setAttribute("orders.customerorders.show", show);
       session.setAttribute("orders.customerorders.showActualHours", showActualHours);
+      session.setAttribute("orders.customerorders.showHidden", showHidden);
     } else {
       filter = (String) session.getAttribute("orders.customerorders.filter");
       customerId = (Long) session.getAttribute("orders.customerorders.customerId");
       show = (Boolean) session.getAttribute("orders.customerorders.show");
       showActualHours = (Boolean) session.getAttribute("orders.customerorders.showActualHours");
+      showHidden = (Boolean) session.getAttribute("orders.customerorders.showHidden");
     }
     var filterSet = (filter != null && !filter.isEmpty()) || customerId != null;
-    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(show, filter, customerId) : List.<Customerorder>of();
+    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(show, filter, customerId, showHidden) : List.<Customerorder>of();
     if (Boolean.TRUE.equals(showActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
       for (Customerorder co : customerorders) {
@@ -83,6 +86,7 @@ public class CustomerorderController {
     model.addAttribute("filter", filter);
     model.addAttribute("customerId", customerId);
     model.addAttribute("show", show);
+    model.addAttribute("showHidden", showHidden);
     model.addAttribute("showActualHours", Boolean.TRUE.equals(showActualHours));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "customerorders");

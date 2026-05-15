@@ -80,14 +80,14 @@ public class CustomerorderDAO {
 
     private Specification<Customerorder> showOnlyValid() {
         LocalDate now = today();
-        return (root, query, builder) -> {
-            var untilDateNullOrGreater = builder.or(
-                builder.isNull(root.get(Customerorder_.untilDate)),
-                builder.greaterThanOrEqualTo(root.get(Customerorder_.untilDate), now)
-            );
-            var notHidden = builder.notEqual(root.get(Customerorder_.hide), TRUE);
-            return builder.and(untilDateNullOrGreater, notHidden);
-        };
+        return (root, query, builder) -> builder.or(
+            builder.isNull(root.get(Customerorder_.untilDate)),
+            builder.greaterThanOrEqualTo(root.get(Customerorder_.untilDate), now)
+        );
+    }
+
+    private Specification<Customerorder> notHidden() {
+        return (root, query, builder) -> builder.notEqual(root.get(Customerorder_.hide), TRUE);
     }
 
     private Specification<Customerorder> matchingCustomerId(long customerId) {
@@ -114,12 +114,15 @@ public class CustomerorderDAO {
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
      */
-    public List<Customerorder> getCustomerordersByFilters(final Boolean showInvalid, final String filter, final Long customerId) {
+    public List<Customerorder> getCustomerordersByFilters(final Boolean showInvalid, final String filter, final Long customerId, final Boolean showHidden) {
         var order = new Order(ASC, Customerorder_.SIGN).ignoreCase();
         return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
             if(!TRUE.equals(showInvalid)) {
                 predicates.add(showOnlyValid().toPredicate(root, query, builder));
+            }
+            if(!TRUE.equals(showHidden)) {
+                predicates.add(notHidden().toPredicate(root, query, builder));
             }
             if(customerId != null && customerId > 0) {
                 predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
