@@ -132,14 +132,14 @@ public class SuborderDAO {
 
     private Specification<Suborder> showOnlyValid() {
         LocalDate now = today();
-        return (root, query, builder) -> {
-            var untilDateNullOrGreater = builder.or(
-                builder.isNull(root.get(Suborder_.untilDate)),
-                builder.greaterThanOrEqualTo(root.get(Suborder_.untilDate), now)
-            );
-            var notHidden = builder.notEqual(root.get(Suborder_.hide), TRUE);
-            return builder.and(untilDateNullOrGreater, notHidden);
-        };
+        return (root, query, builder) -> builder.or(
+            builder.isNull(root.get(Suborder_.untilDate)),
+            builder.greaterThanOrEqualTo(root.get(Suborder_.untilDate), now)
+        );
+    }
+
+    private Specification<Suborder> notHidden() {
+        return (root, query, builder) -> builder.notEqual(root.get(Suborder_.hide), TRUE);
     }
 
     private Specification<Suborder> matchingCustomerorderId(long customerorderId) {
@@ -154,11 +154,14 @@ public class SuborderDAO {
     /**
      * Get a list of all suborders fitting to the given filters ordered by their sign.
      */
-    public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerorderId, Long customerId) {
+    public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerorderId, Long customerId, Boolean showHidden) {
         return suborderRepository.findAll((root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
             if(!TRUE.equals(showInvalid)) {
                 predicates.add(showOnlyValid().toPredicate(root, query, builder));
+            }
+            if(!TRUE.equals(showHidden)) {
+                predicates.add(notHidden().toPredicate(root, query, builder));
             }
             if(customerorderId != null && customerorderId > 0) {
                 predicates.add(matchingCustomerorderId(customerorderId).toPredicate(root, query, builder));

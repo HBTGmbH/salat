@@ -209,7 +209,8 @@ public class SuborderService {
 
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
     return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
-        .filter(not(Suborder::isHide))
+        .filter(
+                not(Suborder::isHide))
         .toList();
   }
 
@@ -252,11 +253,8 @@ public class SuborderService {
     suborderRepository.deleteById(suborderId);
   }
 
-  public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId, Long customerId) {
-    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId, customerId)
-        .stream()
-        .filter(not(Suborder::isHide))
-        .toList();
+  public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId, Long customerId, Boolean showHidden) {
+    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId, customerId, showHidden);
   }
 
   public List<Suborder> getSuborderChildren(Long parentSuborderId) {

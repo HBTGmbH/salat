@@ -73,6 +73,12 @@
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+                <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
+              </label>
+            </div>
+            <div class="col-auto">
+              <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
                 <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
               </label>

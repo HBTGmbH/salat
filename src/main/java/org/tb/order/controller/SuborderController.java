@@ -59,6 +59,7 @@ public class SuborderController {
       @RequestParam(required = false) Long customerId,
       @RequestParam(required = false) Boolean show,
       @RequestParam(required = false) Boolean showActualHours,
+      @RequestParam(required = false) Boolean showHidden,
       HttpServletRequest request,
       HttpSession session,
       Model model) {
@@ -68,15 +69,17 @@ public class SuborderController {
       session.setAttribute("orders.suborders.customerId", customerId);
       session.setAttribute("orders.suborders.show", show);
       session.setAttribute("orders.suborders.showActualHours", showActualHours);
+      session.setAttribute("orders.suborders.showHidden", showHidden);
     } else {
       filter = (String) session.getAttribute("orders.suborders.filter");
       customerOrderId = (Long) session.getAttribute("orders.suborders.customerOrderId");
       customerId = (Long) session.getAttribute("orders.suborders.customerId");
       show = (Boolean) session.getAttribute("orders.suborders.show");
       showActualHours = (Boolean) session.getAttribute("orders.suborders.showActualHours");
+      showHidden = (Boolean) session.getAttribute("orders.suborders.showHidden");
     }
     var filterSet = (filter != null && !filter.isEmpty()) || customerId != null || customerOrderId != null;
-    var suborders = filterSet ? suborderService.getSubordersByFilters(show, filter, customerOrderId, customerId) : List.<Suborder>of();
+    var suborders = filterSet ? suborderService.getSubordersByFilters(show, filter, customerOrderId, customerId, showHidden) : List.<Suborder>of();
     if (Boolean.TRUE.equals(showActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {
@@ -99,6 +102,7 @@ public class SuborderController {
     model.addAttribute("customerId", customerId);
     model.addAttribute("customerOrderId", customerOrderId);
     model.addAttribute("show", show);
+    model.addAttribute("showHidden", showHidden);
     model.addAttribute("showActualHours", Boolean.TRUE.equals(showActualHours));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "suborders");
