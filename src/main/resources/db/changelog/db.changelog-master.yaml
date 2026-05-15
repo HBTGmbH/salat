@@ -1699,5 +1699,23 @@ databaseChangeLog:
                   name: hide
                   type: bit(1)
                   defaultValueBoolean: false
+  - changeSet:
+      id: 46
+      author: kr
+      comment: Add hide column to employee table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: employee
+              columnName: hide
+      changes:
+        - addColumn:
+            tableName: employee
+            columns:
+              - column:
+                  name: hide
+                  type: bit(1)
+                  defaultValueBoolean: false
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

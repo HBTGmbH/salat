@@ -12,5 +12,6 @@ public class EmployeeForm {
     private String loginname;
     private String status;
     private String gender;
+    private Boolean hide;
 
 }

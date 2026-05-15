@@ -56,6 +56,12 @@
           </div>
         </div>
 
+        <div>
+          <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+            field='hide', label=#{main.general.hide}
+          )}"></div>
+        </div>
+
     </div>
 
     <div class="card-footer">

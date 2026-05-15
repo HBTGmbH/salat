@@ -38,18 +38,22 @@ public class EmployeeController {
     @GetMapping
     public String list(
             @RequestParam(required = false) String filter,
+            @RequestParam(required = false) Boolean showHidden,
             HttpServletRequest request,
             HttpSession session,
             Model model) {
         if (request.getParameterMap().containsKey("filter")) {
             session.setAttribute("employees.filter", filter);
+            session.setAttribute("employees.showHidden", showHidden);
         } else {
             filter = (String) session.getAttribute("employees.filter");
+            showHidden = (Boolean) session.getAttribute("employees.showHidden");
         }
-        var employees = employeeService.getEmployeesByFilter(filter);
+        var employees = employeeService.getEmployeesByFilter(filter, showHidden);
         employees.sort(Comparator.comparing(Employee::getLastname).thenComparing(Employee::getFirstname));
         model.addAttribute("employees", employees);
         model.addAttribute("filter", filter);
+        model.addAttribute("showHidden", showHidden);
         addListModel(model);
         return "employee/employee-list";
     }
@@ -99,6 +103,7 @@ public class EmployeeController {
                 employee.setLastname(form.getLastname());
                 employee.setSign(form.getSign());
                 employee.setGender(form.getGender().charAt(0));
+                employee.setHide(Boolean.TRUE.equals(form.getHide()));
                 employeeService.createOrUpdate(employee);
             } catch (ErrorCodeException ex) {
                 model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
@@ -212,6 +217,7 @@ public class EmployeeController {
         form.setLoginname(employee.getLoginname());
         form.setStatus(employee.getStatus());
         form.setGender(String.valueOf(employee.getGender()));
+        form.setHide(employee.getHide());
         return form;
     }
 

@@ -1,5 +1,6 @@
 package org.tb.employee.persistence;
 
+import static java.lang.Boolean.TRUE;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import com.google.common.collect.Lists;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.auth.domain.AccessLevel;
@@ -76,31 +78,39 @@ public class EmployeeDAO {
             .collect(Collectors.toList());
     }
 
+    private Specification<Employee> notHidden() {
+        return (root, query, builder) -> builder.notEqual(root.get(Employee_.hide), TRUE);
+    }
+
     /**
-     * Get a list of all Employees ordered by lastname.
+     * Get a list of all non-hidden Employees ordered by name (for dropdowns).
      */
     public List<Employee> getEmployees() {
-        var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
-        return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
+        return employeeRepository.findAll(notHidden()).stream()
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
 
     /**
-     * Get a list of all Employees fitting to the given filter ordered by lastname.
+     * Get a list of Employees fitting to the given filter ordered by name (for the list view).
      */
-    public List<Employee> getEmployeesByFilter(String filter) {
-        var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
-        if (filter == null || filter.trim().isEmpty()) {
-            return Lists.newArrayList(employeeRepository
-                .findAll(Sort.by(order))).stream()
+    public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
+        boolean hasFilter = filter != null && !filter.trim().isEmpty();
+        boolean excludeHidden = !TRUE.equals(showHidden);
+
+        if (!hasFilter && !excludeHidden) {
+            var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
+            return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
                 .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
-        } else {
+        }
+
+        Specification<Employee> spec = excludeHidden ? notHidden() : null;
+        if (hasFilter) {
             var filterValue = "%" + filter.toUpperCase() + "%";
-            return employeeRepository.findAll((root, query, builder) -> {
+            Specification<Employee> filterSpec = (root, query, builder) -> {
                 var salatUserJoin = root.join(Employee_.salatUser);
                 return builder.or(
                     builder.like(builder.upper(salatUserJoin.get(SalatUser_.loginname)), filterValue),
@@ -109,11 +119,13 @@ public class EmployeeDAO {
                     builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
                     builder.like(builder.upper(salatUserJoin.get(SalatUser_.status)), filterValue)
                 );
-            }).stream()
-                .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
-                .sorted(Comparator.comparing(Employee::getName))
-                .collect(Collectors.toList());
+            };
+            spec = spec == null ? filterSpec : spec.and(filterSpec);
         }
+        return employeeRepository.findAll(spec).stream()
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
+            .sorted(Comparator.comparing(Employee::getName))
+            .collect(Collectors.toList());
     }
 
 }

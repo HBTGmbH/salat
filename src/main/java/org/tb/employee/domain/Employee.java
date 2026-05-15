@@ -8,6 +8,7 @@ import jakarta.persistence.Transient;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.AccessLevel;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.auth.domain.SalatUser;
@@ -39,6 +40,9 @@ public class Employee extends AuditedEntity implements Serializable {
      */
     private char gender;
 
+    @Getter(AccessLevel.NONE)
+    private Boolean hide;
+
     /**
      * The SalatUser associated with this employee
      */
@@ -49,6 +53,10 @@ public class Employee extends AuditedEntity implements Serializable {
         inverseJoinColumns = @JoinColumn(name = "salat_user_id", nullable = false)
     )
     private SalatUser salatUser;
+
+    public Boolean getHide() {
+        return hide != null && hide;
+    }
 
     public String getName() {
         return getFirstname() + " " + getLastname();

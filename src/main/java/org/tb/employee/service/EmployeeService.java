@@ -79,8 +79,8 @@ public class EmployeeService {
     return employeeDAO.getEmployeesWithValidContracts();
   }
 
-  public List<Employee> getEmployeesByFilter(String filter) {
-    return employeeDAO.getEmployeesByFilter(filter);
+  public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
+    return employeeDAO.getEmployeesByFilter(filter, showHidden);
   }
 
   @Authorized(requiresManager = true)
