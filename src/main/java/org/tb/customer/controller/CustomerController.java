@@ -36,17 +36,22 @@ public class CustomerController {
 
   @GetMapping
   public String list(@RequestParam(value = "filter", required = false) String filter,
+                     @RequestParam(value = "showHidden", required = false) Boolean showHidden,
                      HttpServletRequest request,
                      HttpSession session,
                      Model model) {
-    if (request.getParameterMap().containsKey("filter")) {
+    if (request.getParameterMap().containsKey("filter") || request.getParameterMap().containsKey("showHidden")) {
       session.setAttribute("customers.filter", filter);
+      session.setAttribute("customers.showHidden", showHidden);
     } else {
       filter = (String) session.getAttribute("customers.filter");
+      showHidden = (Boolean) session.getAttribute("customers.showHidden");
     }
+    boolean showHiddenFlag = Boolean.TRUE.equals(showHidden);
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
     model.addAttribute("filter", filter);
-    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter));
+    model.addAttribute("showHidden", showHiddenFlag);
+    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter, showHiddenFlag));
     return "customer/customer-list";
   }
 

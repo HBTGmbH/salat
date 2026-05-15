@@ -1681,5 +1681,23 @@ databaseChangeLog:
                   name: type
                   value: NOT_WORKED
             where: type = 'OVERTIME_COMPENSATED' and starttimehour = 0
+  - changeSet:
+      id: 45
+      author: kr
+      comment: Add hide column to customer table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: customer
+              columnName: hide
+      changes:
+        - addColumn:
+            tableName: customer
+            columns:
+              - column:
+                  name: hide
+                  type: bit(1)
+                  defaultValueBoolean: false
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

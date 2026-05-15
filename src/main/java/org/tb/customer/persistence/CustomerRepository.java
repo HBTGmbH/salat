@@ -17,4 +17,22 @@ public interface CustomerRepository extends PagingAndSortingRepository<Customer,
       """)
   List<Customer> findAllByFilterIgnoringCase(String filter);
 
+  @Query("""
+      select c from Customer c where (c.hide is null or c.hide = false) order by c.name asc
+      """)
+  List<Customer> findAllVisible();
+
+  @Query("""
+      select c from Customer c where (c.hide is null or c.hide = false) order by upper(c.shortname) asc
+      """)
+  List<Customer> findAllVisibleOrderByShortnameIgnoreCase();
+
+  @Query("""
+      select c from Customer c where (c.hide is null or c.hide = false) and (
+        cast(c.id as string) like upper(:filter) or upper(c.name) like upper(:filter)
+        or upper(c.address) like upper(:filter) or upper(c.shortname) like upper(:filter)
+      ) order by c.name asc
+      """)
+  List<Customer> findVisibleByFilterIgnoringCase(String filter);
+
 }

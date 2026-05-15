@@ -44,21 +44,17 @@ public class CustomerService {
   private final CustomerDAO customerDAO;
 
   @Transactional(readOnly = true)
-  public List<CustomerDTO> getAllCustomerDTOs() {
-    return stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
-        .map(CustomerDTO::from)
-        .toList();
-  }
-
-  @Transactional(readOnly = true)
-  public List<CustomerDTO> getAllCustomerDTOsByFilter(String filter) {
+  public List<CustomerDTO> getAllCustomerDTOsByFilter(String filter, boolean showHidden) {
     if (filter == null || filter.isBlank()) {
-      return getAllCustomerDTOs();
+      var repo = showHidden
+          ? stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
+          : customerRepository.findAllVisible().stream();
+      return repo.map(CustomerDTO::from).toList();
     } else {
-      return customerRepository
-          .findAllByFilterIgnoringCase("%" + filter + "%").stream()
-          .map(CustomerDTO::from)
-          .toList();
+      var results = showHidden
+          ? customerRepository.findAllByFilterIgnoringCase("%" + filter + "%")
+          : customerRepository.findVisibleByFilterIgnoringCase("%" + filter + "%");
+      return results.stream().map(CustomerDTO::from).toList();
     }
   }
 
@@ -81,9 +77,7 @@ public class CustomerService {
       Predicate<Customer> sameShortName = (Customer c) -> Objects.equals(c.getShortname(), customerDTO.getShortName());
       var duplicateFound = stream(customerRepository.findAll().spliterator(), false)
           .filter(notSameId)
-          .filter(sameShortName)
-          .findAny()
-          .isPresent();
+          .anyMatch(sameShortName);
       if(duplicateFound) {
         throw new BusinessRuleException(CU_DUPLICATE_SHORT_NAME);
       }

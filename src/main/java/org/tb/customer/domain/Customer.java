@@ -1,6 +1,8 @@
 package org.tb.customer.domain;
 
 import jakarta.persistence.Entity;
+
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,11 +16,20 @@ import org.tb.common.domain.AuditedEntity;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Customer extends AuditedEntity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private String name;
     private String shortname;
     private String address;
+    private Boolean hide;
+
+    public Boolean getHide() {
+        if (hide == null) {
+            return false;
+        }
+        return hide;
+    }
 
     public String getShortname() {
         if (shortname == null || shortname.isEmpty()) {

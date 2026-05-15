@@ -18,6 +18,10 @@
       <div th:replace="~{fragments/form-fields :: textareaInput(
         field='address', label=#{main.customer.address.text}, required=true, rows=3, monospace=false
       )}"></div>
+
+      <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+        field='hide', label=#{main.general.hide}
+      )}"></div>
     </div>
     <div class="card-footer">
       <div th:replace="~{fragments/form-fields :: formButtons(${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}, @{/customers})}"></div>

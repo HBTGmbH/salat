@@ -1,5 +1,6 @@
 package org.tb.customer.domain;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -13,24 +14,27 @@ import lombok.extern.jackson.Jacksonized;
 @AllArgsConstructor
 public class CustomerDTO implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private Long id;
   private String name;
   private String shortName;
   private String address;
+  private Boolean hide;
   private String createdBy;
   private LocalDateTime createdAt;
   private String updatedBy;
   private LocalDateTime updatedAt;
   private Integer updateCounter;
-  
+
   public static CustomerDTO from(Customer customer) {
     return CustomerDTO.builder()
         .id(customer.getId())
         .name(customer.getName())
         .shortName(customer.getShortname())
         .address(customer.getAddress())
+        .hide(customer.getHide())
         .createdBy(customer.getCreatedby())
         .createdAt(customer.getCreated())
         .updatedBy(customer.getLastupdatedby())
@@ -43,6 +47,7 @@ public class CustomerDTO implements Serializable {
     customer.setName(name);
     customer.setShortname(shortName);
     customer.setAddress(address);
+    customer.setHide(Boolean.TRUE.equals(hide));
     // do not copy id and audit fields
   }
 
