@@ -34,13 +34,13 @@
       </div>
 
       <div th:replace="~{fragments/form-fields :: selectInput(
-        params=${@formField.requiredSelect('supervisorId', supervisors, 'id', 'name')},
+        params=${#ffield.requiredSelect('supervisorId', supervisors, 'id', 'name')},
         label=#{main.employeecontract.supervisor.text},
         placeholder=#{main.general.selectone.text}
       )}"></div>
 
       <div th:replace="~{fragments/form-fields :: textareaInput(
-        params=${@formField.textarea('taskdescription', 4)}, label=#{main.employeecontract.taskdescription.text}
+        params=${#ffield.textarea('taskdescription', 4)}, label=#{main.employeecontract.taskdescription.text}
       )}"></div>
 
       <div class="row">
@@ -57,14 +57,14 @@
       </div>
 
       <div th:replace="~{fragments/form-fields :: textInput(
-        params=${@formField.required('dailyWorkingTime', 10)}, label=#{main.employeecontract.dailyworkingtime.text}
+        params=${#ffield.required('dailyWorkingTime', 10)}, label=#{main.employeecontract.dailyworkingtime.text}
       )}"></div>
       <div th:replace="~{fragments/form-fields :: textInput(
-        params=${@formField.required('yearlyVacation', 5)}, label=#{main.employeecontract.yearlyvacation.text}
+        params=${#ffield.required('yearlyVacation', 5)}, label=#{main.employeecontract.yearlyvacation.text}
       )}"></div>
 
       <div th:if="${!isEdit}" th:replace="~{fragments/form-fields :: textInput(
-        params=${@formField.text('initialOvertime', 10)}, label=#{main.employeecontract.initialovertime.text}
+        params=${#ffield.text('initialOvertime', 10)}, label=#{main.employeecontract.initialovertime.text}
       )}"></div>
 
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(

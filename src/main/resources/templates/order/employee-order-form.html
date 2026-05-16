@@ -101,7 +101,7 @@
       <div class="row">
         <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: textInput(
-            params=${@formField.text('debithours', 10)}, label=#{main.general.debithours.text}
+            params=${#ffield.text('debithours', 10)}, label=#{main.general.debithours.text}
           )}"></div>
         </div>
         <div class="col-md-6">

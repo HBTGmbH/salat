@@ -8,15 +8,15 @@
       <input type="hidden" th:field="*{id}" />
 
       <div th:replace="~{fragments/form-fields :: textInput(
-        params=${@formField.required('shortName', 12)}, label=#{main.customer.shortname.text}
+        params=${#ffield.required('shortName', 12)}, label=#{main.customer.shortname.text}
       )}"></div>
 
       <div th:replace="~{fragments/form-fields :: textInput(
-        params=${@formField.required('name', 255)}, label=#{main.customer.name.text}
+        params=${#ffield.required('name', 255)}, label=#{main.customer.name.text}
       )}"></div>
 
       <div th:replace="~{fragments/form-fields :: textareaInput(
-        params=${@formField.requiredTextarea('address', 3)}, label=#{main.customer.address.text}
+        params=${#ffield.requiredTextarea('address', 3)}, label=#{main.customer.address.text}
       )}"></div>
 
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(

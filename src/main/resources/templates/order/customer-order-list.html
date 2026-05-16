@@ -6,7 +6,7 @@
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/filter-card :: filterCard(
-      params=${@filterCardParams.htmx('co', '#results-container')},
+      params=${#fcard.htmx('co', '#results-container')},
       formAction=@{/orders/customerorders},
       primaryFilters=~{::primaryFilters},
       advancedFilters=~{::advancedFilters}

@@ -10,11 +10,11 @@
         <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
 
         <div th:replace="~{fragments/form-fields :: textInput(
-          params=${@formField.required('name', 255)}, label='Report Name'
+          params=${#ffield.required('name', 255)}, label='Report Name'
         )}"></div>
 
         <div th:replace="~{fragments/form-fields :: textareaInput(
-          params=${@formField.requiredCodeWithHelp('sql', 15, 'Use named parameters like :startDate, :endDate')},
+          params=${#ffield.requiredCodeWithHelp('sql', 15, 'Use named parameters like :startDate, :endDate')},
           label='SQL'
         )}"></div>
     </div>

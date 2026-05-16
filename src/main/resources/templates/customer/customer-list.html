@@ -5,7 +5,7 @@
 <section layout:fragment="content">
 
   <div th:replace="~{fragments/filter-card :: filterCard(
-      params=${@filterCardParams.simple('cu')},
+      params=${#fcard.simple('cu')},
       formAction=@{/customers},
       primaryFilters=~{::primaryFilters},
       advancedFilters=_

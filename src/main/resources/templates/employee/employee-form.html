@@ -11,12 +11,12 @@
 
         <div>
           <div th:replace="~{fragments/form-fields :: textInput(
-            params=${@formField.required('firstname', 255)}, label=#{main.employee.firstname.text}
+            params=${#ffield.required('firstname', 255)}, label=#{main.employee.firstname.text}
           )}"></div>
         </div>
         <div>
           <div th:replace="~{fragments/form-fields :: textInput(
-            params=${@formField.required('lastname', 255)}, label=#{main.employee.lastname.text}
+            params=${#ffield.required('lastname', 255)}, label=#{main.employee.lastname.text}
           )}"></div>
         </div>
         <div>
@@ -32,13 +32,13 @@
 
         <div>
           <div th:replace="~{fragments/form-fields :: textInput(
-            params=${@formField.required('sign', 5)}, label=#{main.employee.sign.text}
+            params=${#ffield.required('sign', 5)}, label=#{main.employee.sign.text}
           )}"></div>
         </div>
 
         <div>
           <div th:replace="~{fragments/form-fields :: textInput(
-            params=${@formField.required('loginname', 5)}, label=#{main.employee.loginname.text}
+            params=${#ffield.required('loginname', 5)}, label=#{main.employee.loginname.text}
           )}"></div>
         </div>
         <div>
@@ -75,7 +75,7 @@
 
   <!-- Anonymize danger zone (edit only) -->
   <div th:if="${isEdit}" th:replace="~{fragments/danger-zone :: dangerZone(
-      params=${@dangerZoneParams.card(
+      params=${#dzone.card(
           __#{form.employee.anonymize.dangerzone.title}__,
           __#{form.employee.anonymize.dangerzone.description}__,
           __#{form.employee.anonymize.button}__,
@@ -84,7 +84,7 @@
   )}"></div>
 
   <div th:if="${isEdit}" th:replace="~{fragments/danger-zone :: dangerZoneModal(
-      params=${@dangerZoneParams.modal(
+      params=${#dzone.modal(
           'anonymizeModal',
           __#{form.employee.anonymize.modal.title}__,
           __#{form.employee.anonymize.modal.warning}__,

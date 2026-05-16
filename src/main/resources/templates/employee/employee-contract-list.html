@@ -13,7 +13,7 @@
   </div>
 
   <div th:replace="~{fragments/filter-card :: filterCard(
-      params=${@filterCardParams.basic('ec')},
+      params=${#fcard.basic('ec')},
       formAction=@{/employees/contracts},
       primaryFilters=~{::primaryFilters},
       advancedFilters=~{::advancedFilters}
