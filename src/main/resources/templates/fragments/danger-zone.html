@@ -10,7 +10,7 @@
 
     Usage:
       <div th:replace="~{fragments/danger-zone :: dangerZone(
-          params=${@dangerZoneParams.card(
+          params=${#dzone.card(
               __#{form.employee.anonymize.dangerzone.title}__,
               __#{form.employee.anonymize.dangerzone.description}__,
               __#{form.employee.anonymize.button}__,
@@ -42,7 +42,7 @@
 
     Usage:
       <div th:replace="~{fragments/danger-zone :: dangerZoneModal(
-          params=${@dangerZoneParams.modal(
+          params=${#dzone.modal(
               'anonymizeModal',
               __#{form.employee.anonymize.modal.title}__,
               __#{form.employee.anonymize.modal.warning}__,

@@ -6,7 +6,7 @@
     <!--
       Usage example:
       <div th:replace="~{fragments/master-table :: masterTable(
-          params=${@masterTableParams.withAdd('Add New', 'ti-plus')},
+          params=${#mtable.withAdd('Add New', 'ti-plus')},
           addHref=@{/Add}, addIf=${true},
           thead=~{::theadContent}, tbody=~{::tbodyContent}
       )}">

@@ -12,7 +12,7 @@
 
     Usage (with HTMX + advanced section):
       <div th:replace="~{fragments/filter-card :: filterCard(
-          params=${@filterCardParams.htmx('co', '#results-container')},
+          params=${#fcard.htmx('co', '#results-container')},
           formAction=@{/orders/customerorders},
           primaryFilters=~{::primaryFilters},
           advancedFilters=~{::advancedFilters}
@@ -29,7 +29,7 @@
       <div th:replace="~{fragments/filter-card :: filterCardJs}"></div>
 
     Usage (without HTMX, no advanced section):
-      params=${@filterCardParams.simple('cu')}, advancedFilters=_
+      params=${#fcard.simple('cu')}, advancedFilters=_
       Put all filter content including always-visible checkboxes in primaryFilters.
   -->
   <div th:fragment="filterCard(params, formAction, primaryFilters, advancedFilters)" class="card mb-3">

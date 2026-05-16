@@ -10,7 +10,7 @@
       label   - display label (use #{...} for i18n keys)
 
       Usage: th:replace="~{fragments/form-fields :: textInput(
-        params=${@formField.required('name', 255)}, label=#{main.customer.name.text}
+        params=${#ffield.required('name', 255)}, label=#{main.customer.name.text}
       )}"
     -->
     <div th:fragment="textInput(params, label)" class="mb-3">
@@ -28,7 +28,7 @@
       label   - display label (use #{...} for i18n keys)
 
       Usage: th:replace="~{fragments/form-fields :: textareaInput(
-        params=${@formField.requiredCode('sql', 15)}, label='SQL'
+        params=${#ffield.requiredCode('sql', 15)}, label='SQL'
       )}"
     -->
     <div th:fragment="textareaInput(params, label)" class="mb-3">
@@ -48,7 +48,7 @@
       placeholder  - placeholder option text (#{...} or null for no placeholder)
 
       Usage: th:replace="~{fragments/form-fields :: selectInput(
-        params=${@formField.requiredSelect('supervisorId', supervisors, 'id', 'name')},
+        params=${#ffield.requiredSelect('supervisorId', supervisors, 'id', 'name')},
         label=#{main.employeecontract.supervisor.text},
         placeholder=#{main.general.selectone.text}
       )}"

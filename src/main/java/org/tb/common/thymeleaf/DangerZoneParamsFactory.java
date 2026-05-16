@@ -1,4 +1,4 @@
-package org.tb.common.viewhelper.fragment;
+package org.tb.common.thymeleaf;
 
 import org.springframework.stereotype.Component;
 

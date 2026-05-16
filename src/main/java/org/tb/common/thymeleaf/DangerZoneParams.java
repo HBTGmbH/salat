@@ -1,4 +1,4 @@
-package org.tb.common.viewhelper.fragment;
+package org.tb.common.thymeleaf;
 
 import lombok.Builder;
 import lombok.Getter;
