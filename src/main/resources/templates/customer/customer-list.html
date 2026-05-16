@@ -4,48 +4,52 @@
       th:with="section='orders',subSection='customer',title=#{main.general.mainmenu.customers.text},sectionTitle=#{main.general.mainmenu.customerorders.text}">
 <section layout:fragment="content">
 
-  <div class="card mb-3">
-    <div class="card-body">
-      <form method="get" th:action="@{/customers}" data-filter-form="cu">
-        <div class="row g-2 align-items-end">
-          <div class="col-md-6">
-            <input type="text" class="form-control" name="filter" th:value="${filter}"
-                   th:placeholder="#{main.general.filter.text}" />
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-primary" type="submit">
-              <i class="icon ti ti-filter m-0"></i>
-            </button>
-          </div>
-          <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a class="btn btn-success" th:href="@{/customers/create}">
-              <i class="icon ti ti-building-plus"></i>
-              <span th:text="#{main.general.button.createcustomer.text}">New Customer</span>
-            </a>
-          </div>
+  <div th:replace="~{fragments/filter-card :: filterCard(
+      params=${@filterCardParams.simple('cu')},
+      formAction=@{/customers},
+      primaryFilters=~{::primaryFilters},
+      advancedFilters=_
+  )}">
+    <th:block th:fragment="primaryFilters">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+          <input type="text" class="form-control" name="filter" th:value="${filter}"
+                 th:placeholder="#{main.general.filter.text}" />
         </div>
-        <div class="row g-2 align-items-end mt-2">
-          <div class="col-auto ms-2">
-            <label class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
-              <span class="form-check-label" th:text="#{main.customer.showhidden.text}">Show hidden</span>
-            </label>
-          </div>
+        <div class="col-auto">
+          <button class="btn btn-primary" type="submit">
+            <i class="icon ti ti-filter m-0"></i>
+          </button>
         </div>
-      </form>
-    </div>
+        <div class="col-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <a class="btn btn-success" th:href="@{/customers/create}">
+            <i class="icon ti ti-building-plus"></i>
+            <span th:text="#{main.general.button.createcustomer.text}">New Customer</span>
+          </a>
+        </div>
+      </div>
+      <div class="row g-2 align-items-end mt-2">
+        <div class="col-auto ms-2">
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+            <span class="form-check-label" th:text="#{main.customer.showhidden.text}">Show hidden</span>
+          </label>
+        </div>
+      </div>
+    </th:block>
   </div>
+  <div th:replace="~{fragments/filter-card :: filterCardJs}"></div>
 
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
-          <th th:text="#{main.customer.shortname.text}">Short Name</th>
-          <th class="d-none d-sm-table-cell" th:text="#{main.customer.name.text}">Name</th>
-          <th class="d-none d-sm-table-cell" th:text="#{main.customer.address.text}">Address</th>
+          <th th:replace="~{fragments/master-table :: colHeaderPrimary(label=#{main.customer.shortname.text})}"></th>
+          <th th:replace="~{fragments/master-table :: colHeader(label=#{main.customer.name.text})}"></th>
+          <th th:replace="~{fragments/master-table :: colHeader(label=#{main.customer.address.text})}"></th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
-          <th class="w-1"></th>
-          <th class="w-1"></th>
+          <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+          <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
         </tr>
       </thead>
       <tbody>
@@ -53,44 +57,27 @@
           <td colspan="6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
         </tr>
         <tr th:each="cu : ${customers}">
-          <td th:text="${cu.shortName}"></td>
-          <td class="d-none d-sm-table-cell" th:text="${cu.name}"></td>
-          <td class="d-none d-sm-table-cell" th:text="${cu.address}"></td>
-          <td class="d-none d-lg-table-cell">
-            <span th:if="${cu.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
+          <td th:replace="~{fragments/master-table :: colText(text=${cu.shortName}, responsive=null)}"></td>
+          <td th:replace="~{fragments/master-table :: colText(text=${cu.name}, responsive='sm')}"></td>
+          <td th:replace="~{fragments/master-table :: colText(text=${cu.address}, responsive='sm')}"></td>
+          <td th:replace="~{fragments/master-table :: colSlot(content=~{::flagsCell}, responsive='lg')}">
+            <th:block th:fragment="flagsCell">
+              <span th:if="${cu.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
+            </th:block>
           </td>
-          <td>
-            <a th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-               class="btn btn-outline-primary"
-               th:href="@{/customers/edit(id=${cu.id})}">
-              <i class="icon ti ti-pencil m-0"></i>
-            </a>
-          </td>
-          <td>
-            <form th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-                  th:action="@{/customers/delete}" method="post"
-                  th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
-              <input type="hidden" name="id" th:value="${cu.id}"/>
-              <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
-              <button type="submit" class="btn btn-outline-danger">
-                <i class="icon ti ti-trash m-0"></i>
-              </button>
-            </form>
-          </td>
+          <td th:replace="~{fragments/master-table :: colEditLink(
+              href=@{/customers/edit(id=${cu.id})},
+              ifCondition=${#authorization.expression('hasRole(''MANAGER'')')}
+          )}"></td>
+          <td th:replace="~{fragments/master-table :: colDeleteForm(
+              id=${cu.id},
+              action=@{/customers/delete},
+              ifCondition=${#authorization.expression('hasRole(''MANAGER'')')}
+          )}"></td>
         </tr>
       </tbody>
     </table>
   </div>
-
-  <script th:inline="none">
-    document.addEventListener('DOMContentLoaded', function () {
-      const form = document.querySelector('form[data-filter-form]');
-      if (!form) return;
-      form.querySelectorAll('input[type="checkbox"][name]').forEach(function (el) {
-        el.addEventListener('change', function () { form.requestSubmit(); });
-      });
-    });
-  </script>
 
 </section>
 </html>
