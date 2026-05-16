@@ -270,144 +270,23 @@ Two stacked layers provide defence in depth:
 Reusable fragments live in `src/main/resources/templates/fragments/`.
 
 **Fragment mechanics:**
-- Fragment-slot parameters (markup passed as `~{::localName}`): use `_` (no-op token) to pass nothing; render inside the fragment with `th:replace="${param}"` or `<th:block th:replace="${param}"/>`.
-- Scalar fragments with ≤3 params (`checkboxSwitch`, `dateInput`, `formButtons`, `col*`) use plain named params.
-- Fragments with ≥4 scalars use the Typed Parameter Object pattern — a params object replaces all scalars except URL params and slot params (see section below).
-- URL params (used in `th:action`, `th:href`) stay as Thymeleaf params (evaluated via `@{...}`) and are NOT in the params object.
-
-**`form-fields.html`**
-
-| Fragment | Parameters | Notes |
-|---|---|---|
-| `textInput` | `params, label` | `params` = `TextInputParams` via `#ffield.*` |
-| `textareaInput` | `params, label` | `params` = `TextareaParams` via `#ffield.*` |
-| `selectInput` | `params, label, placeholder` | `params` = `SelectInputParams` via `#ffield.*`; `placeholder=null` for no placeholder option |
-| `checkboxSwitch` | `field, label` | — |
-| `dateInput` | `field, label, required` | — |
-| `formButtons` | `saveLabel, cancelHref` | save + cancel footer buttons |
-
-**`master-table.html`**
-
-| Fragment | Parameters | Notes |
-|---|---|---|
-| `masterTable` | `params, addHref, addIf, thead, tbody` | `params` = `MasterTableParams` via `#mtable.*`; `thead`/`tbody` are fragment slots |
-| `masterTableFilter` | `params, addHref, addIf, filterHref, filterValue, thead, tbody` | table with text-only filter form |
-| `colHeaderPrimary` | `label` | `<th>` always visible |
-| `colHeader` | `label` | `<th>` hidden on xs (`d-none d-sm-table-cell`) |
-| `colHeaderActionIcon` | — | action-icon column header (`w-1`) |
-| `colText` | `text, responsive` | `responsive` = `null`/`''` always-visible; `'sm'`/`'md'`/`'lg'` hidden below that breakpoint |
-| `colTextAdd` | `text, additional, responsive` | two-line text cell; same `responsive` convention |
-| `colYesNo` | `enabled` | yes/no status cell |
-| `colCron` | `cronExpr, defCron, desc` | cron expression + description cell |
-| `colDate` | `date` | datetime cell formatted `yyyy-MM-dd HH:mm`; always `d-none d-sm-table-cell` |
-| `colDateRange` | `fromDate, untilDate, responsive` | from-date with open/until secondary line; `responsive` same convention as `colText` |
-| `colEditLink` | `href, ifCondition` | pass `true` for always-visible; expression for conditional |
-| `colDeleteForm` | `id, action, ifCondition` | pass `true` for always-visible; includes hidden `filter` preservation |
-| `colSlot` | `content, responsive` | wraps a fragment slot in a `<td>` with responsive class; pass `_` for empty slot |
-
-**`filter-card.html`**
-
-| Fragment | Parameters | Notes |
-|---|---|---|
-| `filterCard` | `params, formAction, primaryFilters, advancedFilters` | `params` = `FilterCardParams` via `#fcard.*` |
-| `filterCardJs` | — | companion script: localStorage persistence + checkbox/select auto-submit; include once per page after the card |
-
-- `#fcard.simple('key')` → no HTMX, no advanced toggle; pass `advancedFilters=_`
-- `#fcard.basic('key')` → no HTMX, with advanced toggle
-- `#fcard.htmx('key', '#target')` → with HTMX partial updates, with advanced toggle
-
-**`danger-zone.html`**
-
-| Fragment | Parameters | Notes |
-|---|---|---|
-| `dangerZone` | `params` | `params` = `DangerZoneParams` via `#dzone.card(...)` |
-| `dangerZoneModal` | `params, formAction, modalBody` | `params` = `DangerZoneModalParams` via `#dzone.modal(...)`; inner form gets `id="${params.modalId}Form"` |
+- All scalar fragment parameters are named and prefixed with `_` to avoid clashes with outer Thymeleaf variable scope.
+- Required parameters appear directly in the fragment signature: `th:fragment="alert(_message)"`.
+- Optional parameters with a default value are resolved at the top of the fragment body via `th:with`:
+  ```
+  th:with="_severity=${_severity ?: 'warning'}"
+  ```
+- Optional parameters without a default (nullable) use the same pattern with `null`:
+  ```
+  th:with="_additionalText=${_additionalText ?: null}"
+  ```
+- Callers always use named-parameter syntax matching the `_`-prefixed names:
+  ```html
+  <div th:replace="~{fragments/foo :: alert(_message='Alert!', _additionalText='this is an alert')}"></div>
+  ```
+- Fragment-slot parameters (markup passed as `~{::localName}`): use `_` (the no-op token) to pass nothing; render inside the fragment with `th:replace="${_slotParam}"` or `<th:block th:replace="${_slotParam}"/>`.
 
 **`layout/base.html`** — full page shell: navbar, section/subSection active state, toast message rendering.
-
-### Typed Parameter Object for Thymeleaf Fragments
-An application of Fowler's *Introduce Parameter Object* — adapted to the Thymeleaf context via a Spring factory bean. All fragment params classes and factories live in `org.tb.common.viewhelper.fragment`.
-
-**Implemented params classes and factories:**
-
-| Params Class | Dialect Expression | Key Factory Methods |
-|---|---|---|
-| `FilterCardParams` | `#fcard` | `basic(key)`, `htmx(key, target)`, `simple(key)` |
-| `MasterTableParams` | `#mtable` | `withAdd(label)`, `withAdd(label, icon)` |
-| `TextInputParams` | `#ffield` | `text(field, maxlen)`, `required(field, maxlen)`, with optional `helpText` overloads |
-| `TextareaParams` | `#ffield` | `textarea(f, rows)`, `requiredTextarea(f, rows)`, `code(f, rows)`, `requiredCode(f, rows)`, `*WithHelp` variants |
-| `SelectInputParams` | `#ffield` | `select(f, options, valField, labelField)`, `requiredSelect(...)` |
-| `DangerZoneParams` | `#dzone` | `card(title, desc, buttonLabel, modalId)` |
-| `DangerZoneModalParams` | `#dzone` | `modal(modalId, title, warning, submitLabel)` |
-
-Three collaborating pieces:
-
-**1. Params class** — `@Builder @Getter` with `@Builder.Default` for optional fields:
-```java
-@Builder @Getter
-public class FilterCardParams {
-    private final String formKey;
-    private final String hxTarget;           // null = no HTMX
-    @Builder.Default
-    private final boolean showAdvancedToggle = true;
-}
-```
-
-**2. Spring factory bean** — a `@Component` registered in `FragmentFactoriesDialect` as a Thymeleaf expression object; callable from templates as `#dialectName`:
-```java
-@Component("filterCardParams")
-public class FilterCardParamsFactory {
-    public FilterCardParams basic(String formKey) { ... }
-    public FilterCardParams htmx(String formKey, String hxTarget) { ... }
-    public FilterCardParams simple(String formKey) { ... } // showAdvancedToggle=false
-}
-```
-
-Call site in a template — URL param (`formAction`) stays as a Thymeleaf param; scalar config collapses into `params`:
-```html
-<div th:replace="~{fragments/filter-card :: filterCard(
-    params=${#fcard.htmx('co', '#results-container')},
-    formAction=@{/orders/customerorders},
-    primaryFilters=~{::primaryFilters},
-    advancedFilters=~{::advancedFilters}
-)}">
-```
-
-For i18n keys passed to factory methods (e.g. `dangerZone`), use Thymeleaf preprocessing `__#{key}__`:
-```html
-<div th:replace="~{fragments/danger-zone :: dangerZone(
-    params=${#dzone.card(
-        __#{form.employee.anonymize.dangerzone.title}__,
-        __#{form.employee.anonymize.dangerzone.description}__,
-        __#{form.employee.anonymize.button}__,
-        'anonymizeModal'
-    )}
-)}"></div>
-```
-
-**3. Single-parameter fragment** — accepts the params object and unpacks inside:
-```html
-<div th:fragment="filterCard(params, formAction, primaryFilters, advancedFilters)" class="card mb-3">
-  <form method="get" th:action="${formAction}"
-        th:attr="data-filter-form=${params.formKey},
-                 hx-get=${params.hxTarget != null ? formAction : null},
-                 hx-target=${params.hxTarget},
-                 hx-push-url=${params.hxTarget != null ? 'true' : null}">
-    <th:block th:replace="${primaryFilters}"/>
-    <th:block th:if="${params.showAdvancedToggle}">
-      ...
-    </th:block>
-  </form>
-</div>
-```
-
-Rules:
-- All params classes and factories live in `org.tb.common.viewhelper.fragment` (shared across modules).
-- Factory bean registered in `FragmentFactoriesDialect` as a dialect expression object: camelCase class name without "Factory" suffix (`FilterCardParamsFactory` → `#fcard`).
-- URL params stay as Thymeleaf fragment params (never in the params object) — they need `@{...}` URL resolution.
-- Fragment-slot params stay as Thymeleaf fragment expressions (`~{::localName}`) — never in the params object.
-- Simple fragments with ≤3 scalars keep plain named params; don't force params objects where they add no value.
-- Overload the factory for the most common call shapes; defaults cover the rest.
 
 ### Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.
