@@ -10,36 +10,35 @@
         <input type="hidden" th:field="*{id}" />
 
         <div th:replace="~{fragments/form-fields :: textInput(
-          field='name', label='Job Name', required=true, maxlength=255
+          params=${@formField.required('name', 255)}, label='Job Name'
         )}"></div>
 
         <div th:replace="~{fragments/form-fields :: selectInput(
-          field='reportDefinitionId', label='Report', required=true,
-          placeholder='-- Select Report --', options=${reportDefinitions},
-          optionValue='id', optionLabel='name'
+          params=${@formField.requiredSelect('reportDefinitionId', reportDefinitions, 'id', 'name')},
+          label='Report', placeholder='-- Select Report --'
         )}"></div>
 
-        <div th:replace="~{fragments/form-fields :: textareaInputHelp(
-          field='reportParameters', label='Report Parameters (JSON)', required=false,
-          rows=5, helpText=${'Example: {&quot;startDate&quot;: &quot;2024-01-01&quot;, &quot;endDate&quot;: &quot;2024-12-31&quot;}'}, monospace=true
+        <div th:replace="~{fragments/form-fields :: textareaInput(
+          params=${@formField.codeWithHelp('reportParameters', 5, 'Example: {&quot;startDate&quot;: &quot;2024-01-01&quot;, &quot;endDate&quot;: &quot;2024-12-31&quot;}')},
+          label='Report Parameters (JSON)'
         )}"></div>
 
-        <div th:replace="~{fragments/form-fields :: textareaInputHelp(
-          field='recipientEmails', label='Recipient Emails', required=true,
-          rows=3, helpText='Comma or semicolon separated email addresses', monospace=false
+        <div th:replace="~{fragments/form-fields :: textareaInput(
+          params=${@formField.requiredTextareaWithHelp('recipientEmails', 3, 'Comma or semicolon separated email addresses')},
+          label='Recipient Emails'
         )}"></div>
 
         <div th:replace="~{fragments/form-fields :: checkboxSwitch(
           field='enabled', label='Enabled'
         )}"></div>
 
-        <div th:replace="~{fragments/form-fields :: textInputHelp(
-          field='cronExpression', label='Cron Expression (optional)', required=false,
-          maxlength=255, helpText='Leave empty for default schedule (Daily at 5:00 AM)'
+        <div th:replace="~{fragments/form-fields :: textInput(
+          params=${@formField.text('cronExpression', 255, 'Leave empty for default schedule (Daily at 5:00 AM)')},
+          label='Cron Expression (optional)'
         )}"></div>
 
         <div th:replace="~{fragments/form-fields :: textareaInput(
-          field='description', label='Description', required=false, rows=3, monospace=false
+          params=${@formField.textarea('description', 3)}, label='Description'
         )}"></div>
 
         <div th:replace="~{fragments/form-fields :: formButtons(

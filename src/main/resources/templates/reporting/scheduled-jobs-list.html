@@ -6,10 +6,9 @@
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/master-table :: masterTable(
-      addHref=@{/reporting/jobs/create}, addLabel=${'Schedule Report'},
-      thead=~{::theadContent}, tbody=~{::tbodyContent},
-      addIf=${true},
-      addIcon='ti-clock-plus'
+      params=${@masterTableParams.withAdd('Schedule Report', 'ti-clock-plus')},
+      addHref=@{/reporting/jobs/create}, addIf=${true},
+      thead=~{::theadContent}, tbody=~{::tbodyContent}
     )}">
 
     <thead th:fragment="theadContent">
@@ -27,14 +26,14 @@
 
     <tbody th:fragment="tbodyContent">
       <tr th:each="job : ${jobs}">
-        <td th:replace="~{fragments/master-table :: colTextPrimary(text=${job.name})}"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${job.reportDefinition != null ? job.reportDefinition.name : '�'})}"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${job.recipientEmails})}"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${job.name}, responsive=null)}"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${job.reportDefinition != null ? job.reportDefinition.name : '–'}, responsive='sm')}"></td>
+        <td th:replace="~{fragments/master-table :: colText(text=${job.recipientEmails}, responsive='sm')}"></td>
         <td th:replace="~{fragments/master-table :: colYesNo(enabled=${job.enabled})}"></td>
-        <td th:replace="~{fragments/master-table :: colTextAdd(text=${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}, additional=${cronDescriptions[job.id]})}"></td>
+        <td th:replace="~{fragments/master-table :: colTextAdd(text=${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}, additional=${cronDescriptions[job.id]}, responsive='sm')}"></td>
         <td th:replace="~{fragments/master-table :: colDate(date=${job.lastupdate})}"></td>
-        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/jobs/edit'(id=${job.id})})}"></td>
-        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/reporting/jobs/delete'})}"></td>
+        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/jobs/edit'(id=${job.id})}, ifCondition=true)}"></td>
+        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/reporting/jobs/delete'}, ifCondition=true)}"></td>
       </tr>
     </tbody>
 
