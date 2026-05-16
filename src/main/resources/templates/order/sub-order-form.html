@@ -91,17 +91,17 @@
       <div class="row">
         <div class="col-md-4">
           <div th:replace="~{fragments/form-fields :: textInput(
-            field='description', label=#{main.customerorder.description.text}, required=true, maxlength=255
+            params=${@formField.required('description', 255)}, label=#{main.customerorder.description.text}
           )}"></div>
         </div>
         <div class="col-md-4">
           <div th:replace="~{fragments/form-fields :: textInput(
-            field='shortdescription', label=#{main.customerorder.shortdescription.text}, required=false, maxlength=70
+            params=${@formField.text('shortdescription', 70)}, label=#{main.customerorder.shortdescription.text}
           )}"></div>
         </div>
         <div class="col-md-4">
           <div th:replace="~{fragments/form-fields :: textInput(
-            field='suborder_customer', label=#{main.suborder.suborder_customer.text}, required=false, maxlength=30
+            params=${@formField.text('suborder_customer', 30)}, label=#{main.suborder.suborder_customer.text}
           )}"></div>
         </div>
       </div>
@@ -151,7 +151,7 @@
       <div class="row">
         <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: textInput(
-            field='debithours', label=#{main.general.debithours.text}, required=false, maxlength=10
+            params=${@formField.text('debithours', 10)}, label=#{main.general.debithours.text}
           )}"></div>
         </div>
         <div class="col-md-6">

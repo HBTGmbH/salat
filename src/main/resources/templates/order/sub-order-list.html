@@ -5,90 +5,76 @@
       th:with="section='orders',subSection='suborders',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
 
-  <!-- Filter card -->
-  <div class="card mb-3">
-    <div class="card-body">
-      <form method="get" th:action="@{/orders/suborders}" data-filter-form="so"
-            th:hx-get="@{/orders/suborders}" hx-target="#results-container" hx-push-url="true">
-
-        <!-- Primary filter row -->
-        <div class="row g-2 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
-            <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
-              <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
-              <option th:each="c : ${customers}"
-                      th:value="${c.id}"
-                      th:text="${c.shortname}"
-                      th:selected="${customerId != null and customerId == c.id}"></option>
-            </select>
-          </div>
-          <div class="col-md-4" id="order-select-wrapper">
-            <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
-            <select class="form-select tomselect" name="customerOrderId">
-              <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
-              <option th:each="co : ${visibleCustomerOrders}"
-                      th:value="${co.id}"
-                      th:text="${co.sign + ' - ' + co.shortdescription}"
-                      th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
-            </select>
-          </div>
-          <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a id="create-button" class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId}, customerId=${customerId})}">
-              <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
-            </a>
-          </div>
+  <div th:replace="~{fragments/filter-card :: filterCard(
+      params=${@filterCardParams.htmx('so', '#results-container')},
+      formAction=@{/orders/suborders},
+      primaryFilters=~{::primaryFilters},
+      advancedFilters=~{::advancedFilters}
+  )}">
+    <th:block th:fragment="primaryFilters">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
+          <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
+            <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
+            <option th:each="c : ${customers}"
+                    th:value="${c.id}"
+                    th:text="${c.shortname}"
+                    th:selected="${customerId != null and customerId == c.id}"></option>
+          </select>
         </div>
-
-        <!-- Advanced toggle (below main filter) -->
-        <div class="mt-2">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="advanced-toggle" role="switch">
-            <label class="form-check-label text-muted small" th:text="#{main.general.filter.advanced.text}">Erweiterter Filter</label>
-          </div>
+        <div class="col-md-4" id="order-select-wrapper">
+          <label class="form-label" th:text="#{main.suborder.customerorder.text}">Order</label>
+          <select class="form-select tomselect" name="customerOrderId">
+            <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
+            <option th:each="co : ${visibleCustomerOrders}"
+                    th:value="${co.id}"
+                    th:text="${co.sign + ' - ' + co.shortdescription}"
+                    th:selected="${customerOrderId != null and customerOrderId == co.id}"></option>
+          </select>
         </div>
-
-        <!-- Hidden collapse trigger (Bootstrap data-API handles animation without needing window.bootstrap) -->
-        <button type="button" class="d-none" id="advanced-collapse-trigger"
-                data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
-
-        <!-- Advanced filters -->
-        <div class="collapse mt-3" id="advanced-filters">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-              <input type="text" class="form-control" name="filter" th:value="${filter}" />
-            </div>
-            <div class="col-auto">
-              <button class="btn btn-primary" type="submit" title="Apply text filter">
-                <i class="icon ti ti-filter m-0"></i>
-              </button>
-            </div>
-          </div>
-          <div class="row g-2 align-items-end mt-3">
-            <div class="col-auto ms-2">
-              <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
-                <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
-              </label>
-            </div>
-            <div class="col-auto">
-              <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
-                <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
-              </label>
-            </div>
-            <div class="col-auto">
-              <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
-                <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
-              </label>
-            </div>
-          </div>
+        <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+          <a id="create-button" class="btn btn-success" th:href="@{/orders/suborders/create(customerOrderId=${customerOrderId}, customerId=${customerId})}">
+            <i class="icon ti ti-subtask"></i> <span th:text="#{main.general.button.createsuborder.text}">New Suborder</span>
+          </a>
         </div>
-
-      </form>
-    </div>
+      </div>
+    </th:block>
+    <th:block th:fragment="advancedFilters">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <input type="text" class="form-control" name="filter" th:value="${filter}" />
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary" type="submit" title="Apply text filter">
+            <i class="icon ti ti-filter m-0"></i>
+          </button>
+        </div>
+      </div>
+      <div class="row g-2 align-items-end mt-3">
+        <div class="col-auto ms-2">
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
+            <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
+          </label>
+        </div>
+        <div class="col-auto">
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+            <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
+          </label>
+        </div>
+        <div class="col-auto">
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
+            <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
+          </label>
+        </div>
+      </div>
+    </th:block>
   </div>
+  <div th:replace="~{fragments/filter-card :: filterCardJs}"></div>
+
   <div id="results-container" th:fragment="results">
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
@@ -118,13 +104,7 @@
             <div th:text="${so.completeOrderSign}">Suborder Sign</div>
             <small class="text-muted" th:text="${so.shortdescription}">short description</small>
           </td>
-          <td class="d-none d-sm-table-cell">
-            <div th:text="${so.fromDate}">From</div>
-            <small class="text-muted">
-              <span th:if="${so.untilDate == null}" th:text="#{main.general.open.text}">open</span>
-              <span th:if="${so.untilDate != null}" th:text="${so.untilDate}">Until</span>
-            </small>
-          </td>
+          <td th:replace="~{fragments/master-table :: colDateRange(fromDate=${so.fromDate}, untilDate=${so.untilDate}, responsive='sm')}"></td>
           <td class="d-none d-md-table-cell">
             <span th:if="${so.debithours != null and !so.debithours.zero}">
               <span th:text="${@durationUtils.format(so.debithours)}">0:00</span>
@@ -201,47 +181,6 @@
     </a>
   </div>
   </div>
-
-  <script th:inline="none">
-    document.addEventListener('DOMContentLoaded', function () {
-      const form = document.querySelector('form[data-filter-form]');
-      if (!form) return;
-
-      const STORAGE_KEY = form.dataset.filterForm + '-advanced-open';
-      const toggleInput = document.getElementById('advanced-toggle');
-      const panel = document.getElementById('advanced-filters');
-      const collapseTrigger = document.getElementById('advanced-collapse-trigger');
-      if (!toggleInput || !panel || !collapseTrigger) return;
-
-      // Restore initial open state by adding 'show' directly (no animation, before Bootstrap lazy-inits)
-      const serverOpen = panel.dataset.serverOpen === 'true';
-      const localOpen = localStorage.getItem(STORAGE_KEY) === 'true';
-      if (serverOpen || localOpen) {
-        panel.classList.add('show');
-        toggleInput.checked = true;
-      }
-
-      // Switch delegates to hidden Bootstrap data-API trigger — no window.bootstrap reference needed
-      toggleInput.addEventListener('change', function () {
-        collapseTrigger.click();
-      });
-
-      // Persist state via Bootstrap's own collapse events
-      panel.addEventListener('show.bs.collapse', function () {
-        toggleInput.checked = true;
-        localStorage.setItem(STORAGE_KEY, 'true');
-      });
-      panel.addEventListener('hide.bs.collapse', function () {
-        toggleInput.checked = false;
-        localStorage.setItem(STORAGE_KEY, 'false');
-      });
-
-      // Auto-submit on select/named-checkbox changes; text input requires button/Enter
-      form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
-        el.addEventListener('change', function () { form.requestSubmit(); });
-      });
-    });
-  </script>
 
 </main>
 </html>
