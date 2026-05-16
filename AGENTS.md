@@ -279,9 +279,9 @@ Reusable fragments live in `src/main/resources/templates/fragments/`.
 
 | Fragment | Parameters | Notes |
 |---|---|---|
-| `textInput` | `params, label` | `params` = `TextInputParams` via `@formField.*` |
-| `textareaInput` | `params, label` | `params` = `TextareaParams` via `@formField.*` |
-| `selectInput` | `params, label, placeholder` | `params` = `SelectInputParams` via `@formField.*`; `placeholder=null` for no placeholder option |
+| `textInput` | `params, label` | `params` = `TextInputParams` via `#ffield.*` |
+| `textareaInput` | `params, label` | `params` = `TextareaParams` via `#ffield.*` |
+| `selectInput` | `params, label, placeholder` | `params` = `SelectInputParams` via `#ffield.*`; `placeholder=null` for no placeholder option |
 | `checkboxSwitch` | `field, label` | — |
 | `dateInput` | `field, label, required` | — |
 | `formButtons` | `saveLabel, cancelHref` | save + cancel footer buttons |
@@ -290,7 +290,7 @@ Reusable fragments live in `src/main/resources/templates/fragments/`.
 
 | Fragment | Parameters | Notes |
 |---|---|---|
-| `masterTable` | `params, addHref, addIf, thead, tbody` | `params` = `MasterTableParams` via `@masterTableParams.*`; `thead`/`tbody` are fragment slots |
+| `masterTable` | `params, addHref, addIf, thead, tbody` | `params` = `MasterTableParams` via `#mtable.*`; `thead`/`tbody` are fragment slots |
 | `masterTableFilter` | `params, addHref, addIf, filterHref, filterValue, thead, tbody` | table with text-only filter form |
 | `colHeaderPrimary` | `label` | `<th>` always visible |
 | `colHeader` | `label` | `<th>` hidden on xs (`d-none d-sm-table-cell`) |
@@ -309,19 +309,19 @@ Reusable fragments live in `src/main/resources/templates/fragments/`.
 
 | Fragment | Parameters | Notes |
 |---|---|---|
-| `filterCard` | `params, formAction, primaryFilters, advancedFilters` | `params` = `FilterCardParams` via `@filterCardParams.*` |
+| `filterCard` | `params, formAction, primaryFilters, advancedFilters` | `params` = `FilterCardParams` via `#fcard.*` |
 | `filterCardJs` | — | companion script: localStorage persistence + checkbox/select auto-submit; include once per page after the card |
 
-- `@filterCardParams.simple('key')` → no HTMX, no advanced toggle; pass `advancedFilters=_`
-- `@filterCardParams.basic('key')` → no HTMX, with advanced toggle
-- `@filterCardParams.htmx('key', '#target')` → with HTMX partial updates, with advanced toggle
+- `#fcard.simple('key')` → no HTMX, no advanced toggle; pass `advancedFilters=_`
+- `#fcard.basic('key')` → no HTMX, with advanced toggle
+- `#fcard.htmx('key', '#target')` → with HTMX partial updates, with advanced toggle
 
 **`danger-zone.html`**
 
 | Fragment | Parameters | Notes |
 |---|---|---|
-| `dangerZone` | `params` | `params` = `DangerZoneParams` via `@dangerZoneParams.card(...)` |
-| `dangerZoneModal` | `params, formAction, modalBody` | `params` = `DangerZoneModalParams` via `@dangerZoneParams.modal(...)`; inner form gets `id="${params.modalId}Form"` |
+| `dangerZone` | `params` | `params` = `DangerZoneParams` via `#dzone.card(...)` |
+| `dangerZoneModal` | `params, formAction, modalBody` | `params` = `DangerZoneModalParams` via `#dzone.modal(...)`; inner form gets `id="${params.modalId}Form"` |
 
 **`layout/base.html`** — full page shell: navbar, section/subSection active state, toast message rendering.
 
@@ -330,15 +330,15 @@ An application of Fowler's *Introduce Parameter Object* — adapted to the Thyme
 
 **Implemented params classes and factories:**
 
-| Params Class | Factory Bean | Key Factory Methods |
+| Params Class | Dialect Expression | Key Factory Methods |
 |---|---|---|
-| `FilterCardParams` | `@filterCardParams` | `basic(key)`, `htmx(key, target)`, `simple(key)` |
-| `MasterTableParams` | `@masterTableParams` | `withAdd(label)`, `withAdd(label, icon)` |
-| `TextInputParams` | `@formField` | `text(field, maxlen)`, `required(field, maxlen)`, with optional `helpText` overloads |
-| `TextareaParams` | `@formField` | `textarea(f, rows)`, `requiredTextarea(f, rows)`, `code(f, rows)`, `requiredCode(f, rows)`, `*WithHelp` variants |
-| `SelectInputParams` | `@formField` | `select(f, options, valField, labelField)`, `requiredSelect(...)` |
-| `DangerZoneParams` | `@dangerZoneParams` | `card(title, desc, buttonLabel, modalId)` |
-| `DangerZoneModalParams` | `@dangerZoneParams` | `modal(modalId, title, warning, submitLabel)` |
+| `FilterCardParams` | `#fcard` | `basic(key)`, `htmx(key, target)`, `simple(key)` |
+| `MasterTableParams` | `#mtable` | `withAdd(label)`, `withAdd(label, icon)` |
+| `TextInputParams` | `#ffield` | `text(field, maxlen)`, `required(field, maxlen)`, with optional `helpText` overloads |
+| `TextareaParams` | `#ffield` | `textarea(f, rows)`, `requiredTextarea(f, rows)`, `code(f, rows)`, `requiredCode(f, rows)`, `*WithHelp` variants |
+| `SelectInputParams` | `#ffield` | `select(f, options, valField, labelField)`, `requiredSelect(...)` |
+| `DangerZoneParams` | `#dzone` | `card(title, desc, buttonLabel, modalId)` |
+| `DangerZoneModalParams` | `#dzone` | `modal(modalId, title, warning, submitLabel)` |
 
 Three collaborating pieces:
 
@@ -353,7 +353,7 @@ public class FilterCardParams {
 }
 ```
 
-**2. Spring factory bean** — a `@Component` with overloaded factory methods; callable from Thymeleaf as `@beanName`:
+**2. Spring factory bean** — a `@Component` registered in `FragmentFactoriesDialect` as a Thymeleaf expression object; callable from templates as `#dialectName`:
 ```java
 @Component("filterCardParams")
 public class FilterCardParamsFactory {
@@ -366,7 +366,7 @@ public class FilterCardParamsFactory {
 Call site in a template — URL param (`formAction`) stays as a Thymeleaf param; scalar config collapses into `params`:
 ```html
 <div th:replace="~{fragments/filter-card :: filterCard(
-    params=${@filterCardParams.htmx('co', '#results-container')},
+    params=${#fcard.htmx('co', '#results-container')},
     formAction=@{/orders/customerorders},
     primaryFilters=~{::primaryFilters},
     advancedFilters=~{::advancedFilters}
@@ -376,7 +376,7 @@ Call site in a template — URL param (`formAction`) stays as a Thymeleaf param;
 For i18n keys passed to factory methods (e.g. `dangerZone`), use Thymeleaf preprocessing `__#{key}__`:
 ```html
 <div th:replace="~{fragments/danger-zone :: dangerZone(
-    params=${@dangerZoneParams.card(
+    params=${#dzone.card(
         __#{form.employee.anonymize.dangerzone.title}__,
         __#{form.employee.anonymize.dangerzone.description}__,
         __#{form.employee.anonymize.button}__,
@@ -403,7 +403,7 @@ For i18n keys passed to factory methods (e.g. `dangerZone`), use Thymeleaf prepr
 
 Rules:
 - All params classes and factories live in `org.tb.common.viewhelper.fragment` (shared across modules).
-- Factory bean name: camelCase class name without "Factory" suffix (`FilterCardParamsFactory` → `@filterCardParams`).
+- Factory bean registered in `FragmentFactoriesDialect` as a dialect expression object: camelCase class name without "Factory" suffix (`FilterCardParamsFactory` → `#fcard`).
 - URL params stay as Thymeleaf fragment params (never in the params object) — they need `@{...}` URL resolution.
 - Fragment-slot params stay as Thymeleaf fragment expressions (`~{::localName}`) — never in the params object.
 - Simple fragments with ≤3 scalars keep plain named params; don't force params objects where they add no value.
