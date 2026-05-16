@@ -5,89 +5,105 @@
     Advanced filter card fragment.
 
     Parameters:
-      formKey        - value for data-filter-form (used as localStorage key prefix)
-      formAction     - th:action URL for the form
-      primaryFilters - fragment slot: main filter row content (~{::primaryFilters})
-      advancedFilters - fragment slot: collapse panel content (~{::advancedFilters})
-                        pass _ when the page has no advanced filters
+      params               - FilterCardParams: formKey, hxTarget (null = no HTMX), showAdvancedToggle (default true)
+      formAction           - th:action URL for the form (@{/path})
+      primaryFilters       - fragment slot: full primary filter content including row divs (~{::primaryFilters})
+      advancedFilters      - fragment slot: full content of the collapse panel (~{::advancedFilters}); pass _ when params.showAdvancedToggle=false
 
-    Usage:
+    Usage (with HTMX + advanced section):
       <div th:replace="~{fragments/filter-card :: filterCard(
-          formKey='co',
+          params=${@filterCardParams.htmx('co', '#results-container')},
           formAction=@{/orders/customerorders},
           primaryFilters=~{::primaryFilters},
           advancedFilters=~{::advancedFilters}
       )}">
         <th:block th:fragment="primaryFilters">
-          ... selects and inputs for the main filter row ...
+          <div class="row g-2 align-items-end">
+            ... selects and inputs ...
+          </div>
         </th:block>
         <th:block th:fragment="advancedFilters">
-          ... checkboxes and text inputs for the collapse panel ...
+          ... checkboxes and text inputs ...
         </th:block>
       </div>
+      <div th:replace="~{fragments/filter-card :: filterCardJs}"></div>
+
+    Usage (without HTMX, no advanced section):
+      params=${@filterCardParams.simple('cu')}, advancedFilters=_
+      Put all filter content including always-visible checkboxes in primaryFilters.
   -->
-  <div th:fragment="filterCard(formKey, formAction, primaryFilters, advancedFilters)" class="card mb-3">
+  <div th:fragment="filterCard(params, formAction, primaryFilters, advancedFilters)" class="card mb-3">
     <div class="card-body">
-      <form method="get" th:action="${formAction}" th:attr="data-filter-form=${formKey}">
+      <form method="get" th:action="${formAction}"
+            th:attr="data-filter-form=${params.formKey},
+                     hx-get=${params.hxTarget != null ? formAction : null},
+                     hx-target=${params.hxTarget},
+                     hx-push-url=${params.hxTarget != null ? 'true' : null}">
 
-        <div class="row g-2 align-items-end">
-          <th:block th:replace="${primaryFilters}"/>
-        </div>
+        <th:block th:replace="${primaryFilters}"/>
 
-        <div class="mt-2">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="advanced-toggle" role="switch">
-            <label class="form-check-label text-muted small" th:text="#{main.general.filter.advanced.text}">Advanced Filter</label>
+        <th:block th:if="${params.showAdvancedToggle}">
+          <div class="mt-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="advanced-toggle" role="switch">
+              <label class="form-check-label text-muted small" th:text="#{main.general.filter.advanced.text}">Advanced Filter</label>
+            </div>
           </div>
-        </div>
 
-        <button type="button" class="d-none" id="advanced-collapse-trigger"
-                data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
+          <button type="button" class="d-none" id="advanced-collapse-trigger"
+                  data-bs-toggle="collapse" data-bs-target="#advanced-filters"></button>
 
-        <div class="collapse mt-3" id="advanced-filters">
-          <th:block th:replace="${advancedFilters}"/>
-        </div>
+          <div class="collapse mt-3" id="advanced-filters">
+            <th:block th:replace="${advancedFilters}"/>
+          </div>
+        </th:block>
 
       </form>
     </div>
   </div>
 
-  <script th:fragment="filterCardJs" th:inline="none">
-    document.addEventListener('DOMContentLoaded', function () {
-      const form = document.querySelector('form[data-filter-form]');
-      if (!form) return;
+  <!--
+    Companion JS fragment — include once per page after the filter card.
+    Usage: <div th:replace="~{fragments/filter-card :: filterCardJs}"></div>
+  -->
+  <th:block th:fragment="filterCardJs">
+    <script th:inline="none">
+      document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form[data-filter-form]');
+        if (!form) return;
 
-      const STORAGE_KEY = form.dataset.filterForm + '-advanced-open';
-      const toggleInput = document.getElementById('advanced-toggle');
-      const panel = document.getElementById('advanced-filters');
-      const collapseTrigger = document.getElementById('advanced-collapse-trigger');
-      if (!toggleInput || !panel || !collapseTrigger) return;
+        form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
+          el.addEventListener('change', function () { form.requestSubmit(); });
+        });
 
-      const serverOpen = panel.dataset.serverOpen === 'true';
-      const localOpen = localStorage.getItem(STORAGE_KEY) === 'true';
-      if (serverOpen || localOpen) {
-        panel.classList.add('show');
-        toggleInput.checked = true;
-      }
+        const STORAGE_KEY = form.dataset.filterForm + '-advanced-open';
+        const toggleInput = document.getElementById('advanced-toggle');
+        const panel = document.getElementById('advanced-filters');
+        const collapseTrigger = document.getElementById('advanced-collapse-trigger');
+        if (!toggleInput || !panel || !collapseTrigger) return;
 
-      toggleInput.addEventListener('change', function () {
-        collapseTrigger.click();
+        const serverOpen = panel.dataset.serverOpen === 'true';
+        const localOpen = localStorage.getItem(STORAGE_KEY) === 'true';
+        if (serverOpen || localOpen) {
+          panel.classList.add('show');
+          toggleInput.checked = true;
+        }
+
+        toggleInput.addEventListener('change', function () {
+          collapseTrigger.click();
+        });
+
+        panel.addEventListener('show.bs.collapse', function () {
+          toggleInput.checked = true;
+          localStorage.setItem(STORAGE_KEY, 'true');
+        });
+        panel.addEventListener('hide.bs.collapse', function () {
+          toggleInput.checked = false;
+          localStorage.setItem(STORAGE_KEY, 'false');
+        });
       });
-
-      panel.addEventListener('show.bs.collapse', function () {
-        toggleInput.checked = true;
-        localStorage.setItem(STORAGE_KEY, 'true');
-      });
-      panel.addEventListener('hide.bs.collapse', function () {
-        toggleInput.checked = false;
-        localStorage.setItem(STORAGE_KEY, 'false');
-      });
-
-      form.querySelectorAll('select, input[type="checkbox"][name]').forEach(function (el) {
-        el.addEventListener('change', function () { form.requestSubmit(); });
-      });
-    });
-  </script>
+    </script>
+  </th:block>
 
 </body>
 </html>
