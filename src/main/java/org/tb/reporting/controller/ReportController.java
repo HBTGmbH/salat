@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -85,7 +84,7 @@ public class ReportController {
     model.addAttribute("mayEdit", mayEdit);
     model.addAttribute("mayDelete", mayDelete);
     model.addAttribute("filter", filter);
-    return "reporting/reports-list";
+    return "report-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
