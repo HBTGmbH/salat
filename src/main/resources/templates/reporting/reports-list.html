@@ -10,7 +10,7 @@
       _bodyRows = ~{::_bodyRows},
       _addButtonLabel = 'New Report',
       _addButtonHref = @{'/reporting/reports/create'(filter=${filter})},
-      _addButtonIf = ${#authorization.expression('hasRole(''MANAGER'')')},
+      _filterEnabled = ${#authorization.expression('hasRole(''MANAGER'')')},
       _filterHref=@{/reporting/reports},
       _filterValue=${filter}
     )}">
