@@ -6,8 +6,8 @@
 <main layout:fragment="content">
 
   <div th:replace="~{fragments/master-table :: table(
-      _headerRow = ~{::_headerRow},
-      _bodyRows = ~{::_bodyRows},
+      _headerRow = ~{::headerRow},
+      _bodyRows = ~{::bodyRows},
       _addButtonLabel = 'New Report',
       _addButtonHref = @{'/reporting/reports/create'(filter=${filter})},
       _filterEnabled = ${#authorization.expression('hasRole(''MANAGER'')')},
@@ -15,7 +15,7 @@
       _filterValue=${filter}
     )}">
 
-    <th:block th:fragment="_headerRow">
+    <th:block th:fragment="headerRow">
       <tr>
         <th th:replace="~{fragments/master-table :: header(_label='Name', _responsive=true)}"></th>
         <th th:replace="~{fragments/master-table :: header(_label='Last Updated')}"></th>
@@ -26,7 +26,7 @@
       </tr>
     </th:block>
 
-    <th:block th:fragment="_bodyRows">
+    <th:block th:fragment="bodyRows">
       <tr th:each="report : ${reports}">
         <td th:replace="~{fragments/master-table :: text(_value=${report.name}, _responsive=true)}"></td>
         <td th:replace="~{fragments/master-table :: date(_date=${report.lastupdate})}"></td>
