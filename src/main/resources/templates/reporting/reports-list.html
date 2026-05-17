@@ -5,37 +5,42 @@
       th:with="section='reports',subSection='reports',title='Reports',sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
 
-  <div th:replace="~{fragments/master-table :: masterTableFilter(
-      params=${#mtable.withAdd('New Report', 'ti-file-plus')},
-      addHref=@{'/reporting/reports/create'(filter=${filter})},
-      addIf=${#authorization.expression('hasRole(''MANAGER'')')},
-      filterHref=@{/reporting/reports}, filterValue=${filter},
-      thead=~{::theadContent}, tbody=~{::tbodyContent}
+  <div th:replace="~{fragments/master-table :: table(
+      _headerRow = ~{::_headerRow},
+      _bodyRows = ~{::_bodyRows},
+      _addButtonLabel = 'New Report',
+      _addButtonHref = @{'/reporting/reports/create'(filter=${filter})},
+      _addButtonIf = ${#authorization.expression('hasRole(''MANAGER'')')},
+      _filterHref=@{/reporting/reports},
+      _filterValue=${filter}
     )}">
 
-    <thead th:fragment="theadContent">
+    <th:block th:fragment="_headerRow">
       <tr>
-        <th th:replace="~{fragments/master-table :: colHeaderPrimary(label=${'Name'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated By'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+        <th th:replace="~{fragments/master-table :: header(_label='Name', _responsive=true)}"></th>
+        <th th:replace="~{fragments/master-table :: header(_label='Last Updated')}"></th>
+        <th th:replace="~{fragments/master-table :: header(_label='Last Updated By')}"></th>
+        <th th:replace="~{fragments/master-table :: header(_responsive=true)}"></th>
+        <th th:replace="~{fragments/master-table :: header(_responsive=true)}"></th>
+        <th th:replace="~{fragments/master-table :: header(_responsive=true)}"></th>
       </tr>
-    </thead>
+    </th:block>
 
-    <tbody th:fragment="tbodyContent">
+    <th:block th:fragment="_bodyRows">
       <tr th:each="report : ${reports}">
-        <td th:replace="~{fragments/master-table :: colText(text=${report.name}, responsive=null)}"></td>
-        <td th:replace="~{fragments/master-table :: colDate(date=${report.lastupdate})}"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${report.lastupdatedby}, responsive='sm')}"></td>
-        <td>
-          <a class="btn btn-success" th:href="@{'/reporting/reports/execute'(id=${report.id}, filter=${filter})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+        <td th:replace="~{fragments/master-table :: text(_value=${report.name}, _responsive=true)}"></td>
+        <td th:replace="~{fragments/master-table :: date(_date=${report.lastupdate})}"></td>
+        <td th:replace="~{fragments/master-table :: text(_value=${report.lastupdatedby})}"></td>
+        <td th:replace="~{fragments/master-table :: action(
+          _href=@{'/reporting/reports/execute'(id=${report.id}, filter=${filter})},
+          _enabled=mayEdit[report.id],
+          _btnClass='btn-success',
+          _icon='ti-player-play')}">
         </td>
-        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/reports/edit'(id=${report.id}, filter=${filter})}, ifCondition=mayEdit[report.id])}"></td>
-        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${report.id}, action=@{'/reporting/reports/delete'}, ifCondition=mayDelete[report.id])}"></td>
+        <td th:replace="~{fragments/master-table :: editAction(_href=@{'/reporting/reports/edit'(id=${report.id}, filter=${filter})}, _enabled=mayEdit[report.id])}"></td>
+        <td th:replace="~{fragments/master-table :: deleteAction(_href=@{'/reporting/reports/delete'(id=${report.id}, filter=${filter})}, _enabled=mayDelete[report.id])}"></td>
       </tr>
-    </tbody>
+    </th:block>
 
   </div>
 

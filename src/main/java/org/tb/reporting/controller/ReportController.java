@@ -161,7 +161,7 @@ public class ReportController {
         : "redirect:/reporting/reports?filter=" + filter;
   }
 
-  @PostMapping("/delete")
+  @GetMapping("/delete")
   @PreAuthorize("hasRole('MANAGER')")
   public String delete(@RequestParam("id") Long id,
                        @RequestParam(value = "filter", required = false) String filter,
