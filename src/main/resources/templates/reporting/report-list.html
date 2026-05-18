@@ -5,7 +5,7 @@
       th:with="section='reports',subSection='reports',title='Reports',sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
 
-  <div th:replace="~{fragments/master-table :: table(
+  <div th:replace="~{fragments/master-table :: masterTable(
       _headerRow = ~{::headerRow},
       _bodyRows = ~{::bodyRows},
       _addButtonLabel = 'New Report',
@@ -17,28 +17,28 @@
 
     <th:block th:fragment="headerRow">
       <tr>
-        <th th:replace="~{fragments/master-table :: header(_label='Name', _responsive=true)}"></th>
-        <th th:replace="~{fragments/master-table :: header(_label='Last Updated')}"></th>
-        <th th:replace="~{fragments/master-table :: header(_label='Last Updated By')}"></th>
-        <th th:replace="~{fragments/master-table :: header(_responsive=true)}"></th>
-        <th th:replace="~{fragments/master-table :: header(_responsive=true)}"></th>
-        <th th:replace="~{fragments/master-table :: header(_responsive=true)}"></th>
+        <th th:replace="~{fragments/table-headers :: text(_value='Name')}"></th>
+        <th th:replace="~{fragments/table-headers :: text(_value='Last Updated', _removeOnMobile = true)}"></th>
+        <th th:replace="~{fragments/table-headers :: text(_value='Last Updated By', _removeOnMobile = true)}"></th>
+        <th th:replace="~{fragments/table-headers :: blank()}"></th>
+        <th th:replace="~{fragments/table-headers :: blank()}"></th>
+        <th th:replace="~{fragments/table-headers :: blank()}"></th>
       </tr>
     </th:block>
 
     <th:block th:fragment="bodyRows">
       <tr th:each="report : ${reports}">
-        <td th:replace="~{fragments/master-table :: text(_value=${report.name}, _responsive=true)}"></td>
-        <td th:replace="~{fragments/master-table :: date(_date=${report.lastupdate})}"></td>
-        <td th:replace="~{fragments/master-table :: text(_value=${report.lastupdatedby})}"></td>
-        <td th:replace="~{fragments/master-table :: action(
+        <td th:replace="~{fragments/table-columns :: text(_value=${report.name})}"></td>
+        <td th:replace="~{fragments/table-columns :: date(_date=${report.lastupdate}, _removeOnMobile = true)}"></td>
+        <td th:replace="~{fragments/table-columns :: text(_value=${report.lastupdatedby}, _removeOnMobile = true)}"></td>
+        <td th:replace="~{fragments/table-columns :: action(
           _href=@{'/reporting/reports/execute'(id=${report.id}, filter=${filter})},
           _enabled=mayEdit[report.id],
           _btnClass='btn-success',
           _icon='ti-player-play')}">
         </td>
-        <td th:replace="~{fragments/master-table :: editAction(_href=@{'/reporting/reports/edit'(id=${report.id}, filter=${filter})}, _enabled=mayEdit[report.id])}"></td>
-        <td th:replace="~{fragments/master-table :: deleteAction(_href=@{'/reporting/reports/delete'(id=${report.id}, filter=${filter})}, _enabled=mayDelete[report.id])}"></td>
+        <td th:replace="~{fragments/table-columns :: editAction(_href=@{'/reporting/reports/edit'(id=${report.id}, filter=${filter})}, _enabled=mayEdit[report.id])}"></td>
+        <td th:replace="~{fragments/table-columns :: deleteAction(_href=@{'/reporting/reports/delete'(id=${report.id}, filter=${filter})}, _enabled=mayDelete[report.id])}"></td>
       </tr>
     </th:block>
 

@@ -3,42 +3,40 @@
       layout:decorate="~{layout/base}"
       th:with="section='reports',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
-  <th:block th:object="${report}" th:insert="~{fragments/form-fields :: form(_action = @{/reporting/reports/store},_inputs = ~{:: inputs},_buttons = ~{:: buttons})}">
+
+  <th:block th:object="${report}" th:insert="~{fragments/regular-form :: form(_action = @{/reporting/reports/store},_inputs = ~{:: inputs},_buttons = ~{:: buttons})}">
     <th:block th:fragment="inputs">
       <input type="hidden" th:field="*{id}" />
       <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
-      <div th:replace="~{fragments/form-fields :: text(_field = 'name',_label = 'Report Name',_required = true,_maxLength = 255)}"></div>
-      <div th:replace="~{fragments/form-fields :: text(_field = 'sql',_label = 'SQL',_required = true,_rows = 15,_monospace = true,_helpText = 'Use named parameters like :startDate, :endDate')}"></div>
+      <div th:replace="~{fragments/form-inputs :: text(_field = 'name',_label = 'Report Name',_required = true,_maxLength = 255)}"></div>
+      <div th:replace="~{fragments/form-inputs :: text(_field = 'sql',_label = 'SQL',_required = true,_rows = 15,_monospace = true,_helpText = 'Use named parameters like :startDate, :endDate')}"></div>
     </th:block>
     <th:block th:fragment="buttons">
-      <div th:replace="~{fragments/form-fields :: saveCancelButtons(_cancelHref = @{'/reporting/reports'(filter=${filter})},_saveLabel = ${isEdit ? 'Save Report' : 'Create Report'})}"></div>
+      <div th:replace="~{fragments/form-buttons :: saveCancel(_cancelHref = @{'/reporting/reports'(filter=${filter})},_saveLabel = ${isEdit ? 'Save Report' : 'Create Report'})}"></div>
     </th:block>
   </th:block>
 
-  <div class="card mt-4">
-    <div class="card-header">
-      <h3>Authorizations</h3>
-    </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-sm">
-          <thead>
-          <tr>
-            <th>User</th>
-            <th>Access Level</th>
-            <th>Validity</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="auth : ${reportAuthorizations}">
-            <td th:text="${auth.userSign}">user</td>
-            <td th:text="${auth.accessLevel}">WRITE</td>
-            <td th:text="${auth.validity}">2024-01-01..</td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <div th:replace="~{fragments/regular-table :: table(
+    _headerRow = ~{::headerRow},
+    _bodyRows = ~{::bodyRows},
+    _headline = 'Authorizations'
+  )}">
+    <th:block th:fragment="headerRow">
+      <tr>
+        <th th:replace="~{fragments/table-headers :: text(_value='User')}"></th>
+        <th th:replace="~{fragments/table-headers :: text(_value='Access Level')}"></th>
+        <th th:replace="~{fragments/table-headers :: text(_value='Validity')}"></th>
+      </tr>
+    </th:block>
+
+    <th:block th:fragment="bodyRows">
+      <tr th:each="auth : ${reportAuthorizations}">
+        <td th:replace="~{fragments/table-columns :: text(_value=${auth.userSign})}"></td>
+        <td th:replace="~{fragments/table-columns :: text(_value=${auth.accessLevel})}"></td>
+        <td th:replace="~{fragments/table-columns :: text(_value=${auth.validity})}"></td>
+      </tr>
+    </th:block>
   </div>
+
 </main>
 </html>
