@@ -84,7 +84,7 @@ public class ReportController {
     model.addAttribute("mayEdit", mayEdit);
     model.addAttribute("mayDelete", mayDelete);
     model.addAttribute("filter", filter);
-    return "report-list";
+    return "reporting/report-list";
   }
 
   @PreAuthorize("hasRole('MANAGER')")
