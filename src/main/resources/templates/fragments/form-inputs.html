@@ -4,28 +4,6 @@
   <!-- Generic form field fragments usable across modules -->
   <div class="d-none">
 
-    <th:block th:fragment="form(_action, _inputs, _buttons)">
-      <form th:action="${_action}" method="post" class="card">
-        <div class="card-body" th:insert="${_inputs}">
-        </div>
-
-        <div class="card-footer" th:insert="${_buttons}">
-        </div>
-      </form>
-    </th:block>
-
-    <div th:fragment="saveCancelButtons(_cancelHref)" class="d-flex gap-2" th:with="
-      _saveLabel = (${_saveLabel} ?: #{'main.button.label.save.text'}),
-      _cancelLabel = (${_cancelLabel} ?: #{'main.button.label.cancel.text'}),
-      _saveIcon = (${_saveIcon} ?: #{'ti-device-floppy'})
-    ">
-      <button type="submit" class="btn btn-primary">
-        <i th:class="|icon ti ${_saveIcon}|"></i>
-        <span th:text="${_saveLabel}">Save</span>
-      </button>
-      <a th:href="${_cancelHref}" class="btn btn-secondary" th:text="${_cancelLabel}">Cancel</a>
-    </div>
-
     <th:block th:fragment="text(_field, _label)" th:with="
       _required = (${_required} ?: false),
       _maxLength = (${_maxLength} ?: 200),
@@ -134,20 +112,6 @@
         <span class="form-check-label" th:text="${label}">Label</span>
       </label>
       <div class="invalid-feedback" th:if="${#fields.hasErrors('__${field}__')}" th:errors="*{__${field}__}"></div>
-    </div>
-
-    <!--
-      Form action buttons (Save and Cancel).
-      Usage: th:replace="~{fragments/form-fields :: formButtons(
-        saveLabel='Save Job', cancelHref=@{/reporting/jobs}
-      )}"
-    -->
-    <div th:fragment="formButtons(saveLabel, cancelHref)" class="d-flex gap-2">
-      <button type="submit" class="btn btn-primary">
-        <i class="icon ti ti-device-floppy"></i>
-        <span th:text="${saveLabel ?: 'Save'}">Save</span>
-      </button>
-      <a th:href="${cancelHref}" class="btn btn-secondary">Cancel</a>
     </div>
 
   </div>

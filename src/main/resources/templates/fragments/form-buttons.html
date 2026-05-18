@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Generic form field fragments usable across modules -->
+  <div class="d-none">
+
+    <div th:fragment="saveCancel(_cancelHref)" class="d-flex gap-2" th:with="
+      _saveLabel = (${_saveLabel} ?: #{'main.button.label.save.text'}),
+      _cancelLabel = (${_cancelLabel} ?: #{'main.button.label.cancel.text'}),
+      _saveIcon = (${_saveIcon} ?: 'ti-device-floppy')
+    ">
+      <button type="submit" class="btn btn-primary">
+        <i th:class="|icon ti ${_saveIcon}|"></i>
+        <span th:text="${_saveLabel}">Save</span>
+      </button>
+      <a th:href="${_cancelHref}" class="btn btn-secondary" th:text="${_cancelLabel}">Cancel</a>
+    </div>
+
+  </div>
+</body>
+</html>

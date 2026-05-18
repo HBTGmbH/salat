@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Generic master table fragments usable across modules -->
+  <div class="d-none">
+
+    <th:block th:fragment="table(_headerRow, _bodyRows)" th:with="
+      _headline = (${_headline} ?: null)
+    ">
+      <div class="card mt-4">
+        <div class="card-header" th:if="${_headline != null}">
+          <h3 th:text="${_headline}" class="mb-0">Headline</h3>
+        </div>
+        <table class="table table-sm card-table">
+          <thead th:insert="${_headerRow}"></thead>
+          <tbody th:insert="${_bodyRows}"></tbody>
+        </table>
+      </div>
+    </th:block>
+
+  </div>
+</body>
+</html>

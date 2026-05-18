@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Generic form field fragments usable across modules -->
+  <div class="d-none">
+
+    <th:block th:fragment="form(_action, _inputs, _buttons)">
+      <form th:action="${_action}" method="post" class="card">
+        <div class="card-body" th:insert="${_inputs}">
+        </div>
+
+        <div class="card-footer" th:insert="${_buttons}">
+        </div>
+      </form>
+    </th:block>
+
+  </div>
+</body>
+</html>

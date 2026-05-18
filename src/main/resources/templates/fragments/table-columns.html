@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Generic master table fragments usable across modules -->
+  <div class="d-none">
+
+    <th:block th:fragment="text(_value)" th:with="
+      _removeOnMobile = (${_removeOnMobile} ?: false),
+      _additional = (${_additional} ?: null),
+      _defaultValue = (${_defaultValue} ?: null)
+    ">
+      <td th:with="_value = (${_value} ?: ${_defaultValue})"
+          th:if="${_additional == null}"
+          th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}"
+          th:text="${_value}">value</td>
+      <td th:with="_value = (${_value} ?: ${_defaultValue})"
+          th:if="${_additional != null}"
+          th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}">
+        <div th:text="${_value}">value</div>
+        <small class="text-muted" th:text="${_additional}">additional</small>
+      </td>
+    </th:block>
+
+    <th:block th:fragment="yesNo(_value)" th:with="
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <td th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}">
+        <span th:if="${_value}" class="text-success"><i class="icon ti ti-circle-check"></i> Yes</span>
+        <span th:if="${!_value}" class="text-danger"><i class="icon ti ti-circle-x"></i> No</span>
+      </td>
+    </th:block>
+
+    <th:block th:fragment="date(_date)" th:with="
+      _pattern = (${_pattern} ?: 'yyyy-MM-dd'),
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <td th:text="${#temporals.format(_date, _pattern)}"
+          th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}">2025-01-01 00:00</td>
+    </th:block>
+
+    <th:block th:fragment="dateTime(_date)" th:with="
+      _pattern = (${_pattern} ?: 'yyyy-MM-dd HH:mm'),
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <td th:text="${#temporals.format(_date, _pattern)}"
+          th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}">2025-01-01 00:00</td>
+    </th:block>
+
+    <th:block th:fragment="dateRange(_from, _until)" th:with="
+      _pattern = (${_pattern} ?: 'yyyy-MM-dd'),
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <td th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}">
+        <div th:text="${#temporals.format(_from, _pattern)}" class="text-nowrap">From</div>
+        <small class="text-muted">
+          <span th:if="${_until == null}" th:text="#{main.general.open.text}">open</span>
+          <span th:if="${_until != null}" th:text="${#temporals.format(_from, _pattern)}">Until</span>
+        </small>
+      </td>
+    </th:block>
+
+    <td th:fragment="action(_href)" th:with="
+      _enabled = (${_enabled} ?: true),
+      _icon = (${_icon} ?: 'ti-pencil'),
+      _btnClass = (${_btnClass} ?: 'btn-outline-secondary')
+    ">
+      <a th:if="${_enabled}" th:class="|btn ${_btnClass}|" th:href="${_href}"><i th:class="|icon ti ${_icon} m-0|"></i></a>
+    </td>
+
+    <td th:fragment="editAction(_href)" th:with="
+      _enabled = (${_enabled} ?: true),
+      _icon = (${_icon} ?: 'ti-pencil')
+    ">
+      <a th:if="${_enabled}" class="btn btn-outline-primary" th:href="${_href}"><i th:class="|icon ti ${_icon} m-0|"></i></a>
+    </td>
+
+    <td th:fragment="deleteAction(_href)" th:with="
+      _enabled = (${_enabled} ?: true),
+      _icon = (${_icon} ?: 'ti-trash')
+    ">
+      <a th:if="${_enabled}" class="btn btn-outline-danger"
+         th:onclick="|return confirm('Are you sure?');|"
+         th:href="${_href}"><i th:class="|icon ti ${_icon} m-0|"></i></a>
+    </td>
+
+    <th:block th:fragment="flex(_content)" th:with="
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <td th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}">
+        <th:block th:insert="${_content}"/>
+      </td>
+    </th:block>
+
+  </div>
+</body>
+</html>

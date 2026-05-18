@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Generic master table fragments usable across modules -->
+  <div class="d-none">
+
+    <th:block th:fragment="text(_value)" th:with="
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <th th:class="${_removeOnMobile ? 'd-none d-sm-table-cell' : ''}"><span th:text="${_value}">Header</span></th>
+    </th:block>
+
+    <th:block th:fragment="blank()" th:with="
+      _removeOnMobile = (${_removeOnMobile} ?: false)
+    ">
+      <th th:class="${_removeOnMobile ? 'd-none d-sm-table-cell w-1' : 'w-1'}"></th>
+    </th:block>
+
+  </div>
+</body>
+</html>
