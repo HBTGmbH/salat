@@ -4,6 +4,48 @@
   <!-- Generic form field fragments usable across modules -->
   <div class="d-none">
 
+    <th:block th:fragment="form(_action, _inputs, _buttons)">
+      <form th:action="${_action}" method="post" class="card">
+        <div class="card-body" th:insert="${_inputs}">
+        </div>
+
+        <div class="card-footer" th:insert="${_buttons}">
+        </div>
+      </form>
+    </th:block>
+
+    <div th:fragment="saveCancelButtons(_cancelHref)" class="d-flex gap-2" th:with="
+      _saveLabel = (${_saveLabel} ?: #{'main.button.label.save.text'}),
+      _cancelLabel = (${_cancelLabel} ?: #{'main.button.label.cancel.text'}),
+      _saveIcon = (${_saveIcon} ?: #{'ti-device-floppy'})
+    ">
+      <button type="submit" class="btn btn-primary">
+        <i th:class="|icon ti ${_saveIcon}|"></i>
+        <span th:text="${_saveLabel}">Save</span>
+      </button>
+      <a th:href="${_cancelHref}" class="btn btn-secondary" th:text="${_cancelLabel}">Cancel</a>
+    </div>
+
+    <th:block th:fragment="text(_field, _label)" th:with="
+      _required = (${_required} ?: false),
+      _maxLength = (${_maxLength} ?: 200),
+      _helpText = (${_helpText} ?: null),
+      _rows = (${_rows} ?: 1),
+      _monospace = (${_monospace} ?: false)
+    ">
+      <div class="mb-3">
+        <label class="form-label" th:classappend="${_required ? 'required' : ''}"
+               th:for="${_field}" th:text="${_label}">Label</label>
+        <input th:if="${_rows == 1}" type="text" class="form-control" th:id="${_field}" th:field="*{__${_field}__}"
+               th:errorclass="is-invalid" th:maxlength="${_maxlength}" th:required="${_required}" />
+        <textarea th:if="${_rows > 1}" class="form-control" th:id="${_field}" th:field="*{__${_field}__}"
+                  th:errorclass="is-invalid" th:rows="${_rows}" th:required="${_required}"
+                  th:style="${_monospace ? 'font-family: monospace' : _}"></textarea>
+        <div class="form-text" th:if="${_helpText}" th:text="${_helpText}"></div>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors(_field)}" th:errors="*{__${_field}__}"></div>
+      </div>
+    </th:block>
+
     <!--
       Text input field.
       params  - TextInputParams: field, required (default false), maxlength, helpText (null = no help)

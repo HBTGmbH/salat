@@ -3,29 +3,18 @@
       layout:decorate="~{layout/base}"
       th:with="section='reports',subSection='reports',title=${pageTitle},sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
-  <form th:action="@{/reporting/reports/store}" th:object="${report}" method="post" class="card">
-    <div class="card-body">
-        <input type="hidden" th:field="*{id}" />
-        <!-- preserve list filter across save/cancel navigation -->
-        <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
+  <th:block th:object="${report}" th:insert="~{fragments/form-fields :: form(_action = @{/reporting/reports/store},_inputs = ~{:: inputs},_buttons = ~{:: buttons})}">
+    <th:block th:fragment="inputs">
+      <input type="hidden" th:field="*{id}" />
+      <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
+      <div th:replace="~{fragments/form-fields :: text(_field = 'name',_label = 'Report Name',_required = true,_maxLength = 255)}"></div>
+      <div th:replace="~{fragments/form-fields :: text(_field = 'sql',_label = 'SQL',_required = true,_rows = 15,_monospace = true,_helpText = 'Use named parameters like :startDate, :endDate')}"></div>
+    </th:block>
+    <th:block th:fragment="buttons">
+      <div th:replace="~{fragments/form-fields :: saveCancelButtons(_cancelHref = @{'/reporting/reports'(filter=${filter})},_saveLabel = ${isEdit ? 'Save Report' : 'Create Report'})}"></div>
+    </th:block>
+  </th:block>
 
-        <div th:replace="~{fragments/form-fields :: textInput(
-          params=${#ffield.required('name', 255)}, label='Report Name'
-        )}"></div>
-
-        <div th:replace="~{fragments/form-fields :: textareaInput(
-          params=${#ffield.requiredCodeWithHelp('sql', 15, 'Use named parameters like :startDate, :endDate')},
-          label='SQL'
-        )}"></div>
-    </div>
-
-    <div class="card-footer">
-      <div th:replace="~{fragments/form-fields :: formButtons(
-        saveLabel=${isEdit ? 'Save Report' : 'Create Report'},
-        cancelHref=@{'/reporting/reports'(filter=${filter})}
-      )}"></div>
-    </div>
-  </form>
   <div class="card mt-4">
     <div class="card-header">
       <h3>Authorizations</h3>
