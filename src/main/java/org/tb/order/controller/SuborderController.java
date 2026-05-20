@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.common.GlobalConstants;
 import org.tb.common.LocalDateRange;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -460,15 +461,22 @@ public class SuborderController {
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
       form.setCustomerorderId(customerorders.getFirst().getId());
       form.setParentId(form.getCustomerorderId());
-    } else {
-      form.setParentId(null);
     }
 
     // Suborders of the current customer order for parent dropdown
-    model.addAttribute("parentSuborders",
-        suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()));
-    model.addAttribute("currentCustomerorder",
-        customerorderService.getCustomerorderById(form.getCustomerorderId()));
+    var parentSuborders = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId());
+    var currentCustomerorder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+    model.addAttribute("parentSuborders", parentSuborders);
+    model.addAttribute("currentCustomerorder", currentCustomerorder);
+
+    if(form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerId())) {
+      var matched = parentSuborders.stream()
+              .map(AuditedEntity::getId)
+              .anyMatch(id -> Objects.equals(id, form.getParentId()));
+      if(!matched) {
+        form.setParentId(null);
+      }
+    }
 
     model.addAttribute("isEdit", isEdit);
     model.addAttribute("section", "orders");
