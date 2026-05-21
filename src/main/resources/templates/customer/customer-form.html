@@ -4,17 +4,16 @@
       layout:decorate="~{layout/base}"
       th:with="section='orders',subSection='customer',title=${pageTitle},sectionTitle=#{main.general.mainmenu.customerorders.text}">
 <main layout:fragment="content">
-  <form th:action="@{/customers/store}" th:object="${customer}" method="post" class="card">
-    <div class="card-body">
-      <input type="hidden" th:field="*{id}" />
-      <salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" th:required="true" maxlength="12" />
+  <salat:form th:action="@{/customers/store}" th:object="${customer}" th:id-property="*{id}">
+    <salat:inputs>
+      <salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" required="true" maxlength="12" />
       <salat:textInput th:field="*{name}" th:label="#{main.customer.name.text}" required="true" maxlength="255" />
       <salat:textarea th:field="*{address}" th:label="#{main.customer.address.text}" required="true" rows="3" />
       <salat:checkboxSwitch th:field="*{hide}" th:label="#{main.general.hide}" />
-    </div>
-    <div class="card-footer">
+    </salat:inputs>
+    <salat:buttons>
       <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}" th:cancelHref="@{/customers}" />
-    </div>
-  </form>
+    </salat:buttons>
+  </salat:form>
 </main>
 </html>

@@ -83,6 +83,9 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 
 | Tag | Attributes | Replaces |
 |---|---|---|
+| `<salat:form>` | `th:action` (expr), `th:object` (expr), `th:id-property` (field) | `<form method="post" class="card">` with `card-body`/`card-footer` divs and hidden id input |
+| `<salat:inputs>` | _(body: input tags)_ | `<div class="card-body">` wrapper (used inside `salat:form`) |
+| `<salat:buttons>` | _(body: button tags)_ | `<div class="card-footer">` wrapper (used inside `salat:form`) |
 | `<salat:textInput />` | `th:field` (field), `th:label` (expr), `required`, `maxlength`, `th:helpText` (optional expr) | `fragments/form-fields :: textInput / textInputHelp` |
 | `<salat:textarea />` | `th:field` (field), `th:label` (expr), `required`, `rows` (default 3), `monospace`, `th:helpText` (optional expr) | `fragments/form-fields :: textareaInput / textareaInputHelp` |
 | `<salat:checkboxSwitch />` | `th:field` (field), `th:label` (expr) | `fragments/form-fields :: checkboxSwitch` |
@@ -91,13 +94,19 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 ### Usage
 
 1. Declare the namespace on the `<html>` element: `xmlns:salat="http://hbt.de/salat/thymeleaf"`
-2. Use tags as self-closing elements inside a `th:object` form:
+2. Use `salat:form` as a container; `salat:inputs` and `salat:buttons` wrap field groups:
 
 ```html
-<salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" required="true" maxlength="12" />
-<salat:textarea th:field="*{description}" th:label="#{label.description}" required="false" rows="5" />
-<salat:checkboxSwitch th:field="*{active}" th:label="#{label.active}" />
-<salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/customers}" />
+<salat:form th:action="@{/customers/store}" th:object="${customer}" th:id-property="*{id}">
+  <salat:inputs>
+    <salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" required="true" maxlength="12" />
+    <salat:textarea th:field="*{description}" th:label="#{label.description}" required="false" rows="5" />
+    <salat:checkboxSwitch th:field="*{active}" th:label="#{label.active}" />
+  </salat:inputs>
+  <salat:buttons>
+    <salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/customers}" />
+  </salat:buttons>
+</salat:form>
 ```
 
 ### Implementation notes
