@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://www.ultraq.net.nz/thymeleaf/layout"
+            xmlns="http://www.ultraq.net.nz/thymeleaf/layout"
+            elementFormDefault="qualified">
+
+    <!-- Attribute-Definitionen für den Layout-Dialekt -->
+    <xsd:attribute name="decorate" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                Spezifiziert die Layout-Vorlage, die von dieser Seite erweitert/dekoriert werden soll.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:attribute>
+
+    <xsd:attribute name="fragment" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                Definiert einen ersetzbaren Abschnitt (Fragment) im Layout oder der Inhaltsseite.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:attribute>
+
+    <xsd:attribute name="replace" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                Ersetzt das aktuelle Element vollständig durch das angegebene Layout-Fragment.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:attribute>
+
+    <xsd:attribute name="insert" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                Fügt das angegebene Layout-Fragment als Kind-Element in das aktuelle Tag ein.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:attribute>
+
+    <xsd:attribute name="include" type="xsd:string">
+        <xsd:annotation>
+            <xsd:documentation>
+                (Veraltet) Fügt den Inhalt des Fragments in das aktuelle Tag ein.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:attribute>
+
+</xsd:schema>
