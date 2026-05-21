@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://hbt.de/salat/thymeleaf"
+           elementFormDefault="qualified">
+
+  <!--
+    Salat custom Thymeleaf dialect schema (prefix: sal)
+    Namespace: http://hbt.de/salat/thymeleaf
+
+    Usage in templates:
+      <html xmlns:salat="http://hbt.de/salat/thymeleaf" ...>
+
+    IDE setup (IntelliJ IDEA):
+      Settings › Languages & Frameworks › Schemas and DTDs
+        URI:  http://hbt.de/salat/thymeleaf
+        File: src/main/resources/schemas/salat-dialect.xsd
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Shared simple types
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!--
+    A string that may contain a Thymeleaf expression:
+      plain text      →  "Save"
+      message expr    →  "#{main.button.save}"
+      variable expr   →  "${isEdit} ? #{main.button.edit} : #{main.button.save}"
+      link expr       →  "@{/customers}"
+  -->
+  <xs:simpleType name="thExpr">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Form field elements
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!--
+    salat:textInput — renders a labelled <input type="text"> with validation feedback.
+
+    The Thymeleaf form binding is driven by the th:field attribute from the
+    standard th: dialect (e.g. th:field="*{shortName}"). The IDE resolves
+    th:field via its own Spring MVC / Thymeleaf support; xs:anyAttribute
+    below ensures the schema does not reject it.
+
+    Attributes:
+      th:field   (th: ns, required) — field binding, e.g. *{fieldName}
+      th:label      (th: ns, required)         — display label; accepts #{...} messages
+      required   (optional)         — renders "required" CSS class and HTML attribute
+      maxlength  (optional)         — forwarded as HTML maxlength
+      th:helpText   (th: ns, optional)         — secondary help text below the input; accepts #{...}
+
+    Example:
+      <salat:textInput th:field="*{shortName}"
+                     th:label="#{main.customer.shortname.text}"
+                     required="true"
+                     maxlength="12" />
+  -->
+  <xs:element name="textInput">
+    <xs:complexType>
+      <xs:attribute name="required" type="xs:boolean"/>
+      <xs:attribute name="maxlength" type="xs:positiveInteger"/>
+      <!-- Allows th:field and other th: / layout: attributes on this element -->
+      <xs:anyAttribute namespace="##other" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    salat:textarea — renders a labelled <textarea> with validation feedback.
+
+    Attributes:
+      th:field      (th: ns, required) — field binding, e.g. *{fieldName}
+      th:label      (th: ns, required) — display label; accepts #{...} messages
+      required   (optional) — renders "required" CSS class and HTML attribute
+      rows       (optional) — number of visible rows (default: 3)
+      monospace  (optional) — applies font-family:monospace to the textarea
+      th:helpText   (th: ns, optional) — secondary help text below the textarea; accepts #{...}
+
+    Example:
+      <salat:textarea th:field="*{address}"
+                    th:label="#{main.customer.address.text}"
+                    required="true"
+                    rows="3" />
+  -->
+  <xs:element name="textarea">
+    <xs:complexType>
+      <xs:attribute name="required"  type="xs:boolean"/>
+      <xs:attribute name="rows"      type="xs:positiveInteger"/>
+      <xs:attribute name="monospace" type="xs:boolean"/>
+      <xs:anyAttribute namespace="##other" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    salat:checkboxSwitch — renders a Bootstrap toggle switch checkbox.
+
+    Attributes:
+      th:field  (th: ns, required) — field binding, e.g. *{fieldName}
+      th:label  (th: ns, required) — label text shown next to the switch; accepts #{...}
+
+    Example:
+      <salat:checkboxSwitch th:field="*{hide}"
+                          th:label="#{main.general.hide}" />
+  -->
+  <xs:element name="checkboxSwitch">
+    <xs:complexType>
+      <xs:anyAttribute namespace="##other" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    salat:formButtons — renders Save (submit) and Cancel (link) buttons.
+
+    Both attributes accept any Thymeleaf expression; they are forwarded
+    directly to th:text (saveLabel) and th:href (cancelHref) in the
+    generated HTML, so the standard dialect resolves them.
+
+    Attributes:
+      th:saveLabel (th: ns, required) — button label; e.g. "#{main.button.save}" or
+                              "${isEdit} ? #{main.button.edit} : #{main.button.save}"
+      th:cancelHref (th: ns, required) — cancel link URL; e.g. "@{/customers}"
+
+    Example:
+      <salat:formButtons
+          th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}"
+          th:cancelHref="@{/customers}" />
+  -->
+  <xs:element name="formButtons">
+    <xs:complexType>
+      <xs:anyAttribute namespace="##other" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
