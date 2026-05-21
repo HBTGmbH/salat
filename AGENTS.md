@@ -42,7 +42,8 @@ This document captures the architectural rules and direction for the project to 
 - Views:
   - Prefer Thymeleaf templates backed by the module’s controllers.
   - Adopt Bootstrap 5 + Tabler components for UI layout and widgets.
-  - Prefer Thymeleaf fragments to reduce duplication; extract reusable sections (tables, headers, toolbars, forms) into templates/fragments and include them via th:replace/th:include.
+  - **Prefer the `salat:` custom dialect** for reusable form and table components over raw `th:replace` fragment calls. The dialect provides cleaner, attribute-based tags that are easier to read and IDE-friendly.
+  - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
 
 ## Migration Guidance
@@ -71,6 +72,40 @@ This document captures the architectural rules and direction for the project to 
   - Favor standard Spring Security (@PreAuthorize/roles) over custom aspects, unless explicitly required.
   - Keep controllers thin; push logic to services within the same module.
 - Pull Request note: Include a short statement like “Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines.”
+
+---
+
+## Salat Custom Thymeleaf Dialect (`salat:`)
+
+The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`) provides element processors that replace verbose `th:replace` fragment calls with clean, attribute-based tags.
+
+### Available tags
+
+| Tag | Attributes | Replaces |
+|---|---|---|
+| `<salat:textInput />` | `th:field` (field), `th:label` (expr), `required`, `maxlength`, `th:helpText` (optional expr) | `fragments/form-fields :: textInput / textInputHelp` |
+| `<salat:textarea />` | `th:field` (field), `th:label` (expr), `required`, `rows` (default 3), `monospace`, `th:helpText` (optional expr) | `fragments/form-fields :: textareaInput / textareaInputHelp` |
+| `<salat:checkboxSwitch />` | `th:field` (field), `th:label` (expr) | `fragments/form-fields :: checkboxSwitch` |
+| `<salat:formButtons />` | `th:saveLabel` (expr), `th:cancelHref` (expr) | `fragments/form-fields :: formButtons` |
+
+### Usage
+
+1. Declare the namespace on the `<html>` element: `xmlns:salat="http://hbt.de/salat/thymeleaf"`
+2. Use tags as self-closing elements inside a `th:object` form:
+
+```html
+<salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" required="true" maxlength="12" />
+<salat:textarea th:field="*{description}" th:label="#{label.description}" required="false" rows="5" />
+<salat:checkboxSwitch th:field="*{active}" th:label="#{label.active}" />
+<salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/customers}" />
+```
+
+### Implementation notes
+
+- Processors live in `org.tb.common.thymeleaf.processor`, extend `AbstractSalatProcessor` → `AbstractElementTagProcessor`.
+- `th:label`, `th:saveLabel`, `th:cancelHref`, and `th:helpText` accept any Thymeleaf expression (`#{...}`, `${...}`, `@{...}`, or composite).
+- The replacement model is processed (`replaceWith(model, true)`), so `th:field` / `th:errors` in generated output are handled by the standard dialect.
+- When adding a new processor: register it in `SalatDialect.getProcessors()`.
 
 ---
 

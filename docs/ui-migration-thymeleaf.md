@@ -62,24 +62,25 @@ No explicit view resolver is necessary in Spring Boot; it auto-configures Thymel
   - scheduled-job-form.html
 
 Example base layout snippet:
+
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="thymeleaf-layout.xsd">
 <head>
-  <meta charset="UTF-8"/>
-  <title th:text="${pageTitle}">Salat</title>
-  <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css"/>
-  <link rel="stylesheet" href="/webjars/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css"/>
+    <meta charset="UTF-8"/>
+    <title th:text="${pageTitle}">Salat</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/webjars/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css"/>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" th:href="@{/}">Salat</a>
-    <!-- add menu items here -->
-  </div>
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">Salat</a>
+        <!-- add menu items here -->
+    </div>
 </nav>
 <main class="container my-4" layout:fragment="content">
-  <!-- page-specific content -->
+    <!-- page-specific content -->
 </main>
 <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
 </body>
@@ -87,43 +88,52 @@ Example base layout snippet:
 ```
 
 Example list page using the layout:
+
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="thymeleaf-layout.xsd" layout:decorate="~{layout/base}">
 <main layout:fragment="content">
-  <h1>Scheduled Report Jobs</h1>
-  <div class="mb-3">
-    <a class="btn btn-primary" th:href="@{/reporting/jobs2/new}"><i class="bi bi-plus-lg"></i> Create Job</a>
-  </div>
-  <table class="table table-striped align-middle">
-    <thead>
-      <tr>
-        <th>Name</th><th>Report</th><th>Recipients</th><th>Enabled</th><th>Schedule</th><th>Last Updated</th><th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr th:each="job: ${jobs}">
-        <td th:text="${job.name}"></td>
-        <td th:text="${job.reportDefinition.name}"></td>
-        <td th:text="${job.recipientEmails}"></td>
-        <td>
-          <span th:if="${job.enabled}" class="text-success">✓ Yes</span>
-          <span th:if="${!job.enabled}" class="text-danger">✗ No</span>
-        </td>
-        <td>
-          <div th:text="${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}"></div>
-          <small class="text-muted" th:text="${cronDescriptions[job.id]}"></small>
-        </td>
-        <td th:text="${#temporals.format(job.lastupdate, 'dd.MM.yyyy HH:mm')}"></td>
-        <td class="text-end">
-          <a class="btn btn-outline-secondary" th:href="@{'/reporting/jobs2/' + ${job.id} + '/edit'}"><i class="bi bi-pencil"></i></a>
-          <form th:action="@{'/reporting/jobs2/' + ${job.id} + '/delete'}" method="post" class="d-inline">
-            <button class="btn btn-outline-danger" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></button>
-          </form>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+    <h1>Scheduled Report Jobs</h1>
+    <div class="mb-3">
+        <a class="btn btn-primary" th:href="@{/reporting/jobs2/new}"><i class="bi bi-plus-lg"></i> Create Job</a>
+    </div>
+    <table class="table table-striped align-middle">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Report</th>
+            <th>Recipients</th>
+            <th>Enabled</th>
+            <th>Schedule</th>
+            <th>Last Updated</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="job: ${jobs}">
+            <td th:text="${job.name}"></td>
+            <td th:text="${job.reportDefinition.name}"></td>
+            <td th:text="${job.recipientEmails}"></td>
+            <td>
+                <span th:if="${job.enabled}" class="text-success">✓ Yes</span>
+                <span th:if="${!job.enabled}" class="text-danger">✗ No</span>
+            </td>
+            <td>
+                <div th:text="${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}"></div>
+                <small class="text-muted" th:text="${cronDescriptions[job.id]}"></small>
+            </td>
+            <td th:text="${#temporals.format(job.lastupdate, 'dd.MM.yyyy HH:mm')}"></td>
+            <td class="text-end">
+                <a class="btn btn-outline-secondary" th:href="@{'/reporting/jobs2/' + ${job.id} + '/edit'}"><i
+                        class="bi bi-pencil"></i></a>
+                <form th:action="@{'/reporting/jobs2/' + ${job.id} + '/delete'}" method="post" class="d-inline">
+                    <button class="btn btn-outline-danger" onclick="return confirm('Delete?')"><i
+                            class="bi bi-trash"></i></button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 </main>
 </html>
 ```
