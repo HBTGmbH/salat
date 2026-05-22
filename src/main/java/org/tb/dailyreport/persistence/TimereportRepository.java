@@ -33,7 +33,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdateIsGreaterThanEqual(long employeecontractId, LocalDate refDate);
 
   @Query("select t from Timereport t where t.deleted = false and t.status = :status and t.employeecontract.id = :employeecontractId and t.referenceday.refdate <= :refDate")
-  List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, LocalDate date);
+  List<Timereport> findAllByEmployeecontractIdAndStatusAndReferencedayRefdateIsLessThanEqual(long employeecontractId, String status, LocalDate refDate);
 
   @QueryHints(value = {
           @QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"),
