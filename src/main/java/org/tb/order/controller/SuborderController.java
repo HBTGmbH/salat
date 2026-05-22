@@ -130,7 +130,7 @@ public class SuborderController {
     form.setOrderType(OrderType.STANDARD);
     form.setCustomerId(customerId);
     form.setCustomerorderId(customerOrderId);
-    addFormModel(model, form, false);
+    addFormModel(model, form, false, true);
     prefillValidity(form);
     return "order/sub-order-form";
   }
@@ -140,7 +140,7 @@ public class SuborderController {
   public String editForm(@PathVariable Long id, Model model) {
     Suborder so = suborderService.getSuborderById(id);
     var form = toForm(so);
-    addFormModel(model, form, true);
+    addFormModel(model, form, true, true);
     return "order/sub-order-form";
   }
 
@@ -443,8 +443,27 @@ public class SuborderController {
   }
 
   private void addFormModel(Model model, SuborderForm form, boolean isEdit) {
+    addFormModel(model, form, isEdit, false);
+  }
+
+  private void addFormModel(Model model, SuborderForm form, boolean isEdit, boolean initialize) {
     model.addAttribute("suborderForm", form);
     model.addAttribute("orderTypes", OrderType.values());
+    model.addAttribute("isEdit", isEdit);
+    model.addAttribute("section", "orders");
+    model.addAttribute("subSection", "suborders");
+    model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+    String titleKey = isEdit ? "main.general.editsuborder.text" : "main.general.addsuborder.text";
+    model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Suborder" : "Create Suborder"));
+
+    if(initialize) {
+      if(form.getCustomerorderId() != null && form.getCustomerId() == null) {
+        var order = customerorderService.getCustomerorderById(form.getCustomerorderId());
+        if(order != null) {
+          form.setCustomerId(order.getCustomer().getId());
+        }
+      }
+    }
 
     var customers = customerService.getCustomersOrderedByShortName();
     model.addAttribute("customers", customers);
@@ -455,8 +474,8 @@ public class SuborderController {
     // Customer orders for the dropdown (all visible if manager, else only responsible ones)
     List<Customerorder> customerorders = customerorderService.getVisibleCustomerorders();
     customerorders = customerorders.stream()
-        .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
-        .toList();
+            .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
+            .toList();
     model.addAttribute("customerorders", customerorders);
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
       form.setCustomerorderId(customerorders.getFirst().getId());
@@ -478,12 +497,6 @@ public class SuborderController {
       }
     }
 
-    model.addAttribute("isEdit", isEdit);
-    model.addAttribute("section", "orders");
-    model.addAttribute("subSection", "suborders");
-    model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-    String titleKey = isEdit ? "main.general.editsuborder.text" : "main.general.addsuborder.text";
-    model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Suborder" : "Create Suborder"));
   }
 
   private SuborderForm toForm(Suborder so) {

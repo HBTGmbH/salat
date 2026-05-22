@@ -146,7 +146,7 @@ public class EmployeeorderController {
             form.setValidFrom(format(today()));
         }
 
-        addFormModel(model, form, false);
+        addFormModel(model, form, false, true);
         prefillValidity(form);
         prefillDebitHours(form);
         return "order/employee-order-form";
@@ -157,7 +157,7 @@ public class EmployeeorderController {
     public String editForm(@RequestParam Long id, Model model) {
         Employeeorder eo = employeeorderService.getEmployeeorderById(id);
         var form = toForm(eo);
-        addFormModel(model, form, true);
+        addFormModel(model, form, true, true);
         return "order/employee-order-form";
     }
 
@@ -441,7 +441,26 @@ public class EmployeeorderController {
     }
 
     private void addFormModel(Model model, EmployeeorderForm form, boolean isEdit) {
+        addFormModel(model, form, isEdit, false);
+    }
+
+    private void addFormModel(Model model, EmployeeorderForm form, boolean isEdit, boolean initialize) {
         model.addAttribute("employeeorderForm", form);
+        model.addAttribute("isEdit", isEdit);
+        model.addAttribute("section", "orders");
+        model.addAttribute("subSection", "employeeorders");
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+        String titleKey = isEdit ? "main.employeeorder.modify.text" : "main.employeeorder.new.text";
+        model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Employee Order" : "Create Employee Order"));
+
+        if(initialize) {
+            if(form.getOrderId() != null && form.getCustomerId() == null) {
+                var order = customerorderService.getCustomerorderById(form.getOrderId());
+                if(order != null) {
+                    form.setCustomerId(order.getCustomer().getId());
+                }
+            }
+        }
 
         var customers = customerService.getCustomersOrderedByShortName();
         model.addAttribute("customers", customers);
@@ -481,13 +500,6 @@ public class EmployeeorderController {
             }
         }
         model.addAttribute("suborders", suborders);
-
-        model.addAttribute("isEdit", isEdit);
-        model.addAttribute("section", "orders");
-        model.addAttribute("subSection", "employeeorders");
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
-        String titleKey = isEdit ? "main.employeeorder.modify.text" : "main.employeeorder.new.text";
-        model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Employee Order" : "Create Employee Order"));
     }
 
     private void addListModel(Model model) {
