@@ -9,6 +9,7 @@ public record EmployeeorderListItemDTO(
     boolean fitsToSuperiorObjects,
     boolean hidden,
     String customerShortName,
+    String customerName,
     String employeeName,
     String completeOrderSign,
     String completeOrderDescription,

@@ -38,7 +38,7 @@
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
-                      th:text="${c.shortname}"
+                      th:text="|${c.shortname} - ${c.name}|"
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
@@ -140,7 +140,8 @@
         <tr th:each="eo : ${employeeorders}" th:classappend="${!eo.currentlyValid} ? 'table-danger' : ((!eo.fitsToSuperiorObjects) ? 'table-warning' : '')">
           <td th:text="${eo.employeeName}"></td>
           <td class="d-none d-md-table-cell">
-            <div th:text="${eo.customerShortName}" class="text-nowrap">Customer</div>
+            <div th:text="${eo.customerShortName}" class="text-nowrap">Customer Short</div>
+            <small class="text-muted" th:text="${eo.customerName}">Customer Name</small>
           </td>
           <td>
             <div th:text="${eo.completeOrderSign}" class="text-nowrap">Suborder</div>

@@ -19,7 +19,7 @@
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
-                      th:text="${c.shortname}"
+                      th:text="|${c.shortname} - ${c.name}|"
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
@@ -109,7 +109,10 @@
       </thead>
       <tbody>
         <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
-          <td class="d-none d-sm-table-cell" th:text="${so.customerorder.customer.shortname}">Customer</td>
+          <td class="d-none d-md-table-cell">
+            <div th:text="${so.customerorder.customer.shortname}" class="text-nowrap">Customer Short</div>
+            <small class="text-muted" th:text="${so.customerorder.customer.name}">Customer Name</small>
+          </td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.customerorder.sign}">Customer Order</div>
             <small class="text-muted" th:text="${so.customerorder.shortdescription}">Customer order short description</small>

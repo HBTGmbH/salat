@@ -20,8 +20,8 @@
                   hx-include="closest form"
                   hx-trigger="change">
             <option th:each="c : ${customers}"
-                    th:value="${c.id}"
-                    th:text="${c.shortname}"></option>
+                    th:text="|${c.shortname} - ${c.name}|"
+                    th:value="${c.id}"></option>
           </select>
         </div>
 

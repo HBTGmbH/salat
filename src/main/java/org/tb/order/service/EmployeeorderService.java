@@ -306,6 +306,7 @@ public class EmployeeorderService {
               eo.getFitsToSuperiorObjects(),
               eo.getSuborder().isHide() || eo.getSuborder().getCustomerorder().getHide(),
               eo.getSuborder().getCustomerorder().getCustomer().getShortname(),
+              eo.getSuborder().getCustomerorder().getCustomer().getName(),
               eo.getEmployeecontract().getEmployee().getName(),
               eo.getSuborder().getCompleteOrderSign(),
               eo.getSuborder().getCompleteOrderDescription(true, false),
