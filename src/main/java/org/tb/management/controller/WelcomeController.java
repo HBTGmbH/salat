@@ -23,12 +23,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
+import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -118,18 +118,19 @@ public class WelcomeController {
     private void calculateEmployeeInfo(Model model, Employeecontract employeecontract) {
         var todayDate = today();
         var weekStart = todayDate.with(DayOfWeek.MONDAY);
+        var weekEnd = weekStart.plusWeeks(1);
         var monthStart = todayDate.withDayOfMonth(1);
+        var monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
         var recentReports = timereportService.getTimereportsByDatesAndEmployeeContractId(
-            employeecontract.getId(), todayDate.minusDays(60), todayDate);
+            employeecontract.getId(), todayDate.minusDays(60), monthEnd);
 
         // Public holidays (weekdays only)
         long weekPublicHolidays = publicholidayService
-            .getPublicHolidaysBetween(weekStart, weekStart.plusDays(4)).stream()
+            .getPublicHolidaysBetween(weekStart, weekEnd).stream()
             .filter(h -> h.getRefdate().getDayOfWeek() != DayOfWeek.SATURDAY
                       && h.getRefdate().getDayOfWeek() != DayOfWeek.SUNDAY)
             .count();
-        var monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
         long monthPublicHolidays = publicholidayService
             .getPublicHolidaysBetween(monthStart, monthEnd).stream()
             .filter(h -> h.getRefdate().getDayOfWeek() != DayOfWeek.SATURDAY
@@ -137,21 +138,21 @@ public class WelcomeController {
             .count();
 
         // Week hours
-        var weekReports = recentReports.stream()
-            .filter(r -> !r.getReferenceday().isBefore(weekStart))
-            .toList();
-        var weekLogged = weekReports.stream()
-            .map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+        var week = new LocalDateRange(weekStart, weekEnd);
+        var weekLogged =recentReports.stream()
+            .filter(r -> week.contains(r.getReferenceday()))
+            .map(TimereportDTO::getDuration)
+            .reduce(Duration.ZERO, Duration::plus);
         var weekTarget = employeecontract.getDailyWorkingTime().multipliedBy(Math.max(0, 5 - weekPublicHolidays));
         int weekPercent = weekTarget.isZero() ? 0
             : (int) (weekLogged.toMinutes() * 100 / weekTarget.toMinutes());
 
         // Month hours
-        var monthReports = recentReports.stream()
-            .filter(r -> !r.getReferenceday().isBefore(monthStart))
-            .toList();
-        var monthLogged = monthReports.stream()
-            .map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+        var month = new LocalDateRange(monthStart, monthEnd);
+        var monthLogged = recentReports.stream()
+            .filter(r -> month.contains(r.getReferenceday()))
+            .map(TimereportDTO::getDuration)
+            .reduce(Duration.ZERO, Duration::plus);
         long totalWorkingDaysInMonth = getWorkingDayDistance(monthStart, monthEnd);
         var monthTarget = employeecontract.getDailyWorkingTime()
             .multipliedBy(Math.max(0, totalWorkingDaysInMonth - monthPublicHolidays));
@@ -174,7 +175,8 @@ public class WelcomeController {
         }).orElse(99);
 
         // Hours by order this month, sorted by logged hours desc
-        var orderHours = monthReports.stream()
+        var orderHours = recentReports.stream()
+            .filter(r -> month.contains(r.getReferenceday()))
             .collect(Collectors.groupingBy(TimereportDTO::getCompleteOrderSign, Collectors.toList()))
             .entrySet().stream()
             .map(e -> {
