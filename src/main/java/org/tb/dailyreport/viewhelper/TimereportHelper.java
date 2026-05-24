@@ -97,44 +97,6 @@ public class TimereportHelper {
     return errors;
   }
 
-  /**
-   * @return Returns the working time for one day as an int array with length 2. The hours are at index[0], the minutes
-   * at index[1].
-   */
-  private long[] getWorkingTimeForDateAndEmployeeContract(LocalDate date, long employeeContractId) {
-    long[] workingTime = new long[2];
-    List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId,
-        date);
-    long hours = 0;
-    long minutes = 0;
-    for (TimereportDTO timereport : timereports) {
-      hours += timereport.getDuration().toHours();
-      minutes += timereport.getDuration().toMinutesPart();
-    }
-    hours += minutes / MINUTES_PER_HOUR;
-    minutes = minutes % MINUTES_PER_HOUR;
-    workingTime[0] = hours;
-    workingTime[1] = minutes;
-
-    return workingTime;
-  }
-
-  /**
-   * @return Returns int[]  0=hours 1=minutes
-   */
-  public long[] determineBeginTimeToDisplay(long ecId, LocalDate date, Workingday workingday) {
-    long[] beginTime = getWorkingTimeForDateAndEmployeeContract(date, ecId);
-    if (workingday != null) {
-      beginTime[0] += workingday.getStarttimehour();
-      beginTime[1] += workingday.getStarttimeminute();
-      beginTime[0] += workingday.getBreakhours();
-      beginTime[1] += workingday.getBreakminutes();
-      beginTime[0] += beginTime[1] / MINUTES_PER_HOUR;
-      beginTime[1] = beginTime[1] % MINUTES_PER_HOUR;
-    }
-    return beginTime;
-  }
-
   public long[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, TimereportDTO tr) {
     List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
     if (workingday != null) {

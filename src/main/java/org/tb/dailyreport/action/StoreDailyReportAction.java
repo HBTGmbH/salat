@@ -113,9 +113,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 // set the begin time as the end time of the latest existing timereport of current employee
                 // for current day. If no other reports exist so far, set standard begin time (0800).
-                long[] beginTime = timereportHelper.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
-                long beginHours = beginTime[0];
-                long beginMinutes = beginTime[1];
+                Duration beginTime = workingdayService.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
+                long beginHours = beginTime.toHours();
+                long beginMinutes = beginTime.toMinutesPart();
                 form.setSelectedHourBegin(beginHours);
                 form.setSelectedMinuteBegin(beginMinutes);
 
@@ -310,9 +310,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 form.setNumberOfSerialDays(0);
 
                 if (workingday != null) {
-                    long[] beginTime = timereportHelper.determineBeginTimeToDisplay(form.getEmployeeContractId(), selectedDate, workingday);
-                    long beginHours = beginTime[0];
-                    long beginMinutes = beginTime[1];
+                    Duration beginTime = workingdayService.determineBeginTimeToDisplay(form.getEmployeeContractId(), selectedDate, workingday);
+                    long beginHours = beginTime.toHours();
+                    long beginMinutes = beginTime.toMinutesPart();
                     form.setSelectedHourBegin(beginHours);
                     form.setSelectedMinuteBegin(beginMinutes);
                     form.setNumberOfSerialDays(0);
