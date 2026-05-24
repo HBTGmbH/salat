@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
+import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
@@ -54,6 +55,7 @@ public class EmployeecontractServiceTest {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		this.employeeService.createOrUpdate(employee);
 		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
+		supervisor.setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
 		this.employeeService.createOrUpdate(supervisor);
 
 		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
