@@ -97,52 +97,9 @@ public class TimereportHelper {
     return errors;
   }
 
-  /**
-   * Calculates the overall labortime for a list of {@link Timereport}s.
-   *
-   * @return Returns the calculated time as String (hh:mm)
-   */
   public String calculateLaborTime(List<TimereportDTO> timereports) {
-    long[] labortime = calculateLaborTimeAsArray(timereports);
-    long laborTimeHour = labortime[0];
-    long laborTimeMinute = labortime[1];
-
-    String laborTimeString;
-    if (laborTimeHour < 10) {
-      laborTimeString = "0" + laborTimeHour + ":";
-    } else {
-      laborTimeString = laborTimeHour + ":";
-    }
-    if (laborTimeMinute < 10) {
-      return laborTimeString + "0" + laborTimeMinute;
-    } else {
-      return laborTimeString + laborTimeMinute;
-    }
-  }
-
-  /**
-   * Calculates the overall labortime for a list of {@link Timereport}s.
-   *
-   * @return Returns the calculated time as int[] (index 0: hours, index 1: minutes)
-   */
-  public long[] calculateLaborTimeAsArray(List<TimereportDTO> timereports) {
-    long[] labortime = new long[2];
-    long laborTimeHour = 0;
-    long laborTimeMinute = 0;
-
-    for (TimereportDTO timereport : timereports) {
-
-      long hours = timereport.getDuration().toHours();
-      long minutes = timereport.getDuration().toMinutesPart();
-
-      laborTimeHour += hours;
-      laborTimeMinute += minutes;
-    }
-    laborTimeHour += laborTimeMinute / MINUTES_PER_HOUR;
-    laborTimeMinute = laborTimeMinute % MINUTES_PER_HOUR;
-    labortime[0] = laborTimeHour;
-    labortime[1] = laborTimeMinute;
-    return labortime;
+    Duration total = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+    return "%02d:%02d".formatted(total.toHours(), total.toMinutesPart());
   }
 
   /**
