@@ -53,10 +53,16 @@ public class WorkingdayService {
   private final AuthService authService;
   private final EmployeecontractService employeecontractService;
 
+  private boolean isSupervisedByCurrentUser(Employeecontract ec) {
+    return ec.getSupervisor() != null &&
+           ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+  }
+
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
     String grantorSign = employeecontract.getEmployee().getSign();
-    if(!authorizedUser.isManager() && !authorizedUser.isPeopleLead() &&
+    if(!authorizedUser.isManager() &&
+       !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
        !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
@@ -132,7 +138,8 @@ public class WorkingdayService {
       LocalDate dateLast) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
     String grantorSign = employeecontract.getEmployee().getSign();
-    if(!authorizedUser.isManager() && !authorizedUser.isPeopleLead() &&
+    if(!authorizedUser.isManager() &&
+       !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
        !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);

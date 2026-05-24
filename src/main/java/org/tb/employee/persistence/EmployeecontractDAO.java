@@ -143,6 +143,11 @@ public class EmployeecontractDAO {
      * @return List<Employeecontract>
      * @param validAt
      */
+    private boolean isSupervisedByCurrentUser(Employeecontract ec) {
+        return ec.getSupervisor() != null &&
+               ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+    }
+
     private List<Employeecontract> getAllVisibleEmployeeContractsOrderedByEmployeeSign(LocalDate validAt) {
         return employeecontractRepository.findAllValidAtAndNotHidden(validAt).stream()
             .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
@@ -154,14 +159,14 @@ public class EmployeecontractDAO {
     }
 
     public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
-        if (!authorizedUser.isManager() && !authorizedUser.isPeopleLead()) {
-            // may only see his own contracts
-            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
-                .filter(e -> e.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()))
-                .collect(Collectors.toList());
-        } else {
+        if (authorizedUser.isManager()) {
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today());
         }
+        String loginSign = authorizedUser.getEffectiveLoginSign();
+        return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
+            .filter(e -> e.getEmployee().getSalatUser().getLoginname().equals(loginSign)
+                      || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(e)))
+            .collect(Collectors.toList());
     }
 
     public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(LocalDate validAt) {
@@ -170,9 +175,9 @@ public class EmployeecontractDAO {
 
     public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess, LocalDate validAt) {
         if (limitAccess) {
-            // may only see his own contracts
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
-                .filter(e -> employeeAuthorization.isAuthorized(e.getEmployee(), AccessLevel.READ))
+                .filter(e -> employeeAuthorization.isAuthorized(e.getEmployee(), AccessLevel.READ)
+                          || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(e)))
                 .collect(Collectors.toList());
         } else {
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt);
