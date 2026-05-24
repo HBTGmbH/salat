@@ -130,13 +130,15 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         }
 
         request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
-        long[] displayTime = timereportHelper.determineTimesToDisplay(ec.getId(), reportDate, workingday, tr);
+        var displayTime = workingdayService.determineTimesToDisplay(ec.getId(), reportDate, workingday, tr);
 
         if (workingDayIsAvailable) {
-            reportForm.setSelectedHourBegin(displayTime[0]);
-            reportForm.setSelectedMinuteBegin(displayTime[1]);
-            reportForm.setSelectedHourEnd(displayTime[2]);
-            reportForm.setSelectedMinuteEnd(displayTime[3]);
+            displayTime.ifPresent(dt -> {
+                reportForm.setSelectedHourBegin(dt.begin().getHour());
+                reportForm.setSelectedMinuteBegin(dt.begin().getMinute());
+                reportForm.setSelectedHourEnd(dt.end().getHour());
+                reportForm.setSelectedMinuteEnd(dt.end().getMinute());
+            });
             reportForm.setSelectedHourBeginDay(workingday.getStarttimehour());
             reportForm.setSelectedMinuteBeginDay(workingday.getStarttimeminute());
             timereportHelper.refreshHours(reportForm);

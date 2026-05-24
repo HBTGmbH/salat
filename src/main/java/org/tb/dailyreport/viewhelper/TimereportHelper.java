@@ -97,33 +97,6 @@ public class TimereportHelper {
     return errors;
   }
 
-  public long[] determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, TimereportDTO tr) {
-    List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
-    if (workingday != null) {
-      long hourBegin = workingday.getStarttimehour();
-      long minuteBegin = workingday.getStarttimeminute();
-      hourBegin += workingday.getBreakhours();
-      minuteBegin += workingday.getBreakminutes();
-      for (TimereportDTO timereport : timereports) {
-        if (Objects.equals(timereport.getId(), tr.getId())) {
-          break;
-        }
-        hourBegin += timereport.getDuration().toHours();
-        minuteBegin += timereport.getDuration().toMinutesPart();
-      }
-      long hourEnd = hourBegin + tr.getDuration().toHours();
-      long minuteEnd = minuteBegin + tr.getDuration().toMinutesPart();
-      hourBegin += minuteBegin / MINUTES_PER_HOUR;
-      minuteBegin = minuteBegin % MINUTES_PER_HOUR;
-      hourEnd += minuteEnd / MINUTES_PER_HOUR;
-      minuteEnd = minuteEnd % MINUTES_PER_HOUR;
-
-      return new long[]{hourBegin, minuteBegin, hourEnd, minuteEnd};
-    } else {
-      return new long[4];
-    }
-  }
-
   /**
    * Calculates the overall labortime for a list of {@link Timereport}s.
    *

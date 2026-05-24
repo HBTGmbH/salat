@@ -11,8 +11,8 @@ import static org.tb.common.util.DateTimeUtils.now;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -110,9 +110,9 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set the begin time as the end time of the latest existing timereport of current employee
         // for current day. If no other reports exist so far, set standard begin time (0800).
-        Duration beginTime = workingdayService.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
-        form.setSelectedHourBegin(beginTime.toHours());
-        form.setSelectedMinuteBegin(beginTime.toMinutesPart());
+        LocalTime beginTime = workingdayService.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
+        form.setSelectedHourBegin(beginTime.getHour());
+        form.setSelectedMinuteBegin(beginTime.getMinute());
         //		TimereportHelper.refreshHours(reportForm);
 
         if (workingDayIsAvailable) {
@@ -125,8 +125,8 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
             // propose minutes with quarter hour precision
             minute = minute - minute % GlobalConstants.QUARTER_HOUR_IN_MINUTES;
 
-            long beginHours = beginTime.toHours();
-            long beginMinutes = beginTime.toMinutesPart();
+            long beginHours = beginTime.getHour();
+            long beginMinutes = beginTime.getMinute();
             if ((beginHours < hour || beginHours == hour && beginMinutes < minute) && selectedDate.equals(today)) {
                 form.setSelectedMinuteEnd(minute);
                 form.setSelectedHourEnd(hour);

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -113,9 +114,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
 
                 // set the begin time as the end time of the latest existing timereport of current employee
                 // for current day. If no other reports exist so far, set standard begin time (0800).
-                Duration beginTime = workingdayService.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
-                long beginHours = beginTime.toHours();
-                long beginMinutes = beginTime.toMinutesPart();
+                LocalTime beginTime = workingdayService.determineBeginTimeToDisplay(employeeContract.getId(), referenceDay, workingday);
+                long beginHours = beginTime.getHour();
+                long beginMinutes = beginTime.getMinute();
                 form.setSelectedHourBegin(beginHours);
                 form.setSelectedMinuteBegin(beginMinutes);
 
@@ -310,9 +311,9 @@ public class StoreDailyReportAction extends DailyReportAction<AddDailyReportForm
                 form.setNumberOfSerialDays(0);
 
                 if (workingday != null) {
-                    Duration beginTime = workingdayService.determineBeginTimeToDisplay(form.getEmployeeContractId(), selectedDate, workingday);
-                    long beginHours = beginTime.toHours();
-                    long beginMinutes = beginTime.toMinutesPart();
+                    LocalTime beginTime = workingdayService.determineBeginTimeToDisplay(form.getEmployeeContractId(), selectedDate, workingday);
+                    long beginHours = beginTime.getHour();
+                    long beginMinutes = beginTime.getMinute();
                     form.setSelectedHourBegin(beginHours);
                     form.setSelectedMinuteBegin(beginMinutes);
                     form.setNumberOfSerialDays(0);
