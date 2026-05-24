@@ -102,18 +102,6 @@ public class TimereportHelper {
     return "%02d:%02d".formatted(total.toHours(), total.toMinutesPart());
   }
 
-  /**
-   * Checks, if the overall labortime for a list of {@link Timereport}s extends the maximal daily labor time.
-   *
-   * @return Returns true, if the maximal labor time is extended, false otherwise
-   */
-  public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports, int maxDailyLaborTimeHours) {
-
-    Duration actual = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
-
-    // check actual is not greater than the max labor time
-    return Duration.ofHours(maxDailyLaborTimeHours).minus(actual).isNegative();
-  }
 
   public String calculateWorkingDayEnds(Workingday workingday, HttpServletRequest request) {
     if (workingday == null) {
