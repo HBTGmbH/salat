@@ -2,6 +2,8 @@ package org.tb.employee.service;
 
 import static org.tb.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 import static org.tb.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
 import static org.tb.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS;
 import static org.tb.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT;
@@ -296,10 +298,15 @@ public class EmployeecontractService {
       LocalDate validUntil, long supervisorId, boolean throwResolvableConflicts) {
     DataValidationUtils.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
 
-    if(employeecontract.getEmployee().getId().equals(supervisorId)) {
+    var supervisor = employeeDAO.getEmployeeById(supervisorId);
+    if (supervisor == null) {
       throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
     }
-    if(employeeDAO.getEmployeeById(supervisorId) == null) {
+    if (employeecontract.getEmployee().getId().equals(supervisorId)) {
+      throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+    }
+    var supervisorStatus = supervisor.getSalatUser().getStatus();
+    if (!EMPLOYEE_STATUS_PV.equals(supervisorStatus) && !EMPLOYEE_STATUS_BL.equals(supervisorStatus)) {
       throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
     }
 

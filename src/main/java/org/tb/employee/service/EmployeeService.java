@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
@@ -81,6 +83,15 @@ public class EmployeeService {
 
   public List<Employee> getEmployeesWithValidContracts() {
     return employeeDAO.getEmployeesWithValidContracts();
+  }
+
+  public List<Employee> getEligibleSupervisors() {
+    return employeeDAO.getEmployeesWithValidContracts().stream()
+        .filter(e -> {
+          var status = e.getSalatUser().getStatus();
+          return EMPLOYEE_STATUS_PV.equals(status) || EMPLOYEE_STATUS_BL.equals(status);
+        })
+        .toList();
   }
 
   public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
