@@ -9,6 +9,7 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import org.tb.auth.struts.LoginRequiredAction;
 import org.tb.common.GlobalConstants;
 import org.tb.common.OptionItem;
 import org.tb.common.util.DateUtils;
+import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TrainingInformation;
 import org.tb.dailyreport.domain.TrainingOverview;
 import org.tb.dailyreport.service.TrainingService;
@@ -194,20 +196,20 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_HM, GlobalConstants.ZERO_HM);
             } else if (commonTraining == null) {
                 int[] ti = TrainingHelper.getHoursMin(projectTraining);
-                String time = TrainingHelper.fromDBtimeToString(empCon, ti[0], ti[1]);
+                String time = DurationUtils.formatWithWorkingdays(Duration.ofHours(ti[0]).plusMinutes(ti[1]), empCon.getDailyWorkingTime());
                 String hoursMin = TrainingHelper.hoursMinToString(ti);
                 to = new TrainingOverview(year, empCon, time, GlobalConstants.ZERO_DHM, hoursMin, GlobalConstants.ZERO_HM);
             } else if (projectTraining == null) {
                 int[] ti = TrainingHelper.getHoursMin(commonTraining);
-                String time = TrainingHelper.fromDBtimeToString(empCon, ti[0], ti[1]);
+                String time = DurationUtils.formatWithWorkingdays(Duration.ofHours(ti[0]).plusMinutes(ti[1]), empCon.getDailyWorkingTime());
                 String hoursMin = TrainingHelper.hoursMinToString(ti);
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, time, GlobalConstants.ZERO_HM, hoursMin);
             } else {
                 int[] tcT = TrainingHelper.getHoursMin(commonTraining);
-                String commonTime = TrainingHelper.fromDBtimeToString(empCon, tcT[0], tcT[1]);
+                String commonTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(tcT[0]).plusMinutes(tcT[1]), empCon.getDailyWorkingTime());
                 String cHoursMin = TrainingHelper.hoursMinToString(tcT);
                 int[] tpT = TrainingHelper.getHoursMin(projectTraining);
-                String projectTime = TrainingHelper.fromDBtimeToString(empCon, tpT[0], tpT[1]);
+                String projectTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(tpT[0]).plusMinutes(tpT[1]), empCon.getDailyWorkingTime());
                 String pHoursMin = TrainingHelper.hoursMinToString(tpT);
                 to = new TrainingOverview(year, empCon, projectTime, commonTime, pHoursMin, cHoursMin);
             }
@@ -234,10 +236,10 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             .orElse(new TrainingInformation(ec.getId(), 0, 0));
 
         int[] cTime = TrainingHelper.getHoursMin(cTT);
-        String commonTrainingTime = TrainingHelper.fromDBtimeToString(ec, cTime[0], cTime[1]);
+        String commonTrainingTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(cTime[0]).plusMinutes(cTime[1]), ec.getDailyWorkingTime());
         String cHoursMin = TrainingHelper.hoursMinToString(cTime);
         int[] pTime = TrainingHelper.getHoursMin(pTT);
-        String projectTrainingTime = TrainingHelper.fromDBtimeToString(ec, pTime[0], pTime[1]);
+        String projectTrainingTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(pTime[0]).plusMinutes(pTime[1]), ec.getDailyWorkingTime());
         String pHoursMin = TrainingHelper.hoursMinToString(pTime);
 
         TrainingOverview to = new TrainingOverview(year, ec, projectTrainingTime, commonTrainingTime, pHoursMin, cHoursMin);

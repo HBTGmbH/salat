@@ -102,6 +102,21 @@ public class DurationUtils {
     }
   }
 
+  public static String formatWithWorkingdays(Duration duration, Duration dailyWorkingTime) {
+    long trainingDays = 0;
+    long trainingHours = 0;
+    long trainingMinutes = 0;
+    long totalMinutes = duration.toMinutes();
+    long dailyMinutes = dailyWorkingTime.toMinutes();
+    if (dailyMinutes != 0) {
+      trainingDays = totalMinutes / dailyMinutes;
+      long restMinutes = totalMinutes % dailyMinutes;
+      trainingHours = restMinutes / MINUTES_PER_HOUR;
+      trainingMinutes = restMinutes % MINUTES_PER_HOUR;
+    }
+    return "%02d:%02d:%02d".formatted(trainingDays, trainingHours, trainingMinutes);
+  }
+
   public static String decimalFormat(Duration duration) {
     if(duration == null) {
       return "";
