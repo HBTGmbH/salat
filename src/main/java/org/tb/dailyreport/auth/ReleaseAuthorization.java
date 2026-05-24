@@ -21,7 +21,8 @@ public class ReleaseAuthorization {
 
   public boolean isReleaseAuthorized(Employeecontract employeecontract, AccessLevel accessLevel) {
     if(authorizedUser.getEffectiveLoginSign().equals(employeecontract.getEmployee().getSalatUser().getLoginname())) return true;
-    if (authorizedUser.isManager() || authorizedUser.isPeopleLead()) return true;
+    if (authorizedUser.isManager()) return true;
+    if (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) return true;
     if (authorizedUser.isAdmin()) return true;
     String grantorSign = employeecontract.getEmployee().getSign();
     return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_RELEASE, now(), accessLevel);
@@ -29,10 +30,16 @@ public class ReleaseAuthorization {
 
   public boolean isAcceptAuthorized(Employeecontract employeecontract, AccessLevel accessLevel) {
     if(authorizedUser.getEffectiveLoginSign().equals(employeecontract.getEmployee().getSalatUser().getLoginname())) return false; // cannot accept own hours
-    if (authorizedUser.isManager() || authorizedUser.isPeopleLead()) return true;
+    if (authorizedUser.isManager()) return true;
+    if (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) return true;
     if (authorizedUser.isAdmin()) return true;
     String grantorSign = employeecontract.getEmployee().getSign();
     return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_ACCEPT, now(), accessLevel);
+  }
+
+  private boolean isSupervisedByCurrentUser(Employeecontract ec) {
+    return ec.getSupervisor() != null &&
+           ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
   }
 
 }

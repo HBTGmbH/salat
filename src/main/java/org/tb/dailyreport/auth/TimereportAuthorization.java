@@ -21,6 +21,7 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.dailyreport.domain.Timereport;
+import org.tb.employee.domain.Employeecontract;
 
 @Component
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class TimereportAuthorization {
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(authorizedUser.isManager()) return true;
-    if(accessLevel == READ && authorizedUser.isPeopleLead()) return true;
+    if(accessLevel == READ && authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract())) return true;
     if(timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) return true;
 
     if(accessLevel == READ) {
@@ -106,6 +107,11 @@ public class TimereportAuthorization {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
     });
+  }
+
+  private boolean isSupervisedByCurrentUser(Employeecontract ec) {
+    return ec.getSupervisor() != null &&
+           ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
   }
 
 }
