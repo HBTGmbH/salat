@@ -11,6 +11,7 @@ import static org.tb.common.util.DateTimeUtils.now;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -109,9 +110,9 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
 
         // set the begin time as the end time of the latest existing timereport of current employee
         // for current day. If no other reports exist so far, set standard begin time (0800).
-        long[] beginTime = timereportHelper.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
-        form.setSelectedHourBegin(beginTime[0]);
-        form.setSelectedMinuteBegin(beginTime[1]);
+        Duration beginTime = workingdayService.determineBeginTimeToDisplay(ec.getId(), selectedDate, workingday);
+        form.setSelectedHourBegin(beginTime.toHours());
+        form.setSelectedMinuteBegin(beginTime.toMinutesPart());
         //		TimereportHelper.refreshHours(reportForm);
 
         if (workingDayIsAvailable) {
@@ -124,12 +125,14 @@ public class CreateDailyReportAction extends DailyReportAction<AddDailyReportFor
             // propose minutes with quarter hour precision
             minute = minute - minute % GlobalConstants.QUARTER_HOUR_IN_MINUTES;
 
-            if ((beginTime[0] < hour || beginTime[0] == hour && beginTime[1] < minute) && selectedDate.equals(today)) {
+            long beginHours = beginTime.toHours();
+            long beginMinutes = beginTime.toMinutesPart();
+            if ((beginHours < hour || beginHours == hour && beginMinutes < minute) && selectedDate.equals(today)) {
                 form.setSelectedMinuteEnd(minute);
                 form.setSelectedHourEnd(hour);
             } else {
-                form.setSelectedMinuteEnd(beginTime[1]);
-                form.setSelectedHourEnd(beginTime[0]);
+                form.setSelectedMinuteEnd(beginMinutes);
+                form.setSelectedHourEnd(beginHours);
             }
 
             form.setSelectedHourBeginDay(workingday.getStarttimehour());

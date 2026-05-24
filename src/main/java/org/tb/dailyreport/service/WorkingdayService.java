@@ -9,6 +9,7 @@ import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGE
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -133,6 +135,21 @@ public class WorkingdayService {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
     }
     return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast);
+  }
+
+  public Duration determineBeginTimeToDisplay(long ecId, LocalDate date, Workingday workingday) {
+    Duration elapsed = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date)
+        .stream()
+        .map(TimereportDTO::getDuration)
+        .reduce(Duration.ZERO, Duration::plus);
+    if (workingday != null) {
+      elapsed = elapsed
+          .plusHours(workingday.getStarttimehour())
+          .plusMinutes(workingday.getStarttimeminute())
+          .plusHours(workingday.getBreakhours())
+          .plusMinutes(workingday.getBreakminutes());
+    }
+    return elapsed;
   }
 
   @EventListener
