@@ -96,7 +96,7 @@
                     </a>
                 </li>
 			</c:if>
-			<c:if test="${authorizedUser.manager}">
+			<c:if test="${authorizedUser.manager or authorizedUser.peopleLead}">
 				<li><a class="menu" href="<c:url value='/reporting/jobs' />">
 					Scheduled Reports
 				</a></li>

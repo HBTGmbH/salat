@@ -17,6 +17,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ScheduledReportExecutionHistory;
 import org.tb.reporting.domain.ScheduledReportJob;
@@ -28,7 +31,7 @@ import org.tb.reporting.persistence.ScheduledReportJobRepository;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Authorized(requiresManager = true)
+@Authorized
 @Slf4j
 public class ScheduledReportJobService {
 
@@ -37,13 +40,19 @@ public class ScheduledReportJobService {
   private final ScheduledReportExecutionHistoryRepository historyRepository;
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final ApplicationEventPublisher applicationEventPublisher;
+  private final AuthorizedUser authorizedUser;
 
   public List<ScheduledReportJob> getAllJobs() {
-    return (List<ScheduledReportJob>) scheduledReportJobRepository.findAll();
+    if (authorizedUser.isManager()) {
+      return (List<ScheduledReportJob>) scheduledReportJobRepository.findAll();
+    }
+    return scheduledReportJobRepository.findByCreatedby(authorizedUser.getEffectiveLoginSign());
   }
 
   public ScheduledReportJob getJob(Long id) {
-    return scheduledReportJobRepository.findById(id).orElseThrow();
+    ScheduledReportJob job = scheduledReportJobRepository.findById(id).orElseThrow();
+    checkOwnership(job);
+    return job;
   }
 
   public ScheduledReportJob createJob(ScheduledReportJob job) {
@@ -53,6 +62,7 @@ public class ScheduledReportJobService {
   }
 
   public ScheduledReportJob updateJob(ScheduledReportJob job) {
+    checkOwnership(job);
     ScheduledReportJob saved = scheduledReportJobRepository.save(job);
     applicationEventPublisher.publishEvent(new ReportScheduledEvent(this, saved));
     return saved;
@@ -60,8 +70,16 @@ public class ScheduledReportJobService {
 
   public void deleteJob(Long id) {
     ScheduledReportJob job = scheduledReportJobRepository.findById(id).orElseThrow();
+    checkOwnership(job);
     scheduledReportJobRepository.deleteById(id);
     applicationEventPublisher.publishEvent(new ReportUnscheduledEvent(this, job));
+  }
+
+  private void checkOwnership(ScheduledReportJob job) {
+    if (!authorizedUser.isManager() &&
+        !authorizedUser.getEffectiveLoginSign().equals(job.getCreatedby())) {
+      throw new AuthorizationException(ErrorCode.AA_NOT_ATHORIZED);
+    }
   }
 
   /**

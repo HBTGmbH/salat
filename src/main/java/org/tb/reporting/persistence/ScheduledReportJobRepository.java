@@ -10,4 +10,6 @@ public interface ScheduledReportJobRepository extends CrudRepository<ScheduledRe
 
   List<ScheduledReportJob> findByEnabledTrue();
 
+  List<ScheduledReportJob> findByCreatedby(String createdby);
+
 }
