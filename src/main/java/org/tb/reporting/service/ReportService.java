@@ -65,7 +65,6 @@ public class ReportService {
     ).stream().filter(r -> reportAuthorization.isAuthorized(r, EXECUTE)).toList();
   }
 
-  @Authorized(requiresManager = true)
   public void deleteReportDefinition(long reportDefinitionId) {
     reportDefinitionRepository.findById(reportDefinitionId).ifPresent(report -> {
       if(reportAuthorization.isAuthorized(report, DELETE)) {
@@ -80,7 +79,6 @@ public class ReportService {
         .orElse(null);
   }
 
-  @Authorized(requiresManager = true)
   public ReportDefinition create(String name, String sql) {
     if(!reportAuthorization.isAuthorizedForAnyReportDefinition(WRITE)) {
       return null;
@@ -92,7 +90,6 @@ public class ReportService {
     return reportDefinition;
   }
 
-  @Authorized(requiresManager = true)
   public void update(long reportDefinitionId, String name, String sql) {
     var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId).orElseThrow();
     if(!reportAuthorization.isAuthorized(reportDefinition, WRITE)) {

@@ -88,7 +88,7 @@ public class ReportController {
     return "reporting/reports-list";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
   @GetMapping("/create")
   public String createForm(@RequestParam(value = "filter", required = false) String filter, Model model) {
     model.addAttribute("pageTitle", "Create Report");
@@ -102,7 +102,7 @@ public class ReportController {
   }
 
   @GetMapping("/edit")
-  @PreAuthorize("hasRole('MANAGER')")
+  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
   public String editForm(@RequestParam("id") Long id,
                          @RequestParam(value = "filter", required = false) String filter,
                          Model model) {
@@ -124,7 +124,7 @@ public class ReportController {
   }
 
   @PostMapping("/store")
-  @PreAuthorize("hasRole('MANAGER')")
+  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
   public String store(@ModelAttribute("report") ReportForm form,
                       BindingResult bindingResult,
                       Model model,
@@ -162,7 +162,7 @@ public class ReportController {
   }
 
   @PostMapping("/delete")
-  @PreAuthorize("hasRole('MANAGER')")
+  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
   public String delete(@RequestParam("id") Long id,
                        @RequestParam(value = "filter", required = false) String filter,
                        RedirectAttributes redirectAttributes) {
