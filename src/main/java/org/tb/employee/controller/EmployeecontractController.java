@@ -2,8 +2,6 @@ package org.tb.employee.controller;
 
 import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.format;
-import static org.tb.common.util.DateUtils.today;
-import static org.tb.common.util.DurationUtils.parseDuration;
 import static org.tb.common.util.DurationUtils.validateDuration;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -283,7 +281,7 @@ public class EmployeecontractController {
 
     private void addFormModel(Model model, boolean isEdit, List<Overtime> overtimes, String totalOvertime) {
         var employees = employeeService.getAllEmployees();
-        var supervisors = employeeService.getEmployeesWithValidContracts();
+        var supervisors = employeeService.getEligibleSupervisors();
         model.addAttribute("employees", employees);
         model.addAttribute("supervisors", supervisors);
         model.addAttribute("isEdit", isEdit);
