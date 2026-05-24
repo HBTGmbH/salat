@@ -101,14 +101,14 @@ public class ReportService {
   }
 
   public ReportResult execute(Long reportDefinitionId, List<ReportParameter> parameters) {
-    var reportDefinition = reportDefinitionRepository.findById(reportDefinitionId);
-    if(reportDefinition.isEmpty()) {
+    var reportDefinition = getReportDefinition(reportDefinitionId);
+    if(reportDefinition == null) {
       throw new IllegalArgumentException("No report definition found for " + reportDefinitionId);
     }
 
     var resultBuilder = ReportResult.builder().parameters(parameters);
 
-    String resolvedSql = reportDefinition.get().getSql();
+    String resolvedSql = reportDefinition.getSql();
     if(resolvedSql != null) {
       if (authorizedUser != null && authorizedUser.getEffectiveLoginSign() != null) {
         resolvedSql = resolvedSql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getEffectiveLoginSign()); // ensure the sign is filled in as requested

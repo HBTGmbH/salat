@@ -29,7 +29,7 @@ public class ReportAuthViewHelper implements AuthViewHelper {
   }
 
   public boolean mayCreateNewReports() {
-    return authorizedUser.isManager();
+    return authorizedUser.isPeopleLead();
   }
 
   @Override
