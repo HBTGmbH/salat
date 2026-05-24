@@ -171,7 +171,7 @@
 				<!-- release -->
 
 				<c:if
-					test="${authorizedUser.manager || employeeContractId == loginEmployeeContractId}">
+					test="${authorizedUser.manager || isSupervisor || employeeContractId == loginEmployeeContractId}">
 					<tr>
 						<td align="left" class="noBborderStyle" height="10"></td>
 					</tr>
@@ -322,7 +322,7 @@
 										value="${employeecontract.reportReleaseDateString}" />
 								</font>
 
-								<c:if test="${authorizedUser.manager}">
+								<c:if test="${authorizedUser.manager or isSupervisor}">
 									<html:image title="Erinnerungsmail senden"
 										onclick="confirmSendReleaseMail(this.form, '${employeecontract.employee.sign}');return false"
 										src="/images/mail_icon_01.gif">
@@ -345,7 +345,7 @@
 							<c:when test="${employeecontract.acceptanceWarning}">
 								<font color="red"><c:out value="${employeecontract.reportAcceptanceDateString}" />
 								</font>
-								<c:if test="${authorizedUser.manager && !employeecontract.releaseWarning}">
+								<c:if test="${(authorizedUser.manager or isSupervisor) and !employeecontract.releaseWarning}">
 									<html:image title="Erinnerungsmail senden"
 										onclick="confirmSendAcceptanceMail(this.form, '${employeecontract.employee.sign}');return false"
 										src="/images/mail_icon_01.gif">
