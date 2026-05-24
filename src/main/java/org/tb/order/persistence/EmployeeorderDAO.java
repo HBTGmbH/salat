@@ -17,11 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
+import org.tb.order.auth.EmployeeorderAuthorization;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Employeeorder_;
@@ -34,6 +36,7 @@ public class EmployeeorderDAO {
     private static final Logger LOG = LoggerFactory.getLogger(EmployeeorderDAO.class);
 
     private final EmployeeorderRepository employeeorderRepository;
+    private final EmployeeorderAuthorization employeeorderAuthorization;
 
     /**
      * Gets the employeeorder for the given id.
@@ -249,6 +252,7 @@ public class EmployeeorderDAO {
                 }
                 return builder.and(predicates.toArray(new Predicate[0]));
             }).stream()
+            .filter(eo -> employeeorderAuthorization.isAuthorized(eo, AccessLevel.READ))
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
