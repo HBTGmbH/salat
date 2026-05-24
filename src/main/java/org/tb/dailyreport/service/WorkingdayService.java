@@ -33,6 +33,7 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.persistence.WorkingdayRepository;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.service.EmployeecontractService;
@@ -171,6 +172,31 @@ public class WorkingdayService {
         LocalTime.MIDNIGHT.plus(beginDuration),
         LocalTime.MIDNIGHT.plus(endDuration)
     ));
+  }
+
+  public String calculateQuittingTime(Workingday workingday) {
+    if (workingday == null) return "n/a";
+    Duration laborTime = timereportDAO
+        .getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday())
+        .stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+    LocalTime end = LocalTime.MIDNIGHT
+        .plusHours(workingday.getStarttimehour())
+        .plusMinutes(workingday.getStarttimeminute())
+        .plusHours(workingday.getBreakhours())
+        .plusMinutes(workingday.getBreakminutes())
+        .plus(laborTime);
+    return "%02d:%02d".formatted(end.getHour(), end.getMinute());
+  }
+
+  public String calculateWorkingDayEnds(Workingday workingday) {
+    if (workingday == null) return "n/a";
+    LocalTime end = LocalTime.MIDNIGHT
+        .plusHours(workingday.getStarttimehour())
+        .plusMinutes(workingday.getStarttimeminute())
+        .plusHours(workingday.getBreakhours())
+        .plusMinutes(workingday.getBreakminutes())
+        .plus(workingday.getEmployeecontract().getDailyWorkingTime());
+    return "%02d:%02d".formatted(end.getHour(), end.getMinute());
   }
 
   public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports) {
