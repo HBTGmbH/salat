@@ -1,15 +1,10 @@
 package org.tb.dailyreport.viewhelper;
 
-import static org.tb.common.GlobalConstants.HOURS_PER_DAY;
-import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
-
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.stereotype.Component;
@@ -17,29 +12,18 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.action.AddDailyReportForm;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.domain.Workingday;
-import org.tb.dailyreport.service.TimereportService;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
-/**
- * Helper class for timereport handling which does not directly deal with persistence
- *
- * @author oda
- */
 @Component
-@Slf4j
 @RequiredArgsConstructor
 public class TimereportHelper {
 
-  private final TimereportService timereportService;
   private final EmployeeorderService employeeorderService;
   private final AuthorizedUser authorizedUser;
   private final EmployeecontractService employeecontractService;
-  private final AuthorizedEmployee authorizedEmployee;
 
   /**
    * refreshes hours after change of begin/end times
@@ -102,89 +86,5 @@ public class TimereportHelper {
     return "%02d:%02d".formatted(total.toHours(), total.toMinutesPart());
   }
 
-
-  public String calculateWorkingDayEnds(Workingday workingday, HttpServletRequest request) {
-    if (workingday == null) {
-      return "n/a";
-    }
-    Employeecontract employeecontract = getOrInitLoginEmployeeContract(request, workingday.getRefday());
-    long timeHoursLong = employeecontract.getDailyWorkingTime().toHours();
-    long timeMinutesInt = employeecontract.getDailyWorkingTime().toMinutesPart();
-    return calculateEndTime(workingday, timeHoursLong, timeMinutesInt);
-  }
-
-  /**
-   * @return Returns a string with the calculated quitting time (hh:mm). If something fails (may happen for missing
-   * workingday, etc.), "n/a" will be returned.
-   */
-  public String calculateQuittingTime(Workingday workingday, HttpServletRequest request) {
-    if (workingday == null) {
-      return "n/a";
-    }
-    String labortimeString = getOrInitLabortime(request, workingday.getRefday());
-    String[] laborTimeArray = labortimeString.split(":");
-    String laborTimeHoursString = laborTimeArray[0];
-    String laborTimeMinutesString = laborTimeArray[1];
-    long timeHoursLong = Long.parseLong(laborTimeHoursString);
-    long timeMinutesInt = Integer.parseInt(laborTimeMinutesString);
-    return calculateEndTime(workingday, timeHoursLong, timeMinutesInt);
-  }
-
-  private String calculateEndTime(Workingday workingday, long timeHoursLong, long timeMinutesInt) {
-    try {
-      long endTimeHours = workingday.getStarttimehour() + workingday.getBreakhours() + timeHoursLong;
-      long endtimeMinutes = workingday.getStarttimeminute() + workingday.getBreakminutes() + timeMinutesInt;
-      endTimeHours += endtimeMinutes / MINUTES_PER_HOUR;
-      endtimeMinutes = endtimeMinutes % MINUTES_PER_HOUR;
-
-      // format return string
-      StringBuilder endTimeString = new StringBuilder();
-      if (endTimeHours < 10) {
-        endTimeString.append("0");
-      }
-      if (endTimeHours >= HOURS_PER_DAY) {
-        endTimeHours = endTimeHours % HOURS_PER_DAY;
-      }
-      endTimeString.append(endTimeHours);
-      endTimeString.append(":");
-      if (endtimeMinutes < 10) {
-        endTimeString.append("0");
-      }
-      endTimeString.append(endtimeMinutes);
-      return endTimeString.toString();
-    } catch (Exception e) {
-      log.error("Could not calculate quitting time.", e);
-      return "n/a";
-    }
-  }
-
-  private Employeecontract getOrInitLoginEmployeeContract(HttpServletRequest request, LocalDate refday) {
-    var contract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
-    if (contract == null) {
-      contract = employeecontractService.getEmployeeContractValidAt(authorizedEmployee.getEmployeeId(), refday);
-      request.getSession().setAttribute("loginEmployeeContract", contract);
-    }
-    return contract;
-  }
-
-  private String getOrInitLabortime(HttpServletRequest request, LocalDate refday) {
-    var laborTime = (String) request.getSession().getAttribute("labortime");
-    if (laborTime == null) {
-      List<TimereportDTO> timereports = getOrInitTimereports(request, refday);
-      laborTime = calculateLaborTime(timereports);
-      request.getSession().setAttribute("labortime", laborTime);
-    }
-    return laborTime;
-  }
-
-  private List<TimereportDTO> getOrInitTimereports(HttpServletRequest request, LocalDate refday) {
-    var timereports = (List<TimereportDTO>) request.getSession().getAttribute("timereports");
-    if (timereports == null) {
-      var contractId = getOrInitLoginEmployeeContract(request, refday).getId();
-      timereports = timereportService.getTimereportsForEmployeecontractAndDate(contractId, refday);
-      request.getSession().setAttribute("timereports", timereports);
-    }
-    return timereports;
-  }
 
 }
