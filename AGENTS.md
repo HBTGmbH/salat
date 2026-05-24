@@ -1,6 +1,7 @@
 # Architecture and Agents Overview
 
 This document captures the architectural rules and direction for the project to guide day-to-day decisions and long-term evolution.
+See also README.md
 
 ---
 
