@@ -179,7 +179,7 @@
                   </a>
                   <a class="dropdown-item" th:href="@{/reporting/jobs}"
                      th:classappend="${subSection == 'scheduled-report-jobs'} ? 'active' : ''"
-                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+                     th:if="${#authorization.expression('hasAnyRole(''MANAGER'',''PEOPLE_LEAD'')')}">
                     Scheduled Reports
                   </a>
                 </div>
