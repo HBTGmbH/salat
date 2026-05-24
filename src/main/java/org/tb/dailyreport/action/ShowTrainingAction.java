@@ -195,22 +195,22 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             if (commonTraining == null && projectTraining == null) {
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_HM, GlobalConstants.ZERO_HM);
             } else if (commonTraining == null) {
-                int[] ti = TrainingHelper.getHoursMin(projectTraining);
-                String time = DurationUtils.formatWithWorkingdays(Duration.ofHours(ti[0]).plusMinutes(ti[1]), empCon.getDailyWorkingTime());
-                String hoursMin = TrainingHelper.hoursMinToString(ti);
+                Duration duration = TrainingHelper.toDuration(projectTraining);
+                String time = DurationUtils.formatWithWorkingdays(duration, empCon.getDailyWorkingTime());
+                String hoursMin = DurationUtils.format(duration);
                 to = new TrainingOverview(year, empCon, time, GlobalConstants.ZERO_DHM, hoursMin, GlobalConstants.ZERO_HM);
             } else if (projectTraining == null) {
-                int[] ti = TrainingHelper.getHoursMin(commonTraining);
-                String time = DurationUtils.formatWithWorkingdays(Duration.ofHours(ti[0]).plusMinutes(ti[1]), empCon.getDailyWorkingTime());
-                String hoursMin = TrainingHelper.hoursMinToString(ti);
+                Duration duration = TrainingHelper.toDuration(commonTraining);
+                String time = DurationUtils.formatWithWorkingdays(duration, empCon.getDailyWorkingTime());
+                String hoursMin = DurationUtils.format(duration);
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, time, GlobalConstants.ZERO_HM, hoursMin);
             } else {
-                int[] tcT = TrainingHelper.getHoursMin(commonTraining);
-                String commonTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(tcT[0]).plusMinutes(tcT[1]), empCon.getDailyWorkingTime());
-                String cHoursMin = TrainingHelper.hoursMinToString(tcT);
-                int[] tpT = TrainingHelper.getHoursMin(projectTraining);
-                String projectTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(tpT[0]).plusMinutes(tpT[1]), empCon.getDailyWorkingTime());
-                String pHoursMin = TrainingHelper.hoursMinToString(tpT);
+                Duration commonDuration = TrainingHelper.toDuration(commonTraining);
+                String commonTime = DurationUtils.formatWithWorkingdays(commonDuration, empCon.getDailyWorkingTime());
+                String cHoursMin = DurationUtils.format(commonDuration);
+                Duration projectDuration = TrainingHelper.toDuration(projectTraining);
+                String projectTime = DurationUtils.formatWithWorkingdays(projectDuration, empCon.getDailyWorkingTime());
+                String pHoursMin = DurationUtils.format(projectDuration);
                 to = new TrainingOverview(year, empCon, projectTime, commonTime, pHoursMin, cHoursMin);
             }
             trainingOverviews.add(to);
@@ -235,12 +235,12 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         TrainingInformation pTT = trainingService.getProjectTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate)
             .orElse(new TrainingInformation(ec.getId(), 0, 0));
 
-        int[] cTime = TrainingHelper.getHoursMin(cTT);
-        String commonTrainingTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(cTime[0]).plusMinutes(cTime[1]), ec.getDailyWorkingTime());
-        String cHoursMin = TrainingHelper.hoursMinToString(cTime);
-        int[] pTime = TrainingHelper.getHoursMin(pTT);
-        String projectTrainingTime = DurationUtils.formatWithWorkingdays(Duration.ofHours(pTime[0]).plusMinutes(pTime[1]), ec.getDailyWorkingTime());
-        String pHoursMin = TrainingHelper.hoursMinToString(pTime);
+        Duration commonDuration = TrainingHelper.toDuration(cTT);
+        String commonTrainingTime = DurationUtils.formatWithWorkingdays(commonDuration, ec.getDailyWorkingTime());
+        String cHoursMin = DurationUtils.format(commonDuration);
+        Duration projectDuration = TrainingHelper.toDuration(pTT);
+        String projectTrainingTime = DurationUtils.formatWithWorkingdays(projectDuration, ec.getDailyWorkingTime());
+        String pHoursMin = DurationUtils.format(projectDuration);
 
         TrainingOverview to = new TrainingOverview(year, ec, projectTrainingTime, commonTrainingTime, pHoursMin, cHoursMin);
         result.add(to);
