@@ -31,7 +31,7 @@ import org.tb.reporting.persistence.ScheduledReportJobRepository;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Authorized
+@Authorized(requiresPeopleLead = true)
 @Slf4j
 public class ScheduledReportJobService {
 
