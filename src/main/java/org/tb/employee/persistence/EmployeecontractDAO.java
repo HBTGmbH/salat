@@ -132,17 +132,12 @@ public class EmployeecontractDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
-            .filter(c -> employeeAuthorization.isAuthorized(c.getEmployee(), AccessLevel.READ))
+            .filter(c -> employeeAuthorization.isAuthorized(c.getEmployee(), AccessLevel.READ)
+                      || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(c)))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
     }
 
-    /**
-     * Get a list of all Employeecontracts where the hide flag is unset or that is currently valid ordered by employee sign.
-     *
-     * @return List<Employeecontract>
-     * @param validAt
-     */
     private boolean isSupervisedByCurrentUser(Employeecontract ec) {
         return ec.getSupervisor() != null &&
                ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
@@ -186,7 +181,6 @@ public class EmployeecontractDAO {
 
     /**
      * Get a list of all Employeecontracts that are currently valid, ordered by Firstname
-     * @param validAt
      */
     public List<Employeecontract> getAllVisibleEmployeeContractsValidAtOrderedByFirstname(LocalDate validAt) {
         return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
@@ -203,6 +197,8 @@ public class EmployeecontractDAO {
     return employeecontractRepository.findAllNotHidden()
         .stream()
         .filter(ec -> !Objects.equals(ec.getEmployee().getStatus(), EMPLOYEE_STATUS_ADM))
+        .filter(ec -> employeeAuthorization.isAuthorized(ec.getEmployee(), AccessLevel.READ)
+                   || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(ec)))
         .toList();
   }
 
