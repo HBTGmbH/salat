@@ -91,20 +91,6 @@ SPRING_DATASOURCE_PASSWORD=salattest
 SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
 ```
 
-## Business-logic that should be refactored (i.e. move to service)
-
-- TimereportHelper#determineBeginTimeToDisplay - move to WorkingdayService
-- TimereportHelper#determineTimesToDisplay - move to WorkingdayService and introduce a better value class
-  to carry the result
-- TimereportHelper#calculateLaborTime - more or less just a sum up time on Timereports,
-  maybe this can be done without any service, just use Java streaming API and Duration.plus
-- TimereportHelper#checkLaborTimeMaximum - move to WorkingdayService? Or maybe a business rule in
-  TimereportService that creates a warning? Or when it's a warning, maybe add to the WarningService.
-- TimereportHelper#calculateQuittingTime - nach WorkingdayService
-- TrainingHelper#fromDBtimeToString - nach DurationUtils als neue Methode
-  formatWithWorkingsdays(Duration duration, Duration dailyWorkingTime
-- TrainingHelper#hoursMinToString - better use Duration and then DurationUtils#format
-
 ## AGENTS.md
 
 More detailed design decisions can be found in AGENTS.md
