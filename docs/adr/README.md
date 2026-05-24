@@ -20,3 +20,7 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0004](0004-salat-thymeleaf-dialect.md) | Salat Custom Thymeleaf Dialect | Superseded by ADR-0005 | 2026-05-24 |
 | [0005](0005-alle-fragmente-durch-salat-dialect-ersetzen.md) | Alle Thymeleaf-Fragmente durch Salat-Dialect ersetzen | Accepted | 2026-05-24 |
 | [0006](0006-rollenbasierte-autorisierung.md) | Rollenbasierte Autorisierung mit zwei Durchsetzungsebenen | Accepted | 2026-05-24 |
+| [0007](0007-repository-dao-hybrid.md) | Repository + DAO Hybrid Pattern | Accepted | 2026-05-24 |
+| [0008](0008-exception-hierarchie-mit-errorcode.md) | Exception-Hierarchie mit ErrorCode | Accepted | 2026-05-24 |
+| [0009](0009-liquibase-datenbankmigrationen.md) | Liquibase für Datenbankmigrationen | Accepted | 2026-05-24 |
+| [0010](0010-deutsch-first-i18n.md) | Deutsch als Primärsprache und ISO-8859-1-Encoding | Accepted | 2026-05-24 |
