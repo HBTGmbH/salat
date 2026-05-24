@@ -2,7 +2,7 @@ package org.tb.reporting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
-import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 
 import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -47,7 +47,7 @@ public class ReportServiceTest {
     var manager = new SalatUser();
     manager.setLoginname("test");
     manager.setRestricted(false);
-    manager.setStatus(EMPLOYEE_STATUS_PV);
+    manager.setStatus(EMPLOYEE_STATUS_BL);
     authorizedUser.login(manager);
 
     var defs = reportService.getReportDefinitions();
@@ -65,7 +65,7 @@ public class ReportServiceTest {
     var manager = new SalatUser();
     manager.setLoginname("test");
     manager.setRestricted(false);
-    manager.setStatus(EMPLOYEE_STATUS_PV);
+    manager.setStatus(EMPLOYEE_STATUS_BL);
     authorizedUser.login(manager);
 
     var defs = reportService.getReportDefinitions();
@@ -82,7 +82,7 @@ public class ReportServiceTest {
     var manager = new SalatUser();
     manager.setLoginname("test");
     manager.setRestricted(false);
-    manager.setStatus(EMPLOYEE_STATUS_PV);
+    manager.setStatus(EMPLOYEE_STATUS_BL);
     authorizedUser.login(manager);
 
     Employee employee = new Employee();
@@ -115,7 +115,7 @@ public class ReportServiceTest {
     var manager = new SalatUser();
     manager.setLoginname("test");
     manager.setRestricted(false);
-    manager.setStatus(EMPLOYEE_STATUS_PV);
+    manager.setStatus(EMPLOYEE_STATUS_BL);
     authorizedUser.login(manager);
 
     Employee employee = new Employee();
@@ -151,7 +151,7 @@ public class ReportServiceTest {
     var manager = new SalatUser();
     manager.setLoginname("test");
     manager.setRestricted(false);
-    manager.setStatus(EMPLOYEE_STATUS_PV);
+    manager.setStatus(EMPLOYEE_STATUS_BL);
     authorizedUser.login(manager);
 
     var defs = reportService.getReportDefinitions();
@@ -170,7 +170,7 @@ public class ReportServiceTest {
     var manager = new SalatUser();
     manager.setLoginname("test");
     manager.setRestricted(false);
-    manager.setStatus(EMPLOYEE_STATUS_PV);
+    manager.setStatus(EMPLOYEE_STATUS_BL);
     authorizedUser.login(manager);
 
     Employee employee = new Employee();
