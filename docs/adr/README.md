@@ -17,4 +17,5 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0001](0001-modular-monolith.md) | Modular Monolith als Architekturstil | Accepted | 2026-05-24 |
 | [0002](0002-thymeleaf-spring-mvc-als-ui-stack.md) | Thymeleaf + Spring MVC als Ziel-UI-Stack | Accepted | 2026-05-24 |
 | [0003](0003-spring-events-fuer-cross-module-kommunikation.md) | Spring Events für Cross-Module-Kommunikation | Accepted | 2026-05-24 |
-| [0004](0004-salat-thymeleaf-dialect.md) | Salat Custom Thymeleaf Dialect | Accepted | 2026-05-24 |
+| [0004](0004-salat-thymeleaf-dialect.md) | Salat Custom Thymeleaf Dialect | Superseded by ADR-0005 | 2026-05-24 |
+| [0005](0005-alle-fragmente-durch-salat-dialect-ersetzen.md) | Alle Thymeleaf-Fragmente durch Salat-Dialect ersetzen | Accepted | 2026-05-24 |

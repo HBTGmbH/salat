@@ -1,7 +1,7 @@
 # ADR-0004 Salat Custom Thymeleaf Dialect
 
 Date: 2026-05-24
-Status: Accepted
+Status: Superseded by ADR-0005
 
 ## Context and Problem Statement
 
