@@ -28,8 +28,12 @@ public class ReportAuthorization {
     if (authorizedUser.isManager()) {
       return true;
     }
-    if (accessLevel == AccessLevel.EXECUTE && authorizedUser.isPeopleLead()) {
-      return true;
+    if (authorizedUser.isPeopleLead()) {
+      if (accessLevel == AccessLevel.EXECUTE) {
+        return true;
+      }
+      // WRITE / DELETE: only if the people lead created it
+      return authorizedUser.getEffectiveLoginSign().equals(report.getCreatedby());
     }
     return authService.isAuthorized(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel, valueOf(report.getId()));
   }
@@ -38,8 +42,8 @@ public class ReportAuthorization {
     if (authorizedUser.isManager()) {
       return true;
     }
-    if (accessLevel == AccessLevel.EXECUTE && authorizedUser.isPeopleLead()) {
-      return true;
+    if (authorizedUser.isPeopleLead()) {
+      return true; // can execute all; can create/edit/delete their own
     }
     return authService.isAuthorizedAnyObject(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel);
   }
