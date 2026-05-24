@@ -56,6 +56,11 @@ See also README.md
 - Preserve unit, integration, and UI tests across module boundaries.
 - Prefer testing observable behavior at module boundaries over implementation details.
 
+## Build and Tooling
+- Always use `./mvnw` (the Maven wrapper) to build, test, and run Maven goals — never a system-wide `mvn` command.
+- On macOS, prefix every `./mvnw` call with `jenv exec` so the correct JDK is on `PATH`: `jenv exec ./mvnw <goal>`.
+  - If `jenv` is not installed and `java` is not found, prompt the user to install jenv (`brew install jenv`) and add the required JDK version before continuing.
+
 ## Documentation
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
