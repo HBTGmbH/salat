@@ -61,6 +61,26 @@ See also README.md
 - On macOS, prefix every `./mvnw` call with `jenv exec` so the correct JDK is on `PATH`: `jenv exec ./mvnw <goal>`.
   - If `jenv` is not installed and `java` is not found, prompt the user to install jenv (`brew install jenv`) and add the required JDK version before continuing.
 
+## GitHub Workflow
+- **Branch naming**: `feature/<issue-number>-<short-description>` (e.g. `feature/606-move-fromDBtimeToString-to-DurationUtils`)
+- **One issue per branch / PR**: do not bundle unrelated changes.
+- **Linking to issues**: add `Closes #NNN` in the PR body — this is the standard GitHub mechanism. `gh issue develop` only creates new branches; it cannot link an existing branch to an issue.
+- **Creating a PR**:
+  ```
+  gh pr create --title "..." --body "$(cat <<'EOF'
+  ## Summary
+  - bullet points
+
+  ## Test plan
+  - [ ] item
+
+  Closes #NNN
+  EOF
+  )"
+  ```
+- **PR compliance note**: every PR description must include: _"Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines."_
+- **Refactoring issues**: promote one refactoring at a time — open a new issue for the next step rather than bundling multiple cleanups in one PR.
+
 ## Documentation
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
