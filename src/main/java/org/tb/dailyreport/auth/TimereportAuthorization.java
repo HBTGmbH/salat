@@ -33,6 +33,7 @@ public class TimereportAuthorization {
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(authorizedUser.isManager()) return true;
+    if(accessLevel == READ && authorizedUser.isPeopleLead()) return true;
     if(timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) return true;
 
     if(accessLevel == READ) {

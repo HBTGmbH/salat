@@ -154,7 +154,7 @@ public class EmployeecontractDAO {
     }
 
     public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
-        if (!authorizedUser.isManager()) {
+        if (!authorizedUser.isManager() && !authorizedUser.isPeopleLead()) {
             // may only see his own contracts
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
                 .filter(e -> e.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()))
