@@ -18,10 +18,7 @@ import org.apache.struts.action.ActionMapping;
 import org.springframework.stereotype.Component;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
-import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.dailyreport.service.WorkingdayService;
-import org.tb.dailyreport.viewhelper.TimereportHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
@@ -43,8 +40,6 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final EmployeecontractService employeecontractService;
-    private final WorkingdayService workingdayService;
-    private final TimereportHelper timereportHelper;
 
     @Override
     public ActionForward executeAuthenticated(ActionMapping mapping, AddDailyReportForm reportForm, HttpServletRequest request, HttpServletResponse response) {
@@ -115,39 +110,11 @@ public class EditDailyReportAction extends DailyReportAction<AddDailyReportForm>
         reportForm.setEmployeeContractId(ec.getId());
 
         reportForm.setReferenceday(DateUtils.format(utilDate));
-        LocalDate reportDate = tr.getReferenceday();
-        Workingday workingday = workingdayService.getWorkingday(ec.getId(), reportDate);
-
-        boolean workingDayIsAvailable = false;
-        if (workingday != null) {
-            workingDayIsAvailable = true;
-        }
-
-        // workingday should only be available for today
-        LocalDate today = DateUtils.today();
-        if (!utilDate.equals(today)) {
-            workingDayIsAvailable = false;
-        }
-
-        request.getSession().setAttribute("workingDayIsAvailable", workingDayIsAvailable);
-        var displayTime = workingdayService.determineTimesToDisplay(ec.getId(), reportDate, workingday, tr);
-
-        if (workingDayIsAvailable) {
-            displayTime.ifPresent(dt -> {
-                reportForm.setSelectedHourBegin(dt.begin().getHour());
-                reportForm.setSelectedMinuteBegin(dt.begin().getMinute());
-                reportForm.setSelectedHourEnd(dt.end().getHour());
-                reportForm.setSelectedMinuteEnd(dt.end().getMinute());
-            });
-            reportForm.setSelectedHourBeginDay(workingday.getStarttimehour());
-            reportForm.setSelectedMinuteBeginDay(workingday.getStarttimeminute());
-            timereportHelper.refreshHours(reportForm);
-        } else {
-            reportForm.setSelectedHourDuration(tr.getDuration().toHours());
-            reportForm.setSelectedMinuteDuration(tr.getDuration().toMinutesPart());
-            reportForm.setSelectedHourBeginDay(DEFAULT_WORK_DAY_START);
-            reportForm.setSelectedMinuteBeginDay(0);
-        }
+        request.getSession().setAttribute("workingDayIsAvailable", false);
+        reportForm.setSelectedHourDuration(tr.getDuration().toHours());
+        reportForm.setSelectedMinuteDuration(tr.getDuration().toMinutesPart());
+        reportForm.setSelectedHourBeginDay(DEFAULT_WORK_DAY_START);
+        reportForm.setSelectedMinuteBeginDay(0);
 
         reportForm.setSuborder(tr.getCompleteOrderSign());
         reportForm.setSuborderSignId(tr.getSuborderId());
