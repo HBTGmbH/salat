@@ -28,6 +28,7 @@ public class AuthorizedUser implements Serializable {
   private boolean backoffice;
   private boolean admin;
   private boolean manager;
+  private boolean peopleLead;
 
   private String impersonateLoginSign;
 
@@ -57,6 +58,7 @@ public class AuthorizedUser implements Serializable {
     restricted = false;
     admin = false;
     manager = true;
+    peopleLead = true;
     backoffice = true;
     impersonateLoginSign = null;
   }
@@ -66,8 +68,10 @@ public class AuthorizedUser implements Serializable {
     this.loginStatus = user.getStatus();
     boolean isAdmin = loginStatus.equals(EMPLOYEE_STATUS_ADM);
     this.admin = isAdmin;
-    boolean isManager = loginStatus.equals(EMPLOYEE_STATUS_BL) || loginStatus.equals(EMPLOYEE_STATUS_PV);
+    boolean isManager = loginStatus.equals(EMPLOYEE_STATUS_BL);
     this.manager = isAdmin || isManager;
+    boolean isPeopleLead = loginStatus.equals(EMPLOYEE_STATUS_PV);
+    this.peopleLead = isAdmin || isManager || isPeopleLead;
     boolean isBackoffice = loginStatus.equals(EMPLOYEE_STATUS_BO);
     this.backoffice = isBackoffice || isManager || isAdmin;
   }
