@@ -6,6 +6,7 @@ import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_OUTSIDE_CONTRACT;
 import static org.tb.common.exception.ErrorCode.WD_READ_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
+import static org.tb.common.GlobalConstants.MAX_HOURS_PER_DAY;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
@@ -170,6 +171,11 @@ public class WorkingdayService {
         LocalTime.MIDNIGHT.plus(beginDuration),
         LocalTime.MIDNIGHT.plus(endDuration)
     ));
+  }
+
+  public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports) {
+    Duration actual = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+    return Duration.ofHours(MAX_HOURS_PER_DAY).minus(actual).isNegative();
   }
 
   @EventListener
