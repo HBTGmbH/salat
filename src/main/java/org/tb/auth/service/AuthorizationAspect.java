@@ -38,6 +38,9 @@ public class AuthorizationAspect {
     if(effectiveAnnotation.requiresBackoffice() && !authorizedUser.isBackoffice()) {
       throw new AuthorizationException(ErrorCode.AA_NEEDS_BACKOFFICE);
     }
+    if(effectiveAnnotation.requiresPeopleLead() && !authorizedUser.isPeopleLead()) {
+      throw new AuthorizationException(ErrorCode.AA_NEEDS_PEOPLE_LEAD);
+    }
     if(effectiveAnnotation.requiresManager() && !authorizedUser.isManager()) {
       throw new AuthorizationException(ErrorCode.AA_NEEDS_MANAGER);
     }
