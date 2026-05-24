@@ -19,3 +19,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0003](0003-spring-events-fuer-cross-module-kommunikation.md) | Spring Events für Cross-Module-Kommunikation | Accepted | 2026-05-24 |
 | [0004](0004-salat-thymeleaf-dialect.md) | Salat Custom Thymeleaf Dialect | Superseded by ADR-0005 | 2026-05-24 |
 | [0005](0005-alle-fragmente-durch-salat-dialect-ersetzen.md) | Alle Thymeleaf-Fragmente durch Salat-Dialect ersetzen | Accepted | 2026-05-24 |
+| [0006](0006-rollenbasierte-autorisierung.md) | Rollenbasierte Autorisierung mit zwei Durchsetzungsebenen | Accepted | 2026-05-24 |
