@@ -85,6 +85,11 @@ See also README.md
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
 
+## Architecture Decision Records
+- ADRs live in [`docs/adr/`](docs/adr/README.md) (format: MADR).
+- New significant architectural decisions must be captured as an ADR before or alongside implementation.
+- This file documents **what** the current rules are; ADRs document **why** a decision was made and which alternatives were considered.
+
 ## Spring Boot annotations placement
 - Place cross-cutting Spring Boot/Spring Security enabling annotations on the application class (SalatApplication) unless there is a strong, explicit reason to scope them to a specific configuration class.
   - Examples: @EnableMethodSecurity, @EnableScheduling, @EnableAsync. This centralizes enablement, avoids duplicate configuration, and makes project-wide capabilities obvious.
