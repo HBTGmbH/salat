@@ -63,7 +63,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         if (releaseForm.getEmployeeContractId() != null) {
             employeecontract = employeecontractService.getEmployeecontractById(releaseForm.getEmployeeContractId());
         }
-        if (supervisor || authorizedUser.isManager()) {
+        if (supervisor || authorizedUser.isManager() || authorizedUser.isPeopleLead()) {
             Employeecontract currentEmployeeContract;
             if (request.getParameter("task") != null && request.getParameter("task").equals("updateEmployee")) {
                 updateEmployee = true;

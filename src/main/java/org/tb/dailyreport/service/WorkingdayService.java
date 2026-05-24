@@ -56,7 +56,7 @@ public class WorkingdayService {
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
     String grantorSign = employeecontract.getEmployee().getSign();
-    if(!authorizedUser.isManager() &&
+    if(!authorizedUser.isManager() && !authorizedUser.isPeopleLead() &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
        !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
@@ -132,7 +132,7 @@ public class WorkingdayService {
       LocalDate dateLast) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
     String grantorSign = employeecontract.getEmployee().getSign();
-    if(!authorizedUser.isManager() &&
+    if(!authorizedUser.isManager() && !authorizedUser.isPeopleLead() &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
        !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);

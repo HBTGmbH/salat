@@ -1,6 +1,7 @@
 package org.tb.employee.auth;
 
 import static org.tb.auth.domain.AccessLevel.LOGIN;
+import static org.tb.auth.domain.AccessLevel.READ;
 import static org.tb.common.util.DateUtils.today;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class EmployeeAuthorization {
     }
 
     if(authorizedUser.isManager()) return true;
+    if(accessLevel == READ && authorizedUser.isPeopleLead()) return true;
     if(employee.isNew()) return false; // only managers can access newly created objects (without any id yet)
     if(employee.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) return true;
     return false;

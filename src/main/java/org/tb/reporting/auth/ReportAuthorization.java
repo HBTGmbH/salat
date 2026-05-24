@@ -28,11 +28,17 @@ public class ReportAuthorization {
     if (authorizedUser.isManager()) {
       return true;
     }
+    if (accessLevel == AccessLevel.EXECUTE && authorizedUser.isPeopleLead()) {
+      return true;
+    }
     return authService.isAuthorized(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel, valueOf(report.getId()));
   }
 
   public boolean isAuthorizedForAnyReportDefinition(AccessLevel accessLevel) {
     if (authorizedUser.isManager()) {
+      return true;
+    }
+    if (accessLevel == AccessLevel.EXECUTE && authorizedUser.isPeopleLead()) {
       return true;
     }
     return authService.isAuthorizedAnyObject(AUTH_CATEGORY_REPORT_DEFINITION, today(), accessLevel);
