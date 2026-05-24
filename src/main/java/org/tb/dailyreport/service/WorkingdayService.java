@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -154,24 +153,6 @@ public class WorkingdayService {
           .plusMinutes(workingday.getBreakminutes());
     }
     return LocalTime.MIDNIGHT.plus(elapsed);
-  }
-
-  public Optional<TimesDisplay> determineTimesToDisplay(long ecId, LocalDate date, Workingday workingday, TimereportDTO tr) {
-    if (workingday == null) return Optional.empty();
-    List<TimereportDTO> timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date);
-    Duration beginDuration = Duration.ofHours(workingday.getStarttimehour())
-        .plusMinutes(workingday.getStarttimeminute())
-        .plusHours(workingday.getBreakhours())
-        .plusMinutes(workingday.getBreakminutes());
-    for (TimereportDTO timereport : timereports) {
-      if (Objects.equals(timereport.getId(), tr.getId())) break;
-      beginDuration = beginDuration.plus(timereport.getDuration());
-    }
-    Duration endDuration = beginDuration.plus(tr.getDuration());
-    return Optional.of(new TimesDisplay(
-        LocalTime.MIDNIGHT.plus(beginDuration),
-        LocalTime.MIDNIGHT.plus(endDuration)
-    ));
   }
 
   public String calculateQuittingTime(Workingday workingday) {
