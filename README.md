@@ -2,9 +2,9 @@
 
 Requirements:
 
-- Java 21
+- Java 25
 - Docker (running)
-- docker-compose
+- docker-compose or docker compose
 
 Steps to start Salat locally:
 
@@ -42,22 +42,34 @@ To start only the local database, without the Salat application:
 
 ### Troubleshooting
 
-#### Missing BuildProperties
+#### Missing bean buildProperties
 Should you encounter the error
 
-    Consider defining a bean of type 'org.springframework.boot.info.BuildProperties' in your configuration.
+    No bean named 'buildProperties' available
 
 This can be fixed by running
 
-    ./mvnw package
+    ./mvnw spring-boot:build-info
 
-Explanation: Maven creates a file named `build-info.properties`.
+Explanation: Maven creates a file named `target/classes/META-INF/build-info.properties`.
 This file might be missing when an IDE does not create it. (Happened to Klaus with IntelliJ IDEA, despite Maven Integration).
+(by Klaus)
 
+#### Missing bean gitProperties
+Should you encounter the error
+
+    No bean named 'gitProperties' available
+
+This can be fixed by running
+
+    ./mvnw git-commit-id:revision
+
+Explanation: Maven creates a file named `target/classes/git.properties`.
+This file might be missing when an IDE does not create it. (Happened to Klaus with IntelliJ IDEA, despite Maven Integration).
 (by Klaus)
 
 #### DB-Changes
-Changes to the data base are collected via Liquibase in the following file:
+Changes to the database are collected via Liquibase in the following file:
 
     src/main/resources/db/changelog/db.changelog-master.yaml
 
@@ -93,12 +105,6 @@ SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCC
   formatWithWorkingsdays(Duration duration, Duration dailyWorkingTime
 - TrainingHelper#hoursMinToString - better use Duration and then DurationUtils#format
 
+## AGENTS.md
 
-
-## Test the new Thymeleaf UI
-
-Follow the step-by-step guide in docs/how-to-test-new-ui.md. Quick start:
-
-- Start the app (see Run locally above)
-- Open: http://localhost:8080/reporting/jobs2?login-name=tt
-- If the list is empty, create a scheduled job via legacy pages (e.g., /ShowReports) and refresh the page.
+More detailed design decisions can be found in AGENTS.md
