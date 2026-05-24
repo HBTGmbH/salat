@@ -28,7 +28,6 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TrainingInformation;
 import org.tb.dailyreport.domain.TrainingOverview;
 import org.tb.dailyreport.service.TrainingService;
-import org.tb.dailyreport.viewhelper.TrainingHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.dailyreport.viewhelper.EmployeeViewHelper;
@@ -195,20 +194,20 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
             if (commonTraining == null && projectTraining == null) {
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_DHM, GlobalConstants.ZERO_HM, GlobalConstants.ZERO_HM);
             } else if (commonTraining == null) {
-                Duration duration = TrainingHelper.toDuration(projectTraining);
+                Duration duration = projectTraining.toDuration();
                 String time = DurationUtils.formatWithWorkingdays(duration, empCon.getDailyWorkingTime());
                 String hoursMin = DurationUtils.format(duration);
                 to = new TrainingOverview(year, empCon, time, GlobalConstants.ZERO_DHM, hoursMin, GlobalConstants.ZERO_HM);
             } else if (projectTraining == null) {
-                Duration duration = TrainingHelper.toDuration(commonTraining);
+                Duration duration = commonTraining.toDuration();
                 String time = DurationUtils.formatWithWorkingdays(duration, empCon.getDailyWorkingTime());
                 String hoursMin = DurationUtils.format(duration);
                 to = new TrainingOverview(year, empCon, GlobalConstants.ZERO_DHM, time, GlobalConstants.ZERO_HM, hoursMin);
             } else {
-                Duration commonDuration = TrainingHelper.toDuration(commonTraining);
+                Duration commonDuration = commonTraining.toDuration();
                 String commonTime = DurationUtils.formatWithWorkingdays(commonDuration, empCon.getDailyWorkingTime());
                 String cHoursMin = DurationUtils.format(commonDuration);
-                Duration projectDuration = TrainingHelper.toDuration(projectTraining);
+                Duration projectDuration = projectTraining.toDuration();
                 String projectTime = DurationUtils.formatWithWorkingdays(projectDuration, empCon.getDailyWorkingTime());
                 String pHoursMin = DurationUtils.format(projectDuration);
                 to = new TrainingOverview(year, empCon, projectTime, commonTime, pHoursMin, cHoursMin);
@@ -235,10 +234,10 @@ public class ShowTrainingAction extends LoginRequiredAction<ShowTrainingForm> {
         TrainingInformation pTT = trainingService.getProjectTrainingTimesByDatesAndEmployeeContractId(ec, startdate, enddate)
             .orElse(new TrainingInformation(ec.getId(), 0, 0));
 
-        Duration commonDuration = TrainingHelper.toDuration(cTT);
+        Duration commonDuration = cTT.toDuration();
         String commonTrainingTime = DurationUtils.formatWithWorkingdays(commonDuration, ec.getDailyWorkingTime());
         String cHoursMin = DurationUtils.format(commonDuration);
-        Duration projectDuration = TrainingHelper.toDuration(pTT);
+        Duration projectDuration = pTT.toDuration();
         String projectTrainingTime = DurationUtils.formatWithWorkingdays(projectDuration, ec.getDailyWorkingTime());
         String pHoursMin = DurationUtils.format(projectDuration);
 
