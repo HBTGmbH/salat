@@ -6,6 +6,7 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 import com.google.common.collect.Lists;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -14,6 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.auth.domain.AccessLevel;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.SalatUser_;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.auth.EmployeeAuthorization;
@@ -28,6 +30,7 @@ public class EmployeeDAO {
     private final EmployeecontractDAO employeecontractDAO;
     private final EmployeeRepository employeeRepository;
     private final EmployeeAuthorization employeeAuthorization;
+    private final AuthorizedUser authorizedUser;
 
     /**
      * Retrieves the employee with the given loginname.
@@ -57,22 +60,26 @@ public class EmployeeDAO {
      * @return Returns all {@link Employee}s with a contract.
      */
     public List<Employee> getEmployeesWithContracts() {
+        var supervisedIds = supervisedEmployeeIds();
         return employeecontractDAO.getEmployeeContracts().stream()
             .map(Employeecontract::getEmployee)
             .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ) || supervisedIds.contains(e.getId()))
             .distinct()
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
 
     /**
-     * @return Returns all {@link Employee}s with a contract.
+     * @return Returns all {@link Employee}s with a valid contract.
      */
     public List<Employee> getEmployeesWithValidContracts() {
+        var supervisedIds = supervisedEmployeeIds();
         return employeecontractDAO.getEmployeeContracts().stream()
             .filter(Employeecontract::getCurrentlyValid)
             .map(Employeecontract::getEmployee)
             .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ) || supervisedIds.contains(e.getId()))
             .distinct()
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
@@ -86,8 +93,9 @@ public class EmployeeDAO {
      * Get a list of all non-hidden Employees ordered by name (for dropdowns).
      */
     public List<Employee> getEmployees() {
+        var supervisedIds = supervisedEmployeeIds();
         return employeeRepository.findAll(notHidden()).stream()
-            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ) || supervisedIds.contains(e.getId()))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
@@ -96,13 +104,14 @@ public class EmployeeDAO {
      * Get a list of Employees fitting to the given filter ordered by name (for the list view).
      */
     public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
+        var supervisedIds = supervisedEmployeeIds();
         boolean hasFilter = filter != null && !filter.trim().isEmpty();
         boolean excludeHidden = !TRUE.equals(showHidden);
 
         if (!hasFilter && !excludeHidden) {
             var order = new Order(ASC, Employee_.LASTNAME).ignoreCase();
             return Lists.newArrayList(employeeRepository.findAll(Sort.by(order))).stream()
-                .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
+                .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ) || supervisedIds.contains(e.getId()))
                 .sorted(Comparator.comparing(Employee::getName))
                 .collect(Collectors.toList());
         }
@@ -123,9 +132,18 @@ public class EmployeeDAO {
             spec = spec == null ? filterSpec : spec.and(filterSpec);
         }
         return employeeRepository.findAll(spec).stream()
-            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ))
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ) || supervisedIds.contains(e.getId()))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
+    }
+
+    private Set<Long> supervisedEmployeeIds() {
+        if (!authorizedUser.isPeopleLead() || authorizedUser.isManager()) return Set.of();
+        return employeeRepository.findByLoginname(authorizedUser.getEffectiveLoginSign())
+            .map(emp -> employeecontractDAO.getTeamContracts(emp.getId()).stream()
+                .map(ec -> ec.getEmployee().getId())
+                .collect(Collectors.toSet()))
+            .orElse(Set.of());
     }
 
 }
