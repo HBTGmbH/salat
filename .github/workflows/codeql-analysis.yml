@@ -24,15 +24,15 @@ jobs:
         language: [ 'java' ]
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '25'
           cache: 'maven'  # Speed up builds
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
