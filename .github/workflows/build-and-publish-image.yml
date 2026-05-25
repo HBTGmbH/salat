@@ -20,7 +20,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -50,24 +51,19 @@ jobs:
             type=semver,pattern={{version}},value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image with Paketo
         run: |
           ./mvnw spring-boot:build-image \
             --batch-mode \
             --no-transfer-progress \
             -DskipTests \
-            -Dspring-boot.build-image.publish=true \
-            -Dspring-boot.build-image.docker.registry=${{ env.REGISTRY }} \
-            -Dspring-boot.build-image.docker.username=${{ github.actor }} \
-            -Dspring-boot.build-image.docker.password=${{ secrets.GITHUB_TOKEN }} \
-            -Dspring-boot.build-image.builder=paketobuildpacks/builder:full
+            -Dspring-boot.build-image.builder=paketobuildpacks/builder:base
 
-      - name: Tag and push additional image tags
+      - name: Push Docker image
+        if: github.event_name != 'pull_request'
         run: |
           TAGS="${{ steps.meta.outputs.tags }}"
-          SOURCE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}"
-          
           while IFS= read -r tag; do
-            docker tag "$SOURCE_IMAGE" "$tag"
+            docker tag ${{ env.IMAGE_NAME }}:${{ github.run_number }} "$tag"
             docker push "$tag"
           done <<< "$TAGS"
