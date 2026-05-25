@@ -65,7 +65,7 @@ jobs:
             -Dspring-boot.build-image.docker.registry=${{ env.REGISTRY }} \
             -Dspring-boot.build-image.docker.username=${{ github.actor }} \
             -Dspring-boot.build-image.docker.password=${{ secrets.GITHUB_TOKEN }} \
-            -Dspring-boot.build-image.builder=paketobuildpacks/builder:base
+            -Dspring-boot.build-image.builder=paketobuildpacks/builder:full
 
       - name: Tag and push additional image tags
         run: |
