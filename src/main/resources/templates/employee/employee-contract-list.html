@@ -102,6 +102,7 @@
               <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
               <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
               <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+              <th th:if="${not #authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
             </tr>
           </thead>
           <tbody>
@@ -136,6 +137,12 @@
                   </button>
                 </form>
               </td>
+              <td th:if="${not #authorization.expression('hasRole(''MANAGER'')')}">
+                <a th:href="@{/employees/contracts/view(id=${ec.id})}" class="btn btn-outline-secondary"
+                   th:title="#{main.headlinedescription.employeecontracts.view.text}">
+                  <i class="icon ti ti-eye m-0"></i>
+                </a>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -159,6 +166,7 @@
               <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
               <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
               <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
+              <th th:if="${not #authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
             </tr>
           </thead>
           <tbody>
@@ -190,6 +198,12 @@
                     <i class="icon ti ti-trash m-0"></i>
                   </button>
                 </form>
+              </td>
+              <td th:if="${not #authorization.expression('hasRole(''MANAGER'')')}">
+                <a th:href="@{/employees/contracts/view(id=${ec.id})}" class="btn btn-outline-secondary"
+                   th:title="#{main.headlinedescription.employeecontracts.view.text}">
+                  <i class="icon ti ti-eye m-0"></i>
+                </a>
               </td>
             </tr>
           </tbody>

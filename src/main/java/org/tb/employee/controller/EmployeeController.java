@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,10 +16,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.employee.domain.Employee;
@@ -33,7 +35,6 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final AuthorizedUser authorizedUser;
 
     @GetMapping
     public String list(
@@ -56,6 +57,23 @@ public class EmployeeController {
         model.addAttribute("showHidden", showHidden);
         addListModel(model);
         return "employee/employee-list";
+    }
+
+    @GetMapping("/view")
+    public String view(@RequestParam Long id, Model model) {
+        Employee employee;
+        try {
+            employee = employeeService.getEmployeeForView(id);
+        } catch (AuthorizationException e) {
+            throw new ErrorResponseException(HttpStatus.FORBIDDEN);
+        }
+        if (employee == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
+        model.addAttribute("employee", employee);
+        model.addAttribute("section", "employees");
+        model.addAttribute("subSection", "employees");
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.employees.text", "Employees"));
+        model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.employees.text", "Employees"));
+        return "employee/employee-view";
     }
 
     @PreAuthorize("hasRole('MANAGER')")

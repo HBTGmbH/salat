@@ -2,6 +2,7 @@ package org.tb.employee.service;
 
 import static org.tb.auth.domain.AccessLevel.LOGIN;
 import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.exception.ErrorCode.AA_REQUIRED;
 import static org.tb.common.exception.ErrorCode.EM_ANONYMIZE_WRONG_SIGN;
 import static org.tb.common.exception.ErrorCode.EM_DELETE_GOT_VETO;
@@ -96,6 +97,15 @@ public class EmployeeService {
 
   public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
     return employeeDAO.getEmployeesByFilter(filter, showHidden);
+  }
+
+  public Employee getEmployeeForView(long id) {
+    var employee = employeeDAO.getEmployeeById(id);
+    if (employee == null) return null;
+    if (!employeeAuthorization.isAuthorized(employee, AccessLevel.READ, employeeDAO.getSupervisedEmployeeIds())) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
+    return employee;
   }
 
   @Authorized(requiresManager = true)

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='employees',subSection='employees',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <div class="card">
+    <div class="card-body">
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employee.firstname.text}">First Name</label>
+        <p class="form-control-plaintext" th:text="${employee.firstname}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employee.lastname.text}">Last Name</label>
+        <p class="form-control-plaintext" th:text="${employee.lastname}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employee.gender.text}">Gender</label>
+        <p class="form-control-plaintext"
+           th:text="${employee.gender == 'm'} ? #{main.general.employee.gender.male} : #{main.general.employee.gender.female}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employee.sign.text}">Sign</label>
+        <p class="form-control-plaintext" th:text="${employee.sign}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employee.loginname.text}">Login Name</label>
+        <p class="form-control-plaintext" th:text="${employee.loginname}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employee.status.text}">Status</label>
+        <p class="form-control-plaintext" th:text="#{${'main.employee.status.' + employee.status}}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.general.hide}">Hide</label>
+        <p class="form-control-plaintext">
+          <span th:if="${employee.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash me-1"></i><span th:text="#{main.general.yes}">Yes</span></span>
+          <span th:unless="${employee.hide}" th:text="#{main.general.no}">No</span>
+        </p>
+      </div>
+
+    </div>
+    <div class="card-footer">
+      <a th:href="@{/employees}" class="btn btn-secondary" th:text="#{main.general.button.back.text}">Back</a>
+    </div>
+  </div>
+
+</main>
+</html>

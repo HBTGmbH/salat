@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='employees',subSection='contracts',title=${pageTitle},sectionTitle=${sectionTitle}">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
+        <p class="form-control-plaintext fw-bold" th:text="${employeecontract.employee.name}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employeecontract.supervisor.text}">Supervisor</label>
+        <p class="form-control-plaintext"
+           th:text="${employeecontract.supervisor != null} ? ${employeecontract.supervisor.name} : '—'"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employeecontract.taskdescription.text}">Task Description</label>
+        <p class="form-control-plaintext" th:text="${employeecontract.taskDescription}"></p>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.employeecontract.validfrom.text}">Valid From</label>
+            <p class="form-control-plaintext" th:text="${employeecontract.validFrom}"></p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.employeecontract.validuntil.text}">Valid Until</label>
+            <p class="form-control-plaintext">
+              <span th:if="${employeecontract.validUntil == null}" th:text="#{main.general.open.text}">open</span>
+              <span th:unless="${employeecontract.validUntil == null}" th:text="${employeecontract.validUntil}"></span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employeecontract.dailyworkingtime.text}">Daily Working Time</label>
+        <p class="form-control-plaintext"
+           th:text="${!employeecontract.dailyWorkingTime.zero ? @durationUtils.format(employeecontract.dailyWorkingTime) : '—'}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employeecontract.yearlyvacation.text}">Vacation / Year</label>
+        <p class="form-control-plaintext" th:text="${employeecontract.vacationEntitlement}"></p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.employeecontract.freelancer.text}">Freelancer</label>
+        <p class="form-control-plaintext">
+          <span th:if="${employeecontract.freelancer}" class="badge bg-secondary-lt" th:text="#{main.general.yes}">Yes</span>
+          <span th:unless="${employeecontract.freelancer}" th:text="#{main.general.no}">No</span>
+        </p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" th:text="#{main.general.hide}">Hide</label>
+        <p class="form-control-plaintext">
+          <span th:if="${employeecontract.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash me-1"></i><span th:text="#{main.general.yes}">Yes</span></span>
+          <span th:unless="${employeecontract.hide}" th:text="#{main.general.no}">No</span>
+        </p>
+      </div>
+
+    </div>
+    <div class="card-footer">
+      <a th:href="@{/employees/contracts}" class="btn btn-secondary" th:text="#{main.general.button.back.text}">Back</a>
+    </div>
+  </div>
+
+  <!-- Overtime table -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.employeecontract.overtime.headline.text}">Overtime Adjustments</h3>
+    </div>
+    <div class="card-body">
+      <div class="row mb-2">
+        <div class="col-auto fw-bold" th:text="#{main.employeecontract.overtime.total.text}">Total:</div>
+        <div class="col-auto" th:text="${totalovertime}"></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th th:text="#{main.employeecontract.overtime.date.text}">Date</th>
+              <th th:text="#{main.employeecontract.overtime.duration.text}">Duration</th>
+              <th th:text="#{main.employeecontract.overtime.comment.text}">Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(overtimes)}">
+              <td colspan="3" class="text-center text-muted" th:text="#{main.general.nodata.text}">No entries</td>
+            </tr>
+            <tr th:each="ot : ${overtimes}">
+              <td th:text="${ot.effective}"></td>
+              <td th:text="${@durationUtils.format(ot.timeMinutes)}"></td>
+              <td th:text="${ot.comment}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+</html>

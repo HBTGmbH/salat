@@ -17,10 +17,9 @@ import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.util.DateUtils;
-import org.tb.employee.auth.EmployeeAuthorization;
+import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
@@ -30,8 +29,7 @@ import org.tb.employee.domain.Employeecontract_;
 public class EmployeecontractDAO {
 
     private final EmployeecontractRepository employeecontractRepository;
-    private final AuthorizedUser authorizedUser;
-    private final EmployeeAuthorization employeeAuthorization;
+    private final EmployeecontractAuthorization employeecontractAuthorization;
 
     /**
      * Gets the EmployeeContract with the given employee id, that is valid for the given date.
@@ -132,15 +130,9 @@ public class EmployeecontractDAO {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
-            .filter(c -> employeeAuthorization.isAuthorized(c.getEmployee(), AccessLevel.READ)
-                      || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(c)))
+            .filter(c -> employeecontractAuthorization.isAuthorized(c, AccessLevel.READ))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
-    }
-
-    private boolean isSupervisedByCurrentUser(Employeecontract ec) {
-        return ec.getSupervisor() != null &&
-               ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
     }
 
     private List<Employeecontract> getAllVisibleEmployeeContractsOrderedByEmployeeSign(LocalDate validAt) {
@@ -154,13 +146,8 @@ public class EmployeecontractDAO {
     }
 
     public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
-        if (authorizedUser.isManager()) {
-            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today());
-        }
-        String loginSign = authorizedUser.getEffectiveLoginSign();
         return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
-            .filter(e -> e.getEmployee().getSalatUser().getLoginname().equals(loginSign)
-                      || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(e)))
+            .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
             .collect(Collectors.toList());
     }
 
@@ -171,8 +158,7 @@ public class EmployeecontractDAO {
     public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess, LocalDate validAt) {
         if (limitAccess) {
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
-                .filter(e -> employeeAuthorization.isAuthorized(e.getEmployee(), AccessLevel.READ)
-                          || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(e)))
+                .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
                 .collect(Collectors.toList());
         } else {
             return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt);
@@ -197,8 +183,7 @@ public class EmployeecontractDAO {
     return employeecontractRepository.findAllNotHidden()
         .stream()
         .filter(ec -> !Objects.equals(ec.getEmployee().getStatus(), EMPLOYEE_STATUS_ADM))
-        .filter(ec -> employeeAuthorization.isAuthorized(ec.getEmployee(), AccessLevel.READ)
-                   || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(ec)))
+        .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ))
         .toList();
   }
 

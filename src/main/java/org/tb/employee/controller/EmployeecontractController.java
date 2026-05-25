@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DataValidationUtils;
@@ -76,6 +79,29 @@ public class EmployeecontractController {
         model.addAttribute("showHidden", showHidden);
         addListModel(model);
         return "employee/employee-contract-list";
+    }
+
+    @GetMapping("/view")
+    public String view(@RequestParam Long id, Model model) {
+        Employeecontract ec;
+        try {
+            ec = employeecontractService.getEmployeecontractForView(id);
+        } catch (AuthorizationException e) {
+            throw new ErrorResponseException(HttpStatus.FORBIDDEN);
+        }
+        if (ec == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
+        List<Overtime> overtimes = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(id);
+        Duration totalOvertime = overtimes.stream()
+                .map(Overtime::getTimeMinutes)
+                .reduce(Duration.ZERO, Duration::plus);
+        model.addAttribute("employeecontract", ec);
+        model.addAttribute("overtimes", overtimes);
+        model.addAttribute("totalovertime", DurationUtils.format(totalOvertime));
+        model.addAttribute("section", "employees");
+        model.addAttribute("subSection", "contracts");
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.employees.text", "Employees"));
+        model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.employeecontracts.text", "Employee Contracts"));
+        return "employee/employee-contract-view";
     }
 
     @PreAuthorize("hasRole('MANAGER')")

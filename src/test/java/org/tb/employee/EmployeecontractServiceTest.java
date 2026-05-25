@@ -20,6 +20,7 @@ import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.employee.auth.EmployeeAuthorization;
+import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeDAO;
@@ -32,7 +33,7 @@ import org.tb.testutils.EmployeecontractTestUtils;
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @Import({ EmployeeService.class, EmployeeDAO.class, EmployeecontractDAO.class, EmployeecontractService.class,
-		SalatProperties.class, EmployeeAuthorization.class, AuthService.class})
+		SalatProperties.class, EmployeeAuthorization.class, EmployeecontractAuthorization.class, AuthService.class})
 public class EmployeecontractServiceTest {
 
 	@Autowired

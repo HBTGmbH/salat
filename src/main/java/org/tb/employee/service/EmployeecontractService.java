@@ -1,5 +1,6 @@
 package org.tb.employee.service;
 
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static org.tb.common.exception.ErrorCode.EC_OVERLAPS;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
@@ -26,6 +27,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
@@ -37,6 +39,7 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
+import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
@@ -68,6 +71,7 @@ public class EmployeecontractService {
   private final EmployeecontractRepository employeecontractRepository;
   private final VacationRepository vacationRepository;
   private final OvertimeRepository overtimeRepository;
+  private final EmployeecontractAuthorization employeecontractAuthorization;
 
   @Authorized(requiresManager = true)
   public ContractStoredInfo createEmployeecontract(
@@ -458,6 +462,15 @@ public class EmployeecontractService {
 
   public Employeecontract getEmployeecontractById(long employeeContractId) {
     return employeecontractDAO.getEmployeecontractById(employeeContractId);
+  }
+
+  public Employeecontract getEmployeecontractForView(long employeeContractId) {
+    var ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
+    if (ec == null) return null;
+    if (!employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ)) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
+    return ec;
   }
 
   public List<Employeecontract> getTeamContracts(long teamManagerEmployeeId) {
