@@ -17,6 +17,7 @@ import org.tb.auth.persistence.AuthorizedUserAuditorAware;
 import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
 import org.tb.employee.auth.EmployeeAuthorization;
+import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
@@ -32,6 +33,7 @@ import org.tb.testutils.EmployeeTestUtils;
 		AuthService.class,
 		SalatProperties.class,
 		EmployeeAuthorization.class,
+		EmployeecontractAuthorization.class,
 		AuthService.class
 })
 @DisplayNameGeneration(ReplaceUnderscores.class)
