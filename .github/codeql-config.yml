@@ -1,5 +1,4 @@
 name: "Custom CodeQL Config"
 queries:
   - uses: security-and-quality
-  - uses: java/spring-petclinic  # Spring-specific checks
 disable-default-queries: false
