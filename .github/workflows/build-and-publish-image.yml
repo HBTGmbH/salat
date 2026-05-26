@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          ./mvnw test \
+          ./mvnw clean test \
             --batch-mode \
             --no-transfer-progress
 
