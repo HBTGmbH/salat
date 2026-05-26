@@ -38,7 +38,6 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          config-file: ./.github/codeql-config.yml
 
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
