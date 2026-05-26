@@ -57,7 +57,8 @@ jobs:
             --batch-mode \
             --no-transfer-progress \
             -DskipTests \
-            -Dspring-boot.build-image.imageName=${{ env.IMAGE_NAME }}:${{ github.run_number }}
+            -Dsalat.image.name=${{ env.IMAGE_NAME }} \
+            -Dsalat.image.tag=${{ github.run_number }}
 
       - name: Push Docker image
         if: github.event_name != 'pull_request'
