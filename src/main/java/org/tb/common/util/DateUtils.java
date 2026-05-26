@@ -435,7 +435,7 @@ public class DateUtils {
     }
 
     public static LocalTime getTimeFromMinutes(int minutes) {
-        return LocalTime.ofSecondOfDay(minutes * 60);
+        return LocalTime.ofSecondOfDay(minutes * 60L);
     }
 
     public static boolean isInRange(LocalDate value, LocalDate min, LocalDate max) {
