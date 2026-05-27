@@ -130,6 +130,7 @@ public class SuborderController {
     form.setOrderType(OrderType.STANDARD);
     form.setCustomerId(customerId);
     form.setCustomerorderId(customerOrderId);
+    form.setParentId(customerOrderId);
     addFormModel(model, form, false, true);
     prefillValidity(form);
     return "order/sub-order-form";
@@ -488,7 +489,7 @@ public class SuborderController {
     model.addAttribute("parentSuborders", parentSuborders);
     model.addAttribute("currentCustomerorder", currentCustomerorder);
 
-    if(form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerId())) {
+    if(form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerorderId())) {
       var matched = parentSuborders.stream()
               .map(AuditedEntity::getId)
               .anyMatch(id -> Objects.equals(id, form.getParentId()));
