@@ -85,7 +85,8 @@
                   <a class="dropdown-item" th:href="@{/do/ShowMatrix}" th:text="#{main.general.mainmenu.matrixmenu.text}">
                     Matrixübersicht
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}">
+                  <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}"
+                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
                     Überstunden
                   </a>
                   <a class="dropdown-item" th:href="@{/do/ShowTraining}" th:text="#{main.general.mainmenu.training.text}"
