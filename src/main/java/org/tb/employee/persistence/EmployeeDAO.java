@@ -78,6 +78,7 @@ public class EmployeeDAO {
         return employeecontractDAO.getEmployeeContracts().stream()
             .filter(Employeecontract::getCurrentlyValid)
             .map(Employeecontract::getEmployee)
+            .filter(e -> !TRUE.equals(e.getHide()))
             .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
             .distinct()
