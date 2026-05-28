@@ -27,7 +27,7 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   )
   @Query("""
       select e from Employeecontract e where (e.hide = false or e.hide is null)
-      or (e.validFrom <= :date and (e.validUntil >= :date or e.validUntil is null))
+      and (e.validFrom <= :date and (e.validUntil >= :date or e.validUntil is null))
       """)
   List<Employeecontract> findAllValidAtAndNotHidden(LocalDate date);
 
