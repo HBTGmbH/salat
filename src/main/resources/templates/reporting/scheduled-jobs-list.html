@@ -22,6 +22,7 @@
         <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
         <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
         <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
+        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
       </tr>
     </thead>
 
@@ -35,6 +36,12 @@
         <td th:replace="~{fragments/master-table :: colDate(date=${job.lastupdate})}"></td>
         <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/jobs/edit'(id=${job.id})})}"></td>
         <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/reporting/jobs/delete'})}"></td>
+        <td>
+          <form th:action="@{/reporting/jobs/run}" method="post">
+            <input type="hidden" name="id" th:value="${job.id}"/>
+            <button type="submit" class="btn btn-outline-success" title="Run now"><i class="icon ti ti-player-play m-0"></i></button>
+          </form>
+        </td>
       </tr>
     </tbody>
 

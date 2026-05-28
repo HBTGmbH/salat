@@ -316,6 +316,21 @@
           </div>
         </div>
       </div>
+      <div class="container-xl my-4" th:if="${not #strings.isEmpty(toastError)}">
+        <div class="alert alert-danger align-items-start gap-3" role="alert">
+          <div class="icon">
+            <i class="ti ti-circle-x"></i>
+          </div>
+          <div class="flex-fill">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h4 class="alert-title mb-1">Error</h4>
+                <div class="text-secondary">[[${toastError}]]</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="container-xl my-4" th:if="${errors != null && !errors.isEmpty()}">
         <div class="alert alert-danger align-items-start gap-3" role="alert">
           <div class="icon">
