@@ -90,7 +90,7 @@
 					</td>
 				</tr>
 				
-				<c:if test="${isSupervisor or authorizedUser.manager}">
+				<c:if test="${authorizedUser.manager}">
 					<tr>
 						<td align="left" class="noBborderStyle">
 							<b><bean:message key="main.release.supervisor.text" />:&nbsp;&nbsp;</b>

@@ -132,7 +132,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             updateEmployee = true;
         }
 
-        if (request.getParameter("task") != null && request.getParameter("task").equals("updateSupervisor")) {
+        if (authorizedUser.isManager() && request.getParameter("task") != null && request.getParameter("task").equals("updateSupervisor")) {
             superId = releaseForm.getSupervisorId();
             request.getSession().setAttribute("supervisorId", superId);
             if (superId == -1) {
