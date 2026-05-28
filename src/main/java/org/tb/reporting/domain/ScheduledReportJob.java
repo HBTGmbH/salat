@@ -36,6 +36,9 @@ public class ScheduledReportJob extends AuditedEntity implements Serializable {
   @Column(nullable = false)
   private boolean enabled = true;
 
+  @Column(name = "suppress_empty_results", nullable = false)
+  private boolean suppressEmptyResults = false;
+
   @Column(name = "cron_expression")
   private String cronExpression;
 

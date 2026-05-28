@@ -135,7 +135,8 @@ public class ScheduledReportJobService {
       reportEmailService.sendReportEmail(
           job.getReportDefinition().getId(),
           parameters,
-          recipients
+          recipients,
+          job.isSuppressEmptyResults()
       );
 
       log.info("Successfully executed scheduled report job: {} (ID: {})", job.getName(), job.getId());

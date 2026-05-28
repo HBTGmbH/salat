@@ -33,6 +33,10 @@
           field='enabled', label='Enabled'
         )}"></div>
 
+        <div th:replace="~{fragments/form-fields :: checkboxSwitch(
+          field='suppressEmptyResults', label=#{reporting.scheduledjob.suppressEmptyResults.label}
+        )}"></div>
+
         <div th:replace="~{fragments/form-fields :: textInputHelp(
           field='cronExpression', label='Cron Expression (optional)', required=false,
           maxlength=255, helpText='Leave empty for default schedule (Daily at 5:00 AM)'

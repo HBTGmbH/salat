@@ -1751,5 +1751,26 @@ databaseChangeLog:
                   name: hide
                   valueBoolean: true
             where: "EMPLOYEE_ID IN (SELECT id FROM employee WHERE lastname LIKE 'z\\_%')"
+  - changeSet:
+      id: 49
+      author: kr
+      comment: Add suppress_empty_results flag to scheduled_report_job
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: scheduled_report_job
+                columnName: suppress_empty_results
+      changes:
+        - addColumn:
+            tableName: scheduled_report_job
+            columns:
+              - column:
+                  name: suppress_empty_results
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
