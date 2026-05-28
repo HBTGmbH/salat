@@ -89,6 +89,9 @@ public class EmployeeorderController {
         }
 
         var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
+        if (employeeContractId == null && employeeContracts.size() == 1) {
+            employeeContractId = employeeContracts.getFirst().getId();
+        }
         var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId, showHidden);
 
         var filterSet = (filter != null && !filter.isEmpty()) ||
