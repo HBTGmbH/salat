@@ -95,6 +95,7 @@ public class ScheduledReportJobController {
     form.setReportParameters(job.getReportParameters());
     form.setRecipientEmails(job.getRecipientEmails());
     form.setEnabled(job.isEnabled());
+    form.setSuppressEmptyResults(job.isSuppressEmptyResults());
     form.setCronExpression(job.getCronExpression());
     form.setDescription(job.getDescription());
 
@@ -157,6 +158,7 @@ public class ScheduledReportJobController {
     job.setReportParameters(form.getReportParameters());
     job.setRecipientEmails(form.getRecipientEmails());
     job.setEnabled(form.isEnabled());
+    job.setSuppressEmptyResults(form.isSuppressEmptyResults());
     job.setCronExpression(form.getCronExpression());
     job.setDescription(form.getDescription());
 
@@ -187,6 +189,7 @@ public class ScheduledReportJobController {
     private String reportParameters;
     private String recipientEmails;
     private boolean enabled = true;
+    private boolean suppressEmptyResults = false;
     private String cronExpression;
     private String description;
   }

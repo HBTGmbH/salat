@@ -33,7 +33,7 @@ public class ReportEmailService {
   @Value("${salat.reporting.email.enabled:true}")
   private boolean emailEnabled;
 
-  public void sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients) {
+  public void sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients, boolean suppressEmptyResults) {
     try {
       if (!emailEnabled) {
         log.info("Email sending is disabled. Skipping report email for report ID: {}", reportDefinitionId);
@@ -55,8 +55,8 @@ public class ReportEmailService {
         return;
       }
 
-      if(reportResult.getRows().isEmpty()) {
-        log.info("Report id={}, name={} returned no rows. Skipping email.", reportDefinitionId, rd.getName());
+      if(suppressEmptyResults && reportResult.getRows().isEmpty()) {
+        log.info("Report id={}, name={} returned no rows. Skipping email (suppressEmptyResults=true).", reportDefinitionId, rd.getName());
         return;
       }
 
