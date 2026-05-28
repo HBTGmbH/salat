@@ -23,22 +23,27 @@ public class ShowReleaseForm extends ActionForm {
     private Long supervisorId;
 
     private LocalDate releaseDate;
+    private LocalDate selfReleaseDate;
     private LocalDate acceptanceDate;
     private LocalDate reopenDate;
 
     private String releaseDateString;
+    private String selfReleaseDateString;
     private String acceptanceDateString;
     private String reopenDateString;
 
     @Override
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         Employeecontract employeecontract = (Employeecontract) request.getSession().getAttribute("loginEmployeeContract");
+        var selfReleaseDate = today();
         var releaseDate = today();
         var acceptanceDate = today();
         if (employeecontract != null) {
             if (employeecontract.getReportReleaseDate() == null) {
+                selfReleaseDate = employeecontract.getValidFrom();
                 releaseDate = employeecontract.getValidFrom();
             } else {
+                selfReleaseDate = employeecontract.getReportReleaseDate();
                 releaseDate = employeecontract.getReportReleaseDate();
             }
             if (employeecontract.getReportAcceptanceDate() == null) {
@@ -49,6 +54,7 @@ public class ShowReleaseForm extends ActionForm {
         }
         var reopenDate = releaseDate;
 
+        setSelfReleaseDate(selfReleaseDate);
         setReleaseDate(releaseDate);
         setAcceptanceDate(acceptanceDate);
         setReopenDate(reopenDate);
@@ -60,6 +66,24 @@ public class ShowReleaseForm extends ActionForm {
             releaseDateString = fmt.format(releaseDate);
         } else {
             releaseDateString = "";
+        }
+    }
+
+    public void setSelfReleaseDate(LocalDate selfReleaseDate) {
+        this.selfReleaseDate = selfReleaseDate;
+        if(selfReleaseDate != null) {
+            selfReleaseDateString = fmt.format(selfReleaseDate);
+        } else {
+            selfReleaseDateString = "";
+        }
+    }
+
+    public void setSelfReleaseDateString(String selfReleaseDateString) {
+        this.selfReleaseDateString = selfReleaseDateString;
+        if(selfReleaseDateString != null && !selfReleaseDateString.isEmpty()) {
+            selfReleaseDate = YearMonth.parse(selfReleaseDateString, fmt).atEndOfMonth();
+        } else {
+            selfReleaseDate = null;
         }
     }
 
