@@ -340,6 +340,12 @@ Two stacked layers provide defence in depth:
 - **Service boundary** (`@Authorized` + runtime guard): enforced inside the service regardless of caller
 - `AuthorizedUser` (session-scoped bean, `auth/domain/AuthorizedUser.java`): exposes `isManager()`, `isAdmin()`, `isBackoffice()`, `isRestricted()`, and the current login sign
 - Spring Security roles: `RESTRICTED`, `BACKOFFICE`, `MANAGER`, `ADMIN`; `manager` role includes admins; `backoffice` includes managers and admins
+- Role semantics:
+  - `RESTRICTED` — external employees (contractors) and Praktikanten; heavily limited access, cannot access most list/management views
+  - `BACKOFFICE` — regular internal employees; can log time for themselves, view their own contracts and orders
+  - `MANAGER` — team leads and supervisors; can manage contracts, orders, and time reports for their team
+  - `ADMIN` — system administrators; full access
+  - Note: `restricted=true` on `Employee` entity (or the `SalatUser`) maps to the `RESTRICTED` role. A "regular employee" is someone with `restricted=false` in the BACKOFFICE role who can only view their own data.
 
 ### Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.

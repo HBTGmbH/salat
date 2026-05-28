@@ -30,6 +30,7 @@ import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import java.util.Comparator;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -69,8 +70,15 @@ public class EmployeecontractController {
             show = (Boolean) session.getAttribute("employees.contracts.show");
             showHidden = (Boolean) session.getAttribute("employees.contracts.showHidden");
         }
+        var employees = employeecontractService.getVisibleEmployeeContracts().stream()
+                .map(Employeecontract::getEmployee)
+                .distinct()
+                .sorted(Comparator.comparing(Employee::getName))
+                .toList();
+        if (employeeId == null && employees.size() == 1) {
+            employeeId = employees.getFirst().getId();
+        }
         var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId, showHidden);
-        var employees = employeeService.getAllEmployees();
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("employees", employees);
         model.addAttribute("filter", filter);
