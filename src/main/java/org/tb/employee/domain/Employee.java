@@ -6,6 +6,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
 import java.io.Serializable;
+import java.util.Objects;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.AccessLevel;
@@ -14,6 +16,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.domain.AuditedEntity;
+
+import static org.tb.common.GlobalConstants.GENDER_MALE;
 
 @Getter
 @Setter
@@ -76,6 +80,10 @@ public class Employee extends AuditedEntity implements Serializable {
         if (salatUser != null) {
             salatUser.setLoginname(loginname);
         }
+    }
+
+    public boolean isMale() {
+        return Objects.equals(gender, GENDER_MALE);
     }
 
     @Transient
