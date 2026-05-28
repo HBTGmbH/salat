@@ -88,7 +88,7 @@ public class ReleaseService {
   private final ReleaseAuthorization releaseAuthorization;
 
   public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
-    // check authentication
+    // check authorization
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(!releaseAuthorization.isReleaseAuthorized(employeecontract, AccessLevel.WRITE)) {
       throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
@@ -111,9 +111,8 @@ public class ReleaseService {
     sendTimeReportsReleasedMail(employeecontract);
   }
 
-  @Authorized(requiresManager = true)
   public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
-    // check authentication
+    // check authorization
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(!releaseAuthorization.isAcceptAuthorized(employeecontract, AccessLevel.WRITE)) {
       throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
