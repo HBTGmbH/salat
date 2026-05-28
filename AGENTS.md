@@ -339,13 +339,15 @@ Two stacked layers provide defence in depth:
 - **HTTP boundary** (`@PreAuthorize` on controller): enforced by Spring Security before the method runs
 - **Service boundary** (`@Authorized` + runtime guard): enforced inside the service regardless of caller
 - `AuthorizedUser` (session-scoped bean, `auth/domain/AuthorizedUser.java`): exposes `isManager()`, `isAdmin()`, `isBackoffice()`, `isRestricted()`, and the current login sign
-- Spring Security roles: `RESTRICTED`, `BACKOFFICE`, `MANAGER`, `ADMIN`; `manager` role includes admins; `backoffice` includes managers and admins
-- Role semantics:
-  - `RESTRICTED` — external employees (contractors) and Praktikanten; heavily limited access, cannot access most list/management views
-  - `BACKOFFICE` — regular internal employees; can log time for themselves, view their own contracts and orders
-  - `MANAGER` — team leads and supervisors; can manage contracts, orders, and time reports for their team
-  - `ADMIN` — system administrators; full access
-  - Note: `restricted=true` on `Employee` entity (or the `SalatUser`) maps to the `RESTRICTED` role. A "regular employee" is someone with `restricted=false` in the BACKOFFICE role who can only view their own data.
+- Spring Security roles: `USER`, `RESTRICTED`, `BACKOFFICE`, `PEOPLE_LEAD`, `MANAGER`, `ADMIN`; `manager` role includes admins; `backoffice` includes managers and admins; `people_lead` includes managers and admins
+- Role semantics (derived from `SalatUser.status` at login):
+  - `USER` — base role granted to every authenticated user = every employee
+  - `RESTRICTED` — external employees (contractors) and interns (`status=restricted`); heavily limited access, cannot access most list/management views
+  - `BACKOFFICE` — Backoffice (`status=bo`) plus everyone with `MANAGER`; can create invoices and upload financial data from books and records
+  - `PEOPLE_LEAD` — people leads/supervisors (`status=pv`) plus everyone with `MANAGER`; can read time reports and contracts of their team members, run reports
+  - `MANAGER` — general manager (`status=bl`) plus `ADMIN`; can manage contracts, orders, and time reports for everyone
+  - `ADMIN` — system administrators (`status=adm`); full access; only role that is NOT an employee
+  - A "regular employee" is someone with `BACKOFFICE` but not `PEOPLE_LEAD` or `MANAGER` — they can only view their own data.
 
 ### Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.
