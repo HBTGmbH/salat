@@ -82,6 +82,7 @@
 			<jsp:param name="title" value="Menu" />
 		</jsp:include>
 		<br>
+		<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 		<html:form action="/ShowRelease">
 
@@ -119,29 +120,27 @@
 						<c:out value="${loginEmployeeAcceptedUntil}" />
 					</td>
 				</tr>
-				<c:if test="${not loginEmployee.restricted}">
-					<tr>
-						<td align="left" class="noBborderStyle" height="10"></td>
-					</tr>
-					<tr>
-						<td align="left" class="noBborderStyle">
-							<b><bean:message key="main.release.release.until.text" />:</b>
-						</td>
-						<td align="left" class="noBborderStyle">
-							<input type="month" name="selfReleaseDateString" value="<bean:write name="showReleaseForm" property="selfReleaseDateString" />"/>
-						</td>
-						<td class="noBborderStyle">
-							<html:submit onclick="confirmReleaseSelf(this.form);return false" styleId="button">
-								<bean:message key="main.general.button.release.text" />
-							</html:submit>
-						</td>
-					</tr>
-				</c:if>
+				<tr>
+					<td align="left" class="noBborderStyle" height="10"></td>
+				</tr>
+				<tr>
+					<td align="left" class="noBborderStyle">
+						<b><bean:message key="main.release.release.until.text" />:</b>
+					</td>
+					<td align="left" class="noBborderStyle">
+						<input type="month" name="selfReleaseDateString" value="<bean:write name="showReleaseForm" property="selfReleaseDateString" />"/>
+					</td>
+					<td class="noBborderStyle">
+						<html:submit onclick="confirmReleaseSelf(this.form);return false" styleId="button">
+							<bean:message key="main.general.button.release.text" />
+						</html:submit>
+					</td>
+				</tr>
 				<br>
 			</table>
 
 			<!-- ── Section 2: team release/acceptance (supervisors and managers) ── -->
-			<c:if test="${authorizedUser.manager}">
+			<c:if test="${authorizedUser.manager or authorizedUser.peopleLead}">
 				<br>
 				<table border="0" cellspacing="0" cellpadding="2" class="center backgroundcolor">
 					<tr>
@@ -276,8 +275,6 @@
 					</c:if>
 					<br>
 				</table>
-
-				<html:errors prefix="form.errors.prefix" suffix="form.errors.suffix" header="form.errors.header" footer="form.errors.footer" />
 
 				<!-- overview table -->
 				<br>
