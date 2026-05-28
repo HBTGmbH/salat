@@ -37,12 +37,44 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         ShowReleaseForm releaseForm, HttpServletRequest request,
         HttpServletResponse response) throws Exception {
 
-        boolean updateEmployee = false;
-        long superId;
+        String task = request.getParameter("task");
+        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
 
+        // ── Section 1: own contract (visible to everyone) ──────────────────
+        boolean updateSelf = false;
+
+        var loginEmployeeContract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElse(null);
+
+        if ("releaseSelf".equals(task) && loginEmployeeContract != null) {
+            ActionMessages errors = validateFormDataForRelease(request, releaseForm.getSelfReleaseDate(), loginEmployeeContract);
+            if (!errors.isEmpty()) {
+                return mapping.getInputForward();
+            }
+            releaseService.releaseTimereports(loginEmployeeContract.getId(), releaseForm.getSelfReleaseDate());
+            updateSelf = true;
+        }
+
+        if (task == null || updateSelf) {
+            if (loginEmployeeContract != null) {
+                loginEmployeeContract = employeecontractService.getEmployeecontractById(loginEmployeeContract.getId());
+            }
+            var selfReleaseDate = loginEmployeeContract != null ? loginEmployeeContract.getReportReleaseDate() : null;
+            request.getSession().setAttribute("loginEmployeeContract", loginEmployeeContract);
+            request.getSession().setAttribute("loginEmployeeReleasedUntil", DateUtils.format(selfReleaseDate));
+            request.getSession().setAttribute("loginEmployeeAcceptedUntil",
+                DateUtils.format(loginEmployeeContract != null ? loginEmployeeContract.getReportAcceptanceDate() : null));
+
+            if (selfReleaseDate == null && loginEmployeeContract != null) {
+                selfReleaseDate = loginEmployeeContract.getValidFrom();
+            } else if (selfReleaseDate != null) {
+                selfReleaseDate = DateUtils.addMonths(selfReleaseDate, 1);
+            }
+            releaseForm.setSelfReleaseDate(selfReleaseDate);
+        }
+
+        // ── Section 2: team contracts (supervisors and managers only) ───────
         List<Employeecontract> viewableEmployeeContracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
-        //get a list of all supervisors 
         List<Employee> supervisors = new LinkedList<>();
         for (Employeecontract ec : viewableEmployeeContracts) {
             Employee supervisor = ec.getSupervisor();
@@ -53,149 +85,127 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         supervisors.sort(Comparator.comparing(Employee::getName));
         request.getSession().setAttribute("supervisors", supervisors);
 
-        /* get team members */
-        Employee loginEmployee = (Employee) request.getSession().getAttribute("loginEmployee");
         List<Employeecontract> teamMemberContracts = employeecontractService.getTeamContracts(loginEmployee.getId());
         boolean supervisor = !teamMemberContracts.isEmpty();
         request.getSession().setAttribute("isSupervisor", supervisor);
 
-        Employeecontract employeecontract = null;
-        if (releaseForm.getEmployeeContractId() != null) {
-            employeecontract = employeecontractService.getEmployeecontractById(releaseForm.getEmployeeContractId());
-        }
         if (supervisor || authorizedUser.isManager()) {
-            Employeecontract currentEmployeeContract;
-            if (request.getParameter("task") != null && request.getParameter("task").equals("updateEmployee")) {
+            long superId;
+
+            Employeecontract employeecontract = null;
+            if (releaseForm.getEmployeeContractId() != null) {
+                employeecontract = employeecontractService.getEmployeecontractById(releaseForm.getEmployeeContractId());
+            }
+            boolean updateEmployee = false;
+            if ("updateEmployee".equals(task)) {
                 updateEmployee = true;
             } else {
-                currentEmployeeContract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
-                employeecontract = currentEmployeeContract;
+                employeecontract = (Employeecontract) request.getSession().getAttribute("currentEmployeeContract");
             }
-        }
-        if (employeecontract == null) {
-            employeecontract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElseThrow();
-            updateEmployee = true;
-        }
+            if (employeecontract == null) {
+                employeecontract = teamMemberContracts.get(0);
+                updateEmployee = true;
+            }
 
-        List<Employeecontract> employeeContracts;
-        /* check if supervisor has been set before, if not use isSupervisor or employeeAuthorized for preselecting employeecontracts shown*/
-        if (request.getSession().getAttribute("supervisorId") != null) {
-            superId = (Long) request.getSession().getAttribute("supervisorId");
-            if (superId == -1) {
-                employeeContracts = viewableEmployeeContracts;
-            } else {
-                teamMemberContracts = employeecontractService.getTeamContracts(superId);
+            List<Employeecontract> employeeContracts;
+            if (request.getSession().getAttribute("supervisorId") != null) {
+                superId = (Long) request.getSession().getAttribute("supervisorId");
+                if (superId == -1) {
+                    employeeContracts = viewableEmployeeContracts;
+                } else {
+                    teamMemberContracts = employeecontractService.getTeamContracts(superId);
+                    employeeContracts = teamMemberContracts;
+                }
+            } else if (supervisor) {
                 employeeContracts = teamMemberContracts;
-            }
-        } else if (supervisor) {
-            employeeContracts = teamMemberContracts;
-            request.getSession().setAttribute("supervisorId", loginEmployee.getId());
-        } else {
-            employeeContracts = viewableEmployeeContracts;
-            request.getSession().setAttribute("supervisorId", -1L);
-        }
-
-        employeeContracts.sort(Comparator.comparing(ec -> ec.getEmployee().getName()));
-        request.getSession().setAttribute("employeecontracts", employeeContracts);
-
-        // Release Action
-        if (request.getParameter("task") != null && request.getParameter("task").equals("release")) {
-
-            // validate form data
-            ActionMessages errorMessages = validateFormDataForRelease(request, releaseForm, employeecontract);
-            if (!errorMessages.isEmpty()) {
-                return mapping.getInputForward();
-            }
-
-            LocalDate releaseDate = releaseForm.getReleaseDate();
-            releaseService.releaseTimereports(employeecontract.getId(), releaseDate);
-
-            updateEmployee = true;
-        }
-        // End Release Action
-
-        if (request.getParameter("task") != null && request.getParameter("task").equals("accept")) {
-            // validate form data
-            ActionMessages errorMessages = validateFormDataForAcceptance(request, releaseForm, employeecontract);
-            if (!errorMessages.isEmpty()) {
-                return mapping.getInputForward();
-            }
-
-            LocalDate acceptanceDate = releaseForm.getAcceptanceDate();
-            releaseService.acceptTimereports(employeecontract.getId(), acceptanceDate);
-            updateEmployee = true;
-        }
-
-        if (request.getParameter("task") != null && request.getParameter("task").equals("reopen")) {
-            LocalDate reopenDate = releaseForm.getReopenDate();
-            releaseService.reopenTimereports(employeecontract.getId(), reopenDate);
-            updateEmployee = true;
-        }
-
-        if (authorizedUser.isManager() && request.getParameter("task") != null && request.getParameter("task").equals("updateSupervisor")) {
-            superId = releaseForm.getSupervisorId();
-            request.getSession().setAttribute("supervisorId", superId);
-            if (superId == -1) {
-                request.getSession().setAttribute("employeecontracts",
-                        viewableEmployeeContracts);
-
+                request.getSession().setAttribute("supervisorId", loginEmployee.getId());
             } else {
-                teamMemberContracts = employeecontractService.getTeamContracts(superId);
-                request.getSession().setAttribute("employeecontracts",
-                        teamMemberContracts);
-            }
-        }
-
-        if (request.getParameter("task") != null && request.getParameter("task").equals("sendreleasemail")) {
-            Employee recipient = employeeService.getEmployeeBySign(request.getParameter("sign"));
-            releaseService.sendReleaseReminderMail(recipient.getId());
-            request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
-        }
-
-        if (request.getParameter("task") != null && request.getParameter("task").equals("sendacceptancemail")) {
-            Employee contEmployee = employeeService.getEmployeeBySign(request.getParameter("sign"));
-            Employeecontract currentEmployeeContract = employeecontractService.getEmployeeContractValidAt(contEmployee.getId(), today());
-            releaseService.sendAcceptanceReminderMail(currentEmployeeContract.getId());
-            request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
-        }
-
-        if (request.getParameter("task") == null || updateEmployee) {
-            // reload potenial updated data to feed the session and form
-            employeecontract = employeecontractService.getEmployeecontractById(employeecontract.getId());
-            var releaseDateFromContract = employeecontract.getReportReleaseDate();
-            var acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
-
-            request.getSession().setAttribute("currentEmployeeContract", employeecontract);
-            String releasedUntil = DateUtils.format(releaseDateFromContract);
-            request.getSession().setAttribute("releasedUntil", releasedUntil);
-            String acceptedUntil = DateUtils.format(acceptanceDateFromContract);
-            request.getSession().setAttribute("acceptedUntil", acceptedUntil);
-            request.getSession().setAttribute("employeeContractId", employeecontract.getId());
-            request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-            request.getSession().setAttribute("currentEmployeeContract", employeecontract);
-
-            // ensure meaningful values are set to support the user experience - null values do not help here
-            if (releaseDateFromContract == null) {
-                releaseDateFromContract = employeecontract.getValidFrom();
-            } else {
-                // always show next month to help employee release next month
-                releaseDateFromContract = DateUtils.addMonths(releaseDateFromContract, 1);
-            }
-            if (acceptanceDateFromContract == null) {
-                acceptanceDateFromContract = employeecontract.getValidFrom();
+                employeeContracts = viewableEmployeeContracts;
+                request.getSession().setAttribute("supervisorId", -1L);
             }
 
-            releaseForm.setEmployeeContractId(employeecontract.getId());
-            releaseForm.setReleaseDate(releaseDateFromContract);
-            releaseForm.setAcceptanceDate(acceptanceDateFromContract);
-            releaseForm.setReopenDate(releaseForm.getReleaseDate());
+            employeeContracts.sort(Comparator.comparing(ec -> ec.getEmployee().getName()));
+            request.getSession().setAttribute("employeecontracts", employeeContracts);
+
+            if ("release".equals(task)) {
+                ActionMessages errors = validateFormDataForRelease(request, releaseForm.getReleaseDate(), employeecontract);
+                if (!errors.isEmpty()) {
+                    return mapping.getInputForward();
+                }
+                releaseService.releaseTimereports(employeecontract.getId(), releaseForm.getReleaseDate());
+                updateEmployee = true;
+            }
+
+            if ("accept".equals(task)) {
+                ActionMessages errors = validateFormDataForAcceptance(request, releaseForm, employeecontract);
+                if (!errors.isEmpty()) {
+                    return mapping.getInputForward();
+                }
+                releaseService.acceptTimereports(employeecontract.getId(), releaseForm.getAcceptanceDate());
+                updateEmployee = true;
+            }
+
+            if ("reopen".equals(task)) {
+                releaseService.reopenTimereports(employeecontract.getId(), releaseForm.getReopenDate());
+                updateEmployee = true;
+            }
+
+            if (authorizedUser.isManager() && "updateSupervisor".equals(task)) {
+                superId = releaseForm.getSupervisorId();
+                request.getSession().setAttribute("supervisorId", superId);
+                if (superId == -1) {
+                    request.getSession().setAttribute("employeecontracts", viewableEmployeeContracts);
+                } else {
+                    teamMemberContracts = employeecontractService.getTeamContracts(superId);
+                    request.getSession().setAttribute("employeecontracts", teamMemberContracts);
+                }
+            }
+
+            if ("sendreleasemail".equals(task)) {
+                Employee recipient = employeeService.getEmployeeBySign(request.getParameter("sign"));
+                releaseService.sendReleaseReminderMail(recipient.getId());
+                request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
+            }
+
+            if ("sendacceptancemail".equals(task)) {
+                Employee contEmployee = employeeService.getEmployeeBySign(request.getParameter("sign"));
+                Employeecontract currentEmployeeContract = employeecontractService.getEmployeeContractValidAt(contEmployee.getId(), today());
+                releaseService.sendAcceptanceReminderMail(currentEmployeeContract.getId());
+                request.setAttribute("actionInfo", getResources(request).getMessage(getLocale(request), "main.release.actioninfo.mailsent.text"));
+            }
+
+            if (task == null || updateEmployee) {
+                employeecontract = employeecontractService.getEmployeecontractById(employeecontract.getId());
+                var releaseDateFromContract = employeecontract.getReportReleaseDate();
+                var acceptanceDateFromContract = employeecontract.getReportAcceptanceDate();
+
+                request.getSession().setAttribute("currentEmployeeContract", employeecontract);
+                request.getSession().setAttribute("releasedUntil", DateUtils.format(releaseDateFromContract));
+                request.getSession().setAttribute("acceptedUntil", DateUtils.format(acceptanceDateFromContract));
+                request.getSession().setAttribute("employeeContractId", employeecontract.getId());
+                request.getSession().setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
+
+                if (releaseDateFromContract == null) {
+                    releaseDateFromContract = employeecontract.getValidFrom();
+                } else {
+                    releaseDateFromContract = DateUtils.addMonths(releaseDateFromContract, 1);
+                }
+                if (acceptanceDateFromContract == null) {
+                    acceptanceDateFromContract = employeecontract.getValidFrom();
+                }
+
+                releaseForm.setEmployeeContractId(employeecontract.getId());
+                releaseForm.setReleaseDate(releaseDateFromContract);
+                releaseForm.setAcceptanceDate(acceptanceDateFromContract);
+                releaseForm.setReopenDate(releaseForm.getReleaseDate());
+            }
         }
 
         return mapping.findForward("success");
     }
 
     private ActionMessages validateFormDataForRelease(
-        HttpServletRequest request, ShowReleaseForm releaseForm,
+        HttpServletRequest request, LocalDate date,
         Employeecontract selectedEmployeecontract) {
 
         ActionMessages errors = getErrors(request);
@@ -203,22 +213,19 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
             errors = new ActionMessages();
         }
 
-        LocalDate date = releaseForm.getReleaseDate();
-
-        if (date.isBefore(selectedEmployeecontract.getValidFrom())
+        if (date == null || date.isBefore(selectedEmployeecontract.getValidFrom())
                 || selectedEmployeecontract.getValidUntil() != null
                 && date.isAfter(selectedEmployeecontract.getValidUntil())) {
             errors.add("validation", new ActionMessage("form.release.error.date.invalid.foremployeecontract"));
         }
 
-        if (selectedEmployeecontract.getReportAcceptanceDate() != null && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
+        if (selectedEmployeecontract.getReportAcceptanceDate() != null && date != null
+                && date.isBefore(selectedEmployeecontract.getReportAcceptanceDate())) {
             errors.add("validation", new ActionMessage("form.release.error.date.before.acceptance"));
         }
 
         saveErrors(request, errors);
-
         return errors;
-
     }
 
     private ActionMessages validateFormDataForAcceptance(
@@ -251,9 +258,7 @@ public class ShowReleaseAction extends LoginRequiredAction<ShowReleaseForm> {
         }
 
         saveErrors(request, errors);
-
         return errors;
-
     }
 
     @Override
