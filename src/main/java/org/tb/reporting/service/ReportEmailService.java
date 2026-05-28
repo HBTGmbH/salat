@@ -33,18 +33,20 @@ public class ReportEmailService {
   @Value("${salat.reporting.email.enabled:true}")
   private boolean emailEnabled;
 
-  public void sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients, boolean suppressEmptyResults) {
+  public record SendResult(int rowCount, boolean suppressed) {}
+
+  public SendResult sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients, boolean suppressEmptyResults) {
     try {
       if (!emailEnabled) {
         log.info("Email sending is disabled. Skipping report email for report ID: {}", reportDefinitionId);
-        return;
+        return new SendResult(0, true);
       }
 
       log.info("Generating report {} with parameters: {}", reportDefinitionId, parameters);
       ReportDefinition rd = reportService.getReportDefinition(reportDefinitionId);
       if(rd == null) throw new InvalidDataException(ErrorCode.XX_DATA_MISSING, "No report definition found for ID: " + reportDefinitionId);
       ReportResult reportResult = reportService.execute(reportDefinitionId, parameters);
-      
+
       if(reportResult.isError()) {
         log.error(
             "Report id={}, name={} produced an error. Skipping email. ErrorMessage: {}",
@@ -52,12 +54,14 @@ public class ReportEmailService {
             rd.getName(),
             reportResult.getErrorMessage()
         );
-        return;
+        return new SendResult(0, true);
       }
+
+      int rowCount = reportResult.getRows().size();
 
       if(suppressEmptyResults && reportResult.getRows().isEmpty()) {
         log.info("Report id={}, name={} returned no rows. Skipping email (suppressEmptyResults=true).", reportDefinitionId, rd.getName());
-        return;
+        return new SendResult(0, true);
       }
 
       byte[] excelBytes = excelExportService.exportToExcel(reportResult);
@@ -89,6 +93,7 @@ public class ReportEmailService {
 
       mailService.sendEmail(emailRequest);
       log.info("Report email sent successfully to {} recipients for report: {}", recipients.length, rd.getName());
+      return new SendResult(rowCount, false);
 
     } catch (Exception e) {
       log.error("Failed to send report email for report ID: {}", reportDefinitionId, e);

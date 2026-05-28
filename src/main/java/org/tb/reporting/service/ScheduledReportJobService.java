@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,6 +21,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
+import org.tb.reporting.domain.JobExecutionResult;
 import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ScheduledReportExecutionHistory;
 import org.tb.reporting.domain.ScheduledReportJob;
@@ -84,15 +86,17 @@ public class ScheduledReportJobService {
 
   /**
    * Execute a single scheduled report job by its id.
+   * Returns the execution result, or empty if the job was not found or is disabled.
    */
-  public void executeScheduledReportJobById(Long jobId) {
-    scheduledReportJobRepository.findById(jobId).ifPresent(job -> {
-      if (job.isEnabled()) {
-        executeJob(job);
-      } else {
-        log.info("Skipping disabled scheduled report job ID: {}", jobId);
-      }
-    });
+  public Optional<JobExecutionResult> executeScheduledReportJobById(Long jobId) {
+    var jobOpt = scheduledReportJobRepository.findById(jobId);
+    if (jobOpt.isEmpty()) return Optional.empty();
+    var job = jobOpt.get();
+    if (!job.isEnabled()) {
+      log.info("Skipping disabled scheduled report job ID: {}", jobId);
+      return Optional.empty();
+    }
+    return Optional.of(executeJob(job));
   }
 
   @Authorized(permitAll = true)
@@ -109,30 +113,22 @@ public class ScheduledReportJobService {
     }
   }
 
-  private void executeJob(ScheduledReportJob job) {
+  private JobExecutionResult executeJob(ScheduledReportJob job) {
     log.info("Executing scheduled report job: {} (ID: {})", job.getName(), job.getId());
 
     LocalDateTime executedAt = LocalDateTime.now();
+    List<ReportParameter> parameters = parseParameters(job.getReportParameters());
+    String[] recipients = parseRecipients(job.getRecipientEmails());
+
+    if (recipients.length == 0) {
+      String msg = "No recipients configured";
+      log.warn(msg + " for job: {} (ID: {})", job.getName(), job.getId());
+      historyRepository.save(historyEntry(job, executedAt, false, msg));
+      throw new RuntimeException(msg);
+    }
+
     try {
-      List<ReportParameter> parameters = parseParameters(job.getReportParameters());
-      String[] recipients = parseRecipients(job.getRecipientEmails());
-
-      if (recipients.length == 0) {
-        String msg = "No recipients configured";
-        log.warn(msg + " for job: {} (ID: {})", job.getName(), job.getId());
-        historyRepository.save(ScheduledReportExecutionHistory.builder()
-            .jobId(job.getId())
-            .jobName(job.getName())
-            .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
-            .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
-            .executedAt(executedAt)
-            .success(false)
-            .message(msg)
-            .build());
-        return;
-      }
-
-      reportEmailService.sendReportEmail(
+      var sendResult = reportEmailService.sendReportEmail(
           job.getReportDefinition().getId(),
           parameters,
           recipients,
@@ -140,29 +136,28 @@ public class ScheduledReportJobService {
       );
 
       log.info("Successfully executed scheduled report job: {} (ID: {})", job.getName(), job.getId());
-      historyRepository.save(ScheduledReportExecutionHistory.builder()
-          .jobId(job.getId())
-          .jobName(job.getName())
-          .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
-          .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
-          .executedAt(executedAt)
-          .success(true)
-          .message("Email sent to " + recipients.length + " recipient(s)")
-          .build());
+      String historyMsg = sendResult.suppressed() ? "Email suppressed (empty result)" : "Email sent to " + recipients.length + " recipient(s)";
+      historyRepository.save(historyEntry(job, executedAt, true, historyMsg));
+
+      return new JobExecutionResult(job.getName(), sendResult.rowCount(), job.getRecipientEmails(), sendResult.suppressed());
 
     } catch (Exception e) {
       log.error("Error executing job: {} (ID: {})", job.getName(), job.getId(), e);
-      historyRepository.save(ScheduledReportExecutionHistory.builder()
-          .jobId(job.getId())
-          .jobName(job.getName())
-          .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
-          .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
-          .executedAt(executedAt)
-          .success(false)
-          .message(safeMessage(e))
-          .build());
+      historyRepository.save(historyEntry(job, executedAt, false, safeMessage(e)));
       throw new RuntimeException("Failed to execute scheduled report job", e);
     }
+  }
+
+  private ScheduledReportExecutionHistory historyEntry(ScheduledReportJob job, LocalDateTime executedAt, boolean success, String message) {
+    return ScheduledReportExecutionHistory.builder()
+        .jobId(job.getId())
+        .jobName(job.getName())
+        .reportDefinitionId(job.getReportDefinition() != null ? job.getReportDefinition().getId() : null)
+        .reportDefinitionName(job.getReportDefinition() != null ? job.getReportDefinition().getName() : null)
+        .executedAt(executedAt)
+        .success(success)
+        .message(message)
+        .build();
   }
 
   private String safeMessage(Exception e) {

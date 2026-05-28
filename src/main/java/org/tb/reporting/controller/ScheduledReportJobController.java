@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.reporting.domain.JobExecutionResult;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.service.ReportService;
 import org.tb.reporting.service.ScheduledReportJobScheduler;
@@ -171,6 +172,29 @@ public class ScheduledReportJobController {
     }
 
     return "redirect:/reporting/jobs";
+  }
+
+  @PostMapping("/run")
+  public String run(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+    try {
+      jobService.getJob(id); // ownership check
+      var result = jobService.executeScheduledReportJobById(id);
+      String message = result.map(this::buildRunMessage).orElse("Job was not executed (disabled or not found)");
+      redirectAttributes.addFlashAttribute("toastSuccess", message);
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("toastError", "Error executing job: " + e.getMessage());
+    }
+    return "redirect:/reporting/jobs";
+  }
+
+  private String buildRunMessage(JobExecutionResult result) {
+    if (result.suppressed()) {
+      return "Report '" + result.jobName() + "' executed: 0 rows — email suppressed";
+    } else if (result.rowCount() == 0) {
+      return "Report '" + result.jobName() + "' executed: 0 rows — empty result email sent to " + result.recipientEmails();
+    } else {
+      return "Report '" + result.jobName() + "' executed: " + result.rowCount() + " rows sent to " + result.recipientEmails();
+    }
   }
 
   @PostMapping("/delete")
