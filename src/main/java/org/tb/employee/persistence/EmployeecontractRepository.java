@@ -33,7 +33,9 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
 
   @Query("""
     select ec from Employeecontract ec
-    where ec.supervisor.id = :supervisorId and ec.validFrom <= :date and (ec.validUntil is null or ec.validUntil >= :date)
+    where ec.supervisor.id = :supervisorId
+    and (ec.hide = false or ec.hide is null)
+    and ec.validFrom <= :date and (ec.validUntil is null or ec.validUntil >= :date)
     order by ec.employee.lastname asc, ec.validFrom asc
   """)
   List<Employeecontract> findAllSupervisedValidAt(long supervisorId, LocalDate date);
