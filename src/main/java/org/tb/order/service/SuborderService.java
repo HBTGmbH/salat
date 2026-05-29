@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.common.command.CommandPublisher;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
@@ -117,6 +118,16 @@ public class SuborderService {
       parentOrderCandidate = null;
     }
     so.setParentorder(parentOrderCandidate);
+
+    if (soId != null && parentOrderCandidate != null) {
+      Suborder ancestor = parentOrderCandidate;
+      while (ancestor != null) {
+        if (ancestor.getId().equals(soId)) {
+          throw new BusinessRuleException(ErrorCode.SO_PARENTORDER_CYCLE);
+        }
+        ancestor = ancestor.getParentorder();
+      }
+    }
 
     if(!so.isNew()) {
       var event = new SuborderUpdateEvent(so);
