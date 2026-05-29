@@ -27,6 +27,7 @@ import org.tb.order.auth.EmployeeorderAuthorization;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Employeeorder_;
+import org.tb.order.domain.Suborder;
 import org.tb.order.domain.Suborder_;
 
 @Component
@@ -37,6 +38,7 @@ public class EmployeeorderDAO {
 
     private final EmployeeorderRepository employeeorderRepository;
     private final EmployeeorderAuthorization employeeorderAuthorization;
+    private final SuborderDAO suborderDAO;
 
     /**
      * Gets the employeeorder for the given id.
@@ -200,11 +202,8 @@ public class EmployeeorderDAO {
         );
     }
 
-    private Specification<Employeeorder> matchingSuborderId(long suborderId) {
-        return (root, query, builder) -> builder.equal(
-            root.join(Employeeorder_.suborder).get(Suborder_.id),
-            suborderId
-        );
+    private Specification<Employeeorder> matchingSuborderIds(Set<Long> suborderIds) {
+        return (root, query, builder) -> root.join(Employeeorder_.suborder).get(Suborder_.id).in(suborderIds);
     }
 
     private Specification<Employeeorder> filterMatches(String filter) {
@@ -244,7 +243,13 @@ public class EmployeeorderDAO {
                     predicates.add(matchingCustomerorderId(customerOrderId).toPredicate(root, query, builder));
                 }
                 if(customerSuborderId != null && customerSuborderId > 0) {
-                    predicates.add(matchingSuborderId(customerSuborderId).toPredicate(root, query, builder));
+                    var suborder = suborderDAO.getSuborderById(customerSuborderId);
+                    if(suborder != null) {
+                        var ids = suborder.getAllChildren().stream()
+                            .map(Suborder::getId)
+                            .collect(Collectors.toSet());
+                        predicates.add(matchingSuborderIds(ids).toPredicate(root, query, builder));
+                    }
                 }
                 boolean isFilter = filter != null && !filter.trim().isEmpty();
                 if(isFilter) {
