@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.auth.domain.SalatUser_;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
@@ -118,24 +117,24 @@ public class EmployeeDAO {
         }
 
         Specification<Employee> spec = excludeHidden ? notHidden() : null;
-        if (hasFilter) {
-            var filterValue = "%" + filter.toUpperCase() + "%";
-            Specification<Employee> filterSpec = (root, query, builder) -> {
-                var salatUserJoin = root.join(Employee_.salatUser);
-                return builder.or(
-                    builder.like(builder.upper(salatUserJoin.get(SalatUser_.loginname)), filterValue),
-                    builder.like(builder.upper(root.get(Employee_.firstname)), filterValue),
-                    builder.like(builder.upper(root.get(Employee_.lastname)), filterValue),
-                    builder.like(builder.upper(root.get(Employee_.sign)), filterValue),
-                    builder.like(builder.upper(salatUserJoin.get(SalatUser_.status)), filterValue)
-                );
-            };
-            spec = spec == null ? filterSpec : spec.and(filterSpec);
-        }
         return employeeRepository.findAll(spec).stream()
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
+            .filter(e -> !hasFilter || filterMatchesInMemory(e, filter))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
+    }
+
+    private boolean filterMatchesInMemory(Employee e, String filter) {
+        var upper = filter.toUpperCase();
+        return containsIgnoreCase(e.getName(), upper)
+            || containsIgnoreCase(e.getLastname(), upper)
+            || containsIgnoreCase(e.getFirstname(), upper)
+            || containsIgnoreCase(e.getSign(), upper)
+            || containsIgnoreCase(e.getLoginname(), upper);
+    }
+
+    private static boolean containsIgnoreCase(String value, String upper) {
+        return value != null && value.toUpperCase().contains(upper);
     }
 
     public Set<Long> getSupervisedEmployeeIds() {
