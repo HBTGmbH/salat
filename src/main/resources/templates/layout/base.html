@@ -393,25 +393,22 @@
 <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
 <script th:src="@{/webjars/tom-select/dist/js/tom-select.complete.min.js}"></script>
 <script>
-  // Initialize Tom Select for all elements with the 'tomselect' class
-  document.querySelectorAll('select.tomselect').forEach((el) => {
-    new TomSelect(el, {
-      create: false,
-      maxItems: 1,
-      sortField: [{ field: '$order' }],
-      placeholder: el.getAttribute('placeholder') || 'Select an option...',
-    });
+  const tomSelectConfig = (el) => ({
+    create: false,
+    maxItems: 1,
+    maxOptions: 1000,
+    sortField: [{ field: '$order' }],
+    placeholder: el.getAttribute('placeholder') || 'Select an option...',
   });
-  // Reinit Tom Select for elements swapped in via HTMX (e.g. OOB selects)
+
+  document.querySelectorAll('select.tomselect').forEach((el) => {
+    new TomSelect(el, tomSelectConfig(el));
+  });
+
   document.addEventListener('htmx:afterSettle', function () {
     document.querySelectorAll('select.tomselect').forEach((el) => {
       if (!el.tomselect) {
-        new TomSelect(el, {
-          create: false,
-          maxItems: 1,
-          sortField: [{ field: '$order' }],
-          placeholder: el.getAttribute('placeholder') || 'Select an option...',
-        });
+        new TomSelect(el, tomSelectConfig(el));
       }
     });
   });
