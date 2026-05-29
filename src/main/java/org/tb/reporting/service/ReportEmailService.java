@@ -33,7 +33,7 @@ public class ReportEmailService {
   @Value("${salat.reporting.email.enabled:true}")
   private boolean emailEnabled;
 
-  public record SendResult(int rowCount, boolean suppressed, boolean error, ReportResult.ErrorInfo errorInfo) {}
+  public record  SendResult(int rowCount, boolean suppressed, boolean error, ReportResult.ErrorInfo errorInfo) {}
 
   public SendResult sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients, boolean suppressEmptyResults) {
     try {
@@ -87,7 +87,7 @@ public class ReportEmailService {
 
       mailService.sendEmail(emailRequest);
       log.info("Report email sent successfully to {} recipients for report: {}", recipients.length, rd.getName());
-      return new SendResult(rowCount, false, false, null);
+      return new SendResult(reportResult.getRows().size(), false, false, null);
 
     } catch (Exception e) {
       log.error("Failed to send report email for report ID: {}", reportDefinitionId, e);
