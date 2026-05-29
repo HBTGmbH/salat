@@ -151,17 +151,19 @@ public class ReportService {
     } catch (BadSqlGrammarException e) {
       // capture detailed SQL error information in the result to display in UI
       var sqlEx = e.getSQLException();
-      var msg = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage();
+      var msg = e.getMostSpecificCause().getMessage();
       log.warn("Bad SQL grammar while executing report {}: {}", reportDefinitionId, msg);
+      var errorInfo = ReportResult.ErrorInfo.builder()
+          .errorClass(e.getClass().getSimpleName())
+          .errorMessage(msg)
+          .sqlState(sqlEx != null ? sqlEx.getSQLState() : null)
+          .errorCode(sqlEx != null ? sqlEx.getErrorCode() : null)
+          .build();
       return ReportResult.builder()
           .parameters(parameters)
           .columnHeaders(List.of())
           .error(true)
-          .errorClass(e.getClass().getSimpleName())
-          .errorMessage(msg)
-          .sql(resolvedSql)
-          .sqlState(sqlEx != null ? sqlEx.getSQLState() : null)
-          .errorCode(sqlEx != null ? sqlEx.getErrorCode() : null)
+          .errorInfo(errorInfo)
           .build();
     }
   }
