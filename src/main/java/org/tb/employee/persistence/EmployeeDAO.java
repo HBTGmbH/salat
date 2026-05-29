@@ -116,7 +116,7 @@ public class EmployeeDAO {
                 .collect(Collectors.toList());
         }
 
-        Specification<Employee> spec = excludeHidden ? notHidden() : null;
+        Specification<Employee> spec = excludeHidden ? notHidden() : (root, query, builder) -> builder.conjunction();
         return employeeRepository.findAll(spec).stream()
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
             .filter(e -> !hasFilter || filterMatchesInMemory(e, filter))
