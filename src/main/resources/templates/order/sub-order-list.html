@@ -119,7 +119,7 @@
           </td>
           <td>
             <div th:text="${so.completeOrderSign}">Suborder Sign</div>
-            <small class="text-muted" th:text="${so.shortdescription}">short description</small>
+            <small class="text-muted" th:text="${so.getCompleteOrderDescription(true, false)}">short description</small>
           </td>
           <td class="d-none d-sm-table-cell">
             <div th:text="${so.fromDate}">From</div>
