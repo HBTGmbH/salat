@@ -2,7 +2,6 @@ package org.tb.reporting.domain;
 
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -21,13 +20,11 @@ public class ReportResult implements Serializable {
   @Singular
   private final List<ReportResultRow> rows;
 
+  private final String sql; // SQL statement if available
+
   // Error handling (e.g., SQL grammar issues)
   private final boolean error; // true if an error occurred while executing the report
-  private final String errorClass; // exception class simple name
-  private final String errorMessage; // human readable message
-  private final String sql; // offending SQL if available
-  private final String sqlState; // JDBC SQL state if available
-  private final Integer errorCode; // vendor specific error code
+  private final ErrorInfo errorInfo;
 
   /**
    * Liefert ein JavaScript-kompatibles Array als String,
@@ -122,6 +119,15 @@ public class ReportResult implements Serializable {
       }
     }
     return sb.toString();
+  }
+
+  @Getter
+  @Builder
+  public static class ErrorInfo {
+    private final String errorClass; // exception class simple name
+    private final String errorMessage; // human readable message
+    private final String sqlState; // JDBC SQL state if available
+    private final Integer errorCode; // vendor specific error code
   }
 
 }

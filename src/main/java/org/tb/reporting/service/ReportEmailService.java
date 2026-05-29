@@ -33,13 +33,13 @@ public class ReportEmailService {
   @Value("${salat.reporting.email.enabled:true}")
   private boolean emailEnabled;
 
-  public record SendResult(int rowCount, boolean suppressed) {}
+  public record SendResult(int rowCount, boolean suppressed, boolean error, ReportResult.ErrorInfo errorInfo) {}
 
   public SendResult sendReportEmail(Long reportDefinitionId, List<ReportParameter> parameters, String[] recipients, boolean suppressEmptyResults) {
     try {
       if (!emailEnabled) {
         log.info("Email sending is disabled. Skipping report email for report ID: {}", reportDefinitionId);
-        return new SendResult(0, true);
+        return new SendResult(0, true, false, null);
       }
 
       log.info("Generating report {} with parameters: {}", reportDefinitionId, parameters);
@@ -48,14 +48,14 @@ public class ReportEmailService {
       ReportResult reportResult = reportService.execute(reportDefinitionId, parameters);
 
       if(reportResult.isError()) {
-        throw new RuntimeException("Report execution failed: " + reportResult.getErrorMessage());
+        return new SendResult(0, false, true, reportResult.getErrorInfo());
       }
 
       int rowCount = reportResult.getRows().size();
 
       if(suppressEmptyResults && reportResult.getRows().isEmpty()) {
         log.info("Report id={}, name={} returned no rows. Skipping email (suppressEmptyResults=true).", reportDefinitionId, rd.getName());
-        return new SendResult(0, true);
+        return new SendResult(0, true, false, null);
       }
 
       byte[] excelBytes = excelExportService.exportToExcel(reportResult);
@@ -87,7 +87,7 @@ public class ReportEmailService {
 
       mailService.sendEmail(emailRequest);
       log.info("Report email sent successfully to {} recipients for report: {}", recipients.length, rd.getName());
-      return new SendResult(rowCount, false);
+      return new SendResult(rowCount, false, false, null);
 
     } catch (Exception e) {
       log.error("Failed to send report email for report ID: {}", reportDefinitionId, e);
@@ -118,7 +118,7 @@ public class ReportEmailService {
     var fileName = "report-" + reportDefinition.getName() +
                    "-erzeugt-" + DateUtils.formatDateTime(DateTimeUtils.now(), "dd-MM-yy-HHmm") +
                    ".xlsx";
-    return fileName.replaceAll("[^a-zA-Z0-9-_\\.]", "_");
+    return fileName.replaceAll("[^a-zA-Z0-9-_.]", "_");
   }
 
 }

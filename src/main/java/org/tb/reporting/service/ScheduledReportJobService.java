@@ -135,11 +135,18 @@ public class ScheduledReportJobService {
           job.isSuppressEmptyResults()
       );
 
-      log.info("Successfully executed scheduled report job: {} (ID: {})", job.getName(), job.getId());
-      String historyMsg = sendResult.suppressed() ? "Email suppressed (empty result)" : "Email sent to " + recipients.length + " recipient(s)";
-      historyRepository.save(historyEntry(job, executedAt, true, historyMsg));
-
-      return new JobExecutionResult(job.getName(), sendResult.rowCount(), job.getRecipientEmails(), sendResult.suppressed());
+      if(!sendResult.error()) {
+        log.info("Successfully executed scheduled report job: {} (ID: {})", job.getName(), job.getId());
+        String historyMsg = sendResult.suppressed() ? "Email suppressed (empty result)" : "Email sent to " + recipients.length + " recipient(s)";
+        historyRepository.save(historyEntry(job, executedAt, true, historyMsg));
+        return new JobExecutionResult(job.getName(), sendResult.rowCount(), job.getRecipientEmails(), sendResult.suppressed(), false,null);
+      } else {
+        var errorInfo = sendResult.errorInfo();
+        String message = "%s:%s".formatted(errorInfo.getErrorClass(), errorInfo.getErrorMessage());
+        log.error("Error executing job: {} (ID: {}) {}", job.getName(), job.getId(), message);
+        historyRepository.save(historyEntry(job, executedAt, false, message));
+        return new JobExecutionResult(job.getName(), sendResult.rowCount(), job.getRecipientEmails(), sendResult.suppressed(), true, errorInfo);
+      }
 
     } catch (Exception e) {
       log.error("Error executing job: {} (ID: {})", job.getName(), job.getId(), e);

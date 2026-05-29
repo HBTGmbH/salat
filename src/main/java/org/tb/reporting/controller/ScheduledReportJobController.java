@@ -179,8 +179,9 @@ public class ScheduledReportJobController {
     try {
       jobService.getJob(id); // ownership check
       var result = jobService.executeScheduledReportJobById(id);
+      var errorToast = result.map(JobExecutionResult::error).orElse(true);
       String message = result.map(this::buildRunMessage).orElse("Job was not executed (disabled or not found)");
-      redirectAttributes.addFlashAttribute("toastSuccess", message);
+      redirectAttributes.addFlashAttribute(errorToast ? "toastError" : "toastSuccess", message);
     } catch (Exception e) {
       redirectAttributes.addFlashAttribute("toastError", "Error executing job: " + e.getMessage());
     }
@@ -188,7 +189,15 @@ public class ScheduledReportJobController {
   }
 
   private String buildRunMessage(JobExecutionResult result) {
-    if (result.suppressed()) {
+    if (result.error()) {
+      return "Report '%s' failed: %s:%s (%s, State: %s)".formatted(
+          result.jobName(),
+          result.errorInfo().getErrorClass(),
+          result.errorInfo().getErrorMessage(),
+          result.errorInfo().getErrorCode() != null ? result.errorInfo().getErrorCode() : "n/a",
+          result.errorInfo().getSqlState() != null ? result.errorInfo().getSqlState() : "n/a"
+      );
+    } else if (result.suppressed()) {
       return "Report '" + result.jobName() + "' executed: 0 rows — email suppressed";
     } else if (result.rowCount() == 0) {
       return "Report '" + result.jobName() + "' executed: 0 rows — empty result email sent to " + result.recipientEmails();
