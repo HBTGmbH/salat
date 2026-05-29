@@ -45,17 +45,25 @@ public class CustomerService {
 
   @Transactional(readOnly = true)
   public List<CustomerDTO> getAllCustomerDTOsByFilter(String filter, boolean showHidden) {
-    if (filter == null || filter.isBlank()) {
-      var repo = showHidden
-          ? stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
-          : customerRepository.findAllVisible().stream();
-      return repo.map(CustomerDTO::from).toList();
-    } else {
-      var results = showHidden
-          ? customerRepository.findAllByFilterIgnoringCase("%" + filter + "%")
-          : customerRepository.findVisibleByFilterIgnoringCase("%" + filter + "%");
-      return results.stream().map(CustomerDTO::from).toList();
-    }
+    boolean hasFilter = filter != null && !filter.isBlank();
+    var repo = showHidden
+        ? stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
+        : customerRepository.findAllVisible().stream();
+    return repo
+        .filter(c -> !hasFilter || filterMatchesInMemory(c, filter))
+        .map(CustomerDTO::from)
+        .toList();
+  }
+
+  private boolean filterMatchesInMemory(Customer c, String filter) {
+    var upper = filter.toUpperCase();
+    return containsIgnoreCase(c.getShortname(), upper)
+        || containsIgnoreCase(c.getName(), upper)
+        || containsIgnoreCase(c.getAddress(), upper);
+  }
+
+  private static boolean containsIgnoreCase(String value, String upper) {
+    return value != null && value.toUpperCase().contains(upper);
   }
 
   @Authorized(requiresManager = true)

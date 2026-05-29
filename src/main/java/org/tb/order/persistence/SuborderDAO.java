@@ -179,19 +179,18 @@ public class SuborderDAO {
         if(filter == null || filter.trim().isEmpty()) {
             return true;
         }
-        var customerorder = suborder.getCustomerorder();
+        var co = suborder.getCustomerorder();
+        var customer = co.getCustomer();
         var matchCandidates = List.of(
-            customerorder.getSign(),
-            customerorder.getShortdescription(),
-            customerorder.getDescription(),
-            customerorder.getOrder_customer(),
+            customer.getShortname(),
+            customer.getName(),
+            co.getSign(),
+            co.getShortdescription(),
             suborder.getCompleteOrderSign(),
-            suborder.getShortdescription(),
-            suborder.getDescription(),
-            suborder.getSuborder_customer()
+            suborder.getCompleteOrderDescription(true, false),
+            suborder.getShortdescription()
         );
 
-        // do a case insensitive comparison
         final var filterValue = filter.toLowerCase();
         return matchCandidates.stream()
             .filter(Objects::nonNull)

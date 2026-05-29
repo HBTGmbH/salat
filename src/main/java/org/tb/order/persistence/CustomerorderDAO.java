@@ -21,7 +21,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employee;
-import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.domain.Customerorder;
@@ -94,27 +93,26 @@ public class CustomerorderDAO {
         return (root, query, builder) -> builder.equal(root.join(Customerorder_.customer).get(Customer_.id), customerId);
     }
 
-    private Specification<Customerorder> filterMatches(String filter) {
-        final var filterValue = ('%' + filter + '%').toUpperCase();
-        return (root, query, builder) -> builder.or(
-            builder.like(builder.upper(root.get(Customerorder_.sign)), filterValue),
-            builder.like(builder.upper(root.get(Customerorder_.description)), filterValue),
-            builder.like(builder.upper(root.get(Customerorder_.responsible_customer_contractually)), filterValue),
-            builder.like(builder.upper(root.get(Customerorder_.responsible_customer_technical)), filterValue),
-            builder.like(builder.upper(root.get(Customerorder_.order_customer)), filterValue),
-            builder.like(builder.upper(root.join(Customerorder_.customer).get(Customer_.name)), filterValue),
-            builder.like(builder.upper(root.join(Customerorder_.customer).get(Customer_.shortname)), filterValue),
-            builder.like(builder.upper(root.join(Customerorder_.responsible_hbt).get(Employee_.firstname)), filterValue),
-            builder.like(builder.upper(root.join(Customerorder_.responsible_hbt).get(Employee_.lastname)), filterValue),
-            builder.like(builder.upper(root.join(Customerorder_.respEmpHbtContract).get(Employee_.firstname)), filterValue),
-            builder.like(builder.upper(root.join(Customerorder_.respEmpHbtContract).get(Employee_.lastname)), filterValue)
-        );
+    private boolean filterMatchesInMemory(Customerorder co, String filter) {
+        var upper = filter.toUpperCase();
+        var customer = co.getCustomer();
+        return containsIgnoreCase(customer.getShortname(), upper)
+            || containsIgnoreCase(customer.getName(), upper)
+            || containsIgnoreCase(co.getSign(), upper)
+            || containsIgnoreCase(co.getDescription(), upper)
+            || (co.getResponsible_hbt() != null && containsIgnoreCase(co.getResponsible_hbt().getName(), upper))
+            || (co.getRespEmpHbtContract() != null && containsIgnoreCase(co.getRespEmpHbtContract().getName(), upper));
+    }
+
+    private static boolean containsIgnoreCase(String value, String upper) {
+        return value != null && value.toUpperCase().contains(upper);
     }
 
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
      */
     public List<Customerorder> getCustomerordersByFilters(final Boolean showInvalid, final String filter, final Long customerId, final Boolean showHidden) {
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
         var order = new Order(ASC, Customerorder_.SIGN).ignoreCase();
         return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
@@ -127,12 +125,10 @@ public class CustomerorderDAO {
             if(customerId != null && customerId > 0) {
                 predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
             }
-            boolean isFilter = filter != null && !filter.trim().isEmpty();
-            if(isFilter) {
-                predicates.add(filterMatches(filter).toPredicate(root, query, builder));
-            }
             return builder.and(predicates.toArray(new Predicate[0]));
-        }, Sort.by(order));
+        }, Sort.by(order)).stream()
+            .filter(co -> !isFilter || filterMatchesInMemory(co, filter))
+            .collect(Collectors.toList());
     }
 
     public List<Customerorder> getCustomerordersByCustomerId(long customerId) {

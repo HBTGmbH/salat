@@ -92,19 +92,17 @@ public class EmployeecontractDAO {
         return (root, query, builder) -> builder.equal(root.join(Employeecontract_.employee).get(Employee_.id), employeeId);
     }
 
-    private Specification<Employeecontract> filterMatches(String filter) {
-        final var filterValue = ('%' + filter + '%').toUpperCase();
-        return (root, query, builder) -> {
-            var employeeJoin = root.join(Employeecontract_.employee);
-            var salatUserJoin = employeeJoin.join("salatUser");
-            return builder.or(
-                builder.like(builder.upper(root.get(Employeecontract_.taskDescription)), filterValue),
-                builder.like(builder.upper(employeeJoin.get(Employee_.firstname)), filterValue),
-                builder.like(builder.upper(employeeJoin.get(Employee_.lastname)), filterValue),
-                builder.like(builder.upper(employeeJoin.get(Employee_.sign)), filterValue),
-                builder.like(builder.upper(salatUserJoin.get("loginname")), filterValue)
-            );
-        };
+    private boolean filterMatchesInMemory(Employeecontract ec, String filter) {
+        var upper = filter.toUpperCase();
+        var emp = ec.getEmployee();
+        var supervisor = ec.getSupervisor();
+        return containsIgnoreCase(emp.getName(), upper)
+            || containsIgnoreCase(ec.getTaskDescription(), upper)
+            || (supervisor != null && containsIgnoreCase(supervisor.getName(), upper));
+    }
+
+    private static boolean containsIgnoreCase(String value, String upper) {
+        return value != null && value.toUpperCase().contains(upper);
     }
 
     /**
@@ -113,6 +111,7 @@ public class EmployeecontractDAO {
      * @return List<Employeecontract>
      */
     public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId, Boolean showHidden) {
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
         return employeecontractRepository.findAll((Specification<Employeecontract>) (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
             if (!TRUE.equals(showInvalid)) {
@@ -124,13 +123,10 @@ public class EmployeecontractDAO {
             if (employeeId != null && employeeId > 0) {
                 predicates.add(matchingEmployeeId(employeeId).toPredicate(root, query, builder));
             }
-            boolean isFilter = filter != null && !filter.trim().isEmpty();
-            if (isFilter) {
-                predicates.add(filterMatches(filter).toPredicate(root, query, builder));
-            }
             return builder.and(predicates.toArray(new Predicate[0]));
         }).stream()
             .filter(c -> employeecontractAuthorization.isAuthorized(c, AccessLevel.READ))
+            .filter(c -> !isFilter || filterMatchesInMemory(c, filter))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
     }

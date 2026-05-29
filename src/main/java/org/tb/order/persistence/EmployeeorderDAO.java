@@ -210,15 +210,18 @@ public class EmployeeorderDAO {
         var sub = eo.getSuborder();
         var emp = eo.getEmployeecontract().getEmployee();
         var co = sub.getCustomerorder();
+        var customer = co.getCustomer();
         return containsIgnoreCase(emp.getSign(), upper)
             || containsIgnoreCase(emp.getFirstname(), upper)
             || containsIgnoreCase(emp.getLastname(), upper)
+            || containsIgnoreCase(customer.getShortname(), upper)
+            || containsIgnoreCase(customer.getName(), upper)
             || containsIgnoreCase(co.getSign(), upper)
-            || containsIgnoreCase(co.getDescription(), upper)
             || containsIgnoreCase(co.getShortdescription(), upper)
             || containsIgnoreCase(sub.getSign(), upper)
-            || containsIgnoreCase(sub.getDescription(), upper)
-            || containsIgnoreCase(sub.getShortdescription(), upper);
+            || containsIgnoreCase(sub.getShortdescription(), upper)
+            || containsIgnoreCase(sub.getCompleteOrderSign(), upper)
+            || containsIgnoreCase(sub.getCompleteOrderDescription(true, false), upper);
     }
 
     private static boolean containsIgnoreCase(String value, String upper) {
