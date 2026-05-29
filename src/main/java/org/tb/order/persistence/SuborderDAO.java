@@ -2,7 +2,6 @@ package org.tb.order.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static java.util.Comparator.comparing;
-import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.persistence.criteria.Predicate;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.customer.domain.Customer_;
@@ -90,8 +88,9 @@ public class SuborderDAO {
         if (onlyValid) {
             return getSubordersByCustomerorderId(customerorderId, today());
         } else {
-            var order = new Order(ASC, Suborder_.SIGN);
-            return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.by(order));
+            return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.unsorted()).stream()
+                .sorted(comparing(Suborder::getCompleteOrderSign))
+                .collect(Collectors.toList());
         }
     }
 
@@ -99,9 +98,9 @@ public class SuborderDAO {
      * Gets a list of Suborders by customer order id.
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, LocalDate date) {
-        var order = new Order(ASC, Suborder_.SIGN);
-        return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.by(order)).stream()
+        return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.unsorted()).stream()
             .filter(s -> s.isValidAt(date))
+            .sorted(comparing(Suborder::getCompleteOrderSign))
             .collect(Collectors.toList());
     }
 
