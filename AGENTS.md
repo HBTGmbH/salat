@@ -80,6 +80,14 @@ See also README.md
   ```
 - **PR compliance note**: every PR description must include: _"Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines."_
 - **Refactoring issues**: promote one refactoring at a time — open a new issue for the next step rather than bundling multiple cleanups in one PR.
+- **Issue type**: every issue must have its type set via the GitHub GraphQL API after creation. Use `Bug` for defects and `Feature` for new capabilities. Available type IDs:
+  - `Task`:    `IT_kwDOAYn5ks4AV-6C`
+  - `Bug`:     `IT_kwDOAYn5ks4AV-6D`
+  - `Feature`: `IT_kwDOAYn5ks4AV-6H`
+  ```bash
+  gh api graphql -f query='mutation { updateIssue(input: { id: "<node_id>", issueTypeId: "<type_id>" }) { issue { number issueType { name } } } }'
+  # get node_id via: gh api repos/HBTGmbH/salat/issues/NNN --jq .node_id
+  ```
 
 ## Documentation
 - Keep this document updated when architectural rules evolve.
