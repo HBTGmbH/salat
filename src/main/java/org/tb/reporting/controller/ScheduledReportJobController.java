@@ -174,7 +174,7 @@ public class ScheduledReportJobController {
     return "redirect:/reporting/jobs";
   }
 
-  @PostMapping("/run")
+  @GetMapping("/run")
   public String run(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     try {
       jobService.getJob(id); // ownership check

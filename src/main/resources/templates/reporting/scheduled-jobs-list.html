@@ -34,14 +34,11 @@
         <td th:replace="~{fragments/master-table :: colYesNo(enabled=${job.enabled})}"></td>
         <td th:replace="~{fragments/master-table :: colTextAdd(text=${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}, additional=${cronDescriptions[job.id]})}"></td>
         <td th:replace="~{fragments/master-table :: colDate(date=${job.lastupdate})}"></td>
+        <td>
+          <a class="btn btn-success" th:href="@{'/reporting/jobs/run'(id=${job.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+        </td>
         <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/jobs/edit'(id=${job.id})})}"></td>
         <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/reporting/jobs/delete'})}"></td>
-        <td>
-          <form th:action="@{/reporting/jobs/run}" method="post">
-            <input type="hidden" name="id" th:value="${job.id}"/>
-            <button type="submit" class="btn btn-outline-success" title="Run now"><i class="icon ti ti-player-play m-0"></i></button>
-          </form>
-        </td>
       </tr>
     </tbody>
 
