@@ -483,8 +483,11 @@ public class SuborderController {
       form.setParentId(form.getCustomerorderId());
     }
 
-    // Suborders of the current customer order for parent dropdown
-    var parentSuborders = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId());
+    // Suborders of the current customer order for parent dropdown — exclude the suborder being edited
+    var parentSuborders = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId())
+        .stream()
+        .filter(so -> !Objects.equals(so.getId(), form.getId()))
+        .toList();
     var currentCustomerorder = customerorderService.getCustomerorderById(form.getCustomerorderId());
     model.addAttribute("parentSuborders", parentSuborders);
     model.addAttribute("currentCustomerorder", currentCustomerorder);
