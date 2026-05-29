@@ -21,7 +21,6 @@ import org.tb.auth.domain.AccessLevel;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.customer.domain.Customer_;
-import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.auth.EmployeeorderAuthorization;
 import org.tb.order.domain.Customerorder_;
@@ -206,25 +205,31 @@ public class EmployeeorderDAO {
         return (root, query, builder) -> root.join(Employeeorder_.suborder).get(Suborder_.id).in(suborderIds);
     }
 
-    private Specification<Employeeorder> filterMatches(String filter) {
-        final var filterValue = ('%' + filter + '%').toUpperCase();
-        return (root, query, builder) -> builder.or(
-            builder.like(builder.upper(root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee).get(Employee_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee).get(Employee_.firstname)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee).get(Employee_.lastname)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.suborder).join(Suborder_.customerorder).get(Customerorder_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.suborder).join(Suborder_.customerorder).get(Customerorder_.description)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.suborder).join(Suborder_.customerorder).get(Customerorder_.shortdescription)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.suborder).get(Suborder_.sign)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.suborder).get(Suborder_.description)), filterValue),
-            builder.like(builder.upper(root.join(Employeeorder_.suborder).get(Suborder_.shortdescription)), filterValue)
-        );
+    private boolean filterMatchesInMemory(Employeeorder eo, String filter) {
+        var upper = filter.toUpperCase();
+        var sub = eo.getSuborder();
+        var emp = eo.getEmployeecontract().getEmployee();
+        var co = sub.getCustomerorder();
+        return containsIgnoreCase(emp.getSign(), upper)
+            || containsIgnoreCase(emp.getFirstname(), upper)
+            || containsIgnoreCase(emp.getLastname(), upper)
+            || containsIgnoreCase(co.getSign(), upper)
+            || containsIgnoreCase(co.getDescription(), upper)
+            || containsIgnoreCase(co.getShortdescription(), upper)
+            || containsIgnoreCase(sub.getSign(), upper)
+            || containsIgnoreCase(sub.getDescription(), upper)
+            || containsIgnoreCase(sub.getShortdescription(), upper);
+    }
+
+    private static boolean containsIgnoreCase(String value, String upper) {
+        return value != null && value.toUpperCase().contains(upper);
     }
 
     /**
      * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, and suborder.
      */
     public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
                 if(!TRUE.equals(showInvalid)) {
@@ -251,13 +256,10 @@ public class EmployeeorderDAO {
                         predicates.add(matchingSuborderIds(ids).toPredicate(root, query, builder));
                     }
                 }
-                boolean isFilter = filter != null && !filter.trim().isEmpty();
-                if(isFilter) {
-                    predicates.add(filterMatches(filter).toPredicate(root, query, builder));
-                }
                 return builder.and(predicates.toArray(new Predicate[0]));
             }).stream()
             .filter(eo -> employeeorderAuthorization.isAuthorized(eo, AccessLevel.READ))
+            .filter(eo -> !isFilter || filterMatchesInMemory(eo, filter))
             .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
                 .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
