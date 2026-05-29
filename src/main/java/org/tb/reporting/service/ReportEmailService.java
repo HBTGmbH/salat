@@ -48,13 +48,7 @@ public class ReportEmailService {
       ReportResult reportResult = reportService.execute(reportDefinitionId, parameters);
 
       if(reportResult.isError()) {
-        log.error(
-            "Report id={}, name={} produced an error. Skipping email. ErrorMessage: {}",
-            reportDefinitionId,
-            rd.getName(),
-            reportResult.getErrorMessage()
-        );
-        return new SendResult(0, true);
+        throw new RuntimeException("Report execution failed: " + reportResult.getErrorMessage());
       }
 
       int rowCount = reportResult.getRows().size();
