@@ -1,5 +1,6 @@
 package org.tb.reporting.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,25 @@ class ReportControllerTest {
 
   @Mock
   private ReportDefinition reportDefinition;
+
+  @Test
+  void renderQueryParams_encodes_percent_in_value() {
+    var params = List.of(new ReportParameter("sign", "string", "G%"));
+    assertThat(ReportController.renderQueryParams(params)).isEqualTo("&sign=G%25");
+  }
+
+  @Test
+  void renderQueryParams_encodes_percent_with_type_prefix() {
+    var params = List.of(new ReportParameter("name", "number", "G%"));
+    assertThat(ReportController.renderQueryParams(params)).isEqualTo("&name=number,G%25");
+  }
+
+  @Test
+  void renderQueryParams_star_is_preserved_for_later_sql_translation() {
+    // URLEncoder does not encode '*', so it passes through for getParameterMap to convert to '%'
+    var params = List.of(new ReportParameter("sign", "string", "G*"));
+    assertThat(ReportController.renderQueryParams(params)).isEqualTo("&sign=G*");
+  }
 
   @Test
   void testCreateFileNameWithValidData() {
