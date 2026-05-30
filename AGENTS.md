@@ -193,6 +193,41 @@ Each module uses a consistent sub-package structure:
 | `rest` | REST endpoints |
 | `viewhelper` | View decorators and model-prep helpers |
 
+### Entity Classification: Stammdaten vs. Bewegungsdaten
+Entities are divided into two categories (→ ADR-0011):
+
+**Stammdaten (Master Data)** — reference/configuration entities with long lifetimes; rarely changed; referenced by transactional data. Deactivation via `hide`-flag, `enabled`-flag, or validity range rather than deletion.
+
+**Bewegungsdaten (Transactional Data)** — business-event records; append-only or near-immutable after creation; reference master data; may use soft-delete.
+
+| Entity | Type | `hide` / deactivation |
+|---|---|---|
+| `Customer` | Stammdaten | `hide` |
+| `Employee` | Stammdaten | `hide` |
+| `Employeecontract` | Stammdaten | `hide` + `validFrom`/`validUntil` |
+| `Customerorder` | Stammdaten | `hide` + `fromDate`/`untilDate` |
+| `Suborder` | Stammdaten | `hide` + `fromDate`/`untilDate` |
+| `Employeeorder` | Stammdaten | inherits `hide` from parent |
+| `Publicholiday` | Stammdaten | — (calendar fact) |
+| `Referenceday` | Stammdaten | — (calendar reference) |
+| `SalatUser` | Stammdaten | `Employee.hide` |
+| `AuthorizationRule` | Stammdaten | `validFrom`/`validUntil` |
+| `ETLDefinition` | Stammdaten | — |
+| `JiraReplicationConfig` | Stammdaten | `enabled` |
+| `ReportDefinition` | Stammdaten | `hide` (proposed — not yet implemented) |
+| `ScheduledReportJob` | Stammdaten | `enabled` |
+| `OrderRevenueExcelMapping` | Stammdaten | — |
+| `Timereport` | Bewegungsdaten | soft-delete (`deleted` + `@SQLRestriction`) |
+| `Workingday` | Bewegungsdaten | — |
+| `Overtime` | Bewegungsdaten | — |
+| `Vacation` | Bewegungsdaten | — |
+| `OrderRevenue` | Bewegungsdaten | — |
+| `ETLExecutionHistory` | Bewegungsdaten | — |
+| `ScheduledReportExecutionHistory` | Bewegungsdaten | — |
+| `StatisticValue` | Bewegungsdaten | — |
+| `JiraTicket` | Bewegungsdaten | — |
+| `Favorite` | Bewegungsdaten | — |
+
 ### Entity Pattern
 - All JPA entities extend `AuditedEntity` (`common/domain/AuditedEntity.java`)
 - `AuditedEntity` provides: `@Id @GeneratedValue(IDENTITY)`, Spring Data audit fields (`created`, `lastupdate`, `createdby`, `lastupdatedby`), optimistic locking via `@Version updatecounter`, `equals`/`hashCode` by ID

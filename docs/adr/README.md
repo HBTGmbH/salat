@@ -24,3 +24,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0008](0008-exception-hierarchie-mit-errorcode.md) | Exception-Hierarchie mit ErrorCode | Accepted | 2026-05-24 |
 | [0009](0009-liquibase-datenbankmigrationen.md) | Liquibase für Datenbankmigrationen | Accepted | 2026-05-24 |
 | [0010](0010-deutsch-first-i18n.md) | Deutsch als Primärsprache und ISO-8859-1-Encoding | Accepted | 2026-05-24 |
+| [0011](0011-stammdaten-vs-bewegungsdaten.md) | Stammdaten vs. Bewegungsdaten und `hide`-Flag | Accepted | 2026-05-30 |
