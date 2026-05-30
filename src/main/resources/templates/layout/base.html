@@ -231,6 +231,7 @@
                     Übersicht
                   </a>
                   <a class="dropdown-item" th:href="@{/my-accounts}"
+                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}"
                      th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
                      th:text="#{main.my.accounts.title}">
                     Meine Konten
