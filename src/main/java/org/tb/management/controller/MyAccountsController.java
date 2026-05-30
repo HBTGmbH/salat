@@ -255,6 +255,13 @@ public class MyAccountsController {
         long totalWorkMinutes = allReports.stream().mapToLong(t -> t.getDuration().toMinutes()).sum();
         int trainingSharePercent = totalWorkMinutes > 0 ? (int) Math.round(totalTrainingMinutes * 100.0 / totalWorkMinutes) : 0;
 
+        long regularTrainingMinutes = trainingReports.stream()
+                .filter(t -> COMPLETE_ORDER_SIGN_TRAINING.equals(t.getCompleteOrderSign()))
+                .mapToLong(t -> t.getDuration().toMinutes()).sum();
+        long orderTrainingMinutes = trainingReports.stream()
+                .filter(t -> !COMPLETE_ORDER_SIGN_TRAINING.equals(t.getCompleteOrderSign()))
+                .mapToLong(t -> t.getDuration().toMinutes()).sum();
+
         var bookings = trainingReports.stream()
                 .sorted(Comparator.comparing(TimereportDTO::getReferenceday).reversed())
                 .map(t -> new TrainingBooking(
@@ -290,6 +297,8 @@ public class MyAccountsController {
 
         model.addAttribute("totalTrainingHours", DurationUtils.format(Duration.ofMinutes(totalTrainingMinutes)));
         model.addAttribute("trainingSharePercent", trainingSharePercent);
+        model.addAttribute("regularTrainingHours", DurationUtils.format(Duration.ofMinutes(regularTrainingMinutes)));
+        model.addAttribute("orderTrainingHours", DurationUtils.format(Duration.ofMinutes(orderTrainingMinutes)));
         model.addAttribute("trainingBookings", bookings);
         model.addAttribute("trainingChartLabels", trainingChartLabels);
         model.addAttribute("trainingChartHours", trainingChartHours);

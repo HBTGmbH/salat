@@ -190,7 +190,7 @@
         <div class="tab-pane" id="tab-training">
 
           <!-- Summary KPIs -->
-          <div class="row g-3 mb-4">
+          <div class="row g-3 mb-3">
             <div class="col-12 col-sm-6 d-flex">
               <div class="card h-100 w-100">
                 <div class="card-body">
@@ -204,6 +204,26 @@
                 <div class="card-body">
                   <p class="subheader mb-2" th:text="#{main.my.accounts.training.share}">Anteil an Gesamtarbeitszeit</p>
                   <div class="display-5 fw-bold" th:text="${trainingSharePercent} + '%'">0%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training breakdown KPIs -->
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 d-flex">
+              <div class="card h-100 w-100">
+                <div class="card-body">
+                  <p class="subheader mb-2" th:text="#{main.my.accounts.training.regular.hours}">Reguläre Fortbildung</p>
+                  <div class="display-5 fw-bold" th:text="${regularTrainingHours}">0:00</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 d-flex">
+              <div class="card h-100 w-100">
+                <div class="card-body">
+                  <p class="subheader mb-2" th:text="#{main.my.accounts.training.order.hours}">Projektbezogene Fortbildung</p>
+                  <div class="display-5 fw-bold" th:text="${orderTrainingHours}">0:00</div>
                 </div>
               </div>
             </div>
