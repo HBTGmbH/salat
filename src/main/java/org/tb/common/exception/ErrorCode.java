@@ -69,6 +69,11 @@ public enum ErrorCode {
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
+  RL_RELEASE_DATE_INVALID("RL-0003", "release date is null or outside contract validity range"),
+  RL_RELEASE_DATE_BEFORE_ACCEPTANCE("RL-0004", "release date must not be before the acceptance date"),
+  RL_ACCEPTANCE_DATE_INVALID("RL-0005", "acceptance date is null or outside contract validity range"),
+  RL_ACCEPTANCE_DATE_AFTER_RELEASE("RL-0006", "acceptance date must not be after the release date"),
+  RL_ACCEPTANCE_DATE_MOVED_BACKWARDS("RL-0007", "acceptance date must not move backwards"),
 
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER("WD-0004", "you can only save your own working days or you must be a manager!"),
