@@ -32,8 +32,6 @@
 		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
 		<form-bean name="showOvertimeForm" type="org.tb.dailyreport.action.ShowOvertimeForm" />
 		<form-bean name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseForm" />
-		<form-bean name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingForm" />
-
 		<!-- employee/contract/order Struts UI removed (migrated to Spring MVC) -->
 		<!-- customer Struts UI removed (migrated to Spring MVC) -->
 		<!-- customerorder/suborder Struts UI removed (migrated to Spring MVC) -->
@@ -173,13 +171,6 @@
 			<forward name="print" path="/dailyreport/showMatrixPrint.jsp" />
 		</action>
 		
-		<action path="/ShowTraining" input="/dailyreport/showTraining.jsp" validate="true"
-			name="showTrainingForm" type="org.tb.dailyreport.action.ShowTrainingAction">
-			<forward name="success" path="/dailyreport/showTraining.jsp" />
-			<forward name="error" path="/error.jsp" />
-			<forward name="backtomenu" path="/welcome" redirect="true" />
-		</action>
-
 		<!-- Customer Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 		<!-- Customerorder/Suborder Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
 

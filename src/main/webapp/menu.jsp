@@ -48,9 +48,6 @@
 		<c:if test="${not loginEmployee.restricted}"><li class="first"><html:link styleClass="menu" action="/ShowOvertime">
 			<bean:message key="main.general.mainmenu.overtime.text" />
 		</html:link></li></c:if>
-		<c:if test="${not loginEmployee.restricted}"><li><html:link styleClass="menu" action="/ShowTraining">
-			<bean:message key="main.general.mainmenu.training.text" />
-		</html:link></li></c:if>
 		<li><html:link styleClass="menu" action="/ShowRelease">
 			<bean:message key="main.general.mainmenu.release.title.text" />
 		</html:link></li>
