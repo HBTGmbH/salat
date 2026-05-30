@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -235,7 +237,8 @@ public class ReportController {
     response.getOutputStream().write(bytes);
   }
 
-  private static String renderQueryParams(List<ReportParameter> parameters) {
+  @VisibleForTesting
+  static String renderQueryParams(List<ReportParameter> parameters) {
     if (parameters == null || parameters.isEmpty()) {
       return "";
     }
@@ -246,7 +249,7 @@ public class ReportController {
         if (!"string".equals(parameter.getType())) {
           result.append(parameter.getType()).append(",");
         }
-        result.append(parameter.getValue());
+        result.append(URLEncoder.encode(parameter.getValue(), StandardCharsets.UTF_8));
       }
     }
     return result.toString();
