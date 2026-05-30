@@ -13,6 +13,11 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
+import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_AFTER_RELEASE;
+import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_INVALID;
+import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_MOVED_BACKWARDS;
+import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE;
+import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
@@ -94,6 +99,7 @@ public class ReleaseService {
       throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
     }
 
+    validateReleaseDateForContract(releaseDate, employeecontract);
     validateForRelease(employeecontractId, releaseDate);
 
     // set status in timereports
@@ -117,6 +123,8 @@ public class ReleaseService {
     if(!releaseAuthorization.isAcceptAuthorized(employeecontract, AccessLevel.WRITE)) {
       throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
     }
+
+    validateAcceptanceDateForContract(acceptanceDate, employeecontract);
 
     // set status in timereports
     var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
@@ -385,6 +393,33 @@ public class ReleaseService {
         new MailContact(sender.getName(), sender.getEmailAddress()),
         new MailContact(recipient.getName(), recipient.getEmailAddress())
     );
+  }
+
+  private void validateReleaseDateForContract(LocalDate releaseDate, Employeecontract contract) {
+    if (releaseDate == null
+        || releaseDate.isBefore(contract.getValidFrom())
+        || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))) {
+      throw new BusinessRuleException(RL_RELEASE_DATE_INVALID);
+    }
+    if (contract.getReportAcceptanceDate() != null && releaseDate.isBefore(contract.getReportAcceptanceDate())) {
+      throw new BusinessRuleException(RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
+    }
+  }
+
+  private void validateAcceptanceDateForContract(LocalDate acceptanceDate, Employeecontract contract) {
+    if (acceptanceDate == null
+        || acceptanceDate.isBefore(contract.getValidFrom())
+        || (contract.getValidUntil() != null && acceptanceDate.isAfter(contract.getValidUntil()))) {
+      throw new BusinessRuleException(RL_ACCEPTANCE_DATE_INVALID);
+    }
+    if (contract.getReportReleaseDate() != null && acceptanceDate.isAfter(contract.getReportReleaseDate())) {
+      throw new BusinessRuleException(RL_ACCEPTANCE_DATE_AFTER_RELEASE);
+    }
+    if (!authorizedUser.isAdmin()
+        && contract.getReportAcceptanceDate() != null
+        && acceptanceDate.isBefore(contract.getReportAcceptanceDate())) {
+      throw new BusinessRuleException(RL_ACCEPTANCE_DATE_MOVED_BACKWARDS);
+    }
   }
 
   private Optional<ServiceFeedbackMessage> validateRestTime(LocalDate date,
