@@ -99,7 +99,6 @@ public class ReleaseService {
       throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
     }
 
-    validateReleaseDateForContract(releaseDate, employeecontract);
     validateForRelease(employeecontractId, releaseDate);
 
     // set status in timereports
@@ -124,7 +123,7 @@ public class ReleaseService {
       throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
     }
 
-    validateAcceptanceDateForContract(acceptanceDate, employeecontract);
+    validateForAcceptance(employeecontractId, acceptanceDate);
 
     // set status in timereports
     var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
@@ -191,9 +190,18 @@ public class ReleaseService {
 
   @VisibleForTesting
   protected void validateForRelease(Long employeeContractId, LocalDate releaseDate) {
-    final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
-
     var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
+
+    if (releaseDate == null
+        || releaseDate.isBefore(contract.getValidFrom())
+        || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))) {
+      throw new BusinessRuleException(RL_RELEASE_DATE_INVALID);
+    }
+    if (contract.getReportAcceptanceDate() != null && releaseDate.isBefore(contract.getReportAcceptanceDate())) {
+      throw new BusinessRuleException(RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
+    }
+
+    final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
 
     var currentReleaseDate = contract.getReportReleaseDate();
     var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
@@ -395,18 +403,8 @@ public class ReleaseService {
     );
   }
 
-  private void validateReleaseDateForContract(LocalDate releaseDate, Employeecontract contract) {
-    if (releaseDate == null
-        || releaseDate.isBefore(contract.getValidFrom())
-        || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))) {
-      throw new BusinessRuleException(RL_RELEASE_DATE_INVALID);
-    }
-    if (contract.getReportAcceptanceDate() != null && releaseDate.isBefore(contract.getReportAcceptanceDate())) {
-      throw new BusinessRuleException(RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
-    }
-  }
-
-  private void validateAcceptanceDateForContract(LocalDate acceptanceDate, Employeecontract contract) {
+  private void validateForAcceptance(long employeeContractId, LocalDate acceptanceDate) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
     if (acceptanceDate == null
         || acceptanceDate.isBefore(contract.getValidFrom())
         || (contract.getValidUntil() != null && acceptanceDate.isAfter(contract.getValidUntil()))) {
