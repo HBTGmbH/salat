@@ -26,6 +26,15 @@ public class ReportResult implements Serializable {
   private final boolean error; // true if an error occurred while executing the report
   private final ErrorInfo errorInfo;
 
+  public boolean isNumericColumn(String columnName) {
+    return rows.stream()
+        .map(row -> row.getColumnValues().get(columnName))
+        .filter(v -> v != null && v.getValue() != null)
+        .findFirst()
+        .map(ReportResultColumnValue::isNumeric)
+        .orElse(false);
+  }
+
   /**
    * Liefert ein JavaScript-kompatibles Array als String,
    * bei dem die Objekt-Keys nicht in Anführungszeichen stehen.
