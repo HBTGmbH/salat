@@ -89,10 +89,6 @@
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
                     Überstunden
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowTraining}" th:text="#{main.general.mainmenu.training.text}"
-                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
-                    Fortbildung
-                  </a>
                   <a class="dropdown-item" th:href="@{/do/ShowRelease}" th:text="#{main.general.mainmenu.release.title.text}">
                     Freigabe
                   </a>
