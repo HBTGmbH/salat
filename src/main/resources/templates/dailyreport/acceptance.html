@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=${sectionTitle}">
+<section layout:fragment="content">
+
+  <!-- ── Selector card ─────────────────────────────────────────────────── -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="bi bi-people me-2 text-muted"></i>
+        <span th:text="#{main.release.team.title.text}">Buchungen Mitarbeiter</span>
+      </h3>
+    </div>
+    <div class="card-body">
+
+      <!-- Supervisor filter (managers only) -->
+      <div th:if="${supervisors != null}" class="row mb-3">
+        <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.supervisor.text}">People Lead</label>
+        <div class="col-sm-5">
+          <select class="form-select"
+                  onchange="window.location='/acceptance?supervisorId=' + this.value">
+            <option value="-1"
+                    th:selected="${supervisorId == null or supervisorId == -1}"
+                    th:text="#{main.general.all.text}">Alle</option>
+            <option th:each="s : ${supervisors}"
+                    th:value="${s.id}"
+                    th:selected="${supervisorId != null and supervisorId == s.id}"
+                    th:text="${s.name + ' | ' + s.sign}"></option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Employee contract selector -->
+      <div class="row">
+        <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.employee.text}">Mitarbeiter</label>
+        <div class="col-sm-5">
+          <select class="form-select"
+                  th:if="${not #lists.isEmpty(employeeContracts)}"
+                  onchange="window.location='/acceptance?contractId=' + this.value">
+            <option th:each="ec : ${employeeContracts}"
+                    th:value="${ec.id}"
+                    th:selected="${selectedContract != null and selectedContract.id == ec.id}"
+                    th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' …' : '') + ')'}">
+            </option>
+          </select>
+          <span th:if="${#lists.isEmpty(employeeContracts)}" class="text-muted"
+                th:text="#{main.general.noentries.text}">Keine Einträge</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Action card (only when a contract is selected) ────────────────── -->
+  <div th:if="${selectedContract != null}" class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="${selectedContract.employee.name}"></h3>
+      <div class="card-options">
+        <span class="text-muted small">
+          <span th:text="#{main.release.released.until.text}">freigegeben bis</span>:
+          <strong th:if="${not #strings.isEmpty(releasedUntil)}" th:text="${releasedUntil}"></strong>
+          <strong th:if="${#strings.isEmpty(releasedUntil)}" th:text="#{main.release.released.never.text}">nie</strong>
+          &nbsp;|&nbsp;
+          <span th:text="#{main.release.accepted.until.text}">abgenommen bis</span>:
+          <strong th:if="${not #strings.isEmpty(acceptedUntil)}" th:text="${acceptedUntil}"></strong>
+          <strong th:if="${#strings.isEmpty(acceptedUntil)}" th:text="#{main.release.released.never.text}">nie</strong>
+        </span>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- Release form -->
+      <form method="post" th:action="@{/acceptance/release}" class="row g-2 align-items-end mb-3">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
+        <div class="col-auto">
+          <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
+          <input type="month" class="form-control" name="releaseDate" th:value="${releaseDateStr}" />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary"
+                  th:onclick="|return confirm('#{main.general.confirmrelease.text}')|"
+                  th:text="#{main.general.button.release.text}">Freigeben</button>
+        </div>
+      </form>
+
+      <!-- Accept form -->
+      <form method="post" th:action="@{/acceptance/accept}" class="row g-2 align-items-end mb-3">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
+        <div class="col-auto">
+          <label class="form-label fw-semibold" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
+          <input type="month" class="form-control" name="acceptanceDate" th:value="${acceptanceDateStr}" />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-success"
+                  th:onclick="|return confirm('#{main.general.confirmacceptance.text}')|"
+                  th:text="#{main.general.button.accept.text}">Abnehmen</button>
+        </div>
+      </form>
+
+      <!-- Reopen form (admin only) -->
+      <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
+            method="post" th:action="@{/acceptance/reopen}" class="row g-2 align-items-end">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
+        <div class="col-auto">
+          <label class="form-label fw-semibold" th:text="#{main.release.reopen.until.text}">Buchungen öffnen ab (nur Admin)</label>
+          <input type="month" class="form-control" name="reopenDate" th:value="${reopenDateStr}" />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-warning"
+                  th:onclick="|return confirm('#{main.general.confirmreopen.text}')|"
+                  th:text="#{main.general.button.reopen.text}">Öffnen</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ── Overview table ───────────────────────────────────────────────── -->
+  <div th:if="${not #lists.isEmpty(employeeContracts)}" class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="bi bi-table me-2 text-muted"></i>
+        <span th:text="#{main.release.overview.text}">Übersicht</span>
+      </h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.employeeorder.employee.text}">Kürzel</th>
+            <th th:text="#{main.release.employee.text}">Mitarbeiter</th>
+            <th class="d-none d-lg-table-cell" th:text="#{main.release.timeperiod.text}">Zeitraum</th>
+            <th th:text="#{main.release.released.until.text}">freigegeben bis</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.employeecontract.supervisor.text}">PL</th>
+            <th th:text="#{main.release.accepted.until.text}">abgenommen bis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="ec : ${employeeContracts}">
+            <td><code th:text="${ec.employee.sign}"></code></td>
+            <td th:text="${ec.employee.name}"></td>
+            <td class="d-none d-lg-table-cell text-muted">
+              <span th:text="${ec.timeString}"></span>
+              <span th:if="${ec.openEnd}" th:text="#{main.general.open.text}"></span>
+            </td>
+            <td>
+              <span th:if="${ec.releaseWarning}" class="text-danger fw-semibold" th:text="${ec.reportReleaseDateString}"></span>
+              <span th:unless="${ec.releaseWarning}" th:text="${ec.reportReleaseDateString}"></span>
+              <form th:if="${ec.releaseWarning}" method="post" th:action="@{/acceptance/release-mail}" class="d-inline ms-1">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" name="employeeId" th:value="${ec.employee.id}" />
+                <input type="hidden" name="contractId" th:value="${selectedContract != null ? selectedContract.id : ''}" />
+                <button type="submit" class="btn btn-sm btn-ghost-warning py-0 px-1"
+                        th:title="#{main.release.sendmail.release.text}"
+                        th:onclick="|return confirm('#{main.general.confirmmail.text}')|">
+                  <i class="bi bi-envelope"></i>
+                </button>
+              </form>
+            </td>
+            <td class="d-none d-md-table-cell text-muted" th:text="${ec.supervisor != null ? ec.supervisor.sign : ''}"></td>
+            <td>
+              <span th:if="${ec.acceptanceWarning}" class="text-danger fw-semibold" th:text="${ec.reportAcceptanceDateString}"></span>
+              <span th:unless="${ec.acceptanceWarning}" th:text="${ec.reportAcceptanceDateString}"></span>
+              <form th:if="${ec.acceptanceWarning and not ec.releaseWarning}" method="post" th:action="@{/acceptance/acceptance-mail}" class="d-inline ms-1">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" name="contractId" th:value="${ec.id}" />
+                <button type="submit" class="btn btn-sm btn-ghost-warning py-0 px-1"
+                        th:title="#{main.release.sendmail.acceptance.text}"
+                        th:onclick="|return confirm('#{main.general.confirmmail.text}')|">
+                  <i class="bi bi-envelope"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+</html>

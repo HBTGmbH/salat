@@ -31,7 +31,7 @@
 		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportForm" />
 		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
 		<form-bean name="showOvertimeForm" type="org.tb.dailyreport.action.ShowOvertimeForm" />
-		<form-bean name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseForm" />
+		<!-- showReleaseForm removed (migrated to Spring MVC) -->
 		<!-- employee/contract/order Struts UI removed (migrated to Spring MVC) -->
 		<!-- customer Struts UI removed (migrated to Spring MVC) -->
 		<!-- customerorder/suborder Struts UI removed (migrated to Spring MVC) -->
@@ -157,11 +157,7 @@
 			<forward name="error" path="/error.jsp" />
 		</action>
 
-		<action path="/ShowRelease" input="/dailyreport/showRelease.jsp" validate="true"
-			name="showReleaseForm" type="org.tb.dailyreport.action.ShowReleaseAction">
-			<forward name="success" path="/dailyreport/showRelease.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
+		<!-- ShowRelease removed (migrated to Spring MVC at /release and /acceptance) -->
 
 		<action path="/ShowMatrix" input="/dailyreport/showMatrix.jsp" validate="true"
 			name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixAction">
