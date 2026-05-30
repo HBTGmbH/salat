@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=${sectionTitle}">
+<section layout:fragment="content">
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="bi bi-check-circle me-2 text-muted"></i>
+        <span th:text="#{main.general.mainmenu.release.title.text}">Freigabe</span>
+      </h3>
+    </div>
+    <div class="card-body">
+
+      <!-- Status rows -->
+      <div class="row mb-2">
+        <div class="col-sm-4 text-muted fw-semibold" th:text="#{main.release.employee.text}">Mitarbeiter</div>
+        <div class="col-sm-8" th:text="${loginEmployee.name}"></div>
+      </div>
+      <div class="row mb-2">
+        <div class="col-sm-4 text-muted fw-semibold" th:text="#{main.release.released.until.text}">freigegeben bis</div>
+        <div class="col-sm-8">
+          <span th:if="${not #strings.isEmpty(releasedUntil)}" th:text="${releasedUntil}"></span>
+          <span th:if="${#strings.isEmpty(releasedUntil)}" class="text-muted" th:text="#{main.release.released.never.text}">nie</span>
+        </div>
+      </div>
+      <div class="row mb-4">
+        <div class="col-sm-4 text-muted fw-semibold" th:text="#{main.release.accepted.until.text}">abgenommen bis</div>
+        <div class="col-sm-8">
+          <span th:if="${not #strings.isEmpty(acceptedUntil)}" th:text="${acceptedUntil}"></span>
+          <span th:if="${#strings.isEmpty(acceptedUntil)}" class="text-muted" th:text="#{main.release.released.never.text}">nie</span>
+        </div>
+      </div>
+
+      <!-- Release form (only shown when user has a contract) -->
+      <form th:if="${loginEmployeeContract != null}" method="post" th:action="@{/release}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <div class="row g-2 align-items-end">
+          <div class="col-auto">
+            <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
+            <input type="month" class="form-control" name="selfReleaseDate" th:value="${selfReleaseDateStr}" />
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary"
+                    th:onclick="|return confirm('#{main.general.confirmrelease.text}')|"
+                    th:text="#{main.general.button.release.text}">Freigeben</button>
+          </div>
+        </div>
+      </form>
+
+      <div th:if="${loginEmployeeContract == null}" class="text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        <span th:text="#{main.release.no.active.contract.text}">Kein aktiver Mitarbeitervertrag gefunden.</span>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+</html>
