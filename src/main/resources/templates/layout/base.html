@@ -336,6 +336,29 @@
           </div>
         </div>
       </div>
+      <div class="container-xl my-4" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
+        <div class="alert alert-danger align-items-start gap-3" role="alert">
+          <div class="icon">
+            <i class="ti ti-circle-x"></i>
+          </div>
+          <div class="flex-fill">
+            <div class="d-flex justify-content-between">
+              <div class="w-100">
+                <h4 class="alert-title mb-1">Error</h4>
+                <div class="text-secondary" th:text="${toastErrors[0]}"></div>
+                <details th:if="${#lists.size(toastErrors) > 1}" class="mt-2">
+                  <summary class="text-secondary small"
+                           th:text="#{main.general.more.errors.text(${#lists.size(toastErrors) - 1})}">+N weitere Fehler</summary>
+                  <ul class="mt-1 mb-0 ps-3">
+                    <li th:each="msg,i : ${toastErrors}" th:if="${i.index > 0}"
+                        class="text-secondary small" th:text="${msg}"></li>
+                  </ul>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="container-xl my-4" th:if="${errors != null && !errors.isEmpty()}">
         <div class="alert alert-danger align-items-start gap-3" role="alert">
           <div class="icon">

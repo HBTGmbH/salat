@@ -6,6 +6,7 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -65,7 +66,7 @@ public class ReleaseController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.releasetimeperiod.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError", firstMessage(ex));
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return "redirect:/release";
     }
@@ -77,9 +78,10 @@ public class ReleaseController {
         return YearMonth.from(defaultDate).toString();
     }
 
-    private String firstMessage(ErrorCodeException ex) {
+    private List<String> allMessages(ErrorCodeException ex) {
         var msgs = errorCodeViewHelper.toViewMessages(ex);
-        return msgs.isEmpty() ? "Error" : msgs.getFirst().resolved();
+        if (msgs.isEmpty()) return List.of("Error");
+        return msgs.stream().map(m -> m.resolved()).toList();
     }
 
     static LocalDate parseEndOfMonth(String s) {
