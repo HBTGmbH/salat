@@ -41,7 +41,7 @@
   </form>
 
   <!-- KPI row: week hours, month hours, last log, reports status -->
-  <div class="row g-3 mb-3" th:if="${displayEmployeeInfo}">
+  <div class="row g-3 mb-3">
 
     <!-- Hours this week -->
     <div class="col-12 col-sm-6 col-xl-3 d-flex">
@@ -202,7 +202,7 @@
   </div>
 
   <!-- Hours by order this month -->
-  <div class="card mb-3" th:if="${displayEmployeeInfo and orderHours != null and not #lists.isEmpty(orderHours)}">
+  <div class="card mb-3" th:if="${orderHours != null and not #lists.isEmpty(orderHours)}">
     <div class="card-header">
       <h3 class="card-title">
         <i class="bi bi-bar-chart-line me-2 text-muted"></i>

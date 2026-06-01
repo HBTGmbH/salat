@@ -108,9 +108,7 @@ public class WelcomeController {
         model.addAttribute("overtimeMonth", session.getAttribute("overtimeMonth"));
         model.addAttribute("vacations", session.getAttribute("vacations"));
 
-        if (displayEmployeeInfo) {
-            calculateEmployeeInfo(model, employeecontract);
-        }
+        calculateEmployeeInfo(model, employeecontract);
 
         return "management/welcome";
     }
