@@ -47,6 +47,20 @@ public class AcceptanceController {
                        Model model) {
         var loginEmployee = employeeService.getLoginEmployee();
 
+        if (authorizedUser.isManager()) {
+            var allViewable = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
+            List<Employee> supervisors = allViewable.stream()
+                .map(Employeecontract::getSupervisor)
+                .filter(s -> s != null)
+                .distinct()
+                .sorted(Comparator.comparing(Employee::getName))
+                .toList();
+            model.addAttribute("supervisors", supervisors);
+            if (supervisorId == null && supervisors.stream().anyMatch(s -> s.getId().equals(loginEmployee.getId()))) {
+                supervisorId = loginEmployee.getId();
+            }
+        }
+
         List<Employeecontract> employeeContracts = loadContracts(loginEmployee, supervisorId);
         employeeContracts = employeeContracts.stream()
             .sorted(Comparator.comparing(ec -> ec.getEmployee().getName()))
@@ -58,17 +72,6 @@ public class AcceptanceController {
         }
         if (selected == null && !employeeContracts.isEmpty()) {
             selected = employeeContracts.getFirst();
-        }
-
-        if (authorizedUser.isManager()) {
-            var allViewable = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
-            List<Employee> supervisors = allViewable.stream()
-                .map(Employeecontract::getSupervisor)
-                .filter(s -> s != null)
-                .distinct()
-                .sorted(Comparator.comparing(Employee::getName))
-                .toList();
-            model.addAttribute("supervisors", supervisors);
         }
 
         model.addAttribute("employeeContracts", employeeContracts);
