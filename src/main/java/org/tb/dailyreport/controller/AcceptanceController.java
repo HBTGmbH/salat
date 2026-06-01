@@ -95,7 +95,7 @@ public class AcceptanceController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.releasetimeperiod.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError", firstMessage(ex));
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return "redirect:/acceptance?contractId=" + contractId;
     }
@@ -109,7 +109,7 @@ public class AcceptanceController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.accepttimeperiod.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError", firstMessage(ex));
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return "redirect:/acceptance?contractId=" + contractId;
     }
@@ -123,7 +123,7 @@ public class AcceptanceController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.reopentimeperiod.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError", firstMessage(ex));
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return "redirect:/acceptance?contractId=" + contractId;
     }
@@ -137,7 +137,7 @@ public class AcceptanceController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.actioninfo.mailsent.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError", firstMessage(ex));
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return contractId != null ? "redirect:/acceptance?contractId=" + contractId : "redirect:/acceptance";
     }
@@ -150,7 +150,7 @@ public class AcceptanceController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.actioninfo.mailsent.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError", firstMessage(ex));
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return "redirect:/acceptance?contractId=" + contractId;
     }
@@ -179,9 +179,10 @@ public class AcceptanceController {
         return YearMonth.from(defaultDate).toString();
     }
 
-    private String firstMessage(ErrorCodeException ex) {
+    private List<String> allMessages(ErrorCodeException ex) {
         var msgs = errorCodeViewHelper.toViewMessages(ex);
-        return msgs.isEmpty() ? "Error" : msgs.getFirst().resolved();
+        if (msgs.isEmpty()) return List.of("Error");
+        return msgs.stream().map(m -> m.resolved()).toList();
     }
 
     private static LocalDate parseStartOfMonth(String s) {
