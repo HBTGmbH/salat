@@ -91,14 +91,14 @@
                   </a>
                   <a class="dropdown-item" th:href="@{/release}"
                      th:classappend="${subSection == 'release'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.release.title.text}">
+                     th:text="#{main.general.mainmenu.release.text}">
                     Freigabe
                   </a>
                   <a class="dropdown-item" th:href="@{/acceptance}"
                      th:if="${#authorization.expression('hasRole(''PEOPLE_LEAD'')')}"
                      th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
-                     th:text="#{main.release.accepttimeperiod.text}">
-                    Buchungen abnehmen
+                     th:text="#{main.general.mainmenu.acceptance.text}">
+                    Abnahme
                   </a>
                 </div>
               </div>
