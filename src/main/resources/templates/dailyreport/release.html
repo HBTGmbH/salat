@@ -8,7 +8,7 @@
   <div class="card">
     <div class="card-header">
       <h3 class="card-title" th:text="${loginEmployee.name}"></h3>
-      <div class="card-options">
+      <div class="card-options d-none d-sm-flex">
         <span class="text-muted small">
           <span th:text="#{main.release.released.until.text}">freigegeben bis</span>:
           <strong th:if="${not #strings.isEmpty(releasedUntil)}" th:text="${releasedUntil}"></strong>
