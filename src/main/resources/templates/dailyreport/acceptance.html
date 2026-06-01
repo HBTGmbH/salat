@@ -20,7 +20,7 @@
         <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.supervisor.text}">People Lead</label>
         <div class="col-sm-5">
           <select class="form-select"
-                  onchange="window.location='/acceptance?supervisorId=' + this.value">
+                  onchange="window.location='/acceptance?supervisorId=' + encodeURIComponent(this.value)">
             <option value="-1"
                     th:selected="${supervisorId == null or supervisorId == -1}"
                     th:text="#{main.general.all.text}">Alle</option>
@@ -39,7 +39,7 @@
           <select class="form-select"
                   th:if="${not #lists.isEmpty(employeeContracts)}"
                   th:data-supervisor-id="${supervisorId}"
-                  onchange="var s=this.dataset.supervisorId; window.location='/acceptance?contractId=' + this.value + (s ? '&amp;supervisorId=' + s : '')">
+                  onchange="var s=this.dataset.supervisorId; window.location='/acceptance?contractId=' + encodeURIComponent(this.value) + (s ? '&amp;supervisorId=' + encodeURIComponent(s) : '')">
             <option th:each="ec : ${employeeContracts}"
                     th:value="${ec.id}"
                     th:selected="${selectedContract != null and selectedContract.id == ec.id}"
