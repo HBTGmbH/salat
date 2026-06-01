@@ -17,10 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraTicket;
@@ -32,21 +31,17 @@ import org.tb.jira.service.JiraClient.JiraSearchResult;
 @SpringBootTest
 class JiraReplicationServiceTest {
 
-  @Mock
+  @MockitoBean
   private JiraClient jiraClient;
 
-  @Mock
+  @MockitoBean
   private JiraReplicationConfigRepository configRepo;
 
-  @Mock
+  @MockitoBean
   private JiraTicketRepository ticketRepo;
 
-  @InjectMocks
+  @Autowired
   private JiraReplicationService jiraReplicationService;
-
-  public JiraReplicationServiceTest() {
-    MockitoAnnotations.openMocks(this);
-  }
 
   @Test
   void testRunReplicationWithValidConfig() {

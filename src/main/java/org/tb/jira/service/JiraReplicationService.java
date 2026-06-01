@@ -211,7 +211,7 @@ public class JiraReplicationService {
   }
 
   private LocalDateTime toDateTime(String dateTimeValue) {
-    if (dateTimeValue.isBlank()) {
+    if (dateTimeValue == null || dateTimeValue.isBlank()) {
       return null;
     }
     // e.g. 2024-05-31T13:43:33
