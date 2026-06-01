@@ -36,7 +36,6 @@
 
       <!-- Release form (only shown when user has a contract) -->
       <form th:if="${loginEmployeeContract != null}" method="post" th:action="@{/release}">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <div class="row g-2 align-items-end">
           <div class="col-auto">
             <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>

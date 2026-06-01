@@ -73,7 +73,6 @@
 
       <!-- Release form -->
       <form method="post" th:action="@{/acceptance/release}" class="row g-2 align-items-end mb-3">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
         <div class="col-auto">
           <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
@@ -88,7 +87,6 @@
 
       <!-- Accept form -->
       <form method="post" th:action="@{/acceptance/accept}" class="row g-2 align-items-end mb-3">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
         <div class="col-auto">
           <label class="form-label fw-semibold" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
@@ -104,7 +102,6 @@
       <!-- Reopen form (admin only) -->
       <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
             method="post" th:action="@{/acceptance/reopen}" class="row g-2 align-items-end">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
         <div class="col-auto">
           <label class="form-label fw-semibold" th:text="#{main.release.reopen.until.text}">Buchungen öffnen ab (nur Admin)</label>
@@ -152,7 +149,6 @@
               <span th:if="${ec.releaseWarning}" class="text-danger fw-semibold" th:text="${ec.reportReleaseDateString}"></span>
               <span th:unless="${ec.releaseWarning}" th:text="${ec.reportReleaseDateString}"></span>
               <form th:if="${ec.releaseWarning}" method="post" th:action="@{/acceptance/release-mail}" class="d-inline ms-1">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <input type="hidden" name="employeeId" th:value="${ec.employee.id}" />
                 <input type="hidden" name="contractId" th:value="${selectedContract != null ? selectedContract.id : ''}" />
                 <button type="submit" class="btn btn-sm btn-ghost-warning py-0 px-1"
@@ -167,7 +163,6 @@
               <span th:if="${ec.acceptanceWarning}" class="text-danger fw-semibold" th:text="${ec.reportAcceptanceDateString}"></span>
               <span th:unless="${ec.acceptanceWarning}" th:text="${ec.reportAcceptanceDateString}"></span>
               <form th:if="${ec.acceptanceWarning and not ec.releaseWarning}" method="post" th:action="@{/acceptance/acceptance-mail}" class="d-inline ms-1">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <input type="hidden" name="contractId" th:value="${ec.id}" />
                 <button type="submit" class="btn btn-sm btn-ghost-warning py-0 px-1"
                         th:title="#{main.release.sendmail.acceptance.text}"
