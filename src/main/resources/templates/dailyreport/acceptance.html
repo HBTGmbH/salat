@@ -37,9 +37,9 @@
         <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.employee.text}">Mitarbeiter</label>
         <div class="col-sm-5">
           <select class="form-select"
+                  id="employee-contract-select"
                   th:if="${not #lists.isEmpty(employeeContracts)}"
-                  th:data-supervisor-id="${supervisorId}"
-                  onchange="var s=this.dataset.supervisorId; window.location='/acceptance?contractId=' + encodeURIComponent(this.value) + (s ? '&amp;supervisorId=' + encodeURIComponent(s) : '')">
+                  th:data-supervisor-id="${supervisorId}">
             <option th:each="ec : ${employeeContracts}"
                     th:value="${ec.id}"
                     th:selected="${selectedContract != null and selectedContract.id == ec.id}"
@@ -184,5 +184,22 @@
     </div>
   </div>
 
+  <script th:inline="javascript">
+    (function () {
+      var contractSelect = document.getElementById('employee-contract-select');
+      if (!contractSelect) {
+        return;
+      }
+      contractSelect.addEventListener('change', function () {
+        var url = new URL('/acceptance', window.location.origin);
+        url.searchParams.set('contractId', contractSelect.value);
+        var supervisorId = contractSelect.dataset.supervisorId;
+        if (supervisorId) {
+          url.searchParams.set('supervisorId', supervisorId);
+        }
+        window.location.assign(url.pathname + url.search);
+      });
+    })();
+  </script>
 </section>
 </html>
