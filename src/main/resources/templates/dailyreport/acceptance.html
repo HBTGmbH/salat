@@ -73,45 +73,51 @@
     <div class="card-body">
 
       <!-- Release form -->
-      <form method="post" th:action="@{/acceptance/release}" class="row g-2 align-items-end mb-3">
+      <form method="post" th:action="@{/acceptance/release}" class="mb-3">
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
-        <div class="col-auto">
-          <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
-          <input type="month" class="form-control" name="releaseDate" th:value="${releaseDateStr}" />
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn btn-primary"
-                  th:onclick="|return confirm('#{main.general.confirmrelease.text}')|"
-                  th:text="#{main.general.button.release.text}">Freigeben</button>
+        <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
+        <div class="row g-2 align-items-center">
+          <div class="col-auto">
+            <input type="month" class="form-control" name="releaseDate" th:value="${releaseDateStr}" />
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary"
+                    th:onclick="|return confirm('#{main.general.confirmrelease.text}')|"
+                    th:text="#{main.general.button.release.text}">Freigeben</button>
+          </div>
         </div>
       </form>
 
       <!-- Accept form -->
-      <form method="post" th:action="@{/acceptance/accept}" class="row g-2 align-items-end mb-3">
+      <form method="post" th:action="@{/acceptance/accept}" class="mb-3">
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
-        <div class="col-auto">
-          <label class="form-label fw-semibold" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
-          <input type="month" class="form-control" name="acceptanceDate" th:value="${acceptanceDateStr}" />
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn btn-success"
-                  th:onclick="|return confirm('#{main.general.confirmacceptance.text}')|"
-                  th:text="#{main.general.button.accept.text}">Abnehmen</button>
+        <label class="form-label fw-semibold" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
+        <div class="row g-2 align-items-center">
+          <div class="col-auto">
+            <input type="month" class="form-control" name="acceptanceDate" th:value="${acceptanceDateStr}" />
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-success"
+                    th:onclick="|return confirm('#{main.general.confirmacceptance.text}')|"
+                    th:text="#{main.general.button.accept.text}">Abnehmen</button>
+          </div>
         </div>
       </form>
 
       <!-- Reopen form (admin only) -->
       <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
-            method="post" th:action="@{/acceptance/reopen}" class="row g-2 align-items-end">
+            method="post" th:action="@{/acceptance/reopen}">
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
-        <div class="col-auto">
-          <label class="form-label fw-semibold" th:text="#{main.release.reopen.until.text}">Buchungen öffnen ab (nur Admin)</label>
-          <input type="month" class="form-control" name="reopenDate" th:value="${reopenDateStr}" />
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn btn-warning"
-                  th:onclick="|return confirm('#{main.general.confirmreopen.text}')|"
-                  th:text="#{main.general.button.reopen.text}">Öffnen</button>
+        <label class="form-label fw-semibold" th:text="#{main.release.reopen.until.text}">Buchungen öffnen ab (nur Admin)</label>
+        <div class="row g-2 align-items-center">
+          <div class="col-auto">
+            <input type="month" class="form-control" name="reopenDate" th:value="${reopenDateStr}" />
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-warning"
+                    th:onclick="|return confirm('#{main.general.confirmreopen.text}')|"
+                    th:text="#{main.general.button.reopen.text}">Öffnen</button>
+          </div>
         </div>
       </form>
 

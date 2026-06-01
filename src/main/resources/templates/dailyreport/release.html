@@ -36,9 +36,9 @@
 
       <!-- Release form (only shown when user has a contract) -->
       <form th:if="${loginEmployeeContract != null}" method="post" th:action="@{/release}">
-        <div class="row g-2 align-items-end">
+        <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
+        <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
             <input type="month" class="form-control" name="selfReleaseDate" th:value="${selfReleaseDateStr}" />
           </div>
           <div class="col-auto">
