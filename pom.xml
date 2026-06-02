@@ -45,7 +45,7 @@
     <webjars-tabler-io-core.version>1.4.0</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.35.0</webjars-tabler-io-icons.version>
     <webjars-htmx.version>2.0.10</webjars-htmx.version>
-    <webjars-tomselect.version>2.6.0</webjars-tomselect.version>
+    <webjars-tomselect.version>2.6.1</webjars-tomselect.version>
   </properties>
 
   <dependencies>
