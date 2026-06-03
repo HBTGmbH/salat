@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='CSV Import / Export',sectionTitle='Variant B – Simplicity',pageTitle='Daily Report – Variant B CSV'">
+<section layout:fragment="content">
+
+  <!-- Mockup banner -->
+  <div class="alert alert-info d-flex align-items-center gap-3 mb-3 d-print-none">
+    <i class="ti ti-file-spreadsheet flex-shrink-0"></i>
+    <div class="flex-fill"><strong>Variant B — CSV Import / Export</strong> · Static mockup, import/export do not function.</div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a th:href="@{/dailyreport/mockup}" class="btn btn-sm btn-outline-secondary">Overview</a>
+      <a th:href="@{/dailyreport/mockup/b/calendar}" class="btn btn-sm btn-outline-primary">
+        <i class="ti ti-calendar-month me-1"></i>Calendar
+      </a>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+
+      <div class="row g-3 mb-3">
+
+        <!-- Import card -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title"><i class="ti ti-upload me-2 text-blue"></i>Import</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-muted">
+                Upload a CSV file to load working day data and time bookings.
+                The file must use the format described below.
+              </p>
+
+              <div class="mb-3">
+                <label class="form-label required">CSV file</label>
+                <input type="file" class="form-control" accept=".csv">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label required">Import mode</label>
+                <div class="d-flex flex-column gap-2">
+                  <label class="form-check">
+                    <input class="form-check-input" type="radio" name="importMode" value="add" checked>
+                    <span class="form-check-label">
+                      <strong>Add</strong> — skip days that already have entries
+                    </span>
+                  </label>
+                  <label class="form-check">
+                    <input class="form-check-input" type="radio" name="importMode" value="replace">
+                    <span class="form-check-label">
+                      <strong>Replace</strong> — overwrite existing entries with imported data
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button type="button" class="btn btn-primary" onclick="return false">
+                <i class="ti ti-upload me-1"></i>Import
+              </button>
+              <small class="text-muted ms-3">Days outside your contract period are skipped.</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export card -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title"><i class="ti ti-download me-2 text-green"></i>Export</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-muted">
+                Download all working day data and time bookings for a month as CSV.
+                The file can be re-imported or processed in a spreadsheet.
+              </p>
+
+              <div class="mb-3">
+                <label class="form-label required">Period</label>
+                <select class="form-select tomselect">
+                  <option selected>June 2026</option>
+                  <option>May 2026</option>
+                  <option>April 2026</option>
+                  <option>March 2026</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Format</label>
+                <div class="form-control bg-light text-muted">CSV — UTF-8, comma-separated, first row is header</div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button type="button" class="btn btn-success" onclick="return false">
+                <i class="ti ti-download me-1"></i>Export CSV
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Format reference -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">CSV Format</h3>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-3">
+            Each row represents one time booking. Working day fields (<code>start</code>, <code>break</code>, <code>type</code>)
+            repeat for every booking on the same day. Days with no bookings (e.g. NOT_WORKED) appear as a single row
+            with booking columns left empty.
+          </p>
+
+          <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+              <thead>
+                <tr>
+                  <th class="text-nowrap">#</th>
+                  <th>Column</th>
+                  <th>Format</th>
+                  <th>Example</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table-active">
+                  <td class="text-muted">0</td>
+                  <td class="fw-medium">date</td>
+                  <td class="text-muted">YYYY-MM-DD</td>
+                  <td class="font-monospace small">2026-06-02</td>
+                  <td class="text-muted small">Working day date (ISO 8601)</td>
+                </tr>
+                <tr class="table-active">
+                  <td class="text-muted">1</td>
+                  <td class="fw-medium">start</td>
+                  <td class="text-muted">HH:mm</td>
+                  <td class="font-monospace small">08:00</td>
+                  <td class="text-muted small">Day start time; empty if not set</td>
+                </tr>
+                <tr class="table-active">
+                  <td class="text-muted">2</td>
+                  <td class="fw-medium">break</td>
+                  <td class="text-muted">HH:mm</td>
+                  <td class="font-monospace small">00:30</td>
+                  <td class="text-muted small">Break duration; empty if not set</td>
+                </tr>
+                <tr class="table-active">
+                  <td class="text-muted">3</td>
+                  <td class="fw-medium">type</td>
+                  <td class="text-muted">WORKED · NOT_WORKED</td>
+                  <td class="font-monospace small">WORKED</td>
+                  <td class="text-muted small">Working day type; empty if not set</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">4</td>
+                  <td class="fw-medium">employeeorderId</td>
+                  <td class="text-muted">integer</td>
+                  <td class="font-monospace small">78</td>
+                  <td class="text-muted small">Internal ID of the employee order; empty for NOT_WORKED rows</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">5</td>
+                  <td class="fw-medium">orderSign</td>
+                  <td class="text-muted">text</td>
+                  <td class="font-monospace small">ALPHA</td>
+                  <td class="text-muted small">Project key</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">6</td>
+                  <td class="fw-medium">orderLabel</td>
+                  <td class="text-muted">text</td>
+                  <td class="font-monospace small">Alpha Projekt</td>
+                  <td class="text-muted small">Project name</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">7</td>
+                  <td class="fw-medium">suborderSign</td>
+                  <td class="text-muted">text</td>
+                  <td class="font-monospace small">DEV-BACKEND</td>
+                  <td class="text-muted small">Task key</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">8</td>
+                  <td class="fw-medium">suborderLabel</td>
+                  <td class="text-muted">text</td>
+                  <td class="font-monospace small">Backend Development</td>
+                  <td class="text-muted small">Task name</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">9</td>
+                  <td class="fw-medium">hours</td>
+                  <td class="text-muted">integer</td>
+                  <td class="font-monospace small">3</td>
+                  <td class="text-muted small">Booked hours</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">10</td>
+                  <td class="fw-medium">minutes</td>
+                  <td class="text-muted">0 · 15 · 30 · 45</td>
+                  <td class="font-monospace small">30</td>
+                  <td class="text-muted small">Booked minutes in addition to hours</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">11</td>
+                  <td class="fw-medium">comment</td>
+                  <td class="text-muted">text</td>
+                  <td class="font-monospace small">PROJ-123 initial setup</td>
+                  <td class="text-muted small">Work description; quote with " if it contains commas</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">12</td>
+                  <td class="fw-medium">training</td>
+                  <td class="text-muted">true · false</td>
+                  <td class="font-monospace small">false</td>
+                  <td class="text-muted small">Whether this booking counts as training time</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Example rows -->
+          <p class="text-muted small mb-1 mt-3">Example — day with two bookings:</p>
+          <pre class="bg-light rounded p-3 small mb-2">date,start,break,type,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,hours,minutes,comment,training
+2026-06-02,08:00,00:30,WORKED,78,ALPHA,Alpha Projekt,DEV-BACKEND,Backend Development,3,0,PROJ-123 initial setup,false
+2026-06-02,08:00,00:30,WORKED,78,ALPHA,Alpha Projekt,DEV-FRONTEND,Frontend Development,1,30,PROJ-124 refactoring,false</pre>
+          <p class="text-muted small mb-1">Example — not-worked day (no bookings):</p>
+          <pre class="bg-light rounded p-3 small mb-0">2026-06-09,,,NOT_WORKED,,,,,,,,, </pre>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+</html>

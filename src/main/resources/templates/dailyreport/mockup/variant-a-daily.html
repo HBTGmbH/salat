@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='Mon 2 Jun 2026',sectionTitle='Variant A – Efficiency',pageTitle='Daily Report – Variant A'">
+<section layout:fragment="content">
+
+  <!-- Mockup banner -->
+  <div class="alert alert-info d-flex align-items-center gap-3 mb-3 d-print-none">
+    <i class="ti ti-layout-2 flex-shrink-0"></i>
+    <div class="flex-fill"><strong>Variant A — Efficiency</strong> · Static mockup, no data is persisted.</div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a th:href="@{/dailyreport/mockup}" class="btn btn-sm btn-outline-secondary">Overview</a>
+      <a th:href="@{/dailyreport/mockup/a/matrix}" class="btn btn-sm btn-outline-primary">
+        <i class="ti ti-table me-1"></i>Monthly Matrix
+      </a>
+    </div>
+  </div>
+
+  <!-- Date navigation + employee switcher -->
+  <div class="d-flex gap-2 align-items-center flex-wrap mb-3">
+    <div class="btn-group btn-group-sm">
+      <button class="btn btn-outline-secondary" onclick="return false" title="Previous day"><i class="ti ti-chevron-left m-0"></i></button>
+      <button class="btn btn-outline-secondary" onclick="return false" title="Previous week"><i class="ti ti-chevrons-left m-0"></i></button>
+      <button class="btn btn-outline-secondary" onclick="return false">Today</button>
+      <button class="btn btn-outline-secondary" onclick="return false" title="Next week"><i class="ti ti-chevrons-right m-0"></i></button>
+      <button class="btn btn-outline-secondary" onclick="return false" title="Next day"><i class="ti ti-chevron-right m-0"></i></button>
+    </div>
+    <a th:href="@{/dailyreport/mockup/a/matrix}" class="btn btn-sm btn-outline-secondary">
+      <i class="ti ti-table me-1"></i>Month view
+    </a>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <span class="text-muted small">Employee:</span>
+      <select class="form-select form-select-sm tomselect" style="width: 185px">
+        <option selected>Klaus Richarz</option>
+        <option>Max Mustermann</option>
+        <option>Anna Schmidt</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- ── Main column ────────────────────────────────────────────── -->
+    <div class="col-lg-8">
+
+      <!-- Working day card -->
+      <div class="card mb-3">
+        <div class="card-body py-2">
+          <div class="row g-3 align-items-center flex-wrap">
+            <div class="col-auto">
+              <label class="form-label mb-1 small fw-medium">Start</label>
+              <input type="time" class="form-control form-control-sm" value="08:00" style="width: 105px">
+            </div>
+            <div class="col-auto">
+              <label class="form-label mb-1 small fw-medium">Break</label>
+              <input type="time" class="form-control form-control-sm" value="00:30" style="width: 105px">
+            </div>
+            <div class="col-auto">
+              <label class="form-label mb-1 small fw-medium">Status</label>
+              <select class="form-select form-select-sm" style="width: 145px">
+                <option selected>WORKED</option>
+                <option>NOT_WORKED</option>
+              </select>
+            </div>
+            <div class="col-auto">
+              <div class="d-flex gap-3 mt-1 flex-wrap">
+                <span class="text-muted small">Labor: <strong>5h00</strong></span>
+                <span class="text-muted small">Quit: <strong>~16:00</strong></span>
+                <span class="text-warning small"><i class="ti ti-alert-triangle me-1"></i>3h00 below contractual 8h00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookings card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#bookingModal">
+              <i class="ti ti-plus"></i> Add
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="ti ti-star me-1"></i>Fav
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                  <i class="ti ti-star text-yellow me-1"></i>Daily Standup <span class="text-muted ms-1 small">STAND · 0h30</span>
+                </a></li>
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                  <i class="ti ti-star text-yellow me-1"></i>Alpha Backend <span class="text-muted ms-1 small">DEV-BACK · 1h00</span>
+                </a></li>
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                  <i class="ti ti-star text-yellow me-1"></i>URLAUB <span class="text-muted ms-1 small">URLAUB · 8h00</span>
+                </a></li>
+              </ul>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" id="deleteSelectedBtn" disabled onclick="return false">
+              <i class="ti ti-trash me-1"></i>Delete selected
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="ti ti-arrows-move me-1"></i>Move
+              </button>
+              <div class="dropdown-menu p-3" style="min-width: 230px">
+                <label class="form-label">Shift selected bookings by</label>
+                <div class="d-flex gap-2 align-items-center">
+                  <input type="number" class="form-control form-control-sm" value="1" min="-30" max="30" style="width: 75px">
+                  <span class="text-muted small">days</span>
+                  <button class="btn btn-sm btn-primary" onclick="return false">Apply</button>
+                </div>
+                <div class="form-text">Weekends and holidays are skipped.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table table-sm">
+            <thead>
+              <tr>
+                <th class="w-1"><input type="checkbox" class="form-check-input" id="selectAll"></th>
+                <th>Order · Suborder</th>
+                <th class="w-1 text-nowrap">Time</th>
+                <th class="w-1 d-none d-sm-table-cell">Trng</th>
+                <th>Comment</th>
+                <th class="w-1"></th>
+                <th class="w-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" class="form-check-input row-check"></td>
+                <td>ALPHA · DEV-BACKEND</td>
+                <td class="text-nowrap fw-medium">3h00</td>
+                <td class="d-none d-sm-table-cell"></td>
+                <td class="text-muted small">PROJ-123 initial setup</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                    <i class="ti ti-pencil m-0"></i>
+                  </button>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this booking?')">
+                    <i class="ti ti-trash m-0"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="form-check-input row-check"></td>
+                <td>ALPHA · DEV-BACKEND</td>
+                <td class="text-nowrap fw-medium">1h30</td>
+                <td class="d-none d-sm-table-cell"></td>
+                <td class="text-muted small">PROJ-124 refactoring</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                    <i class="ti ti-pencil m-0"></i>
+                  </button>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this booking?')">
+                    <i class="ti ti-trash m-0"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="form-check-input row-check"></td>
+                <td>INTERNAL · STANDUP-DAILY</td>
+                <td class="text-nowrap fw-medium">0h30</td>
+                <td class="d-none d-sm-table-cell"></td>
+                <td class="text-muted small">Sprint review</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                    <i class="ti ti-pencil m-0"></i>
+                  </button>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this booking?')">
+                    <i class="ti ti-trash m-0"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="table-group-divider">
+                <td></td>
+                <td class="text-muted small">Total</td>
+                <td class="text-nowrap fw-medium">5h00</td>
+                <td colspan="4">
+                  <span class="text-warning small"><i class="ti ti-alert-triangle me-1"></i>3h00 below contractual 8h00</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /main column -->
+
+    <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+    <div class="col-lg-4">
+
+      <!-- Overtime -->
+      <div class="card mb-3">
+        <div class="card-header"><h4 class="card-title">Overtime</h4></div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Total accumulated</span>
+            <strong class="text-green">+12h30</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">This month (June)</span>
+            <strong class="text-green">+2h00</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Favourites -->
+      <div class="card">
+        <div class="card-header">
+          <h4 class="card-title">Favourites</h4>
+          <div class="card-options">
+            <a href="#" class="btn btn-sm btn-ghost-secondary" onclick="return false">Manage</a>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          <a href="#" class="list-group-item list-group-item-action px-3"
+             data-bs-toggle="modal" data-bs-target="#bookingModal">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-medium"><i class="ti ti-star text-yellow me-1"></i>Daily Standup</div>
+                <small class="text-muted">INTERNAL · STANDUP-DAILY · 0h30</small>
+              </div>
+              <i class="ti ti-chevron-right text-muted"></i>
+            </div>
+          </a>
+          <a href="#" class="list-group-item list-group-item-action px-3"
+             data-bs-toggle="modal" data-bs-target="#bookingModal">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-medium"><i class="ti ti-star text-yellow me-1"></i>Alpha Backend</div>
+                <small class="text-muted">ALPHA · DEV-BACKEND · 1h00</small>
+              </div>
+              <i class="ti ti-chevron-right text-muted"></i>
+            </div>
+          </a>
+          <a href="#" class="list-group-item list-group-item-action px-3"
+             data-bs-toggle="modal" data-bs-target="#bookingModal">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-medium"><i class="ti ti-star text-yellow me-1"></i>URLAUB</div>
+                <small class="text-muted">URLAUB · URLAUB · 8h00</small>
+              </div>
+              <i class="ti ti-chevron-right text-muted"></i>
+            </div>
+          </a>
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-sm btn-outline-secondary w-100" onclick="return false">
+            <i class="ti ti-device-floppy me-1"></i>Save current as favourite
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+  </div><!-- /row -->
+
+  <!-- ── Booking Modal ──────────────────────────────────────────────── -->
+  <div class="modal modal-blur fade" id="bookingModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">New Booking</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Date + serial -->
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col">
+              <label class="form-label">Date</label>
+              <div class="input-group input-group-sm">
+                <button class="btn btn-outline-secondary" onclick="return false"><i class="ti ti-chevron-left m-0"></i></button>
+                <input type="date" class="form-control" value="2026-06-02">
+                <button class="btn btn-outline-secondary" onclick="return false"><i class="ti ti-chevron-right m-0"></i></button>
+              </div>
+            </div>
+            <div class="col-auto">
+              <label class="form-label">Repeat</label>
+              <select class="form-select form-select-sm" style="width: 155px">
+                <option selected>Not repeated</option>
+                <option>2 working days</option>
+                <option>3 working days</option>
+                <option>5 working days</option>
+                <option>10 working days</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Order -->
+          <div class="mb-3">
+            <label class="form-label required">Order</label>
+            <select class="form-select tomselect">
+              <option value="">— Select order —</option>
+              <option selected>ALPHA</option>
+              <option>INTERNAL</option>
+              <option>URLAUB</option>
+            </select>
+          </div>
+
+          <!-- Suborder -->
+          <div class="mb-3">
+            <label class="form-label required">Suborder</label>
+            <select class="form-select tomselect">
+              <option value="">— Select suborder —</option>
+              <option selected>DEV-BACKEND — Backend Development</option>
+              <option>DEV-FRONTEND — Frontend Development</option>
+              <option>MGMT — Project Management</option>
+            </select>
+          </div>
+
+          <!-- Time mode toggle -->
+          <div class="mb-3">
+            <label class="form-label required">Duration</label>
+            <div class="d-flex gap-3 mb-2">
+              <label class="form-check">
+                <input class="form-check-input" type="radio" name="timeMode" value="duration" checked>
+                <span class="form-check-label">Duration</span>
+              </label>
+              <label class="form-check">
+                <input class="form-check-input" type="radio" name="timeMode" value="beginend">
+                <span class="form-check-label">Begin / End</span>
+              </label>
+            </div>
+            <div id="durationFields" class="d-flex gap-0">
+              <div class="input-group" style="max-width: 220px">
+                <input type="number" class="form-control" value="3" min="0" max="24" style="width: 65px">
+                <span class="input-group-text">h</span>
+                <select class="form-select" style="width: 85px">
+                  <option selected>00</option>
+                  <option>15</option>
+                  <option>30</option>
+                  <option>45</option>
+                </select>
+                <span class="input-group-text">min</span>
+              </div>
+            </div>
+            <div id="beginEndFields" class="row g-2 align-items-center d-none">
+              <div class="col-auto">
+                <input type="time" class="form-control form-control-sm" value="08:00" style="width: 110px">
+              </div>
+              <div class="col-auto text-muted">–</div>
+              <div class="col-auto">
+                <input type="time" class="form-control form-control-sm" value="11:00" style="width: 110px">
+              </div>
+              <div class="col-auto">
+                <span class="badge bg-secondary-lt text-secondary">→ 3h00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training -->
+          <div class="mb-3">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox">
+              <span class="form-check-label">Training</span>
+            </label>
+          </div>
+
+          <!-- Comment -->
+          <div class="mb-3">
+            <label class="form-label">Comment</label>
+            <textarea class="form-control" rows="2" placeholder="Describe the work done, e.g. PROJ-123 …"></textarea>
+          </div>
+
+          <!-- Quick favourites -->
+          <div class="border-top pt-3">
+            <small class="text-muted d-block mb-2">Quick favourites:</small>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-sm btn-outline-secondary" onclick="return false">
+                <i class="ti ti-star text-yellow me-1"></i>Daily Standup
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="return false">
+                <i class="ti ti-star text-yellow me-1"></i>Alpha Backend
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="return false">
+                <i class="ti ti-star text-yellow me-1"></i>URLAUB
+              </button>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost-secondary btn-sm me-auto" onclick="return false">
+            <i class="ti ti-star me-1"></i>Save as favourite
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="return false">Save &amp; Continue</button>
+          <button type="button" class="btn btn-primary" onclick="return false">
+            <i class="ti ti-device-floppy me-1"></i>Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script th:inline="none">
+    // Duration / Begin+End toggle
+    document.querySelectorAll('input[name="timeMode"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        var isDuration = this.value === 'duration';
+        document.getElementById('durationFields').classList.toggle('d-none', !isDuration);
+        document.getElementById('beginEndFields').classList.toggle('d-none', isDuration);
+      });
+    });
+    // Select all / enable Delete selected
+    var selectAll = document.getElementById('selectAll');
+    function updateDeleteBtn() {
+      var count = document.querySelectorAll('.row-check:checked').length;
+      var btn = document.getElementById('deleteSelectedBtn');
+      if (btn) btn.disabled = count === 0;
+    }
+    if (selectAll) {
+      selectAll.addEventListener('change', function() {
+        document.querySelectorAll('.row-check').forEach(function(cb) { cb.checked = selectAll.checked; });
+        updateDeleteBtn();
+      });
+    }
+    document.querySelectorAll('.row-check').forEach(function(cb) {
+      cb.addEventListener('change', updateDeleteBtn);
+    });
+  </script>
+
+</section>
+</html>

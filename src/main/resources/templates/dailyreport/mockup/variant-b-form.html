@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='Add Booking',sectionTitle='Variant B – Simplicity',pageTitle='Daily Report – Variant B Form'">
+<section layout:fragment="content">
+
+  <!-- Mockup banner -->
+  <div class="alert alert-info d-flex align-items-center gap-3 mb-3 d-print-none">
+    <i class="ti ti-forms flex-shrink-0"></i>
+    <div class="flex-fill"><strong>Variant B — Booking Form</strong> · Static mockup, no data is persisted.</div>
+    <a th:href="@{/dailyreport/mockup}" class="btn btn-sm btn-outline-secondary">Overview</a>
+  </div>
+
+  <div class="row align-items-start">
+    <div class="col-lg-7">
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Add booking</h3>
+        </div>
+        <div class="card-body">
+
+          <!-- Date + Duration side by side -->
+          <div class="row g-3 mb-3">
+            <div class="col-auto">
+              <label class="form-label required">Date</label>
+              <input type="date" class="form-control" value="2026-06-02">
+            </div>
+            <div class="col-auto">
+              <label class="form-label required">Duration or Begin / End</label>
+              <div class="d-flex align-items-center gap-2">
+                <div class="btn-group flex-shrink-0" role="group">
+                  <button type="button" class="btn btn-outline-secondary active" id="btnDuration" onclick="showDuration()" title="Duration">
+                    <i class="icon ti ti-hourglass m-0"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" id="btnBeginEnd" onclick="showBeginEnd()" title="Begin / End">
+                    <i class="icon ti ti-clock-2 m-0"></i>
+                  </button>
+                </div>
+                <div id="durationSection">
+                  <div class="input-group">
+                    <input type="number" class="form-control" value="3" min="0" max="24" style="min-width: 70px">
+                    <span class="input-group-text">h</span>
+                    <select class="form-select" style="width: 80px">
+                      <option selected>00</option>
+                      <option>15</option>
+                      <option>30</option>
+                      <option>45</option>
+                    </select>
+                    <span class="input-group-text">min</span>
+                  </div>
+                </div>
+                <div id="beginEndSection" class="d-none">
+                  <div class="d-flex gap-2 align-items-center">
+                    <input type="time" class="form-control" value="08:00" style="width: 120px">
+                    <span class="text-muted">–</span>
+                    <input type="time" class="form-control" value="11:00" style="width: 120px">
+                    <span class="badge bg-secondary-lt text-secondary ms-1">3h00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order -->
+          <div class="mb-3">
+            <label class="form-label required">Order</label>
+            <select class="form-select tomselect">
+              <option value="">— Select order —</option>
+              <option selected>ALPHA · Alpha Projekt — Muster GmbH</option>
+              <option>INTERNAL · Internal — (intern)</option>
+              <option>URLAUB · Urlaub</option>
+            </select>
+            <div class="form-text">Customer: <strong>Muster GmbH</strong></div>
+          </div>
+
+          <!-- Suborder -->
+          <div class="mb-3">
+            <label class="form-label required">Suborder</label>
+            <select class="form-select tomselect">
+              <option value="">— Select suborder —</option>
+              <option selected>DEV-BACKEND — Backend Development</option>
+              <option>DEV-FRONTEND — Frontend Development</option>
+              <option>MGMT — Project Management</option>
+            </select>
+          </div>
+
+          <!-- Comment -->
+          <div class="mb-3">
+            <label class="form-label">Comment</label>
+            <textarea class="form-control" rows="3" placeholder="Describe the work done, e.g. PROJ-123 …"></textarea>
+          </div>
+
+          <!-- Training -->
+          <div class="mb-3">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox">
+              <span class="form-check-label">Training</span>
+            </label>
+          </div>
+
+          <!-- Serial booking -->
+          <div class="mb-3">
+            <button type="button" class="btn btn-outline-secondary" id="showSerialLink" onclick="toggleSerial(event)">
+              <i class="ti ti-repeat me-1"></i>Repeat for multiple working days…
+            </button>
+            <div class="mt-3 d-none" id="serialSection">
+              <label class="form-label">Repeat across</label>
+              <div class="d-flex gap-2 align-items-center">
+                <select class="form-select" style="width: 210px">
+                  <option selected>Not repeated</option>
+                  <option>2 working days</option>
+                  <option>3 working days</option>
+                  <option>5 working days</option>
+                  <option>10 working days</option>
+                </select>
+                <span class="text-muted small">(weekends and holidays skipped)</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="card-footer d-flex gap-2">
+          <button type="button" class="btn btn-primary" onclick="return false">
+            <i class="ti ti-device-floppy me-1"></i>Save
+          </button>
+          <button type="button" class="btn btn-outline-secondary" onclick="toggleSaveAsFav()">
+            <i class="ti ti-star me-1"></i>Save as fav
+          </button>
+          <a th:href="@{/dailyreport/mockup/b/daily}" class="btn btn-secondary ms-auto">Cancel</a>
+        </div>
+        <div class="card-footer d-none" id="saveAsFavSection">
+          <div class="d-flex gap-2 align-items-center">
+            <label class="form-label mb-0 me-1 text-nowrap">Name</label>
+            <input type="text" class="form-control" placeholder="e.g. Daily Standup">
+            <button type="button" class="btn btn-primary text-nowrap" onclick="return false">
+              <i class="ti ti-star me-1"></i>Save
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main col -->
+
+    <!-- Sidebar -->
+    <div class="col-lg-5">
+
+      <!-- Employee (Manager / People Lead only) -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">
+            Employee
+            <span class="badge bg-yellow-lt text-yellow ms-1 fw-normal" style="font-size:0.65rem">Manager</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <select class="form-select tomselect">
+            <option selected>Klaus Richarz</option>
+            <option>Max Mustermann</option>
+            <option>Anna Schmidt</option>
+          </select>
+          <div class="form-text">Visible to People Leads and Managers only.</div>
+        </div>
+      </div>
+
+      <!-- Today's bookings -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">Today's bookings</h3>
+          <div class="card-options">
+            <span class="text-muted small">Mon 2 Jun</span>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-medium small">1497/01 · THOR</div>
+                <div class="text-muted" style="font-size:0.75rem">DEV-BACKEND · Backend Development</div>
+                <div class="text-muted" style="font-size:0.75rem">PROJ-123 initial setup</div>
+              </div>
+              <span class="badge bg-blue-lt ms-2">3h00</span>
+            </div>
+          </div>
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-medium small">1497/01 · THOR</div>
+                <div class="text-muted" style="font-size:0.75rem">DEV-FRONTEND · Frontend Development</div>
+                <div class="text-muted" style="font-size:0.75rem">PROJ-124 refactoring</div>
+              </div>
+              <span class="badge bg-blue-lt ms-2">1h30</span>
+            </div>
+          </div>
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-medium small">INT-01 · INTERNAL</div>
+                <div class="text-muted" style="font-size:0.75rem">STANDUP-DAILY · Daily Standup</div>
+                <div class="text-muted" style="font-size:0.75rem">Sprint review</div>
+              </div>
+              <span class="badge bg-blue-lt ms-2">0h30</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer text-muted small">
+          <i class="ti ti-clock me-1 text-warning"></i>3h00 still to book · target 8h00
+        </div>
+      </div>
+
+      <!-- Recent comments -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Recent comments</h3>
+          <div class="card-options">
+            <span class="text-muted small">ALPHA · THOR</span>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          <button type="button" class="list-group-item list-group-item-action text-start py-2 px-3" onclick="fillComment('PROJ-123 initial setup')">
+            <span class="small">PROJ-123 initial setup</span>
+          </button>
+          <button type="button" class="list-group-item list-group-item-action text-start py-2 px-3" onclick="fillComment('PROJ-124 refactoring')">
+            <span class="small">PROJ-124 refactoring</span>
+          </button>
+          <button type="button" class="list-group-item list-group-item-action text-start py-2 px-3" onclick="fillComment('PROJ-119 code review')">
+            <span class="small">PROJ-119 code review</span>
+          </button>
+          <button type="button" class="list-group-item list-group-item-action text-start py-2 px-3" onclick="fillComment('PROJ-115 unit tests')">
+            <span class="small">PROJ-115 unit tests</span>
+          </button>
+          <button type="button" class="list-group-item list-group-item-action text-start py-2 px-3" onclick="fillComment('PROJ-110 deployment prep')">
+            <span class="small">PROJ-110 deployment prep</span>
+          </button>
+        </div>
+        <div class="card-footer text-muted small">Click to fill the comment field.</div>
+      </div>
+
+    </div><!-- end sidebar -->
+  </div>
+
+  <script th:inline="none">
+    function showDuration() {
+      document.getElementById('durationSection').classList.remove('d-none');
+      document.getElementById('beginEndSection').classList.add('d-none');
+      document.getElementById('btnDuration').classList.add('active');
+      document.getElementById('btnBeginEnd').classList.remove('active');
+    }
+    function showBeginEnd() {
+      document.getElementById('durationSection').classList.add('d-none');
+      document.getElementById('beginEndSection').classList.remove('d-none');
+      document.getElementById('btnDuration').classList.remove('active');
+      document.getElementById('btnBeginEnd').classList.add('active');
+    }
+    function toggleSaveAsFav() {
+      document.getElementById('saveAsFavSection').classList.toggle('d-none');
+    }
+    function toggleSerial(e) {
+      e.preventDefault();
+      document.getElementById('serialSection').classList.toggle('d-none');
+    }
+    function fillComment(text) {
+      document.querySelector('textarea.form-control').value = text;
+    }
+  </script>
+
+</section>
+</html>

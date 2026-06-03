@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='Mon 2 Jun 2026',sectionTitle='Variant C – Beautiful',pageTitle='Daily Report – Variant C'">
+<section layout:fragment="content">
+
+  <!-- Mockup banner -->
+  <div class="alert alert-info d-flex align-items-center gap-3 mb-3 d-print-none">
+    <i class="ti ti-sparkles flex-shrink-0"></i>
+    <div class="flex-fill"><strong>Variant C — Beautiful</strong> · Static mockup, no data is persisted. Offcanvas form opens via the Add button.</div>
+    <a th:href="@{/dailyreport/mockup}" class="btn btn-sm btn-outline-secondary">Overview</a>
+  </div>
+
+  <!-- Employee switcher (managers only concept) -->
+  <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="text-muted small">Viewing as:</span>
+      <select class="form-select form-select-sm tomselect" style="width: 185px">
+        <option selected>Klaus Richarz</option>
+        <option>Max Mustermann</option>
+        <option>Anna Schmidt</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Sidebar + content layout -->
+  <div class="row g-0">
+
+    <!-- ── Vertical tab sidebar ────────────────────────────────── -->
+    <div class="col-auto border-end pe-3 me-4 d-print-none" style="min-width: 155px">
+      <ul class="nav flex-column nav-pills">
+        <li class="nav-item">
+          <a class="nav-link active" th:href="@{/dailyreport/mockup/c/daily}">
+            <i class="ti ti-calendar me-2"></i>Daily
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/dailyreport/mockup/c/calendar}">
+            <i class="ti ti-calendar-month me-2"></i>Month
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/dailyreport/mockup/c/favourites}">
+            <i class="ti ti-star me-2"></i>Favourites
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/dailyreport/mockup/c/data}">
+            <i class="ti ti-database-import me-2"></i>WD Data
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ── Main content ────────────────────────────────────────── -->
+    <div class="col">
+
+      <!-- Date navigation -->
+      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary" onclick="return false"><i class="ti ti-chevron-left m-0"></i></button>
+          <button class="btn btn-outline-secondary" onclick="return false">Today</button>
+          <button class="btn btn-outline-secondary" onclick="return false"><i class="ti ti-chevron-right m-0"></i></button>
+        </div>
+        <h4 class="mb-0">Monday, 2 June 2026</h4>
+      </div>
+
+      <!-- Working day card -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <label class="form-label mb-1 small fw-medium">Start</label>
+              <input type="time" class="form-control form-control-sm" value="08:00" style="width: 110px">
+            </div>
+            <div class="col-auto">
+              <label class="form-label mb-1 small fw-medium">Break</label>
+              <input type="time" class="form-control form-control-sm" value="00:30" style="width: 110px">
+            </div>
+            <div class="col-auto">
+              <label class="form-label mb-1 small fw-medium">Status</label>
+              <select class="form-select form-select-sm" style="width: 145px">
+                <option selected>WORKED</option>
+                <option>NOT_WORKED</option>
+              </select>
+            </div>
+            <div class="col">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-muted small">Booked: <strong>5h00</strong> / <strong>8h00</strong></span>
+                <span class="text-muted small">Quit ~16:00</span>
+              </div>
+              <div class="progress" style="height: 6px">
+                <div class="progress-bar bg-warning" style="width:62%"></div>
+              </div>
+              <div class="text-warning small mt-1"><i class="ti ti-alert-triangle me-1"></i>3h00 below contractual</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookings section -->
+      <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <h5 class="mb-0">Bookings</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" id="selectModeBtn" onclick="toggleSelectMode()">
+            <i class="ti ti-checkbox me-1"></i>Select
+          </button>
+          <button class="btn btn-sm btn-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+            <i class="ti ti-plus me-1"></i>Add booking
+          </button>
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="ti ti-star me-1"></i>Use favourite
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+              <i class="ti ti-star text-yellow me-1"></i>Daily Standup — 0h30
+            </a></li>
+            <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+              <i class="ti ti-star text-yellow me-1"></i>Alpha Backend — 1h00
+            </a></li>
+            <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+              <i class="ti ti-star text-yellow me-1"></i>URLAUB — 8h00
+            </a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Booking cards -->
+      <div class="row g-2 mb-3" id="bookingCards">
+
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body py-2">
+              <div class="d-flex align-items-center gap-3">
+                <input type="checkbox" class="form-check-input select-check d-none flex-shrink-0">
+                <div class="flex-fill">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="fw-medium">ALPHA · DEV-BACKEND</span>
+                      <span class="badge bg-blue-lt ms-2">3h00</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-sm btn-ghost-primary" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+                        <i class="ti ti-pencil m-0"></i>
+                      </button>
+                      <button class="btn btn-sm btn-ghost-danger" onclick="return confirm('Delete this booking?')">
+                        <i class="ti ti-trash m-0"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="text-muted small mt-1">PROJ-123 initial setup</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body py-2">
+              <div class="d-flex align-items-center gap-3">
+                <input type="checkbox" class="form-check-input select-check d-none flex-shrink-0">
+                <div class="flex-fill">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="fw-medium">ALPHA · DEV-BACKEND</span>
+                      <span class="badge bg-blue-lt ms-2">1h30</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-sm btn-ghost-primary" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+                        <i class="ti ti-pencil m-0"></i>
+                      </button>
+                      <button class="btn btn-sm btn-ghost-danger" onclick="return confirm('Delete this booking?')">
+                        <i class="ti ti-trash m-0"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="text-muted small mt-1">PROJ-124 refactoring</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body py-2">
+              <div class="d-flex align-items-center gap-3">
+                <input type="checkbox" class="form-check-input select-check d-none flex-shrink-0">
+                <div class="flex-fill">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="fw-medium">INTERNAL · STANDUP-DAILY</span>
+                      <span class="badge bg-blue-lt ms-2">0h30</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <button class="btn btn-sm btn-ghost-primary" data-bs-toggle="offcanvas" data-bs-target="#bookingOffcanvas">
+                        <i class="ti ti-pencil m-0"></i>
+                      </button>
+                      <button class="btn btn-sm btn-ghost-danger" onclick="return confirm('Delete this booking?')">
+                        <i class="ti ti-trash m-0"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="text-muted small mt-1">Sprint review</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Select-mode actions (hidden by default) -->
+      <div id="selectActions" class="d-none d-flex gap-2 mb-3 align-items-center flex-wrap">
+        <button class="btn btn-sm btn-outline-danger" id="deleteSelBtn" disabled onclick="return false">
+          <i class="ti ti-trash me-1"></i>Delete selected
+        </button>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" disabled id="moveSelBtn" data-bs-toggle="dropdown">
+            <i class="ti ti-arrows-move me-1"></i>Move to date…
+          </button>
+          <div class="dropdown-menu p-3" style="min-width: 220px">
+            <label class="form-label">Shift selected by</label>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="number" class="form-control form-control-sm" value="1" min="-30" max="30" style="width: 75px">
+              <span class="text-muted small">days</span>
+              <button class="btn btn-sm btn-primary" onclick="return false">Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-muted small">Total: <strong>5h00</strong></div>
+
+    </div><!-- /col -->
+  </div><!-- /row -->
+
+  <!-- ── Offcanvas booking form ──────────────────────────────────── -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="bookingOffcanvas" style="width: 420px">
+    <div class="offcanvas-header border-bottom">
+      <h4 class="offcanvas-title">New Booking · 2 June 2026</h4>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+
+      <!-- Order -->
+      <div class="mb-3">
+        <label class="form-label required">Project</label>
+        <select class="form-select tomselect">
+          <option value="">— Select project —</option>
+          <option selected>ALPHA</option>
+          <option>INTERNAL</option>
+          <option>URLAUB</option>
+        </select>
+      </div>
+
+      <!-- Suborder -->
+      <div class="mb-3">
+        <label class="form-label required">Task</label>
+        <select class="form-select tomselect">
+          <option value="">— Select task —</option>
+          <option selected>DEV-BACKEND — Backend Development</option>
+          <option>DEV-FRONTEND — Frontend Development</option>
+          <option>MGMT — Project Management</option>
+        </select>
+      </div>
+
+      <!-- Time mode -->
+      <div class="mb-3">
+        <label class="form-label required">Duration</label>
+        <div class="d-flex gap-3 mb-2">
+          <label class="form-check">
+            <input class="form-check-input" type="radio" name="ocTimeMode" value="duration" checked>
+            <span class="form-check-label">Duration</span>
+          </label>
+          <label class="form-check">
+            <input class="form-check-input" type="radio" name="ocTimeMode" value="beginend">
+            <span class="form-check-label">Begin / End</span>
+          </label>
+        </div>
+        <div id="ocDurationFields">
+          <div class="input-group" style="max-width: 220px">
+            <input type="number" class="form-control" value="3" min="0" max="24">
+            <span class="input-group-text">h</span>
+            <select class="form-select" style="width: 80px">
+              <option selected>00</option>
+              <option>15</option>
+              <option>30</option>
+              <option>45</option>
+            </select>
+            <span class="input-group-text">min</span>
+          </div>
+        </div>
+        <div id="ocBeginEndFields" class="d-flex gap-2 align-items-center d-none">
+          <input type="time" class="form-control" value="08:00" style="width: 120px">
+          <span class="text-muted">–</span>
+          <input type="time" class="form-control" value="11:00" style="width: 120px">
+          <span class="badge bg-secondary-lt text-secondary ms-1">3h00</span>
+        </div>
+      </div>
+
+      <!-- Comment -->
+      <div class="mb-3">
+        <label class="form-label">Comment</label>
+        <textarea class="form-control" rows="3" placeholder="Describe the work done, e.g. PROJ-123 …"></textarea>
+      </div>
+
+      <!-- Training + serial -->
+      <div class="row g-3 mb-3">
+        <div class="col-auto">
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox">
+            <span class="form-check-label">Training</span>
+          </label>
+        </div>
+        <div class="col">
+          <label class="form-label small">Repeat</label>
+          <select class="form-select form-select-sm">
+            <option selected>Not repeated</option>
+            <option>2 working days</option>
+            <option>3 working days</option>
+            <option>5 working days</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+    <div class="offcanvas-footer border-top p-3 d-flex gap-2">
+      <button type="button" class="btn btn-ghost-secondary btn-sm" onclick="return false">
+        <i class="ti ti-star me-1"></i>Save as fav
+      </button>
+      <div class="ms-auto d-flex gap-2">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="return false">+Add</button>
+        <button type="button" class="btn btn-primary" onclick="return false">
+          <i class="ti ti-device-floppy me-1"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script th:inline="none">
+    // Offcanvas time mode toggle
+    document.querySelectorAll('input[name="ocTimeMode"]').forEach(function(r) {
+      r.addEventListener('change', function() {
+        var isDur = this.value === 'duration';
+        document.getElementById('ocDurationFields').classList.toggle('d-none', !isDur);
+        document.getElementById('ocBeginEndFields').classList.toggle('d-none', isDur);
+      });
+    });
+    // Select mode toggle
+    function toggleSelectMode() {
+      var active = document.getElementById('selectActions').classList.toggle('d-none');
+      document.querySelectorAll('.select-check').forEach(function(cb) {
+        cb.classList.toggle('d-none', active);
+      });
+      document.getElementById('selectModeBtn').classList.toggle('active', !active);
+    }
+    // Enable delete/move buttons when items are checked
+    document.addEventListener('change', function(e) {
+      if (e.target.classList.contains('select-check')) {
+        var n = document.querySelectorAll('.select-check:checked').length;
+        document.getElementById('deleteSelBtn').disabled = n === 0;
+        document.getElementById('moveSelBtn').disabled = n === 0;
+      }
+    });
+  </script>
+
+</section>
+</html>

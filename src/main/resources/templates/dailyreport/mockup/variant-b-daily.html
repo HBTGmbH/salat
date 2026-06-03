@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='Mon 2 Jun 2026',sectionTitle='Variant B – Simplicity',pageTitle='Daily Report – Variant B'">
+<section layout:fragment="content">
+
+  <!-- Mockup banner -->
+  <div class="alert alert-info d-flex align-items-center gap-3 mb-3 d-print-none">
+    <i class="ti ti-layout-navbar flex-shrink-0"></i>
+    <div class="flex-fill"><strong>Variant B — Simplicity</strong> · Static mockup, no data is persisted. Low-priority stories omitted.</div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a th:href="@{/dailyreport/mockup}" class="btn btn-sm btn-outline-secondary">Overview</a>
+      <a th:href="@{/dailyreport/mockup/b/calendar}" class="btn btn-outline-primary">
+        <i class="ti ti-calendar-month me-1"></i>Monthly Calendar
+      </a>
+    </div>
+  </div>
+
+  <div class="row align-items-start">
+    <div class="col-lg-8">
+
+      <!-- Date navigation -->
+      <div class="card mb-3">
+        <div class="card-body text-center py-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <button class="btn btn-outline-secondary" onclick="return false">
+              <i class="ti ti-chevron-left me-1"></i>Previous day
+            </button>
+            <div>
+              <h3 class="mb-0">Monday, 2 June 2026</h3>
+              <a href="#" class="text-muted small" onclick="return false">Mark as not worked</a>
+            </div>
+            <button class="btn btn-outline-secondary" onclick="return false">
+              Next day<i class="ti ti-chevron-right ms-1"></i>
+            </button>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-outline-primary" onclick="return false">Today</button>
+            <a th:href="@{/dailyreport/mockup/b/calendar}" class="btn btn-outline-secondary ms-1">
+              <i class="ti ti-calendar-month me-1"></i>Month view
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Working day -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col">
+              <label class="form-label">Start</label>
+              <input type="time" class="form-control" value="08:00">
+            </div>
+            <div class="col">
+              <label class="form-label">Break</label>
+              <input type="time" class="form-control" value="00:30">
+            </div>
+            <div class="col">
+              <label class="form-label">Status</label>
+              <select class="form-select">
+                <option selected>WORKED</option>
+                <option>NOT_WORKED</option>
+              </select>
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-primary" onclick="return false">
+                <i class="icon ti ti-device-floppy me-1"></i>Save
+              </button>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">Booked: <strong>5h00</strong> of <strong>8h00</strong></span>
+            <span class="text-muted small">Quitting ~16:30</span>
+          </div>
+          <div class="progress" style="height: 8px">
+            <div class="progress-bar bg-warning" role="progressbar" style="width: 62%" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <div class="text-warning small mt-1"><i class="ti ti-alert-triangle me-1"></i>3h00 below contractual working time</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex gap-2 mb-3">
+        <a th:href="@{/dailyreport/mockup/b/form}" class="btn btn-success flex-fill">
+          <i class="ti ti-plus me-1"></i>Add booking
+        </a>
+        <div class="dropdown flex-fill">
+          <button class="btn btn-outline-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="ti ti-star me-1"></i>Apply favourite
+          </button>
+          <ul class="dropdown-menu w-100">
+            <li>
+              <div class="dropdown-item d-flex align-items-center gap-2 p-0">
+                <a th:href="@{/dailyreport/mockup/b/form}" class="flex-fill py-2 ps-3 text-decoration-none text-reset">
+                  <i class="ti ti-star text-yellow me-1"></i>Daily Standup — 0h30
+                </a>
+                <button class="btn btn-ghost-danger btn-sm py-2 pe-3" onclick="return confirm('Delete this favourite?')">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </div>
+            </li>
+            <li>
+              <div class="dropdown-item d-flex align-items-center gap-2 p-0">
+                <a th:href="@{/dailyreport/mockup/b/form}" class="flex-fill py-2 ps-3 text-decoration-none text-reset">
+                  <i class="ti ti-star text-yellow me-1"></i>Alpha Backend — 1h00
+                </a>
+                <button class="btn btn-ghost-danger btn-sm py-2 pe-3" onclick="return confirm('Delete this favourite?')">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </div>
+            </li>
+            <li>
+              <div class="dropdown-item d-flex align-items-center gap-2 p-0">
+                <a th:href="@{/dailyreport/mockup/b/form}" class="flex-fill py-2 ps-3 text-decoration-none text-reset">
+                  <i class="ti ti-star text-yellow me-1"></i>URLAUB — 8h00
+                </a>
+                <button class="btn btn-ghost-danger btn-sm py-2 pe-3" onclick="return confirm('Delete this favourite?')">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Bookings list -->
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>Order / Suborder</th>
+                <th class="w-1 text-nowrap">Time</th>
+                <th class="w-1"></th>
+                <th class="w-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="fw-medium">1497/01 · THOR</div>
+                  <div class="text-muted small">DEV-BACKEND · Backend Development</div>
+                  <div class="text-muted small mt-1">PROJ-123 initial setup</div>
+                </td>
+                <td class="text-nowrap"><span class="badge bg-blue-lt">3h00</span></td>
+                <td>
+                  <a th:href="@{/dailyreport/mockup/b/form}" class="btn btn-outline-primary">
+                    <i class="icon ti ti-pencil m-0"></i>
+                  </a>
+                </td>
+                <td>
+                  <button class="btn btn-outline-danger" onclick="return confirm('Delete this booking?')">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="fw-medium">1497/01 · THOR</div>
+                  <div class="text-muted small">DEV-FRONTEND · Frontend Development</div>
+                  <div class="text-muted small mt-1">PROJ-124 refactoring</div>
+                </td>
+                <td class="text-nowrap"><span class="badge bg-blue-lt">1h30</span></td>
+                <td>
+                  <a th:href="@{/dailyreport/mockup/b/form}" class="btn btn-outline-primary">
+                    <i class="icon ti ti-pencil m-0"></i>
+                  </a>
+                </td>
+                <td>
+                  <button class="btn btn-outline-danger" onclick="return confirm('Delete this booking?')">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="fw-medium">INT-01 · INTERNAL</div>
+                  <div class="text-muted small">STANDUP-DAILY · Daily Standup</div>
+                  <div class="text-muted small mt-1">Sprint review</div>
+                </td>
+                <td class="text-nowrap"><span class="badge bg-blue-lt">0h30</span></td>
+                <td>
+                  <a th:href="@{/dailyreport/mockup/b/form}" class="btn btn-outline-primary">
+                    <i class="icon ti ti-pencil m-0"></i>
+                  </a>
+                </td>
+                <td>
+                  <button class="btn btn-outline-danger" onclick="return confirm('Delete this booking?')">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="table-group-divider">
+                <td class="text-muted">Total</td>
+                <td><span class="badge bg-blue-lt">5h00</span></td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- end main col -->
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+
+      <!-- Employee Contract (Manager / People Lead only) -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">
+            Employee
+            <span class="badge bg-yellow-lt text-yellow ms-1 fw-normal" style="font-size:0.65rem">Manager</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <select class="form-select tomselect">
+            <option selected>Klaus Richarz</option>
+            <option>Max Mustermann</option>
+            <option>Anna Schmidt</option>
+          </select>
+          <div class="form-text">Visible to People Leads and Managers only.</div>
+        </div>
+      </div>
+
+      <!-- Week strip -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">This week</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          <!-- Mon 2: currently viewed day -->
+          <a th:href="@{/dailyreport/mockup/b/daily}" class="list-group-item list-group-item-action active d-flex justify-content-between align-items-center">
+            <div class="d-inline-block text-center rounded px-2 py-1" style="width:3rem;background:rgba(255,255,255,0.25)">
+              <div class="fw-bold text-white lh-1" style="font-size:1.1rem">2</div>
+              <div class="text-white opacity-75" style="font-size:0.65rem">Mon</div>
+            </div>
+            <span class="badge bg-white text-primary">5h00</span>
+          </a>
+          <!-- Tue 3: fully booked -->
+          <a th:href="@{/dailyreport/mockup/b/daily}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div class="d-inline-block text-center rounded px-2 py-1 bg-blue-lt" style="width:3rem">
+              <div class="fw-bold text-blue lh-1" style="font-size:1.1rem">3</div>
+              <div class="text-blue opacity-75" style="font-size:0.65rem">Tue</div>
+            </div>
+            <span class="badge bg-blue-lt text-blue">8h00</span>
+          </a>
+          <!-- Wed 4: bank holiday (Fronleichnam) -->
+          <a th:href="@{/dailyreport/mockup/b/daily}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <div class="d-inline-block text-center rounded px-2 py-1 bg-red-lt" style="width:3rem">
+                <div class="fw-bold text-red lh-1" style="font-size:1.1rem">4</div>
+                <div class="text-red opacity-75" style="font-size:0.65rem">Wed</div>
+              </div>
+              <div class="text-red mt-1" style="font-size:0.7rem;white-space:nowrap">Fronleichnam</div>
+            </div>
+            <span class="badge bg-red-lt text-red">8h00</span>
+          </a>
+          <!-- Thu 5: not yet booked -->
+          <a th:href="@{/dailyreport/mockup/b/daily}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div class="d-inline-block text-center rounded px-2 py-1 bg-secondary-lt" style="width:3rem">
+              <div class="fw-bold text-muted lh-1" style="font-size:1.1rem">5</div>
+              <div class="text-muted opacity-75" style="font-size:0.65rem">Thu</div>
+            </div>
+            <span class="badge bg-secondary-lt text-muted">—</span>
+          </a>
+          <!-- Fri 6: not yet booked -->
+          <a th:href="@{/dailyreport/mockup/b/daily}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div class="d-inline-block text-center rounded px-2 py-1 bg-secondary-lt" style="width:3rem">
+              <div class="fw-bold text-muted lh-1" style="font-size:1.1rem">6</div>
+              <div class="text-muted opacity-75" style="font-size:0.65rem">Fri</div>
+            </div>
+            <span class="badge bg-secondary-lt text-muted">—</span>
+          </a>
+        </div>
+        <div class="card-footer text-muted small">
+          Week total: <strong>16h00</strong> · Target: <strong>40h00</strong>
+        </div>
+      </div>
+
+      <!-- Favourites -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Favourites</h3>
+          <div class="card-options">
+            <a th:href="@{/dailyreport/mockup/b/form}" class="btn btn-sm btn-outline-secondary">
+              <i class="ti ti-plus me-1"></i>New
+            </a>
+          </div>
+        </div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item d-flex align-items-center gap-2 p-0">
+            <a th:href="@{/dailyreport/mockup/b/form}" class="flex-fill py-2 ps-3 text-decoration-none text-reset">
+              <div class="fw-medium small">Daily Standup</div>
+              <div class="text-muted" style="font-size:0.75rem">INTERNAL · STANDUP-DAILY · 0h30</div>
+            </a>
+            <button class="btn btn-ghost-danger btn-sm py-2 pe-3" onclick="return confirm('Delete this favourite?')">
+              <i class="icon ti ti-trash m-0"></i>
+            </button>
+          </div>
+          <div class="list-group-item d-flex align-items-center gap-2 p-0">
+            <a th:href="@{/dailyreport/mockup/b/form}" class="flex-fill py-2 ps-3 text-decoration-none text-reset">
+              <div class="fw-medium small">Alpha Backend</div>
+              <div class="text-muted" style="font-size:0.75rem">ALPHA · DEV-BACKEND · 1h00</div>
+            </a>
+            <button class="btn btn-ghost-danger btn-sm py-2 pe-3" onclick="return confirm('Delete this favourite?')">
+              <i class="icon ti ti-trash m-0"></i>
+            </button>
+          </div>
+          <div class="list-group-item d-flex align-items-center gap-2 p-0">
+            <a th:href="@{/dailyreport/mockup/b/form}" class="flex-fill py-2 ps-3 text-decoration-none text-reset">
+              <div class="fw-medium small">URLAUB</div>
+              <div class="text-muted" style="font-size:0.75rem">URLAUB · GESAMT · 8h00</div>
+            </a>
+            <button class="btn btn-ghost-danger btn-sm py-2 pe-3" onclick="return confirm('Delete this favourite?')">
+              <i class="icon ti ti-trash m-0"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end sidebar -->
+  </div>
+
+</section>
+</html>

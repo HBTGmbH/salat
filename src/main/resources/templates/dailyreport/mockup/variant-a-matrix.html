@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='June 2026',sectionTitle='Variant A – Efficiency',pageTitle='Daily Report – Variant A Matrix'">
+<section layout:fragment="content">
+
+  <!-- Mockup banner -->
+  <div class="alert alert-info d-flex align-items-center gap-3 mb-3 d-print-none">
+    <i class="ti ti-table flex-shrink-0"></i>
+    <div class="flex-fill"><strong>Variant A — Monthly Matrix</strong> · Static mockup.</div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a th:href="@{/dailyreport/mockup}" class="btn btn-sm btn-outline-secondary">Overview</a>
+      <a th:href="@{/dailyreport/mockup/a/daily}" class="btn btn-sm btn-outline-primary">
+        <i class="ti ti-calendar me-1"></i>Daily View
+      </a>
+    </div>
+  </div>
+
+  <!-- Matrix controls -->
+  <div class="card mb-3">
+    <div class="card-body py-2">
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary" onclick="return false"><i class="ti ti-chevron-left m-0"></i></button>
+          <button class="btn btn-outline-secondary" onclick="return false" disabled>June 2026</button>
+          <button class="btn btn-outline-secondary" onclick="return false"><i class="ti ti-chevron-right m-0"></i></button>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="return false">Today</button>
+        <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
+          <!-- column group toggles (story 3.2) -->
+          <label class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="showInvoice" checked>
+            <span class="form-check-label small">Invoice</span>
+          </label>
+          <label class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="showNonInvoice" checked>
+            <span class="form-check-label small">Non-invoice</span>
+          </label>
+          <label class="form-check form-check-inline mb-0">
+            <input class="form-check-input" type="checkbox" id="showStartBreak">
+            <span class="form-check-label small">Start / Break</span>
+          </label>
+          <button class="btn btn-sm btn-outline-secondary" onclick="return false" title="Fill NOT_WORKED">
+            <i class="ti ti-circle-check me-1"></i>Fill NOT_WORKED
+          </button>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+              <i class="ti ti-file-spreadsheet me-1"></i>CSV
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" onclick="return false"><i class="ti ti-upload me-1"></i>Import (add)</a></li>
+              <li><a class="dropdown-item" href="#" onclick="return false"><i class="ti ti-upload me-1"></i>Import (replace)</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" onclick="return false"><i class="ti ti-download me-1"></i>Export</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary d-print-none" onclick="window.print()">
+            <i class="ti ti-printer m-0"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matrix table -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-vcenter table-sm card-table" style="font-size: 0.82rem">
+        <thead>
+          <tr>
+            <th class="text-nowrap" style="min-width: 180px">Order · Suborder</th>
+            <!-- Day headers — weekends grayed -->
+            <th class="text-center px-1 text-nowrap">1<br><span class="text-muted" style="font-size:0.7rem">Mo</span></th>
+            <th class="text-center px-1 text-nowrap">2<br><span class="text-muted" style="font-size:0.7rem">Tu</span></th>
+            <th class="text-center px-1 text-nowrap">3<br><span class="text-muted" style="font-size:0.7rem">We</span></th>
+            <th class="text-center px-1 text-nowrap">4<br><span class="text-muted" style="font-size:0.7rem">Th</span></th>
+            <th class="text-center px-1 text-nowrap">5<br><span class="text-muted" style="font-size:0.7rem">Fr</span></th>
+            <th class="text-center px-1 bg-light text-muted">6<br><span style="font-size:0.7rem">Sa</span></th>
+            <th class="text-center px-1 bg-light text-muted">7<br><span style="font-size:0.7rem">Su</span></th>
+            <th class="text-center px-1 text-nowrap">8<br><span class="text-muted" style="font-size:0.7rem">Mo</span></th>
+            <th class="text-center px-1 text-nowrap bg-warning-lt">9<br><span class="text-muted" style="font-size:0.7rem">Tu</span></th>
+            <th class="text-center px-1 text-nowrap">10<br><span class="text-muted" style="font-size:0.7rem">We</span></th>
+            <th class="text-center px-1 text-nowrap">11<br><span class="text-muted" style="font-size:0.7rem">Th</span></th>
+            <th class="text-center px-1 text-nowrap">12<br><span class="text-muted" style="font-size:0.7rem">Fr</span></th>
+            <th class="text-center px-1 text-muted small" colspan="2">⋯</th>
+            <th class="text-center px-1 text-nowrap">29<br><span class="text-muted" style="font-size:0.7rem">Mo</span></th>
+            <th class="text-center px-1 text-nowrap">30<br><span class="text-muted" style="font-size:0.7rem">Tu</span></th>
+            <th class="text-center px-1 fw-bold text-nowrap">Σ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 1: DEV-BACKEND -->
+          <tr>
+            <td class="text-nowrap">ALPHA · DEV-BACKEND</td>
+            <td class="text-center px-1">7.5</td>
+            <td class="text-center px-1">4.5</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1">3</td>
+            <td class="text-center px-1">7.5</td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1">7.5</td>
+            <td class="text-center px-1 bg-warning-lt text-muted" title="NOT_WORKED">—</td>
+            <td class="text-center px-1">3</td>
+            <td class="text-center px-1">3</td>
+            <td class="text-center px-1">7.5</td>
+            <td class="text-center px-1 text-muted" colspan="2">⋯</td>
+            <td class="text-center px-1">3</td>
+            <td class="text-center px-1">4.5</td>
+            <td class="text-center px-1 fw-medium">75h30</td>
+          </tr>
+          <!-- Row 2: DEV-FRONTEND -->
+          <tr>
+            <td class="text-nowrap">ALPHA · DEV-FRONTEND</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1">2</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1 bg-warning-lt text-muted" title="NOT_WORKED">—</td>
+            <td class="text-center px-1">4</td>
+            <td class="text-center px-1">4.5</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1 text-muted" colspan="2">⋯</td>
+            <td class="text-center px-1">4.5</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1 fw-medium">22h00</td>
+          </tr>
+          <!-- Row 3: STANDUP -->
+          <tr>
+            <td class="text-nowrap">INTERNAL · STANDUP-DAILY</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1 bg-warning-lt text-muted" title="NOT_WORKED">—</td>
+            <td class="text-center px-1 text-muted">—</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1 text-muted" colspan="2">⋯</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1">0.5</td>
+            <td class="text-center px-1 fw-medium">9h30</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="table-group-divider fw-medium">
+            <td>Day total</td>
+            <td class="text-center px-1">8</td>
+            <td class="text-center px-1">5</td>
+            <td class="text-center px-1 text-danger">—</td>
+            <td class="text-center px-1">5.5</td>
+            <td class="text-center px-1">8</td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1 bg-light text-muted"></td>
+            <td class="text-center px-1">8</td>
+            <td class="text-center px-1 bg-warning-lt text-muted">NW</td>
+            <td class="text-center px-1 text-warning">7</td>
+            <td class="text-center px-1">8</td>
+            <td class="text-center px-1">8</td>
+            <td class="text-center px-1 text-muted" colspan="2">⋯</td>
+            <td class="text-center px-1 text-warning">8</td>
+            <td class="text-center px-1 text-warning">5</td>
+            <td class="text-center px-1">107h</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="card-footer d-print-none">
+      <small class="text-muted">
+        <span class="badge bg-warning-lt text-warning me-2">NW</span>NOT_WORKED day &nbsp;·&nbsp;
+        <span class="text-danger fw-medium">—</span> unbooked working day &nbsp;·&nbsp;
+        <span class="text-warning">partial</span> = below 8h contractual &nbsp;·&nbsp;
+        Clicking a day header navigates to the daily view for that date (Story 3.3).
+      </small>
+    </div>
+  </div>
+
+  <script th:inline="none">
+    // Clicking a day column header → navigate to daily view
+    document.querySelectorAll('thead th[data-day]').forEach(function(th) {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', function() {
+        window.location.href = '/dailyreport/mockup/a/daily';
+      });
+    });
+  </script>
+
+</section>
+</html>

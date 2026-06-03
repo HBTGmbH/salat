@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='mockup',title='Daily Report',sectionTitle='UI Mockups',pageTitle='Daily Report – UI Mockups'">
+<section layout:fragment="content">
+
+  <div class="alert alert-info mb-4" role="alert">
+    <div class="d-flex align-items-center gap-2">
+      <i class="ti ti-info-circle flex-shrink-0"></i>
+      <div>
+        Static prototypes for the daily report module migration (Epics 1–3). No data is persisted.
+        Sample data is hardcoded and shows <strong>Monday 2 June 2026</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-cards">
+
+    <!-- Variant A -->
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">Variant A — Efficiency</h3>
+          <span class="badge bg-purple-lt ms-2">All stories</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Maximum information density. Working day data, overtime, bookings, and favourites are co-located on one screen. Suited to daily power users.</p>
+          <ul class="list-unstyled mb-0 mt-3">
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Stories 1.1–1.9 · 2.1–2.5 · 3.1–3.4</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Two-column layout with favourites sidebar</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Dense matrix view with column groups</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Modal booking form with quick favourites</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Checkbox mass-select for delete and move</li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex gap-2 flex-wrap">
+            <a th:href="@{/dailyreport/mockup/a/daily}" class="btn btn-primary btn-sm">
+              <i class="ti ti-calendar me-1"></i>Daily View
+            </a>
+            <a th:href="@{/dailyreport/mockup/a/matrix}" class="btn btn-outline-secondary btn-sm">
+              <i class="ti ti-table me-1"></i>Monthly Matrix
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant B -->
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">Variant B — Simplicity</h3>
+          <span class="badge bg-blue-lt ms-2">Core stories</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Clarity above completeness. Single-purpose screens, plain-language labels, large touch targets. Low-priority stories omitted.</p>
+          <ul class="list-unstyled mb-0 mt-3">
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Stories 1.1–1.7 · 2.1–2.3 · 3.1 · 3.3–3.4</li>
+            <li class="mb-1"><i class="ti ti-minus text-muted me-1"></i>1.8, 1.9, 2.4, 2.5, 3.2 omitted</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Progress bar for booked time</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Calendar view with colour tiles</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Separate booking form page</li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex gap-2 flex-wrap">
+            <a th:href="@{/dailyreport/mockup/b/daily}" class="btn btn-primary btn-sm">
+              <i class="ti ti-calendar me-1"></i>Daily View
+            </a>
+            <a th:href="@{/dailyreport/mockup/b/form}" class="btn btn-outline-secondary btn-sm">
+              <i class="ti ti-forms me-1"></i>Booking Form
+            </a>
+            <a th:href="@{/dailyreport/mockup/b/calendar}" class="btn btn-outline-secondary btn-sm">
+              <i class="ti ti-calendar-month me-1"></i>Calendar
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant C -->
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">Variant C — Beautiful</h3>
+          <span class="badge bg-purple-lt ms-2">All stories</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Split views with a vertical tab sidebar. Card-based bookings, slide-in offcanvas form. Dedicated screens for favourites and working day data.</p>
+          <ul class="list-unstyled mb-0 mt-3">
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Stories 1.1–1.9 · 2.1–2.5 · 3.1–3.4</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Sidebar: Daily · Month · Favourites · Data</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Offcanvas slide-in booking panel</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Card-based booking tiles</li>
+            <li class="mb-1"><i class="ti ti-check text-green me-1"></i>Dedicated favourites management view</li>
+          </ul>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex gap-2 flex-wrap">
+            <a th:href="@{/dailyreport/mockup/c/daily}" class="btn btn-primary btn-sm">
+              <i class="ti ti-calendar me-1"></i>Daily View
+            </a>
+            <a th:href="@{/dailyreport/mockup/c/calendar}" class="btn btn-outline-secondary btn-sm">
+              <i class="ti ti-calendar-month me-1"></i>Calendar
+            </a>
+            <a th:href="@{/dailyreport/mockup/c/favourites}" class="btn btn-outline-secondary btn-sm">
+              <i class="ti ti-star me-1"></i>Favourites
+            </a>
+            <a th:href="@{/dailyreport/mockup/c/data}" class="btn btn-outline-secondary btn-sm">
+              <i class="ti ti-database-import me-1"></i>WD Data
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+</html>
