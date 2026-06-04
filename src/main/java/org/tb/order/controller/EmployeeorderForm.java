@@ -14,6 +14,8 @@ public class EmployeeorderForm {
     private Long employeeContractId;
     private Long orderId;
     private Long suborderId;
+    /** The suborder ID as stored in the DB when the edit form was opened; never mutated by HTMX handlers. */
+    private Long storedSuborderId;
     private String validFrom;
     private String validUntil;
     private String debithours;
