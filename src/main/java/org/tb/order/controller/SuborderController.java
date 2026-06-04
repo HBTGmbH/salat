@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -473,10 +474,17 @@ public class SuborderController {
     }
 
     // Customer orders for the dropdown (all visible if manager, else only responsible ones)
-    List<Customerorder> customerorders = customerorderService.getVisibleCustomerorders();
-    customerorders = customerorders.stream()
+    var customerorders = new ArrayList<>(customerorderService.getVisibleCustomerorders().stream()
             .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
-            .toList();
+            .toList());
+    // In edit mode, ensure the stored order appears even if hidden or expired
+    if (isEdit && form.getCustomerorderId() != null
+            && customerorders.stream().noneMatch(co -> Objects.equals(co.getId(), form.getCustomerorderId()))) {
+      Customerorder storedOrder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+      if (storedOrder != null) {
+        customerorders.add(storedOrder);
+      }
+    }
     model.addAttribute("customerorders", customerorders);
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
       form.setCustomerorderId(customerorders.getFirst().getId());
