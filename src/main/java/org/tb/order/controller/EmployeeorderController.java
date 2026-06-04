@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -471,7 +472,15 @@ public class EmployeeorderController {
             form.setCustomerId(customers.getFirst().getId());
         }
 
-        var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
+        var employeeContracts = new ArrayList<>(employeecontractService.getVisibleEmployeeContracts());
+        // In edit mode, ensure the stored contract appears even if hidden
+        if (isEdit && form.getEmployeeContractId() != null
+                && employeeContracts.stream().noneMatch(ec -> Objects.equals(ec.getId(), form.getEmployeeContractId()))) {
+            Employeecontract storedContract = employeecontractService.getEmployeecontractById(form.getEmployeeContractId());
+            if (storedContract != null) {
+                employeeContracts.add(storedContract);
+            }
+        }
         model.addAttribute("employeecontracts", employeeContracts);
         if (form.getEmployeeContractId() == null && !employeeContracts.isEmpty()) {
             form.setEmployeeContractId(employeeContracts.getFirst().getId());
@@ -482,12 +491,19 @@ public class EmployeeorderController {
             .map(Employeecontract::getValidity)
             .orElse(null);
 
-        List<Customerorder> orders = customerorderService.getVisibleCustomerorders();
-        orders = orders.stream()
+        var orders = new ArrayList<>(customerorderService.getVisibleCustomerorders().stream()
             .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
             .filter(Customerorder::getCurrentlyValid)
             .filter(co -> co.getValidity().overlaps(validity))
-            .toList();
+            .toList());
+        // In edit mode, ensure the stored order appears even if hidden or expired
+        if (isEdit && form.getOrderId() != null
+                && orders.stream().noneMatch(co -> Objects.equals(co.getId(), form.getOrderId()))) {
+            Customerorder storedOrder = customerorderService.getCustomerorderById(form.getOrderId());
+            if (storedOrder != null) {
+                orders.add(storedOrder);
+            }
+        }
         model.addAttribute("orders", orders);
         if (form.getOrderId() == null && !orders.isEmpty()) {
             form.setOrderId(orders.getFirst().getId());
@@ -495,10 +511,19 @@ public class EmployeeorderController {
 
         List<Suborder> suborders = List.of();
         if(form.getOrderId() != null) {
-            suborders = getVisibleSuborders(form.getOrderId(), true)
+            var filteredSuborders = new ArrayList<>(getVisibleSuborders(form.getOrderId(), true)
                 .stream()
                 .filter(so -> so.getValidity().overlaps(validity))
-                .toList();
+                .toList());
+            // In edit mode, ensure the stored suborder appears even if hidden or expired
+            if (isEdit && form.getSuborderId() != null
+                    && filteredSuborders.stream().noneMatch(so -> Objects.equals(so.getId(), form.getSuborderId()))) {
+                Suborder storedSuborder = suborderService.getSuborderById(form.getSuborderId());
+                if (storedSuborder != null) {
+                    filteredSuborders.add(storedSuborder);
+                }
+            }
+            suborders = filteredSuborders;
             if (form.getSuborderId() == null && !suborders.isEmpty()) {
                 form.setSuborderId(suborders.getFirst().getId());
             }
