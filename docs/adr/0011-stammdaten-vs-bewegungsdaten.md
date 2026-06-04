@@ -1,7 +1,9 @@
-# ADR-0011 Stammdaten vs. Bewegungsdaten und `hide`-Flag für Stammdaten-Entitäten
+# ADR-0011 Stammdaten vs. Bewegungsdaten
 
 Date: 2026-05-30
 Status: Accepted
+
+> Das `hide`-Flag und die Archivierungsregeln für Stammdaten wurden nach ADR-0012 ausgelagert.
 
 ## Context and Problem Statement
 
@@ -10,8 +12,7 @@ Ein einheitliches Modell fehlte bislang, das festlegt:
 
 - welche Entitäten als Stammdaten (Referenz- oder Konfigurationsdaten) gelten,
 - welche als Bewegungsdaten (Ereignis- oder Transaktionsdaten),
-- welche typischen Muster für jeden Typ gelten,
-- und welche Entitäten ein `hide`-Flag erhalten sollen.
+- und welche typischen Muster für jeden Typ gelten.
 
 ## Considered Options
 
@@ -20,13 +21,13 @@ Ein einheitliches Modell fehlte bislang, das festlegt:
 
 ## Decision Outcome
 
-Chosen: **Klassifizierung dokumentieren**, weil das explizite Modell Entscheidungen über `hide`-Flags,
-Dropdown-Filterung, Softlöschung und Validierungsbereiche konsistent macht.
+Chosen: **Klassifizierung dokumentieren**, weil das explizite Modell Entscheidungen über
+Deaktivierungsmechanismen, Softlöschung und Gültigkeitsbereiche konsistent macht.
 
 ### Consequences
 
-* Good: klare Entscheidungsgrundlage, welche Entitäten ein `hide`-Flag, eine Gültigkeitsspanne
-  oder einen anderen Deaktivierungsmechanismus benötigen
+* Good: klare Entscheidungsgrundlage, welche Entitäten eine Gültigkeitsspanne oder einen
+  anderen Deaktivierungsmechanismus benötigen
 * Good: neue Entitäten können sofort klassifiziert werden
 * Neutral: Klassifizierung erfordert gelegentliche Pflege, wenn sich Domänenverständnis ändert
 
@@ -44,8 +45,7 @@ Sie ändern sich selten, haben eine lange Lebensdauer und werden von Bewegungsda
 | Lebensdauer | lang; Objekte werden nicht gelöscht, sondern archiviert oder deaktiviert |
 | Änderungsfrequenz | gering; seltene, manuelle Pflege |
 | Referenzierung | werden von Bewegungsdaten (und anderen Stammdaten) referenziert |
-| Deaktivierung | `hide`-Flag (UX), `enabled`-Flag (Aktivierung) oder Gültigkeitsspanne (`fromDate`/`untilDate`, `validFrom`/`validUntil`) |
-| `hide`-Semantik | Entität bleibt in der DB; bestehende Referenzen bleiben gültig und können gespeichert werden; neue Entitäten dürfen sie nicht mehr referenzieren; in Dropdown-Listen wird sie ausgeblendet |
+| Deaktivierung | `hide`-Flag (UX-Archivierung, → ADR-0012), `enabled`-Flag (Aktivierung) oder Gültigkeitsspanne (`fromDate`/`untilDate`, `validFrom`/`validUntil`, → ADR-0012) |
 | Audit-Trail | immer via `AuditedEntity` |
 | Löschen | i.d.R. nicht erlaubt, wenn noch Bewegungsdaten referenzieren (Veto-Event) |
 
@@ -59,7 +59,6 @@ Bewegungsdaten halten *Ereignisse* und *Aktivitäten* fest, die die Anwendung ü
 | Änderungsfrequenz | initial hoch, dann zunehmend immutabel |
 | Referenzierung | referenzieren Stammdaten; werden selten selbst referenziert |
 | Deaktivierung | Softlöschung (`deleted`-Flag + `@SQLRestriction`) oder Status-Feld |
-| `hide`-Semantik | nicht anwendbar — Bewegungsdaten haben keinen eigenen Sichtbarkeits-Toggle |
 | Audit-Trail | optional (nicht alle Bewegungsdaten erweitern `AuditedEntity`) |
 | Löschen | Soft-Delete bevorzugt, wenn historische Daten bewahrt werden müssen |
 
@@ -83,7 +82,7 @@ Bewegungsdaten halten *Ereignisse* und *Aktivitäten* fest, die die Anwendung ü
 | `AuthorizationRule` | auth | — | `validFrom`/`validUntil` | Zeitbegrenzte Berechtigungsregel |
 | `ETLDefinition` | etl | — | — | System-Konfiguration; kein Dropdown in UI |
 | `JiraReplicationConfig` | jira | — | `enabled`-Flag | Integrations-Konfiguration; `enabled` reicht aus |
-| `ReportDefinition` | reporting | ❌ **fehlt** | — | Berichtsvorlage; in `ScheduledReportJob`-Dropdown; **→ `hide` vorgeschlagen** |
+| `ReportDefinition` | reporting | ❌ fehlt | — | Berichtsvorlage; in `ScheduledReportJob`-Dropdown |
 | `ScheduledReportJob` | reporting | — | `enabled`-Flag | Geplanter Job; `enabled` reicht aus |
 | `OrderRevenueExcelMapping` | order | — | — | Kleines Mapping; kein Dropdown |
 
@@ -109,19 +108,6 @@ Bewegungsdaten halten *Ereignisse* und *Aktivitäten* fest, die die Anwendung ü
 
 ---
 
-## Vorgeschlagene Ergänzungen des `hide`-Flags
+## Verwandte Entscheidungen
 
-### `ReportDefinition` — `hide` hinzufügen
-
-**Begründung**: `ReportDefinition` erscheint im Dropdown zur Auswahl der Berichtsvorlage beim Anlegen
-eines `ScheduledReportJob`. Wenn eine Berichtsvorlage veraltet ist, soll sie für neue Jobs nicht mehr
-wählbar sein, muss aber für bestehende Jobs weiter referenzierbar bleiben.
-
-Umsetzungsschritte:
-1. Feld `hide` (Boolean, default `false`) in `ReportDefinition` ergänzen
-2. Liquibase-Migration: `ALTER TABLE reportdefinition ADD COLUMN hide bit(1) NOT NULL DEFAULT 0`
-3. DAO: `notHidden()`-Spezifikation + Anwendung bei Dropdown-Abfragen (Ausschluss aus `ScheduledReportJob`-Formular)
-4. Service/Controller: `hide`-Flag im `ReportDefinitionService` setzbar machen
-5. Listen-View: `Flags`-Spalte mit `bi-eye-slash`-Badge; Filter-Toggle `showHidden`
-6. Formular für `ScheduledReportJob`: versteckte `ReportDefinition`-Einträge ausfiltern, außer wenn die
-   aktuell referenzierte Definition bereits versteckt ist (Bearbeitungs-Szenario)
+- ADR-0012: Archivierungsregeln für Stammdaten — `hide`-Flag, Gültigkeitsspannen und Dropdown-Verhalten in Create- vs. Edit-Dialogen
