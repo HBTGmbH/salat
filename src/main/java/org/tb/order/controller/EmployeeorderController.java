@@ -485,6 +485,7 @@ public class EmployeeorderController {
         List<Customerorder> orders = customerorderService.getVisibleCustomerorders();
         orders = orders.stream()
             .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
+            .filter(Customerorder::getCurrentlyValid)
             .filter(co -> co.getValidity().overlaps(validity))
             .toList();
         model.addAttribute("orders", orders);
@@ -494,7 +495,7 @@ public class EmployeeorderController {
 
         List<Suborder> suborders = List.of();
         if(form.getOrderId() != null) {
-            suborders = getVisibleSuborders(form.getOrderId(), false)
+            suborders = getVisibleSuborders(form.getOrderId(), true)
                 .stream()
                 .filter(so -> so.getValidity().overlaps(validity))
                 .toList();
