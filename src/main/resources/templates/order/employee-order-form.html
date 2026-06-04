@@ -8,6 +8,7 @@
   <form th:action="@{/orders/employeeorders/store}" th:object="${employeeorderForm}" method="post" class="card mb-3">
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
+      <input type="hidden" th:field="*{storedSuborderId}" />
 
       <!-- Global errors (e.g. overlap) -->
       <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger mb-3">

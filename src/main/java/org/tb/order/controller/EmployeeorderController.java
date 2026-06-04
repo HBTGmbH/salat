@@ -515,12 +515,14 @@ public class EmployeeorderController {
                 .stream()
                 .filter(so -> so.getValidity().overlaps(validity))
                 .toList());
-            // In edit mode, ensure the stored suborder appears even if hidden or expired
-            if (isEdit && form.getSuborderId() != null
-                    && filteredSuborders.stream().noneMatch(so -> Objects.equals(so.getId(), form.getSuborderId()))) {
-                Suborder storedSuborder = suborderService.getSuborderById(form.getSuborderId());
-                if (storedSuborder != null) {
-                    filteredSuborders.add(storedSuborder);
+            // In edit mode, ensure the stored suborder appears even if hidden or expired.
+            // Fall back to storedSuborderId when suborderId was reset by a CO change and the user switched back.
+            Long suborderIdToEnsure = form.getSuborderId() != null ? form.getSuborderId() : form.getStoredSuborderId();
+            if (isEdit && suborderIdToEnsure != null
+                    && filteredSuborders.stream().noneMatch(so -> Objects.equals(so.getId(), suborderIdToEnsure))) {
+                Suborder suborderToAdd = suborderService.getSuborderById(suborderIdToEnsure);
+                if (suborderToAdd != null && Objects.equals(suborderToAdd.getCustomerorder().getId(), form.getOrderId())) {
+                    filteredSuborders.add(suborderToAdd);
                 }
             }
             suborders = filteredSuborders;
@@ -562,6 +564,7 @@ public class EmployeeorderController {
         form.setEmployeeContractId(eo.getEmployeecontract().getId());
         form.setOrderId(eo.getSuborder().getCustomerorder().getId());
         form.setSuborderId(eo.getSuborder().getId());
+        form.setStoredSuborderId(eo.getSuborder().getId());
         form.setValidFrom(format(eo.getFromDate()));
         form.setValidUntil(eo.getUntilDate() != null ? format(eo.getUntilDate()) : "");
         if (eo.getDebithours() != null && !eo.getDebithours().isZero()) {
