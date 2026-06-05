@@ -144,6 +144,14 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerorderById(customerorderId);
   }
 
+  @Authorized(requiresManager = true)
+  public Customerorder toggleHide(long id) {
+    Customerorder co = customerorderDAO.getCustomerorderById(id);
+    if (co == null) throw new InvalidDataException(ErrorCode.CO_NOT_FOUND);
+    co.setHide(!co.getHide());
+    return customerorderRepository.save(co);
+  }
+
   public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(Long responsibleEmployeeId) {
     return customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
   }

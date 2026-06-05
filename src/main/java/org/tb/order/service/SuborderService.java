@@ -19,6 +19,7 @@ import org.tb.common.LocalDateRange;
 import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DateUtils;
@@ -61,6 +62,14 @@ public class SuborderService {
 
   public List<Suborder> getStandardSuborders() {
     return suborderDAO.getStandardSuborders();
+  }
+
+  @Authorized(requiresManager = true)
+  public Suborder toggleHide(long id) {
+    Suborder so = suborderDAO.getSuborderById(id);
+    if (so == null) throw new InvalidDataException(ErrorCode.SO_NOT_FOUND);
+    so.setHide(!so.isHide());
+    return suborderRepository.save(so);
   }
 
   private void createOrUpdate(Long soId, SuborderDTO data, Long customerorderId) {

@@ -68,9 +68,7 @@
               <td th:text="${employee.firstname}"></td>
               <td class="d-none d-md-table-cell" th:text="${employee.sign}"></td>
               <td class="d-none d-md-table-cell" th:text="${employee.loginname}"></td>
-              <td class="d-none d-lg-table-cell">
-                <span th:if="${employee.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
-              </td>
+              <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: employeeHideFlag}"></td>
               <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
                 <a th:href="@{/employees/edit(id=${employee.id})}" class="btn btn-outline-primary"
                    th:title="#{main.headlinedescription.employees.edit.text}">

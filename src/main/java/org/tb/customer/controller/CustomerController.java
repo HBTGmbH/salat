@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -127,6 +128,20 @@ public class CustomerController {
     redirectAttributes.addFlashAttribute("toastSuccess",
         messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));
     return "redirect:/customers";
+  }
+
+  @PreAuthorize("hasRole('MANAGER')")
+  @PostMapping("/{id}/toggle-hide")
+  public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    try {
+      var cu = customerService.toggleHide(id);
+      model.addAttribute("cu", cu);
+      return "fragments/hide-toggle :: customerHideFlag";
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+      return "redirect:/customers";
+    }
   }
 
   @PreAuthorize("hasRole('MANAGER')")

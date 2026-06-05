@@ -343,6 +343,14 @@ public class EmployeecontractService {
   }
 
   @Authorized(requiresManager = true)
+  public Employeecontract toggleHide(long id) {
+    Employeecontract ec = employeecontractRepository.findById(id)
+        .orElseThrow(() -> new InvalidDataException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND));
+    ec.setHide(!ec.getHide());
+    return employeecontractRepository.save(ec);
+  }
+
+  @Authorized(requiresManager = true)
   public void deleteEmployeeContractById(long employeeContractId) {
     Employeecontract ec = getEmployeecontractById(employeeContractId);
 

@@ -173,6 +173,20 @@ public class CustomerorderController {
   }
 
   @PreAuthorize("hasRole('MANAGER')")
+  @PostMapping("/{id}/toggle-hide")
+  public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    try {
+      var co = customerorderService.toggleHide(id);
+      model.addAttribute("co", co);
+      return "fragments/hide-toggle :: customerorderHideFlag";
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+      return "redirect:/orders/customerorders";
+    }
+  }
+
+  @PreAuthorize("hasRole('MANAGER')")
   @PostMapping("/{id}/delete")
   public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
     try {

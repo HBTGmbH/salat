@@ -6,6 +6,7 @@ import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.exception.ErrorCode.AA_REQUIRED;
 import static org.tb.common.exception.ErrorCode.EM_ANONYMIZE_WRONG_SIGN;
 import static org.tb.common.exception.ErrorCode.EM_DELETE_GOT_VETO;
+import static org.tb.common.exception.ErrorCode.EM_NOT_FOUND;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.ArrayList;
@@ -105,6 +106,16 @@ public class EmployeeService {
     if (!employeeAuthorization.isAuthorized(employee, AccessLevel.READ, employeeDAO.getSupervisedEmployeeIds())) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
     }
+    return employee;
+  }
+
+  @Authorized(requiresManager = true)
+  public Employee toggleHide(long id) {
+    if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
+    Employee employee = employeeDAO.getEmployeeById(id);
+    if (employee == null) throw new InvalidDataException(EM_NOT_FOUND);
+    employee.setHide(!employee.getHide());
+    employeeRepository.save(employee);
     return employee;
   }
 

@@ -207,6 +207,20 @@ public class SuborderController {
   }
 
   @PreAuthorize("hasRole('MANAGER')")
+  @PostMapping("/{id}/toggle-hide")
+  public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    try {
+      var so = suborderService.toggleHide(id);
+      model.addAttribute("so", so);
+      return "fragments/hide-toggle :: suborderHideFlag";
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+      return "redirect:/orders/suborders";
+    }
+  }
+
+  @PreAuthorize("hasRole('MANAGER')")
   @PostMapping("/{id}/delete")
   public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
     try {

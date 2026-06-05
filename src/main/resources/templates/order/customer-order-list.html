@@ -146,9 +146,7 @@
                           and (co.debithoursunit == 0 or co.debithoursunit == 1 or co.debithoursunit == 12)}"
                   th:text="${@durationUtils.format(co.difference)}">0:00</span>
           </td>
-          <td class="d-none d-lg-table-cell">
-            <span th:if="${co.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
-          </td>
+          <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerorderHideFlag}"></td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a class="btn btn-outline-primary" th:href="@{/orders/customerorders/edit(id=${co.id})}">
               <i class="icon ti ti-pencil m-0"></i>
