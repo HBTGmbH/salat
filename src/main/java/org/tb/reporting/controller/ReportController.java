@@ -130,6 +130,7 @@ public class ReportController {
   public String store(@ModelAttribute("report") ReportForm form,
                       BindingResult bindingResult,
                       Model model,
+                      HttpSession session,
                       RedirectAttributes redirectAttributes,
                       @RequestParam(value = "filter", required = false) String filter) {
 
@@ -152,7 +153,9 @@ public class ReportController {
 
     if (form.getId() == null) {
       reportService.create(form.getName(), form.getSql());
+      session.setAttribute("reporting.reports.filter", null);
       redirectAttributes.addFlashAttribute("toastSuccess", "Report created successfully");
+      return "redirect:/reporting/reports";
     } else {
       reportService.update(form.getId(), form.getName(), form.getSql());
       redirectAttributes.addFlashAttribute("toastSuccess", "Report updated successfully");

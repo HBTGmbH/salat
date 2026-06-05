@@ -130,6 +130,7 @@ public class CustomerorderController {
   public String store(@ModelAttribute("customerorderForm") CustomerorderForm form,
                       BindingResult bindingResult,
                       Model model,
+                      HttpSession session,
                       RedirectAttributes redirectAttributes) {
     validateForm(form, bindingResult);
 
@@ -162,6 +163,10 @@ public class CustomerorderController {
       return "order/customer-order-form";
     }
 
+    if (newId != null) {
+      session.setAttribute("orders.customerorders.customerId", form.getCustomerId());
+      session.setAttribute("orders.customerorders.filter", null);
+    }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"));
     if (newId != null) {
