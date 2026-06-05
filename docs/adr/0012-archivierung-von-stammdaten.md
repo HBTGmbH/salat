@@ -127,6 +127,64 @@ builder.or(
 - Listen-Views: `show` (Gültigkeit) und `showHidden` als unabhängige Boolean-Toggle-Parameter;
   Session-Keys nach Schema `<modul>.<entität>.show` / `<modul>.<entität>.showHidden`.
 
+#### Stored-ID-Muster: gespeicherte Fremdschlüssel über Roundtrips hinweg sichern
+
+HTMX-Change-Handler setzen abhängige Felder auf `null` zurück (z. B. `form.setSuborderId(null)` in
+`change-customerorder`), und Validierungsfehler können dazu führen, dass ein Select-Element ohne
+passende Option keinen Wert übermittelt. In beiden Fällen ist die ursprünglich gespeicherte ID im
+Form-Objekt verloren und `addFormModel()` kann den Wert nicht mehr zur Liste ergänzen.
+
+**Lösung:** Das Form-Objekt erhält ein `storedXxxId`-Feld, das einmalig beim Laden des Edit-Formulars
+aus der Entität befüllt wird und danach nie mehr verändert wird. Es wird als
+`<input type="hidden">` im Template gerendert und überlebt so jeden POST-Roundtrip.
+`addFormModel()` fällt auf dieses Feld zurück, wenn das primäre Feld `null` ist.
+
+```java
+// 1. Im Form-Objekt: separates "gespeichertes" Feld
+public class EmployeeorderForm {
+    private Long suborderId;
+    /** Einmalig aus der DB gesetzt; wird von HTMX-Handlern nie zurückgesetzt. */
+    private Long storedSuborderId;
+    // ...
+}
+
+// 2. In toForm(): beide Felder gemeinsam initialisieren
+private EmployeeorderForm toForm(Employeeorder eo) {
+    form.setSuborderId(eo.getSuborder().getId());
+    form.setStoredSuborderId(eo.getSuborder().getId());
+    // ...
+}
+
+// 3. In addFormModel(): storedId als Fallback, wenn das primäre Feld null ist
+Long suborderIdToEnsure = form.getSuborderId() != null
+    ? form.getSuborderId()
+    : form.getStoredSuborderId();
+if (isEdit && suborderIdToEnsure != null
+        && filteredSuborders.stream().noneMatch(so -> Objects.equals(so.getId(), suborderIdToEnsure))) {
+    Suborder suborderToAdd = suborderService.getSuborderById(suborderIdToEnsure);
+    // Nur hinzufügen, wenn der Unterauftrag zum aktuell gewählten Kundenauftrag gehört
+    if (suborderToAdd != null
+            && Objects.equals(suborderToAdd.getCustomerorder().getId(), form.getOrderId())) {
+        filteredSuborders.add(suborderToAdd);
+    }
+}
+```
+
+```html
+<!-- 4. Im Template: hidden input direkt neben dem id-Feld -->
+<input type="hidden" th:field="*{id}" />
+<input type="hidden" th:field="*{storedSuborderId}" />
+```
+
+**Wann dieses Muster anwenden?** Immer dann, wenn
+
+- ein Fremdschlüssel-Feld durch einen HTMX-Change-Handler zurückgesetzt werden kann, **oder**
+- ein Select-Element beim erneuten Rendern nach einem Validierungsfehler keinen passenden Eintrag
+  findet und deshalb keinen Wert übermittelt.
+
+Das Muster ist nicht nötig, wenn weder HTMX-Handler das Feld zurücksetzen noch
+Validierungsfehler-Roundtrips den Wert verlieren können.
+
 ### Entitäten ohne eigenes `hide`-Flag
 
 `Employeeorder` hat kein eigenes `hide`. Der `notHidden()`-Filter prüft das Flag der übergeordneten
