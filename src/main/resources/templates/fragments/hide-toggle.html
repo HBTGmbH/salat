@@ -14,7 +14,7 @@
               class="border-0 bg-transparent p-0"
               style="cursor:pointer"
               th:title="#{main.general.hide.toggle}">
-        <span th:class="${cu.hide} ? 'badge bg-red' : 'badge bg-secondary-lt'">
+        <span th:class="${cu.hide} ? 'badge bg-danger-lt' : 'badge bg-secondary-lt'">
           <i class="bi bi-eye-slash" th:if="${cu.hide}"></i>
           <i class="bi bi-eye" th:unless="${cu.hide}" style="opacity:0.35"></i>
         </span>
@@ -22,7 +22,7 @@
     </form>
   </th:block>
   <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
-    <span th:if="${cu.hide}" class="badge bg-red" th:title="#{main.general.hide}">
+    <span th:if="${cu.hide}" class="badge bg-danger-lt" th:title="#{main.general.hide}">
       <i class="bi bi-eye-slash"></i>
     </span>
   </th:block>
@@ -40,7 +40,7 @@
               class="border-0 bg-transparent p-0"
               style="cursor:pointer"
               th:title="#{main.general.hide.toggle}">
-        <span th:class="${co.hide} ? 'badge bg-red' : 'badge bg-secondary-lt'">
+        <span th:class="${co.hide} ? 'badge bg-danger-lt' : 'badge bg-secondary-lt'">
           <i class="bi bi-eye-slash" th:if="${co.hide}"></i>
           <i class="bi bi-eye" th:unless="${co.hide}" style="opacity:0.35"></i>
         </span>
@@ -48,7 +48,7 @@
     </form>
   </th:block>
   <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
-    <span th:if="${co.hide}" class="badge bg-red" th:title="#{main.general.hide}">
+    <span th:if="${co.hide}" class="badge bg-danger-lt" th:title="#{main.general.hide}">
       <i class="bi bi-eye-slash"></i>
     </span>
   </th:block>
@@ -71,7 +71,7 @@
               class="border-0 bg-transparent p-0"
               style="cursor:pointer"
               th:title="#{main.general.hide.toggle}">
-        <span th:class="${so.hide} ? 'badge bg-red' : 'badge bg-secondary-lt'">
+        <span th:class="${so.hide} ? 'badge bg-danger-lt' : 'badge bg-secondary-lt'">
           <i class="bi bi-eye-slash" th:if="${so.hide}"></i>
           <i class="bi bi-eye" th:unless="${so.hide}" style="opacity:0.35"></i>
         </span>
@@ -79,7 +79,7 @@
     </form>
   </th:block>
   <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
-    <span th:if="${so.hide}" class="badge bg-red" th:title="#{main.general.hide}">
+    <span th:if="${so.hide}" class="badge bg-danger-lt" th:title="#{main.general.hide}">
       <i class="bi bi-eye-slash"></i>
     </span>
   </th:block>
@@ -97,7 +97,7 @@
               class="border-0 bg-transparent p-0"
               style="cursor:pointer"
               th:title="#{main.general.hide.toggle}">
-        <span th:class="${employee.hide} ? 'badge bg-red' : 'badge bg-secondary-lt'">
+        <span th:class="${employee.hide} ? 'badge bg-danger-lt' : 'badge bg-secondary-lt'">
           <i class="bi bi-eye-slash" th:if="${employee.hide}"></i>
           <i class="bi bi-eye" th:unless="${employee.hide}" style="opacity:0.35"></i>
         </span>
@@ -105,7 +105,7 @@
     </form>
   </th:block>
   <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
-    <span th:if="${employee.hide}" class="badge bg-red" th:title="#{main.general.hide}">
+    <span th:if="${employee.hide}" class="badge bg-danger-lt" th:title="#{main.general.hide}">
       <i class="bi bi-eye-slash"></i>
     </span>
   </th:block>
@@ -123,7 +123,7 @@
               class="border-0 bg-transparent p-0"
               style="cursor:pointer"
               th:title="#{main.general.hide.toggle}">
-        <span th:class="${ec.hide} ? 'badge bg-red' : 'badge bg-secondary-lt'">
+        <span th:class="${ec.hide} ? 'badge bg-danger-lt' : 'badge bg-secondary-lt'">
           <i class="bi bi-eye-slash" th:if="${ec.hide}"></i>
           <i class="bi bi-eye" th:unless="${ec.hide}" style="opacity:0.35"></i>
         </span>
@@ -131,7 +131,7 @@
     </form>
   </th:block>
   <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
-    <span th:if="${ec.hide}" class="badge bg-red" th:title="#{main.general.hide}">
+    <span th:if="${ec.hide}" class="badge bg-danger-lt" th:title="#{main.general.hide}">
       <i class="bi bi-eye-slash"></i>
     </span>
   </th:block>
