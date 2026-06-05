@@ -130,6 +130,10 @@ public class CustomerService {
         .orElseThrow(() -> new InvalidDataException(CU_NOT_FOUND));
   }
 
+  public Customer getCustomerEntityById(Long id) {
+    return customerDAO.getCustomerById(id);
+  }
+
   public List<Customer> getAllCustomers() {
     return customerDAO.getCustomers();
   }
