@@ -16,6 +16,8 @@ public class EmployeecontractForm {
     private Long id;
     private Long employeeId;
     private Long supervisorId;
+    /** Set once from DB when edit form is opened; never mutated by form lifecycle. */
+    private Long storedSupervisorId;
     private String taskdescription;
     private String validFrom;
     private String validUntil;
