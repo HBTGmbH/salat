@@ -89,6 +89,15 @@ See also README.md
   # get node_id via: gh api repos/HBTGmbH/salat/issues/NNN --jq .node_id
   ```
 
+## Definition of Ready
+
+Before writing any code:
+
+- [ ] `main` is checked out and up-to-date: `git checkout main && git pull`
+- [ ] A dedicated branch has been created: name must start with `feature/` (new capability) or `bug/` (defect fix), e.g. `feature/683-multiple-supervisors`
+
+---
+
 ## Definition of Done
 
 Before marking any task complete, work through this checklist and report which items apply and whether each is satisfied.
