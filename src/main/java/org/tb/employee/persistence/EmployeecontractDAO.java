@@ -56,13 +56,13 @@ public class EmployeecontractDAO {
     }
 
     /**
-     * Get a list of all Employeecontracts ordered by lastname.
+     * Get a list of all Employeecontracts ordered by full name.
      *
      * @return List<Employeecontract>
      */
     public List<Employeecontract> getEmployeeContracts() {
         return StreamSupport.stream(employeecontractRepository.findAll().spliterator(), false)
-            .sorted(comparing((Employeecontract ec) -> ec.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
+            .sorted(comparing((Employeecontract ec) -> ec.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
     }
 
@@ -105,7 +105,7 @@ public class EmployeecontractDAO {
     }
 
     /**
-     * Get a list of all Employeecontracts fitting to the given filters ordered by lastname.
+     * Get a list of all Employeecontracts fitting to the given filters ordered by full name.
      *
      * @return List<Employeecontract>
      */
@@ -126,7 +126,7 @@ public class EmployeecontractDAO {
         }).stream()
             .filter(c -> employeecontractAuthorization.isAuthorized(c, AccessLevel.READ))
             .filter(c -> !isFilter || filterMatchesInMemory(c, filter))
-            .sorted(comparing((Employeecontract e) -> e.getEmployee().getLastname()).thenComparing(Employeecontract::getValidFrom))
+            .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
     }
 
