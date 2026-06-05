@@ -51,6 +51,7 @@ public class EmployeecontractDAO {
     public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
         return employeecontractRepository.findById(id).map(e -> {
             Hibernate.initialize(e.getVacations());
+            Hibernate.initialize(e.getSupervisors());
             return e;
         }).orElse(null);
     }
