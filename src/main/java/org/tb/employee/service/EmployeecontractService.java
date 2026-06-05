@@ -22,7 +22,6 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Hibernate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.jpa.domain.Specification;
@@ -450,9 +449,7 @@ public class EmployeecontractService {
   }
 
   public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate validAt) {
-    var contracts = employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(validAt);
-    contracts.forEach(ec -> Hibernate.initialize(ec.getSupervisors()));
-    return contracts;
+    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(validAt);
   }
 
   public List<Employeecontract> getViewableEmployeeContractsValidAt(LocalDate validAt) {

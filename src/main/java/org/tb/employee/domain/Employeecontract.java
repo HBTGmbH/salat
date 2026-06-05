@@ -41,7 +41,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "employeecontract_supervisor",
         joinColumns = @JoinColumn(name = "EMPLOYEECONTRACT_ID"),
         inverseJoinColumns = @JoinColumn(name = "SUPERVISOR_ID"))
