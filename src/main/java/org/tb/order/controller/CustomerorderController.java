@@ -6,8 +6,10 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +29,9 @@ import org.tb.common.util.DurationUtils;
 import org.tb.common.GlobalConstants;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.customer.service.CustomerService;
+import org.tb.customer.domain.Customer;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
@@ -117,15 +121,6 @@ public class CustomerorderController {
     Customerorder co = customerorderService.getCustomerorderById(id);
     var form = toForm(co);
     addFormModel(model, form, true);
-    // Ensure currently assigned employees are in the list even if their contracts expired
-    var employees = employeeService.getEmployeesWithValidContracts();
-    if (co.getRespEmpHbtContract() != null && !employees.contains(co.getRespEmpHbtContract())) {
-      employees.add(co.getRespEmpHbtContract());
-    }
-    if (co.getResponsible_hbt() != null && !employees.contains(co.getResponsible_hbt())) {
-      employees.add(co.getResponsible_hbt());
-    }
-    model.addAttribute("employees", employees);
     return "order/customer-order-form";
   }
 
@@ -264,8 +259,26 @@ public class CustomerorderController {
 
   private void addFormModel(Model model, CustomerorderForm form, boolean isEdit) {
     model.addAttribute("customerorderForm", form);
-    model.addAttribute("customers", customerService.getAllCustomers());
-    model.addAttribute("employees", employeeService.getEmployeesWithValidContracts());
+
+    var customers = new ArrayList<>(customerService.getAllCustomers());
+    // In edit mode, ensure the stored customer appears even if hidden
+    if (isEdit && form.getCustomerId() != null
+        && customers.stream().noneMatch(c -> Objects.equals(c.getId(), form.getCustomerId()))) {
+      Customer storedCustomer = customerService.getCustomerEntityById(form.getCustomerId());
+      if (storedCustomer != null) {
+        customers.add(storedCustomer);
+      }
+    }
+    model.addAttribute("customers", customers);
+
+    var employees = employeeService.getEmployeesWithValidContracts();
+    // In edit mode, ensure assigned employees appear even if hidden or their contracts have expired
+    if (isEdit) {
+      addEmployeeIfAbsent(employees, form.getEmployeeId());
+      addEmployeeIfAbsent(employees, form.getRespContrEmployeeId());
+    }
+    model.addAttribute("employees", employees);
+
     model.addAttribute("orderTypes", OrderType.values());
     model.addAttribute("isEdit", isEdit);
     model.addAttribute("section", "orders");
@@ -273,6 +286,15 @@ public class CustomerorderController {
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
     String titleKey = isEdit ? "main.general.editcustomerorder.text" : "main.general.addcustomerorder.text";
     model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Customer Order" : "Create Customer Order"));
+  }
+
+  private void addEmployeeIfAbsent(List<Employee> employees, Long employeeId) {
+    if (employeeId != null && employees.stream().noneMatch(e -> Objects.equals(e.getId(), employeeId))) {
+      Employee emp = employeeService.getEmployeeById(employeeId);
+      if (emp != null) {
+        employees.add(emp);
+      }
+    }
   }
 
   private CustomerorderForm toForm(Customerorder co) {
