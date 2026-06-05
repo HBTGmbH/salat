@@ -1810,10 +1810,12 @@ databaseChangeLog:
             tableName: employeecontract
             columnName: SUPERVISOR_ID
       changes:
+        - dropForeignKeyConstraint:
+            baseTableName: employeecontract
+            constraintName: FKF359ADE030CF4EF8
         - dropColumn:
             tableName: employeecontract
             columnName: SUPERVISOR_ID
-            cascadeConstraints: true
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
