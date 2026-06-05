@@ -23,6 +23,9 @@ public class CustomerorderForm {
   private Boolean hide;
   private Long employeeId;
   private Long respContrEmployeeId;
+  /** Employee IDs as stored in the DB when the edit form was opened; never mutated by the form lifecycle. */
+  private Long storedEmployeeId;
+  private Long storedRespContrEmployeeId;
   private OrderType orderType;
 
 }

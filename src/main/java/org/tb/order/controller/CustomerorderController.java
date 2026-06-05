@@ -282,10 +282,11 @@ public class CustomerorderController {
     model.addAttribute("customers", customers);
 
     var employees = employeeService.getEmployeesWithValidContracts();
-    // In edit mode, ensure assigned employees appear even if hidden or their contracts have expired
+    // In edit mode, ensure assigned employees appear even if hidden or their contracts have expired.
+    // Fall back to stored IDs when the form fields are null (e.g. after validation failure with empty select).
     if (isEdit) {
-      addEmployeeIfAbsent(employees, form.getEmployeeId());
-      addEmployeeIfAbsent(employees, form.getRespContrEmployeeId());
+      addEmployeeIfAbsent(employees, form.getEmployeeId() != null ? form.getEmployeeId() : form.getStoredEmployeeId());
+      addEmployeeIfAbsent(employees, form.getRespContrEmployeeId() != null ? form.getRespContrEmployeeId() : form.getStoredRespContrEmployeeId());
     }
     model.addAttribute("employees", employees);
 
@@ -319,9 +320,11 @@ public class CustomerorderController {
     form.setResponsibleCustomerTechnical(co.getResponsible_customer_technical());
     if (co.getResponsible_hbt() != null) {
       form.setEmployeeId(co.getResponsible_hbt().getId());
+      form.setStoredEmployeeId(co.getResponsible_hbt().getId());
     }
     if (co.getRespEmpHbtContract() != null) {
       form.setRespContrEmployeeId(co.getRespEmpHbtContract().getId());
+      form.setStoredRespContrEmployeeId(co.getRespEmpHbtContract().getId());
     }
     form.setValidFrom(format(co.getFromDate()));
     form.setValidUntil(co.getUntilDate() != null ? format(co.getUntilDate()) : "");

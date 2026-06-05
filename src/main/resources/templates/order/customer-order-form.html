@@ -8,6 +8,8 @@
   <form th:action="@{/orders/customerorders/store}" th:object="${customerorderForm}" method="post" class="card">
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
+      <input type="hidden" th:field="*{storedEmployeeId}" />
+      <input type="hidden" th:field="*{storedRespContrEmployeeId}" />
 
       <div class="row">
         <div class="col-md-4">
