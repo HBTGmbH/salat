@@ -441,7 +441,7 @@ List views that expose boolean state flags on rows use a dedicated **Flags** col
 Rules:
 - Column header: `th:text="#{main.general.flags.text}"`, class `d-none d-lg-table-cell` (hidden on small screens)
 - Each flag is a `<span class="badge bg-<color>-lt" th:title="#{...}">` containing a Bootstrap Icon `<i class="bi bi-..."></i>`
-- The **hide** flag always uses `bg-red` and `bi-eye-slash`. In list views the flag cell is produced by the `fragments/hide-toggle.html` fragments which also render a clickable toggle for managers:
+- The **hide** flag always uses `bg-danger-lt` and `bi-eye-slash`. In list views the flag cell is produced by the `fragments/hide-toggle.html` fragments which also render a clickable toggle for managers:
   ```html
   <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerHideFlag}"></td>
   ```
