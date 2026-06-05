@@ -1774,7 +1774,12 @@ databaseChangeLog:
   - changeSet:
       id: 50
       author: kr
-      comment: Replace single supervisor with multiple supervisors on employee contract
+      comment: Create employeecontract_supervisor join table and migrate existing supervisor data
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: employeecontract_supervisor
       changes:
         - createTable:
             tableName: employeecontract_supervisor
@@ -1795,6 +1800,16 @@ databaseChangeLog:
                     references: employee(id)
         - sql:
             sql: "INSERT INTO employeecontract_supervisor (EMPLOYEECONTRACT_ID, SUPERVISOR_ID) SELECT id, SUPERVISOR_ID FROM employeecontract WHERE SUPERVISOR_ID IS NOT NULL"
+  - changeSet:
+      id: 51
+      author: kr
+      comment: Drop legacy SUPERVISOR_ID column from employeecontract after join table migration
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: employeecontract
+            columnName: SUPERVISOR_ID
+      changes:
         - dropColumn:
             tableName: employeecontract
             columnName: SUPERVISOR_ID
