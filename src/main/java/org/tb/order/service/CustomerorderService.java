@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.command.CommandPublisher;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DurationUtils;
@@ -82,10 +83,14 @@ public class CustomerorderService {
     co.setResponsible_customer_contractually(dto.responsibleCustomerContractually());
     co.setResponsible_customer_technical(dto.responsibleCustomerTechnical());
 
-    Employee responsibleHbt = dto.responsibleHbtId() != null ? employeeDAO.getEmployeeById(dto.responsibleHbtId()) : null;
-    Employee respEmpHbtContract = dto.respEmpHbtContractId() != null ? employeeDAO.getEmployeeById(dto.respEmpHbtContractId()) : null;
-    co.setResponsible_hbt(responsibleHbt);
-    co.setRespEmpHbtContract(respEmpHbtContract);
+    if (dto.responsibleHbtId() == null) {
+      throw new InvalidDataException(ErrorCode.CO_RESPONSIBLE_HBT_REQUIRED);
+    }
+    if (dto.respEmpHbtContractId() == null) {
+      throw new InvalidDataException(ErrorCode.CO_RESP_CONTRACT_EMPLOYEE_REQUIRED);
+    }
+    co.setResponsible_hbt(employeeDAO.getEmployeeById(dto.responsibleHbtId()));
+    co.setRespEmpHbtContract(employeeDAO.getEmployeeById(dto.respEmpHbtContractId()));
 
     if (dto.debithours() == null
         || dto.debithours().isEmpty()
