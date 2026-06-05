@@ -9,6 +9,7 @@
 
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
+      <input type="hidden" th:field="*{storedSupervisorId}" />
 
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(
             field='resolveConflicts', label=#{main.employeecontract.resolveconflicts.text}

@@ -7,7 +7,10 @@ import static org.tb.common.util.DurationUtils.validateDuration;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
@@ -15,22 +18,21 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.ErrorResponseException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tb.common.exception.AuthorizationException;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import java.util.Comparator;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -123,7 +125,7 @@ public class EmployeecontractController {
         form.setYearlyVacation(String.valueOf(DEFAULT_VACATION_PER_YEAR));
         form.setInitialOvertime("0:00");
         model.addAttribute("employeecontractForm", form);
-        addFormModel(model, false, null, null);
+        addFormModel(model, form, false, null, null);
         return "employee/employee-contract-form";
     }
 
@@ -140,7 +142,7 @@ public class EmployeecontractController {
                 .map(Overtime::getTimeMinutes)
                 .reduce(Duration.ZERO, Duration::plus);
 
-        addFormModel(model, true, overtimes, DurationUtils.format(totalOvertime));
+        addFormModel(model, form, true, overtimes, DurationUtils.format(totalOvertime));
         model.addAttribute("currentEmployee", ec.getEmployee().getName());
         return "employee/employee-contract-form";
     }
@@ -199,13 +201,13 @@ public class EmployeecontractController {
                 Duration totalOvertime = overtimes.stream()
                         .map(Overtime::getTimeMinutes)
                         .reduce(Duration.ZERO, Duration::plus);
-                addFormModel(model, true, overtimes, DurationUtils.format(totalOvertime));
+                addFormModel(model, form, true, overtimes, DurationUtils.format(totalOvertime));
                 Employeecontract ec = employeecontractService.getEmployeecontractById(form.getId());
                 if (ec != null) {
                     model.addAttribute("currentEmployee", ec.getEmployee().getName());
                 }
             } else {
-                addFormModel(model, false, null, null);
+                addFormModel(model, form, false, null, null);
             }
             return "employee/employee-contract-form";
         }
@@ -313,9 +315,19 @@ public class EmployeecontractController {
         }
     }
 
-    private void addFormModel(Model model, boolean isEdit, List<Overtime> overtimes, String totalOvertime) {
+    private void addFormModel(Model model, EmployeecontractForm form, boolean isEdit, List<Overtime> overtimes, String totalOvertime) {
         var employees = employeeService.getAllEmployees();
-        var supervisors = employeeService.getEligibleSupervisors();
+        var supervisors = new ArrayList<>(employeeService.getEligibleSupervisors());
+        if (isEdit && form != null) {
+            Long supervisorIdToEnsure = form.getSupervisorId() != null ? form.getSupervisorId() : form.getStoredSupervisorId();
+            if (supervisorIdToEnsure != null
+                    && supervisors.stream().noneMatch(e -> Objects.equals(e.getId(), supervisorIdToEnsure))) {
+                Employee storedSupervisor = employeeService.getEmployeeById(supervisorIdToEnsure);
+                if (storedSupervisor != null) {
+                    supervisors.add(storedSupervisor);
+                }
+            }
+        }
         model.addAttribute("employees", employees);
         model.addAttribute("supervisors", supervisors);
         model.addAttribute("isEdit", isEdit);
@@ -343,6 +355,7 @@ public class EmployeecontractController {
         form.setEmployeeId(ec.getEmployee().getId());
         if (ec.getSupervisor() != null) {
             form.setSupervisorId(ec.getSupervisor().getId());
+            form.setStoredSupervisorId(ec.getSupervisor().getId());
         }
         form.setTaskdescription(ec.getTaskDescription());
         form.setFreelancer(ec.getFreelancer());
