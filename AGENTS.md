@@ -89,6 +89,48 @@ See also README.md
   # get node_id via: gh api repos/HBTGmbH/salat/issues/NNN --jq .node_id
   ```
 
+## Definition of Done
+
+Before marking any task complete, work through this checklist and report which items apply and whether each is satisfied.
+
+A feature or fix is considered done when **all** of the following are true:
+
+### Code
+- [ ] Build passes: `jenv exec ./mvnw verify` completes without errors
+- [ ] All existing tests pass; new behaviour should be covered by tests
+- [ ] No new cross-module cycles introduced; cross-module side-effects go through Spring events
+- [ ] Controllers are thin — business logic lives in a service within the same module
+- [ ] Security: `@PreAuthorize` on every controller write method; `@Authorized` + runtime guard in the service
+
+### Views (if UI changed)
+- [ ] Uses Spring MVC + Thymeleaf (no new Struts/JSP)
+- [ ] Leaf-level form components use the `salat:` custom dialect; layout/structural reuse uses fragments
+- [ ] Bootstrap 5 + Tabler components for layout and widgets
+- [ ] CSRF protection relies solely on `th:action="@{...}"` — no explicit `_csrf` hidden input
+
+### Internationalisation (if new keys added)
+- [ ] Keys added to both `MessageResources.properties` (German) and `MessageResources_en.properties` (English)
+- [ ] Both files written with Python using `encoding='iso-8859-1'` and sorted after the change
+- [ ] Every new `ErrorCode` has a matching `errorcode.*` key in both bundles
+
+### Database (if schema changed)
+- [ ] Liquibase changeset appended to `db.changelog-master.yaml` (never edited)
+- [ ] Changeset guarded with `preConditions: onFail: MARK_RAN` + a `columnExists`/`tableExists` check
+- [ ] Boolean columns use `type: bit(1)`
+
+### Documentation
+- [ ] Checked against all ADRs in `docs/adr/` — implementation must not contradict any decision record
+- [ ] ADR created in `docs/adr/` for any significant architectural decision
+- [ ] `AGENTS.md` updated if an architectural rule changed
+
+### Pull Request
+- [ ] Branch named `feature/<issue-number>-<short-description>`
+- [ ] PR body contains `Closes #NNN`
+- [ ] Issue type set via GitHub GraphQL API
+- [ ] PR description includes: *"Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines."*
+
+---
+
 ## Documentation
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
