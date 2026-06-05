@@ -251,6 +251,16 @@ public class CustomerorderController {
           messages.getMessage("form.timereport.error.date.wrongformat", "Invalid date format"));
     }
 
+    if (form.getEmployeeId() == null) {
+      bindingResult.rejectValue("employeeId", "error.employeeId",
+          messages.getMessage("form.customerorder.error.responsiblehbt.required", "Responsible HBT employee is required"));
+    }
+
+    if (form.getRespContrEmployeeId() == null) {
+      bindingResult.rejectValue("respContrEmployeeId", "error.respContrEmployeeId",
+          messages.getMessage("form.customerorder.error.responsiblehbt.contract.required", "Contract responsible employee is required"));
+    }
+
     if (!DurationUtils.validateDuration(form.getDebithours())) {
       bindingResult.rejectValue("debithours", "error.debithours",
           messages.getMessage("form.customerorder.error.debithours.wrongformat", "Invalid debit hours format"));

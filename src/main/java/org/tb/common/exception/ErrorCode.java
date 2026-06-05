@@ -17,6 +17,8 @@ public enum ErrorCode {
 
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
+  CO_RESPONSIBLE_HBT_REQUIRED("CO-0003", "responsible HBT employee is required"),
+  CO_RESP_CONTRACT_EMPLOYEE_REQUIRED("CO-0004", "responsible HBT contract employee is required"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
