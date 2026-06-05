@@ -64,7 +64,7 @@ public class EmployeecontractServiceTest {
 				ec.getEmployee().getId(),
 				ec.getValidFrom(),
 				ec.getValidUntil(),
-				ec.getSupervisor().getId(),
+				ec.getSupervisors().stream().map(org.tb.employee.domain.Employee::getId).toList(),
 				ec.getTaskDescription(),
 				ec.getFreelancer(),
 				TRUE == ec.getHide(),

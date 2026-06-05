@@ -5,7 +5,10 @@ import static org.tb.common.util.DateUtils.format;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.io.Serializable;
@@ -38,10 +41,13 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ManyToOne
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "employeecontract_supervisor",
+        joinColumns = @JoinColumn(name = "EMPLOYEECONTRACT_ID"),
+        inverseJoinColumns = @JoinColumn(name = "SUPERVISOR_ID"))
     @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "SUPERVISOR_ID")
-    private Employee supervisor;
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private List<Employee> supervisors = new ArrayList<>();
 
     private LocalDate validFrom;
     private LocalDate validUntil;

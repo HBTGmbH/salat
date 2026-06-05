@@ -9,7 +9,9 @@
 
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
-      <input type="hidden" th:field="*{storedSupervisorId}" />
+      <th:block th:each="storedId : *{storedSupervisorIds}">
+        <input type="hidden" name="storedSupervisorIds" th:value="${storedId}"/>
+      </th:block>
 
       <div th:replace="~{fragments/form-fields :: checkboxSwitch(
             field='resolveConflicts', label=#{main.employeecontract.resolveconflicts.text}
@@ -34,10 +36,14 @@
         </div>
       </div>
 
-      <div th:replace="~{fragments/form-fields :: selectInput(
-        field='supervisorId', label=#{main.employeecontract.supervisor.text}, required=true,
-        placeholder=#{main.general.selectone.text}, options=${supervisors}, optionValue='id', optionLabel='name'
-      )}"></div>
+      <div class="mb-3">
+        <label class="form-label required" th:text="#{main.employeecontract.supervisor.text}">People Lead</label>
+        <select class="form-select tomselect tomselect-multi" id="supervisorIds"
+                th:field="*{supervisorIds}" multiple th:errorclass="is-invalid">
+          <option th:each="s : ${supervisors}" th:value="${s.id}" th:text="${s.name}"></option>
+        </select>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors('supervisorIds')}" th:errors="*{supervisorIds}"></div>
+      </div>
 
       <div th:replace="~{fragments/form-fields :: textareaInput(
         field='taskdescription', label=#{main.employeecontract.taskdescription.text}, required=false, rows=4, monospace=false

@@ -1771,6 +1771,33 @@ databaseChangeLog:
                   defaultValueBoolean: false
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 50
+      author: kr
+      comment: Replace single supervisor with multiple supervisors on employee contract
+      changes:
+        - createTable:
+            tableName: employeecontract_supervisor
+            columns:
+              - column:
+                  name: EMPLOYEECONTRACT_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ecsu_contract
+                    references: employeecontract(id)
+              - column:
+                  name: SUPERVISOR_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ecsu_supervisor
+                    references: employee(id)
+        - sql:
+            sql: "INSERT INTO employeecontract_supervisor (EMPLOYEECONTRACT_ID, SUPERVISOR_ID) SELECT id, SUPERVISOR_ID FROM employeecontract WHERE SUPERVISOR_ID IS NOT NULL"
+        - dropColumn:
+            tableName: employeecontract
+            columnName: SUPERVISOR_ID
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

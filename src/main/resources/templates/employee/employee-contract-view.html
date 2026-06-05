@@ -16,7 +16,7 @@
       <div class="mb-3">
         <label class="form-label" th:text="#{main.employeecontract.supervisor.text}">Supervisor</label>
         <p class="form-control-plaintext"
-           th:text="${employeecontract.supervisor != null} ? ${employeecontract.supervisor.name} : '—'"></p>
+           th:text="${employeecontract.supervisors.isEmpty()} ? '—' : ${#strings.listJoin(employeecontract.supervisors.![name], ', ')}"></p>
       </div>
 
       <div class="mb-3">
