@@ -42,7 +42,7 @@
       <div class="mb-3">
         <label class="form-label" th:text="#{main.general.hide}">Hide</label>
         <p class="form-control-plaintext">
-          <span th:if="${employee.hide}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash me-1"></i><span th:text="#{main.general.yes}">Yes</span></span>
+          <span th:if="${employee.hide}" class="badge bg-danger-lt"><i class="bi bi-eye-slash me-1"></i><span th:text="#{main.general.yes}">Yes</span></span>
           <span th:unless="${employee.hide}" th:text="#{main.general.no}">No</span>
         </p>
       </div>

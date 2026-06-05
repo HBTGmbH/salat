@@ -171,7 +171,7 @@
                   th:text="${@durationUtils.format(eo.difference)}">0:00</span>
           </td>
           <td class="d-none d-lg-table-cell">
-            <span th:if="${eo.hidden}" class="badge bg-secondary-lt"><i class="bi bi-eye-slash"></i></span>
+            <span th:if="${eo.hidden}" class="badge bg-danger-lt"><i class="bi bi-eye-slash"></i></span>
           </td>
           <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
             <a th:href="@{/orders/employeeorders/edit(id=${eo.id})}" class="btn btn-outline-primary">
