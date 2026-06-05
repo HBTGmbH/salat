@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.domain.EmployeeorderListItemDTO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
@@ -481,6 +483,8 @@ public class EmployeeorderController {
                 employeeContracts.add(storedContract);
             }
         }
+        employeeContracts.sort(Comparator.comparing((Employeecontract ec) -> ec.getEmployee().getLastname())
+            .thenComparing(Employeecontract::getValidFrom));
         model.addAttribute("employeecontracts", employeeContracts);
         if (form.getEmployeeContractId() == null && !employeeContracts.isEmpty()) {
             form.setEmployeeContractId(employeeContracts.getFirst().getId());
@@ -504,6 +508,7 @@ public class EmployeeorderController {
                 orders.add(storedOrder);
             }
         }
+        orders.sort(Comparator.comparing(Customerorder::getSign));
         model.addAttribute("orders", orders);
         if (form.getOrderId() == null && !orders.isEmpty()) {
             form.setOrderId(orders.getFirst().getId());
@@ -525,6 +530,7 @@ public class EmployeeorderController {
                     filteredSuborders.add(suborderToAdd);
                 }
             }
+            filteredSuborders.sort(SubOrderComparator.INSTANCE);
             suborders = filteredSuborders;
             if (form.getSuborderId() == null && !suborders.isEmpty()) {
                 form.setSuborderId(suborders.getFirst().getId());

@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -279,6 +280,7 @@ public class CustomerorderController {
         customers.add(storedCustomer);
       }
     }
+    customers.sort(Comparator.comparing(c -> c.getShortname().toLowerCase()));
     model.addAttribute("customers", customers);
 
     var employees = employeeService.getEmployeesWithValidContracts();
@@ -287,6 +289,7 @@ public class CustomerorderController {
     if (isEdit) {
       addEmployeeIfAbsent(employees, form.getEmployeeId() != null ? form.getEmployeeId() : form.getStoredEmployeeId());
       addEmployeeIfAbsent(employees, form.getRespContrEmployeeId() != null ? form.getRespContrEmployeeId() : form.getStoredRespContrEmployeeId());
+      employees.sort(Comparator.comparing(Employee::getName));
     }
     model.addAttribute("employees", employees);
 

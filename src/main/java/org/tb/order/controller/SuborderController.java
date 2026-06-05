@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSession;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -485,6 +486,7 @@ public class SuborderController {
         customerorders.add(storedOrder);
       }
     }
+    customerorders.sort(Comparator.comparing(Customerorder::getSign));
     model.addAttribute("customerorders", customerorders);
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
       form.setCustomerorderId(customerorders.getFirst().getId());
