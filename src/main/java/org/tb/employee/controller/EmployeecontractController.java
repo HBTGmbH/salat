@@ -328,6 +328,7 @@ public class EmployeecontractController {
                 }
             }
         }
+        supervisors.sort(Comparator.comparing(Employee::getName));
         model.addAttribute("employees", employees);
         model.addAttribute("supervisors", supervisors);
         model.addAttribute("isEdit", isEdit);
