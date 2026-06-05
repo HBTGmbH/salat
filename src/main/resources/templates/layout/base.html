@@ -423,7 +423,7 @@
 <script>
   const tomSelectConfig = (el) => ({
     create: false,
-    maxItems: 1,
+    maxItems: el.classList.contains('tomselect-multi') ? null : 1,
     maxOptions: 1000,
     sortField: [{ field: '$order' }],
     placeholder: el.getAttribute('placeholder') || 'Select an option...',

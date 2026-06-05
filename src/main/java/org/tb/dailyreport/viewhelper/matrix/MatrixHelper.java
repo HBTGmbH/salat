@@ -423,8 +423,8 @@ public class MatrixHelper {
             results.put("currentEmployeeContract", employeeContract);
             results.put("currentEmployeeId", employeeContract.getEmployee().getId());
             if (authorizedUser.isManager() ||
-                (authorizedUser.isPeopleLead() && employeeContract.getSupervisor() != null &&
-                    employeeContract.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) ||
+                (authorizedUser.isPeopleLead() && employeeContract.getSupervisors().stream()
+                    .anyMatch(s -> s.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()))) ||
                 authorizedUser.getEffectiveLoginSign().equals(employeeContract.getEmployee().getSalatUser().getLoginname())) {
                 results.put("csvDownloadUrl", getCsvDownloadUrl(reportForm, employeeContract.getEmployee().getSign()));
             } else {

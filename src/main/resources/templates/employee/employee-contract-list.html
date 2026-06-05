@@ -109,7 +109,7 @@
             <tr th:each="ec : ${group}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
               <td th:text="${ec.employeeName}"></td>
               <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
-              <td class="d-none d-md-table-cell" th:text="${ec.supervisorName}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.supervisorNames}"></td>
               <td>
                 <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
                 <small class="text-muted">
@@ -171,7 +171,7 @@
             <tr th:each="ec : ${group}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
               <td th:text="${ec.employeeName}"></td>
               <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
-              <td class="d-none d-md-table-cell" th:text="${ec.supervisorName}"></td>
+              <td class="d-none d-md-table-cell" th:text="${ec.supervisorNames}"></td>
               <td>
                 <div th:text="${ec.validFrom}" class="text-nowrap">From</div>
                 <small class="text-muted">

@@ -6,6 +6,8 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -15,9 +17,9 @@ public class EmployeecontractForm {
 
     private Long id;
     private Long employeeId;
-    private Long supervisorId;
+    private List<Long> supervisorIds = new ArrayList<>();
     /** Set once from DB when edit form is opened; never mutated by form lifecycle. */
-    private Long storedSupervisorId;
+    private List<Long> storedSupervisorIds = new ArrayList<>();
     private String taskdescription;
     private String validFrom;
     private String validUntil;

@@ -165,7 +165,7 @@ public class EmployeecontractController {
                             form.getId(),
                             form.getValidFromTyped(),
                             form.getValidUntilTyped(),
-                            form.getSupervisorId(),
+                            form.getSupervisorIds(),
                             form.getTaskdescription(),
                             Boolean.TRUE.equals(form.getFreelancer()),
                             Boolean.TRUE.equals(form.getHide()),
@@ -178,7 +178,7 @@ public class EmployeecontractController {
                             form.getEmployeeId(),
                             form.getValidFromTyped(),
                             form.getValidUntilTyped(),
-                            form.getSupervisorId(),
+                            form.getSupervisorIds(),
                             form.getTaskdescription(),
                             Boolean.TRUE.equals(form.getFreelancer()),
                             Boolean.TRUE.equals(form.getHide()),
@@ -333,12 +333,15 @@ public class EmployeecontractController {
         var employees = employeeService.getAllEmployees();
         var supervisors = new ArrayList<>(employeeService.getEligibleSupervisors());
         if (isEdit && form != null) {
-            Long supervisorIdToEnsure = form.getSupervisorId() != null ? form.getSupervisorId() : form.getStoredSupervisorId();
-            if (supervisorIdToEnsure != null
-                    && supervisors.stream().noneMatch(e -> Objects.equals(e.getId(), supervisorIdToEnsure))) {
-                Employee storedSupervisor = employeeService.getEmployeeById(supervisorIdToEnsure);
-                if (storedSupervisor != null) {
-                    supervisors.add(storedSupervisor);
+            var idsToEnsure = new ArrayList<Long>();
+            idsToEnsure.addAll(form.getSupervisorIds());
+            idsToEnsure.addAll(form.getStoredSupervisorIds());
+            for (Long id : idsToEnsure) {
+                if (id != null && supervisors.stream().noneMatch(e -> Objects.equals(e.getId(), id))) {
+                    Employee storedSupervisor = employeeService.getEmployeeById(id);
+                    if (storedSupervisor != null) {
+                        supervisors.add(storedSupervisor);
+                    }
                 }
             }
         }
@@ -368,10 +371,9 @@ public class EmployeecontractController {
         var form = new EmployeecontractForm();
         form.setId(ec.getId());
         form.setEmployeeId(ec.getEmployee().getId());
-        if (ec.getSupervisor() != null) {
-            form.setSupervisorId(ec.getSupervisor().getId());
-            form.setStoredSupervisorId(ec.getSupervisor().getId());
-        }
+        var supervisorIds = ec.getSupervisors().stream().map(Employee::getId).toList();
+        form.setSupervisorIds(new ArrayList<>(supervisorIds));
+        form.setStoredSupervisorIds(new ArrayList<>(supervisorIds));
         form.setTaskdescription(ec.getTaskDescription());
         form.setFreelancer(ec.getFreelancer());
         form.setHide(ec.getHide());

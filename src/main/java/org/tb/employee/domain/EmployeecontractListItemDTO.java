@@ -7,7 +7,7 @@ public record EmployeecontractListItemDTO(
     Long id,
     String employeeName,
     String taskDescription,
-    String supervisorName,
+    String supervisorNames,
     LocalDate validFrom,
     LocalDate validUntil,
     boolean freelancer,

@@ -50,8 +50,7 @@ public class AcceptanceController {
         if (authorizedUser.isManager()) {
             var allViewable = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
             List<Employee> supervisors = allViewable.stream()
-                .map(Employeecontract::getSupervisor)
-                .filter(s -> s != null)
+                .flatMap(ec -> ec.getSupervisors().stream())
                 .distinct()
                 .sorted(Comparator.comparing(Employee::getName))
                 .toList();

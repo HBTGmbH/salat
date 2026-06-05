@@ -95,10 +95,9 @@ public class EmployeecontractDAO {
     private boolean filterMatchesInMemory(Employeecontract ec, String filter) {
         var upper = filter.toUpperCase();
         var emp = ec.getEmployee();
-        var supervisor = ec.getSupervisor();
         return containsIgnoreCase(emp.getName(), upper)
             || containsIgnoreCase(ec.getTaskDescription(), upper)
-            || (supervisor != null && containsIgnoreCase(supervisor.getName(), upper));
+            || ec.getSupervisors().stream().anyMatch(s -> containsIgnoreCase(s.getName(), upper));
     }
 
     private static boolean containsIgnoreCase(String value, String upper) {

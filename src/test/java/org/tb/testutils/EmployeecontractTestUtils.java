@@ -14,7 +14,7 @@ public class EmployeecontractTestUtils {
 		ec.setDailyWorkingTime(Duration.ofHours(8));
 		ec.setEmployee(employee);
 		ec.setValidFrom(DateUtils.parse("2017-01-01"));
-		ec.setSupervisor(supervisor);
+		ec.setSupervisors(java.util.List.of(supervisor));
 		return ec;
 	}
 }

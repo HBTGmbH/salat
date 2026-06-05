@@ -342,65 +342,67 @@ public class ReleaseService {
 
     var employeeContract = employeecontractService.getEmployeecontractById(employeecontracttoAcceptId);
     var coworker = employeeContract.getEmployee();
-    var recipient = employeeContract.getSupervisor();
     var sender = employeeService.getLoginEmployee();
 
     String subject = "SALAT: Erinnerung SALAT-Freigabe abnehmen";
-    StringBuilder message = new StringBuilder();
-    if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-      message.append("Liebe ");
-    } else {
-      message.append("Lieber ");
-    }
-    message.append(recipient.getFirstname());
-    message.append(",\n\n");
-    message.append("bitte nimm die SALAT-Buchungen des abgelaufenen Monats von ");
-    if (GlobalConstants.GENDER_FEMALE == coworker.getGender()) {
-      message.append("Kollegin ");
-    } else {
-      message.append("Kollege ");
-    }
-    message.append(coworker.getName());
-    message.append(" ab.\n\n");
-    message.append(sender.getName());
+    for (var recipient : employeeContract.getSupervisors()) {
+      StringBuilder message = new StringBuilder();
+      if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
+        message.append("Liebe ");
+      } else {
+        message.append("Lieber ");
+      }
+      message.append(recipient.getFirstname());
+      message.append(",\n\n");
+      message.append("bitte nimm die SALAT-Buchungen des abgelaufenen Monats von ");
+      if (GlobalConstants.GENDER_FEMALE == coworker.getGender()) {
+        message.append("Kollegin ");
+      } else {
+        message.append("Kollege ");
+      }
+      message.append(coworker.getName());
+      message.append(" ab.\n\n");
+      message.append(sender.getName());
 
-    mailService.sendEmail(
-        subject,
-        message.toString(),
-        new MailContact(sender.getName(), sender.getEmailAddress()),
-        new MailContact(recipient.getName(), recipient.getEmailAddress())
-    );
+      mailService.sendEmail(
+          subject,
+          message.toString(),
+          new MailContact(sender.getName(), sender.getEmailAddress()),
+          new MailContact(recipient.getName(), recipient.getEmailAddress())
+      );
+    }
   }
 
   private void sendTimeReportsReleasedMail(Employeecontract releasedEmployeeContract) {
     var sender = releasedEmployeeContract.getEmployee();
-    var recipient = releasedEmployeeContract.getSupervisor();
-
     String subject = "SALAT: Buchungen durch " + sender.getSign() + " freigegeben";
-    StringBuilder message = new StringBuilder();
-    if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
-      message.append("Liebe Personalverantwortliche ");
-    } else {
-      message.append("Lieber Personalverantwortlicher ");
-    }
-    message.append(recipient.getFirstname());
-    message.append(",\n\n");
-    message.append(sender.getName());
-    message.append(" hat eben ");
-    if (GlobalConstants.GENDER_FEMALE == sender.getGender()) {
-      message.append("ihre ");
-    } else {
-      message.append("seine ");
-    }
-    message.append("SALAT-Buchungen freigegeben.\n");
-    message.append("Bitte nimm diese ab.");
 
-    mailService.sendEmail(
-        subject,
-        message.toString(),
-        new MailContact(sender.getName(), sender.getEmailAddress()),
-        new MailContact(recipient.getName(), recipient.getEmailAddress())
-    );
+    for (var recipient : releasedEmployeeContract.getSupervisors()) {
+      StringBuilder message = new StringBuilder();
+      if (GlobalConstants.GENDER_FEMALE == recipient.getGender()) {
+        message.append("Liebe Personalverantwortliche ");
+      } else {
+        message.append("Lieber Personalverantwortlicher ");
+      }
+      message.append(recipient.getFirstname());
+      message.append(",\n\n");
+      message.append(sender.getName());
+      message.append(" hat eben ");
+      if (GlobalConstants.GENDER_FEMALE == sender.getGender()) {
+        message.append("ihre ");
+      } else {
+        message.append("seine ");
+      }
+      message.append("SALAT-Buchungen freigegeben.\n");
+      message.append("Bitte nimm diese ab.");
+
+      mailService.sendEmail(
+          subject,
+          message.toString(),
+          new MailContact(sender.getName(), sender.getEmailAddress()),
+          new MailContact(recipient.getName(), recipient.getEmailAddress())
+      );
+    }
   }
 
   private void validateForAcceptance(long employeeContractId, LocalDate acceptanceDate) {

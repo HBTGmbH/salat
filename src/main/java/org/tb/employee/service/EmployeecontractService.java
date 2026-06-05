@@ -78,7 +78,7 @@ public class EmployeecontractService {
       long employeeId,
       LocalDate validFrom,
       LocalDate validUntil,
-      long supervisorId,
+      List<Long> supervisorIds,
       String taskDescription,
       boolean freelancer,
       boolean hide,
@@ -94,7 +94,7 @@ public class EmployeecontractService {
     employeecontract.setEmployee(theEmployee);
     var info = createOrUpdate(employeecontract, validFrom,
         validUntil,
-        supervisorId,
+        supervisorIds,
         taskDescription,
         freelancer,
         hide,
@@ -119,7 +119,7 @@ public class EmployeecontractService {
       long employeecontractId,
       LocalDate validFrom,
       LocalDate validUntil,
-      long supervisorId,
+      List<Long> supervisorIds,
       String taskDescription,
       boolean freelancer,
       boolean hide,
@@ -131,7 +131,7 @@ public class EmployeecontractService {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     return createOrUpdate(employeecontract, validFrom,
         validUntil,
-        supervisorId,
+        supervisorIds,
         taskDescription,
         freelancer,
         hide,
@@ -144,7 +144,7 @@ public class EmployeecontractService {
       Employeecontract employeecontract,
       LocalDate validFrom,
       LocalDate validUntil,
-      long supervisorId,
+      List<Long> supervisorIds,
       String taskDescription,
       boolean freelancer,
       boolean hide,
@@ -155,13 +155,16 @@ public class EmployeecontractService {
     List<String> logs = new ArrayList<>();
 
     var throwResolvableConflicts = !resolveConflicts; // throw always if not resolving any conflicts
-    var valid = validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorId, throwResolvableConflicts);
+    var valid = validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorIds, throwResolvableConflicts);
 
     employeecontract.setValidUntil(validFrom);
     employeecontract.setValidFrom(validFrom);
     employeecontract.setValidUntil(validUntil);
 
-    employeecontract.setSupervisor(employeeDAO.getEmployeeById(supervisorId));
+    var resolvedSupervisors = supervisorIds.stream()
+        .map(id -> employeeDAO.getEmployeeById(id))
+        .toList();
+    employeecontract.setSupervisors(resolvedSupervisors);
     employeecontract.setTaskDescription(taskDescription);
     employeecontract.setFreelancer(freelancer);
     employeecontract.setHide(hide);
@@ -299,19 +302,24 @@ public class EmployeecontractService {
   }
 
   private boolean validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
-      LocalDate validUntil, long supervisorId, boolean throwResolvableConflicts) {
+      LocalDate validUntil, List<Long> supervisorIds, boolean throwResolvableConflicts) {
     DataValidationUtils.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
 
-    var supervisor = employeeDAO.getEmployeeById(supervisorId);
-    if (supervisor == null) {
+    if (supervisorIds == null || supervisorIds.isEmpty()) {
       throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
     }
-    if (employeecontract.getEmployee().getId().equals(supervisorId)) {
-      throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
-    }
-    var supervisorStatus = supervisor.getSalatUser().getStatus();
-    if (!EMPLOYEE_STATUS_PV.equals(supervisorStatus) && !EMPLOYEE_STATUS_BL.equals(supervisorStatus)) {
-      throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+    for (Long supervisorId : supervisorIds) {
+      var supervisor = employeeDAO.getEmployeeById(supervisorId);
+      if (supervisor == null) {
+        throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+      }
+      if (employeecontract.getEmployee().getId().equals(supervisorId)) {
+        throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+      }
+      var supervisorStatus = supervisor.getSalatUser().getStatus();
+      if (!EMPLOYEE_STATUS_PV.equals(supervisorStatus) && !EMPLOYEE_STATUS_BL.equals(supervisorStatus)) {
+        throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+      }
     }
 
     // ensure no overlapping employee contracts
@@ -501,7 +509,7 @@ public class EmployeecontractService {
             ec.getId(),
             ec.getEmployee().getName(),
             ec.getTaskDescription(),
-            ec.getSupervisor() != null ? ec.getSupervisor().getName() : null,
+            ec.getSupervisors().stream().map(Employee::getName).collect(java.util.stream.Collectors.joining(", ")),
             ec.getValidFrom(),
             ec.getValidUntil(),
             Boolean.TRUE.equals(ec.getFreelancer()),

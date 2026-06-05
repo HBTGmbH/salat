@@ -54,8 +54,8 @@ public class WorkingdayService {
   private final EmployeecontractService employeecontractService;
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {
-    return ec.getSupervisor() != null &&
-           ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+    return ec.getSupervisors().stream()
+        .anyMatch(s -> s.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()));
   }
 
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {

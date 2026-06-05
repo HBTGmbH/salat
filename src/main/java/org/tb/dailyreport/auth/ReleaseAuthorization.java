@@ -38,8 +38,8 @@ public class ReleaseAuthorization {
   }
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {
-    return ec.getSupervisor() != null &&
-           ec.getSupervisor().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+    return ec.getSupervisors().stream()
+        .anyMatch(s -> s.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()));
   }
 
 }
