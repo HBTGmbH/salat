@@ -82,8 +82,8 @@ public class CustomerorderService {
     co.setResponsible_customer_contractually(dto.responsibleCustomerContractually());
     co.setResponsible_customer_technical(dto.responsibleCustomerTechnical());
 
-    Employee responsibleHbt = employeeDAO.getEmployeeById(dto.responsibleHbtId());
-    Employee respEmpHbtContract = employeeDAO.getEmployeeById(dto.respEmpHbtContractId());
+    Employee responsibleHbt = dto.responsibleHbtId() != null ? employeeDAO.getEmployeeById(dto.responsibleHbtId()) : null;
+    Employee respEmpHbtContract = dto.respEmpHbtContractId() != null ? employeeDAO.getEmployeeById(dto.respEmpHbtContractId()) : null;
     co.setResponsible_hbt(responsibleHbt);
     co.setRespEmpHbtContract(respEmpHbtContract);
 
