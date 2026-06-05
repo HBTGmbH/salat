@@ -242,6 +242,7 @@ public class EmployeeorderController {
             @ModelAttribute("employeeorderForm") EmployeeorderForm form,
             BindingResult bindingResult,
             Model model,
+            HttpSession session,
             RedirectAttributes redirectAttributes,
             @RequestParam(required = false) String saveAndNew) {
 
@@ -252,6 +253,7 @@ public class EmployeeorderController {
             return "order/employee-order-form";
         }
 
+        boolean isCreate = form.getId() == null;
         Employeeorder eo;
         if (form.getId() != null) {
             eo = employeeorderService.getEmployeeorderById(form.getId());
@@ -288,6 +290,13 @@ public class EmployeeorderController {
             return "order/employee-order-form";
         }
 
+        if (isCreate) {
+            session.setAttribute("orders.employeeorders.employeeContractId", form.getEmployeeContractId());
+            session.setAttribute("orders.employeeorders.customerId", form.getCustomerId());
+            session.setAttribute("orders.employeeorders.orderId", form.getOrderId());
+            session.setAttribute("orders.employeeorders.suborderId", form.getSuborderId());
+            session.setAttribute("orders.employeeorders.filter", null);
+        }
         redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("form.employeeorder.message.stored", "Employee order saved successfully"));
         if (saveAndNew != null) {

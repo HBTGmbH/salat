@@ -152,6 +152,7 @@ public class SuborderController {
   public String store(@ModelAttribute("suborderForm") SuborderForm form,
                       BindingResult bindingResult,
                       Model model,
+                      HttpSession session,
                       RedirectAttributes redirectAttributes) {
     validateForm(form, bindingResult);
 
@@ -196,6 +197,11 @@ public class SuborderController {
       return "order/sub-order-form";
     }
 
+    if (isCreate) {
+      session.setAttribute("orders.suborders.customerOrderId", form.getCustomerorderId());
+      session.setAttribute("orders.suborders.customerId", form.getCustomerId());
+      session.setAttribute("orders.suborders.filter", null);
+    }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"));
     if (isCreate && customerorderId != null) {

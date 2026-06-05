@@ -152,9 +152,11 @@ public class EmployeecontractController {
     public String store(@ModelAttribute("employeecontractForm") EmployeecontractForm form,
                         BindingResult bindingResult,
                         Model model,
+                        HttpSession session,
                         RedirectAttributes redirectAttributes) {
         validateContractForm(form, bindingResult);
 
+        boolean isCreate = form.getId() == null;
         boolean hasErrors = bindingResult.hasErrors();
         List<String> logs = List.of();
         if (!hasErrors) {
@@ -212,6 +214,10 @@ public class EmployeecontractController {
             return "employee/employee-contract-form";
         }
 
+        if (isCreate) {
+            session.setAttribute("employees.contracts.employeeId", form.getEmployeeId());
+            session.setAttribute("employees.contracts.filter", null);
+        }
         if (!logs.isEmpty()) {
             redirectAttributes.addFlashAttribute("logs", logs);
         }

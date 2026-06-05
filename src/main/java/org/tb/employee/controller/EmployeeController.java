@@ -102,9 +102,11 @@ public class EmployeeController {
     public String store(@ModelAttribute("employeeForm") EmployeeForm form,
                         BindingResult bindingResult,
                         Model model,
+                        HttpSession session,
                         RedirectAttributes redirectAttributes) {
         validateForm(form, bindingResult);
 
+        boolean isCreate = form.getId() == null;
         boolean hasErrors = bindingResult.hasErrors();
         if (!hasErrors) {
             try {
@@ -134,6 +136,9 @@ public class EmployeeController {
             return "employee/employee-form";
         }
 
+        if (isCreate) {
+            session.setAttribute("employees.filter", null);
+        }
         redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("form.employee.message.stored", "Employee saved successfully"));
         return "redirect:/employees";

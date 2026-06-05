@@ -80,6 +80,7 @@ public class CustomerController {
   public String store(@Valid @ModelAttribute("customer") CustomerDTO form,
                       BindingResult bindingResult,
                       Model model,
+                      HttpSession session,
                       RedirectAttributes redirectAttributes) {
     if (form.getShortName() == null || form.getShortName().isBlank()) {
       bindingResult.rejectValue("shortName", "error.shortName",
@@ -106,6 +107,7 @@ public class CustomerController {
           messageSourceAccessor.getMessage("form.customer.error.address.toolong", "Name is required"));
     }
 
+    boolean isCreate = form.getId() == null;
     var errors = !bindingResult.getFieldErrors().isEmpty();
 
     if(!errors) {
@@ -118,13 +120,16 @@ public class CustomerController {
     }
 
     if (errors) {
-      String titleKey = form.getId() == null ? "main.general.addcustomer.text" : "main.general.editcustomer.text";
-      String titleFallback = form.getId() == null ? "Create Customer" : "Edit Customer";
+      String titleKey = isCreate ? "main.general.addcustomer.text" : "main.general.editcustomer.text";
+      String titleFallback = isCreate ? "Create Customer" : "Edit Customer";
       model.addAttribute("pageTitle", messageSourceAccessor.getMessage(titleKey, titleFallback));
-      model.addAttribute("isEdit", form.getId() != null);
+      model.addAttribute("isEdit", !isCreate);
       return "customer/customer-form";
     }
 
+    if (isCreate) {
+      session.setAttribute("customers.filter", null);
+    }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));
     return "redirect:/customers";
