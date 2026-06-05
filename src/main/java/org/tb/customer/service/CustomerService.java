@@ -67,6 +67,16 @@ public class CustomerService {
   }
 
   @Authorized(requiresManager = true)
+  public CustomerDTO toggleHide(long id) {
+    if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
+    Customer customer = customerRepository.findById(id)
+        .orElseThrow(() -> new InvalidDataException(CU_NOT_FOUND));
+    customer.setHide(!customer.getHide());
+    customerRepository.save(customer);
+    return CustomerDTO.from(customer);
+  }
+
+  @Authorized(requiresManager = true)
   public void createOrUpdate(CustomerDTO customerDTO) {
     if(!authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Customer hide-toggle flags cell */-->
+<td class="d-none d-lg-table-cell" th:fragment="customerHideFlag">
+  <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <form th:action="@{/customers/{id}/toggle-hide(id=${cu.id})}" method="post">
+      <button type="submit"
+              th:hx-post="@{/customers/{id}/toggle-hide(id=${cu.id})}"
+              hx-include="closest form"
+              hx-target="closest td"
+              hx-swap="outerHTML"
+              class="border-0 bg-transparent p-0"
+              style="cursor:pointer"
+              th:title="#{main.general.hide.toggle}">
+        <span class="badge bg-secondary-lt">
+          <i class="bi bi-eye-slash" th:if="${cu.hide}"></i>
+          <i class="bi bi-eye" th:unless="${cu.hide}" style="opacity:0.35"></i>
+        </span>
+      </button>
+    </form>
+  </th:block>
+  <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <span th:if="${cu.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
+      <i class="bi bi-eye-slash"></i>
+    </span>
+  </th:block>
+</td>
+
+<!--/* Customer-order hide-toggle flags cell */-->
+<td class="d-none d-lg-table-cell" th:fragment="customerorderHideFlag">
+  <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <form th:action="@{/orders/customerorders/{id}/toggle-hide(id=${co.id})}" method="post">
+      <button type="submit"
+              th:hx-post="@{/orders/customerorders/{id}/toggle-hide(id=${co.id})}"
+              hx-include="closest form"
+              hx-target="closest td"
+              hx-swap="outerHTML"
+              class="border-0 bg-transparent p-0"
+              style="cursor:pointer"
+              th:title="#{main.general.hide.toggle}">
+        <span class="badge bg-secondary-lt">
+          <i class="bi bi-eye-slash" th:if="${co.hide}"></i>
+          <i class="bi bi-eye" th:unless="${co.hide}" style="opacity:0.35"></i>
+        </span>
+      </button>
+    </form>
+  </th:block>
+  <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <span th:if="${co.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
+      <i class="bi bi-eye-slash"></i>
+    </span>
+  </th:block>
+</td>
+
+<!--/* Suborder hide-toggle flags cell (includes all suborder flag badges) */-->
+<td class="d-none d-lg-table-cell" th:fragment="suborderHideFlag">
+  <span th:if="${so.invoiceString == 'Y'}" class="badge bg-success-lt" th:title="#{main.suborder.invoice.text}"><i class="bi-cash-stack"></i></span>
+  <span th:if="${so.standard}" class="badge bg-warning-lt" th:title="#{main.suborder.standard.text}"><i class="bi-bookmark-star-fill"></i></span>
+  <span th:if="${so.commentnecessary}" class="badge bg-danger-lt" th:title="#{main.suborder.commentnecessary.text}"><i class="bi bi-chat-square-text"></i></span>
+  <span th:if="${so.fixedPrice}" class="badge bg-primary-lt" th:title="#{main.suborder.fixedprice.text}"><i class="bi bi-tag-fill"></i></span>
+  <span th:if="${so.trainingFlag}" class="badge bg-purple-lt" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+  <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <form th:action="@{/orders/suborders/{id}/toggle-hide(id=${so.id})}" method="post">
+      <button type="submit"
+              th:hx-post="@{/orders/suborders/{id}/toggle-hide(id=${so.id})}"
+              hx-include="closest form"
+              hx-target="closest td"
+              hx-swap="outerHTML"
+              class="border-0 bg-transparent p-0"
+              style="cursor:pointer"
+              th:title="#{main.general.hide.toggle}">
+        <span class="badge bg-secondary-lt">
+          <i class="bi bi-eye-slash" th:if="${so.hide}"></i>
+          <i class="bi bi-eye" th:unless="${so.hide}" style="opacity:0.35"></i>
+        </span>
+      </button>
+    </form>
+  </th:block>
+  <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <span th:if="${so.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
+      <i class="bi bi-eye-slash"></i>
+    </span>
+  </th:block>
+</td>
+
+<!--/* Employee hide-toggle flags cell */-->
+<td class="d-none d-lg-table-cell" th:fragment="employeeHideFlag">
+  <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <form th:action="@{/employees/{id}/toggle-hide(id=${employee.id})}" method="post">
+      <button type="submit"
+              th:hx-post="@{/employees/{id}/toggle-hide(id=${employee.id})}"
+              hx-include="closest form"
+              hx-target="closest td"
+              hx-swap="outerHTML"
+              class="border-0 bg-transparent p-0"
+              style="cursor:pointer"
+              th:title="#{main.general.hide.toggle}">
+        <span class="badge bg-secondary-lt">
+          <i class="bi bi-eye-slash" th:if="${employee.hide}"></i>
+          <i class="bi bi-eye" th:unless="${employee.hide}" style="opacity:0.35"></i>
+        </span>
+      </button>
+    </form>
+  </th:block>
+  <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <span th:if="${employee.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
+      <i class="bi bi-eye-slash"></i>
+    </span>
+  </th:block>
+</td>
+
+<!--/* Employee-contract hide-toggle flags cell */-->
+<td class="d-none d-lg-table-cell" th:fragment="contractHideFlag">
+  <th:block th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <form th:action="@{/employees/contracts/{id}/toggle-hide(id=${ec.id})}" method="post">
+      <button type="submit"
+              th:hx-post="@{/employees/contracts/{id}/toggle-hide(id=${ec.id})}"
+              hx-include="closest form"
+              hx-target="closest td"
+              hx-swap="outerHTML"
+              class="border-0 bg-transparent p-0"
+              style="cursor:pointer"
+              th:title="#{main.general.hide.toggle}">
+        <span class="badge bg-secondary-lt">
+          <i class="bi bi-eye-slash" th:if="${ec.hide}"></i>
+          <i class="bi bi-eye" th:unless="${ec.hide}" style="opacity:0.35"></i>
+        </span>
+      </button>
+    </form>
+  </th:block>
+  <th:block th:unless="${#authorization.expression('hasRole(''MANAGER'')')}">
+    <span th:if="${ec.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
+      <i class="bi bi-eye-slash"></i>
+    </span>
+  </th:block>
+</td>
+
+</body>
+</html>

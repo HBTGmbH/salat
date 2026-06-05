@@ -56,9 +56,7 @@
           <td th:text="${cu.shortName}"></td>
           <td class="d-none d-sm-table-cell" th:text="${cu.name}"></td>
           <td class="d-none d-sm-table-cell" th:text="${cu.address}"></td>
-          <td class="d-none d-lg-table-cell">
-            <span th:if="${cu.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
-          </td>
+          <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerHideFlag}"></td>
           <td>
             <a th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
                class="btn btn-outline-primary"

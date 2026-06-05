@@ -119,9 +119,7 @@
               </td>
               <td class="d-none d-md-table-cell" th:text="${!ec.dailyWorkingTime.zero ? @durationUtils.format(ec.dailyWorkingTime) : ''}"></td>
               <td class="d-none d-md-table-cell" th:text="${ec.vacationEntitlement}"></td>
-              <td class="d-none d-lg-table-cell">
-                <span th:if="${ec.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
-              </td>
+              <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: contractHideFlag}"></td>
               <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
                 <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
                    th:title="#{main.headlinedescription.employeecontracts.edit.text}">
@@ -181,9 +179,7 @@
                   <span th:if="${ec.validUntil != null}" th:text="${ec.validUntil}">Until</span>
                 </small>
               </td>
-              <td class="d-none d-lg-table-cell">
-                <span th:if="${ec.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}"><i class="bi bi-eye-slash"></i></span>
-              </td>
+              <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: contractHideFlag}"></td>
               <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
                 <a th:href="@{/employees/contracts/edit(id=${ec.id})}" class="btn btn-outline-primary"
                    th:title="#{main.headlinedescription.employeecontracts.edit.text}">

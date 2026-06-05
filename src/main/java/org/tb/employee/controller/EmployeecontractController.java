@@ -261,6 +261,20 @@ public class EmployeecontractController {
     }
 
     @PreAuthorize("hasRole('MANAGER')")
+    @PostMapping("/{id}/toggle-hide")
+    public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            Employeecontract ec = employeecontractService.toggleHide(id);
+            model.addAttribute("ec", ec);
+            return "fragments/hide-toggle :: contractHideFlag";
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                    errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+            return "redirect:/employees/contracts";
+        }
+    }
+
+    @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Employeecontract ec = employeecontractService.getEmployeecontractById(id);

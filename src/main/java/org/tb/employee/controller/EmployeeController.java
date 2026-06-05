@@ -140,6 +140,20 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasRole('MANAGER')")
+    @PostMapping("/{id}/toggle-hide")
+    public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            Employee employee = employeeService.toggleHide(id);
+            model.addAttribute("employee", employee);
+            return "fragments/hide-toggle :: employeeHideFlag";
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                    errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+            return "redirect:/employees";
+        }
+    }
+
+    @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/{id}/anonymize")
     public String anonymize(@PathVariable Long id,
                             @RequestParam String confirmSign,

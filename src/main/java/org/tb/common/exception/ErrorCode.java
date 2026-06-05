@@ -19,6 +19,7 @@ public enum ErrorCode {
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
   CO_RESPONSIBLE_HBT_REQUIRED("CO-0003", "responsible HBT employee is required"),
   CO_RESP_CONTRACT_EMPLOYEE_REQUIRED("CO-0004", "responsible HBT contract employee is required"),
+  CO_NOT_FOUND("CO-0005", "customer order was not found"),
 
   CU_DELETE_GOT_VETO("CU-0001", "customer cannot be deleted due to veto"),
   CU_NOT_FOUND("CU-0002", "the customer was not found!"),
@@ -36,6 +37,7 @@ public enum ErrorCode {
 
   EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
   EM_ANONYMIZE_WRONG_SIGN("EM-0002", "confirm sign does not match the employee sign"),
+  EM_NOT_FOUND("EM-0003", "employee was not found"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),
@@ -44,6 +46,7 @@ public enum ErrorCode {
   SO_UPDATE_GOT_VETO("SO-0001", "suborder cannot be changed due to veto"),
   SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),
   SO_PARENTORDER_CYCLE("SO-0003", "parent would introduce a cycle or self-reference in the suborder hierarchy"),
+  SO_NOT_FOUND("SO-0004", "suborder was not found"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),
