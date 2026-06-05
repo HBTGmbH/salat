@@ -1813,6 +1813,7 @@ databaseChangeLog:
         - dropColumn:
             tableName: employeecontract
             columnName: SUPERVISOR_ID
+            cascadeConstraints: true
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
