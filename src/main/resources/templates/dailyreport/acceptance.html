@@ -165,7 +165,7 @@
                 </button>
               </form>
             </td>
-            <td class="d-none d-md-table-cell text-muted" th:text="${ec.supervisors.isEmpty() ? '' : #strings.listJoin(ec.supervisors.![sign], ', ')}"></td>
+            <td class="d-none d-md-table-cell text-muted" th:text="${ec.supervisors.isEmpty() ? '' : #strings.listJoin(ec.supervisors.![name], ', ')}"></td>
             <td>
               <span th:if="${ec.acceptanceWarning}" class="text-danger fw-semibold" th:text="${ec.reportAcceptanceDateString}"></span>
               <span th:unless="${ec.acceptanceWarning}" th:text="${ec.reportAcceptanceDateString}"></span>
