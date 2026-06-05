@@ -441,13 +441,9 @@ List views that expose boolean state flags on rows use a dedicated **Flags** col
 Rules:
 - Column header: `th:text="#{main.general.flags.text}"`, class `d-none d-lg-table-cell` (hidden on small screens)
 - Each flag is a `<span class="badge bg-<color>-lt" th:title="#{...}">` containing a Bootstrap Icon `<i class="bi bi-..."></i>`
-- The **hide** flag always uses `bg-secondary-lt` and `bi-eye-slash`:
+- The **hide** flag always uses `bg-red` and `bi-eye-slash`. In list views the flag cell is produced by the `fragments/hide-toggle.html` fragments which also render a clickable toggle for managers:
   ```html
-  <td class="d-none d-lg-table-cell">
-    <span th:if="${item.hide}" class="badge bg-secondary-lt" th:title="#{main.general.hide}">
-      <i class="bi bi-eye-slash"></i>
-    </span>
-  </td>
+  <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerHideFlag}"></td>
   ```
 - Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-tag-fill` (fixed price), `bi-mortarboard` (training)
 - Do not put flag badges inline in the primary/name column — use the flags column instead
