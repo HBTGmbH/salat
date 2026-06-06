@@ -82,7 +82,7 @@
           <tr th:each="tr : ${preview.timereports}">
             <td th:text="${tr.employeeName}"></td>
             <td th:text="${#temporals.format(tr.referenceday, 'dd.MM.yyyy')}"></td>
-            <td th:text="${tr.durationhours + ':' + #strings.leftPad('' + tr.durationminutes, 2, '0')}"></td>
+            <td th:text="${@durationUtils.format(tr.duration)}"></td>
             <td th:text="${tr.taskdescription}"></td>
             <td>
               <span th:if="${tr.status == 'closed' and tr.acceptedby != null}"
