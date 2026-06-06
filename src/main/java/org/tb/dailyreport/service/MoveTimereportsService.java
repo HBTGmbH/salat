@@ -1,5 +1,6 @@
 package org.tb.dailyreport.service;
 
+import static org.tb.common.exception.ErrorCode.SO_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
@@ -8,14 +9,18 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.LocalDateRange;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.TimereportRepository;
@@ -51,7 +56,8 @@ public class MoveTimereportsService {
     validate(sourceSuborderId, targetSuborderId, targetSuborder, fromDate, toDate);
 
     var timereports = loadTimereports(sourceSuborderId, employeeContractIds, fromDate, toDate);
-    var newOrders = computeNewEmployeeOrders(timereports, targetSuborderId, targetSuborder);
+    var byContract = groupByContract(timereports);
+    var newOrders = computeNewEmployeeOrders(byContract, targetSuborderId, targetSuborder);
 
     return new MoveTimereportsPreview(timereports, newOrders, sourceSuborder, targetSuborder, fromDate, toDate);
   }
@@ -65,25 +71,31 @@ public class MoveTimereportsService {
     validate(sourceSuborderId, targetSuborderId, targetSuborder, fromDate, toDate);
 
     var timereports = loadTimereports(sourceSuborderId, employeeContractIds, fromDate, toDate);
+    var byContract = groupByContract(timereports);
 
     // Build or find employee orders on target suborder, keyed by employeeContractId
     Map<Long, Employeeorder> employeeOrders = new LinkedHashMap<>();
-    for (var ecId : uniqueContractIds(timereports)) {
+    for (var entry : byContract.entrySet()) {
+      var ecId = entry.getKey();
       var existing = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(ecId, targetSuborderId);
       if (!existing.isEmpty()) {
         employeeOrders.put(ecId, existing.get(0));
       } else {
-        var earliestDate = earliestDateFor(timereports, ecId);
-        var newEo = buildEmployeeOrder(ecId, targetSuborder, earliestDate);
+        var newEo = buildEmployeeOrder(ecId, targetSuborder, earliestDateFor(entry.getValue()));
         employeeorderService.create(newEo);
         employeeOrders.put(ecId, newEo);
       }
     }
 
-    // Reassign each timereport to the target suborder and its employee order
+    // Batch-fetch timereport entities and reassign to target suborder + employee order
+    var ids = timereports.stream().map(TimereportDTO::getId).toList();
+    var timereportMap = new HashMap<Long, Timereport>();
+    timereportRepository.findAllById(ids).forEach(tr -> timereportMap.put(tr.getId(), tr));
     for (var dto : timereports) {
-      var tr = timereportRepository.findById(dto.getId())
-          .orElseThrow(() -> new InvalidDataException(TR_TIME_REPORT_NOT_FOUND, dto.getId()));
+      var tr = timereportMap.get(dto.getId());
+      if (tr == null) {
+        throw new InvalidDataException(TR_TIME_REPORT_NOT_FOUND, dto.getId());
+      }
       tr.setSuborder(targetSuborder);
       tr.setEmployeeorder(employeeOrders.get(dto.getEmployeecontractId()));
     }
@@ -94,11 +106,7 @@ public class MoveTimereportsService {
     if (sourceSuborderId == targetSuborderId) {
       throw new InvalidDataException(TR_MOVE_SOURCE_TARGET_SAME);
     }
-    var targetFrom = targetSuborder.getFromDate();
-    var targetUntil = targetSuborder.getUntilDate();
-    boolean outsideFrom = targetFrom != null && fromDate.isBefore(targetFrom);
-    boolean outsideUntil = targetUntil != null && toDate.isAfter(targetUntil);
-    if (outsideFrom || outsideUntil) {
+    if (!targetSuborder.getValidity().contains(new LocalDateRange(fromDate, toDate))) {
       throw new InvalidDataException(TR_MOVE_DATE_RANGE_OUTSIDE_TARGET);
     }
   }
@@ -117,32 +125,28 @@ public class MoveTimereportsService {
         .toList();
   }
 
+  private Map<Long, List<TimereportDTO>> groupByContract(List<TimereportDTO> timereports) {
+    return timereports.stream()
+        .collect(Collectors.groupingBy(TimereportDTO::getEmployeecontractId,
+            LinkedHashMap::new, Collectors.toList()));
+  }
+
   private List<NewEmployeeorderInfo> computeNewEmployeeOrders(
-      List<TimereportDTO> timereports, long targetSuborderId, Suborder targetSuborder) {
+      Map<Long, List<TimereportDTO>> byContract, long targetSuborderId, Suborder targetSuborder) {
     var result = new ArrayList<NewEmployeeorderInfo>();
-    for (var ecId : uniqueContractIds(timereports)) {
+    for (var entry : byContract.entrySet()) {
+      var ecId = entry.getKey();
       var existing = employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(ecId, targetSuborderId);
       if (existing.isEmpty()) {
-        var name = timereports.stream()
-            .filter(dto -> dto.getEmployeecontractId() == ecId)
-            .map(TimereportDTO::getEmployeeName)
-            .findFirst().orElse("");
-        result.add(new NewEmployeeorderInfo(name, earliestDateFor(timereports, ecId), targetSuborder.getUntilDate()));
+        var name = entry.getValue().get(0).getEmployeeName();
+        result.add(new NewEmployeeorderInfo(name, earliestDateFor(entry.getValue()), targetSuborder.getUntilDate()));
       }
     }
     return result;
   }
 
-  private List<Long> uniqueContractIds(List<TimereportDTO> timereports) {
-    return timereports.stream()
-        .map(TimereportDTO::getEmployeecontractId)
-        .distinct()
-        .toList();
-  }
-
-  private LocalDate earliestDateFor(List<TimereportDTO> timereports, long ecId) {
-    return timereports.stream()
-        .filter(dto -> dto.getEmployeecontractId() == ecId)
+  private LocalDate earliestDateFor(List<TimereportDTO> dtos) {
+    return dtos.stream()
         .map(TimereportDTO::getReferenceday)
         .min(Comparator.naturalOrder())
         .orElseThrow();
@@ -162,7 +166,7 @@ public class MoveTimereportsService {
   private Suborder getSuborder(long suborderId) {
     var so = suborderDAO.getSuborderById(suborderId);
     if (so == null) {
-      throw new InvalidDataException(TR_TIME_REPORT_NOT_FOUND, suborderId);
+      throw new InvalidDataException(SO_NOT_FOUND, suborderId);
     }
     return so;
   }

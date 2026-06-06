@@ -1,6 +1,9 @@
 package org.tb.dailyreport.controller;
 
+import static org.tb.common.util.DateUtils.today;
+
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -96,12 +98,8 @@ public class MoveTimereportsController {
 
   @PostMapping("/source-suborders")
   @PreAuthorize("hasRole('MANAGER')")
-  public String sourceSuborders(@RequestParam(required = false) Long sourceCustomerOrderId,
-      @ModelAttribute MoveTimereportsForm form, Model model, HttpServletRequest request) {
-    var suborders = sourceCustomerOrderId != null
-        ? suborderService.getSubordersByCustomerorderId(sourceCustomerOrderId)
-        : Collections.emptyList();
-    model.addAttribute("sourceSuborders", suborders);
+  public String sourceSuborders(@ModelAttribute MoveTimereportsForm form, Model model,
+      HttpServletRequest request) {
     populateFormModel(model, form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
@@ -111,12 +109,8 @@ public class MoveTimereportsController {
 
   @PostMapping("/target-suborders")
   @PreAuthorize("hasRole('MANAGER')")
-  public String targetSuborders(@RequestParam(required = false) Long targetCustomerOrderId,
-      @ModelAttribute MoveTimereportsForm form, Model model, HttpServletRequest request) {
-    var suborders = targetCustomerOrderId != null
-        ? suborderService.getSubordersByCustomerorderId(targetCustomerOrderId)
-        : Collections.emptyList();
-    model.addAttribute("targetSuborders", suborders);
+  public String targetSuborders(@ModelAttribute MoveTimereportsForm form, Model model,
+      HttpServletRequest request) {
     populateFormModel(model, form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
     model.addAttribute("htmxRequest", htmxRequest);
@@ -125,7 +119,7 @@ public class MoveTimereportsController {
   }
 
   private boolean validateForm(MoveTimereportsForm form, Model model) {
-    var errors = new java.util.ArrayList<String>();
+    var errors = new ArrayList<String>();
     if (form.getSourceSuborderId() == null) {
       errors.add(messages.getMessage("main.movetimereports.error.source.required", "Quell-Unterauftrag erforderlich."));
     }
@@ -152,9 +146,9 @@ public class MoveTimereportsController {
   private void populateFormModel(Model model, MoveTimereportsForm form) {
     model.addAttribute("form", form);
     model.addAttribute("customerOrders",
-        customerorderService.getCustomerordersByFilters(null, null, null, null));
+        customerorderService.getAllCustomerorders());
     model.addAttribute("employeeContracts",
-        employeecontractService.getViewableEmployeeContractsValidAt(java.time.LocalDate.now()));
+        employeecontractService.getViewableEmployeeContractsValidAt(today()));
     var sourceSuborders = form.getSourceCustomerOrderId() != null
         ? suborderService.getSubordersByCustomerorderId(form.getSourceCustomerOrderId())
         : Collections.emptyList();
