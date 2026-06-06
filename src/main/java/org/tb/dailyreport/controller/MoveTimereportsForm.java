@@ -11,8 +11,10 @@ import org.tb.common.util.DateUtils;
 @Setter
 public class MoveTimereportsForm {
 
+  private Long sourceCustomerId;
   private Long sourceCustomerOrderId;
   private Long sourceSuborderId;
+  private Long targetCustomerId;
   private Long targetCustomerOrderId;
   private Long targetSuborderId;
   private List<Long> employeeContractIds = new ArrayList<>();

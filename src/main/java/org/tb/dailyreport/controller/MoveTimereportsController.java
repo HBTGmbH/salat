@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.customer.service.CustomerService;
 import org.tb.dailyreport.service.MoveTimereportsPreview;
 import org.tb.dailyreport.service.MoveTimereportsService;
 import org.tb.employee.service.EmployeecontractService;
@@ -31,6 +32,7 @@ import org.tb.order.service.SuborderService;
 public class MoveTimereportsController {
 
   private final MoveTimereportsService moveTimereportsService;
+  private final CustomerService customerService;
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final EmployeecontractService employeecontractService;
@@ -118,6 +120,34 @@ public class MoveTimereportsController {
     return "dailyreport/move-timereports-form";
   }
 
+  @PostMapping("/source-customerorders")
+  @PreAuthorize("hasRole('MANAGER')")
+  public String sourceCustomerOrders(@ModelAttribute MoveTimereportsForm form, Model model,
+      HttpServletRequest request) {
+    form.setSourceCustomerOrderId(null);
+    form.setSourceSuborderId(null);
+    populateFormModel(model, form);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("sourceCustomerOrdersChanged", true);
+    model.addAttribute("sourceSubordersChanged", true);
+    return "dailyreport/move-timereports-form";
+  }
+
+  @PostMapping("/target-customerorders")
+  @PreAuthorize("hasRole('MANAGER')")
+  public String targetCustomerOrders(@ModelAttribute MoveTimereportsForm form, Model model,
+      HttpServletRequest request) {
+    form.setTargetCustomerOrderId(null);
+    form.setTargetSuborderId(null);
+    populateFormModel(model, form);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("targetCustomerOrdersChanged", true);
+    model.addAttribute("targetSubordersChanged", true);
+    return "dailyreport/move-timereports-form";
+  }
+
   private boolean validateForm(MoveTimereportsForm form, Model model) {
     var errors = new ArrayList<String>();
     if (form.getSourceSuborderId() == null) {
@@ -145,10 +175,17 @@ public class MoveTimereportsController {
 
   private void populateFormModel(Model model, MoveTimereportsForm form) {
     model.addAttribute("form", form);
-    model.addAttribute("customerOrders",
-        customerorderService.getAllCustomerorders());
+    model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
     model.addAttribute("employeeContracts",
         employeecontractService.getViewableEmployeeContractsValidAt(today()));
+    var sourceCustomerOrders = form.getSourceCustomerId() != null
+        ? customerorderService.getCustomerordersByFilters(null, null, form.getSourceCustomerId(), null)
+        : Collections.emptyList();
+    var targetCustomerOrders = form.getTargetCustomerId() != null
+        ? customerorderService.getCustomerordersByFilters(null, null, form.getTargetCustomerId(), null)
+        : Collections.emptyList();
+    model.addAttribute("sourceCustomerOrders", sourceCustomerOrders);
+    model.addAttribute("targetCustomerOrders", targetCustomerOrders);
     var sourceSuborders = form.getSourceCustomerOrderId() != null
         ? suborderService.getSubordersByCustomerorderId(form.getSourceCustomerOrderId())
         : Collections.emptyList();

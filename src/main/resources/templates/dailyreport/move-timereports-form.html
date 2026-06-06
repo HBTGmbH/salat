@@ -34,6 +34,20 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
+              <label class="form-label" th:text="#{main.movetimereports.source.customer.text}">Quell-Kunde</label>
+              <select class="form-select tomselect" th:field="*{sourceCustomerId}"
+                      th:hx-post="@{/dailyreports/move/source-customerorders}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="c : ${customers}"
+                        th:value="${c.id}"
+                        th:text="${c.shortname + ' - ' + c.name}"></option>
+              </select>
+            </div>
+
+            <div class="mb-3" id="sourceCustomerOrderIdInput">
               <label class="form-label" th:text="#{main.movetimereports.source.customerorder.text}">Quell-Auftrag</label>
               <select class="form-select tomselect" th:field="*{sourceCustomerOrderId}"
                       th:hx-post="@{/dailyreports/move/source-suborders}"
@@ -41,7 +55,7 @@
                       hx-include="closest form"
                       hx-trigger="change">
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
-                <option th:each="co : ${customerOrders}"
+                <option th:each="co : ${sourceCustomerOrders}"
                         th:value="${co.id}"
                         th:text="${co.sign + ' - ' + co.shortdescription}"></option>
               </select>
@@ -68,6 +82,20 @@
           </div>
           <div class="card-body">
             <div class="mb-3">
+              <label class="form-label" th:text="#{main.movetimereports.target.customer.text}">Ziel-Kunde</label>
+              <select class="form-select tomselect" th:field="*{targetCustomerId}"
+                      th:hx-post="@{/dailyreports/move/target-customerorders}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="c : ${customers}"
+                        th:value="${c.id}"
+                        th:text="${c.shortname + ' - ' + c.name}"></option>
+              </select>
+            </div>
+
+            <div class="mb-3" id="targetCustomerOrderIdInput">
               <label class="form-label" th:text="#{main.movetimereports.target.customerorder.text}">Ziel-Auftrag</label>
               <select class="form-select tomselect" th:field="*{targetCustomerOrderId}"
                       th:hx-post="@{/dailyreports/move/target-suborders}"
@@ -75,7 +103,7 @@
                       hx-include="closest form"
                       hx-trigger="change">
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
-                <option th:each="co : ${customerOrders}"
+                <option th:each="co : ${targetCustomerOrders}"
                         th:value="${co.id}"
                         th:text="${co.sign + ' - ' + co.shortdescription}"></option>
               </select>
@@ -124,12 +152,22 @@
 
   </form>
 
-  <!-- HTMX OOB updates for suborder selects -->
+  <!-- HTMX OOB updates -->
   <div th:if="${htmxRequest}">
+    <div class="mb-3" id="sourceCustomerOrderIdInput" th:hx-swap-oob="${sourceCustomerOrdersChanged}">
+      <label class="form-label" th:text="#{main.movetimereports.source.customerorder.text}">Quell-Auftrag</label>
+      <select class="form-select tomselect" name="sourceCustomerOrderId">
+        <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+        <option th:each="co : ${sourceCustomerOrders}"
+                th:value="${co.id}"
+                th:selected="${form.sourceCustomerOrderId != null and form.sourceCustomerOrderId == co.id}"
+                th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+      </select>
+    </div>
+
     <div class="mb-3" id="sourceSuborderIdInput" th:hx-swap-oob="${sourceSubordersChanged}">
       <label class="form-label required" th:text="#{main.movetimereports.source.suborder.text}">Quell-Unterauftrag</label>
-      <select class="form-select tomselect" name="sourceSuborderId"
-              th:value="${form.sourceSuborderId}">
+      <select class="form-select tomselect" name="sourceSuborderId">
         <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
         <option th:each="so : ${sourceSuborders}"
                 th:value="${so.id}"
@@ -138,10 +176,20 @@
       </select>
     </div>
 
+    <div class="mb-3" id="targetCustomerOrderIdInput" th:hx-swap-oob="${targetCustomerOrdersChanged}">
+      <label class="form-label" th:text="#{main.movetimereports.target.customerorder.text}">Ziel-Auftrag</label>
+      <select class="form-select tomselect" name="targetCustomerOrderId">
+        <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+        <option th:each="co : ${targetCustomerOrders}"
+                th:value="${co.id}"
+                th:selected="${form.targetCustomerOrderId != null and form.targetCustomerOrderId == co.id}"
+                th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+      </select>
+    </div>
+
     <div class="mb-3" id="targetSuborderIdInput" th:hx-swap-oob="${targetSubordersChanged}">
       <label class="form-label required" th:text="#{main.movetimereports.target.suborder.text}">Ziel-Unterauftrag</label>
-      <select class="form-select tomselect" name="targetSuborderId"
-              th:value="${form.targetSuborderId}">
+      <select class="form-select tomselect" name="targetSuborderId">
         <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
         <option th:each="so : ${targetSuborders}"
                 th:value="${so.id}"
