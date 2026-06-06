@@ -130,19 +130,17 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
-    private List<Employeecontract> getAllVisibleEmployeeContractsOrderedByEmployeeSign(LocalDate validAt) {
+    private List<Employeecontract> getAllVisibleEmployeeContracts(LocalDate validAt) {
         return employeecontractRepository.findAllValidAtAndNotHidden(validAt).stream()
             .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
-            .sorted(
-                comparing((Employeecontract a) -> a.getEmployee().getSign().toLowerCase())
-                .thenComparing(Employeecontract::getValidFrom)
-            )
+            .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
     }
 
     public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
-        return getAllVisibleEmployeeContractsOrderedByEmployeeSign(DateUtils.today()).stream()
+        return getAllVisibleEmployeeContracts(DateUtils.today()).stream()
             .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
+            .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
     }
 
@@ -152,26 +150,18 @@ public class EmployeecontractDAO {
 
     public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess, LocalDate validAt) {
         if (limitAccess) {
-            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
+            return getAllVisibleEmployeeContracts(validAt).stream()
                 .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
                 .collect(Collectors.toList());
         } else {
-            return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt);
+            return getAllVisibleEmployeeContracts(validAt);
         }
     }
 
-    /**
-     * Get a list of all Employeecontracts that are currently valid, ordered by Firstname
-     */
-    public List<Employeecontract> getAllVisibleEmployeeContractsValidAtOrderedByFirstname(LocalDate validAt) {
-        return getAllVisibleEmployeeContractsOrderedByEmployeeSign(validAt).stream()
-            .sorted(comparing((Employeecontract e) -> e.getEmployee().getFirstname())
-                .thenComparing(Employeecontract::getValidFrom))
-            .collect(Collectors.toList());
-    }
-
     public List<Employeecontract> getEmployeeContractsByEmployeeId(Long employeeId) {
-        return employeecontractRepository.findAllByEmployeeId(employeeId);
+        return employeecontractRepository.findAllByEmployeeId(employeeId).stream()
+            .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
+            .toList();
     }
 
   public List<Employeecontract> getVisibleEmployeeContracts() {
@@ -179,6 +169,7 @@ public class EmployeecontractDAO {
         .stream()
         .filter(ec -> !Objects.equals(ec.getEmployee().getStatus(), EMPLOYEE_STATUS_ADM))
         .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ))
+        .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
         .toList();
   }
 
