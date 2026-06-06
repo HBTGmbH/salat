@@ -21,6 +21,7 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static org.tb.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
+import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
@@ -79,6 +80,7 @@ import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.Warning;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -160,11 +162,19 @@ public class TimereportService {
 
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours, durationMinutes, false);
+  }
+
+  public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      boolean trainingFlag, long durationHours, long durationMinutes, boolean force) throws ErrorCodeException {
+    if (force && !authorizedUser.isManager()) {
+      throw new AuthorizationException(AA_NEEDS_MANAGER);
+    }
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
-    checkAndSaveTimereports(Collections.singletonList(timereport));
+    checkAndSaveTimereports(Collections.singletonList(timereport), force);
   }
 
   /**
@@ -223,9 +233,15 @@ public class TimereportService {
   }
 
   private void checkAndSaveTimereports(List<Timereport> timereports) {
+    checkAndSaveTimereports(timereports, false);
+  }
+
+  private void checkAndSaveTimereports(List<Timereport> timereports, boolean force) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
-    timereportAuthorization.checkAuthorized(timereports, AccessLevel.WRITE);
+    if (!force) {
+      timereportAuthorization.checkAuthorized(timereports, AccessLevel.WRITE);
+    }
     validateWorkingDayBusinessRules(timereports);
     validateTimeReportingBusinessRules(timereports);
     validateContractBusinessRules(timereports);
