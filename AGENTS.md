@@ -165,6 +165,42 @@ A feature or fix is considered done when **all** of the following are true:
 
 ---
 
+## TomSelect Dropdowns
+
+All `<select>` elements use [TomSelect](https://tom-select.github.io/) for search-as-you-type behaviour. Initialisation is handled centrally in `layout/base.html` via a `querySelectorAll` on page load and again on `htmx:afterSettle` (so OOB-swapped selects are picked up automatically).
+
+### CSS class contract
+
+| Class | `maxItems` | When to use |
+|---|---|---|
+| `tomselect` | `1` (single) | Any select where only one value is needed |
+| `tomselect tomselect-multi` | `null` (unlimited) | Multi-select; always combine with the HTML `multiple` attribute |
+
+### Single-select
+
+```html
+<select class="form-select tomselect" th:field="*{orderId}">
+  <option value="">-- Select --</option>
+  <option th:each="o : ${orders}" th:value="${o.id}" th:text="${o.sign}"></option>
+</select>
+```
+
+### Multi-select
+
+Always add both `tomselect-multi` **and** the native `multiple` attribute. The class sets `maxItems: null` in TomSelect; `multiple` ensures the browser submits all selected values so Spring MVC can bind them to a `List<Long>` (or `List<String>`).
+
+```html
+<select class="form-select tomselect tomselect-multi" th:field="*{contractIds}" multiple>
+  <option th:each="ec : ${contracts}" th:value="${ec.id}" th:text="${ec.employee.name}"></option>
+</select>
+```
+
+### HTMX + OOB swaps
+
+`htmx:afterSettle` re-initialises any `select.tomselect` that does not yet have a `.tomselect` instance, so OOB-replaced selects are picked up without extra work. **Do not** add a `multiple` attribute to single-select OOB replacements — if the original select was single, the OOB replacement must also be single.
+
+---
+
 ## Salat Custom Thymeleaf Dialect (`salat:`)
 
 The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`) provides element processors that replace verbose `th:replace` fragment calls with clean, attribute-based tags.
