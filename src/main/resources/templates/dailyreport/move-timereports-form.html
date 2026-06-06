@@ -15,12 +15,6 @@
       <li th:each="err : ${validationErrors}" th:text="${err}"></li>
     </ul>
   </div>
-  <div th:if="${errors != null and not #lists.isEmpty(errors)}" class="alert alert-danger mb-3">
-    <ul class="mb-0">
-      <li th:each="err : ${errors}" th:text="${err.resolved()}"></li>
-    </ul>
-  </div>
-
   <form th:action="@{/dailyreports/move/preview}" method="post" th:object="${form}">
 
     <!-- Source + Target row -->
