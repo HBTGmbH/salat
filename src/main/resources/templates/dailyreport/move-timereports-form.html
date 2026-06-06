@@ -47,7 +47,7 @@
               </select>
             </div>
 
-            <div class="mb-3" id="sourceSuborderIdInput" th:hx-swap-oob="${sourceSubordersChanged}">
+            <div class="mb-3" id="sourceSuborderIdInput">
               <label class="form-label required" th:text="#{main.movetimereports.source.suborder.text}">Quell-Unterauftrag</label>
               <select class="form-select tomselect" th:field="*{sourceSuborderId}">
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
@@ -81,7 +81,7 @@
               </select>
             </div>
 
-            <div class="mb-3" id="targetSuborderIdInput" th:hx-swap-oob="${targetSubordersChanged}">
+            <div class="mb-3" id="targetSuborderIdInput">
               <label class="form-label required" th:text="#{main.movetimereports.target.suborder.text}">Ziel-Unterauftrag</label>
               <select class="form-select tomselect" th:field="*{targetSuborderId}">
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
