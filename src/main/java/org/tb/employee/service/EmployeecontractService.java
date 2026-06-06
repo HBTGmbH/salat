@@ -525,10 +525,6 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
   }
 
-  public List<Employeecontract> getAllVisibleEmployeeContractsValidAtOrderedByFirstname(LocalDate validAt) {
-    return employeecontractDAO.getAllVisibleEmployeeContractsValidAtOrderedByFirstname(validAt);
-  }
-
   public List<Overtime> getOvertimeAdjustmentsByEmployeeContractId(long employeeContractId) {
     return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
   }
