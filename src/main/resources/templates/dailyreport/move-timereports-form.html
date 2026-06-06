@@ -137,7 +137,7 @@
           </div>
           <div class="col-md-6">
             <label class="form-label" th:text="#{main.movetimereports.employees.text}">Mitarbeiter (leer = alle)</label>
-            <select class="form-select tomselect" th:field="*{employeeContractIds}" multiple>
+            <select class="form-select tomselect tomselect-multi" th:field="*{employeeContractIds}" multiple>
               <option th:each="ec : ${employeeContracts}"
                       th:value="${ec.id}"
                       th:text="${ec.employee.name + ' (' + ec.employee.sign + ')'}"></option>
