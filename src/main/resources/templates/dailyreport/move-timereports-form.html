@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=#{main.movetimereports.title}">
+<head>
+  <title th:text="#{main.movetimereports.title}">Buchungen umbuchen</title>
+</head>
+<body>
+<section layout:fragment="content">
+
+  <!-- validation errors -->
+  <div th:if="${validationErrors != null and not #lists.isEmpty(validationErrors)}" class="alert alert-danger mb-3">
+    <ul class="mb-0">
+      <li th:each="err : ${validationErrors}" th:text="${err}"></li>
+    </ul>
+  </div>
+  <div th:if="${errors != null and not #lists.isEmpty(errors)}" class="alert alert-danger mb-3">
+    <ul class="mb-0">
+      <li th:each="err : ${errors}" th:text="${err.resolved()}"></li>
+    </ul>
+  </div>
+
+  <form th:action="@{/dailyreports/move/preview}" method="post" th:object="${form}">
+
+    <!-- Source + Target row -->
+    <div class="row g-3 mb-3">
+
+      <!-- Source -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h3 class="card-title" th:text="#{main.movetimereports.source.title}">Quelle</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label" th:text="#{main.movetimereports.source.customerorder.text}">Quell-Auftrag</label>
+              <select class="form-select tomselect" th:field="*{sourceCustomerOrderId}"
+                      th:hx-post="@{/dailyreports/move/source-suborders}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="co : ${customerOrders}"
+                        th:value="${co.id}"
+                        th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+              </select>
+            </div>
+
+            <div class="mb-3" id="sourceSuborderIdInput" th:hx-swap-oob="${sourceSubordersChanged}">
+              <label class="form-label required" th:text="#{main.movetimereports.source.suborder.text}">Quell-Unterauftrag</label>
+              <select class="form-select tomselect" th:field="*{sourceSuborderId}">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="so : ${sourceSuborders}"
+                        th:value="${so.id}"
+                        th:text="${so.completeOrderSignAndDescription}"></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Target -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h3 class="card-title" th:text="#{main.movetimereports.target.title}">Ziel</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label" th:text="#{main.movetimereports.target.customerorder.text}">Ziel-Auftrag</label>
+              <select class="form-select tomselect" th:field="*{targetCustomerOrderId}"
+                      th:hx-post="@{/dailyreports/move/target-suborders}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="co : ${customerOrders}"
+                        th:value="${co.id}"
+                        th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+              </select>
+            </div>
+
+            <div class="mb-3" id="targetSuborderIdInput" th:hx-swap-oob="${targetSubordersChanged}">
+              <label class="form-label required" th:text="#{main.movetimereports.target.suborder.text}">Ziel-Unterauftrag</label>
+              <select class="form-select tomselect" th:field="*{targetSuborderId}">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="so : ${targetSuborders}"
+                        th:value="${so.id}"
+                        th:text="${so.completeOrderSignAndDescription}"></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date range + Employees -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label required" th:text="#{main.movetimereports.fromdate.text}">Von</label>
+            <input type="date" class="form-control" th:field="*{fromDate}" required />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label required" th:text="#{main.movetimereports.todate.text}">Bis</label>
+            <input type="date" class="form-control" th:field="*{toDate}" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" th:text="#{main.movetimereports.employees.text}">Mitarbeiter (leer = alle)</label>
+            <select class="form-select tomselect" th:field="*{employeeContractIds}" multiple>
+              <option th:each="ec : ${employeeContracts}"
+                      th:value="${ec.id}"
+                      th:text="${ec.employee.name + ' (' + ec.employee.sign + ')'}"></option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button type="submit" class="btn btn-primary" th:text="#{main.movetimereports.button.preview}">Vorschau anzeigen</button>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- HTMX OOB updates for suborder selects -->
+  <div th:if="${htmxRequest}">
+    <div class="mb-3" id="sourceSuborderIdInput" th:hx-swap-oob="${sourceSubordersChanged}">
+      <label class="form-label required" th:text="#{main.movetimereports.source.suborder.text}">Quell-Unterauftrag</label>
+      <select class="form-select tomselect" name="sourceSuborderId"
+              th:value="${form.sourceSuborderId}">
+        <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+        <option th:each="so : ${sourceSuborders}"
+                th:value="${so.id}"
+                th:selected="${form.sourceSuborderId != null and form.sourceSuborderId == so.id}"
+                th:text="${so.completeOrderSignAndDescription}"></option>
+      </select>
+    </div>
+
+    <div class="mb-3" id="targetSuborderIdInput" th:hx-swap-oob="${targetSubordersChanged}">
+      <label class="form-label required" th:text="#{main.movetimereports.target.suborder.text}">Ziel-Unterauftrag</label>
+      <select class="form-select tomselect" name="targetSuborderId"
+              th:value="${form.targetSuborderId}">
+        <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+        <option th:each="so : ${targetSuborders}"
+                th:value="${so.id}"
+                th:selected="${form.targetSuborderId != null and form.targetSuborderId == so.id}"
+                th:text="${so.completeOrderSignAndDescription}"></option>
+      </select>
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

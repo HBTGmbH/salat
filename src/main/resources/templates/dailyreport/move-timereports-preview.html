@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=#{main.movetimereports.preview.title}">
+<head>
+  <title th:text="#{main.movetimereports.preview.title}">Vorschau: Buchungen umbuchen</title>
+</head>
+<body>
+<section layout:fragment="content">
+
+  <!-- Summary card -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.movetimereports.preview.title}">Vorschau: zu verschiebende Buchungen</h3>
+    </div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-5">
+          <span class="text-muted small" th:text="#{main.movetimereports.source.title}">Quelle</span><br/>
+          <strong th:text="${preview.sourceSuborder.completeOrderSignAndDescription}"></strong>
+        </div>
+        <div class="col-md-1 d-flex align-items-center justify-content-center">
+          <i class="bi bi-arrow-right fs-4 text-muted"></i>
+        </div>
+        <div class="col-md-5">
+          <span class="text-muted small" th:text="#{main.movetimereports.target.title}">Ziel</span><br/>
+          <strong th:text="${preview.targetSuborder.completeOrderSignAndDescription}"></strong>
+        </div>
+        <div class="col-md-1">
+          <span class="text-muted small" th:text="#{main.movetimereports.preview.count}">Buchungen</span><br/>
+          <strong th:text="${#lists.size(preview.timereports)}"></strong>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-md-6">
+          <span class="text-muted small" th:text="#{main.movetimereports.fromdate.text}">Von</span>:
+          <strong th:text="${#temporals.format(preview.fromDate, 'dd.MM.yyyy')}"></strong>
+          &ndash;
+          <span class="text-muted small" th:text="#{main.movetimereports.todate.text}">Bis</span>:
+          <strong th:text="${#temporals.format(preview.toDate, 'dd.MM.yyyy')}"></strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stale-reports warning -->
+  <div class="alert alert-warning mb-3">
+    <div class="d-flex">
+      <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+      <span th:text="#{main.movetimereports.preview.warning.stale}">
+        Hinweis: Berichte für die betroffenen Zeiträume können nach der Umbuchung veraltet sein.
+        Nächtliche Aggregationen werden diese über Nacht aktualisieren. Werden aktuelle Zahlen
+        benötigt, müssen die Berichte manuell neu ausgeführt werden.
+      </span>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div th:if="${#lists.isEmpty(preview.timereports)}" class="alert alert-info mb-3"
+       th:text="#{main.movetimereports.preview.empty}">
+    Keine Buchungen für die getroffene Auswahl gefunden.
+  </div>
+
+  <!-- Timereports table -->
+  <div th:if="${not #lists.isEmpty(preview.timereports)}" class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.movetimereports.preview.timereports.title}">Buchungen</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.movetimereports.column.employee}">Mitarbeiter</th>
+            <th th:text="#{main.movetimereports.column.date}">Datum</th>
+            <th th:text="#{main.movetimereports.column.duration}">Dauer</th>
+            <th th:text="#{main.movetimereports.column.comment}">Kommentar</th>
+            <th th:text="#{main.movetimereports.column.status}">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="tr : ${preview.timereports}">
+            <td th:text="${tr.employeeName}"></td>
+            <td th:text="${#temporals.format(tr.referenceday, 'dd.MM.yyyy')}"></td>
+            <td th:text="${tr.durationhours + ':' + #strings.leftPad('' + tr.durationminutes, 2, '0')}"></td>
+            <td th:text="${tr.taskdescription}"></td>
+            <td>
+              <span th:if="${tr.status == 'closed' and tr.acceptedby != null}"
+                    class="badge bg-warning-lt"
+                    th:title="#{main.movetimereports.preview.badge.accepted}"
+                    th:text="#{main.movetimereports.preview.badge.accepted}">Abgenommen</span>
+              <span th:if="${tr.status == 'commited'}"
+                    class="badge bg-info-lt"
+                    th:text="#{main.movetimereports.preview.badge.commited}">Freigegeben</span>
+              <span th:if="${tr.status == 'open'}"
+                    class="badge bg-secondary-lt"
+                    th:text="#{main.movetimereports.preview.badge.open}">Offen</span>
+              <span th:if="${tr.status == 'closed' and tr.acceptedby == null}"
+                    class="badge bg-success-lt"
+                    th:text="#{main.movetimereports.preview.badge.closed}">Geschlossen</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- New employee orders section -->
+  <div th:if="${not #lists.isEmpty(preview.newEmployeeOrders)}" class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.movetimereports.preview.neworders.title}">Neu anzulegende Mitarbeiteraufträge</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.movetimereports.column.employee}">Mitarbeiter</th>
+            <th th:text="#{main.movetimereports.column.suborder}">Unterauftrag</th>
+            <th th:text="#{main.employeecontract.validfrom.text}">Gültig ab</th>
+            <th th:text="#{main.employeecontract.validuntil.text}">Gültig bis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="neo : ${preview.newEmployeeOrders}">
+            <td th:text="${neo.employeeFullName}"></td>
+            <td th:text="${preview.targetSuborder.completeOrderSignAndDescription}"></td>
+            <td th:text="${#temporals.format(neo.fromDate, 'dd.MM.yyyy')}"></td>
+            <td>
+              <span th:if="${neo.untilDate != null}" th:text="${#temporals.format(neo.untilDate, 'dd.MM.yyyy')}"></span>
+              <span th:if="${neo.untilDate == null}" th:text="#{main.movetimereports.preview.openend}">offen</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Confirm / Back actions -->
+  <div th:if="${not #lists.isEmpty(preview.timereports)}" class="d-flex gap-2 mb-3">
+    <form th:action="@{/dailyreports/move/confirm}" method="post">
+      <input type="hidden" name="sourceSuborderId" th:value="${form.sourceSuborderId}" />
+      <input type="hidden" name="targetSuborderId" th:value="${form.targetSuborderId}" />
+      <input type="hidden" name="fromDate" th:value="${form.fromDate}" />
+      <input type="hidden" name="toDate" th:value="${form.toDate}" />
+      <input th:each="ecId : ${form.employeeContractIds}"
+             type="hidden" name="employeeContractIds" th:value="${ecId}" />
+      <button type="submit" class="btn btn-danger"
+              th:text="#{main.movetimereports.button.confirm}">Umbuchung bestätigen</button>
+    </form>
+    <a th:href="@{/dailyreports/move}" class="btn btn-secondary"
+       th:text="#{main.general.button.cancel.text}">Zurück</a>
+  </div>
+  <div th:if="${#lists.isEmpty(preview.timereports)}" class="mb-3">
+    <a th:href="@{/dailyreports/move}" class="btn btn-secondary"
+       th:text="#{main.general.button.cancel.text}">Zurück</a>
+  </div>
+
+</section>
+</body>
+</html>
