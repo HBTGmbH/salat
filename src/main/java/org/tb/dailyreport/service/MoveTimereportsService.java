@@ -3,13 +3,11 @@ package org.tb.dailyreport.service;
 import static org.tb.common.exception.ErrorCode.SO_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
-import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.common.exception.InvalidDataException;
-import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.service.MoveTimereportsPreview.NewEmployeeorderInfo;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
@@ -35,18 +31,17 @@ import org.tb.order.service.EmployeeorderService;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Authorized
+@Authorized(requiresManager = true)
 public class MoveTimereportsService {
 
   private final TimereportDAO timereportDAO;
-  private final TimereportRepository timereportRepository;
+  private final TimereportService timereportService;
   private final SuborderDAO suborderDAO;
   private final EmployeeorderDAO employeeorderDAO;
   private final EmployeeorderService employeeorderService;
   private final EmployeecontractService employeecontractService;
 
   @Transactional(readOnly = true)
-  @Authorized(requiresManager = true)
   public MoveTimereportsPreview preview(
       long sourceSuborderId, long targetSuborderId,
       List<Long> employeeContractIds, LocalDate fromDate, LocalDate toDate) {
@@ -62,7 +57,6 @@ public class MoveTimereportsService {
     return new MoveTimereportsPreview(timereports, newOrders, sourceSuborder, targetSuborder, fromDate, toDate);
   }
 
-  @Authorized(requiresManager = true)
   public void move(
       long sourceSuborderId, long targetSuborderId,
       List<Long> employeeContractIds, LocalDate fromDate, LocalDate toDate) {
@@ -87,17 +81,16 @@ public class MoveTimereportsService {
       }
     }
 
-    // Batch-fetch timereport entities and reassign to target suborder + employee order
-    var ids = timereports.stream().map(TimereportDTO::getId).toList();
-    var timereportMap = new HashMap<Long, Timereport>();
-    timereportRepository.findAllById(ids).forEach(tr -> timereportMap.put(tr.getId(), tr));
     for (var dto : timereports) {
-      var tr = timereportMap.get(dto.getId());
-      if (tr == null) {
-        throw new InvalidDataException(TR_TIME_REPORT_NOT_FOUND, dto.getId());
-      }
-      tr.setSuborder(targetSuborder);
-      tr.setEmployeeorder(employeeOrders.get(dto.getEmployeecontractId()));
+      timereportService.updateTimereport(
+          dto.getId(),
+          dto.getEmployeecontractId(),
+          employeeOrders.get(dto.getEmployeecontractId()).getId(),
+          dto.getReferenceday(),
+          dto.getTaskdescription(),
+          dto.isTraining(),
+          dto.getDurationhours(),
+          dto.getDurationminutes());
     }
   }
 
