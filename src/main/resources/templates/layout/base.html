@@ -100,6 +100,12 @@
                      th:text="#{main.general.mainmenu.acceptance.text}">
                     Abnahme
                   </a>
+                  <a class="dropdown-item" th:href="@{/dailyreports/move}"
+                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                     th:classappend="${subSection == 'move-timereports'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.movetimereports.text}">
+                    Buchungen umbuchen
+                  </a>
                 </div>
               </div>
             </div>
