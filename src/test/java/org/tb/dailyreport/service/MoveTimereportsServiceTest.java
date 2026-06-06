@@ -257,7 +257,7 @@ class MoveTimereportsServiceTest {
 
             verify(employeeorderService, never()).create(any());
             verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L),
-                eq(LocalDate.of(2024, 1, 10)), any(), anyBoolean(), anyLong(), anyLong());
+                eq(LocalDate.of(2024, 1, 10)), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
         }
 
         @Test
@@ -286,8 +286,8 @@ class MoveTimereportsServiceTest {
             assertThat(createdEo.getUntilDate()).isEqualTo(LocalDate.of(2024, 12, 31));
             assertThat(createdEo.getSuborder()).isSameAs(target);
             assertThat(createdEo.getEmployeecontract()).isSameAs(contract);
-            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong());
-            verify(timereportService).updateTimereport(eq(101L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong());
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
+            verify(timereportService).updateTimereport(eq(101L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
         }
 
         @Test
@@ -314,8 +314,8 @@ class MoveTimereportsServiceTest {
             var captor = ArgumentCaptor.forClass(Employeeorder.class);
             verify(employeeorderService).create(captor.capture());
             assertThat(captor.getValue().getFromDate()).isEqualTo(LocalDate.of(2024, 1, 10));
-            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), anyLong(), anyLong());
-            verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), anyLong(), anyLong());
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
+            verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), anyLong(), anyLong(), eq(true));
         }
     }
 }
