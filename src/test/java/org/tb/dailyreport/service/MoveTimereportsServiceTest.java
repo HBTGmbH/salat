@@ -3,8 +3,10 @@ package org.tb.dailyreport.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,10 +24,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.common.exception.ErrorCodeException;
-import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
-import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Employeeorder;
@@ -42,7 +42,7 @@ class MoveTimereportsServiceTest {
     @Mock
     private TimereportDAO timereportDAO;
     @Mock
-    private TimereportRepository timereportRepository;
+    private TimereportService timereportService;
     @Mock
     private SuborderDAO suborderDAO;
     @Mock
@@ -74,10 +74,10 @@ class MoveTimereportsServiceTest {
                 .build();
     }
 
-    private Timereport timereportWithId(long id) {
-        var tr = new Timereport();
-        ReflectionTestUtils.setField(tr, "id", id);
-        return tr;
+    private Employeeorder employeeorderWithId(long id) {
+        var eo = new Employeeorder();
+        ReflectionTestUtils.setField(eo, "id", id);
+        return eo;
     }
 
     @Nested
@@ -243,23 +243,21 @@ class MoveTimereportsServiceTest {
     class Move {
 
         @Test
-        void existingEmployeeOrderOnTarget_timereportReassignedToExistingOrder() {
+        void existingEmployeeOrderOnTarget_timereportReassignedViaService() {
             var target = suborder(TARGET_ID, LocalDate.of(2024, 1, 1), null);
             when(suborderDAO.getSuborderById(TARGET_ID)).thenReturn(target);
             when(timereportDAO.getTimereportsByDatesAndSuborderId(FROM, TO, SOURCE_ID)).thenReturn(List.of(
                 dto(100L, 10L, "Mustermann", LocalDate.of(2024, 1, 10))
             ));
-            var existingEo = new Employeeorder();
+            var existingEo = employeeorderWithId(99L);
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
                 .thenReturn(List.of(existingEo));
-            var timereport = timereportWithId(100L);
-            when(timereportRepository.findAllById(any())).thenReturn(List.of(timereport));
 
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
             verify(employeeorderService, never()).create(any());
-            assertThat(timereport.getSuborder()).isSameAs(target);
-            assertThat(timereport.getEmployeeorder()).isSameAs(existingEo);
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L),
+                eq(LocalDate.of(2024, 1, 10)), any(), anyBoolean(), anyLong(), anyLong());
         }
 
         @Test
@@ -274,9 +272,10 @@ class MoveTimereportsServiceTest {
                 .thenReturn(List.of());
             var contract = new Employeecontract();
             when(employeecontractService.getEmployeecontractById(10L)).thenReturn(contract);
-            var tr1 = timereportWithId(100L);
-            var tr2 = timereportWithId(101L);
-            when(timereportRepository.findAllById(any())).thenReturn(List.of(tr1, tr2));
+            doAnswer(inv -> {
+                ReflectionTestUtils.setField(inv.<Employeeorder>getArgument(0), "id", 55L);
+                return null;
+            }).when(employeeorderService).create(any());
 
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
@@ -287,8 +286,8 @@ class MoveTimereportsServiceTest {
             assertThat(createdEo.getUntilDate()).isEqualTo(LocalDate.of(2024, 12, 31));
             assertThat(createdEo.getSuborder()).isSameAs(target);
             assertThat(createdEo.getEmployeecontract()).isSameAs(contract);
-            assertThat(tr1.getSuborder()).isSameAs(target);
-            assertThat(tr2.getSuborder()).isSameAs(target);
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong());
+            verify(timereportService).updateTimereport(eq(101L), eq(10L), eq(55L), any(), any(), anyBoolean(), anyLong(), anyLong());
         }
 
         @Test
@@ -299,22 +298,24 @@ class MoveTimereportsServiceTest {
                 dto(100L, 10L, "Andersen", LocalDate.of(2024, 1, 5)),
                 dto(101L, 20L, "Mustermann", LocalDate.of(2024, 1, 10))
             ));
-            var existingEo = new Employeeorder();
+            var existingEo = employeeorderWithId(99L);
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
                 .thenReturn(List.of(existingEo));
             when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(20L, TARGET_ID))
                 .thenReturn(List.of());
             when(employeecontractService.getEmployeecontractById(20L)).thenReturn(new Employeecontract());
-            var tr1 = timereportWithId(100L);
-            var tr2 = timereportWithId(101L);
-            when(timereportRepository.findAllById(any())).thenReturn(List.of(tr1, tr2));
+            doAnswer(inv -> {
+                ReflectionTestUtils.setField(inv.<Employeeorder>getArgument(0), "id", 77L);
+                return null;
+            }).when(employeeorderService).create(any());
 
             classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
             var captor = ArgumentCaptor.forClass(Employeeorder.class);
             verify(employeeorderService).create(captor.capture());
             assertThat(captor.getValue().getFromDate()).isEqualTo(LocalDate.of(2024, 1, 10));
-            assertThat(tr1.getEmployeeorder()).isSameAs(existingEo);
+            verify(timereportService).updateTimereport(eq(100L), eq(10L), eq(99L), any(), any(), anyBoolean(), anyLong(), anyLong());
+            verify(timereportService).updateTimereport(eq(101L), eq(20L), eq(77L), any(), any(), anyBoolean(), anyLong(), anyLong());
         }
     }
 }

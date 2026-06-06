@@ -5,7 +5,6 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,7 +27,7 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/dailyreports/move")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@PreAuthorize("hasRole('MANAGER')")
 public class MoveTimereportsController {
 
   private final MoveTimereportsService moveTimereportsService;
@@ -40,14 +39,12 @@ public class MoveTimereportsController {
   private final ErrorCodeViewHelper errorCodeViewHelper;
 
   @GetMapping
-  @PreAuthorize("hasRole('MANAGER')")
   public String form(Model model) {
     populateFormModel(model, new MoveTimereportsForm());
     return "dailyreport/move-timereports-form";
   }
 
   @PostMapping("/preview")
-  @PreAuthorize("hasRole('MANAGER')")
   public String preview(@ModelAttribute MoveTimereportsForm form, Model model) {
     if (!validateForm(form, model)) {
       populateFormModel(model, form);
@@ -72,7 +69,6 @@ public class MoveTimereportsController {
   }
 
   @PostMapping("/confirm")
-  @PreAuthorize("hasRole('MANAGER')")
   public String confirm(@ModelAttribute MoveTimereportsForm form, RedirectAttributes redirectAttributes) {
     if (form.getSourceSuborderId() == null || form.getTargetSuborderId() == null
         || form.getFromDateTyped() == null || form.getToDateTyped() == null) {
@@ -99,7 +95,6 @@ public class MoveTimereportsController {
   }
 
   @PostMapping("/source-suborders")
-  @PreAuthorize("hasRole('MANAGER')")
   public String sourceSuborders(@ModelAttribute MoveTimereportsForm form, Model model,
       HttpServletRequest request) {
     populateFormModel(model, form);
@@ -110,7 +105,6 @@ public class MoveTimereportsController {
   }
 
   @PostMapping("/target-suborders")
-  @PreAuthorize("hasRole('MANAGER')")
   public String targetSuborders(@ModelAttribute MoveTimereportsForm form, Model model,
       HttpServletRequest request) {
     populateFormModel(model, form);
@@ -121,7 +115,6 @@ public class MoveTimereportsController {
   }
 
   @PostMapping("/source-customerorders")
-  @PreAuthorize("hasRole('MANAGER')")
   public String sourceCustomerOrders(@ModelAttribute MoveTimereportsForm form, Model model,
       HttpServletRequest request) {
     form.setSourceCustomerOrderId(null);
@@ -135,7 +128,6 @@ public class MoveTimereportsController {
   }
 
   @PostMapping("/target-customerorders")
-  @PreAuthorize("hasRole('MANAGER')")
   public String targetCustomerOrders(@ModelAttribute MoveTimereportsForm form, Model model,
       HttpServletRequest request) {
     form.setTargetCustomerOrderId(null);
