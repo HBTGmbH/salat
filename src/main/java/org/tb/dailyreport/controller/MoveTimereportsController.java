@@ -190,7 +190,8 @@ public class MoveTimereportsController {
   }
 
   private void addSectionAttributes(Model model) {
-    model.addAttribute("section", "release");
+    model.addAttribute("section", "dailyreport");
     model.addAttribute("subSection", "move-timereports");
+    model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
   }
 }

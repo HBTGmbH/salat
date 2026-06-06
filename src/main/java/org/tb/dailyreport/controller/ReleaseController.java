@@ -46,7 +46,7 @@ public class ReleaseController {
         model.addAttribute("selfReleaseDateStr", defaultReleaseDateStr(contract));
         model.addAttribute("releasedUntil", contract != null ? format(contract.getReportReleaseDate()) : "");
         model.addAttribute("acceptedUntil", contract != null ? format(contract.getReportAcceptanceDate()) : "");
-        model.addAttribute("section", "release");
+        model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "release");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.release.text"));
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
