@@ -1,0 +1,147 @@
+package org.tb.dailyreport.service;
+
+import static org.tb.common.util.DateUtils.today;
+
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.Authorized;
+import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.MatrixData;
+import org.tb.dailyreport.domain.Workingday;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+@Authorized
+public class MatrixService {
+
+    private final TimereportService timereportService;
+    private final PublicholidayService publicholidayService;
+    private final WorkingdayService workingdayService;
+
+    @Transactional(readOnly = true)
+    public MatrixData buildMatrix(YearMonth yearMonth, long employeeContractId) {
+        LocalDate dateFirst = yearMonth.atDay(1);
+        LocalDate dateLast = yearMonth.atEndOfMonth();
+        LocalDate today = today();
+
+        var reports = employeeContractId > 0
+            ? timereportService.getTimereportsByDatesAndEmployeeContractId(employeeContractId, dateFirst, dateLast)
+            : timereportService.getTimereportsByDates(dateFirst, dateLast);
+
+        Map<LocalDate, String> holidays = publicholidayService
+            .getPublicHolidaysBetween(dateFirst, dateLast)
+            .stream()
+            .collect(Collectors.toMap(h -> h.getRefdate(), h -> h.getName()));
+
+        Map<LocalDate, Workingday> workingdays = employeeContractId > 0
+            ? workingdayService.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast)
+                .stream().collect(Collectors.toMap(Workingday::getRefday, Function.identity()))
+            : Map.of();
+
+        List<LocalDate> days = dateFirst.datesUntil(dateLast.plusDays(1)).collect(Collectors.toList());
+
+        List<MatrixData.DayHeader> dayHeaders = days.stream()
+            .map(d -> new MatrixData.DayHeader(
+                d.getDayOfMonth(),
+                d,
+                weekdayKey(d.getDayOfWeek()),
+                isWeekend(d),
+                holidays.containsKey(d),
+                d.isEqual(today)))
+            .toList();
+
+        List<MatrixData.Row> rows = reports.stream()
+            .collect(Collectors.groupingBy(r -> r.getSuborderId()))
+            .entrySet().stream()
+            .sorted(Comparator.comparing(e -> e.getValue().get(0).getCompleteOrderSign()))
+            .map(e -> buildRow(e.getValue(), days, holidays))
+            .toList();
+
+        Map<LocalDate, Duration> durationByDay = reports.stream()
+            .collect(Collectors.toMap(
+                r -> r.getReferenceday(),
+                r -> r.getDuration(),
+                Duration::plus));
+
+        List<MatrixData.FooterDay> footerDays = days.stream()
+            .map(d -> {
+                Duration duration = durationByDay.getOrDefault(d, Duration.ZERO);
+                Workingday wd = workingdays.get(d);
+                boolean notWorked = wd != null && wd.getType() == Workingday.WorkingDayType.NOT_WORKED;
+                return new MatrixData.FooterDay(
+                    DurationUtils.format(duration, false),
+                    notWorked,
+                    isWeekend(d),
+                    holidays.containsKey(d),
+                    duration.isZero());
+            })
+            .toList();
+
+        Duration grand = reports.stream()
+            .map(r -> r.getDuration())
+            .reduce(Duration.ZERO, Duration::plus);
+
+        return new MatrixData(dayHeaders, rows, footerDays, DurationUtils.format(grand));
+    }
+
+    private MatrixData.Row buildRow(
+            List<org.tb.dailyreport.domain.TimereportDTO> suborderReports,
+            List<LocalDate> days,
+            Map<LocalDate, String> holidays) {
+
+        var first = suborderReports.get(0);
+        String completeSign = first.getCompleteOrderSign();
+        String customerSign = first.getCustomerorderSign();
+        int sep = completeSign.indexOf('/');
+        String suborderSign = sep >= 0 ? completeSign.substring(sep + 1) : completeSign;
+
+        Map<LocalDate, Duration> durationByDate = suborderReports.stream()
+            .collect(Collectors.toMap(
+                r -> r.getReferenceday(),
+                r -> r.getDuration(),
+                Duration::plus));
+
+        Duration rowTotal = Duration.ZERO;
+        List<MatrixData.Cell> cells = new ArrayList<>();
+        for (LocalDate day : days) {
+            Duration duration = durationByDate.getOrDefault(day, Duration.ZERO);
+            rowTotal = rowTotal.plus(duration);
+            cells.add(new MatrixData.Cell(
+                DurationUtils.format(duration, false),
+                duration.isZero(),
+                isWeekend(day),
+                holidays.containsKey(day)));
+        }
+
+        return new MatrixData.Row(customerSign, suborderSign, cells, DurationUtils.format(rowTotal));
+    }
+
+    private String weekdayKey(DayOfWeek dow) {
+        return switch (dow) {
+            case MONDAY -> "main.matrixoverview.weekdays.monday.text";
+            case TUESDAY -> "main.matrixoverview.weekdays.tuesday.text";
+            case WEDNESDAY -> "main.matrixoverview.weekdays.wednesday.text";
+            case THURSDAY -> "main.matrixoverview.weekdays.thursday.text";
+            case FRIDAY -> "main.matrixoverview.weekdays.friday.text";
+            case SATURDAY -> "main.matrixoverview.weekdays.saturday.text";
+            case SUNDAY -> "main.matrixoverview.weekdays.sunday.text";
+        };
+    }
+
+    private boolean isWeekend(LocalDate d) {
+        var dow = d.getDayOfWeek();
+        return dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY;
+    }
+}

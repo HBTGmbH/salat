@@ -82,7 +82,9 @@
                   <a class="dropdown-item" th:href="@{/do/ShowDailyReport}" th:text="#{main.general.mainmenu.daily.text}">
                     Einzelübersicht
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowMatrix}" th:text="#{main.general.mainmenu.matrixmenu.text}">
+                  <a class="dropdown-item" th:href="@{/dailyreport/matrix}"
+                     th:classappend="${subSection == 'matrix'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.matrixmenu.text}">
                     Matrixübersicht
                   </a>
                   <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}"
@@ -380,7 +382,7 @@
           </div>
         </div>
       </div>
-      <div class="container-xl" layout:fragment="content">
+      <div th:class="${containerClass ?: 'container-xl'}" layout:fragment="content">
         <!-- page specific content -->
       </div>
     </div>
