@@ -42,10 +42,6 @@
         <input type="hidden" name="year" th:value="${yearMonth.year}"/>
         <select name="employeeContractId" class="form-select form-select-sm tomselect"
                 onchange="this.form.submit()" style="min-width: 200px">
-          <option th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-                  value="-1"
-                  th:selected="${selectedContractId == -1}"
-                  th:text="#{main.matrixoverview.headline.allemployees.text}">Alle Mitarbeiter</option>
           <option th:each="ec : ${employeecontracts}"
                   th:value="${ec.id}"
                   th:text="${ec.employee.name}"
