@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<section layout:fragment="content">
+
+<style>
+  .matrix-first-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--tblr-card-bg, var(--tblr-body-bg));
+  }
+  thead .matrix-first-col { z-index: 3; }
+  tfoot .matrix-first-col { z-index: 3; }
+  .matrix-day-col { min-width: 2.5rem; }
+</style>
+
+<!-- Filter bar -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+
+      <!-- Month navigation -->
+      <div class="btn-group btn-group-sm">
+        <a class="btn btn-outline-secondary"
+           th:href="@{/dailyreport/matrix(month=${prevMonth},year=${prevYear},employeeContractId=${selectedContractId})}">
+          <i class="ti ti-chevron-left m-0"></i>
+        </a>
+        <span class="btn btn-outline-secondary disabled" th:text="${title}">Juni 2026</span>
+        <a class="btn btn-outline-secondary"
+           th:href="@{/dailyreport/matrix(month=${nextMonth},year=${nextYear},employeeContractId=${selectedContractId})}">
+          <i class="ti ti-chevron-right m-0"></i>
+        </span>
+      </div>
+      <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix(employeeContractId=${selectedContractId})}">Heute</a>
+
+      <!-- Employee selector (only when multiple contracts are viewable) -->
+      <form class="ms-auto" method="get" th:action="@{/dailyreport/matrix}"
+            th:if="${#lists.size(employeecontracts) > 1}">
+        <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
+        <input type="hidden" name="year" th:value="${yearMonth.year}"/>
+        <select name="employeeContractId" class="form-select form-select-sm tomselect"
+                onchange="this.form.submit()" style="min-width: 200px">
+          <option th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                  value="-1"
+                  th:selected="${selectedContractId == -1}"
+                  th:text="#{main.matrixoverview.headline.allemployees.text}">Alle Mitarbeiter</option>
+          <option th:each="ec : ${employeecontracts}"
+                  th:value="${ec.id}"
+                  th:text="${ec.employee.name}"
+                  th:selected="${ec.id == selectedContractId}">
+          </option>
+        </select>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Matrix table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-vcenter table-sm card-table" style="font-size: 0.82rem">
+
+      <thead>
+        <tr>
+          <th class="matrix-first-col text-nowrap" style="min-width: 200px"
+              th:text="#{main.matrixoverview.table.order}">Auftrag</th>
+          <th th:each="dh : ${matrixData.dayHeaders}"
+              class="text-center matrix-day-col px-1 text-nowrap"
+              th:classappend="${dh.weekend} ? ' bg-light text-muted' : (${dh.publicHoliday} ? ' bg-warning-lt' : (${dh.today} ? ' bg-azure-lt' : ''))">
+            [[${dh.day}]]<br>
+            <span style="font-size:0.7rem"
+                  th:text="${#strings.substring(#messages.msg(dh.weekdayKey), 0, 2)}">Mo</span>
+          </th>
+          <th class="text-center px-1 fw-bold text-nowrap"
+              th:text="#{main.matrixoverview.table.sum.text}">Σ</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <!-- Empty state -->
+        <tr th:if="${#lists.isEmpty(matrixData.rows)}">
+          <td th:colspan="${#lists.size(matrixData.dayHeaders) + 2}" class="text-center text-muted py-3">
+            Keine Buchungen in diesem Monat.
+          </td>
+        </tr>
+
+        <tr th:each="row : ${matrixData.rows}">
+          <td class="matrix-first-col text-nowrap">
+            <span class="text-muted small" th:text="${row.customerOrderSign}">ALPHA</span>
+            <span class="text-muted mx-1">·</span>
+            <span th:text="${row.suborderSign}">DEV-BACKEND</span>
+          </td>
+          <td th:each="cell : ${row.cells}"
+              class="text-center px-1"
+              th:classappend="${cell.weekend} ? ' bg-light' : (${cell.publicHoliday} ? ' bg-warning-lt' : '')">
+            <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
+            <span th:if="${cell.empty}" class="text-muted">—</span>
+          </td>
+          <td class="text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>
+        </tr>
+
+      </tbody>
+
+      <tfoot>
+        <tr class="table-group-divider fw-medium">
+          <td class="matrix-first-col text-nowrap"
+              th:text="#{main.matrixoverview.table.overall.text}">GESAMT</td>
+          <td th:each="fd : ${matrixData.footerDays}"
+              class="text-center px-1"
+              th:classappend="${fd.weekend} ? ' bg-light text-muted' : (${fd.publicHoliday} ? ' bg-warning-lt' : '')">
+            <span th:if="${fd.notWorked}" class="text-warning small">NW</span>
+            <span th:if="${not fd.notWorked and not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
+            <span th:if="${not fd.notWorked and fd.empty and not fd.weekend and not fd.publicHoliday}"
+                  class="text-muted">—</span>
+          </td>
+          <td class="text-center px-1 fw-bold" th:text="${matrixData.totalString}">0:00</td>
+        </tr>
+      </tfoot>
+
+    </table>
+  </div>
+
+  <div class="card-footer d-flex gap-3 flex-wrap align-items-center">
+    <span>
+      <span th:text="#{main.matrixoverview.headline.actualtime.text}">IST-Stunden:</span>
+      <strong th:text="${matrixData.totalString}">0:00</strong>
+    </span>
+    <span class="text-muted ms-auto small">
+      <span class="badge bg-light text-muted border me-1">Sa/So</span>
+      <span class="badge bg-warning-lt me-1">Feiertag</span>
+      <span class="badge bg-azure-lt me-1">Heute</span>
+      <span class="me-1 text-warning small fw-medium">NW</span>
+      <span class="text-muted small" th:text="#{main.matrixoverview.table.notworked.text}">Nicht gearbeitet</span>
+    </span>
+  </div>
+</div>
+
+</section>
+</html>
