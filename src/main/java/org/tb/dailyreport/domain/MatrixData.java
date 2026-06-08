@@ -20,6 +20,9 @@ public record MatrixData(
     public record Row(
         String customerOrderSign,
         String suborderSign,
+        String customer,
+        String customerOrderDesc,
+        String suborderDesc,
         List<Cell> cells,
         String totalString) {}
 
