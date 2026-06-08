@@ -21,6 +21,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.MatrixData;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.employee.service.EmployeecontractService;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class MatrixService {
     private final PublicholidayService publicholidayService;
     private final OvertimeService overtimeService;
     private final WorkingdayService workingdayService;
+    private final EmployeecontractService employeecontractService;
 
     @Transactional(readOnly = true)
     public MatrixData buildMatrix(YearMonth yearMonth, long employeeContractId) {
@@ -132,6 +134,33 @@ public class MatrixService {
         }
 
         return new MatrixData(dayHeaders, rows, footerDays, DurationUtils.format(grand), targetString, diffString, diffNegative);
+    }
+
+    public void fillNotWorked(YearMonth yearMonth, long employeeContractId) {
+        var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
+        LocalDate first = yearMonth.atDay(1);
+        LocalDate last = yearMonth.atEndOfMonth();
+        if (first.isBefore(employeecontract.getValidFrom())) {
+            first = employeecontract.getValidFrom();
+        }
+        if (employeecontract.getValidUntil() != null && last.isAfter(employeecontract.getValidUntil())) {
+            last = employeecontract.getValidUntil();
+        }
+        if (first.isAfter(last)) return;
+        LocalDate effectiveFirst = first;
+        LocalDate effectiveLast = last;
+        effectiveFirst.datesUntil(effectiveLast.plusDays(1)).forEach(day -> {
+            if (workingdayService.isRegularWorkingday(day)) {
+                boolean hasBookings = !timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, day).isEmpty();
+                if (!hasBookings && workingdayService.getWorkingday(employeeContractId, day) == null) {
+                    var workingday = new Workingday();
+                    workingday.setEmployeecontract(employeecontract);
+                    workingday.setRefday(day);
+                    workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
+                    workingdayService.upsertWorkingday(workingday);
+                }
+            }
+        });
     }
 
     private MatrixData.Row buildRow(
