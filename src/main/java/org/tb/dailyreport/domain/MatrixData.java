@@ -7,7 +7,10 @@ public record MatrixData(
     List<DayHeader> dayHeaders,
     List<Row> rows,
     List<FooterDay> footerDays,
-    String totalString) {
+    String totalString,
+    String targetString,
+    String diffString,
+    boolean diffNegative) {
 
     public record DayHeader(
         int day,

@@ -201,6 +201,15 @@
       <span th:text="#{main.matrixoverview.headline.actualtime.text}">IST-Stunden:</span>
       <strong th:text="${matrixData.totalString}">0:00</strong>
     </span>
+    <span th:if="${matrixData.targetString != null}">
+      <span th:text="#{main.matrixoverview.headline.targettime.text}">SOLL-Stunden:</span>
+      <strong th:text="${matrixData.targetString}">0:00</strong>
+    </span>
+    <span th:if="${matrixData.diffString != null}"
+          th:classappend="${matrixData.diffNegative ? 'text-warning' : 'text-success'}">
+      <span th:text="#{main.matrixoverview.headline.difference.text}">Differenz:</span>
+      <strong th:text="${matrixData.diffString}">+0:00</strong>
+    </span>
     <span class="text-muted ms-auto small">
       <span class="badge bg-azure-lt text-muted me-1">Sa/So</span>
       <span class="badge bg-warning-lt me-1">Feiertag</span>
