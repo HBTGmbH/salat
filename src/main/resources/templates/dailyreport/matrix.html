@@ -55,7 +55,11 @@
            th:href="@{/dailyreport/matrix(month=${prevMonth},year=${prevYear},employeeContractId=${selectedContractId})}">
           <i class="ti ti-chevron-left m-0"></i>
         </a>
-        <span class="btn btn-outline-secondary disabled" th:text="${title}">Juni 2026</span>
+        <input type="month" id="matrix-month-input"
+               class="btn btn-outline-secondary"
+               th:value="${yearMonth}"
+               th:attr="data-ec-id=${selectedContractId}"
+               style="cursor:pointer">
         <a class="btn btn-outline-secondary"
            th:href="@{/dailyreport/matrix(month=${nextMonth},year=${nextYear},employeeContractId=${selectedContractId})}">
           <i class="ti ti-chevron-right m-0"></i>
@@ -248,5 +252,10 @@
     }
   });
 })();
+
+document.getElementById('matrix-month-input')?.addEventListener('change', function () {
+  const [year, month] = this.value.split('-');
+  location.href = '/dailyreport/matrix?month=' + parseInt(month) + '&year=' + year + '&employeeContractId=' + this.dataset.ecId;
+});
 </script>
 </html>
