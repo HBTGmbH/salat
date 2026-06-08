@@ -134,22 +134,24 @@ public class MatrixService {
         String customerOrderDesc = first.getCustomerorderDescription();
         String suborderDesc = first.getSuborderDescription();
 
-        Map<LocalDate, Duration> durationByDate = suborderReports.stream()
-            .collect(Collectors.toMap(
-                r -> r.getReferenceday(),
-                r -> r.getDuration(),
-                Duration::plus));
+        Map<LocalDate, List<org.tb.dailyreport.domain.TimereportDTO>> reportsByDate = suborderReports.stream()
+            .collect(Collectors.groupingBy(r -> r.getReferenceday()));
 
         Duration rowTotal = Duration.ZERO;
         List<MatrixData.Cell> cells = new ArrayList<>();
         for (LocalDate day : days) {
-            Duration duration = durationByDate.getOrDefault(day, Duration.ZERO);
+            var dayReports = reportsByDate.getOrDefault(day, List.of());
+            Duration duration = dayReports.stream().map(r -> r.getDuration()).reduce(Duration.ZERO, Duration::plus);
             rowTotal = rowTotal.plus(duration);
+            var details = dayReports.stream()
+                .map(r -> new MatrixData.ReportDetail(DurationUtils.format(r.getDuration()), r.getTaskdescription()))
+                .toList();
             cells.add(new MatrixData.Cell(
                 DurationUtils.format(duration, false),
                 duration.isZero(),
                 isWeekend(day),
-                holidays.containsKey(day)));
+                holidays.containsKey(day),
+                details));
         }
 
         return new MatrixData.Row(customerOrderSign, suborderSign, customer, customerOrderDesc, suborderDesc, cells, DurationUtils.format(rowTotal));

@@ -26,11 +26,14 @@ public record MatrixData(
         List<Cell> cells,
         String totalString) {}
 
+    public record ReportDetail(String durationString, String taskDescription) {}
+
     public record Cell(
         String durationString,
         boolean empty,
         boolean weekend,
-        boolean publicHoliday) {}
+        boolean publicHoliday,
+        List<ReportDetail> details) {}
 
     public record FooterDay(
         String workingTimeString,
