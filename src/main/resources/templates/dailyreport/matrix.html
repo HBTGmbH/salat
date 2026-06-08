@@ -130,7 +130,7 @@
           <td style="border-left: 2px solid"></td>
         </tr>
 
-        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+        <tr th:if="${showBeginBreakEnd}" class="text-muted small">
           <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.startofwork.text}">Beginn</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
@@ -140,7 +140,7 @@
           <td style="border-left: 2px solid"></td>
         </tr>
 
-        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+        <tr th:if="${showBeginBreakEnd}" class="text-muted small">
           <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.breakduration.text}">Pause</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
@@ -150,7 +150,7 @@
           <td style="border-left: 2px solid"></td>
         </tr>
 
-        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+        <tr th:if="${showBeginBreakEnd}" class="text-muted small">
           <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.endofwork.text}">Ende</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
