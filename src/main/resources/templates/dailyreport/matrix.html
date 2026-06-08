@@ -6,17 +6,19 @@
 
 <style>
   .matrix-first-col {
-    position: sticky;
-    left: 0;
-    z-index: 2;
     background: var(--tblr-card-bg, var(--tblr-body-bg));
+    border-right: 2px solid;
   }
-  thead .matrix-first-col { z-index: 3; }
-  tfoot .matrix-first-col { z-index: 3; }
   .matrix-day-col { min-width: 2.5rem; }
   .matrix-today {
     border-left: 5px solid var(--tblr-primary);
     border-right: 5px solid var(--tblr-primary);
+  }
+  .matrix-row-even td:not([class*="bg-"]) {
+    background-color: rgba(0, 0, 0, 0.025);
+  }
+  [data-bs-theme="dark"] .matrix-row-even td:not([class*="bg-"]) {
+    background-color: rgba(255, 255, 255, 0.04);
   }
 </style>
 
@@ -65,7 +67,7 @@
 
       <thead>
         <tr style="border-bottom: 2px solid">
-          <th class="matrix-first-col text-nowrap" style="min-width: 200px; border-right: 2px solid"
+          <th class="matrix-first-col text-nowrap"
               th:text="#{main.matrixoverview.table.order}">Auftrag</th>
           <th th:each="dh : ${matrixData.dayHeaders}"
               class="text-center matrix-day-col px-1 text-nowrap"
@@ -89,8 +91,8 @@
           </td>
         </tr>
 
-        <tr th:each="row : ${matrixData.rows}">
-          <td class="matrix-first-col text-nowrap" style="border-right: 2px solid">
+        <tr th:each="row, rs : ${matrixData.rows}" th:classappend="${rs.even ? 'matrix-row-even' : ''}">
+          <td class="matrix-first-col text-nowrap">
             <span class="text-muted small" th:text="${row.customerOrderSign}">ALPHA</span>
             <span class="text-muted mx-1">·</span>
             <span th:text="${row.suborderSign}">DEV-BACKEND</span>
@@ -108,7 +110,7 @@
 
       <tfoot>
         <tr class="table-group-divider fw-medium" style="border-top: 2px solid">
-          <td class="matrix-first-col text-nowrap" style="border-right: 2px solid"
+          <td class="matrix-first-col text-nowrap"
               th:text="#{main.matrixoverview.table.overall.text}">GESAMT</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
