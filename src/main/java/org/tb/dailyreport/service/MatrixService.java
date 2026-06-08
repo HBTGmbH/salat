@@ -30,6 +30,7 @@ public class MatrixService {
 
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
+    private final OvertimeService overtimeService;
     private final WorkingdayService workingdayService;
 
     @Transactional(readOnly = true)
@@ -119,7 +120,18 @@ public class MatrixService {
             .map(r -> r.getDuration())
             .reduce(Duration.ZERO, Duration::plus);
 
-        return new MatrixData(dayHeaders, rows, footerDays, DurationUtils.format(grand));
+        String targetString = null;
+        String diffString = null;
+        boolean diffNegative = false;
+        if (employeeContractId > 0) {
+            Duration target = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, dateLast);
+            Duration diff = grand.minus(target);
+            targetString = DurationUtils.format(target);
+            diffString = (diff.isNegative() ? "" : "+") + DurationUtils.format(diff);
+            diffNegative = diff.isNegative();
+        }
+
+        return new MatrixData(dayHeaders, rows, footerDays, DurationUtils.format(grand), targetString, diffString, diffNegative);
     }
 
     private MatrixData.Row buildRow(
