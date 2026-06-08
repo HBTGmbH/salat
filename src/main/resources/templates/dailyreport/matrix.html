@@ -246,8 +246,20 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
 });
 
 document.getElementById('matrix-month-input')?.addEventListener('change', function () {
-  const [year, month] = this.value.split('-');
-  location.href = '/dailyreport/matrix?month=' + parseInt(month) + '&year=' + year + '&employeeContractId=' + this.dataset.ecId;
+  const [yearRaw, monthRaw] = this.value.split('-');
+  const year = Number.parseInt(yearRaw, 10);
+  const month = Number.parseInt(monthRaw, 10);
+  const employeeContractId = this.dataset.ecId ?? '';
+
+  if (!Number.isInteger(year) || !Number.isInteger(month)) {
+    return;
+  }
+
+  const url = new URL('/dailyreport/matrix', window.location.origin);
+  url.searchParams.set('month', String(month));
+  url.searchParams.set('year', String(year));
+  url.searchParams.set('employeeContractId', employeeContractId);
+  location.href = url.toString();
 });
 </script>
 </html>
