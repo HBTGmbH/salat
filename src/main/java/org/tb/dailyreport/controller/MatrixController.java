@@ -46,6 +46,11 @@ public class MatrixController {
 
         var matrixData = matrixService.buildMatrix(yearMonth, ecId);
         var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
+        boolean showBeginBreakEnd = contracts.stream()
+            .filter(c -> c.getId() == ecId)
+            .findFirst()
+            .map(c -> !c.getFreelancer())
+            .orElse(false);
 
         YearMonth prev = yearMonth.minusMonths(1);
         YearMonth next = yearMonth.plusMonths(1);
@@ -55,6 +60,7 @@ public class MatrixController {
         model.addAttribute("matrixData", matrixData);
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
+        model.addAttribute("showBeginBreakEnd", showBeginBreakEnd);
         model.addAttribute("yearMonth", yearMonth);
         model.addAttribute("prevMonth", prev.getMonthValue());
         model.addAttribute("prevYear", prev.getYear());
