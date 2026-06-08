@@ -88,7 +88,7 @@
                   <a class="dropdown-item" th:href="@{/dailyreport/matrix}"
                      th:classappend="${subSection == 'matrix'} ? 'active' : ''">
                     <span th:text="#{main.general.mainmenu.matrixmenu.text}">Matrixübersicht</span>
-                    <span class="badge bg-orange ms-1">Beta</span>
+                    <span class="badge bg-purple-lt ms-1">Beta</span>
                   </a>
                   <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}"
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
@@ -107,9 +107,9 @@
                   </a>
                   <a class="dropdown-item" th:href="@{/dailyreports/move}"
                      th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-                     th:classappend="${subSection == 'move-timereports'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.movetimereports.text}">
-                    Buchungen umbuchen
+                     th:classappend="${subSection == 'move-timereports'} ? 'active' : ''">
+                    <span th:text="#{main.general.mainmenu.movetimereports.text}">Buchungen umbuchen</span>
+                    <span class="badge bg-purple-lt ms-1">New</span>
                   </a>
                 </div>
               </div>
