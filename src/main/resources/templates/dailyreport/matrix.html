@@ -93,9 +93,8 @@
 
         <tr th:each="row, rs : ${matrixData.rows}" th:classappend="${rs.even ? 'matrix-row-even' : ''}">
           <td class="matrix-first-col text-nowrap">
-            <span class="text-muted small" th:text="${row.customerOrderSign}">ALPHA</span>
-            <span class="text-muted mx-1">·</span>
-            <span th:text="${row.suborderSign}">DEV-BACKEND</span>
+            <span class="text-muted small nowrap" style="display: block" th:text="|${row.customerOrderSign} · ${row.customerOrderDesc} · ${row.customer}|">1417 · Alpha · Kunde</span>
+            <span style="display: block" th:text="|${row.suborderSign} · ${row.suborderDesc}|">01 · DEV-BACKEND</span>
           </td>
           <td th:each="cell, cs : ${row.cells}"
               class="text-center px-1"

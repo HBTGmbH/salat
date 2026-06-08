@@ -102,10 +102,11 @@ public class MatrixService {
             Map<LocalDate, String> holidays) {
 
         var first = suborderReports.get(0);
-        String completeSign = first.getCompleteOrderSign();
-        String customerSign = first.getCustomerorderSign();
-        int sep = completeSign.indexOf('/');
-        String suborderSign = sep >= 0 ? completeSign.substring(sep + 1) : completeSign;
+        String suborderSign = first.getCompleteOrderSign();
+        String customerOrderSign = first.getCustomerorderSign();
+        String customer = first.getCustomerShortname();
+        String customerOrderDesc = first.getCustomerorderDescription();
+        String suborderDesc = first.getSuborderDescription();
 
         Map<LocalDate, Duration> durationByDate = suborderReports.stream()
             .collect(Collectors.toMap(
@@ -125,7 +126,7 @@ public class MatrixService {
                 holidays.containsKey(day)));
         }
 
-        return new MatrixData.Row(customerSign, suborderSign, cells, DurationUtils.format(rowTotal));
+        return new MatrixData.Row(customerOrderSign, suborderSign, customer, customerOrderDesc, suborderDesc, cells, DurationUtils.format(rowTotal));
     }
 
     private String weekdayKey(DayOfWeek dow) {
