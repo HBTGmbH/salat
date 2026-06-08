@@ -6,12 +6,17 @@ import static org.tb.common.util.DateUtils.today;
 import java.time.YearMonth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.EmployeeService;
@@ -26,6 +31,7 @@ public class MatrixController {
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
+    private final ErrorCodeViewHelper errorCodeViewHelper;
 
     @GetMapping
     public String show(
@@ -73,5 +79,24 @@ public class MatrixController {
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("title", messages.getMessage(monthKey) + " " + targetYear);
         return "dailyreport/matrix";
+    }
+
+    @PostMapping("/fill-not-worked")
+    @PreAuthorize("isAuthenticated()")
+    public String fillNotWorked(
+            @RequestParam Long employeeContractId,
+            @RequestParam Integer month,
+            @RequestParam Integer year,
+            RedirectAttributes redirectAttributes) {
+        try {
+            matrixService.fillNotWorked(YearMonth.of(year, month), employeeContractId);
+            redirectAttributes.addFlashAttribute("toastSuccess",
+                messages.getMessage("main.matrix.fillnotworked.success.text"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream()
+                    .map(Object::toString).findFirst().orElse("Error"));
+        }
+        return "redirect:/dailyreport/matrix?month=" + month + "&year=" + year + "&employeeContractId=" + employeeContractId;
     }
 }
