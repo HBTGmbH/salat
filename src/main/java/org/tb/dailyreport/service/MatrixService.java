@@ -3,6 +3,7 @@ package org.tb.dailyreport.service;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -80,12 +81,26 @@ public class MatrixService {
                 Duration duration = durationByDay.getOrDefault(d, Duration.ZERO);
                 Workingday wd = workingdays.get(d);
                 boolean notWorked = wd != null && wd.getType() == Workingday.WorkingDayType.NOT_WORKED;
+                String beginString = null;
+                String breakString = null;
+                String endString = null;
+                if (wd != null && wd.getType() == Workingday.WorkingDayType.WORKED) {
+                    beginString = "%02d:%02d".formatted(wd.getStarttimehour(), wd.getStarttimeminute());
+                    breakString = DurationUtils.format(wd.getBreakLength(), false);
+                    LocalTime end = LocalTime.of(wd.getStarttimehour(), wd.getStarttimeminute())
+                        .plus(wd.getBreakLength())
+                        .plus(duration);
+                    endString = "%02d:%02d".formatted(end.getHour(), end.getMinute());
+                }
                 return new MatrixData.FooterDay(
                     DurationUtils.format(duration, false),
                     notWorked,
                     isWeekend(d),
                     holidays.containsKey(d),
-                    duration.isZero());
+                    duration.isZero(),
+                    beginString,
+                    breakString,
+                    endString);
             })
             .toList();
 

@@ -114,12 +114,50 @@
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
               th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt text-muted' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
-            <span th:if="${fd.notWorked}" class="text-warning small">NW</span>
-            <span th:if="${not fd.notWorked and not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
-            <span th:if="${not fd.notWorked and fd.empty and not fd.weekend and not fd.publicHoliday}"
-                  class="text-muted">—</span>
+            <span th:if="${not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
+            <span th:if="${fd.empty}" class="text-muted">—</span>
           </td>
           <td class="text-center px-1 fw-bold" th:text="${matrixData.totalString}" style="border-left: 2px solid">0:00</td>
+        </tr>
+
+        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+          <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.notworked.text}">Nicht gearbeitet</td>
+          <td th:each="fd, fs : ${matrixData.footerDays}"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            <span th:if="${fd.notWorked}" class="text-warning">●</span>
+          </td>
+          <td style="border-left: 2px solid"></td>
+        </tr>
+
+        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+          <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.startofwork.text}">Beginn</td>
+          <td th:each="fd, fs : ${matrixData.footerDays}"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            <span th:if="${fd.beginString != null}" th:text="${fd.beginString}">08:00</span>
+          </td>
+          <td style="border-left: 2px solid"></td>
+        </tr>
+
+        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+          <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.breakduration.text}">Pause</td>
+          <td th:each="fd, fs : ${matrixData.footerDays}"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            <span th:if="${fd.breakString != null}" th:text="${fd.breakString}">0:30</span>
+          </td>
+          <td style="border-left: 2px solid"></td>
+        </tr>
+
+        <tr th:if="${selectedContractId > 0}" class="text-muted small">
+          <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.endofwork.text}">Ende</td>
+          <td th:each="fd, fs : ${matrixData.footerDays}"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            <span th:if="${fd.endString != null}" th:text="${fd.endString}">17:00</span>
+          </td>
+          <td style="border-left: 2px solid"></td>
         </tr>
       </tfoot>
 
@@ -135,8 +173,6 @@
       <span class="badge bg-azure-lt text-muted me-1">Sa/So</span>
       <span class="badge bg-warning-lt me-1">Feiertag</span>
       <span class="badge me-1 matrix-today">Heute</span>
-      <span class="me-1 text-warning small fw-medium">NW</span>
-      <span class="text-muted small" th:text="#{main.matrixoverview.table.notworked.text}">Nicht gearbeitet</span>
     </span>
   </div>
 </div>

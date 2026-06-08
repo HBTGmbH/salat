@@ -37,5 +37,8 @@ public record MatrixData(
         boolean notWorked,
         boolean weekend,
         boolean publicHoliday,
-        boolean empty) {}
+        boolean empty,
+        String beginString,
+        String breakString,
+        String endString) {}
 }
