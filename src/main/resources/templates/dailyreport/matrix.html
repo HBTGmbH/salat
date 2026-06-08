@@ -40,6 +40,9 @@
         </a>
       </div>
       <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix(employeeContractId=${selectedContractId})}">Heute</a>
+      <button id="matrix-details-toggle" type="button" class="btn btn-sm btn-outline-secondary"
+              title="Buchungsdetails einblenden" th:text="Details">
+      </button>
 
       <!-- Employee selector (only when multiple contracts are viewable) -->
       <form class="ms-auto" method="get" th:action="@{/dailyreport/matrix}"
@@ -101,6 +104,13 @@
               th:classappend="${matrixData.dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.weekend ? 'bg-azure-lt' : (cell.publicHoliday ? 'bg-warning-lt' : '')}">
             <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
             <span th:if="${cell.empty}" class="text-muted">—</span>
+            <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail p-10 d-none">
+              <div th:each="d : ${cell.details}" class="text-start text-nowrap">
+                <strong th:text="${d.durationString}">1:00</strong>
+                <span th:if="${d.taskDescription != null and not #strings.isEmpty(d.taskDescription)}"
+                      th:text="${' – ' + d.taskDescription}"></span>
+              </div>
+            </div>
           </td>
           <td class="text-center px-1 fw-medium" th:text="${row.totalString}" style="border-left: 2px solid">0:00</td>
         </tr>
@@ -177,5 +187,35 @@
   </div>
 </div>
 
+
 </section>
+
+<script layout:fragment="scripts">
+(function () {
+  const btn = document.getElementById('matrix-details-toggle');
+  if (!btn) return;
+  let popovers = [];
+  let active = false;
+
+  btn.addEventListener('click', () => {
+    active = !active;
+    btn.classList.toggle('active', active);
+    if (active) {
+      document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
+        const td = detail.closest('td');
+        popovers.push(new tabler.bootstrap.Popover(td, {
+          html: true,
+          content: detail.innerHTML,
+          trigger: 'hover focus',
+          placement: 'top',
+          customClass: 'matrix-detail-popover'
+        }));
+      });
+    } else {
+      popovers.forEach(p => p.dispose());
+      popovers = [];
+    }
+  });
+})();
+</script>
 </html>
