@@ -20,6 +20,28 @@
   [data-bs-theme="dark"] .matrix-row-even td:not([class*="bg-"]) {
     background-color: rgba(255, 255, 255, 0.04);
   }
+  .matrix-detail-popover.popover {
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+    max-width: 360px;
+  }
+  .matrix-detail-popover .popover-body {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  [data-bs-theme="dark"] .matrix-detail-popover .popover-body {
+    background: rgba(28, 32, 44, 0.85);
+  }
+  .matrix-detail-popover .popover-arrow::after {
+    border-top-color: rgba(255, 255, 255, 0.82);
+  }
+  [data-bs-theme="dark"] .matrix-detail-popover .popover-arrow::after {
+    border-top-color: rgba(28, 32, 44, 0.85);
+  }
 </style>
 
 <!-- Filter bar -->
