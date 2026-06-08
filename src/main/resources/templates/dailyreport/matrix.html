@@ -113,7 +113,7 @@
               th:text="#{main.matrixoverview.table.overall.text}">GESAMT</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt text-muted' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.totalError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt text-muted' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
             <span th:if="${not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
             <span th:if="${fd.empty}" class="text-muted">—</span>
           </td>
@@ -134,7 +134,7 @@
           <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.startofwork.text}">Beginn</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.beginError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
             <span th:if="${fd.beginString != null}" th:text="${fd.beginString}">08:00</span>
           </td>
           <td style="border-left: 2px solid"></td>
@@ -144,7 +144,7 @@
           <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.breakduration.text}">Pause</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.breakError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
             <span th:if="${fd.breakString != null}" th:text="${fd.breakString}">0:30</span>
           </td>
           <td style="border-left: 2px solid"></td>
