@@ -1,5 +1,6 @@
 package org.tb.dailyreport.service;
 
+import static org.tb.common.GlobalConstants.MAX_HOURS_PER_DAY;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
@@ -76,6 +77,13 @@ public class MatrixService {
                 r -> r.getDuration(),
                 Duration::plus));
 
+        var beginErrors = employeeContractId > 0
+            ? timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast)
+            : Map.of();
+        var breakErrors = employeeContractId > 0
+            ? timereportService.validateBreakTimes(employeeContractId, dateFirst, dateLast)
+            : Map.of();
+
         List<MatrixData.FooterDay> footerDays = days.stream()
             .map(d -> {
                 Duration duration = durationByDay.getOrDefault(d, Duration.ZERO);
@@ -84,9 +92,9 @@ public class MatrixService {
                 String beginString = null;
                 String breakString = null;
                 String endString = null;
-                if (wd != null && wd.getType() == Workingday.WorkingDayType.WORKED) {
+                if (wd != null && wd.getType() == Workingday.WorkingDayType.WORKED && !duration.isZero()) {
                     beginString = "%02d:%02d".formatted(wd.getStarttimehour(), wd.getStarttimeminute());
-                    breakString = DurationUtils.format(wd.getBreakLength(), false);
+                    breakString = DurationUtils.format(wd.getBreakLength());
                     LocalTime end = LocalTime.of(wd.getStarttimehour(), wd.getStarttimeminute())
                         .plus(wd.getBreakLength())
                         .plus(duration);
@@ -100,7 +108,10 @@ public class MatrixService {
                     duration.isZero(),
                     beginString,
                     breakString,
-                    endString);
+                    endString,
+                    beginErrors.containsKey(d),
+                    breakErrors.containsKey(d),
+                    duration.toHours() >= MAX_HOURS_PER_DAY);
             })
             .toList();
 

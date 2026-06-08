@@ -40,5 +40,8 @@ public record MatrixData(
         boolean empty,
         String beginString,
         String breakString,
-        String endString) {}
+        String endString,
+        boolean beginError,
+        boolean breakError,
+        boolean totalError) {}
 }
