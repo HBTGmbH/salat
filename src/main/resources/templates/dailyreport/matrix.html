@@ -7,7 +7,46 @@
 <style>
   .matrix-first-col {
     background: var(--tblr-card-bg, var(--tblr-body-bg));
-    border-right: 1.5px solid;
+    border-right: 2px solid;
+    color:  var(--tblr-table-color) !important;
+  }
+  .matrix-last-col {
+    border-left: 2px solid;
+    color: var(--tblr-table-color) !important;
+  }
+  .matrix-day-col:not(:last-child) {
+    border-right: 1px solid;
+  }
+  #matrix > thead {
+    border-bottom: 2px solid;
+  }
+  #matrix > thead * th {
+    color:  var(--tblr-table-color);
+  }
+
+  #matrix > tbody * td:not(:last-child):not(.matrix-first-col) {
+    border-right: 1px solid;
+  }
+
+  #matrix > tfoot * td:not(:last-child):not(.matrix-first-col) {
+    border-right: 1px solid;
+  }
+
+  #matrix > tfoot * td.bg-danger-lt {
+    border: 2px solid !important;
+  }
+
+  #matrix > tfoot {
+    border-top: 2px solid;
+  }
+  #matrix > tfoot > tr:first-child {
+    border-bottom: 2px solid;
+  }
+  #matrix > tfoot > tr:first-child > td {
+    font-weight: bold;
+  }
+  #matrix > tfoot > tr > td:first-child {
+    text-align: right;
   }
   .matrix-day-col { min-width: 2.5rem; }
   .matrix-today {
@@ -101,11 +140,11 @@
 <!-- Matrix table -->
 <div class="card">
   <div class="table-responsive">
-    <table class="table table-vcenter table-sm card-table" style="font-size: 0.82rem">
+    <table class="table table-vcenter table-sm card-table" id="matrix">
 
       <thead>
-        <tr style="border-bottom: 1.5px solid">
-          <th class="matrix-first-col text-nowrap" style="color: var(--tblr-table-color)"
+        <tr>
+          <th class="matrix-first-col text-nowrap"
               th:text="#{main.matrixoverview.table.order}">Auftrag</th>
           <th th:each="dh : ${matrixData.dayHeaders}"
               class="text-center matrix-day-col px-1 text-nowrap"
@@ -114,8 +153,7 @@
             <span style="font-size:0.7rem"
                   th:text="${#strings.substring(#messages.msg(dh.weekdayKey), 0, 2)}">Mo</span>
           </th>
-          <th class="text-center px-1 fw-bold text-nowrap"
-              style="border-left: 1.5px solid; color: var(--tblr-table-color)"
+          <th class="matrix-last-col text-center px-1 fw-bold text-nowrap"
               th:text="#{main.matrixoverview.table.sum.text}">Σ</th>
         </tr>
       </thead>
@@ -138,7 +176,6 @@
               class="text-center px-1"
               th:classappend="${matrixData.dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.weekend ? 'bg-azure-lt' : (cell.publicHoliday ? 'bg-warning-lt' : '')}">
             <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
-            <span th:if="${cell.empty}">—</span>
             <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail p-10 d-none">
               <div th:each="d : ${cell.details}" class="text-start text-nowrap">
                 <strong th:text="${d.durationString}">1:00</strong>
@@ -147,32 +184,21 @@
               </div>
             </div>
           </td>
-          <td class="text-center px-1 fw-medium" th:text="${row.totalString}" style="border-left: 1.5px solid">0:00</td>
+          <td class="matrix-last-col text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>
         </tr>
 
       </tbody>
 
       <tfoot>
-        <tr class="table-group-divider fw-medium" style="border-top: 1.5px solid">
+        <tr class="table-group-divider fw-medium">
           <td class="matrix-first-col text-nowrap"
               th:text="#{main.matrixoverview.table.overall.text}">GESAMT</td>
           <td th:each="fd, fs : ${matrixData.footerDays}"
               class="text-center px-1"
               th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.totalError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
             <span th:if="${not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
-            <span th:if="${fd.empty}">—</span>
           </td>
-          <td class="text-center px-1 fw-bold" th:text="${matrixData.totalString}" style="border-left: 1.5px solid">0:00</td>
-        </tr>
-
-        <tr th:if="${selectedContractId > 0}" class="small">
-          <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.notworked.text}">Nicht gearbeitet</td>
-          <td th:each="fd, fs : ${matrixData.footerDays}"
-              class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
-            <span th:if="${fd.notWorked}" class="text-warning">●</span>
-          </td>
-          <td style="border-left: 1.5px solid"></td>
+          <td class="matrix-last-col text-center px-1 fw-bold" th:text="${matrixData.totalString}">0:00</td>
         </tr>
 
         <tr th:if="${showBeginBreakEnd}" class="small">
@@ -182,7 +208,7 @@
               th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.beginError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
             <span th:if="${fd.beginString != null}" th:text="${fd.beginString}">08:00</span>
           </td>
-          <td style="border-left: 1.5px solid"></td>
+          <td class="matrix-last-col"></td>
         </tr>
 
         <tr th:if="${showBeginBreakEnd}" class="small">
@@ -192,7 +218,7 @@
               th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.breakError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
             <span th:if="${fd.breakString != null}" th:text="${fd.breakString}">0:30</span>
           </td>
-          <td style="border-left: 1.5px solid"></td>
+          <td class="matrix-last-col"></td>
         </tr>
 
         <tr th:if="${showBeginBreakEnd}" class="small">
@@ -202,7 +228,17 @@
               th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
             <span th:if="${fd.endString != null}" th:text="${fd.endString}">17:00</span>
           </td>
-          <td style="border-left: 1.5px solid"></td>
+          <td class="matrix-last-col"></td>
+        </tr>
+
+        <tr th:if="${selectedContractId > 0}" class="small">
+          <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.notworked.text}">Nicht gearbeitet</td>
+          <td th:each="fd, fs : ${matrixData.footerDays}"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            <span th:if="${fd.notWorked}" class="text-warning">●</span>
+          </td>
+          <td class="matrix-last-col"></td>
         </tr>
       </tfoot>
 
