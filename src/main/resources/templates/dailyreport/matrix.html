@@ -49,6 +49,16 @@
     text-align: right;
   }
   .matrix-day-col { min-width: 2.5rem; }
+  #matrix > thead th.matrix-day-col {
+    cursor: pointer;
+  }
+  #matrix .matrix-col-hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.18) !important;
+    color: var(--tblr-primary) !important;
+  }
+  #matrix thead .matrix-col-hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.28) !important;
+  }
   .matrix-today {
     border-left: 2px solid var(--tblr-primary);
     border-right: 2px solid var(--tblr-primary);
@@ -148,7 +158,8 @@
               th:text="#{main.matrixoverview.table.order}">Auftrag</th>
           <th th:each="dh : ${matrixData.dayHeaders}"
               class="text-center matrix-day-col px-1 text-nowrap"
-              th:classappend="${dh.today ? 'matrix-today ' : ''} + ${dh.weekend ? 'bg-azure-lt' : (dh.publicHoliday ? 'bg-warning-lt' : '')}">
+              th:classappend="${dh.today ? 'matrix-today ' : ''} + ${dh.weekend ? 'bg-azure-lt' : (dh.publicHoliday ? 'bg-warning-lt' : '')}"
+              th:attr="data-daily-url=@{/do/ShowDailyReport(day=${#temporals.format(dh.date,'dd')},month=${monthShortForm},year=${yearMonth.year},employeeContractId=${selectedContractId})}">
             [[${dh.day}]]<br>
             <span style="font-size:0.7rem"
                   th:text="${#strings.substring(#messages.msg(dh.weekdayKey), 0, 2)}">Mo</span>
@@ -280,6 +291,47 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
     customClass: 'matrix-detail-popover'
   });
 });
+
+// Whole-column click and hover highlight → daily report for that day
+(function () {
+  const table = document.getElementById('matrix');
+  const headers = Array.from(table.querySelectorAll('thead th'));
+
+  function cellsInColumn(colIdx) {
+    return table.querySelectorAll(`tr > *:nth-child(${colIdx + 1})`);
+  }
+
+  // Apply pointer cursor to every cell in a navigable day column
+  headers.forEach((th, i) => {
+    if (th.dataset.dailyUrl) cellsInColumn(i).forEach(c => c.style.cursor = 'pointer');
+  });
+
+  // Column hover highlight
+  let activeColIdx = -1;
+  table.addEventListener('mouseover', e => {
+    const cell = e.target.closest('td, th');
+    if (!cell) return;
+    const colIdx = cell.cellIndex;
+    if (colIdx === activeColIdx) return;
+    cellsInColumn(activeColIdx).forEach(c => c.classList.remove('matrix-col-hover'));
+    activeColIdx = colIdx;
+    if (headers[colIdx]?.dataset.dailyUrl) {
+      cellsInColumn(colIdx).forEach(c => c.classList.add('matrix-col-hover'));
+    }
+  });
+  table.addEventListener('mouseleave', () => {
+    cellsInColumn(activeColIdx).forEach(c => c.classList.remove('matrix-col-hover'));
+    activeColIdx = -1;
+  });
+
+  // Click
+  table.addEventListener('click', e => {
+    const cell = e.target.closest('td, th');
+    if (!cell) return;
+    const url = headers[cell.cellIndex]?.dataset.dailyUrl;
+    if (url) location.href = url;
+  });
+}());
 
 document.getElementById('matrix-month-input')?.addEventListener('change', function () {
   const [yearRaw, monthRaw] = this.value.split('-');

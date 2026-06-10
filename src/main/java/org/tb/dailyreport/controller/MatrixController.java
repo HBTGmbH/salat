@@ -68,6 +68,7 @@ public class MatrixController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("showBeginBreakEnd", showBeginBreakEnd);
         model.addAttribute("yearMonth", yearMonth);
+        model.addAttribute("monthShortForm", formatMonth(yearMonth.atDay(1)));
         model.addAttribute("prevMonth", prev.getMonthValue());
         model.addAttribute("prevYear", prev.getYear());
         model.addAttribute("nextMonth", next.getMonthValue());
