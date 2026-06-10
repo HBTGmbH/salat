@@ -160,6 +160,16 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
 
     // due to session timeout or because it is the initial display of the view, we need to trigger init
     if(task == null || request.getSession().getAttribute("view") == null) {
+      // ADR-0013: employeeContractId may be passed as a URL parameter when navigating from the new
+      // Thymeleaf matrix view. Pre-seed currentEmployeeContract in the session so init() loads the
+      // correct employee's data instead of whatever the session held before.
+      long ecIdParam = reportForm.getEmployeeContractId();
+      if (ecIdParam > 0) {
+        Employeecontract targetEc = employeecontractService.getEmployeecontractById(ecIdParam);
+        if (targetEc != null) {
+          request.getSession().setAttribute("currentEmployeeContract", targetEc);
+        }
+      }
       //*** initialisation ***
       var initForward = init(request, reportForm);
       if (initForward != null) {
@@ -879,6 +889,18 @@ public class ShowDailyReportAction extends DailyReportAction<ShowDailyReportForm
         Collections.sort(timereports, comparator);
       }
       request.getSession().setAttribute("timereports", timereports);
+      // load orders/suborders if absent — e.g. when navigating directly from the Thymeleaf matrix
+      // without a prior full ShowDailyReport page load that would have populated the session
+      if (request.getSession().getAttribute("orders") == null) {
+        List<Customerorder> orders = currentEmployeeId == -1
+            ? customerorderService.getAllCustomerorders()
+            : customerorderService.getCustomerordersByEmployeeContractId(ec.getId());
+        request.getSession().setAttribute("orders", orders);
+        if (!orders.isEmpty()) {
+          request.getSession().setAttribute("suborders",
+              suborderService.getSubordersByEmployeeContractId(ec.getId()));
+        }
+      }
     } else {
       LocalDate refDate = DateUtils.today();
       Workingday workingday = workingdayService.getWorkingday(ec.getId(), refDate);
