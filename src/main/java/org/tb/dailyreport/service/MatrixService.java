@@ -114,7 +114,7 @@ public class MatrixService {
                     endString,
                     beginErrors.containsKey(d),
                     breakErrors.containsKey(d),
-                    duration.toHours() >= MAX_HOURS_PER_DAY);
+                    workingdayService.checkLaborTimeMaximum(duration));
             })
             .toList();
 

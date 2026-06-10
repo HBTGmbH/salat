@@ -189,7 +189,11 @@ public class WorkingdayService {
 
   public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports) {
     Duration actual = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
-    return Duration.ofHours(MAX_HOURS_PER_DAY).minus(actual).isNegative();
+    return checkLaborTimeMaximum(actual);
+  }
+
+  public boolean checkLaborTimeMaximum(Duration workedTime) {
+    return Duration.ofHours(MAX_HOURS_PER_DAY).minus(workedTime).isNegative();
   }
 
   @EventListener
