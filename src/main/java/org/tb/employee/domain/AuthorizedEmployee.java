@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
+// ADR-0013: Ausnahme — session-scoped Bean für Identitätsdaten des eingeloggten Mitarbeiters
+// (Name, ID, Kennung, E-Mail). Session-Scope ist hier korrekt; dies ist kein UI-Selektionszustand.
 @Component
 @Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class AuthorizedEmployee implements Serializable {
