@@ -14,6 +14,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
+// ADR-0013: Ausnahme — session-scoped Bean für Sicherheits- und Identitätszustand des eingeloggten
+// Nutzers (Rollen, Login-Kennung). Session-Scope ist hier korrekt; dies ist kein UI-Selektionszustand.
+// Die Impersonation (impersonate/login) ist ebenfalls erlaubt: sie ist ein Identitätswechsel für
+// Support-Zwecke, kein UI-Zustand der per URL oder Cookie ausgedrückt werden könnte.
 @Component
 @Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
 @Getter
