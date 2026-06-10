@@ -311,8 +311,7 @@
       </div>
     </header>
     <div class="page-body">
-      <div class="container-xl my-4" th:if="${not #strings.isEmpty(toastSuccess)}">
-        <div class="alert alert-success alert-dismissible align-items-start gap-3" role="alert">
+      <div class="container-xl my-4 alert alert-success alert-dismissible align-items-start gap-3" role="alert" th:if="${not #strings.isEmpty(toastSuccess)}">
           <div class="icon">
             <i class="ti ti-circle-check"></i>
           </div>
@@ -331,10 +330,8 @@
             </div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
       </div>
-      <div class="container-xl my-4" th:if="${not #strings.isEmpty(toastError)}">
-        <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
+      <div class="container-xl my-4 alert alert-danger alert-dismissible align-items-start gap-3" role="alert" th:if="${not #strings.isEmpty(toastError)}">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
           </div>
@@ -347,10 +344,8 @@
             </div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
       </div>
-      <div class="container-xl my-4" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
-        <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
+      <div class="container-xl my-4 alert alert-danger alert-dismissible align-items-start gap-3" role="alert" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
           </div>
@@ -371,10 +366,8 @@
             </div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
       </div>
-      <div class="container-xl my-4" th:if="${errors != null && !errors.isEmpty()}">
-        <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
+      <div class="container-xl my-4 alert alert-danger alert-dismissible align-items-start gap-3" role="alert" th:if="${errors != null && !errors.isEmpty()}">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
           </div>
@@ -387,7 +380,6 @@
             </div>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
       </div>
       <div th:class="${containerClass ?: 'container-xl'}" layout:fragment="content">
         <!-- page specific content -->
