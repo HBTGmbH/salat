@@ -51,7 +51,7 @@ public class LocalDevOpenApiConfiguration {
             .title("DEVELOPMENT SALAT Rest API")
             .version(buildProperties.isPresent() ? buildProperties.get().getVersion() : "DEVELOPMENT")
             .description(openApiDescription.toString()))
-        .externalDocs(new ExternalDocumentation().description("Confluence").url("https://hbteam.atlassian.net/wiki/spaces/SALAT/pages/1440481391/Rest+API"))
+        .externalDocs(new ExternalDocumentation().description("Confluence").url(salatProperties.getApiDocsUrl()))
         .schemaRequirement("loginName", loginName)
         .security(of(new SecurityRequirement().addList("loginName")));
   }

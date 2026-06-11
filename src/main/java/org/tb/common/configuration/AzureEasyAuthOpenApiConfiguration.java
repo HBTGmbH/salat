@@ -63,8 +63,8 @@ public class AzureEasyAuthOpenApiConfiguration {
             .contact(new io.swagger.v3.oas.models.info.Contact()
                 .name("HBT SALAT Dev Team")
                 .url("https://hbt.de"))
-            .termsOfService("https://hbteam.atlassian.net/wiki/spaces/SALAT/pages/1440481391/Rest+API"))
-        .externalDocs(new ExternalDocumentation().description("Confluence").url("https://hbteam.atlassian.net/wiki/spaces/SALAT/pages/1440481391/Rest+API"))
+            .termsOfService(salatProperties.getApiDocsUrl()))
+        .externalDocs(new ExternalDocumentation().description("Confluence").url(salatProperties.getApiDocsUrl()))
         .schemaRequirement("EasyAuth", easyAuth)
         .schemaRequirement("oauth2", oauth2)
         .security(of(

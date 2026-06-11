@@ -5,6 +5,8 @@ salat:
       logout-url: /?logout=true
   url: localhost
   mail-host: localhost
+  docs-url: ""
+  api-docs-url: ""
   auth-service:
     cache-expiry: 1s
   cache:
