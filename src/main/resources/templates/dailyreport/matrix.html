@@ -60,8 +60,8 @@
     background-color: rgba(var(--tblr-primary-rgb), 0.28) !important;
   }
   .matrix-today {
-    border-left: 2px solid var(--tblr-primary);
-    border-right: 2px solid var(--tblr-primary);
+    border-left: 2px solid var(--tblr-primary) !important;
+    border-right: 2px solid var(--tblr-primary) !important;
   }
   .matrix-row-even td:not([class*="bg-"]) {
     background-color: rgba(0, 0, 0, 0.025);
@@ -158,7 +158,7 @@
               th:text="#{main.matrixoverview.table.order}">Auftrag</th>
           <th th:each="dh : ${matrixData.dayHeaders}"
               class="text-center matrix-day-col px-1 text-nowrap"
-              th:classappend="${dh.today ? 'matrix-today ' : ''} + ${dh.weekend ? 'bg-azure-lt' : (dh.publicHoliday ? 'bg-warning-lt' : '')}"
+              th:classappend="${dh.weekend ? 'bg-azure-lt ' : (dh.publicHoliday ? 'bg-warning-lt ' : '')} + ${dh.today ? 'matrix-today' : ''}"
               th:attr="data-daily-url=@{/do/ShowDailyReport(day=${#temporals.format(dh.date,'dd')},month=${monthShortForm},year=${yearMonth.year},employeeContractId=${selectedContractId})}">
             [[${dh.day}]]<br>
             <span style="font-size:0.7rem"
