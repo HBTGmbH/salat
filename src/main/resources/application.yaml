@@ -5,7 +5,11 @@ salat:
       logout-url: /?logout=true
   url: localhost
   mail-host: localhost
+  # User-facing documentation URL (e.g. Confluence overview). Hidden in footer when empty.
+  # Override locally via JVM arg: -Dsalat.docs-url=https://your-confluence/wiki/spaces/SALAT/overview
   docs-url: ""
+  # REST API documentation URL (OpenAPI externalDocs / termsOfService). Left empty when not configured.
+  # Override locally via JVM arg: -Dsalat.api-docs-url=https://your-confluence/wiki/spaces/SALAT/pages/.../Rest+API
   api-docs-url: ""
   auth-service:
     cache-expiry: 1s
