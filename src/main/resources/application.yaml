@@ -1,34 +1,42 @@
+# Spring Boot ENV override convention:
+# Any property can be overridden via an environment variable by uppercasing the key
+# and replacing dots (.) and dashes (-) with underscores (_).
+# Examples:
+#   salat.url                      → SALAT_URL
+#   spring.datasource.password     → SPRING_DATASOURCE_PASSWORD
+#   salat.reporting.email.enabled  → SALAT_REPORTING_EMAIL_ENABLED
+
 salat:
   auth:
     logout:
-      enabled: true
-      logout-url: /?logout=true
-  url: localhost
-  mail-host: localhost
+      enabled: true                  # env: SALAT_AUTH_LOGOUT_ENABLED
+      logout-url: /?logout=true      # env: SALAT_AUTH_LOGOUT_LOGOUT_URL
+  url: localhost                     # env: SALAT_URL
+  mail-host: localhost               # env: SALAT_MAIL_HOST
   # User-facing documentation URL (e.g. Confluence overview). Hidden in footer when empty.
   # Override locally via JVM arg: -Dsalat.docs-url=https://your-confluence/wiki/spaces/SALAT/overview
-  docs-url: ""
+  docs-url: ""                       # env: SALAT_DOCS_URL
   # REST API documentation URL (OpenAPI externalDocs / termsOfService). Left empty when not configured.
   # Override locally via JVM arg: -Dsalat.api-docs-url=https://your-confluence/wiki/spaces/SALAT/pages/.../Rest+API
-  api-docs-url: ""
+  api-docs-url: ""                   # env: SALAT_API_DOCS_URL
   auth-service:
-    cache-expiry: 1s
+    cache-expiry: 1s                 # env: SALAT_AUTH_SERVICE_CACHE_EXPIRY
   cache:
-    max-entries: 1000
-    expiry-tti: 10
+    max-entries: 1000                # env: SALAT_CACHE_MAX_ENTRIES
+    expiry-tti: 10                   # env: SALAT_CACHE_EXPIRY_TTI
   reporting:
     scheduler:
-      cron: "0 0 5 * * ?" # Daily at 5:00 AM
+      cron: "0 0 5 * * ?"           # env: SALAT_REPORTING_SCHEDULER_CRON — Daily at 5:00 AM
     email:
-      enabled: true
-      from: noreply@salat.local
+      enabled: true                  # env: SALAT_REPORTING_EMAIL_ENABLED
+      from: noreply@salat.local      # env: SALAT_REPORTING_EMAIL_FROM
 server:
   tomcat:
     max-part-count: 100
   servlet:
     session:
       persistent: false
-      timeout: 12h
+      timeout: 12h                   # env: SERVER_SERVLET_SESSION_TIMEOUT
       cookie:
         same-site: strict
         name: SALATSESSIONID
@@ -46,13 +54,13 @@ spring:
     # driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     # url: jdbc:p6spy:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
-    username: salattest
-    password: salattest
+    url: jdbc:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true  # env: SPRING_DATASOURCE_URL
+    username: salattest                # env: SPRING_DATASOURCE_USERNAME
+    password: salattest                # env: SPRING_DATASOURCE_PASSWORD
     hikari:
       connection-timeout: 1000
       minimum-idle: 0
-      maximum-pool-size: 20
+      maximum-pool-size: 20           # env: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
   jpa:
     generate-ddl: false
     show-sql: false
@@ -91,14 +99,14 @@ spring:
       include-message: always
       include-exception: true
   mail:
-    host: ${salat.mail-host}
-    port: 1025
+    host: ${salat.mail-host}       # override via SALAT_MAIL_HOST (see above)
+    port: 1025                     # env: SPRING_MAIL_PORT
     properties:
       mail:
         smtp:
-          auth: false
+          auth: false              # env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
           starttls:
-            enable: false
+            enable: false          # env: SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
 management:
   endpoints:
     web:
