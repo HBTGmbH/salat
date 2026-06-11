@@ -122,14 +122,14 @@ public class MatrixService {
             .map(r -> r.getDuration())
             .reduce(Duration.ZERO, Duration::plus);
 
-        boolean freelancer = employeeContractId > 0
-            && Boolean.TRUE.equals(employeecontractService.getEmployeecontractById(employeeContractId).getFreelancer());
+        boolean hasTarget = employeeContractId > 0
+            && !employeecontractService.getEmployeecontractById(employeeContractId).getDailyWorkingTime().isZero();
 
-        String totalString = freelancer ? null : DurationUtils.format(grand);
+        String totalString = hasTarget ? DurationUtils.format(grand) : null;
         String targetString = null;
         String diffString = null;
         boolean diffNegative = false;
-        if (employeeContractId > 0 && !freelancer) {
+        if (hasTarget) {
             Duration target = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, dateLast);
             Duration diff = grand.minus(target);
             targetString = DurationUtils.format(target);
@@ -139,7 +139,7 @@ public class MatrixService {
 
         String prevDayDiffString = null;
         boolean prevDayDiffNegative = false;
-        if (employeeContractId > 0 && !freelancer && !today.isBefore(dateFirst) && !today.isAfter(dateLast)) {
+        if (hasTarget && !today.isBefore(dateFirst) && !today.isAfter(dateLast)) {
             LocalDate cutoff = today.minusDays(1);
             while (cutoff.getDayOfWeek() == DayOfWeek.SATURDAY || cutoff.getDayOfWeek() == DayOfWeek.SUNDAY) {
                 cutoff = cutoff.minusDays(1);
