@@ -165,6 +165,29 @@ A feature or fix is considered done when **all** of the following are true:
 
 ---
 
+## Globally Accessible Objects in `layout/base.html`
+
+`layout/base.html` is the shared layout template rendered for every page. It has no dedicated controller, so Spring MVC model attributes are not available.
+
+**Convention:** Access Spring beans via `${@beanName.property}` — Thymeleaf resolves `@beanName` as a Spring application context lookup.
+
+```html
+[[${@buildProperties.version}]]
+[[${@salatProperties.docsUrl}]]
+```
+
+**Constraint:** `@beanName` is only valid inside `${...}` expressions. It is **not** allowed inside `@{...}` URL expressions. For URLs sourced from a bean, extract the value first with `th:with`, then reference it via `${...}`:
+
+```html
+<!-- correct -->
+<a th:with="url=${@salatProperties.docsUrl}" th:href="${url}">...</a>
+
+<!-- fails: @beanName prohibited inside @{} -->
+<a th:href="@{${@salatProperties.docsUrl}}">...</a>
+```
+
+> Note: `BuildInformationProvider.contextInitialized()` registers `buildProperties`, `gitProperties`, and `serverTimeHelper` as servlet context attributes. This is legacy wiring for Struts/JSP pages. Thymeleaf templates use `${@beanName}` (Spring bean lookup) directly and do not rely on servlet context attributes.
+
 ## TomSelect Dropdowns
 
 All `<select>` elements use [TomSelect](https://tom-select.github.io/) for search-as-you-type behaviour. Initialisation is handled centrally in `layout/base.html` via a `querySelectorAll` on page load and again on `htmx:afterSettle` (so OOB-swapped selects are picked up automatically).
