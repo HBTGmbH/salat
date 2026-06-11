@@ -270,6 +270,11 @@
       <span th:text="#{main.matrixoverview.headline.difference.text}">Differenz:</span>
       <strong th:text="${matrixData.diffString}">+0:00</strong>
     </span>
+    <span th:if="${matrixData.prevDayDiffString != null}"
+          th:classappend="${matrixData.prevDayDiffNegative ? 'text-warning' : 'text-success'}">
+      <span th:text="#{main.matrixoverview.headline.prevdaydiff.text}">Stand gestern:</span>
+      <strong th:text="${matrixData.prevDayDiffString}">+0:00</strong>
+    </span>
     <span class="ms-auto small">
       <span class="badge bg-azure-lt me-1">Sa/So</span>
       <span class="badge bg-warning-lt me-1">Feiertag</span>

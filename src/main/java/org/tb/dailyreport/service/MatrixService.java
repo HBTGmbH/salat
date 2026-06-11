@@ -133,7 +133,27 @@ public class MatrixService {
             diffNegative = diff.isNegative();
         }
 
-        return new MatrixData(dayHeaders, rows, footerDays, DurationUtils.format(grand), targetString, diffString, diffNegative);
+        String prevDayDiffString = null;
+        boolean prevDayDiffNegative = false;
+        if (employeeContractId > 0 && !today.isBefore(dateFirst) && !today.isAfter(dateLast)) {
+            LocalDate cutoff = today.minusDays(1);
+            while (cutoff.getDayOfWeek() == DayOfWeek.SATURDAY || cutoff.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                cutoff = cutoff.minusDays(1);
+            }
+            if (!cutoff.isBefore(dateFirst)) {
+                LocalDate effectiveCutoff = cutoff;
+                Duration grandPrevDay = reports.stream()
+                    .filter(r -> !r.getReferenceday().isAfter(effectiveCutoff))
+                    .map(r -> r.getDuration())
+                    .reduce(Duration.ZERO, Duration::plus);
+                Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, cutoff);
+                Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
+                prevDayDiffString = (prevDayDiff.isNegative() ? "" : "+") + DurationUtils.format(prevDayDiff);
+                prevDayDiffNegative = prevDayDiff.isNegative();
+            }
+        }
+
+        return new MatrixData(dayHeaders, rows, footerDays, DurationUtils.format(grand), targetString, diffString, diffNegative, prevDayDiffString, prevDayDiffNegative);
     }
 
     public void fillNotWorked(YearMonth yearMonth, long employeeContractId) {
