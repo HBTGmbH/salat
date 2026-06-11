@@ -10,7 +10,9 @@ public record MatrixData(
     String totalString,
     String targetString,
     String diffString,
-    boolean diffNegative) {
+    boolean diffNegative,
+    String prevDayDiffString,
+    boolean prevDayDiffNegative) {
 
     public record DayHeader(
         int day,
