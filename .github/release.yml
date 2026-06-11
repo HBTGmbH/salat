@@ -1,0 +1,22 @@
+changelog:
+  categories:
+    - title: "⚙️ Operations / Deployment Required"
+      labels:
+        - needs-ops-action
+    - title: "🐛 Bug Fixes"
+      labels:
+        - bug
+    - title: "✨ New Features"
+      labels:
+        - enhancement
+        - Feature
+    - title: "🔧 Tasks & Improvements"
+      labels:
+        - technical improvement
+        - dependencies
+    - title: "📖 Documentation"
+      labels:
+        - documentation
+    - title: "🔀 Other Changes"
+      labels:
+        - "*"
