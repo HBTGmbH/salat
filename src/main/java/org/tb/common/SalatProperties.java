@@ -12,6 +12,8 @@ public class SalatProperties {
 
   private String url;
   private String mailHost;
+  private String docsUrl;
+  private String apiDocsUrl;
   private Auth auth;
   private AuthService authService;
 
