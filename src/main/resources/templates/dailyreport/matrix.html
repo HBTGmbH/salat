@@ -60,8 +60,8 @@
     background-color: rgba(var(--tblr-primary-rgb), 0.28) !important;
   }
   .matrix-today {
-    border-left: 2px solid var(--tblr-primary) !important;
-    border-right: 2px solid var(--tblr-primary) !important;
+    border-left: 2px solid red !important;
+    border-right: 2px solid red !important;
   }
   .matrix-row-even td:not([class*="bg-"]) {
     background-color: rgba(0, 0, 0, 0.025);
@@ -257,7 +257,7 @@
   </div>
 
   <div class="card-footer d-flex gap-3 flex-wrap align-items-center">
-    <span>
+    <span th:if="${matrixData.totalString != null}">
       <span th:text="#{main.matrixoverview.headline.actualtime.text}">IST-Stunden:</span>
       <strong th:text="${matrixData.totalString}">0:00</strong>
     </span>
