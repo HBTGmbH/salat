@@ -111,7 +111,8 @@
               </div>
 
               <!-- Start / Break — auto-save on change, hidden when not worked -->
-              <div id="working-fields" class="d-flex flex-wrap gap-3">
+              <div id="working-fields" class="d-flex flex-wrap gap-3"
+                   th:style="${dailyData.notWorked} ? 'display:none'">
                 <div class="d-flex align-items-center gap-2">
                   <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
                   <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
@@ -439,17 +440,6 @@
 
 </script>
 
-<th:block layout:fragment="scripts">
-<script>
-  // Runs after all layout scripts (incl. htmx) are loaded
-  (function() {
-    var toggle = document.getElementById('notWorked');
-    if (toggle && toggle.checked) {
-      toggleWorkingFields(true);
-    }
-  })();
-</script>
-</th:block>
 
 </section>
 </html>
