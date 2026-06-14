@@ -96,48 +96,41 @@
             <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
             <input type="hidden" name="date" th:value="${date}"/>
 
-            <!-- Not-worked toggle -->
-            <div class="mb-3">
-              <div class="form-check form-switch">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+
+              <!-- Not-worked toggle -->
+              <div class="form-check form-switch mb-0 me-2" style="min-width:max-content">
                 <input class="form-check-input" type="checkbox" id="notWorkedToggle" name="notWorked"
                        th:checked="${dailyData != null and dailyData.workingday != null and dailyData.workingday.type.name() == 'NOT_WORKED'}"
                        onchange="toggleWorkingFields(this.checked)">
                 <label class="form-check-label" for="notWorkedToggle"
                        th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
               </div>
-            </div>
 
-            <!-- Start / Break / Save row -->
-            <div id="working-fields" class="row g-3 align-items-end">
-              <div class="col">
-                <label class="form-label" th:text="#{main.daily.workingday.start.label}">Start</label>
-                <input type="time" class="form-control" id="starttime"
-                       th:name="'starttimehour'" style="display:none"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${#numbers.formatInteger(dailyData.workingday.starttimehour, 2) + ':' + #numbers.formatInteger(dailyData.workingday.starttimeminute, 2)} : '08:00'">
-                <!-- Hidden fields for hour/minute split — populated by JS -->
-                <input type="hidden" name="starttimehour" id="starttimehour-val"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.starttimehour} : 8">
-                <input type="hidden" name="starttimeminute" id="starttimeminute-val"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.starttimeminute} : 0">
-                <input type="time" class="form-control" id="starttime-display"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${#numbers.formatInteger(dailyData.workingday.starttimehour, 2) + ':' + #numbers.formatInteger(dailyData.workingday.starttimeminute, 2)} : '08:00'"
-                       onchange="splitTime('starttime-display','starttimehour-val','starttimeminute-val')">
+              <!-- Start / Break — auto-save on change, hidden when not worked -->
+              <div id="working-fields" class="d-flex flex-wrap gap-3">
+                <div>
+                  <label class="form-label mb-1" th:text="#{main.daily.workingday.start.label}">Start</label>
+                  <input type="hidden" name="starttimehour" id="starttimehour-val"
+                         th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.starttimehour} : 8">
+                  <input type="hidden" name="starttimeminute" id="starttimeminute-val"
+                         th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.starttimeminute} : 0">
+                  <input type="time" class="form-control form-control-sm" id="starttime-display"
+                         th:value="${dailyData != null and dailyData.workingday != null} ? ${#numbers.formatInteger(dailyData.workingday.starttimehour, 2) + ':' + #numbers.formatInteger(dailyData.workingday.starttimeminute, 2)} : '08:00'"
+                         onchange="saveTime('starttime-display','starttimehour-val','starttimeminute-val')">
+                </div>
+                <div>
+                  <label class="form-label mb-1" th:text="#{main.daily.workingday.break.label}">Pause</label>
+                  <input type="hidden" name="breakhours" id="breakhours-val"
+                         th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.breakhours} : 0">
+                  <input type="hidden" name="breakminutes" id="breakminutes-val"
+                         th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.breakminutes} : 0">
+                  <input type="time" class="form-control form-control-sm" id="break-display"
+                         th:value="${dailyData != null and dailyData.workingday != null} ? ${#numbers.formatInteger(dailyData.workingday.breakhours, 2) + ':' + #numbers.formatInteger(dailyData.workingday.breakminutes, 2)} : '00:30'"
+                         onchange="saveTime('break-display','breakhours-val','breakminutes-val')">
+                </div>
               </div>
-              <div class="col">
-                <label class="form-label" th:text="#{main.daily.workingday.break.label}">Pause</label>
-                <input type="hidden" name="breakhours" id="breakhours-val"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.breakhours} : 0">
-                <input type="hidden" name="breakminutes" id="breakminutes-val"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${dailyData.workingday.breakminutes} : 0">
-                <input type="time" class="form-control" id="break-display"
-                       th:value="${dailyData != null and dailyData.workingday != null} ? ${#numbers.formatInteger(dailyData.workingday.breakhours, 2) + ':' + #numbers.formatInteger(dailyData.workingday.breakminutes, 2)} : '00:30'"
-                       onchange="splitTime('break-display','breakhours-val','breakminutes-val')">
-              </div>
-              <div class="col-auto">
-                <button type="submit" class="btn btn-primary">
-                  <i class="ti ti-device-floppy me-1"></i><span th:text="#{main.daily.workingday.save.button}">Speichern</span>
-                </button>
-              </div>
+
             </div>
           </form>
 
@@ -442,12 +435,13 @@
     }
   }
 
-  function splitTime(srcId, hourId, minId) {
+  function saveTime(srcId, hourId, minId) {
     var val = document.getElementById(srcId).value;
     if (val) {
       var parts = val.split(':');
       document.getElementById(hourId).value = parseInt(parts[0], 10);
       document.getElementById(minId).value = parseInt(parts[1], 10);
+      document.getElementById('workingday-form').submit();
     }
   }
 
