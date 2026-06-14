@@ -57,7 +57,21 @@ public class DailyService {
 
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
 
-        return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime, hasTarget, overMaxHours, progressPercent, weekStrip);
+        boolean notWorked = workingday != null && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
+        int startHour   = workingday != null ? workingday.getStarttimehour()   : 8;
+        int startMinute = workingday != null ? workingday.getStarttimeminute() : 0;
+        int breakHours  = workingday != null ? workingday.getBreakhours()      : 0;
+        int breakMinutes = workingday != null ? workingday.getBreakminutes()   : 30;
+        String startTime = String.format("%02d:%02d", startHour, startMinute);
+        String breakTime = String.format("%02d:%02d", breakHours, breakMinutes);
+        String dailyWorkingTimeFormatted = workingday != null
+            ? DurationUtils.format(workingday.getEmployeecontract().getDailyWorkingTime())
+            : null;
+
+        return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
+            hasTarget, overMaxHours, progressPercent, weekStrip,
+            notWorked, startHour, startMinute, startTime, breakHours, breakMinutes, breakTime,
+            dailyWorkingTimeFormatted);
     }
 
     @Transactional(readOnly = true)
