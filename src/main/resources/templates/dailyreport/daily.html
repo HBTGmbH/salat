@@ -104,7 +104,7 @@
           <form method="post" th:action="@{/dailyreport/daily/workingday}" id="workingday-form"
                 th:object="${workingdayForm}"
                 th:attr="hx-post=@{/dailyreport/daily/workingday}"
-                hx-target="#daily-week-strip"
+                hx-target="#daily-bookings-area"
                 hx-swap="outerHTML">
             <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
             <input type="hidden" name="date" th:value="${date}"/>
@@ -125,12 +125,12 @@
                 <div class="d-flex align-items-center gap-2">
                   <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
                   <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
-                         style="width:auto" onchange="saveTime()">
+                         style="width:auto" onblur="saveTime()">
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
                   <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
-                         style="width:auto" onchange="saveTime()">
+                         style="width:auto" onblur="saveTime()">
                 </div>
               </div>
 
