@@ -304,8 +304,7 @@
           <div>
             <span th:if="${wd.notWorked}" class="text-warning">●</span>
             <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
-                  class="badge"
-                  th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
+                  class="badge bg-blue-lt text-blue"
                   th:text="${@durationUtils.format(wd.booked)}"></span>
           </div>
         </a>
@@ -350,8 +349,7 @@
             <div>
               <span th:if="${wd.notWorked}" class="text-warning">●</span>
               <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
-                    class="badge"
-                    th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
+                    class="badge bg-blue-lt text-blue"
                     th:text="${@durationUtils.format(wd.booked)}"></span>
             </div>
           </a>
