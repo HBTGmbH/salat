@@ -113,8 +113,21 @@
 
               <!-- Not-worked toggle -->
               <div class="flex-fill d-flex justify-content-center">
-                <div class="form-check form-switch mb-0">
+                <span th:if="${dailyData != null and !dailyData.timereports.isEmpty()}"
+                      data-bs-toggle="tooltip"
+                      th:title="#{main.daily.workingday.notworked.hasbookings.tooltip}"
+                      style="cursor:not-allowed">
+                  <div class="form-check form-switch mb-0" style="pointer-events:none">
+                    <input class="form-check-input" type="checkbox" th:field="*{notWorked}" id="notWorked"
+                           disabled>
+                    <label class="form-check-label" for="notWorked"
+                           th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
+                  </div>
+                </span>
+                <div th:unless="${dailyData != null and !dailyData.timereports.isEmpty()}"
+                     class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox" th:field="*{notWorked}" id="notWorked"
+                         th:disabled="${!dailyData.workingdayEditable}"
                          onchange="notWorkedChanged(this.checked)">
                   <label class="form-check-label" for="notWorked"
                          th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
@@ -126,6 +139,7 @@
                    th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
                 <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
+                       th:disabled="${!dailyData.workingdayEditable}"
                        style="width:auto" onblur="saveTime()">
               </div>
 
@@ -134,6 +148,7 @@
                    th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
                 <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
+                       th:disabled="${!dailyData.workingdayEditable}"
                        style="width:auto" onblur="saveTime()">
               </div>
 
@@ -170,7 +185,7 @@
       <div id="daily-bookings-area" th:fragment="dailyBookings">
 
       <!-- Add booking -->
-      <div class="d-flex gap-2 mb-3" th:if="${selectedContractId > 0}">
+      <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport}">
         <a th:href="@{/dailyreport/daily/new-timereport(date=${date},employeeContractId=${selectedContractId})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
@@ -192,7 +207,8 @@
                 <td style="position:relative; padding-right:5rem">
                   <div class="text-muted small" th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
                   <div class="fw-medium" th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
-                  <div class="inline-edit-wrap mt-1">
+                  <!-- task description: editable or read-only -->
+                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap mt-1">
                     <div class="text-muted small inline-edit-display"
                          style="white-space:pre-wrap; min-height:1.4em"
                          data-placeholder="Kommentar..."
@@ -209,9 +225,14 @@
                               hx-swap="outerHTML"
                               th:text="${tr.taskdescription}"></textarea>
                   </div>
+                  <div th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
+                       class="text-muted small mt-1"
+                       style="white-space:pre-wrap; min-height:1.4em"
+                       th:text="${tr.taskdescription}"></div>
                 </td>
                 <td class="w-1 text-nowrap">
-                  <div class="inline-edit-wrap">
+                  <!-- duration: editable or read-only -->
+                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap">
                     <span class="badge bg-blue-lt inline-edit-display"
                           style="user-select:none"
                           th:text="${@durationUtils.format(tr.duration)}"></span>
@@ -224,9 +245,12 @@
                            hx-target="#daily-bookings-area"
                            hx-swap="outerHTML"/>
                   </div>
+                  <span th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
+                        class="badge bg-blue-lt"
+                        th:text="${@durationUtils.format(tr.duration)}"></span>
                 </td>
                 <td>
-                  <div class="text-nowrap">
+                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
                     <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-outline-primary"
                        style="padding:1px 5px; font-size:0.7rem">
                       <i class="icon ti ti-pencil m-0"></i>
@@ -452,8 +476,8 @@
                                th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
                           <div class="fw-medium text-truncate" style="font-size:0.85rem"
                                th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
-                          <!-- task description: inline edit -->
-                          <div class="inline-edit-wrap mt-1">
+                          <!-- task description: editable or read-only -->
+                          <div th:if="${listData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap mt-1">
                             <div class="text-muted inline-edit-display"
                                  style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
                                  data-placeholder="Kommentar..."
@@ -469,10 +493,14 @@
                                       hx-swap="none"
                                       th:text="${tr.taskdescription}"></textarea>
                           </div>
+                          <div th:unless="${listData.editableTimereportIds.contains(tr.id)}"
+                               class="text-muted mt-1"
+                               style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
+                               th:text="${tr.taskdescription}"></div>
                         </div>
                         <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
-                          <!-- duration: inline edit -->
-                          <div class="inline-edit-wrap">
+                          <!-- duration: editable or read-only -->
+                          <div th:if="${listData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap">
                             <span class="badge bg-blue-lt inline-edit-display"
                                   style="user-select:none"
                                   th:text="${@durationUtils.format(tr.duration)}"></span>
@@ -484,10 +512,13 @@
                                    hx-trigger="blur"
                                    hx-swap="none"/>
                           </div>
+                          <span th:unless="${listData.editableTimereportIds.contains(tr.id)}"
+                                class="badge bg-blue-lt"
+                                th:text="${@durationUtils.format(tr.duration)}"></span>
                           <span th:if="${tr.training}" class="badge bg-purple-lt text-purple">Fortbildung</span>
                         </div>
                       </div>
-                      <div class="d-flex gap-1 mt-auto pt-2">
+                      <div th:if="${listData.editableTimereportIds.contains(tr.id)}" class="d-flex gap-1 mt-auto pt-2">
                         <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-outline-primary"
                            style="padding:1px 5px; font-size:0.7rem">
                           <i class="icon ti ti-pencil m-0"></i>
@@ -503,7 +534,8 @@
                     </div>
                   </div>
                   <!-- Add new timereport card -->
-                  <a th:href="@{/dailyreport/daily/new-timereport(date=${day.date},employeeContractId=${selectedContractId})}"
+                  <a th:if="${listData.canCreateTimereport}"
+                     th:href="@{/dailyreport/daily/new-timereport(date=${day.date},employeeContractId=${selectedContractId})}"
                      class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
                      style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
                     <i class="ti ti-plus" style="font-size:1.5rem"></i>
@@ -646,6 +678,22 @@
       input.classList.add('d-none');
       display.classList.remove('d-none');
     }
+  });
+
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+    new bootstrap.Tooltip(el);
+  });
+
+  document.body.addEventListener('showError', function(evt) {
+    var msg = evt.detail.value;
+    var toastEl = document.createElement('div');
+    toastEl.className = 'toast toast-error align-items-center show position-fixed bottom-0 end-0 m-3';
+    toastEl.setAttribute('role', 'alert');
+    toastEl.style.zIndex = '9999';
+    toastEl.innerHTML = '<div class="d-flex"><div class="toast-body">' + msg + '</div>'
+      + '<button type="button" class="btn-close me-2 m-auto" onclick="this.closest(\'.toast\').remove()"></button></div>';
+    document.body.appendChild(toastEl);
+    setTimeout(function() { toastEl.remove(); }, 5000);
   });
 </script>
 </html>
