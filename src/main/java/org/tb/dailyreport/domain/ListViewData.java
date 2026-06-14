@@ -9,6 +9,8 @@ public record ListViewData(
     String monthTarget,
     String monthDiff,
     boolean monthDiffNegative,
+    String prevDayDiffString,
+    boolean prevDayDiffNegative,
     boolean hasTarget,
     boolean monthReleased
 ) {
