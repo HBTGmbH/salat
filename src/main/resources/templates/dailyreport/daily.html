@@ -175,40 +175,67 @@
               <tr>
                 <th th:text="#{main.daily.column.order}">Auftrag / Unterauftrag</th>
                 <th class="w-1 text-nowrap" th:text="#{main.daily.column.duration}">Zeit</th>
-                <th class="w-1"></th>
-                <th class="w-1"></th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               <tr th:each="tr : ${dailyData.timereports}">
-                <td>
+                <td style="position:relative; padding-right:5rem">
                   <div class="fw-medium" th:text="${tr.completeOrderSign}"></div>
                   <div class="text-muted small" th:text="${tr.customerShortname}"></div>
-                  <div class="text-muted small mt-1" th:if="${not #strings.isEmpty(tr.taskdescription)}" th:text="${tr.taskdescription}"></div>
+                  <div class="inline-edit-wrap mt-1">
+                    <div class="text-muted small inline-edit-display"
+                         style="white-space:pre-wrap; min-height:1.4em"
+                         data-placeholder="Kommentar..."
+                         th:classappend="${#strings.isEmpty(tr.taskdescription)} ? 'is-empty'"
+                         th:text="${tr.taskdescription}"></div>
+                    <textarea class="form-control form-control-sm inline-edit-input d-none"
+                              rows="2"
+                              style="font-size:0.8rem; resize:none"
+                              name="taskdescription"
+                              placeholder="Kommentar..."
+                              th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
+                              hx-trigger="blur"
+                              hx-swap="none"
+                              th:text="${tr.taskdescription}"></textarea>
+                  </div>
                 </td>
-                <td class="text-nowrap">
-                  <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}"></span>
+                <td class="w-1 text-nowrap">
+                  <div class="inline-edit-wrap">
+                    <span class="badge bg-blue-lt inline-edit-display"
+                          style="user-select:none"
+                          th:text="${@durationUtils.format(tr.duration)}"></span>
+                    <input type="text" class="form-control form-control-sm text-center inline-edit-input d-none"
+                           style="width:4rem; font-size:0.8rem"
+                           name="duration"
+                           th:value="${@durationUtils.format(tr.duration)}"
+                           th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
+                           hx-trigger="blur"
+                           hx-swap="none"/>
+                  </div>
                 </td>
                 <td>
-                  <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-sm btn-outline-primary">
-                    <i class="icon ti ti-pencil m-0"></i>
-                  </a>
-                </td>
-                <td>
-                  <button type="button" class="btn btn-sm btn-outline-danger"
-                          th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-date=${date}"
-                          onclick="openDeleteModal(this)"
-                          data-bs-toggle="modal" data-bs-target="#deleteModal">
-                    <i class="icon ti ti-trash m-0"></i>
-                  </button>
+                  <div class="text-nowrap">
+                    <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-outline-primary"
+                       style="padding:1px 5px; font-size:0.7rem">
+                      <i class="icon ti ti-pencil m-0"></i>
+                    </a>
+                    <button type="button" class="btn btn-outline-danger"
+                            style="padding:1px 5px; font-size:0.7rem"
+                            th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-date=${date}"
+                            onclick="openDeleteModal(this)"
+                            data-bs-toggle="modal" data-bs-target="#deleteModal">
+                      <i class="icon ti ti-trash m-0"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
             <tfoot th:if="${dailyData != null}">
               <tr class="table-group-divider">
-                <td class="text-muted" th:text="#{main.daily.column.total}">Gesamt</td>
+                <td class="text-muted" th:text="#{main.daily.column.total}" style="text-align: right">Gesamt</td>
                 <td><span class="badge bg-blue-lt" th:text="${@durationUtils.format(dailyData.totalBooked)}"></span></td>
-                <td colspan="2"></td>
+                <td></td>
               </tr>
             </tfoot>
           </table>
