@@ -13,7 +13,15 @@ public record DailyViewData(
     boolean hasTarget,
     boolean overMaxHours,
     int progressPercent,
-    List<WeekStripDay> weekStrip
+    List<WeekStripDay> weekStrip,
+    boolean notWorked,
+    int startHour,
+    int startMinute,
+    String startTime,
+    int breakHours,
+    int breakMinutes,
+    String breakTime,
+    String dailyWorkingTimeFormatted
 ) {
     public record WeekStripDay(
         LocalDate date,
