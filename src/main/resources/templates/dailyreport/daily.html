@@ -320,12 +320,20 @@
           <th:block th:each="day : ${listData.days}">
             <!-- Day header row -->
             <tr th:classappend="${day.isToday} ? 'daily-today' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : ''))">
-              <td class="text-center fw-bold" style="vertical-align:top">
+              <td class="text-center" style="vertical-align:top">
                 <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},employeeContractId=${selectedContractId})}"
-                   class="btn btn-sm btn-ghost-secondary p-1"
-                   th:title="#{main.daily.viewday.title}">
-                  <div th:text="${day.date.dayOfMonth}"></div>
-                  <div class="text-muted" style="font-size:0.65rem" th:text="${#temporals.format(day.date, 'EEE')}"></div>
+                   class="d-inline-block text-decoration-none text-center rounded px-2 py-1"
+                   th:classappend="${day.isToday} ? 'bg-primary-lt' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
+                   th:title="#{main.daily.viewday.title}"
+                   style="width:3rem">
+                  <div class="fw-bold lh-1"
+                       th:classappend="${day.isToday} ? 'text-primary' : (${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : 'text-muted'))"
+                       style="font-size:1.1rem"
+                       th:text="${day.date.dayOfMonth}"></div>
+                  <div class="opacity-75"
+                       th:classappend="${day.isToday} ? 'text-primary' : (${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : 'text-muted'))"
+                       style="font-size:0.65rem"
+                       th:text="${#temporals.format(day.date, 'EEE')}"></div>
                 </a>
               </td>
               <td colspan="4">
