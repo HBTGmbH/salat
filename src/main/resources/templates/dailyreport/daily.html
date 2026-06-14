@@ -239,8 +239,8 @@
                 </td>
               </tr>
             </tbody>
-            <tfoot th:if="${dailyData != null}">
-              <tr class="table-group-divider">
+            <tfoot th:if="${dailyData != null}" style="border-top: 2px solid var(--tblr-border-color);">
+              <tr>
                 <td class="text-muted" th:text="#{main.daily.column.total}" style="text-align: right">Gesamt</td>
                 <td><span class="badge bg-blue-lt" th:text="${@durationUtils.format(dailyData.totalBooked)}"></span></td>
                 <td></td>
