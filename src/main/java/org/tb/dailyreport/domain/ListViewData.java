@@ -2,6 +2,7 @@ package org.tb.dailyreport.domain;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public record ListViewData(
     List<ListDay> days,
@@ -12,7 +13,9 @@ public record ListViewData(
     String prevDayDiffString,
     boolean prevDayDiffNegative,
     boolean hasTarget,
-    boolean monthReleased
+    boolean monthReleased,
+    Set<Long> editableTimereportIds,
+    boolean canCreateTimereport
 ) {
     public record ListDay(
         LocalDate date,

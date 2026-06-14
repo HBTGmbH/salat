@@ -3,6 +3,7 @@ package org.tb.dailyreport.domain;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public record DailyViewData(
     List<TimereportDTO> timereports,
@@ -17,7 +18,10 @@ public record DailyViewData(
     boolean notWorked,
     String startTime,
     String breakTime,
-    String dailyWorkingTimeFormatted
+    String dailyWorkingTimeFormatted,
+    Set<Long> editableTimereportIds,
+    boolean workingdayEditable,
+    boolean canCreateTimereport
 ) {
     public record WeekStripDay(
         LocalDate date,

@@ -4,6 +4,7 @@ import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -124,6 +125,7 @@ public class DailyController {
     public String saveWorkingday(
             @ModelAttribute WorkingdayForm form,
             HttpServletRequest request,
+            HttpServletResponse response,
             Model model,
             RedirectAttributes redirectAttributes) {
         Long employeeContractId = form.getEmployeeContractId();
@@ -171,9 +173,26 @@ public class DailyController {
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.daily.workingday.save.success.text"));
         } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastError",
-                errorCodeViewHelper.toViewMessages(ex).stream()
-                    .map(Object::toString).findFirst().orElse("Error"));
+            String errMsg = errorCodeViewHelper.toViewMessages(ex).stream()
+                .map(Object::toString).findFirst().orElse("Error");
+            if ("true".equals(request.getHeader("HX-Request"))) {
+                response.setHeader("HX-Trigger", "{\"showError\":\"" + errMsg.replace("\"", "'") + "\"}");
+                var dailyData = dailyService.buildDailyView(date, employeeContractId);
+                model.addAttribute("dailyData", dailyData);
+                model.addAttribute("weekStripData", dailyData.weekStrip());
+                var updatedForm = new WorkingdayForm();
+                updatedForm.setEmployeeContractId(employeeContractId);
+                updatedForm.setDate(date);
+                updatedForm.setNotWorked(dailyData.notWorked());
+                updatedForm.setStartTime(dailyData.startTime());
+                updatedForm.setBreakTime(dailyData.breakTime());
+                model.addAttribute("workingdayForm", updatedForm);
+                model.addAttribute("date", date);
+                model.addAttribute("selectedContractId", employeeContractId);
+                model.addAttribute("isHtmxRequest", true);
+                return "dailyreport/daily :: dailyBookings";
+            }
+            redirectAttributes.addFlashAttribute("toastError", errMsg);
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + employeeContractId;
     }
@@ -185,9 +204,11 @@ public class DailyController {
             @RequestParam(required = false) String duration,
             @RequestParam(required = false) String taskdescription,
             HttpServletRequest request,
+            HttpServletResponse response,
             Model model) {
         LocalDate date = today();
         Long ecId = null;
+        String htmxError = null;
         try {
             var tr = timereportService.getTimereportById(id);
             date = tr.getReferenceday();
@@ -204,9 +225,13 @@ public class DailyController {
                 ecId, tr.getEmployeeorderId(),
                 date, desc, tr.isTraining(), hours, minutes);
         } catch (ErrorCodeException ex) {
-            // fall through — still re-render so the UI reflects actual state
+            htmxError = errorCodeViewHelper.toViewMessages(ex).stream()
+                .map(Object::toString).findFirst().orElse("Error");
         }
         if ("true".equals(request.getHeader("HX-Request")) && ecId != null) {
+            if (htmxError != null) {
+                response.setHeader("HX-Trigger", "{\"showError\":\"" + htmxError.replace("\"", "'") + "\"}");
+            }
             var dailyData = dailyService.buildDailyView(date, ecId);
             model.addAttribute("dailyData", dailyData);
             model.addAttribute("weekStripData", dailyData.weekStrip());

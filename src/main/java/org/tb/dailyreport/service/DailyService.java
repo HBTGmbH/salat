@@ -4,6 +4,9 @@ import static java.time.DayOfWeek.MONDAY;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
@@ -13,11 +16,13 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.DailyViewData;
 import org.tb.dailyreport.domain.DailyViewData.WeekStripDay;
@@ -39,6 +44,7 @@ public class DailyService {
     private final PublicholidayService publicholidayService;
     private final OvertimeService overtimeService;
     private final EmployeecontractService employeecontractService;
+    private final AuthorizedUser authorizedUser;
 
     @Transactional(readOnly = true)
     public DailyViewData buildDailyView(LocalDate date, long employeeContractId) {
@@ -69,9 +75,19 @@ public class DailyService {
             ? DurationUtils.format(workingday.getEmployeecontract().getDailyWorkingTime())
             : null;
 
+        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
+            .equals(authorizedUser.getEffectiveLoginSign());
+        Set<Long> editableIds = timereports.stream()
+            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner))
+            .map(TimereportDTO::getId)
+            .collect(toSet());
+        boolean workingdayEditable = isOwner || authorizedUser.isManager();
+        boolean canCreate = isOwner || authorizedUser.isManager();
+
         return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
             hasTarget, overMaxHours, progressPercent, weekStrip,
-            notWorked, startTime, breakTime, dailyWorkingTimeFormatted);
+            notWorked, startTime, breakTime, dailyWorkingTimeFormatted,
+            editableIds, workingdayEditable, canCreate);
     }
 
     @Transactional(readOnly = true)
@@ -133,7 +149,15 @@ public class DailyService {
         boolean monthReleased = contract.getReportReleaseDate() != null
             && !contract.getReportReleaseDate().isBefore(last);
 
-        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased);
+        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
+            .equals(authorizedUser.getEffectiveLoginSign());
+        Set<Long> editableIds = timereports.stream()
+            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner))
+            .map(TimereportDTO::getId)
+            .collect(toSet());
+        boolean canCreate = isOwner || authorizedUser.isManager();
+
+        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased, editableIds, canCreate);
     }
 
     @Transactional(readOnly = true)
@@ -162,5 +186,11 @@ public class DailyService {
             boolean notWorked = wd != null && wd.getType() == Workingday.WorkingDayType.NOT_WORKED;
             return new WeekStripDay(day, booked, count, day.isEqual(today), day.isEqual(date), holidays.containsKey(day), holidays.get(day), notWorked);
         }).collect(Collectors.toList());
+    }
+
+    private boolean canEditTimereport(String status, boolean isOwner) {
+        if (TIMEREPORT_STATUS_CLOSED.equals(status)) return authorizedUser.isAdmin();
+        if (TIMEREPORT_STATUS_COMMITED.equals(status)) return authorizedUser.isManager() && !isOwner;
+        return isOwner || authorizedUser.isAdmin(); // OPEN
     }
 }
