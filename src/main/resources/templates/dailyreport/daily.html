@@ -238,14 +238,14 @@
              th:classappend="${wd.isSelected} ? 'active' : (${wd.isToday} ? 'daily-today' : '')">
             <div>
               <div class="d-inline-block text-center rounded px-2 py-1"
-                   th:classappend="${wd.isSelected} ? '' : (${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
+                   th:classappend="${wd.isSelected} ? 'bg-primary-lt' : (${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                    style="width:3rem">
                 <div class="fw-bold lh-1"
-                     th:classappend="${wd.isSelected} ? 'text-white' : (${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
+                     th:classappend="${wd.isSelected} ? 'text-primary' : (${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
                      style="font-size:1.1rem"
                      th:text="${wd.date.dayOfMonth}"></div>
                 <div class="opacity-75"
-                     th:classappend="${wd.isSelected} ? 'text-white' : (${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
+                     th:classappend="${wd.isSelected} ? 'text-primary' : (${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
                      style="font-size:0.65rem"
                      th:text="${#temporals.format(wd.date, 'EEE')}"></div>
               </div>
