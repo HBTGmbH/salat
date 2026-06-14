@@ -302,7 +302,9 @@
                 class="text-muted small"
                 th:text="#{main.daily.week.bookings.text(${wd.bookingCount})}"></span>
           <div>
-            <span th:if="${wd.notWorked}" class="text-warning">●</span>
+            <span th:if="${wd.notWorked}" class="badge bg-warning-lt text-warning"
+                  style="font-size:0.65rem"
+                  th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
             <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
                   class="badge bg-blue-lt text-blue"
                   th:text="${@durationUtils.format(wd.booked)}"></span>
@@ -347,7 +349,9 @@
                   class="text-muted small"
                   th:text="#{main.daily.week.bookings.text(${wd.bookingCount})}"></span>
             <div>
-              <span th:if="${wd.notWorked}" class="text-warning">●</span>
+              <span th:if="${wd.notWorked}" class="badge bg-warning-lt text-warning"
+                  style="font-size:0.65rem"
+                  th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
               <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
                     class="badge bg-blue-lt text-blue"
                     th:text="${@durationUtils.format(wd.booked)}"></span>
