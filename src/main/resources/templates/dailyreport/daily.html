@@ -4,6 +4,13 @@
       layout:decorate="~{layout/base}">
 <section layout:fragment="content">
 
+<style>
+  .daily-today {
+    border-left: 2px solid red !important;
+    border-right: 2px solid red !important;
+  }
+</style>
+
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- Shared header: mode tabs + employee selector               -->
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -219,21 +226,21 @@
           <a th:each="wd : ${dailyData.weekStrip}"
              th:href="@{/dailyreport/daily(mode='daily',date=${wd.date},employeeContractId=${selectedContractId})}"
              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-             th:classappend="${wd.isSelected} ? 'active' : ''">
+             th:classappend="${wd.isSelected} ? 'active' : (${wd.isToday} ? 'daily-today' : '')">
             <div>
               <div class="d-inline-block text-center rounded px-2 py-1"
-                   th:classappend="${wd.isSelected} ? '' : (${wd.isHoliday} ? 'bg-red-lt' : (${wd.isToday} ? 'bg-blue-lt' : 'bg-secondary-lt'))"
+                   th:classappend="${wd.isSelected} ? '' : (${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                    style="width:3rem">
                 <div class="fw-bold lh-1"
-                     th:classappend="${wd.isSelected} ? 'text-white' : (${wd.isHoliday} ? 'text-red' : (${wd.isToday} ? 'text-blue' : 'text-muted'))"
+                     th:classappend="${wd.isSelected} ? 'text-white' : (${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
                      style="font-size:1.1rem"
                      th:text="${wd.date.dayOfMonth}"></div>
                 <div class="opacity-75"
-                     th:classappend="${wd.isSelected} ? 'text-white' : (${wd.isHoliday} ? 'text-red' : (${wd.isToday} ? 'text-blue' : 'text-muted'))"
+                     th:classappend="${wd.isSelected} ? 'text-white' : (${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
                      style="font-size:0.65rem"
                      th:text="${#temporals.format(wd.date, 'EEE')}"></div>
               </div>
-              <div th:if="${wd.isHoliday and wd.holidayName != null}" class="text-red mt-1"
+              <div th:if="${wd.isHoliday and wd.holidayName != null}" class="text-warning mt-1"
                    style="font-size:0.7rem;white-space:nowrap" th:text="${wd.holidayName}"></div>
             </div>
             <span th:if="${wd.notWorked}" class="badge bg-secondary-lt text-muted" th:text="#{main.daily.notworked.badge}">—</span>
@@ -303,7 +310,7 @@
         <tbody>
           <th:block th:each="day : ${listData.days}">
             <!-- Day header row -->
-            <tr th:classappend="${day.isToday} ? 'table-active' : (${day.isWeekend or day.isHoliday} ? 'table-secondary' : '')">
+            <tr th:classappend="${day.isToday} ? 'daily-today' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : ''))">
               <td class="text-center fw-bold" style="vertical-align:top">
                 <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},employeeContractId=${selectedContractId})}"
                    class="btn btn-sm btn-ghost-secondary p-1"
@@ -323,7 +330,7 @@
             </tr>
             <!-- Timereport rows for this day -->
             <tr th:each="tr : ${day.timereports}"
-                th:classappend="${day.isWeekend or day.isHoliday} ? 'table-secondary' : ''">
+                th:classappend="${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : '')">
               <td></td>
               <td>
                 <div class="fw-medium small" th:text="${tr.completeOrderSign}"></div>
@@ -365,8 +372,7 @@
           <tr>
             <td colspan="2" class="text-end text-muted small" th:text="#{main.matrixoverview.headline.difference.text}">Differenz</td>
             <td>
-              <span class="badge"
-                    th:classappend="${listData.monthDiffNegative} ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success'"
+              <span th:classappend="${listData.monthDiffNegative} ? 'text-warning' : 'text-success'"
                     th:text="${listData.monthDiff}"></span>
             </td>
             <td colspan="2"></td>
