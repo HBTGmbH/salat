@@ -13,14 +13,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
@@ -171,13 +169,18 @@ public class DailyController {
 
     @PostMapping("/timereport/{id}/update-inline")
     @PreAuthorize("isAuthenticated()")
-    @ResponseBody
-    public ResponseEntity<String> updateTimereportInline(
+    public String updateTimereportInline(
             @PathVariable long id,
             @RequestParam(required = false) String duration,
-            @RequestParam(required = false) String taskdescription) {
+            @RequestParam(required = false) String taskdescription,
+            HttpServletRequest request,
+            Model model) {
+        LocalDate date = today();
+        Long ecId = null;
         try {
             var tr = timereportService.getTimereportById(id);
+            date = tr.getReferenceday();
+            ecId = tr.getEmployeecontractId();
             long hours = tr.getDurationhours();
             long minutes = tr.getDurationminutes();
             if (duration != null && duration.matches("\\d{1,3}:\\d{2}")) {
@@ -187,16 +190,29 @@ public class DailyController {
             }
             String desc = taskdescription != null ? taskdescription : tr.getTaskdescription();
             timereportService.updateTimereport(id,
-                tr.getEmployeecontractId(), tr.getEmployeeorderId(),
-                tr.getReferenceday(), desc, tr.isTraining(), hours, minutes);
-            long totalMinutes = hours * 60 + minutes;
-            String normalized = (totalMinutes / 60) + ":" + String.format("%02d", totalMinutes % 60);
-            return ResponseEntity.ok(normalized);
+                ecId, tr.getEmployeeorderId(),
+                date, desc, tr.isTraining(), hours, minutes);
         } catch (ErrorCodeException ex) {
-            return ResponseEntity.badRequest().body(
-                errorCodeViewHelper.toViewMessages(ex).stream()
-                    .map(Object::toString).findFirst().orElse("Error"));
+            // fall through — still re-render so the UI reflects actual state
         }
+        if ("true".equals(request.getHeader("HX-Request")) && ecId != null) {
+            var dailyData = dailyService.buildDailyView(date, ecId);
+            model.addAttribute("dailyData", dailyData);
+            model.addAttribute("weekStripData", dailyData.weekStrip());
+            var form = new WorkingdayForm();
+            form.setEmployeeContractId(ecId);
+            form.setDate(date);
+            form.setNotWorked(dailyData.notWorked());
+            form.setStartTime(dailyData.startTime());
+            form.setBreakTime(dailyData.breakTime());
+            model.addAttribute("workingdayForm", form);
+            model.addAttribute("date", date);
+            model.addAttribute("selectedContractId", ecId);
+            model.addAttribute("isHtmxRequest", true);
+            return "dailyreport/daily :: dailyBookings";
+        }
+        return "redirect:/dailyreport/daily?mode=daily&date=" + date
+            + (ecId != null ? "&employeeContractId=" + ecId : "");
     }
 
     @GetMapping("/new-timereport")
