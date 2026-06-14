@@ -149,14 +149,18 @@ public class DailyService {
         Map<LocalDate, Duration> bookedByDay = weekReports.stream().collect(
             toMap(TimereportDTO::getReferenceday, TimereportDTO::getDuration, Duration::plus));
 
+        Map<LocalDate, Long> countByDay = weekReports.stream().collect(
+            Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.counting()));
+
         Map<LocalDate, Workingday> workingdays = workingdayService.getWorkingdaysByEmployeeContractId(employeeContractId, monday, sunday)
             .stream().collect(toMap(Workingday::getRefday, identity()));
 
         return monday.datesUntil(sunday.plusDays(1)).map(day -> {
             Duration booked = bookedByDay.getOrDefault(day, Duration.ZERO);
+            int count = countByDay.getOrDefault(day, 0L).intValue();
             Workingday wd = workingdays.get(day);
             boolean notWorked = wd != null && wd.getType() == Workingday.WorkingDayType.NOT_WORKED;
-            return new WeekStripDay(day, booked, day.isEqual(today), day.isEqual(date), holidays.containsKey(day), holidays.get(day), notWorked);
+            return new WeekStripDay(day, booked, count, day.isEqual(today), day.isEqual(date), holidays.containsKey(day), holidays.get(day), notWorked);
         }).collect(Collectors.toList());
     }
 }
