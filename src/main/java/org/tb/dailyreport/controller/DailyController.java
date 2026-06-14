@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
@@ -98,6 +99,13 @@ public class DailyController {
                 var dailyData = dailyService.buildDailyView(targetDate, ecId);
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
+                var form = new WorkingdayForm();
+                form.setEmployeeContractId(ecId);
+                form.setDate(targetDate);
+                form.setNotWorked(dailyData.notWorked());
+                form.setStartTime(dailyData.startTime());
+                form.setBreakTime(dailyData.breakTime());
+                model.addAttribute("workingdayForm", form);
             }
             model.addAttribute("yearMonth", yearMonth);
             model.addAttribute("date", targetDate);
@@ -112,16 +120,12 @@ public class DailyController {
     @PostMapping("/workingday")
     @PreAuthorize("isAuthenticated()")
     public String saveWorkingday(
-            @RequestParam Long employeeContractId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(defaultValue = "0") int starttimehour,
-            @RequestParam(defaultValue = "0") int starttimeminute,
-            @RequestParam(defaultValue = "0") int breakhours,
-            @RequestParam(defaultValue = "0") int breakminutes,
-            @RequestParam(defaultValue = "false") boolean notWorked,
+            @ModelAttribute WorkingdayForm form,
             HttpServletRequest request,
             Model model,
             RedirectAttributes redirectAttributes) {
+        Long employeeContractId = form.getEmployeeContractId();
+        LocalDate date = form.getDate();
         try {
             var contract = employeecontractService.getEmployeecontractById(employeeContractId);
             Workingday workingday = workingdayService.getWorkingday(employeeContractId, date);
@@ -130,18 +134,20 @@ public class DailyController {
                 workingday.setEmployeecontract(contract);
                 workingday.setRefday(date);
             }
-            if (notWorked) {
+            if (form.isNotWorked()) {
                 workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
                 workingday.setStarttimehour(0);
                 workingday.setStarttimeminute(0);
                 workingday.setBreakhours(0);
                 workingday.setBreakminutes(0);
             } else {
+                int[] start = parseTime(form.getStartTime(), 8, 0);
+                int[] brk   = parseTime(form.getBreakTime(), 0, 30);
                 workingday.setType(Workingday.WorkingDayType.WORKED);
-                workingday.setStarttimehour(starttimehour);
-                workingday.setStarttimeminute(starttimeminute);
-                workingday.setBreakhours(breakhours);
-                workingday.setBreakminutes(breakminutes);
+                workingday.setStarttimehour(start[0]);
+                workingday.setStarttimeminute(start[1]);
+                workingday.setBreakhours(brk[0]);
+                workingday.setBreakminutes(brk[1]);
             }
             workingdayService.upsertWorkingday(workingday);
             if ("true".equals(request.getHeader("HX-Request"))) {
@@ -157,6 +163,14 @@ public class DailyController {
                     .map(Object::toString).findFirst().orElse("Error"));
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + employeeContractId;
+    }
+
+    private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
+        if (hhmm != null && hhmm.matches("\\d{1,2}:\\d{2}")) {
+            String[] p = hhmm.split(":");
+            return new int[]{Integer.parseInt(p[0]), Integer.parseInt(p[1])};
+        }
+        return new int[]{defaultHour, defaultMinute};
     }
 
     @PostMapping("/delete-timereport")
