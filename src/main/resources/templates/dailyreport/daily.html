@@ -156,7 +156,7 @@
 
       <!-- Add booking -->
       <div class="d-flex gap-2 mb-3" th:if="${selectedContractId > 0}">
-        <a th:href="@{/do/CreateDailyReport}" class="btn btn-success flex-fill">
+        <a th:href="@{/dailyreport/daily/new-timereport(date=${date},employeeContractId=${selectedContractId})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
       </div>
@@ -190,7 +190,7 @@
                 </td>
                 <td>
                   <button type="button" class="btn btn-sm btn-outline-danger"
-                          th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign}"
+                          th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-date=${date}"
                           onclick="openDeleteModal(this)"
                           data-bs-toggle="modal" data-bs-target="#deleteModal">
                     <i class="icon ti ti-trash m-0"></i>
@@ -294,20 +294,17 @@
   <div class="card" th:if="${listData != null}">
     <div class="table-responsive">
       <table class="table table-vcenter card-table" id="daily-list">
-        <thead>
+        <thead class="d-none">
           <tr>
-            <th style="width:3rem"></th>
-            <th th:text="#{main.daily.column.order}">Auftrag / Unterauftrag</th>
-            <th class="w-1 text-nowrap" th:text="#{main.daily.column.duration}">Zeit</th>
             <th class="w-1"></th>
-            <th class="w-1"></th>
+            <th colspan="4"></th>
           </tr>
         </thead>
         <tbody>
           <th:block th:each="day : ${listData.days}">
-            <!-- Day header row -->
+            <!-- Day row -->
             <tr th:classappend="${day.isToday} ? 'daily-today' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : ''))">
-              <td class="text-center" style="vertical-align:top">
+              <td class="w-1 text-center align-top text-nowrap">
                 <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},employeeContractId=${selectedContractId})}"
                    class="d-inline-block text-decoration-none text-center rounded px-2 py-1"
                    th:classappend="${day.isToday} ? 'bg-primary-lt' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
@@ -323,64 +320,90 @@
                        th:text="${#temporals.format(day.date, 'EEE')}"></div>
                 </a>
               </td>
-              <td colspan="4">
-                <span th:if="${day.notWorked}" class="badge bg-secondary-lt text-muted"
-                      th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
-                <span th:if="${day.isHoliday}" class="badge bg-red-lt text-red ms-1"
-                      th:text="${day.holidayName}"></span>
-              </td>
-            </tr>
-            <!-- Timereport rows for this day -->
-            <tr th:each="tr : ${day.timereports}"
-                th:classappend="${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : '')">
-              <td></td>
-              <td>
-                <div class="fw-medium small" th:text="${tr.completeOrderSign}"></div>
-                <div class="text-muted" style="font-size:0.75rem" th:text="${tr.customerShortname}"></div>
-                <div class="text-muted" style="font-size:0.75rem" th:if="${not #strings.isEmpty(tr.taskdescription)}"
-                     th:text="${tr.taskdescription}"></div>
-              </td>
-              <td class="text-nowrap">
-                <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}"></span>
-              </td>
-              <td>
-                <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-sm btn-outline-primary">
-                  <i class="icon ti ti-pencil m-0"></i>
-                </a>
-              </td>
-              <td>
-                <button type="button" class="btn btn-sm btn-outline-danger"
-                        th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-mode='list',data-date=${day.date},data-month=${yearMonth.monthValue},data-year=${yearMonth.year}"
-                        onclick="openDeleteModal(this)"
-                        data-bs-toggle="modal" data-bs-target="#deleteModal">
-                  <i class="icon ti ti-trash m-0"></i>
-                </button>
+              <td colspan="4" class="py-2">
+                <div th:if="${day.notWorked or day.isHoliday}" class="mb-2">
+                  <span th:if="${day.notWorked}" class="badge bg-warning-lt text-warning"
+                        th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
+                  <span th:if="${day.isHoliday}" class="badge bg-red-lt text-red ms-1"
+                        th:text="${day.holidayName}"></span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <div th:each="tr : ${day.timereports}"
+                       class="card card-sm mb-0 flex-shrink-0"
+                       style="min-width:200px; max-width:320px">
+                    <div class="card-body py-2 px-3 d-flex flex-column">
+                      <div class="d-flex justify-content-between align-items-start gap-2 flex-grow-1">
+                        <div class="overflow-hidden">
+                          <div class="text-muted text-truncate" style="font-size:0.75rem"
+                               th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
+                          <div class="fw-medium text-truncate" style="font-size:0.85rem"
+                               th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
+                          <div th:if="${not #strings.isEmpty(tr.taskdescription)}" class="task-desc-wrap mt-1">
+                            <div class="task-desc-text text-muted"
+                                 style="font-size:0.75rem; white-space:pre-wrap; overflow:hidden; max-height:3em"
+                                 th:text="${tr.taskdescription}"></div>
+                            <a href="#" class="task-desc-more text-muted d-none"
+                               style="font-size:0.7rem; text-decoration:none"
+                               onclick="toggleTaskDesc(this); return false;">···</a>
+                          </div>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                          <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}"></span>
+                          <span th:if="${tr.training}" class="badge bg-purple-lt text-purple">Fortbildung</span>
+                        </div>
+                      </div>
+                      <div class="d-flex gap-1 mt-auto pt-2">
+                        <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-outline-primary"
+                           style="padding:1px 5px; font-size:0.7rem">
+                          <i class="icon ti ti-pencil m-0"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger"
+                                style="padding:1px 5px; font-size:0.7rem"
+                                th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-mode='list',data-date=${day.date},data-month=${yearMonth.monthValue},data-year=${yearMonth.year}"
+                                onclick="openDeleteModal(this)"
+                                data-bs-toggle="modal" data-bs-target="#deleteModal">
+                          <i class="icon ti ti-trash m-0"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Add new timereport card -->
+                  <a th:href="@{/dailyreport/daily/new-timereport(date=${day.date},employeeContractId=${selectedContractId})}"
+                     class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
+                     style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
+                    <i class="ti ti-plus" style="font-size:1.5rem"></i>
+                  </a>
+                </div>
               </td>
             </tr>
           </th:block>
         </tbody>
-        <!-- Month totals -->
-        <tfoot th:if="${listData.hasTarget}" class="table-group-divider">
-          <tr>
-            <td colspan="2" class="text-end text-muted small" th:text="#{main.matrixoverview.headline.actualtime.text}">IST</td>
-            <td><span class="badge bg-blue-lt" th:text="${listData.monthTotal}"></span></td>
-            <td colspan="2"></td>
-          </tr>
-          <tr>
-            <td colspan="2" class="text-end text-muted small" th:text="#{main.matrixoverview.headline.targettime.text}">SOLL</td>
-            <td><span class="badge bg-secondary-lt text-muted" th:text="${listData.monthTarget}"></span></td>
-            <td colspan="2"></td>
-          </tr>
-          <tr>
-            <td colspan="2" class="text-end text-muted small" th:text="#{main.matrixoverview.headline.difference.text}">Differenz</td>
-            <td>
-              <span th:classappend="${listData.monthDiffNegative} ? 'text-warning' : 'text-success'"
-                    th:text="${listData.monthDiff}"></span>
-            </td>
-            <td colspan="2"></td>
-          </tr>
-        </tfoot>
       </table>
+    </div>
+    <div class="card-footer d-flex gap-3 flex-wrap align-items-center" th:if="${listData != null}">
+      <span th:if="${listData.monthTotal != null}">
+        <span th:text="#{main.matrixoverview.headline.actualtime.text}">IST-Stunden:</span>
+        <strong th:text="${listData.monthTotal}">0:00</strong>
+      </span>
+      <span th:if="${listData.monthTarget != null}">
+        <span th:text="#{main.matrixoverview.headline.targettime.text}">SOLL-Stunden:</span>
+        <strong th:text="${listData.monthTarget}">0:00</strong>
+      </span>
+      <span th:if="${listData.monthDiff != null}"
+            th:classappend="${listData.monthDiffNegative} ? 'text-warning' : 'text-success'">
+        <span th:text="#{main.matrixoverview.headline.difference.text}">Differenz:</span>
+        <strong th:text="${listData.monthDiff}">+0:00</strong>
+      </span>
+      <span th:if="${listData.prevDayDiffString != null}"
+            th:classappend="${listData.prevDayDiffNegative} ? 'text-warning' : 'text-success'">
+        <span th:text="#{main.matrixoverview.headline.prevdaydiff.text}">Stand gestern:</span>
+        <strong th:text="${listData.prevDayDiffString}">+0:00</strong>
+      </span>
+      <span class="ms-auto small">
+        <span class="badge bg-azure-lt me-1">Sa/So</span>
+        <span class="badge bg-warning-lt me-1">Feiertag</span>
+        <span class="badge me-1 matrix-today">Heute</span>
+      </span>
     </div>
   </div>
 
@@ -436,6 +459,21 @@
 
   function saveTime() {
     htmx.trigger('#workingday-form', 'submit');
+  }
+
+  document.querySelectorAll('.task-desc-wrap').forEach(function(wrap) {
+    var text = wrap.querySelector('.task-desc-text');
+    var more = wrap.querySelector('.task-desc-more');
+    if (text.scrollHeight > text.clientHeight + 1) {
+      more.classList.remove('d-none');
+    }
+  });
+
+  function toggleTaskDesc(link) {
+    var text = link.previousElementSibling;
+    var expanded = text.style.maxHeight === 'none';
+    text.style.maxHeight = expanded ? '3em' : 'none';
+    link.textContent = expanded ? '···' : '↑';
   }
 
 </script>

@@ -4,6 +4,7 @@ import static java.time.DayOfWeek.MONDAY;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
+import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
@@ -113,10 +114,26 @@ public class DailyService {
             monthDiffNegative = diff.isNegative();
         }
 
+        String prevDayDiffString = null;
+        boolean prevDayDiffNegative = false;
+        if (hasTarget && isInRange(today, first, last)) {
+            var cutoff = today.minusDays(1);
+            if (!cutoff.isBefore(first)) {
+                Duration grandPrevDay = timereports.stream()
+                    .filter(r -> !r.getReferenceday().isAfter(cutoff))
+                    .map(TimereportDTO::getDuration)
+                    .reduce(Duration.ZERO, Duration::plus);
+                Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, first, cutoff);
+                Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
+                prevDayDiffString = (prevDayDiff.isNegative() ? "" : "+") + DurationUtils.format(prevDayDiff);
+                prevDayDiffNegative = prevDayDiff.isNegative();
+            }
+        }
+
         boolean monthReleased = contract.getReportReleaseDate() != null
             && !contract.getReportReleaseDate().isBefore(last);
 
-        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, hasTarget, monthReleased);
+        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased);
     }
 
     @Transactional(readOnly = true)

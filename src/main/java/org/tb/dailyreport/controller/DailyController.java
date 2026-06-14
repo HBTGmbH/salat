@@ -6,6 +6,7 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -163,6 +164,21 @@ public class DailyController {
                     .map(Object::toString).findFirst().orElse("Error"));
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + employeeContractId;
+    }
+
+    @GetMapping("/new-timereport")
+    public String newTimereport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam Long employeeContractId,
+            HttpServletRequest request) {
+        request.getSession().setAttribute("currentDay", String.valueOf(date.getDayOfMonth()));
+        request.getSession().setAttribute("currentMonth", date.format(DateTimeFormatter.ofPattern("MMM", java.util.Locale.ENGLISH)));
+        request.getSession().setAttribute("currentYear", String.valueOf(date.getYear()));
+        var contract = employeecontractService.getEmployeecontractById(employeeContractId);
+        request.getSession().setAttribute("currentEmployeeContract", contract);
+        request.getSession().setAttribute("currentEmployee", contract.getEmployee().getName());
+        request.getSession().setAttribute("currentEmployeeId", contract.getEmployee().getId());
+        return "redirect:/do/CreateDailyReport";
     }
 
     private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
