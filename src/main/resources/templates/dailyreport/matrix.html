@@ -161,7 +161,7 @@
           <th th:each="dh : ${matrixData.dayHeaders}"
               class="text-center matrix-day-col px-1 text-nowrap"
               th:classappend="${dh.weekend ? 'bg-azure-lt ' : (dh.publicHoliday ? 'bg-warning-lt ' : '')} + ${dh.today ? 'matrix-today' : ''}"
-              th:attr="data-daily-url=@{/do/ShowDailyReport(day=${#temporals.format(dh.date,'dd')},month=${monthShortForm},year=${yearMonth.year},employeeContractId=${selectedContractId})}">
+              th:attr="data-daily-url=@{/dailyreport/daily(mode='daily',date=${dh.date},employeeContractId=${selectedContractId})}">
             [[${dh.day}]]<br>
             <span style="font-size:0.7rem"
                   th:text="${#strings.substring(#messages.msg(dh.weekdayKey), 0, 2)}">Mo</span>
