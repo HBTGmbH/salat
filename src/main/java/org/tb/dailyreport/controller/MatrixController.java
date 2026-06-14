@@ -63,9 +63,15 @@ public class MatrixController {
 
         String monthKey = "main.timereport.select.month." + formatMonth(yearMonth.atDay(1)).toLowerCase() + ".text";
 
+        var selectedContract = contracts.stream().filter(c -> c.getId() == ecId).findFirst();
+        boolean monthReleased = selectedContract
+            .map(c -> c.getReportReleaseDate() != null && !c.getReportReleaseDate().isBefore(yearMonth.atEndOfMonth()))
+            .orElse(false);
+
         model.addAttribute("matrixData", matrixData);
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
+        model.addAttribute("monthReleased", monthReleased);
         model.addAttribute("showBeginBreakEnd", showBeginBreakEnd);
         model.addAttribute("yearMonth", yearMonth);
         model.addAttribute("monthShortForm", formatMonth(yearMonth.atDay(1)));

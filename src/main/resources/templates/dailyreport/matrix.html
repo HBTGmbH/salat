@@ -125,6 +125,8 @@
         <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
         <input type="hidden" name="year" th:value="${yearMonth.year}"/>
         <button type="submit" class="btn btn-sm btn-outline-secondary"
+                th:disabled="${monthReleased}"
+                th:title="${monthReleased} ? #{main.matrix.fillnotworked.disabled.title} : null"
                 th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
       </form>
 
