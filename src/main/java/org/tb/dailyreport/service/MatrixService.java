@@ -1,6 +1,7 @@
 package org.tb.dailyreport.service;
 
-import static org.tb.common.GlobalConstants.MAX_HOURS_PER_DAY;
+import static java.util.stream.Collectors.toMap;
+import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
@@ -20,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.MatrixData;
+import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.service.EmployeecontractService;
 
@@ -48,11 +51,11 @@ public class MatrixService {
         Map<LocalDate, String> holidays = publicholidayService
             .getPublicHolidaysBetween(dateFirst, dateLast)
             .stream()
-            .collect(Collectors.toMap(h -> h.getRefdate(), h -> h.getName()));
+            .collect(toMap(Publicholiday::getRefdate, Publicholiday::getName));
 
         Map<LocalDate, Workingday> workingdays = employeeContractId > 0
             ? workingdayService.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast)
-                .stream().collect(Collectors.toMap(Workingday::getRefday, Function.identity()))
+                .stream().collect(toMap(Workingday::getRefday, Function.identity()))
             : Map.of();
 
         List<LocalDate> days = dateFirst.datesUntil(dateLast.plusDays(1)).collect(Collectors.toList());
@@ -68,17 +71,20 @@ public class MatrixService {
             .toList();
 
         List<MatrixData.Row> rows = reports.stream()
-            .collect(Collectors.groupingBy(r -> r.getSuborderId()))
+            .collect(Collectors.groupingBy(TimereportDTO::getSuborderId))
             .entrySet().stream()
-            .sorted(Comparator.comparing(e -> e.getValue().get(0).getCompleteOrderSign()))
+            .sorted(Comparator.comparing(e -> e.getValue().getFirst().getCompleteOrderSign()))
             .map(e -> buildRow(e.getValue(), days, holidays))
             .toList();
 
-        Map<LocalDate, Duration> durationByDay = reports.stream()
-            .collect(Collectors.toMap(
-                r -> r.getReferenceday(),
-                r -> r.getDuration(),
-                Duration::plus));
+        Map<LocalDate, Duration> durationByDay = reports
+            .stream()
+            .collect(toMap(
+                TimereportDTO::getReferenceday,
+                TimereportDTO::getDuration,
+                Duration::plus
+            )
+        );
 
         var beginErrors = employeeContractId > 0
             ? timereportService.validateBeginOfWorkingDays(employeeContractId, dateFirst, dateLast)
@@ -119,7 +125,7 @@ public class MatrixService {
             .toList();
 
         Duration grand = reports.stream()
-            .map(r -> r.getDuration())
+            .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus);
 
         boolean hasTarget = employeeContractId > 0
@@ -139,16 +145,12 @@ public class MatrixService {
 
         String prevDayDiffString = null;
         boolean prevDayDiffNegative = false;
-        if (hasTarget && !today.isBefore(dateFirst) && !today.isAfter(dateLast)) {
-            LocalDate cutoff = today.minusDays(1);
-            while (cutoff.getDayOfWeek() == DayOfWeek.SATURDAY || cutoff.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                cutoff = cutoff.minusDays(1);
-            }
+        if (hasTarget && isInRange(today, dateFirst, dateLast)) {
+            var cutoff = today.minusDays(1);
             if (!cutoff.isBefore(dateFirst)) {
-                LocalDate effectiveCutoff = cutoff;
                 Duration grandPrevDay = reports.stream()
-                    .filter(r -> !r.getReferenceday().isAfter(effectiveCutoff))
-                    .map(r -> r.getDuration())
+                    .filter(r -> !r.getReferenceday().isAfter(cutoff))
+                    .map(TimereportDTO::getDuration)
                     .reduce(Duration.ZERO, Duration::plus);
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, cutoff);
                 Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
@@ -192,7 +194,7 @@ public class MatrixService {
             List<LocalDate> days,
             Map<LocalDate, String> holidays) {
 
-        var first = suborderReports.get(0);
+        var first = suborderReports.getFirst();
         String suborderSign = first.getCompleteOrderSign();
         String customerOrderSign = first.getCustomerorderSign();
         String customer = first.getCustomerShortname();
@@ -200,13 +202,13 @@ public class MatrixService {
         String suborderDesc = first.getSuborderDescription();
 
         Map<LocalDate, List<org.tb.dailyreport.domain.TimereportDTO>> reportsByDate = suborderReports.stream()
-            .collect(Collectors.groupingBy(r -> r.getReferenceday()));
+            .collect(Collectors.groupingBy(TimereportDTO::getReferenceday));
 
         Duration rowTotal = Duration.ZERO;
         List<MatrixData.Cell> cells = new ArrayList<>();
         for (LocalDate day : days) {
             var dayReports = reportsByDate.getOrDefault(day, List.of());
-            Duration duration = dayReports.stream().map(r -> r.getDuration()).reduce(Duration.ZERO, Duration::plus);
+            Duration duration = dayReports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
             rowTotal = rowTotal.plus(duration);
             var details = dayReports.stream()
                 .map(r -> new MatrixData.ReportDetail(DurationUtils.format(r.getDuration()), r.getTaskdescription()))
