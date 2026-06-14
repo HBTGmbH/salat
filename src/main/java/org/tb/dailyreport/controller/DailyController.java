@@ -13,11 +13,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
@@ -164,6 +167,36 @@ public class DailyController {
                     .map(Object::toString).findFirst().orElse("Error"));
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + employeeContractId;
+    }
+
+    @PostMapping("/timereport/{id}/update-inline")
+    @PreAuthorize("isAuthenticated()")
+    @ResponseBody
+    public ResponseEntity<String> updateTimereportInline(
+            @PathVariable long id,
+            @RequestParam(required = false) String duration,
+            @RequestParam(required = false) String taskdescription) {
+        try {
+            var tr = timereportService.getTimereportById(id);
+            long hours = tr.getDurationhours();
+            long minutes = tr.getDurationminutes();
+            if (duration != null && duration.matches("\\d{1,3}:\\d{2}")) {
+                String[] parts = duration.split(":");
+                hours = Long.parseLong(parts[0]);
+                minutes = Long.parseLong(parts[1]);
+            }
+            String desc = taskdescription != null ? taskdescription : tr.getTaskdescription();
+            timereportService.updateTimereport(id,
+                tr.getEmployeecontractId(), tr.getEmployeeorderId(),
+                tr.getReferenceday(), desc, tr.isTraining(), hours, minutes);
+            long totalMinutes = hours * 60 + minutes;
+            String normalized = (totalMinutes / 60) + ":" + String.format("%02d", totalMinutes % 60);
+            return ResponseEntity.ok(normalized);
+        } catch (ErrorCodeException ex) {
+            return ResponseEntity.badRequest().body(
+                errorCodeViewHelper.toViewMessages(ex).stream()
+                    .map(Object::toString).findFirst().orElse("Error"));
+        }
     }
 
     @GetMapping("/new-timereport")
