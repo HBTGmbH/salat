@@ -253,7 +253,6 @@
                    style="font-size:0.7rem;white-space:nowrap" th:text="${wd.holidayName}"></div>
             </div>
             <span th:if="${wd.notWorked}" class="badge bg-secondary-lt text-muted" th:text="#{main.daily.notworked.badge}">—</span>
-            <span th:if="${!wd.notWorked and wd.booked.isZero()}" class="badge bg-secondary-lt text-muted">—</span>
             <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
                   class="badge"
                   th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
@@ -341,8 +340,6 @@
                       th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
                 <span th:if="${day.isHoliday}" class="badge bg-red-lt text-red ms-1"
                       th:text="${day.holidayName}"></span>
-                <span th:if="${#lists.isEmpty(day.timereports) and !day.notWorked and !day.isWeekend and !day.isHoliday}"
-                      class="text-muted small">—</span>
               </td>
             </tr>
             <!-- Timereport rows for this day -->
