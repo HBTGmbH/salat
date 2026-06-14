@@ -22,6 +22,7 @@ public record DailyViewData(
     public record WeekStripDay(
         LocalDate date,
         Duration booked,
+        int bookingCount,
         boolean isToday,
         boolean isSelected,
         boolean isHoliday,

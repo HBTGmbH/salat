@@ -295,11 +295,16 @@
             <div th:if="${wd.isHoliday and wd.holidayName != null}" class="text-warning mt-1"
                  style="font-size:0.7rem;white-space:nowrap" th:text="${wd.holidayName}"></div>
           </div>
-          <span th:if="${wd.notWorked}" class="text-warning">●</span>
-          <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
-                class="badge"
-                th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
-                th:text="${@durationUtils.format(wd.booked)}"></span>
+          <span th:if="${wd.bookingCount > 0}"
+                class="text-muted small"
+                th:text="#{main.daily.week.bookings.text(${wd.bookingCount})}"></span>
+          <div>
+            <span th:if="${wd.notWorked}" class="text-warning">●</span>
+            <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
+                  class="badge"
+                  th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
+                  th:text="${@durationUtils.format(wd.booked)}"></span>
+          </div>
         </a>
       </div>
 
@@ -336,11 +341,16 @@
               <div th:if="${wd.isHoliday and wd.holidayName != null}" class="text-warning mt-1"
                    style="font-size:0.7rem;white-space:nowrap" th:text="${wd.holidayName}"></div>
             </div>
-            <span th:if="${wd.notWorked}" class="text-warning">●</span>
-            <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
-                  class="badge"
-                  th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
-                  th:text="${@durationUtils.format(wd.booked)}"></span>
+            <span th:if="${wd.bookingCount > 0}"
+                  class="text-muted small"
+                  th:text="#{main.daily.week.bookings.text(${wd.bookingCount})}"></span>
+            <div>
+              <span th:if="${wd.notWorked}" class="text-warning">●</span>
+              <span th:if="${!wd.notWorked and !wd.booked.isZero()}"
+                    class="badge"
+                    th:classappend="${wd.isSelected} ? 'bg-white text-primary' : 'bg-blue-lt text-blue'"
+                    th:text="${@durationUtils.format(wd.booked)}"></span>
+            </div>
           </a>
         </div>
       </div>
