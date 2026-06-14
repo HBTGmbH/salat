@@ -9,6 +9,15 @@
     border-left: 2px solid red !important;
     border-right: 2px solid red !important;
   }
+  /* Blue row hover for list view, matching matrix */
+  #daily-list tbody tr:hover td {
+    background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
+  }
+  /* Blue hover for week strip, matching matrix */
+  #daily-week-strip .list-group-item-action:hover:not(.active) {
+    background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
+    color: var(--tblr-primary) !important;
+  }
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -222,7 +231,7 @@
         <div class="card-header">
           <h3 class="card-title" th:text="#{main.daily.week.title}">Diese Woche</h3>
         </div>
-        <div class="list-group list-group-flush">
+        <div class="list-group list-group-flush" id="daily-week-strip">
           <a th:each="wd : ${dailyData.weekStrip}"
              th:href="@{/dailyreport/daily(mode='daily',date=${wd.date},employeeContractId=${selectedContractId})}"
              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
@@ -297,7 +306,7 @@
   <!-- Day list -->
   <div class="card" th:if="${listData != null}">
     <div class="table-responsive">
-      <table class="table table-vcenter card-table">
+      <table class="table table-vcenter card-table" id="daily-list">
         <thead>
           <tr>
             <th style="width:3rem"></th>
