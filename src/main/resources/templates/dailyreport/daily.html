@@ -13,6 +13,12 @@
   #daily-list tbody tr:hover td {
     background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
   }
+  .inline-edit-display { cursor: pointer; }
+  .inline-edit-display.is-empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.4;
+    font-style: italic;
+  }
   /* Blue hover for week strip, matching matrix */
   #daily-week-strip .list-group-item-action:hover:not(.active) {
     background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
@@ -333,22 +339,43 @@
                        style="min-width:200px; max-width:320px">
                     <div class="card-body py-2 px-3 d-flex flex-column">
                       <div class="d-flex justify-content-between align-items-start gap-2 flex-grow-1">
-                        <div class="overflow-hidden">
+                        <div class="overflow-hidden flex-grow-1">
                           <div class="text-muted text-truncate" style="font-size:0.75rem"
                                th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
                           <div class="fw-medium text-truncate" style="font-size:0.85rem"
                                th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
-                          <div th:if="${not #strings.isEmpty(tr.taskdescription)}" class="task-desc-wrap mt-1">
-                            <div class="task-desc-text text-muted"
-                                 style="font-size:0.75rem; white-space:pre-wrap; overflow:hidden; max-height:3em"
+                          <!-- task description: inline edit -->
+                          <div class="inline-edit-wrap mt-1">
+                            <div class="text-muted inline-edit-display"
+                                 style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
+                                 data-placeholder="Kommentar..."
+                                 th:classappend="${#strings.isEmpty(tr.taskdescription)} ? 'is-empty'"
                                  th:text="${tr.taskdescription}"></div>
-                            <a href="#" class="task-desc-more text-muted d-none"
-                               style="font-size:0.7rem; text-decoration:none"
-                               onclick="toggleTaskDesc(this); return false;">···</a>
+                            <textarea class="form-control form-control-sm inline-edit-input d-none"
+                                      rows="2"
+                                      style="font-size:0.75rem; resize:none"
+                                      name="taskdescription"
+                                      placeholder="Kommentar..."
+                                      th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
+                                      hx-trigger="blur"
+                                      hx-swap="none"
+                                      th:text="${tr.taskdescription}"></textarea>
                           </div>
                         </div>
                         <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
-                          <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}"></span>
+                          <!-- duration: inline edit -->
+                          <div class="inline-edit-wrap">
+                            <span class="badge bg-blue-lt inline-edit-display"
+                                  style="user-select:none"
+                                  th:text="${@durationUtils.format(tr.duration)}"></span>
+                            <input type="text" class="form-control form-control-sm text-center inline-edit-input d-none"
+                                   style="width:4rem; font-size:0.8rem"
+                                   name="duration"
+                                   th:value="${@durationUtils.format(tr.duration)}"
+                                   th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
+                                   hx-trigger="blur"
+                                   hx-swap="none"/>
+                          </div>
                           <span th:if="${tr.training}" class="badge bg-purple-lt text-purple">Fortbildung</span>
                         </div>
                       </div>
@@ -461,23 +488,46 @@
     htmx.trigger('#workingday-form', 'submit');
   }
 
-  document.querySelectorAll('.task-desc-wrap').forEach(function(wrap) {
-    var text = wrap.querySelector('.task-desc-text');
-    var more = wrap.querySelector('.task-desc-more');
-    if (text.scrollHeight > text.clientHeight + 1) {
-      more.classList.remove('d-none');
-    }
+  // Inline edit: click display → show input; blur → save via HTMX → show display
+  document.querySelectorAll('.inline-edit-display').forEach(function(display) {
+    display.addEventListener('click', function() {
+      var input = display.nextElementSibling;
+      input.value = display.classList.contains('is-empty') ? '' : display.textContent;
+      display.classList.add('d-none');
+      input.classList.remove('d-none');
+      if (input.tagName === 'TEXTAREA') {
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px';
+        input.addEventListener('input', function() {
+          input.style.height = 'auto';
+          input.style.height = input.scrollHeight + 'px';
+        });
+      }
+      input.focus();
+    });
   });
 
-  function toggleTaskDesc(link) {
-    var text = link.previousElementSibling;
-    var expanded = text.style.maxHeight === 'none';
-    text.style.maxHeight = expanded ? '3em' : 'none';
-    link.textContent = expanded ? '···' : '↑';
-  }
 
 </script>
 
 
 </section>
+
+<script layout:fragment="scripts">
+  htmx.on('htmx:afterRequest', function(evt) {
+    var input = evt.target;
+    if (!input.classList.contains('inline-edit-input')) return;
+    var display = input.previousElementSibling;
+    if (evt.detail.successful) {
+      if (input.name === 'duration') {
+        display.textContent = evt.detail.xhr.responseText.trim() || input.value;
+      } else {
+        display.textContent = input.value;
+        display.classList.toggle('is-empty', input.value.trim() === '');
+      }
+    }
+    input.classList.add('d-none');
+    display.classList.remove('d-none');
+  });
+</script>
 </html>
