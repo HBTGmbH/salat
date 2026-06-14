@@ -184,8 +184,8 @@
             <tbody>
               <tr th:each="tr : ${dailyData.timereports}">
                 <td style="position:relative; padding-right:5rem">
-                  <div class="fw-medium" th:text="${tr.completeOrderSign}"></div>
-                  <div class="text-muted small" th:text="${tr.customerShortname}"></div>
+                  <div class="text-muted small" th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
+                  <div class="fw-medium" th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
                   <div class="inline-edit-wrap mt-1">
                     <div class="text-muted small inline-edit-display"
                          style="white-space:pre-wrap; min-height:1.4em"
