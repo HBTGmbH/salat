@@ -430,16 +430,18 @@
 
   function notWorkedChanged(checked) {
     toggleWorkingFields(checked);
-    if (checked) {
-      htmx.trigger('#workingday-form', 'submit');
-    }
+    htmx.trigger('#workingday-form', 'submit');
   }
 
   function saveTime() {
     htmx.trigger('#workingday-form', 'submit');
   }
 
-  // Init: hide working fields and progress if not-worked is checked
+</script>
+
+<th:block layout:fragment="scripts">
+<script>
+  // Runs after all layout scripts (incl. htmx) are loaded
   (function() {
     var toggle = document.getElementById('notWorked');
     if (toggle && toggle.checked) {
@@ -447,6 +449,7 @@
     }
   })();
 </script>
+</th:block>
 
 </section>
 </html>
