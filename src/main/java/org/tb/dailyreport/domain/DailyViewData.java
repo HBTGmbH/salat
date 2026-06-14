@@ -15,11 +15,7 @@ public record DailyViewData(
     int progressPercent,
     List<WeekStripDay> weekStrip,
     boolean notWorked,
-    int startHour,
-    int startMinute,
     String startTime,
-    int breakHours,
-    int breakMinutes,
     String breakTime,
     String dailyWorkingTimeFormatted
 ) {

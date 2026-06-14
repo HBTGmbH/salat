@@ -93,44 +93,34 @@
       <div class="card mb-3" th:if="${selectedContractId > 0}">
         <div class="card-body">
           <form method="post" th:action="@{/dailyreport/daily/workingday}" id="workingday-form"
+                th:object="${workingdayForm}"
                 th:attr="hx-post=@{/dailyreport/daily/workingday}"
                 hx-target="#daily-week-strip"
                 hx-swap="outerHTML">
             <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
             <input type="hidden" name="date" th:value="${date}"/>
 
-            <div class="d-flex flex-wrap align-items-end gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-3">
 
               <!-- Not-worked toggle -->
-              <div class="form-check form-switch mb-0 me-2" style="min-width:max-content">
-                <input class="form-check-input" type="checkbox" id="notWorkedToggle" name="notWorked"
-                       th:checked="${dailyData.notWorked}"
+              <div class="form-check form-switch mb-0" style="min-width:max-content">
+                <input class="form-check-input" type="checkbox" th:field="*{notWorked}"
                        onchange="notWorkedChanged(this.checked)">
-                <label class="form-check-label" for="notWorkedToggle"
+                <label class="form-check-label" for="notWorked"
                        th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
               </div>
 
               <!-- Start / Break — auto-save on change, hidden when not worked -->
               <div id="working-fields" class="d-flex flex-wrap gap-3">
-                <div>
-                  <label class="form-label mb-1" th:text="#{main.daily.workingday.start.label}">Start</label>
-                  <input type="hidden" name="starttimehour" id="starttimehour-val"
-                         th:value="${dailyData.startHour}">
-                  <input type="hidden" name="starttimeminute" id="starttimeminute-val"
-                         th:value="${dailyData.startMinute}">
-                  <input type="time" class="form-control form-control-sm" id="starttime-display"
-                         th:value="${dailyData.startTime}"
-                         onchange="saveTime('starttime-display','starttimehour-val','starttimeminute-val')">
+                <div class="d-flex align-items-center gap-2">
+                  <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
+                  <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
+                         style="width:auto" onchange="saveTime()">
                 </div>
-                <div>
-                  <label class="form-label mb-1" th:text="#{main.daily.workingday.break.label}">Pause</label>
-                  <input type="hidden" name="breakhours" id="breakhours-val"
-                         th:value="${dailyData.breakHours}">
-                  <input type="hidden" name="breakminutes" id="breakminutes-val"
-                         th:value="${dailyData.breakMinutes}">
-                  <input type="time" class="form-control form-control-sm" id="break-display"
-                         th:value="${dailyData.breakTime}"
-                         onchange="saveTime('break-display','breakhours-val','breakminutes-val')">
+                <div class="d-flex align-items-center gap-2">
+                  <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
+                  <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
+                         style="width:auto" onchange="saveTime()">
                 </div>
               </div>
 
@@ -138,7 +128,8 @@
           </form>
 
           <!-- Progress / quitting time -->
-          <div th:if="${dailyData != null and dailyData.hasTarget}" class="mt-3">
+          <div th:if="${dailyData != null and dailyData.hasTarget}" id="daily-progress"
+               th:style="${dailyData.notWorked} ? 'display:none'" class="mt-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="text-muted small">
                 <span th:text="#{main.daily.booked.label}">Gebucht:</span>
@@ -433,6 +424,8 @@
 
   function toggleWorkingFields(notWorked) {
     document.getElementById('working-fields').style.display = notWorked ? 'none' : '';
+    var progress = document.getElementById('daily-progress');
+    if (progress) progress.style.display = notWorked ? 'none' : '';
   }
 
   function notWorkedChanged(checked) {
@@ -442,19 +435,13 @@
     }
   }
 
-  function saveTime(srcId, hourId, minId) {
-    var val = document.getElementById(srcId).value;
-    if (val) {
-      var parts = val.split(':');
-      document.getElementById(hourId).value = parseInt(parts[0], 10);
-      document.getElementById(minId).value = parseInt(parts[1], 10);
-      htmx.trigger('#workingday-form', 'submit');
-    }
+  function saveTime() {
+    htmx.trigger('#workingday-form', 'submit');
   }
 
-  // Init: hide working fields if not-worked is checked
+  // Init: hide working fields and progress if not-worked is checked
   (function() {
-    var toggle = document.getElementById('notWorkedToggle');
+    var toggle = document.getElementById('notWorked');
     if (toggle && toggle.checked) {
       toggleWorkingFields(true);
     }
