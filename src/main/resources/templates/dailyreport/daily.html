@@ -437,6 +437,9 @@
 
   function toggleWorkingFields(notWorked) {
     document.getElementById('working-fields').style.display = notWorked ? 'none' : '';
+    if (notWorked) {
+      document.getElementById('workingday-form').submit();
+    }
   }
 
   function splitTime(srcId, hourId, minId) {
