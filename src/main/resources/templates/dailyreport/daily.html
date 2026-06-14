@@ -102,7 +102,7 @@
               <div class="form-check form-switch mb-0 me-2" style="min-width:max-content">
                 <input class="form-check-input" type="checkbox" id="notWorkedToggle" name="notWorked"
                        th:checked="${dailyData != null and dailyData.workingday != null and dailyData.workingday.type.name() == 'NOT_WORKED'}"
-                       onchange="toggleWorkingFields(this.checked)">
+                       onchange="notWorkedChanged(this.checked)">
                 <label class="form-check-label" for="notWorkedToggle"
                        th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
               </div>
@@ -430,7 +430,11 @@
 
   function toggleWorkingFields(notWorked) {
     document.getElementById('working-fields').style.display = notWorked ? 'none' : '';
-    if (notWorked) {
+  }
+
+  function notWorkedChanged(checked) {
+    toggleWorkingFields(checked);
+    if (checked) {
       document.getElementById('workingday-form').submit();
     }
   }
