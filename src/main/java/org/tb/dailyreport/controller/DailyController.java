@@ -153,9 +153,20 @@ public class DailyController {
             }
             workingdayService.upsertWorkingday(workingday);
             if ("true".equals(request.getHeader("HX-Request"))) {
-                model.addAttribute("weekStripData", dailyService.buildWeekStrip(date, employeeContractId));
+                var dailyData = dailyService.buildDailyView(date, employeeContractId);
+                model.addAttribute("dailyData", dailyData);
+                model.addAttribute("weekStripData", dailyData.weekStrip());
+                var updatedForm = new WorkingdayForm();
+                updatedForm.setEmployeeContractId(employeeContractId);
+                updatedForm.setDate(date);
+                updatedForm.setNotWorked(dailyData.notWorked());
+                updatedForm.setStartTime(dailyData.startTime());
+                updatedForm.setBreakTime(dailyData.breakTime());
+                model.addAttribute("workingdayForm", updatedForm);
+                model.addAttribute("date", date);
                 model.addAttribute("selectedContractId", employeeContractId);
-                return "dailyreport/daily :: weekStrip";
+                model.addAttribute("isHtmxRequest", true);
+                return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.daily.workingday.save.success.text"));
