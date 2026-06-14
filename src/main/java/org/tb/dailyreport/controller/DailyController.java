@@ -3,6 +3,7 @@ package org.tb.dailyreport.controller;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +95,9 @@ public class DailyController {
             LocalDate next = targetDate.plusDays(1);
 
             if (ecId > 0) {
-                model.addAttribute("dailyData", dailyService.buildDailyView(targetDate, ecId));
+                var dailyData = dailyService.buildDailyView(targetDate, ecId);
+                model.addAttribute("dailyData", dailyData);
+                model.addAttribute("weekStripData", dailyData.weekStrip());
             }
             model.addAttribute("yearMonth", yearMonth);
             model.addAttribute("date", targetDate);
@@ -116,6 +119,8 @@ public class DailyController {
             @RequestParam(defaultValue = "0") int breakhours,
             @RequestParam(defaultValue = "0") int breakminutes,
             @RequestParam(defaultValue = "false") boolean notWorked,
+            HttpServletRequest request,
+            Model model,
             RedirectAttributes redirectAttributes) {
         try {
             var contract = employeecontractService.getEmployeecontractById(employeeContractId);
@@ -139,6 +144,11 @@ public class DailyController {
                 workingday.setBreakminutes(breakminutes);
             }
             workingdayService.upsertWorkingday(workingday);
+            if ("true".equals(request.getHeader("HX-Request"))) {
+                model.addAttribute("weekStripData", dailyService.buildWeekStrip(date, employeeContractId));
+                model.addAttribute("selectedContractId", employeeContractId);
+                return "dailyreport/daily :: weekStrip";
+            }
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.daily.workingday.save.success.text"));
         } catch (ErrorCodeException ex) {

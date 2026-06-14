@@ -106,7 +106,8 @@ public class DailyService {
         return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, hasTarget, monthReleased);
     }
 
-    private List<WeekStripDay> buildWeekStrip(LocalDate date, long employeeContractId) {
+    @Transactional(readOnly = true)
+    public List<WeekStripDay> buildWeekStrip(LocalDate date, long employeeContractId) {
         LocalDate monday = date.with(MONDAY);
         LocalDate sunday = monday.plusDays(6);
         LocalDate today = today();
