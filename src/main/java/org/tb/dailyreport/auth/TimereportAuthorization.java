@@ -35,7 +35,8 @@ public class TimereportAuthorization {
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(authorizedUser.isManager()) return true;
     if(accessLevel == READ && authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract())) return true;
-    if(timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign())) return true;
+    var isOwner = timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+    if(isOwner && accessLevel == READ) return true;
 
     if(accessLevel == READ) {
       // every project manager may see the time reports of her project
@@ -62,13 +63,10 @@ public class TimereportAuthorization {
          !authorizedUser.isAdmin()) {
         return false;
       }
-      if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
-         Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
+      if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) && isOwner) {
         return false;
       }
-      if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) &&
-         !authorizedUser.isAdmin() &&
-         !Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
+      if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) && !authorizedUser.isAdmin() && !isOwner) {
         return false;
       }
     }
