@@ -185,7 +185,7 @@
       <div id="daily-bookings-area" th:fragment="dailyBookings">
 
       <!-- Add booking -->
-      <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport}">
+      <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
         <a th:href="@{/dailyreport/daily/new-timereport(date=${date},employeeContractId=${selectedContractId})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
@@ -534,7 +534,7 @@
                     </div>
                   </div>
                   <!-- Add new timereport card -->
-                  <a th:if="${listData.canCreateTimereport}"
+                  <a th:if="${listData.canCreateTimereport and !day.notWorked}"
                      th:href="@{/dailyreport/daily/new-timereport(date=${day.date},employeeContractId=${selectedContractId})}"
                      class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
                      style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
