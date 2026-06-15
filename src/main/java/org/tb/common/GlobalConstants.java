@@ -109,7 +109,7 @@ public class GlobalConstants {
     public static final String ALL_EMPLOYEES = "ALL EMPLOYEES";
 
     public static final String TIMEREPORT_STATUS_OPEN = "open";
-    public static final String TIMEREPORT_STATUS_COMMITED = "commited"; // TODO fix type commited -> committed (changes data in database
+    public static final String TIMEREPORT_STATUS_COMMITED = "commited"; // TODO fix type commited -> committed (changes data in database)
     public static final String TIMEREPORT_STATUS_CLOSED = "closed";
 
     // view constants
