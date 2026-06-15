@@ -33,7 +33,7 @@ public class TimereportAuthorization {
   private final AuthService authService;
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
-    if(authorizedUser.isManager()) return true;
+    if(accessLevel == READ && authorizedUser.isManager()) return true;
     if(accessLevel == READ && authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract())) return true;
     var isOwner = timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
     if(isOwner && accessLevel == READ) return true;
@@ -55,18 +55,18 @@ public class TimereportAuthorization {
 
     if(accessLevel == DELETE || accessLevel == AccessLevel.WRITE) {
       if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus()) &&
-         !authorizedUser.isAdmin()) {
+         (!authorizedUser.isManager() || isOwner)) {
         return false;
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
          !authorizedUser.isManager() &&
-         !authorizedUser.isAdmin()) {
+         !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract()))) {
         return false;
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) && isOwner) {
         return false;
       }
-      if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) && !authorizedUser.isAdmin() && !isOwner) {
+      if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) && !authorizedUser.isManager() && !isOwner) {
         return false;
       }
     }
@@ -82,22 +82,22 @@ public class TimereportAuthorization {
     // authorization is based on the status
     timereports.forEach(timereport -> {
       if(accessLevel == DELETE || accessLevel == AccessLevel.WRITE) {
+        var isOwner = Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname());
         if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus()) &&
-           !authorizedUser.isAdmin()) {
+           (!authorizedUser.isManager() || isOwner)) {
           throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
         }
         if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
            !authorizedUser.isManager() &&
-           !authorizedUser.isAdmin()) {
+           !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract()))) {
           throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
         }
-        if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
-           Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
+        if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) && isOwner) {
           throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_NOT_SELF);
         }
         if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) &&
-           !authorizedUser.isAdmin() &&
-           !Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname())) {
+           !authorizedUser.isManager() &&
+           !isOwner) {
           throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
         }
       }
