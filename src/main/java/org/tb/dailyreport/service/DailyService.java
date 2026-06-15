@@ -200,8 +200,8 @@ public class DailyService {
     }
 
     private boolean canEditTimereport(String status, boolean isOwner) {
-        if (TIMEREPORT_STATUS_CLOSED.equals(status)) return authorizedUser.isAdmin();
         if (TIMEREPORT_STATUS_COMMITED.equals(status)) return authorizedUser.isManager() && !isOwner;
-        return isOwner || authorizedUser.isAdmin(); // OPEN
+        if (TIMEREPORT_STATUS_CLOSED.equals(status)) return authorizedUser.isManager() && !isOwner;
+        return isOwner || authorizedUser.isManager(); // TIMEREPORT_STATUS_OPEN
     }
 }
