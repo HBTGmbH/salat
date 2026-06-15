@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="listTimereportCard"
+     th:id="'tr-card-' + ${singleTr.id}"
+     class="card card-sm mb-0 flex-shrink-0"
+     style="min-width:200px; max-width:320px">
+  <div class="card-body py-2 px-3 d-flex flex-column">
+    <div class="d-flex justify-content-between align-items-start gap-2 flex-grow-1">
+      <div class="overflow-hidden flex-grow-1">
+        <div class="text-muted text-truncate" style="font-size:0.75rem"
+             th:text="|${singleTr.customerorderSign} · ${singleTr.customerorderDescription} · ${singleTr.customerShortname}|"></div>
+        <div class="fw-medium text-truncate" style="font-size:0.85rem"
+             th:text="|${singleTr.completeOrderSign} · ${singleTr.suborderDescription}|"></div>
+        <!-- task description: editable or read-only -->
+        <div th:if="${singleTrEditable}" class="inline-edit-wrap mt-1">
+          <div class="text-muted inline-edit-display"
+               style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
+               data-placeholder="Kommentar..."
+               th:classappend="${#strings.isEmpty(singleTr.taskdescription)} ? 'is-empty'"
+               th:text="${singleTr.taskdescription}"></div>
+          <textarea class="form-control form-control-sm inline-edit-input d-none"
+                    rows="2"
+                    style="font-size:0.75rem; resize:none"
+                    name="taskdescription"
+                    placeholder="Kommentar..."
+                    th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
+                    hx-trigger="blur"
+                    hx-swap="outerHTML"
+                    th:text="${singleTr.taskdescription}"></textarea>
+        </div>
+        <div th:unless="${singleTrEditable}"
+             class="text-muted mt-1"
+             style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
+             th:text="${singleTr.taskdescription}"></div>
+      </div>
+      <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+        <!-- duration: editable or read-only -->
+        <div th:if="${singleTrEditable}" class="inline-edit-wrap">
+          <span class="badge bg-blue-lt inline-edit-display"
+                style="user-select:none"
+                th:text="${@durationUtils.format(singleTr.duration)}"></span>
+          <input type="text" class="form-control form-control-sm text-center inline-edit-input d-none"
+                 style="width:4rem; font-size:0.8rem"
+                 name="duration"
+                 th:value="${@durationUtils.format(singleTr.duration)}"
+                 th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
+                 hx-trigger="blur"
+                 hx-swap="outerHTML"/>
+        </div>
+        <span th:unless="${singleTrEditable}"
+              class="badge bg-blue-lt"
+              th:text="${@durationUtils.format(singleTr.duration)}"></span>
+        <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple">Fortbildung</span>
+      </div>
+    </div>
+    <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">
+      <a th:href="@{/do/EditDailyReport(trId=${singleTr.id})}" class="btn btn-outline-primary"
+         style="padding:1px 5px; font-size:0.7rem">
+        <i class="icon ti ti-pencil m-0"></i>
+      </a>
+      <button type="button" class="btn btn-outline-danger"
+              style="padding:1px 5px; font-size:0.7rem"
+              th:attr="data-tr-id=${singleTr.id},data-tr-desc=${singleTr.completeOrderSign},data-mode='list',data-date=${singleTrDate},data-month=${singleTrYearMonth.monthValue},data-year=${singleTrYearMonth.year}"
+              onclick="openDeleteModal(this)"
+              data-bs-toggle="modal" data-bs-target="#deleteModal">
+        <i class="icon ti ti-trash m-0"></i>
+      </button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
