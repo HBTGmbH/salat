@@ -178,11 +178,18 @@ public class MatrixService {
         effectiveFirst.datesUntil(effectiveLast.plusDays(1)).forEach(day -> {
             if (workingdayService.isRegularWorkingday(day)) {
                 boolean hasBookings = !timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, day).isEmpty();
-                if (!hasBookings && workingdayService.getWorkingday(employeeContractId, day) == null) {
-                    var workingday = new Workingday();
-                    workingday.setEmployeecontract(employeecontract);
-                    workingday.setRefday(day);
+                if (!hasBookings) {
+                    var workingday = workingdayService.getWorkingday(employeeContractId, day);
+                    if (workingday == null) {
+                        workingday = new Workingday();
+                        workingday.setEmployeecontract(employeecontract);
+                        workingday.setRefday(day);
+                    }
                     workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
+                    workingday.setStarttimehour(0);
+                    workingday.setStarttimeminute(0);
+                    workingday.setBreakhours(0);
+                    workingday.setBreakminutes(0);
                     workingdayService.upsertWorkingday(workingday);
                 }
             }
