@@ -5,8 +5,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static org.tb.common.GlobalConstants.*;
 import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
@@ -31,6 +30,7 @@ import org.tb.dailyreport.domain.ListViewData.ListDay;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 
 @Service
@@ -75,10 +75,10 @@ public class DailyService {
             ? DurationUtils.format(workingday.getEmployeecontract().getDailyWorkingTime())
             : null;
 
-        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
-            .equals(authorizedUser.getEffectiveLoginSign());
+        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+        var isSupervised = isSupervisedByCurrentUser(contract);
         Set<Long> editableIds = timereports.stream()
-            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner))
+            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner, isSupervised))
             .map(TimereportDTO::getId)
             .collect(toSet());
         boolean workingdayEditable = isOwner || authorizedUser.isManager();
@@ -152,10 +152,10 @@ public class DailyService {
         boolean monthReleased = contract.getReportReleaseDate() != null
             && !contract.getReportReleaseDate().isBefore(last);
 
-        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
-            .equals(authorizedUser.getEffectiveLoginSign());
+        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
+        var isSupervised = isSupervisedByCurrentUser(contract);
         Set<Long> editableIds = timereports.stream()
-            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner))
+            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner, isSupervised))
             .map(TimereportDTO::getId)
             .collect(toSet());
         boolean canCreate = (!monthReleased && isOwner) || authorizedUser.isManager();
@@ -196,12 +196,29 @@ public class DailyService {
         var contract = employeecontractService.getEmployeecontractById(employeeContractId);
         boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
             .equals(authorizedUser.getEffectiveLoginSign());
-        return canEditTimereport(tr.getStatus(), isOwner);
+        var isSupervised = isSupervisedByCurrentUser(contract);
+        return canEditTimereport(tr.getStatus(), isOwner, isSupervised);
     }
 
-    private boolean canEditTimereport(String status, boolean isOwner) {
-        if (TIMEREPORT_STATUS_COMMITED.equals(status)) return authorizedUser.isManager() && !isOwner;
-        if (TIMEREPORT_STATUS_CLOSED.equals(status)) return authorizedUser.isManager() && !isOwner;
-        return isOwner || authorizedUser.isManager(); // TIMEREPORT_STATUS_OPEN
+    private boolean canEditTimereport(String status, boolean isOwner, boolean isSupervised) {
+        return switch(status) {
+            // people leads may edit committed time reports if they are the supervisor too
+            // manager for all employees
+            // but not their own (to prevent mistakes)
+            case TIMEREPORT_STATUS_COMMITED -> (isSupervised && authorizedUser.isPeopleLead() || authorizedUser.isManager()) && !isOwner;
+            // managers may edit closed time reports too
+            // but not their own (to prevent mistakes)
+            case TIMEREPORT_STATUS_CLOSED -> authorizedUser.isManager() && !isOwner;
+            // all employees may edit their own open time reports.
+            // manager may do this too, even if open
+            case TIMEREPORT_STATUS_OPEN -> isOwner || authorizedUser.isManager();
+            default -> false; // other status values must default to false
+        };
     }
+
+    private boolean isSupervisedByCurrentUser(Employeecontract ec) {
+        return ec.getSupervisors().stream()
+                .anyMatch(s -> s.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()));
+    }
+
 }
