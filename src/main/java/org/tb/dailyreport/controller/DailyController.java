@@ -168,6 +168,7 @@ public class DailyController {
                 model.addAttribute("date", date);
                 model.addAttribute("selectedContractId", employeeContractId);
                 model.addAttribute("isHtmxRequest", true);
+                model.addAttribute("isDailyMode", true);
                 return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -190,6 +191,7 @@ public class DailyController {
                 model.addAttribute("date", date);
                 model.addAttribute("selectedContractId", employeeContractId);
                 model.addAttribute("isHtmxRequest", true);
+                model.addAttribute("isDailyMode", true);
                 return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastError", errMsg);
@@ -232,6 +234,16 @@ public class DailyController {
             if (htmxError != null) {
                 response.setHeader("HX-Trigger", "{\"showError\":\"" + htmxError.replace("\"", "'") + "\"}");
             }
+            String currentUrl = request.getHeader("HX-Current-URL");
+            boolean isListMode = currentUrl != null && currentUrl.contains("mode=list");
+            if (isListMode) {
+                var tr = timereportService.getTimereportById(id);
+                model.addAttribute("singleTr", tr);
+                model.addAttribute("singleTrEditable", dailyService.isTimereportEditable(tr, ecId));
+                model.addAttribute("singleTrDate", date);
+                model.addAttribute("singleTrYearMonth", YearMonth.from(date));
+                return "dailyreport/daily-list-card :: listTimereportCard";
+            }
             var dailyData = dailyService.buildDailyView(date, ecId);
             model.addAttribute("dailyData", dailyData);
             model.addAttribute("weekStripData", dailyData.weekStrip());
@@ -245,6 +257,7 @@ public class DailyController {
             model.addAttribute("date", date);
             model.addAttribute("selectedContractId", ecId);
             model.addAttribute("isHtmxRequest", true);
+            model.addAttribute("isDailyMode", true);
             return "dailyreport/daily :: dailyBookings";
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date

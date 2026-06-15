@@ -82,7 +82,10 @@ public class DailyService {
             .map(TimereportDTO::getId)
             .collect(toSet());
         boolean workingdayEditable = isOwner || authorizedUser.isManager();
-        boolean canCreate = isOwner || authorizedUser.isManager();
+        LocalDate lastOfMonth = YearMonth.from(date).atEndOfMonth();
+        boolean monthReleased = contract.getReportReleaseDate() != null
+            && !contract.getReportReleaseDate().isBefore(lastOfMonth);
+        boolean canCreate = (!monthReleased && isOwner) || authorizedUser.isManager();
 
         return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
             hasTarget, overMaxHours, progressPercent, weekStrip,
@@ -155,7 +158,7 @@ public class DailyService {
             .filter(tr -> canEditTimereport(tr.getStatus(), isOwner))
             .map(TimereportDTO::getId)
             .collect(toSet());
-        boolean canCreate = isOwner || authorizedUser.isManager();
+        boolean canCreate = (!monthReleased && isOwner) || authorizedUser.isManager();
 
         return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased, editableIds, canCreate);
     }
@@ -186,6 +189,14 @@ public class DailyService {
             boolean notWorked = wd != null && wd.getType() == Workingday.WorkingDayType.NOT_WORKED;
             return new WeekStripDay(day, booked, count, day.isEqual(today), day.isEqual(date), holidays.containsKey(day), holidays.get(day), notWorked);
         }).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isTimereportEditable(TimereportDTO tr, long employeeContractId) {
+        var contract = employeecontractService.getEmployeecontractById(employeeContractId);
+        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
+            .equals(authorizedUser.getEffectiveLoginSign());
+        return canEditTimereport(tr.getStatus(), isOwner);
     }
 
     private boolean canEditTimereport(String status, boolean isOwner) {
