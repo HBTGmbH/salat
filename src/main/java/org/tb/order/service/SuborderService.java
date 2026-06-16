@@ -50,6 +50,15 @@ public class SuborderService {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
   }
 
+  @Transactional(readOnly = true)
+  public List<SuborderOption> getSuborderOptionsForForm(long employeecontractId, long customerorderId, LocalDate date) {
+    return suborderDAO
+        .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date)
+        .stream()
+        .map(s -> new SuborderOption(s.getId(), s.getCompleteOrderSign()))
+        .toList();
+  }
+
   @Authorized(requiresManager = true)
   public void create(SuborderDTO suborderData, Long customerorder) {
     createOrUpdate(null, suborderData, customerorder);

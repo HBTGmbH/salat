@@ -32,9 +32,9 @@ import org.tb.employee.service.EmployeecontractService;
 import org.tb.favorites.domain.Favorite;
 import org.tb.favorites.service.FavoriteService;
 import org.tb.order.domain.Customerorder;
-import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
+import org.tb.order.service.SuborderOption;
 import org.tb.order.service.SuborderService;
 
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
@@ -70,12 +70,11 @@ public class TimereportController {
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, effectiveDate);
         Long firstOrderId = orders.isEmpty() ? null : orders.get(0).getId();
 
-        List<Suborder> suborders = List.of();
+        List<SuborderOption> suborders = List.of();
         Long firstSuborderId = null;
         if (firstOrderId != null) {
-            suborders = suborderService
-                .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ecId, firstOrderId, effectiveDate);
-            firstSuborderId = suborders.isEmpty() ? null : suborders.get(0).getId();
+            suborders = suborderService.getSuborderOptionsForForm(ecId, firstOrderId, effectiveDate);
+            firstSuborderId = suborders.isEmpty() ? null : suborders.get(0).id();
         }
 
         var form = new TimereportForm();
@@ -110,8 +109,7 @@ public class TimereportController {
         form.setTraining(tr.isTraining());
 
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
-        var suborders = suborderService
-            .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ecId, tr.getCustomerorderId(), date);
+        var suborders = suborderService.getSuborderOptionsForForm(ecId, tr.getCustomerorderId(), date);
 
         populateModel(model, form, orders, suborders, ecId, date, true);
         return "dailyreport/timereport-form";
@@ -145,7 +143,7 @@ public class TimereportController {
         LocalDate date = form.getReferenceday();
 
         List<Customerorder> orders = List.of();
-        List<Suborder> suborders = List.of();
+        List<SuborderOption> suborders = List.of();
         if (ecId > 0 && date != null) {
             orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
             Long requestedOrderId = form.getOrderId();
@@ -159,10 +157,9 @@ public class TimereportController {
                 firstOrderId = requestedOrderId;
             }
             if (firstOrderId != null) {
-                suborders = suborderService
-                    .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ecId, firstOrderId, date);
-                if (suborders.stream().noneMatch(s -> s.getId().equals(form.getSuborderId()))) {
-                    form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).getId());
+                suborders = suborderService.getSuborderOptionsForForm(ecId, firstOrderId, date);
+                if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
+                    form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).id());
                 }
             }
         }
@@ -189,15 +186,14 @@ public class TimereportController {
     @PostMapping("/refresh-suborders")
     @PreAuthorize("isAuthenticated()")
     public String refreshSuborders(@ModelAttribute TimereportForm form, Model model) {
-        List<Suborder> suborders = List.of();
+        List<SuborderOption> suborders = List.of();
         if (form.getOrderId() != null && form.getEmployeeContractId() != null && form.getReferenceday() != null) {
-            suborders = suborderService
-                .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(
-                    form.getEmployeeContractId(), form.getOrderId(), form.getReferenceday());
+            suborders = suborderService.getSuborderOptionsForForm(
+                form.getEmployeeContractId(), form.getOrderId(), form.getReferenceday());
         }
         // reset suborderId if no longer valid after order change
-        if (suborders.stream().noneMatch(s -> s.getId().equals(form.getSuborderId()))) {
-            form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).getId());
+        if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
+            form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).id());
         }
         model.addAttribute("timereportForm", form);
         model.addAttribute("suborders", suborders);
@@ -313,8 +309,8 @@ public class TimereportController {
         } catch (ErrorCodeException ex) {
             var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
             var suborders = form.getOrderId() != null
-                ? suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ecId, form.getOrderId(), date)
-                : List.<Suborder>of();
+                ? suborderService.getSuborderOptionsForForm(ecId, form.getOrderId(), date)
+                : List.<SuborderOption>of();
             populateModel(model, form, orders, suborders, ecId, date, isEdit);
             model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
             return "dailyreport/timereport-form";
@@ -325,15 +321,15 @@ public class TimereportController {
             boolean isEdit, String errorMessage) {
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
         var suborders = form.getOrderId() != null
-            ? suborderService.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ecId, form.getOrderId(), date)
-            : List.<Suborder>of();
+            ? suborderService.getSuborderOptionsForForm(ecId, form.getOrderId(), date)
+            : List.<SuborderOption>of();
         populateModel(model, form, orders, suborders, ecId, date, isEdit);
         model.addAttribute("errors", List.of(errorMessage));
         return "dailyreport/timereport-form";
     }
 
     private void populateModel(Model model, TimereportForm form, List<Customerorder> orders,
-            List<Suborder> suborders, long ecId, LocalDate date, boolean isEdit) {
+            List<SuborderOption> suborders, long ecId, LocalDate date, boolean isEdit) {
         model.addAttribute("timereportForm", form);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
