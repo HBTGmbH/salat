@@ -858,4 +858,9 @@ public class TimereportService {
     return timereportDAO.getTimereportsWithoutDurationForEmployeeContractId(employeecontractId, releaseDate);
   }
 
+  @Transactional(readOnly = true)
+  public List<String> getRecentComments(long employeeContractId, long suborderId) {
+    return timereportDAO.getRecentCommentsByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
+  }
+
 }

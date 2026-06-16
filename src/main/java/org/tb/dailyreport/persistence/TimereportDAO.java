@@ -444,6 +444,33 @@ public class TimereportDAO {
         }
     }
 
+    public List<String> getRecentCommentsByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
+        return timereportRepository.findAll(
+            where(matchesEmployeecontractId(employeecontractId))
+                .and(matchesSuborderId(suborderId))
+                .and(notDeleted())
+                .and(orderedByReferencedayDesc())
+        ).stream()
+            .map(Timereport::getTaskdescription)
+            .filter(s -> s != null && !s.isBlank())
+            .distinct()
+            .limit(5)
+            .collect(Collectors.toList());
+    }
+
+    private Specification<Timereport> orderedByReferencedayDesc() {
+        return (root, query, builder) -> {
+            if (Long.class.equals(query.getResultType()) || long.class.equals(query.getResultType())) {
+                return null;
+            }
+            var orderList = new ArrayList<Order>();
+            orderList.addAll(query.getOrderList());
+            orderList.add(builder.desc(root.join(Timereport_.referenceday).get(Referenceday_.refdate)));
+            query.orderBy(orderList);
+            return null;
+        };
+    }
+
     private Optional<TimereportDTO> toDao(Optional<Timereport> timereport) {
         return timereport.filter(this::accessible).map(this::toDao);
     }
