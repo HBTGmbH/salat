@@ -2,7 +2,7 @@ package org.tb.dailyreport.controller;
 
 import static org.tb.common.util.DateUtils.today;
 
-import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -135,6 +135,55 @@ public class TimereportController {
             Model model) {
         form.setId(id);
         return saveTimereport(form, true, redirectAttributes, model);
+    }
+
+    @PostMapping("/refresh-orders")
+    @PreAuthorize("isAuthenticated()")
+    public String refreshOrders(@ModelAttribute TimereportForm form, Model model,
+            HttpServletResponse response) {
+        long ecId = form.getEmployeeContractId() != null ? form.getEmployeeContractId() : -1L;
+        LocalDate date = form.getReferenceday();
+
+        List<Customerorder> orders = List.of();
+        List<Suborder> suborders = List.of();
+        if (ecId > 0 && date != null) {
+            orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
+            Long requestedOrderId = form.getOrderId();
+            boolean orderStillValid = orders.stream().anyMatch(o -> o.getId().equals(requestedOrderId));
+            Long firstOrderId;
+            if (!orderStillValid) {
+                firstOrderId = orders.isEmpty() ? null : orders.get(0).getId();
+                form.setOrderId(firstOrderId);
+                form.setSuborderId(null);
+            } else {
+                firstOrderId = requestedOrderId;
+            }
+            if (firstOrderId != null) {
+                suborders = suborderService
+                    .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(ecId, firstOrderId, date);
+                if (suborders.stream().noneMatch(s -> s.getId().equals(form.getSuborderId()))) {
+                    form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).getId());
+                }
+            }
+        }
+
+        model.addAttribute("timereportForm", form);
+        model.addAttribute("orders", orders);
+        model.addAttribute("suborders", suborders);
+        model.addAttribute("recentComments", loadRecentComments(form));
+        if (ecId > 0 && date != null) {
+            model.addAttribute("todaysBookings",
+                timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
+        } else {
+            model.addAttribute("todaysBookings", List.of());
+        }
+        if (authorizedUser.isPeopleLead()) {
+            model.addAttribute("employeecontracts",
+                employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
+                    date != null ? date : today()));
+        }
+        response.setHeader("HX-Trigger", "ordersRefreshed");
+        return "dailyreport/timereport-form :: ordersAndSubordersFragment";
     }
 
     @PostMapping("/refresh-suborders")
