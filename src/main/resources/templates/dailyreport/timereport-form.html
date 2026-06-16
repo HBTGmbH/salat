@@ -132,6 +132,7 @@
                   <option th:each="s : ${suborders}"
                           th:value="${s.id}"
                           th:text="${s.label}"
+                          th:attr="data-cnr=${s.commentNecessary}"
                           th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
                 </select>
               </div>
@@ -140,8 +141,11 @@
 
             <!-- Comment -->
             <div class="mb-3">
-              <label class="form-label" th:text="#{main.timereport.form.comment.label}">Kommentar</label>
-              <textarea class="form-control" th:field="*{comment}" rows="3"
+              <label id="commentLabel"
+                     th:class="${'form-label' + (commentNecessary == true ? ' required' : '')}"
+                     th:text="#{main.timereport.form.comment.label}">Kommentar</label>
+              <textarea id="commentField" class="form-control" th:field="*{comment}" rows="3"
+                        th:attr="required=${commentNecessary == true ? 'required' : null}"
                         th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>
             </div>
 
@@ -278,7 +282,7 @@
                     th:each="c : ${recentComments}"
                     th:attr="data-comment=${c}"
                     onclick="fillComment(this.dataset.comment)"
-                    th:text="${c}"></button>
+                    th:utext="${c}"></button>
           </div>
           <div class="card-footer text-muted small" th:text="#{main.timereport.sidebar.recentcomments.hint}"></div>
         </div>
@@ -314,6 +318,31 @@
       var ta = document.querySelector('textarea[name="comment"]');
       if (ta) ta.value = text;
     }
+    function updateCommentRequired() {
+      var sel = document.getElementById('suborderId');
+      var label = document.getElementById('commentLabel');
+      var ta = document.getElementById('commentField');
+      if (!sel || !label || !ta) return;
+      var opt = sel.options[sel.selectedIndex];
+      var required = opt && opt.dataset.cnr === 'true';
+      if (required) {
+        label.classList.add('required');
+        ta.setAttribute('required', 'required');
+      } else {
+        label.classList.remove('required');
+        ta.removeAttribute('required');
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var sel = document.getElementById('suborderId');
+      if (sel) sel.addEventListener('change', updateCommentRequired);
+      updateCommentRequired();
+    });
+    document.addEventListener('htmx:afterSettle', function() {
+      var sel = document.getElementById('suborderId');
+      if (sel) sel.addEventListener('change', updateCommentRequired);
+      updateCommentRequired();
+    });
     function updateDurationBadge() {
       var b = document.getElementById('beginTimeInput').value;
       var e = document.getElementById('endTimeInput').value;
