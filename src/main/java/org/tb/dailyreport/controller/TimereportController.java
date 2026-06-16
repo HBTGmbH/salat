@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.HtmlUtils;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
@@ -162,10 +163,14 @@ public class TimereportController {
             }
         }
 
+        boolean commentNecessaryOrders = suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .findFirst().map(SuborderOption::commentNecessary).orElse(false);
         model.addAttribute("timereportForm", form);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
-        model.addAttribute("recentComments", loadRecentComments(form));
+        model.addAttribute("commentNecessary", commentNecessaryOrders);
+        model.addAttribute("recentComments", loadFormattedRecentComments(form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
@@ -195,9 +200,13 @@ public class TimereportController {
         if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
             form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).id());
         }
+        boolean commentNecessarySuborders = suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .findFirst().map(SuborderOption::commentNecessary).orElse(false);
         model.addAttribute("timereportForm", form);
         model.addAttribute("suborders", suborders);
-        model.addAttribute("recentComments", loadRecentComments(form));
+        model.addAttribute("commentNecessary", commentNecessarySuborders);
+        model.addAttribute("recentComments", loadFormattedRecentComments(form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
@@ -224,7 +233,7 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
-        model.addAttribute("recentComments", loadRecentComments(form));
+        model.addAttribute("recentComments", loadFormattedRecentComments(form));
         if (authorizedUser.isPeopleLead()) {
             model.addAttribute("employeecontracts",
                 employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
@@ -342,13 +351,17 @@ public class TimereportController {
 
     private void populateModel(Model model, TimereportForm form, List<Customerorder> orders,
             List<SuborderOption> suborders, long ecId, LocalDate date, boolean isEdit) {
+        boolean commentNecessary = suborders.stream()
+            .filter(s -> s.id().equals(form.getSuborderId()))
+            .findFirst().map(SuborderOption::commentNecessary).orElse(false);
         model.addAttribute("timereportForm", form);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
+        model.addAttribute("commentNecessary", commentNecessary);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("todaysBookings",
             timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
-        model.addAttribute("recentComments", loadRecentComments(form));
+        model.addAttribute("recentComments", loadFormattedRecentComments(form));
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
@@ -363,9 +376,12 @@ public class TimereportController {
         }
     }
 
-    private List<String> loadRecentComments(TimereportForm form) {
+    private List<String> loadFormattedRecentComments(TimereportForm form) {
         if (form.getEmployeeContractId() != null && form.getSuborderId() != null) {
-            return timereportService.getRecentComments(form.getEmployeeContractId(), form.getSuborderId());
+            return timereportService.getRecentComments(form.getEmployeeContractId(), form.getSuborderId())
+                .stream()
+                .map(c -> HtmlUtils.htmlEscape(c).replace("\n", "<br>"))
+                .toList();
         }
         return List.of();
     }

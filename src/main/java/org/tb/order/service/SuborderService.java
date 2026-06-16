@@ -59,7 +59,7 @@ public class SuborderService {
             var sign = s.getCompleteOrderSign();
             var desc = s.getShortdescription();
             var label = (desc != null && !desc.isBlank()) ? sign + " — " + desc : sign;
-            return new SuborderOption(s.getId(), label);
+            return new SuborderOption(s.getId(), label, Boolean.TRUE.equals(s.getCommentnecessary()));
         })
         .toList();
   }
