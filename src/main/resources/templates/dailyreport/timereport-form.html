@@ -212,11 +212,7 @@
     <!-- ===== Sidebar column ===== -->
     <div class="col-lg-5">
       <div id="form-sidebar" th:fragment="sidebarFragment"
-           hx-post="/dailyreport/timereports/refresh-sidebar"
-           hx-include="#timereportMainForm"
-           hx-target="#form-sidebar"
-           hx-swap="outerHTML"
-           hx-trigger="ordersRefreshed from:body">
+           th:attr="hx-swap-oob=${oobSidebar == true ? 'outerHTML' : null}">
 
         <!-- Employee selector (People Lead / Manager only) -->
         <form th:if="${employeecontracts != null}" method="get"
@@ -291,6 +287,15 @@
     </div><!-- end sidebar col -->
 
   </div><!-- end row -->
+
+  <!--
+    Composite fragment returned by refresh-orders:
+    primary swap = ordersAndSubordersFragment; OOB swap = sidebarFragment (via hx-swap-oob).
+  -->
+  <th:block th:fragment="ordersRefreshCompositeFragment">
+    <th:block th:replace="~{:: ordersAndSubordersFragment}"/>
+    <th:block th:replace="~{:: sidebarFragment}"/>
+  </th:block>
 
   <script th:inline="none">
     function showDuration() {
