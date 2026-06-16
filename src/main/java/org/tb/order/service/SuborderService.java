@@ -55,7 +55,12 @@ public class SuborderService {
     return suborderDAO
         .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date)
         .stream()
-        .map(s -> new SuborderOption(s.getId(), s.getCompleteOrderSign()))
+        .map(s -> {
+            var sign = s.getCompleteOrderSign();
+            var desc = s.getShortdescription();
+            var label = (desc != null && !desc.isBlank()) ? sign + " — " + desc : sign;
+            return new SuborderOption(s.getId(), label);
+        })
         .toList();
   }
 

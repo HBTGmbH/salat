@@ -131,7 +131,7 @@
                   <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
                   <option th:each="s : ${suborders}"
                           th:value="${s.id}"
-                          th:text="${s.completeOrderSign}"
+                          th:text="${s.label}"
                           th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
                 </select>
               </div>
