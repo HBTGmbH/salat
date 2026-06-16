@@ -5,13 +5,6 @@
       th:with="containerClass='container-xl'">
 <section layout:fragment="content">
 
-  <!-- Validation errors -->
-  <div th:if="${not #lists.isEmpty(errors)}" class="alert alert-danger mb-3">
-    <ul class="mb-0">
-      <li th:each="err : ${errors}" th:text="${err}"></li>
-    </ul>
-  </div>
-
   <div class="row align-items-start">
 
     <!-- ===== Main form column ===== -->
