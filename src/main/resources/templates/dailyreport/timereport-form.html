@@ -279,10 +279,11 @@
           <div class="list-group list-group-flush">
             <button type="button"
                     class="list-group-item list-group-item-action text-start py-2 px-3"
+                    style="white-space: pre-wrap"
                     th:each="c : ${recentComments}"
                     th:attr="data-comment=${c}"
                     onclick="fillComment(this.dataset.comment)"
-                    th:utext="${c}"></button>
+                    th:text="${c}"></button>
           </div>
           <div class="card-footer text-muted small" th:text="#{main.timereport.sidebar.recentcomments.hint}"></div>
         </div>
