@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.web.util.HtmlUtils;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
@@ -170,7 +169,7 @@ public class TimereportController {
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessaryOrders);
-        model.addAttribute("recentComments", loadFormattedRecentComments(form));
+        model.addAttribute("recentComments", loadRecentComments(form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
@@ -206,7 +205,7 @@ public class TimereportController {
         model.addAttribute("timereportForm", form);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessarySuborders);
-        model.addAttribute("recentComments", loadFormattedRecentComments(form));
+        model.addAttribute("recentComments", loadRecentComments(form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
@@ -233,7 +232,7 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
-        model.addAttribute("recentComments", loadFormattedRecentComments(form));
+        model.addAttribute("recentComments", loadRecentComments(form));
         if (authorizedUser.isPeopleLead()) {
             model.addAttribute("employeecontracts",
                 employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
@@ -361,7 +360,7 @@ public class TimereportController {
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("todaysBookings",
             timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
-        model.addAttribute("recentComments", loadFormattedRecentComments(form));
+        model.addAttribute("recentComments", loadRecentComments(form));
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
@@ -376,12 +375,9 @@ public class TimereportController {
         }
     }
 
-    private List<String> loadFormattedRecentComments(TimereportForm form) {
+    private List<String> loadRecentComments(TimereportForm form) {
         if (form.getEmployeeContractId() != null && form.getSuborderId() != null) {
-            return timereportService.getRecentComments(form.getEmployeeContractId(), form.getSuborderId())
-                .stream()
-                .map(c -> HtmlUtils.htmlEscape(c).replace("\n", "<br>"))
-                .toList();
+            return timereportService.getRecentComments(form.getEmployeeContractId(), form.getSuborderId());
         }
         return List.of();
     }
