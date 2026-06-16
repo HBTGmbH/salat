@@ -184,10 +184,12 @@ public class TimereportController {
     @PostMapping("/refresh-suborders")
     @PreAuthorize("isAuthenticated()")
     public String refreshSuborders(@ModelAttribute TimereportForm form, Model model) {
+        long ecId = form.getEmployeeContractId() != null ? form.getEmployeeContractId() : -1L;
+        LocalDate date = form.getReferenceday();
+
         List<SuborderOption> suborders = List.of();
-        if (form.getOrderId() != null && form.getEmployeeContractId() != null && form.getReferenceday() != null) {
-            suborders = suborderService.getSuborderOptionsForForm(
-                form.getEmployeeContractId(), form.getOrderId(), form.getReferenceday());
+        if (form.getOrderId() != null && ecId > 0 && date != null) {
+            suborders = suborderService.getSuborderOptionsForForm(ecId, form.getOrderId(), date);
         }
         // reset suborderId if no longer valid after order change
         if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
@@ -196,7 +198,19 @@ public class TimereportController {
         model.addAttribute("timereportForm", form);
         model.addAttribute("suborders", suborders);
         model.addAttribute("recentComments", loadRecentComments(form));
-        return "dailyreport/timereport-form :: suborderFragment";
+        if (ecId > 0 && date != null) {
+            model.addAttribute("todaysBookings",
+                timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
+        } else {
+            model.addAttribute("todaysBookings", List.of());
+        }
+        if (authorizedUser.isPeopleLead()) {
+            model.addAttribute("employeecontracts",
+                employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
+                    date != null ? date : today()));
+        }
+        model.addAttribute("oobSidebar", true);
+        return "dailyreport/timereport-form :: suborderRefreshCompositeFragment";
     }
 
     @PostMapping("/refresh-sidebar")

@@ -347,4 +347,10 @@
   <th:block th:replace="~{:: sidebarFragment}"/>
 </th:block>
 
+<!-- Composite fragment returned by refresh-suborders. -->
+<th:block th:fragment="suborderRefreshCompositeFragment">
+  <th:block th:replace="~{:: suborderFragment}"/>
+  <th:block th:replace="~{:: sidebarFragment}"/>
+</th:block>
+
 </html>
