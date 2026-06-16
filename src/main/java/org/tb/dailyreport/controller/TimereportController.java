@@ -2,7 +2,6 @@ package org.tb.dailyreport.controller;
 
 import static org.tb.common.util.DateUtils.today;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -137,8 +136,7 @@ public class TimereportController {
 
     @PostMapping("/refresh-orders")
     @PreAuthorize("isAuthenticated()")
-    public String refreshOrders(@ModelAttribute TimereportForm form, Model model,
-            HttpServletResponse response) {
+    public String refreshOrders(@ModelAttribute TimereportForm form, Model model) {
         long ecId = form.getEmployeeContractId() != null ? form.getEmployeeContractId() : -1L;
         LocalDate date = form.getReferenceday();
 
@@ -179,8 +177,8 @@ public class TimereportController {
                 employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
                     date != null ? date : today()));
         }
-        response.setHeader("HX-Trigger", "ordersRefreshed");
-        return "dailyreport/timereport-form :: ordersAndSubordersFragment";
+        model.addAttribute("oobSidebar", true);
+        return "dailyreport/timereport-form :: ordersRefreshCompositeFragment";
     }
 
     @PostMapping("/refresh-suborders")
