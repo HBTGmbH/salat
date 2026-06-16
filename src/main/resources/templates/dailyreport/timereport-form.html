@@ -288,15 +288,6 @@
 
   </div><!-- end row -->
 
-  <!--
-    Composite fragment returned by refresh-orders:
-    primary swap = ordersAndSubordersFragment; OOB swap = sidebarFragment (via hx-swap-oob).
-  -->
-  <th:block th:fragment="ordersRefreshCompositeFragment">
-    <th:block th:replace="~{:: ordersAndSubordersFragment}"/>
-    <th:block th:replace="~{:: sidebarFragment}"/>
-  </th:block>
-
   <script th:inline="none">
     function showDuration() {
       document.getElementById('durationSection').classList.remove('d-none');
@@ -345,4 +336,15 @@
   </script>
 
 </section>
+
+<!--
+  Composite fragment returned by refresh-orders: invisible to the page renderer
+  (outside layout:fragment="content") but reachable by HTMX fragment requests.
+  Primary swap = ordersAndSubordersFragment; OOB swap = sidebarFragment.
+-->
+<th:block th:fragment="ordersRefreshCompositeFragment">
+  <th:block th:replace="~{:: ordersAndSubordersFragment}"/>
+  <th:block th:replace="~{:: sidebarFragment}"/>
+</th:block>
+
 </html>
