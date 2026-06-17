@@ -39,14 +39,14 @@
     <li class="nav-item">
       <a class="nav-link"
          th:classappend="${mode == 'daily'} ? 'active' : ''"
-         th:href="@{/dailyreport/daily(mode='daily',date=${date},employeeContractId=${selectedContractId})}">
+         th:href="@{/dailyreport/daily(mode='daily',date=${date})}">
         <span th:text="#{main.daily.mode.daily.text}">Tagesansicht</span>
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link"
          th:classappend="${mode == 'list'} ? 'active' : ''"
-         th:href="@{/dailyreport/daily(mode='list',month=${yearMonth.monthValue},year=${yearMonth.year},employeeContractId=${selectedContractId})}">
+         th:href="@{/dailyreport/daily(mode='list',month=${yearMonth.monthValue},year=${yearMonth.year})}">
         <span th:text="#{main.daily.mode.list.text}">Monatsübersicht</span>
       </a>
     </li>
@@ -82,17 +82,17 @@
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='daily',date=${prevDate},employeeContractId=${selectedContractId})}">
+               th:href="@{/dailyreport/daily(mode='daily',date=${prevDate})}">
               <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevday.text}">Vorheriger Tag</span>
             </a>
             <h3 class="mb-0" th:text="${#temporals.format(date, 'EEEE, d. MMMM yyyy')}"></h3>
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='daily',date=${nextDate},employeeContractId=${selectedContractId})}">
+               th:href="@{/dailyreport/daily(mode='daily',date=${nextDate})}">
               <span th:text="#{main.daily.nav.nextday.text}">Nächster Tag</span><i class="ti ti-chevron-right ms-1"></i>
             </a>
           </div>
           <a class="btn btn-sm btn-outline-primary"
-             th:href="@{/dailyreport/daily(mode='daily',employeeContractId=${selectedContractId})}">
+             th:href="@{/dailyreport/daily(mode='daily')}">
             <span th:text="#{main.daily.nav.today.text}">Heute</span>
           </a>
         </div>
@@ -106,7 +106,6 @@
                 th:attr="hx-post=@{/dailyreport/daily/workingday}"
                 hx-target="#daily-bookings-area"
                 hx-swap="outerHTML">
-            <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
             <input type="hidden" name="date" th:value="${date}"/>
 
             <div class="d-flex align-items-center">
@@ -186,7 +185,7 @@
 
       <!-- Add booking -->
       <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
-        <a th:href="@{/dailyreport/timereports/new(date=${date},employeeContractId=${selectedContractId})}" class="btn btn-success flex-fill">
+        <a th:href="@{/dailyreport/timereports/new(date=${date})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
       </div>
@@ -306,7 +305,7 @@
       <div th:if="${isHtmxRequest == true and isDailyMode == true}" id="daily-week-strip" hx-swap-oob="outerHTML:#daily-week-strip"
            class="list-group list-group-flush">
         <a th:each="wd : ${weekStripData}"
-           th:href="@{/dailyreport/daily(mode='daily',date=${wd.date},employeeContractId=${selectedContractId})}"
+           th:href="@{/dailyreport/daily(mode='daily',date=${wd.date})}"
            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
            th:classappend="(${wd.isSelected} ? 'active ' : '') + (${wd.isToday} ? 'daily-today' : '')">
           <div>
@@ -353,7 +352,7 @@
         </div>
         <div class="list-group list-group-flush" id="daily-week-strip" th:fragment="weekStrip">
           <a th:each="wd : ${weekStripData}"
-             th:href="@{/dailyreport/daily(mode='daily',date=${wd.date},employeeContractId=${selectedContractId})}"
+             th:href="@{/dailyreport/daily(mode='daily',date=${wd.date})}"
              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
              th:classappend="(${wd.isSelected} ? 'active ' : '') + (${wd.isToday} ? 'daily-today' : '')">
             <div>
@@ -400,25 +399,24 @@
   <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     <div class="btn-group btn-group-sm">
       <a class="btn btn-outline-secondary"
-         th:href="@{/dailyreport/daily(mode='list',month=${prevMonth},year=${prevYear},employeeContractId=${selectedContractId})}">
+         th:href="@{/dailyreport/daily(mode='list',month=${prevMonth},year=${prevYear})}">
         <i class="ti ti-chevron-left m-0"></i>
       </a>
       <span class="btn btn-outline-secondary disabled"
             th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}"></span>
       <a class="btn btn-outline-secondary"
-         th:href="@{/dailyreport/daily(mode='list',month=${nextMonth},year=${nextYear},employeeContractId=${selectedContractId})}">
+         th:href="@{/dailyreport/daily(mode='list',month=${nextMonth},year=${nextYear})}">
         <i class="ti ti-chevron-right m-0"></i>
       </a>
     </div>
     <a class="btn btn-sm btn-outline-secondary"
-       th:href="@{/dailyreport/daily(mode='list',employeeContractId=${selectedContractId})}">
+       th:href="@{/dailyreport/daily(mode='list')}">
       <span th:text="#{main.daily.nav.today.text}">Heute</span>
     </a>
 
     <!-- Fill not worked -->
     <form th:if="${selectedContractId > 0 and listData != null}" method="post"
           th:action="@{/dailyreport/daily/fill-not-worked}" class="ms-auto">
-      <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
       <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
       <input type="hidden" name="year" th:value="${yearMonth.year}"/>
       <button type="submit" class="btn btn-sm btn-outline-secondary"
@@ -472,7 +470,7 @@
                   </th:block>
                   <!-- Add new timereport card -->
                   <a th:if="${listData.canCreateTimereport and !day.notWorked}"
-                     th:href="@{/dailyreport/timereports/new(date=${day.date},employeeContractId=${selectedContractId})}"
+                     th:href="@{/dailyreport/timereports/new(date=${day.date})}"
                      class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
                      style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
                     <i class="ti ti-plus" style="font-size:1.5rem"></i>
@@ -530,7 +528,6 @@
           <input type="hidden" id="deleteTimereportId" name="timereportId"/>
           <input type="hidden" id="deleteDate" name="date"/>
           <input type="hidden" id="deleteMode" name="mode"/>
-          <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
           <input type="hidden" id="deleteMonth" name="month"/>
           <input type="hidden" id="deleteYear" name="year"/>
           <button type="submit" class="btn btn-danger" th:text="#{main.daily.delete.modal.confirm}">Löschen</button>

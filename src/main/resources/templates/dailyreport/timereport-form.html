@@ -23,7 +23,6 @@
               th:object="${timereportForm}">
 
           <input type="hidden" th:if="${timereportForm.id != null}" th:field="*{id}"/>
-          <input type="hidden" th:field="*{employeeContractId}"/>
           <input type="hidden" th:field="*{durationMode}" id="durationModeField"/>
 
           <div class="card-body">
@@ -183,7 +182,7 @@
               <i class="ti ti-star me-1"></i>
               <span th:text="#{main.timereport.form.savefav.button}">Als Favorit speichern</span>
             </button>
-            <a th:href="@{/dailyreport/daily(mode='daily',date=${timereportForm.referenceday},employeeContractId=${timereportForm.employeeContractId})}"
+            <a th:href="@{/dailyreport/daily(mode='daily',date=${timereportForm.referenceday})}"
                class="btn btn-secondary ms-auto"
                th:text="#{main.timereport.form.cancel}">Abbrechen</a>
           </div>
@@ -228,7 +227,7 @@
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:text="${ec.employee.name}"
-                      th:selected="${ec.id == timereportForm.employeeContractId}"></option>
+                      th:selected="${ec.id == selectedContractId}"></option>
             </select>
             <div class="form-text" th:text="#{main.timereport.sidebar.employee.hint}"></div>
           </div>

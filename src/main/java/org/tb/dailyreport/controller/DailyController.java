@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.web.UiState;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.DailyService;
@@ -45,6 +46,7 @@ public class DailyController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final UiState uiState;
 
     @GetMapping
     public String show(
@@ -52,15 +54,11 @@ public class DailyController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Long employeeContractId,
             Model model) {
 
         var today = today();
-        var loginEmployee = employeeService.getLoginEmployee();
         var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
-        var myContract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElse(null);
-        long ecId = employeeContractId != null ? employeeContractId
-            : (myContract != null ? myContract.getId() : -1L);
+        long ecId = effectiveContractId();
 
         String effectiveMode = (mode != null && mode.equals("list")) ? "list" : "daily";
 
@@ -102,7 +100,7 @@ public class DailyController {
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
                 var form = new WorkingdayForm();
-                form.setEmployeeContractId(ecId);
+
                 form.setDate(targetDate);
                 form.setNotWorked(dailyData.notWorked());
                 form.setStartTime(dailyData.startTime());
@@ -127,7 +125,7 @@ public class DailyController {
             HttpServletResponse response,
             Model model,
             RedirectAttributes redirectAttributes) {
-        Long employeeContractId = form.getEmployeeContractId();
+        long employeeContractId = effectiveContractId();
         LocalDate date = form.getDate();
         try {
             var contract = employeecontractService.getEmployeecontractById(employeeContractId);
@@ -158,7 +156,7 @@ public class DailyController {
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
                 var updatedForm = new WorkingdayForm();
-                updatedForm.setEmployeeContractId(employeeContractId);
+
                 updatedForm.setDate(date);
                 updatedForm.setNotWorked(dailyData.notWorked());
                 updatedForm.setStartTime(dailyData.startTime());
@@ -181,7 +179,7 @@ public class DailyController {
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
                 var updatedForm = new WorkingdayForm();
-                updatedForm.setEmployeeContractId(employeeContractId);
+
                 updatedForm.setDate(date);
                 updatedForm.setNotWorked(dailyData.notWorked());
                 updatedForm.setStartTime(dailyData.startTime());
@@ -195,7 +193,7 @@ public class DailyController {
             }
             redirectAttributes.addFlashAttribute("toastError", errMsg);
         }
-        return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + employeeContractId;
+        return "redirect:/dailyreport/daily?mode=daily&date=" + date;
     }
 
     @PostMapping("/timereport/{id}/update-inline")
@@ -247,7 +245,6 @@ public class DailyController {
             model.addAttribute("dailyData", dailyData);
             model.addAttribute("weekStripData", dailyData.weekStrip());
             var form = new WorkingdayForm();
-            form.setEmployeeContractId(ecId);
             form.setDate(date);
             form.setNotWorked(dailyData.notWorked());
             form.setStartTime(dailyData.startTime());
@@ -259,8 +256,16 @@ public class DailyController {
             model.addAttribute("isDailyMode", true);
             return "dailyreport/daily :: dailyBookings";
         }
-        return "redirect:/dailyreport/daily?mode=daily&date=" + date
-            + (ecId != null ? "&employeeContractId=" + ecId : "");
+        return "redirect:/dailyreport/daily?mode=daily&date=" + date;
+    }
+
+    private long effectiveContractId() {
+        Long fromCookie = uiState.getSelectedContractId();
+        if (fromCookie != null && fromCookie > 0) return fromCookie;
+        var loginEmployee = employeeService.getLoginEmployee();
+        return employeecontractService.getCurrentContract(loginEmployee.getId())
+            .map(c -> c.getId())
+            .orElse(-1L);
     }
 
     private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
@@ -277,7 +282,6 @@ public class DailyController {
             @RequestParam Long timereportId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam String mode,
-            @RequestParam Long employeeContractId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
             RedirectAttributes redirectAttributes) {
@@ -291,20 +295,20 @@ public class DailyController {
                     .map(Object::toString).findFirst().orElse("Error"));
         }
         if ("list".equals(mode) && month != null && year != null) {
-            return "redirect:/dailyreport/daily?mode=list&month=" + month + "&year=" + year + "&employeeContractId=" + employeeContractId;
+            return "redirect:/dailyreport/daily?mode=list&month=" + month + "&year=" + year;
         }
-        return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + employeeContractId;
+        return "redirect:/dailyreport/daily?mode=daily&date=" + date;
     }
 
     @PostMapping("/fill-not-worked")
     @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
-            @RequestParam Long employeeContractId,
             @RequestParam Integer month,
             @RequestParam Integer year,
             RedirectAttributes redirectAttributes) {
+        long ecId = effectiveContractId();
         try {
-            matrixService.fillNotWorked(YearMonth.of(year, month), employeeContractId);
+            matrixService.fillNotWorked(YearMonth.of(year, month), ecId);
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.matrix.fillnotworked.success.text"));
         } catch (ErrorCodeException ex) {
@@ -312,6 +316,6 @@ public class DailyController {
                 errorCodeViewHelper.toViewMessages(ex).stream()
                     .map(Object::toString).findFirst().orElse("Error"));
         }
-        return "redirect:/dailyreport/daily?mode=list&month=" + month + "&year=" + year + "&employeeContractId=" + employeeContractId;
+        return "redirect:/dailyreport/daily?mode=list&month=" + month + "&year=" + year;
     }
 }

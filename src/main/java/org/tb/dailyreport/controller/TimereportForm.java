@@ -8,7 +8,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 public class TimereportForm {
 
     private Long id;
-    private Long employeeContractId;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate referenceday;
