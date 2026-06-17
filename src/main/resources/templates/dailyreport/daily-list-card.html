@@ -55,7 +55,7 @@
       </div>
     </div>
     <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">
-      <a th:href="@{/do/EditDailyReport(trId=${singleTr.id})}" class="btn btn-outline-primary"
+      <a th:href="@{/dailyreport/timereports/{id}/edit(id=${singleTr.id})}" class="btn btn-outline-primary"
          style="padding:1px 5px; font-size:0.7rem">
         <i class="icon ti ti-pencil m-0"></i>
       </a>

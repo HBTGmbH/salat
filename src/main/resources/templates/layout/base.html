@@ -76,7 +76,7 @@
             <div class="dropdown-menu" th:classappend="${section == 'dailyreport'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/do/CreateDailyReport}" th:text="#{main.general.mainmenu.newreport.text}">
+                  <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}" th:text="#{main.general.mainmenu.newreport.text}">
                     Neue Buchung
                   </a>
                   <a class="dropdown-item" th:href="@{/do/ShowDailyReport}" th:text="#{main.general.mainmenu.daily.text}">
