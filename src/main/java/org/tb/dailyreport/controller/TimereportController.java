@@ -1,5 +1,6 @@
 package org.tb.dailyreport.controller;
 
+import static java.math.BigDecimal.valueOf;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -102,8 +103,8 @@ public class TimereportController {
         form.setReferenceday(date);
         form.setOrderId(tr.getCustomerorderId());
         form.setSuborderId(tr.getSuborderId());
-        form.setDurationHours((int) tr.getDurationhours());
-        form.setDurationMinutes((int) tr.getDurationminutes());
+        form.setDurationHours(valueOf(tr.getDurationhours()).intValueExact());
+        form.setDurationMinutes(valueOf(tr.getDurationminutes()).intValueExact());
         form.setComment(tr.getTaskdescription() != null ? tr.getTaskdescription() : "");
         form.setTraining(tr.isTraining());
 
@@ -275,27 +276,13 @@ public class TimereportController {
         }
 
         try {
-            var eo = employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
-                ecId, form.getSuborderId(), date);
-            if (eo == null) {
-                throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
-            }
-            long employeeOrderId = eo.getId();
-
-            if (isEdit) {
-                timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
-                    form.getComment(), form.isTraining(), durationHours, durationMinutes);
-            } else {
-                timereportService.createTimereports(ecId, employeeOrderId, date,
-                    form.getComment(), form.isTraining(), durationHours, durationMinutes,
-                    form.getNumberOfSerialDays());
-            }
-
             // update workingday start time from begin/end mode when start is not yet set
-            if ("beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null && !isEdit) {
-                int[] begin = parseTime(form.getBeginTime());
+            if (!isEdit) {
                 var workingday = workingdayService.getWorkingday(ecId, date);
                 if (workingday == null || workingday.getStartOfWorkingDay() == null) {
+                    boolean useBegin = "beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null;
+                    int[] begin = useBegin ? parseTime(form.getBeginTime()) : new int[]{8,0};
+
                     if (workingday == null) {
                         workingday = new Workingday();
                         workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
@@ -310,11 +297,27 @@ public class TimereportController {
                 }
             }
 
+            var eo = employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+                    ecId, form.getSuborderId(), date);
+            if (eo == null) {
+                throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
+            }
+            long employeeOrderId = eo.getId();
+
+            if (isEdit) {
+                timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
+                        form.getComment(), form.isTraining(), durationHours, durationMinutes);
+            } else {
+                timereportService.createTimereports(ecId, employeeOrderId, date,
+                        form.getComment(), form.isTraining(), durationHours, durationMinutes,
+                        form.getNumberOfSerialDays());
+            }
+
             if (form.isSaveAsFavorite()) {
                 var fav = Favorite.builder()
                     .employeeorderId(employeeOrderId)
-                    .hours((int) durationHours)
-                    .minutes((int) durationMinutes)
+                    .hours(valueOf(durationHours).intValueExact())
+                    .minutes(valueOf(durationMinutes).intValueExact())
                     .comment(form.getComment())
                     .build();
                 favoriteService.addFavorite(fav);
