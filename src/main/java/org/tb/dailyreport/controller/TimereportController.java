@@ -300,10 +300,10 @@ public class TimereportController {
                         workingday = new Workingday();
                         workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
                         workingday.setRefday(date);
-                        workingday.setType(Workingday.WorkingDayType.WORKED);
                         workingday.setBreakhours(0);
                         workingday.setBreakminutes(0);
                     }
+                    workingday.setType(Workingday.WorkingDayType.WORKED);
                     workingday.setStarttimehour(begin[0]);
                     workingday.setStarttimeminute(begin[1]);
                     workingdayService.upsertWorkingday(workingday);
