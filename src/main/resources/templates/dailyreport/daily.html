@@ -251,7 +251,7 @@
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
-                    <a th:href="@{/do/EditDailyReport(trId=${tr.id})}" class="btn btn-outline-primary"
+                    <a th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id})}" class="btn btn-outline-primary"
                        style="padding:1px 5px; font-size:0.7rem">
                       <i class="icon ti ti-pencil m-0"></i>
                     </a>
