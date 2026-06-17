@@ -7,7 +7,7 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
-import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
+import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_MANAGER;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 import static org.tb.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
@@ -54,23 +54,22 @@ public class TimereportAuthorization {
     }
 
     if(accessLevel == DELETE || accessLevel == AccessLevel.WRITE) {
-      if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus()) &&
-         (!authorizedUser.isManager() || isOwner)) {
-        return false;
+      // write allowance depends on timereport status
+      if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus())) {
+        return authorizedUser.isManager() && !isOwner;
       }
-      if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
-         !authorizedUser.isManager() &&
-         !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract()))) {
-        return false;
+      if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus())) {
+        return !isOwner && (
+          authorizedUser.isManager() || (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract()))
+        );
       }
-      if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) && isOwner) {
-        return false;
-      }
-      if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) && !authorizedUser.isManager() && !isOwner) {
-        return false;
+      // TIMEREPORT_STATUS_OPEN timereports may be written by manager and owners
+      if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) && (authorizedUser.isManager() || isOwner)) {
+        return true;
       }
     }
 
+    // check rules as fallback
     var grantor = timereport.getEmployeecontract().getEmployee().getSign();
     var date = timereport.getReferenceday().getRefdate();
     var customerOrderSign = timereport.getSuborder().getCustomerorder().getSign();
@@ -81,11 +80,13 @@ public class TimereportAuthorization {
   public void checkAuthorized(List<Timereport> timereports, AccessLevel accessLevel) throws AuthorizationException {
     // authorization is based on the status
     timereports.forEach(timereport -> {
+
+      // pre qualify write access rules
       if(accessLevel == DELETE || accessLevel == AccessLevel.WRITE) {
         var isOwner = Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname());
         if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus()) &&
            (!authorizedUser.isManager() || isOwner)) {
-          throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
+          throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_MANAGER);
         }
         if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
            !authorizedUser.isManager() &&
@@ -101,6 +102,8 @@ public class TimereportAuthorization {
           throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
         }
       }
+
+      // ensure isAuthorized checks are made
       if(!isAuthorized(timereport, accessLevel)) {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
