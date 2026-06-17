@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.web.UiState;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -57,15 +58,15 @@ public class TimereportController {
     private final AuthorizedEmployee authorizedEmployee;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final UiState uiState;
 
     @GetMapping("/new")
     public String createForm(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(required = false) Long employeeContractId,
             Model model) {
 
         LocalDate effectiveDate = date != null ? date : today();
-        long ecId = resolveContractId(employeeContractId, effectiveDate);
+        long ecId = effectiveContractId();
 
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, effectiveDate);
         Long firstOrderId = orders.isEmpty() ? null : orders.get(0).getId();
@@ -78,7 +79,7 @@ public class TimereportController {
         }
 
         var form = new TimereportForm();
-        form.setEmployeeContractId(ecId);
+
         form.setReferenceday(effectiveDate);
         form.setOrderId(firstOrderId);
         form.setSuborderId(firstSuborderId);
@@ -99,7 +100,7 @@ public class TimereportController {
 
         var form = new TimereportForm();
         form.setId(id);
-        form.setEmployeeContractId(ecId);
+
         form.setReferenceday(date);
         form.setOrderId(tr.getCustomerorderId());
         form.setSuborderId(tr.getSuborderId());
@@ -138,7 +139,7 @@ public class TimereportController {
     @PostMapping("/refresh-orders")
     @PreAuthorize("isAuthenticated()")
     public String refreshOrders(@ModelAttribute TimereportForm form, Model model) {
-        long ecId = form.getEmployeeContractId() != null ? form.getEmployeeContractId() : -1L;
+        long ecId = effectiveContractId();
         LocalDate date = form.getReferenceday();
 
         List<Customerorder> orders = List.of();
@@ -167,6 +168,7 @@ public class TimereportController {
             .filter(s -> s.id().equals(form.getSuborderId()))
             .findFirst().map(SuborderOption::commentNecessary).orElse(false);
         model.addAttribute("timereportForm", form);
+        model.addAttribute("selectedContractId", ecId);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessaryOrders);
@@ -189,7 +191,7 @@ public class TimereportController {
     @PostMapping("/refresh-suborders")
     @PreAuthorize("isAuthenticated()")
     public String refreshSuborders(@ModelAttribute TimereportForm form, Model model) {
-        long ecId = form.getEmployeeContractId() != null ? form.getEmployeeContractId() : -1L;
+        long ecId = effectiveContractId();
         LocalDate date = form.getReferenceday();
 
         List<SuborderOption> suborders = List.of();
@@ -204,6 +206,7 @@ public class TimereportController {
             .filter(s -> s.id().equals(form.getSuborderId()))
             .findFirst().map(SuborderOption::commentNecessary).orElse(false);
         model.addAttribute("timereportForm", form);
+        model.addAttribute("selectedContractId", ecId);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessarySuborders);
         model.addAttribute("recentComments", loadRecentComments(form));
@@ -225,8 +228,9 @@ public class TimereportController {
     @PostMapping("/refresh-sidebar")
     @PreAuthorize("isAuthenticated()")
     public String refreshSidebar(@ModelAttribute TimereportForm form, Model model) {
-        long ecId = form.getEmployeeContractId() != null ? form.getEmployeeContractId() : -1L;
+        long ecId = effectiveContractId();
         model.addAttribute("timereportForm", form);
+        model.addAttribute("selectedContractId", ecId);
         if (ecId > 0 && form.getReferenceday() != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, form.getReferenceday()));
@@ -247,9 +251,7 @@ public class TimereportController {
     private String saveTimereport(TimereportForm form, boolean isEdit,
             RedirectAttributes redirectAttributes, Model model) {
 
-        long ecId = form.getEmployeeContractId() != null
-            ? form.getEmployeeContractId()
-            : resolveContractId(null, form.getReferenceday());
+        long ecId = effectiveContractId();
         LocalDate date = form.getReferenceday();
 
         long durationHours;
@@ -327,7 +329,7 @@ public class TimereportController {
                 messages.getMessage(isEdit
                     ? "main.timereport.update.success.text"
                     : "main.timereport.create.success.text"));
-            return "redirect:/dailyreport/daily?mode=daily&date=" + date + "&employeeContractId=" + ecId;
+            return "redirect:/dailyreport/daily?mode=daily&date=" + date;
 
         } catch (ErrorCodeException ex) {
             var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
@@ -357,6 +359,7 @@ public class TimereportController {
             .filter(s -> s.id().equals(form.getSuborderId()))
             .findFirst().map(SuborderOption::commentNecessary).orElse(false);
         model.addAttribute("timereportForm", form);
+        model.addAttribute("selectedContractId", ecId);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
@@ -379,14 +382,18 @@ public class TimereportController {
     }
 
     private List<String> loadRecentComments(TimereportForm form) {
-        if (form.getEmployeeContractId() != null && form.getSuborderId() != null) {
-            return timereportService.getRecentComments(form.getEmployeeContractId(), form.getSuborderId());
+        if (form.getSuborderId() != null) {
+            long ecId = effectiveContractId();
+            if (ecId > 0) {
+                return timereportService.getRecentComments(ecId, form.getSuborderId());
+            }
         }
         return List.of();
     }
 
-    private long resolveContractId(Long requestedId, LocalDate date) {
-        if (requestedId != null) return requestedId;
+    private long effectiveContractId() {
+        Long fromCookie = uiState.getSelectedContractId();
+        if (fromCookie != null && fromCookie > 0) return fromCookie;
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
             .map(c -> c.getId())

@@ -104,24 +104,22 @@
       <!-- Month navigation -->
       <div class="btn-group btn-group-sm">
         <a class="btn btn-outline-secondary"
-           th:href="@{/dailyreport/matrix(month=${prevMonth},year=${prevYear},employeeContractId=${selectedContractId})}">
+           th:href="@{/dailyreport/matrix(month=${prevMonth},year=${prevYear})}">
           <i class="ti ti-chevron-left m-0"></i>
         </a>
         <input type="month" id="matrix-month-input"
                class="btn btn-outline-secondary"
                th:value="${yearMonth}"
-               th:attr="data-ec-id=${selectedContractId}"
                style="cursor:pointer">
         <a class="btn btn-outline-secondary"
-           th:href="@{/dailyreport/matrix(month=${nextMonth},year=${nextYear},employeeContractId=${selectedContractId})}">
+           th:href="@{/dailyreport/matrix(month=${nextMonth},year=${nextYear})}">
           <i class="ti ti-chevron-right m-0"></i>
         </a>
       </div>
-      <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix(employeeContractId=${selectedContractId})}">Heute</a>
+      <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}">Heute</a>
 
       <!-- Fill not worked -->
       <form th:if="${selectedContractId > 0}" method="post" th:action="@{/dailyreport/matrix/fill-not-worked}">
-        <input type="hidden" name="employeeContractId" th:value="${selectedContractId}"/>
         <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
         <input type="hidden" name="year" th:value="${yearMonth.year}"/>
         <button type="submit" class="btn btn-sm btn-outline-secondary"
@@ -161,7 +159,7 @@
           <th th:each="dh : ${matrixData.dayHeaders}"
               class="text-center matrix-day-col px-1 text-nowrap"
               th:classappend="${dh.weekend ? 'bg-azure-lt ' : (dh.publicHoliday ? 'bg-warning-lt ' : '')} + ${dh.today ? 'matrix-today' : ''}"
-              th:attr="data-daily-url=@{/dailyreport/daily(mode='daily',date=${dh.date},employeeContractId=${selectedContractId})}">
+              th:attr="data-daily-url=@{/dailyreport/daily(mode='daily',date=${dh.date})}">
             [[${dh.day}]]<br>
             <span style="font-size:0.7rem"
                   th:text="${#strings.substring(#messages.msg(dh.weekdayKey), 0, 2)}">Mo</span>
@@ -344,7 +342,6 @@ document.getElementById('matrix-month-input')?.addEventListener('change', functi
   const [yearRaw, monthRaw] = this.value.split('-');
   const year = Number.parseInt(yearRaw, 10);
   const month = Number.parseInt(monthRaw, 10);
-  const employeeContractId = this.dataset.ecId ?? '';
 
   if (!Number.isInteger(year) || !Number.isInteger(month)) {
     return;
@@ -353,7 +350,6 @@ document.getElementById('matrix-month-input')?.addEventListener('change', functi
   const url = new URL('/dailyreport/matrix', window.location.origin);
   url.searchParams.set('month', String(month));
   url.searchParams.set('year', String(year));
-  url.searchParams.set('employeeContractId', employeeContractId);
   location.href = url.toString();
 });
 </script>

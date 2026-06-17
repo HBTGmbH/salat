@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.web.UiState;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.employee.service.EmployeecontractService;
@@ -32,10 +33,10 @@ public class MatrixController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final UiState uiState;
 
     @GetMapping
     public String show(
-            @RequestParam(required = false) Long employeeContractId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
             Model model) {
@@ -45,10 +46,7 @@ public class MatrixController {
         int targetYear = year != null ? year : today.getYear();
         YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
 
-        var loginEmployee = employeeService.getLoginEmployee();
-        var myContract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElse(null);
-        long ecId = employeeContractId != null ? employeeContractId
-            : (myContract != null ? myContract.getId() : -1L);
+        long ecId = effectiveContractId();
 
         var matrixData = matrixService.buildMatrix(yearMonth, ecId);
         var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
@@ -91,12 +89,12 @@ public class MatrixController {
     @PostMapping("/fill-not-worked")
     @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
-            @RequestParam Long employeeContractId,
             @RequestParam Integer month,
             @RequestParam Integer year,
             RedirectAttributes redirectAttributes) {
+        long ecId = effectiveContractId();
         try {
-            matrixService.fillNotWorked(YearMonth.of(year, month), employeeContractId);
+            matrixService.fillNotWorked(YearMonth.of(year, month), ecId);
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.matrix.fillnotworked.success.text"));
         } catch (ErrorCodeException ex) {
@@ -104,6 +102,15 @@ public class MatrixController {
                 errorCodeViewHelper.toViewMessages(ex).stream()
                     .map(Object::toString).findFirst().orElse("Error"));
         }
-        return "redirect:/dailyreport/matrix?month=" + month + "&year=" + year + "&employeeContractId=" + employeeContractId;
+        return "redirect:/dailyreport/matrix?month=" + month + "&year=" + year;
+    }
+
+    private long effectiveContractId() {
+        Long fromCookie = uiState.getSelectedContractId();
+        if (fromCookie != null && fromCookie > 0) return fromCookie;
+        var loginEmployee = employeeService.getLoginEmployee();
+        return employeecontractService.getCurrentContract(loginEmployee.getId())
+            .map(c -> c.getId())
+            .orElse(-1L);
     }
 }

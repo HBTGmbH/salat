@@ -6,7 +6,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 @Data
 public class WorkingdayForm {
-    private Long employeeContractId;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate date;
     private boolean notWorked;

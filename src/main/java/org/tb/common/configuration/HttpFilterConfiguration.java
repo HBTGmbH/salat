@@ -12,6 +12,8 @@ import org.tb.common.filter.LoggingFilter.MdcDataSource;
 import org.tb.common.filter.PerformanceLoggingFilter;
 import org.tb.common.filter.ResourceUrlEncodingFilter;
 import org.tb.common.filter.ResourceUrlProviderExposingFilter;
+import org.tb.common.filter.UiStateFilter;
+import org.tb.common.web.UiState;
 
 @Configuration
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class HttpFilterConfiguration {
 
     private final Set<MdcDataSource> mdcDataSources;
     private final ResourceUrlProvider resourceUrlProvider;
+    private final UiState uiState;
 
     @Bean
     public FilterRegistrationBean<ResourceUrlEncodingFilter> salatResourceUrlEncodingFilter(){
@@ -62,6 +65,15 @@ public class HttpFilterConfiguration {
         registrationBean.setOrder(102);
         registrationBean.setFilter(new LoggingFilter(mdcDataSources));
         registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<UiStateFilter> uiStateFilter() {
+        var registrationBean = new FilterRegistrationBean<UiStateFilter>();
+        registrationBean.setOrder(103);
+        registrationBean.setFilter(new UiStateFilter(uiState));
+        registrationBean.addUrlPatterns("/*");
         return registrationBean;
     }
 
