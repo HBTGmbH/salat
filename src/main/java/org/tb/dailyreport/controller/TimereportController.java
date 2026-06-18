@@ -104,8 +104,9 @@ public class TimereportController {
         form.setReferenceday(date);
         form.setOrderId(tr.getCustomerorderId());
         form.setSuborderId(tr.getSuborderId());
-        form.setDurationHours(valueOf(tr.getDurationhours()).intValueExact());
-        form.setDurationMinutes(valueOf(tr.getDurationminutes()).intValueExact());
+        form.setDurationTime(String.format("%02d:%02d",
+                valueOf(tr.getDurationhours()).intValueExact(),
+                valueOf(tr.getDurationminutes()).intValueExact()));
         form.setComment(tr.getTaskdescription() != null ? tr.getTaskdescription() : "");
         form.setTraining(tr.isTraining());
 
@@ -265,11 +266,21 @@ public class TimereportController {
                 return reRenderFormWithError(model, form, ecId, date, isEdit,
                     messages.getMessage("main.timereport.form.validation.duration.positive"));
             }
+            if (totalMinutes > 1440) {
+                return reRenderFormWithError(model, form, ecId, date, isEdit,
+                    messages.getMessage("main.timereport.form.validation.duration.range"));
+            }
             durationHours = totalMinutes / 60;
             durationMinutes = totalMinutes % 60;
         } else {
-            durationHours = form.getDurationHours();
-            durationMinutes = form.getDurationMinutes();
+            int[] parts = parseTime(form.getDurationTime());
+            long totalMinutes = parts[0] * 60L + parts[1];
+            if (totalMinutes <= 0 || totalMinutes > 1440) {
+                return reRenderFormWithError(model, form, ecId, date, isEdit,
+                    messages.getMessage("main.timereport.form.validation.duration.range"));
+            }
+            durationHours = parts[0];
+            durationMinutes = parts[1];
         }
 
         if (form.getSuborderId() == null) {

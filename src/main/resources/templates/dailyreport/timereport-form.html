@@ -60,18 +60,10 @@
 
                   <!-- Duration entry -->
                   <div id="durationSection">
-                    <div class="input-group">
-                      <input type="number" class="form-control" th:field="*{durationHours}"
-                             min="0" max="23" size="2"/>
-                      <span class="input-group-text" th:text="#{main.timereport.form.hours.label}">h</span>
-                      <select class="form-select" th:field="*{durationMinutes}">
-                        <option value="0">00</option>
-                        <option value="15">15</option>
-                        <option value="30">30</option>
-                        <option value="45">45</option>
-                      </select>
-                      <span class="input-group-text" th:text="#{main.timereport.form.minutes.label}">min</span>
-                    </div>
+                    <input type="text" class="form-control" th:field="*{durationTime}"
+                           placeholder="HH:MM" maxlength="5" inputmode="numeric"
+                           style="width:100px"
+                           oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
                   </div>
 
                   <!-- Begin/End entry -->
@@ -349,6 +341,20 @@
           badge.textContent = '';
         }
       }
+    }
+    function durationMask(e) {
+      var input = e.target;
+      var digits = input.value.replace(/\D/g, '').slice(0, 4);
+      if (digits.length === 4)      input.value = digits.slice(0, 2) + ':' + digits.slice(2);
+      else if (digits.length === 3) input.value = digits.slice(0, 1) + ':' + digits.slice(1);
+      else                          input.value = digits;
+    }
+    function durationBlur(e) {
+      var input = e.target;
+      var digits = input.value.replace(/\D/g, '');
+      if      (digits.length === 1) input.value = '0' + digits + ':00';
+      else if (digits.length === 2) input.value = '00:' + digits;
+      else if (digits.length === 3) input.value = '0' + digits.slice(0, 1) + ':' + digits.slice(1);
     }
     // restore durationMode toggle state on page load (e.g. after validation re-render)
     (function () {

@@ -18,8 +18,8 @@ public class TimereportForm {
     /** "duration" (default) or "beginEnd" — controlled by JS toggle buttons */
     private String durationMode = "duration";
 
-    private int durationHours;
-    private int durationMinutes;
+    /** HH:MM (e.g. "01:30") — only used when durationMode == "duration" */
+    private String durationTime = "";
 
     /** HH:MM — only used when durationMode == "beginEnd" */
     private String beginTime;
