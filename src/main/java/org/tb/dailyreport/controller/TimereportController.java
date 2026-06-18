@@ -263,11 +263,12 @@ public class TimereportController {
             long totalMinutes = (end[0] * 60L + end[1]) - (begin[0] * 60L + begin[1]);
             if (totalMinutes <= 0) {
                 return reRenderFormWithError(model, form, ecId, date, isEdit,
-                    messages.getMessage("main.timereport.form.validation.duration.positive"));
+                        errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.positive"));
             }
             if (totalMinutes > 1440) {
                 return reRenderFormWithError(model, form, ecId, date, isEdit,
-                    messages.getMessage("main.timereport.form.validation.duration.range"));
+                        errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
+
             }
             durationHours = totalMinutes / 60;
             durationMinutes = totalMinutes % 60;
@@ -276,7 +277,7 @@ public class TimereportController {
             long totalMinutes = parts[0] * 60L + parts[1];
             if (totalMinutes <= 0 || totalMinutes > 1440) {
                 return reRenderFormWithError(model, form, ecId, date, isEdit,
-                    messages.getMessage("main.timereport.form.validation.duration.range"));
+                        errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
             }
             durationHours = parts[0];
             durationMinutes = parts[1];
@@ -284,7 +285,7 @@ public class TimereportController {
 
         if (form.getSuborderId() == null) {
             return reRenderFormWithError(model, form, ecId, date, isEdit,
-                messages.getMessage("main.timereport.form.validation.suborder.required"));
+                    errorCodeViewHelper.toViewMessage("main.timereport.form.validation.suborder.required"));
         }
 
         try {
@@ -353,7 +354,7 @@ public class TimereportController {
     }
 
     private String reRenderFormWithError(Model model, TimereportForm form, long ecId, LocalDate date,
-            boolean isEdit, String errorMessage) {
+            boolean isEdit, ErrorCodeViewHelper.ViewMessage errorMessage) {
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
         var suborders = form.getOrderId() != null
             ? suborderOptions(ecId, form.getOrderId(), date)

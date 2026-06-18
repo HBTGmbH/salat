@@ -24,6 +24,12 @@ public class ErrorCodeViewHelper {
     }).collect(Collectors.toList());
   }
 
+  public ViewMessage toViewMessage(String key) {
+    var args = new Object[0];
+    String resolved = messages.getMessage(key, args, "???" + key + "???");
+    return new ViewMessage(key, args, resolved);
+  }
+
   private String toErrorKey(ServiceFeedbackMessage m) {
     // TR-0015 -> errorcode.tr.0015
     return "errorcode." + m.getErrorCode().getCode().replace('-', '.').toLowerCase();
