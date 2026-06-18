@@ -51,16 +51,15 @@ public class SuborderService {
   }
 
   @Transactional(readOnly = true)
-  public List<SuborderOption> getSuborderOptionsForForm(long employeecontractId, long customerorderId, LocalDate date) {
+  public List<SuborderSummary> getSuborderSummaries(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO
         .getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date)
         .stream()
-        .map(s -> {
-            var sign = s.getCompleteOrderSign();
-            var desc = s.getShortdescription();
-            var label = (desc != null && !desc.isBlank()) ? sign + " — " + desc : sign;
-            return new SuborderOption(s.getId(), label, Boolean.TRUE.equals(s.getCommentnecessary()));
-        })
+        .map(s -> new SuborderSummary(
+            s.getId(),
+            s.getCompleteOrderSign(),
+            s.getShortdescription(),
+            Boolean.TRUE.equals(s.getCommentnecessary())))
         .toList();
   }
 

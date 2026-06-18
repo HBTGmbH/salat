@@ -35,7 +35,6 @@ import org.tb.favorites.service.FavoriteService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
-import org.tb.order.service.SuborderOption;
 import org.tb.order.service.SuborderService;
 
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
@@ -74,7 +73,7 @@ public class TimereportController {
         List<SuborderOption> suborders = List.of();
         Long firstSuborderId = null;
         if (firstOrderId != null) {
-            suborders = suborderService.getSuborderOptionsForForm(ecId, firstOrderId, effectiveDate);
+            suborders = suborderOptions(ecId, firstOrderId, effectiveDate);
             firstSuborderId = suborders.isEmpty() ? null : suborders.get(0).id();
         }
 
@@ -111,7 +110,7 @@ public class TimereportController {
         form.setTraining(tr.isTraining());
 
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
-        var suborders = suborderService.getSuborderOptionsForForm(ecId, tr.getCustomerorderId(), date);
+        var suborders = suborderOptions(ecId, tr.getCustomerorderId(), date);
 
         populateModel(model, form, orders, suborders, ecId, date, true);
         return "dailyreport/timereport-form";
@@ -158,7 +157,7 @@ public class TimereportController {
                 firstOrderId = requestedOrderId;
             }
             if (firstOrderId != null) {
-                suborders = suborderService.getSuborderOptionsForForm(ecId, firstOrderId, date);
+                suborders = suborderOptions(ecId, firstOrderId, date);
                 if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
                     form.setSuborderId(suborders.isEmpty() ? null : suborders.get(0).id());
                 }
@@ -197,7 +196,7 @@ public class TimereportController {
 
         List<SuborderOption> suborders = List.of();
         if (form.getOrderId() != null && ecId > 0 && date != null) {
-            suborders = suborderService.getSuborderOptionsForForm(ecId, form.getOrderId(), date);
+            suborders = suborderOptions(ecId, form.getOrderId(), date);
         }
         // reset suborderId if no longer valid after order change
         if (suborders.stream().noneMatch(s -> s.id().equals(form.getSuborderId()))) {
@@ -345,7 +344,7 @@ public class TimereportController {
         } catch (ErrorCodeException ex) {
             var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
             var suborders = form.getOrderId() != null
-                ? suborderService.getSuborderOptionsForForm(ecId, form.getOrderId(), date)
+                ? suborderOptions(ecId, form.getOrderId(), date)
                 : List.<SuborderOption>of();
             populateModel(model, form, orders, suborders, ecId, date, isEdit);
             model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
@@ -357,7 +356,7 @@ public class TimereportController {
             boolean isEdit, String errorMessage) {
         var orders = customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date);
         var suborders = form.getOrderId() != null
-            ? suborderService.getSuborderOptionsForForm(ecId, form.getOrderId(), date)
+            ? suborderOptions(ecId, form.getOrderId(), date)
             : List.<SuborderOption>of();
         populateModel(model, form, orders, suborders, ecId, date, isEdit);
         model.addAttribute("errors", List.of(errorMessage));
@@ -400,6 +399,19 @@ public class TimereportController {
             }
         }
         return List.of();
+    }
+
+    private List<SuborderOption> suborderOptions(long ecId, long orderId, LocalDate date) {
+        return suborderService.getSuborderSummaries(ecId, orderId, date)
+            .stream()
+            .map(s -> {
+                var desc  = s.shortdescription();
+                var label = (desc != null && !desc.isBlank())
+                    ? s.completeOrderSign() + " — " + desc
+                    : s.completeOrderSign();
+                return new SuborderOption(s.id(), label, s.commentNecessary());
+            })
+            .toList();
     }
 
     private long effectiveContractId() {
