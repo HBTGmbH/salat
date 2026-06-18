@@ -18,6 +18,7 @@
 
           <input type="hidden" th:if="${timereportForm.id != null}" th:field="*{id}"/>
           <input type="hidden" th:field="*{durationMode}" id="durationModeField"/>
+          <input type="hidden" id="saveAsFavField" name="saveAsFavorite" value="false"/>
 
           <div class="card-body">
 
@@ -176,12 +177,11 @@
           <!-- Save as favourite panel (hidden by default) -->
           <div class="card-footer d-none" id="saveAsFavSection">
             <div class="d-flex gap-2 align-items-center">
-              <span class="form-label mb-0 me-1 text-nowrap" th:text="#{main.timereport.form.savefav.label}">Favorit speichern?</span>
-              <label class="form-check form-switch mb-0">
-                <input class="form-check-input" type="checkbox" th:field="*{saveAsFavorite}"/>
-              </label>
-              <button type="submit" class="btn btn-primary text-nowrap ms-2">
-                <i class="ti ti-device-floppy me-1"></i>
+              <i class="ti ti-star text-yellow me-1"></i>
+              <span class="text-muted small" th:text="#{main.timereport.form.savefav.label}">Favorit speichern?</span>
+              <button type="submit" class="btn btn-primary text-nowrap ms-auto"
+                      onclick="document.getElementById('saveAsFavField').value='true'">
+                <i class="ti ti-star me-1"></i>
                 <span th:text="#{main.timereport.form.savefav.action}">Speichern &amp; Favorit</span>
               </button>
             </div>

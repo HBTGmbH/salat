@@ -27,6 +27,9 @@
   #daily-week-strip .list-group-item-action {
     text-decoration: none;
   }
+  .fav-apply-btn:hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.04) !important;
+  }
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -149,11 +152,53 @@
       <!-- ─── Inline-edit refresh target ─────────────────────── -->
       <div id="daily-bookings-area" th:fragment="dailyBookings">
 
-      <!-- Add booking -->
+      <!-- Add booking + Apply favourite -->
       <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
         <a th:href="@{/dailyreport/timereports/new(date=${date})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
+        <div class="dropdown flex-fill" th:if="${favorites != null and not #lists.isEmpty(favorites)}">
+          <button class="btn btn-outline-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="ti ti-star me-1"></i><span th:text="#{main.daily.favourites.apply.button}">Favorit anwenden</span>
+          </button>
+          <ul class="dropdown-menu w-100">
+            <li th:each="fav : ${favorites}">
+              <div class="d-flex align-items-stretch">
+                <form th:action="@{/dailyreport/daily/apply-favourite}" method="post" class="flex-fill"
+                      th:attr="hx-post=@{/dailyreport/daily/apply-favourite}"
+                      hx-target="#daily-bookings-area"
+                      hx-swap="outerHTML">
+                  <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+                  <input type="hidden" name="date" th:value="${date}"/>
+                  <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2"
+                          data-bs-dismiss="dropdown">
+                    <div class="flex-fill">
+                      <div class="fw-medium small" th:text="${fav.label}"></div>
+                      <div th:if="${fav.comment != null and !fav.comment.isEmpty()}"
+                           class="text-muted mt-1" style="font-size:0.75rem"
+                           th:text="${fav.comment}"></div>
+                    </div>
+                    <span class="badge bg-blue-lt flex-shrink-0"
+                          th:text="${@durationUtils.format(fav.duration)}"></span>
+                  </button>
+                </form>
+                <form th:action="@{/dailyreport/daily/delete-favourite}" method="post" class="d-flex align-items-center"
+                      th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
+                      hx-target="#daily-bookings-area"
+                      hx-swap="outerHTML">
+                  <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+                  <input type="hidden" name="date" th:value="${date}"/>
+                  <button type="submit" class="btn btn-ghost-danger btn-sm py-2 pe-2"
+                          th:title="#{main.daily.favourites.delete.title}"
+                          th:attr="data-confirm=#{main.daily.favourites.delete.confirm}"
+                          onclick="return confirm(this.dataset.confirm)">
+                    <i class="icon ti ti-trash m-0"></i>
+                  </button>
+                </form>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- Bookings table -->
@@ -306,6 +351,50 @@
         </a>
       </div>
 
+      <!-- OOB: favourites sidebar refresh after apply/delete -->
+      <div th:if="${oobFavourites == true}"
+           id="daily-favourites-panel"
+           hx-swap-oob="outerHTML:#daily-favourites-panel"
+           class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
+            <form th:action="@{/dailyreport/daily/apply-favourite}" method="post" class="flex-fill"
+                  th:attr="hx-post=@{/dailyreport/daily/apply-favourite}"
+                  hx-target="#daily-bookings-area"
+                  hx-swap="outerHTML">
+              <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+              <input type="hidden" name="date" th:value="${date}"/>
+              <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2">
+                <div class="flex-fill">
+                  <div class="fw-medium small" th:text="${fav.label}"></div>
+                  <div th:if="${fav.comment != null and !fav.comment.isEmpty()}"
+                       class="text-muted mt-1" style="font-size:0.75rem"
+                       th:text="${fav.comment}"></div>
+                </div>
+                <span class="badge bg-blue-lt flex-shrink-0"
+                      th:text="${@durationUtils.format(fav.duration)}"></span>
+              </button>
+            </form>
+            <form th:action="@{/dailyreport/daily/delete-favourite}" method="post" class="d-flex align-items-center"
+                  th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
+                  hx-target="#daily-bookings-area"
+                  hx-swap="outerHTML">
+              <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+              <input type="hidden" name="date" th:value="${date}"/>
+              <button type="submit" class="btn btn-ghost-danger btn-sm py-2 pe-2"
+                      th:title="#{main.daily.favourites.delete.title}"
+                      th:attr="data-confirm=#{main.daily.favourites.delete.confirm}"
+                      onclick="return confirm(this.dataset.confirm)">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
       </div><!-- end daily-bookings-area -->
 
     </div><!-- end main col -->
@@ -374,6 +463,48 @@
                     th:text="${@durationUtils.format(wd.booked)}"></span>
             </div>
           </a>
+        </div>
+      </div>
+
+      <!-- Favourites -->
+      <div class="card mb-3" id="daily-favourites-panel"
+           th:if="${favorites != null and not #lists.isEmpty(favorites)}">
+        <div class="card-header">
+          <h3 class="card-title" th:text="#{main.daily.favourites.title}">Favoriten</h3>
+        </div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
+            <form th:action="@{/dailyreport/daily/apply-favourite}" method="post" class="flex-fill"
+                  th:attr="hx-post=@{/dailyreport/daily/apply-favourite}"
+                  hx-target="#daily-bookings-area"
+                  hx-swap="outerHTML">
+              <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+              <input type="hidden" name="date" th:value="${date}"/>
+              <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2">
+                <div class="flex-fill">
+                  <div class="fw-medium small" th:text="${fav.label}"></div>
+                  <div th:if="${fav.comment != null and !fav.comment.isEmpty()}"
+                       class="text-muted mt-1" style="font-size:0.75rem"
+                       th:text="${fav.comment}"></div>
+                </div>
+                <span class="badge bg-blue-lt flex-shrink-0"
+                      th:text="${@durationUtils.format(fav.duration)}"></span>
+              </button>
+            </form>
+            <form th:action="@{/dailyreport/daily/delete-favourite}" method="post" class="d-flex align-items-center"
+                  th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
+                  hx-target="#daily-bookings-area"
+                  hx-swap="outerHTML">
+              <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+              <input type="hidden" name="date" th:value="${date}"/>
+              <button type="submit" class="btn btn-ghost-danger btn-sm py-2 pe-2"
+                      th:title="#{main.daily.favourites.delete.title}"
+                      th:attr="data-confirm=#{main.daily.favourites.delete.confirm}"
+                      onclick="return confirm(this.dataset.confirm)">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 

@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -31,6 +33,10 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
+import java.time.Duration;
+import org.tb.favorites.domain.Favorite;
+import org.tb.favorites.service.FavoriteService;
+import org.tb.order.service.EmployeeorderService;
 
 @Controller
 @RequestMapping("/dailyreport/daily")
@@ -44,6 +50,8 @@ public class DailyController {
     private final WorkingdayService workingdayService;
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
+    private final FavoriteService favoriteService;
+    private final EmployeeorderService employeeorderService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final UiState uiState;
@@ -112,6 +120,9 @@ public class DailyController {
             model.addAttribute("prevDate", prev);
             model.addAttribute("nextDate", next);
             model.addAttribute("title", targetDate.toString());
+            if (ecId > 0) {
+                model.addAttribute("favorites", buildFavoriteViews());
+            }
         }
 
         return "dailyreport/daily";
@@ -257,6 +268,88 @@ public class DailyController {
             return "dailyreport/daily :: dailyBookings";
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date;
+    }
+
+    @PostMapping("/apply-favourite")
+    @PreAuthorize("isAuthenticated()")
+    public String applyFavourite(
+            @RequestParam Long favoriteId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Model model) {
+        long ecId = effectiveContractId();
+        try {
+            var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
+            timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
+                fav.getComment(), false, fav.getHours(), fav.getMinutes(), 1);
+        } catch (ErrorCodeException ex) {
+            String err = errorCodeViewHelper.toViewMessages(ex).stream()
+                .map(Object::toString).findFirst().orElse("Error");
+            response.setHeader("HX-Trigger", "{\"showError\":\"" + err.replace("\"", "'") + "\"}");
+        }
+        var dailyData = dailyService.buildDailyView(date, ecId);
+        var wdForm = new WorkingdayForm();
+        wdForm.setDate(date);
+        wdForm.setNotWorked(dailyData.notWorked());
+        wdForm.setStartTime(dailyData.startTime());
+        wdForm.setBreakTime(dailyData.breakTime());
+        model.addAttribute("dailyData", dailyData);
+        model.addAttribute("weekStripData", dailyData.weekStrip());
+        model.addAttribute("workingdayForm", wdForm);
+        model.addAttribute("date", date);
+        model.addAttribute("selectedContractId", ecId);
+        model.addAttribute("isHtmxRequest", true);
+        model.addAttribute("isDailyMode", true);
+        model.addAttribute("favorites", buildFavoriteViews());
+        model.addAttribute("oobFavourites", true);
+        return "dailyreport/daily :: dailyBookings";
+    }
+
+    @PostMapping("/delete-favourite")
+    @PreAuthorize("isAuthenticated()")
+    public String deleteFavourite(
+            @RequestParam Long favoriteId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            Model model) {
+        long ecId = effectiveContractId();
+        try {
+            favoriteService.deleteFavorite(favoriteId);
+        } catch (Exception ex) {
+            // favourite already gone or access denied — ignore
+        }
+        var dailyData = dailyService.buildDailyView(date, ecId);
+        model.addAttribute("dailyData", dailyData);
+        model.addAttribute("weekStripData", dailyData.weekStrip());
+        var form = new WorkingdayForm();
+        form.setDate(date);
+        form.setNotWorked(dailyData.notWorked());
+        form.setStartTime(dailyData.startTime());
+        form.setBreakTime(dailyData.breakTime());
+        model.addAttribute("workingdayForm", form);
+        model.addAttribute("date", date);
+        model.addAttribute("selectedContractId", ecId);
+        model.addAttribute("isHtmxRequest", true);
+        model.addAttribute("isDailyMode", true);
+        model.addAttribute("favorites", buildFavoriteViews());
+        model.addAttribute("oobFavourites", true);
+        return "dailyreport/daily :: dailyBookings";
+    }
+
+    private List<FavoriteView> buildFavoriteViews() {
+        long empId = employeeService.getLoginEmployee().getId();
+        return favoriteService.getFavorites(empId).stream()
+            .map(this::buildFavoriteView)
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    private FavoriteView buildFavoriteView(Favorite f) {
+        var eo = employeeorderService.getEmployeeorderById(f.getEmployeeorderId());
+        if (eo == null) return null;
+        String label = eo.getSuborder().getCompleteOrderSignAndDescription();
+        Duration duration = Duration.ofHours(f.getHours()).plusMinutes(f.getMinutes());
+        return new FavoriteView(f.getId(), label, f.getComment(), duration);
     }
 
     private long effectiveContractId() {
