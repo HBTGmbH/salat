@@ -30,47 +30,6 @@
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- Shared header: mode tabs + employee selector               -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-
-  <!-- Mode tabs -->
-  <ul class="nav nav-pills">
-    <li class="nav-item">
-      <a class="nav-link"
-         th:classappend="${mode == 'daily'} ? 'active' : ''"
-         th:href="@{/dailyreport/daily(mode='daily',date=${date})}">
-        <span th:text="#{main.daily.mode.daily.text}">Tagesansicht</span>
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link"
-         th:classappend="${mode == 'list'} ? 'active' : ''"
-         th:href="@{/dailyreport/daily(mode='list',month=${yearMonth.monthValue},year=${yearMonth.year})}">
-        <span th:text="#{main.daily.mode.list.text}">Monatsübersicht</span>
-      </a>
-    </li>
-  </ul>
-
-  <!-- Employee selector (only when multiple contracts are viewable) -->
-  <form class="ms-auto" method="get" th:action="@{/dailyreport/daily}"
-        th:if="${#lists.size(employeecontracts) > 1}">
-    <input type="hidden" name="mode" th:value="${mode}"/>
-    <input type="hidden" th:if="${mode == 'daily'}" name="date" th:value="${date}"/>
-    <input type="hidden" th:if="${mode == 'list' and yearMonth != null}" name="month" th:value="${yearMonth.monthValue}"/>
-    <input type="hidden" th:if="${mode == 'list' and yearMonth != null}" name="year" th:value="${yearMonth.year}"/>
-    <select name="employeeContractId" class="form-select form-select-sm tomselect"
-            onchange="this.form.submit()" style="min-width: 200px">
-      <option th:each="ec : ${employeecontracts}"
-              th:value="${ec.id}"
-              th:text="${ec.employee.name}"
-              th:selected="${ec.id == selectedContractId}">
-      </option>
-    </select>
-  </form>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- DAILY MODE                                                  -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div th:if="${mode == 'daily'}">
@@ -91,10 +50,17 @@
               <span th:text="#{main.daily.nav.nextday.text}">Nächster Tag</span><i class="ti ti-chevron-right ms-1"></i>
             </a>
           </div>
-          <a class="btn btn-sm btn-outline-primary"
-             th:href="@{/dailyreport/daily(mode='daily')}">
-            <span th:text="#{main.daily.nav.today.text}">Heute</span>
-          </a>
+          <div class="d-flex justify-content-center gap-2">
+            <a class="btn btn-sm btn-outline-primary"
+               th:href="@{/dailyreport/daily(mode='daily')}">
+              <span th:text="#{main.daily.nav.today.text}">Heute</span>
+            </a>
+            <a class="btn btn-sm btn-outline-secondary"
+               th:href="@{/dailyreport/daily(mode='list',month=${yearMonth.monthValue},year=${yearMonth.year})}">
+              <i class="ti ti-calendar me-1"></i>
+              <span th:text="#{main.daily.mode.list.text}">Monatsübersicht</span>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -346,6 +312,29 @@
     <!-- Sidebar -->
     <div class="col-lg-4" th:if="${dailyData != null}">
 
+      <!-- Employee selector (People Lead / Manager only) -->
+      <form th:if="${#lists.size(employeecontracts) > 1}" method="get"
+            th:action="@{/dailyreport/daily}" class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">
+            <span th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</span>
+            <span class="badge bg-yellow-lt text-yellow ms-1 fw-normal" style="font-size:0.65rem"
+                  th:text="#{main.timereport.sidebar.employee.badge}">Manager</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <input type="hidden" name="mode" value="daily"/>
+          <input type="hidden" name="date" th:value="${date}"/>
+          <select class="form-select tomselect" name="employeeContractId" onchange="this.form.submit()">
+            <option th:each="ec : ${employeecontracts}"
+                    th:value="${ec.id}"
+                    th:text="${ec.employee.name}"
+                    th:selected="${ec.id == selectedContractId}"></option>
+          </select>
+          <div class="form-text" th:text="#{main.timereport.sidebar.employee.hint}"></div>
+        </div>
+      </form>
+
       <!-- Week strip -->
       <div class="card mb-3">
         <div class="card-header">
@@ -395,40 +384,35 @@
 <!-- LIST MODE                                                   -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div th:if="${mode == 'list'}">
+  <div class="row align-items-start">
 
-  <!-- Month navigation + fill-not-worked -->
-  <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-    <div class="btn-group btn-group-sm">
-      <a class="btn btn-outline-secondary"
-         th:href="@{/dailyreport/daily(mode='list',month=${prevMonth},year=${prevYear})}">
-        <i class="ti ti-chevron-left m-0"></i>
-      </a>
-      <span class="btn btn-outline-secondary disabled"
-            th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}"></span>
-      <a class="btn btn-outline-secondary"
-         th:href="@{/dailyreport/daily(mode='list',month=${nextMonth},year=${nextYear})}">
-        <i class="ti ti-chevron-right m-0"></i>
-      </a>
-    </div>
-    <a class="btn btn-sm btn-outline-secondary"
-       th:href="@{/dailyreport/daily(mode='list')}">
-      <span th:text="#{main.daily.nav.today.text}">Heute</span>
-    </a>
+    <!-- Main column -->
+    <div class="col-lg-8">
 
-    <!-- Fill not worked -->
-    <form th:if="${selectedContractId > 0 and listData != null}" method="post"
-          th:action="@{/dailyreport/daily/fill-not-worked}" class="ms-auto">
-      <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
-      <input type="hidden" name="year" th:value="${yearMonth.year}"/>
-      <button type="submit" class="btn btn-sm btn-outline-secondary"
-              th:disabled="${listData.monthReleased}"
-              th:title="${listData.monthReleased} ? #{main.matrix.fillnotworked.disabled.title} : null"
-              th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
-    </form>
-  </div>
+      <!-- Month navigation card -->
+      <div class="card mb-3">
+        <div class="card-body text-center py-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <a class="btn btn-sm btn-outline-secondary"
+               th:href="@{/dailyreport/daily(mode='list',month=${prevMonth},year=${prevYear})}">
+              <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevmonth.text}">Vorheriger Monat</span>
+            </a>
+            <h3 class="mb-0"
+                th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}"></h3>
+            <a class="btn btn-sm btn-outline-secondary"
+               th:href="@{/dailyreport/daily(mode='list',month=${nextMonth},year=${nextYear})}">
+              <span th:text="#{main.daily.nav.nextmonth.text}">Nächster Monat</span><i class="ti ti-chevron-right ms-1"></i>
+            </a>
+          </div>
+          <a class="btn btn-sm btn-outline-primary"
+             th:href="@{/dailyreport/daily(mode='list')}">
+            <span th:text="#{main.daily.nav.today.text}">Heute</span>
+          </a>
+        </div>
+      </div>
 
-  <!-- Day list -->
-  <div class="card" th:if="${listData != null}">
+      <!-- Day list -->
+      <div class="card" th:if="${listData != null}">
     <div class="table-responsive">
       <table class="table table-vcenter card-table" id="daily-list">
         <thead class="d-none">
@@ -508,8 +492,51 @@
         <span class="badge me-1 matrix-today">Heute</span>
       </span>
     </div>
-  </div>
+      </div><!-- end day list card -->
 
+    </div><!-- end main col -->
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+
+      <!-- Employee selector (People Lead / Manager only) -->
+      <form th:if="${#lists.size(employeecontracts) > 1}" method="get"
+            th:action="@{/dailyreport/daily}" class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title">
+            <span th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</span>
+            <span class="badge bg-yellow-lt text-yellow ms-1 fw-normal" style="font-size:0.65rem"
+                  th:text="#{main.timereport.sidebar.employee.badge}">Manager</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <input type="hidden" name="mode" value="list"/>
+          <input type="hidden" th:if="${yearMonth != null}" name="month" th:value="${yearMonth.monthValue}"/>
+          <input type="hidden" th:if="${yearMonth != null}" name="year" th:value="${yearMonth.year}"/>
+          <select class="form-select tomselect" name="employeeContractId" onchange="this.form.submit()">
+            <option th:each="ec : ${employeecontracts}"
+                    th:value="${ec.id}"
+                    th:text="${ec.employee.name}"
+                    th:selected="${ec.id == selectedContractId}"></option>
+          </select>
+          <div class="form-text" th:text="#{main.timereport.sidebar.employee.hint}"></div>
+        </div>
+      </form>
+
+      <!-- Fill not worked -->
+      <form th:if="${selectedContractId > 0 and listData != null}" method="post"
+            th:action="@{/dailyreport/daily/fill-not-worked}">
+        <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
+        <input type="hidden" name="year" th:value="${yearMonth.year}"/>
+        <button type="submit" class="btn btn-outline-secondary w-100"
+                th:disabled="${listData.monthReleased}"
+                th:title="${listData.monthReleased} ? #{main.matrix.fillnotworked.disabled.title} : null"
+                th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
+      </form>
+
+    </div><!-- end sidebar -->
+
+  </div>
 </div><!-- end list mode -->
 
 <!-- ═══════════════════════════════════════════════════════════ -->
