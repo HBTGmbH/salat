@@ -271,6 +271,9 @@
 
   </div><!-- end row -->
 
+  <script th:inline="javascript" th:if="${liveBookingStartMinutes != null}">
+    var liveBookingStartMinutes = /*[[${liveBookingStartMinutes}]]*/ null;
+  </script>
   <script th:inline="none">
     function showDuration() {
       document.getElementById('durationSection').classList.remove('d-none');
@@ -354,6 +357,22 @@
     (function () {
       var mode = document.getElementById('durationModeField').value;
       if (mode === 'beginEnd') showBeginEnd();
+    })();
+    // auto-switch to begin/end mode for live bookings (today with a saved start time)
+    (function () {
+      if (typeof liveBookingStartMinutes === 'undefined' || liveBookingStartMinutes === null) return;
+      if (document.getElementById('durationModeField').value === 'beginEnd') return;
+      var startH = Math.floor(liveBookingStartMinutes / 60);
+      var startM = liveBookingStartMinutes % 60;
+      document.getElementById('beginTimeInput').value =
+        String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
+      var now = new Date();
+      var nowMins = now.getHours() * 60 + now.getMinutes();
+      var endMins = nowMins === 0 ? 0 : Math.ceil(nowMins / 15) * 15;
+      document.getElementById('endTimeInput').value =
+        String(Math.floor(endMins / 60) % 24).padStart(2, '0') + ':' + String(endMins % 60).padStart(2, '0');
+      showBeginEnd();
+      updateDurationBadge();
     })();
   </script>
 

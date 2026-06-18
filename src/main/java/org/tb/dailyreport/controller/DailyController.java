@@ -177,6 +177,7 @@ public class DailyController {
                 model.addAttribute("selectedContractId", employeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
+                model.addAttribute("favorites", buildFavoriteViews());
                 return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -200,6 +201,7 @@ public class DailyController {
                 model.addAttribute("selectedContractId", employeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
+                model.addAttribute("favorites", buildFavoriteViews());
                 return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastError", errMsg);
@@ -265,6 +267,7 @@ public class DailyController {
             model.addAttribute("selectedContractId", ecId);
             model.addAttribute("isHtmxRequest", true);
             model.addAttribute("isDailyMode", true);
+            model.addAttribute("favorites", buildFavoriteViews());
             return "dailyreport/daily :: dailyBookings";
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date;

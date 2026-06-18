@@ -364,9 +364,21 @@ public class TimereportController {
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
         model.addAttribute("isEdit", isEdit);
-        model.addAttribute("todaysBookings",
-            timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
+        var todaysBookings = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
+        model.addAttribute("todaysBookings", todaysBookings);
         model.addAttribute("recentComments", loadRecentComments(form));
+        if (!isEdit && date != null && date.equals(today())) {
+            var workingday = workingdayService.getWorkingday(ecId, date);
+            if (workingday != null && (workingday.getStarttimehour() > 0 || workingday.getStarttimeminute() > 0)) {
+                long bookedMinutes = todaysBookings.stream()
+                    .mapToLong(tr -> tr.getDuration().toMinutes())
+                    .sum();
+                long startMinutes = workingday.getStarttimehour() * 60L + workingday.getStarttimeminute()
+                    + workingday.getBreakhours() * 60L + workingday.getBreakminutes()
+                    + bookedMinutes;
+                model.addAttribute("liveBookingStartMinutes", startMinutes);
+            }
+        }
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
