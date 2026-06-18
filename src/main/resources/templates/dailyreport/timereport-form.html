@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
-      th:with="containerClass='container-xl'">
+      th:with="containerClass='container-xl',title=${pageTitle}">
 <section layout:fragment="content">
 
   <div class="row align-items-start">
@@ -10,12 +10,6 @@
     <!-- ===== Main form column ===== -->
     <div class="col-lg-7">
       <div class="card">
-        <div class="card-header">
-          <h3 class="card-title"
-              th:text="${isEdit} ? #{main.timereport.form.title.edit} : #{main.timereport.form.title.create}">
-            Neue Buchung
-          </h3>
-        </div>
 
         <form id="timereportMainForm"
               th:action="${isEdit} ? @{/dailyreport/timereports/{id}(id=${timereportForm.id})} : @{/dailyreport/timereports}"
