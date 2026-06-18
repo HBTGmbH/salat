@@ -449,13 +449,27 @@ public class TimereportDAO {
             where(matchesEmployeecontractId(employeecontractId))
                 .and(matchesSuborderId(suborderId))
                 .and(notDeleted())
-                .and(orderedByReferencedayDesc())
+                .and(orderedByCreatedDesc())
         ).stream()
             .map(Timereport::getTaskdescription)
             .filter(s -> s != null && !s.isBlank())
+            .map(String::strip)
             .distinct()
             .limit(5)
             .collect(Collectors.toList());
+    }
+
+    private Specification<Timereport> orderedByCreatedDesc() {
+        return (root, query, builder) -> {
+            if (Long.class.equals(query.getResultType()) || long.class.equals(query.getResultType())) {
+                return null;
+            }
+            var orderList = new ArrayList<Order>();
+            orderList.addAll(query.getOrderList());
+            orderList.add(builder.desc(root.get("created")));
+            query.orderBy(orderList);
+            return null;
+        };
     }
 
     private Specification<Timereport> orderedByReferencedayDesc() {
