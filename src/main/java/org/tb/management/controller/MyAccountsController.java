@@ -25,11 +25,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
+import org.tb.common.web.UiState;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.EmployeeorderService;
 
 @Controller
@@ -51,10 +54,13 @@ public class MyAccountsController {
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final MessageSourceAccessor messageSourceAccessor;
+    private final EmployeecontractService employeecontractService;
+    private final EmployeeService employeeService;
+    private final UiState uiState;
 
     @GetMapping
     public String show(HttpSession session, Model model) {
-        var contract = currentContract(session);
+        var contract = currentContract();
         var today = today();
         var currentYear = today.getYear();
         var yearStart = LocalDate.of(currentYear, 1, 1);
@@ -308,11 +314,14 @@ public class MyAccountsController {
         return timereport.isTraining() || COMPLETE_ORDER_SIGN_TRAINING.equals(timereport.getCompleteOrderSign());
     }
 
-    private Employeecontract currentContract(HttpSession session) {
-        var contract = (Employeecontract) session.getAttribute("currentEmployeeContract");
-        if (contract == null) {
-            contract = (Employeecontract) session.getAttribute("loginEmployeeContract");
+    private Employeecontract currentContract() {
+        Long contractId = uiState.getSelectedContractId();
+        if (contractId != null && contractId > 0) {
+            var contract = employeecontractService.getEmployeecontractById(contractId);
+            if (contract != null) return contract;
         }
-        return contract;
+        var loginEmployee = employeeService.getLoginEmployee();
+        return employeecontractService.getCurrentContract(loginEmployee.getId())
+            .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
     }
 }
