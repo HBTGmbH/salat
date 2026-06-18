@@ -31,6 +31,7 @@ Chosen: **Option C**, weil ein vollständiges Verbot die schrittweise Migration 
 **Benutzerbezogener Selektionszustand (z. B. "welcher Vertrag ist gerade ausgewählt"):**
 - Muss über URL-Parameter (bevorzugt) oder ein Browser-Cookie persistiert werden.
 - Kein Ablegen in `HttpSession` — der Zustand überlebt keinen Server-Neustart und ist nicht tab-safe.
+- Die konkrete Implementierung dieses Mechanismus ist in ADR-0014 beschrieben (`UiState`-Bean + `UiStateFilter`).
 - Konsequenz für Verlinkung von neuen auf Legacy-Screens: der Zielzustand muss als URL-Parameter mitgeliefert werden, auch wenn die Legacy-Action ihn danach in die Session schreibt.
 
 **Erlaubte Ausnahmen (müssen am Ort der Ausnahme dokumentiert werden):**
