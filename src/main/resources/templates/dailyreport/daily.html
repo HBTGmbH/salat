@@ -242,7 +242,8 @@
                            th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
                            hx-trigger="blur"
                            hx-target="#daily-bookings-area"
-                           hx-swap="outerHTML"/>
+                           hx-swap="outerHTML"
+                           oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
                   </div>
                   <span th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
                         class="badge bg-blue-lt"
@@ -565,6 +566,42 @@
     htmx.trigger('#workingday-form', 'submit');
   }
 
+  function durationMask(e) {
+    var input = e.target;
+    var digits = input.value.replace(/\D/g, '').slice(0, 4);
+    if (digits.length === 4)      input.value = digits.slice(0, 2) + ':' + digits.slice(2);
+    else if (digits.length === 3) input.value = digits.slice(0, 1) + ':' + digits.slice(1);
+    else                          input.value = digits;
+  }
+  function durationBlur(e) {
+    var input = e.target;
+    var digits = input.value.replace(/\D/g, '');
+    if      (digits.length === 1) input.value = '0' + digits + ':00';
+    else if (digits.length === 2) input.value = '00:' + digits;
+    else if (digits.length === 3) input.value = '0' + digits.slice(0, 1) + ':' + digits.slice(1);
+  }
+
+  var inlineEditEscaped = false;
+
+  document.addEventListener('keydown', function(evt) {
+    var input = document.activeElement;
+    if (!input || !input.classList.contains('inline-edit-input')) return;
+    if (evt.key === 'Escape') {
+      inlineEditEscaped = true;
+      var display = input.previousElementSibling;
+      input.classList.add('d-none');
+      display.classList.remove('d-none');
+      input.blur();
+      evt.preventDefault();
+      return;
+    }
+    if (evt.key === 'Enter') {
+      if (input.tagName === 'TEXTAREA' && evt.shiftKey) return;
+      evt.preventDefault();
+      input.blur();
+    }
+  });
+
   // Inline edit: event delegation survives HTMX re-renders
   document.addEventListener('click', function(evt) {
     var display = evt.target.closest('.inline-edit-display');
@@ -582,6 +619,10 @@
       });
     }
     input.focus();
+    if (input.tagName === 'TEXTAREA') {
+      var len = input.value.length;
+      input.setSelectionRange(len, len);
+    }
   });
 
 
@@ -591,6 +632,13 @@
 </section>
 
 <script layout:fragment="scripts">
+  htmx.on('htmx:beforeRequest', function(evt) {
+    if (evt.target.classList.contains('inline-edit-input') && inlineEditEscaped) {
+      evt.preventDefault();
+      inlineEditEscaped = false;
+    }
+  });
+
   htmx.on('htmx:afterRequest', function(evt) {
     var input = evt.target;
     if (!input.classList.contains('inline-edit-input')) return;

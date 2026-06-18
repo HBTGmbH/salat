@@ -46,7 +46,8 @@
                  th:value="${@durationUtils.format(singleTr.duration)}"
                  th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
                  hx-trigger="blur"
-                 hx-swap="outerHTML"/>
+                 hx-swap="outerHTML"
+                 oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
         </div>
         <span th:unless="${singleTrEditable}"
               class="badge bg-blue-lt"
