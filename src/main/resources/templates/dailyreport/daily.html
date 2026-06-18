@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}">
+      layout:decorate="~{layout/base}" th:with="title=${pageTitle}">
 <section layout:fragment="content">
 
 <style>
@@ -214,6 +214,7 @@
                   <span th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
                         class="badge bg-blue-lt"
                         th:text="${@durationUtils.format(tr.duration)}"></span>
+                  <span th:if="${tr.training}" class="badge bg-purple-lt text-purple d-block mt-1">Fortbildung</span>
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
