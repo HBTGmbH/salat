@@ -356,6 +356,23 @@ public class TimereportService {
     }
   }
 
+  @Transactional(readOnly = true)
+  public List<LocalDate> getWorkableSerialDates(LocalDate start, int count) {
+    List<LocalDate> dates = new ArrayList<>();
+    LocalDate current = start;
+    for (int i = 0; i < count; i++) {
+      dates.add(current);
+      if (i < count - 1) {
+        LocalDate next = current;
+        do {
+          next = DateUtils.addDays(next, 1);
+        } while (!DateUtils.isWeekday(next) || publicholidayDAO.getPublicHoliday(next).isPresent());
+        current = next;
+      }
+    }
+    return dates;
+  }
+
   private Referenceday getNextWorkableDay(Referenceday referenceday) {
     Referenceday nextWorkableDay = null;
     LocalDate day = referenceday.getRefdate();

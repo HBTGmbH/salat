@@ -289,24 +289,13 @@ public class TimereportController {
         }
 
         try {
-            // update workingday start time from begin/end mode when start is not yet set
+            // seed workingday start time for all serial days when not yet set
             if (!isEdit) {
-                var workingday = workingdayService.getWorkingday(ecId, date);
-                if (workingday == null || workingday.getStartOfWorkingDay() == null) {
-                    boolean useBegin = "beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null;
-                    int[] begin = useBegin ? parseTime(form.getBeginTime()) : new int[]{8,0};
-
-                    if (workingday == null) {
-                        workingday = new Workingday();
-                        workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
-                        workingday.setRefday(date);
-                        workingday.setBreakhours(0);
-                        workingday.setBreakminutes(0);
-                    }
-                    workingday.setType(Workingday.WorkingDayType.WORKED);
-                    workingday.setStarttimehour(begin[0]);
-                    workingday.setStarttimeminute(begin[1]);
-                    workingdayService.upsertWorkingday(workingday);
+                boolean useBegin = "beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null;
+                int[] begin = useBegin ? parseTime(form.getBeginTime()) : new int[]{8, 0};
+                var serialDates = timereportService.getWorkableSerialDates(date, form.getNumberOfSerialDays());
+                for (LocalDate serialDate : serialDates) {
+                    seedWorkingday(ecId, serialDate, begin);
                 }
             }
 
@@ -400,6 +389,23 @@ public class TimereportController {
             }
         }
         return List.of();
+    }
+
+    private void seedWorkingday(long ecId, LocalDate date, int[] begin) {
+        var workingday = workingdayService.getWorkingday(ecId, date);
+        if (workingday == null || workingday.getStartOfWorkingDay() == null) {
+            if (workingday == null) {
+                workingday = new Workingday();
+                workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
+                workingday.setRefday(date);
+                workingday.setBreakhours(0);
+                workingday.setBreakminutes(0);
+            }
+            workingday.setType(Workingday.WorkingDayType.WORKED);
+            workingday.setStarttimehour(begin[0]);
+            workingday.setStarttimeminute(begin[1]);
+            workingdayService.upsertWorkingday(workingday);
+        }
     }
 
     private List<SuborderOption> suborderOptions(long ecId, long orderId, LocalDate date) {
