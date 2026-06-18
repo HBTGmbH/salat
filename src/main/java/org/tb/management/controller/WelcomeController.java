@@ -25,6 +25,7 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
+import org.tb.common.web.UiState;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -57,10 +58,11 @@ public class WelcomeController {
     private final PublicholidayService publicholidayService;
     private final MessageSourceAccessor messageSourceAccessor;
     private final AuthorizedUser authorizedUser;
+    private final UiState uiState;
 
     @GetMapping
     public String welcome(HttpSession session, Model model) {
-        var employeecontract = currentContract(session);
+        var employeecontract = currentContract();
         session.setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
         session.setAttribute("currentEmployeeContract", employeecontract);
 
@@ -216,12 +218,15 @@ public class WelcomeController {
         return "redirect:/welcome";
     }
 
-    private Employeecontract currentContract(HttpSession session) {
-        var contract = (Employeecontract) session.getAttribute("currentEmployeeContract");
-        if (contract == null) {
-            contract = (Employeecontract) session.getAttribute("loginEmployeeContract");
+    private Employeecontract currentContract() {
+        Long contractId = uiState.getSelectedContractId();
+        if (contractId != null && contractId > 0) {
+            var contract = employeecontractService.getEmployeecontractById(contractId);
+            if (contract != null) return contract;
         }
-        return contract;
+        var loginEmployee = employeeService.getLoginEmployee();
+        return employeecontractService.getCurrentContract(loginEmployee.getId())
+            .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
     }
 
     /** Returns "success", "warning", or "danger" based on total overtime thresholds (in hours). */
