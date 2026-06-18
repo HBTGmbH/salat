@@ -393,19 +393,20 @@ public class TimereportController {
 
     private void seedWorkingday(long ecId, LocalDate date, int[] begin) {
         var workingday = workingdayService.getWorkingday(ecId, date);
-        if (workingday == null || workingday.getStartOfWorkingDay() == null) {
-            if (workingday == null) {
-                workingday = new Workingday();
-                workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
-                workingday.setRefday(date);
-                workingday.setBreakhours(0);
-                workingday.setBreakminutes(0);
-            }
-            workingday.setType(Workingday.WorkingDayType.WORKED);
+        if (workingday == null) {
+            workingday = new Workingday();
+            workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
+            workingday.setRefday(date);
+            workingday.setBreakhours(0);
+            workingday.setBreakminutes(0);
             workingday.setStarttimehour(begin[0]);
             workingday.setStarttimeminute(begin[1]);
-            workingdayService.upsertWorkingday(workingday);
+        } else {
+            if(workingday.getStarttimehour() == 0) workingday.setStarttimehour(begin[0]);
+            if(workingday.getStarttimeminute() == 0) workingday.setStarttimeminute(begin[1]);
         }
+        workingday.setType(Workingday.WorkingDayType.WORKED);
+        workingdayService.upsertWorkingday(workingday);
     }
 
     private List<SuborderOption> suborderOptions(long ecId, long orderId, LocalDate date) {
