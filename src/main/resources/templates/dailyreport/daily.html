@@ -408,8 +408,6 @@
         <div class="card-header">
           <h3 class="card-title">
             <span th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</span>
-            <span class="badge bg-yellow-lt text-yellow ms-1 fw-normal" style="font-size:0.65rem"
-                  th:text="#{main.timereport.sidebar.employee.badge}">Manager</span>
           </h3>
         </div>
         <div class="card-body">
@@ -421,7 +419,6 @@
                     th:text="${ec.employee.name}"
                     th:selected="${ec.id == selectedContractId}"></option>
           </select>
-          <div class="form-text" th:text="#{main.timereport.sidebar.employee.hint}"></div>
         </div>
       </form>
 
@@ -637,8 +634,6 @@
         <div class="card-header">
           <h3 class="card-title">
             <span th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</span>
-            <span class="badge bg-yellow-lt text-yellow ms-1 fw-normal" style="font-size:0.65rem"
-                  th:text="#{main.timereport.sidebar.employee.badge}">Manager</span>
           </h3>
         </div>
         <div class="card-body">
@@ -651,7 +646,6 @@
                     th:text="${ec.employee.name}"
                     th:selected="${ec.id == selectedContractId}"></option>
           </select>
-          <div class="form-text" th:text="#{main.timereport.sidebar.employee.hint}"></div>
         </div>
       </form>
 
