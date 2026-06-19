@@ -21,6 +21,7 @@
               <th class="text-end" th:text="#{main.headlinedescription.overtime.report.target.text}"></th>
               <th class="text-end" th:text="#{main.headlinedescription.overtime.report.diff.text}"></th>
               <th class="text-end" th:text="#{main.headlinedescription.overtime.report.diffcumulative.text}"></th>
+              <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}"></th>
             </tr>
           </thead>
           <tbody>
@@ -36,6 +37,7 @@
               <td class="text-end"
                   th:classappend="${overtimeReport.total.diffCumulative.negative} ? 'text-danger' : ''"
                   th:text="${@durationUtils.format(overtimeReport.total.diffCumulative)}"></td>
+              <td class="d-none d-lg-table-cell"></td>
             </tr>
             <tr th:each="month : ${overtimeReport.months}">
               <td th:text="${@dateUtils.format(month.yearMonth)}"></td>
@@ -49,6 +51,18 @@
               <td class="text-end"
                   th:classappend="${month.diffCumulative.negative} ? 'text-danger' : ''"
                   th:text="${@durationUtils.format(month.diffCumulative)}"></td>
+              <td class="d-none d-lg-table-cell">
+                <span th:if="${reportReleaseDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportReleaseDate)}"
+                      class="badge bg-teal-lt me-1"
+                      th:title="#{main.release.released.until.text}">
+                  <i class="bi bi-send"></i>
+                </span>
+                <span th:if="${reportAcceptanceDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportAcceptanceDate)}"
+                      class="badge bg-green-lt"
+                      th:title="#{main.release.accepted.until.text}">
+                  <i class="bi bi-patch-check"></i>
+                </span>
+              </td>
             </tr>
           </tbody>
         </table>
