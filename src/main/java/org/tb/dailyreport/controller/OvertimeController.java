@@ -3,6 +3,7 @@ package org.tb.dailyreport.controller;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,6 +44,8 @@ public class OvertimeController {
             : null;
 
         Duration overtimeMismatch = null;
+        LocalDate reportReleaseDate = null;
+        LocalDate reportAcceptanceDate = null;
         if (report != null) {
             var storedOvertime = overtimeService.calculateOvertime(ecId, true);
             if (storedOvertime.isPresent()) {
@@ -52,12 +55,20 @@ public class OvertimeController {
                     overtimeMismatch = detailed.minus(stored);
                 }
             }
+            var contract = contracts.stream()
+                .filter(ec -> ec.getId() == ecId)
+                .findFirst()
+                .orElseGet(() -> employeecontractService.getEmployeecontractById(ecId));
+            reportReleaseDate = contract.getReportReleaseDate();
+            reportAcceptanceDate = contract.getReportAcceptanceDate();
         }
 
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("overtimeReport", report);
         model.addAttribute("overtimeMismatch", overtimeMismatch);
+        model.addAttribute("reportReleaseDate", reportReleaseDate);
+        model.addAttribute("reportAcceptanceDate", reportAcceptanceDate);
         model.addAttribute("section",    "dailyreport");
         model.addAttribute("subSection", "overtime");
         model.addAttribute("pageTitle",  messages.getMessage("main.general.mainmenu.overtime.text"));
