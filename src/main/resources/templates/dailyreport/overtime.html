@@ -38,17 +38,19 @@
                   th:text="${@durationUtils.format(overtimeReport.total.diffCumulative)}"></td>
             </tr>
             <tr th:each="month : ${overtimeReport.months}">
-              <td>
+              <td class="d-flex justify-content-between align-items-center">
                 <span th:text="${@dateUtils.format(month.yearMonth)}"></span>
-                <span th:if="${reportReleaseDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportReleaseDate)}"
-                      class="badge bg-teal-lt ms-2"
-                      th:title="#{main.release.released.until.text}">
-                  <i class="bi bi-send"></i>
-                </span>
-                <span th:if="${reportAcceptanceDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportAcceptanceDate)}"
-                      class="badge bg-green-lt ms-1"
-                      th:title="#{main.release.accepted.until.text}">
-                  <i class="bi bi-patch-check"></i>
+                <span>
+                  <span th:if="${reportReleaseDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportReleaseDate)}"
+                        class="badge bg-teal-lt ms-2"
+                        th:title="#{main.release.released.until.text}">
+                    <i class="bi bi-send"></i>
+                  </span>
+                  <span th:if="${reportAcceptanceDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportAcceptanceDate)}"
+                        class="badge bg-green-lt ms-1"
+                        th:title="#{main.release.accepted.until.text}">
+                    <i class="bi bi-patch-check"></i>
+                  </span>
                 </span>
               </td>
               <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.actual)}"></td>
