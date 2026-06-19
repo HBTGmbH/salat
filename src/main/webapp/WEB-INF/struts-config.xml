@@ -30,7 +30,7 @@
 		<form-bean name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixForm" />
 		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportForm" />
 		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
-		<form-bean name="showOvertimeForm" type="org.tb.dailyreport.action.ShowOvertimeForm" />
+		<!-- showOvertimeForm removed (migrated to Spring MVC at /dailyreport/overtime) -->
 		<!-- showReleaseForm removed (migrated to Spring MVC) -->
 		<!-- employee/contract/order Struts UI removed (migrated to Spring MVC) -->
 		<!-- customer Struts UI removed (migrated to Spring MVC) -->
@@ -151,11 +151,7 @@
 			<forward name="print" path="/dailyreport/showDailyReportPrint.jsp" />
 		</action>
 
-		<action path="/ShowOvertime" input="/employee/showOvertime.jsp" validate="false"
-			type="org.tb.dailyreport.action.ShowOvertimeAction" name="showOvertimeForm" scope="request">
-			<forward name="success" path="/employee/showOvertime.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
+		<!-- ShowOvertime removed (migrated to Spring MVC at /dailyreport/overtime) -->
 
 		<!-- ShowRelease removed (migrated to Spring MVC at /release and /acceptance) -->
 

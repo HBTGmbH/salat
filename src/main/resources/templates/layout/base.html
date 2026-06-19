@@ -99,6 +99,12 @@
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
                     Überstunden
                   </a>
+                  <a class="dropdown-item" th:href="@{/dailyreport/overtime}"
+                     th:classappend="${subSection == 'overtime'} ? 'active' : ''"
+                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
+                    <span th:text="#{main.general.mainmenu.overtime.text}">Überstunden</span>
+                    <span class="badge bg-purple-lt ms-1">Beta</span>
+                  </a>
                   <a class="dropdown-item" th:href="@{/release}"
                      th:classappend="${subSection == 'release'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.release.text}">
