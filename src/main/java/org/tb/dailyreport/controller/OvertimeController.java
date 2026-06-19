@@ -71,6 +71,7 @@ public class OvertimeController {
         model.addAttribute("reportAcceptanceDate", reportAcceptanceDate);
         model.addAttribute("section",    "dailyreport");
         model.addAttribute("subSection", "overtime");
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("pageTitle",  messages.getMessage("main.general.mainmenu.overtime.text"));
         return "dailyreport/overtime";
     }
