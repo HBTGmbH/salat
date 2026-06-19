@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" th:with="title=${pageTitle}">
+<section layout:fragment="content">
+
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+
+      <form method="get" th:action="@{/dailyreport/overtime}">
+        <label class="form-label mb-0 me-1 fw-semibold"
+               th:text="#{main.overtime.employeecontract.text}"></label>
+        <select name="employeeContractId" class="form-select form-select-sm tomselect"
+                onchange="this.form.submit()" style="min-width: 260px">
+          <option th:each="ec : ${employeecontracts}"
+                  th:value="${ec.id}"
+                  th:selected="${ec.id == selectedContractId}"
+                  th:text="${ec.employee.name + ' | ' + ec.employee.sign
+                             + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'}">
+          </option>
+        </select>
+      </form>
+
+      <form th:if="${@authorizedUser.manager and selectedContractId > 0}"
+            method="post" th:action="@{/dailyreport/overtime/correct}" class="ms-auto">
+        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                th:text="#{main.overtime.employeecontract.correct.label}"></button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<div th:if="${overtimeReport != null}" class="card">
+  <div class="table-responsive">
+    <table class="table table-vcenter table-sm card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.headlinedescription.overtime.report.yearmonth.text}"></th>
+          <th class="text-end" th:text="#{main.headlinedescription.overtime.report.actual.text}"></th>
+          <th class="text-end" th:text="#{main.headlinedescription.overtime.report.adjustment.text}"></th>
+          <th class="text-end" th:text="#{main.headlinedescription.overtime.report.sum.text}"></th>
+          <th class="text-end" th:text="#{main.headlinedescription.overtime.report.target.text}"></th>
+          <th class="text-end" th:text="#{main.headlinedescription.overtime.report.diff.text}"></th>
+          <th class="text-end" th:text="#{main.headlinedescription.overtime.report.diffcumulative.text}"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="fw-bold">
+          <td th:text="#{main.headlinedescription.overtime.report.total.text}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.actual)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.adjustment)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.sum)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.target)}"></td>
+          <td class="text-end"
+              th:classappend="${overtimeReport.total.diff.negative} ? 'text-danger' : ''"
+              th:text="${@durationUtils.format(overtimeReport.total.diff)}"></td>
+          <td class="text-end"
+              th:classappend="${overtimeReport.total.diffCumulative.negative} ? 'text-danger' : ''"
+              th:text="${@durationUtils.format(overtimeReport.total.diffCumulative)}"></td>
+        </tr>
+        <tr th:each="month : ${overtimeReport.months}">
+          <td th:text="${@dateUtils.format(month.yearMonth)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(month.actual)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(month.adjustment)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(month.sum)}"></td>
+          <td class="text-end" th:text="${@durationUtils.format(month.target)}"></td>
+          <td class="text-end"
+              th:classappend="${month.diff.negative} ? 'text-danger' : ''"
+              th:text="${@durationUtils.format(month.diff)}"></td>
+          <td class="text-end"
+              th:classappend="${month.diffCumulative.negative} ? 'text-danger' : ''"
+              th:text="${@durationUtils.format(month.diffCumulative)}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div th:if="${overtimeReport == null}" class="card">
+  <div class="card-body text-center text-muted py-4">
+    <span th:text="#{main.general.noentries.text}"></span>
+  </div>
+</div>
+
+</section>
+</html>
