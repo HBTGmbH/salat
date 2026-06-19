@@ -2,6 +2,7 @@ package org.tb.dailyreport.controller;
 
 import static org.tb.common.util.DateUtils.today;
 
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,9 +42,22 @@ public class OvertimeController {
             ? overtimeService.createDetailedReportForEmployee(ecId)
             : null;
 
+        Duration overtimeMismatch = null;
+        if (report != null) {
+            var storedOvertime = overtimeService.calculateOvertime(ecId, true);
+            if (storedOvertime.isPresent()) {
+                Duration detailed = report.getTotal().getDiffCumulative();
+                Duration stored = storedOvertime.get().getTotal().getDuration();
+                if (!detailed.equals(stored)) {
+                    overtimeMismatch = detailed.minus(stored);
+                }
+            }
+        }
+
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("overtimeReport", report);
+        model.addAttribute("overtimeMismatch", overtimeMismatch);
         model.addAttribute("section",    "dailyreport");
         model.addAttribute("subSection", "overtime");
         model.addAttribute("pageTitle",  messages.getMessage("main.general.mainmenu.overtime.text"));

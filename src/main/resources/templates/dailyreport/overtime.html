@@ -84,10 +84,16 @@
       </div>
     </form>
 
-    <!-- Recalculate (manager only) -->
-    <form th:if="${@authorizedUser.manager and selectedContractId > 0}"
+    <!-- Recalculate — only shown when stored static overtime is stale -->
+    <form th:if="${@authorizedUser.manager and overtimeMismatch != null}"
           method="post" th:action="@{/dailyreport/overtime/correct}" class="card">
-      <div class="card-body">
+      <div class="card-body border-bottom pb-3 mb-3">
+        <div class="text-muted small mb-1" th:text="#{main.overtime.mismatch.text}"></div>
+        <div class="fw-semibold"
+             th:classappend="${overtimeMismatch.negative} ? 'text-danger' : 'text-warning'"
+             th:text="${@durationUtils.format(overtimeMismatch)}"></div>
+      </div>
+      <div class="card-body pt-0">
         <button type="submit" class="btn btn-outline-secondary w-100"
                 th:text="#{main.overtime.employeecontract.correct.label}"></button>
       </div>
