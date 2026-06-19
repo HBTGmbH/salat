@@ -14,55 +14,53 @@
         <table class="table table-vcenter table-sm card-table">
           <thead>
             <tr>
-              <th th:text="#{main.headlinedescription.overtime.report.yearmonth.text}"></th>
-              <th class="text-end" th:text="#{main.headlinedescription.overtime.report.actual.text}"></th>
-              <th class="text-end" th:text="#{main.headlinedescription.overtime.report.adjustment.text}"></th>
-              <th class="text-end" th:text="#{main.headlinedescription.overtime.report.sum.text}"></th>
-              <th class="text-end" th:text="#{main.headlinedescription.overtime.report.target.text}"></th>
-              <th class="text-end" th:text="#{main.headlinedescription.overtime.report.diff.text}"></th>
-              <th class="text-end" th:text="#{main.headlinedescription.overtime.report.diffcumulative.text}"></th>
-              <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}"></th>
+              <th class="w-100" th:text="#{main.headlinedescription.overtime.report.yearmonth.text}"></th>
+              <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.actual.text}"></th>
+              <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.adjustment.text}"></th>
+              <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.sum.text}"></th>
+              <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.target.text}"></th>
+              <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.diff.text}"></th>
+              <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.diffcumulative.text}"></th>
             </tr>
           </thead>
           <tbody>
             <tr class="fw-bold">
               <td th:text="#{main.headlinedescription.overtime.report.total.text}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.actual)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.adjustment)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.sum)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(overtimeReport.total.target)}"></td>
-              <td class="text-end"
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.actual)}"></td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.adjustment)}"></td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.sum)}"></td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.target)}"></td>
+              <td class="text-end text-nowrap"
                   th:classappend="${overtimeReport.total.diff.negative} ? 'text-danger' : ''"
                   th:text="${@durationUtils.format(overtimeReport.total.diff)}"></td>
-              <td class="text-end"
+              <td class="text-end text-nowrap"
                   th:classappend="${overtimeReport.total.diffCumulative.negative} ? 'text-danger' : ''"
                   th:text="${@durationUtils.format(overtimeReport.total.diffCumulative)}"></td>
-              <td class="d-none d-lg-table-cell"></td>
             </tr>
             <tr th:each="month : ${overtimeReport.months}">
-              <td th:text="${@dateUtils.format(month.yearMonth)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(month.actual)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(month.adjustment)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(month.sum)}"></td>
-              <td class="text-end" th:text="${@durationUtils.format(month.target)}"></td>
-              <td class="text-end"
-                  th:classappend="${month.diff.negative} ? 'text-danger' : ''"
-                  th:text="${@durationUtils.format(month.diff)}"></td>
-              <td class="text-end"
-                  th:classappend="${month.diffCumulative.negative} ? 'text-danger' : ''"
-                  th:text="${@durationUtils.format(month.diffCumulative)}"></td>
-              <td class="d-none d-lg-table-cell">
+              <td>
+                <span th:text="${@dateUtils.format(month.yearMonth)}"></span>
                 <span th:if="${reportReleaseDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportReleaseDate)}"
-                      class="badge bg-teal-lt me-1"
+                      class="badge bg-teal-lt ms-2"
                       th:title="#{main.release.released.until.text}">
                   <i class="bi bi-send"></i>
                 </span>
                 <span th:if="${reportAcceptanceDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportAcceptanceDate)}"
-                      class="badge bg-green-lt"
+                      class="badge bg-green-lt ms-1"
                       th:title="#{main.release.accepted.until.text}">
                   <i class="bi bi-patch-check"></i>
                 </span>
               </td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.actual)}"></td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.adjustment)}"></td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.sum)}"></td>
+              <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.target)}"></td>
+              <td class="text-end text-nowrap"
+                  th:classappend="${month.diff.negative} ? 'text-danger' : ''"
+                  th:text="${@durationUtils.format(month.diff)}"></td>
+              <td class="text-end text-nowrap"
+                  th:classappend="${month.diffCumulative.negative} ? 'text-danger' : ''"
+                  th:text="${@durationUtils.format(month.diffCumulative)}"></td>
             </tr>
           </tbody>
         </table>
