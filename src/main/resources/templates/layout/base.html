@@ -95,6 +95,11 @@
                     <span th:text="#{main.general.mainmenu.matrixmenu.text}">Matrixübersicht</span>
                     <span class="badge bg-purple-lt ms-1">Beta</span>
                   </a>
+                  <a class="dropdown-item" th:href="@{/dailyreport/csv}"
+                     th:classappend="${subSection == 'csv'} ? 'active' : ''">
+                    <span th:text="#{main.general.mainmenu.csv.text}">CSV Import / Export</span>
+                    <span class="badge bg-purple-lt ms-1">Beta</span>
+                  </a>
                   <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}"
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
                     Überstunden

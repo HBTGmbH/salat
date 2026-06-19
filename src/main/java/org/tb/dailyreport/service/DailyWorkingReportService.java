@@ -9,6 +9,8 @@ import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -19,6 +21,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.rest.DailyReportData;
@@ -41,6 +44,31 @@ public class DailyWorkingReportService {
     private final TimereportService timereportService;
     private final TimereportDAO timereportDAO;
     private final AuthorizedEmployee authorizedEmployee;
+
+    @Transactional(readOnly = true)
+    public List<DailyWorkingReportData> getReportsForMonth(YearMonth month, long employeeContractId) {
+        return month.atDay(1).datesUntil(month.atEndOfMonth().plusDays(1))
+            .map(day -> buildReportForDay(employeeContractId, day))
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    private DailyWorkingReportData buildReportForDay(long contractId, LocalDate date) {
+        var workingDay = workingdayDAO.getWorkingdayByDateAndEmployeeContractId(date, contractId);
+        var timeReports = timereportService.getTimereportsByDateAndEmployeeContractId(contractId, date)
+            .stream().map(DailyReportData::valueOf).toList();
+        if (workingDay == null && timeReports.isEmpty()) return null;
+        var builder = DailyWorkingReportData.builder().date(date).dailyReports(timeReports);
+        if (workingDay != null) {
+            builder.type(workingDay.getType());
+            if (workingDay.getType() != WorkingDayType.NOT_WORKED) {
+                var bd = workingDay.getBreakLength();
+                builder.startTime(workingDay.getStartOfWorkingDay().toLocalTime());
+                builder.breakDuration(LocalTime.of(bd.toHoursPart(), bd.toMinutesPart()));
+            }
+        }
+        return builder.build();
+    }
 
     public void createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
