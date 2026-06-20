@@ -50,8 +50,10 @@
           <th:block th:if="${day.workingDayDataChanged()}">
             <span class="badge bg-azure-lt" th:text="#{main.dailyreport.csv.import.report.workingday.updated.text}">Working day updated</span>
             <span class="text-muted small font-monospace" th:if="${day.startTime() != null}">
+              <th:block th:text="#{main.daily.workingday.start.label}">Start</th:block>
               <th:block th:text="${#temporals.format(day.startTime(), 'HH:mm')}">08:00</th:block>
               &middot;
+              <th:block th:text="#{main.daily.workingday.break.label}">Break</th:block>
               <th:block th:text="${day.breakDuration() != null ? #temporals.format(day.breakDuration(), 'HH:mm') : '00:00'}">00:30</th:block>
             </span>
           </th:block>
@@ -98,11 +100,12 @@
                         th:text="${#numbers.formatInteger(u.from().hours(),2,'NONE') + ':' + #numbers.formatInteger(u.from().minutes(),2,'NONE')}">02:00</span>
                 <th:block th:text="${#numbers.formatInteger(u.to().hours(),2,'NONE') + ':' + #numbers.formatInteger(u.to().minutes(),2,'NONE')}">03:00</th:block>
               </td>
-              <td class="small text-muted" style="white-space: pre-wrap">
+              <td class="small text-muted">
                   <span th:if="${u.from().comment() ne u.to().comment()}"
                         class="text-decoration-line-through d-block"
-                        th:text="${u.from().comment()}">old comment</span>
-                <th:block th:text="${u.to().comment()}">PROJ-123 initial setup</th:block>
+                        th:text="${u.from().comment()}"
+                        style="white-space: pre-wrap">old comment</span>
+                <span th:text="${u.to().comment()}" style="white-space: pre-wrap">PROJ-123 initial setup</span>
               </td>
             </tr>
             </tbody>
