@@ -25,6 +25,7 @@ public record ImportReport(List<DayResult> days) implements Serializable {
         List<BookingDetail> bookingsDeleted
     ) implements Serializable {
         public boolean workingDayChanged() { return workingDayCreated || workingDayDataChanged; }
+        public boolean hasChanges() { return workingDayChanged() || !bookingsCreated.isEmpty() || !bookingsDeleted.isEmpty(); }
         public int bookingsCreatedCount() { return bookingsCreated.size(); }
         public int bookingsDeletedCount() { return bookingsDeleted.size(); }
     }
