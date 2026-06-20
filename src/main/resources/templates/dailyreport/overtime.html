@@ -7,7 +7,7 @@
 <div class="row align-items-start">
 
   <!-- ===== Main content column ===== -->
-  <div class="col-lg-8">
+  <div class="col">
 
     <div th:if="${overtimeReport != null}" class="card">
       <div class="table-responsive">
@@ -78,7 +78,7 @@
   </div><!-- end main col -->
 
   <!-- ===== Sidebar column ===== -->
-  <div class="col-lg-4">
+  <div class="col-lg-4" th:if="${#lists.size(employeecontracts) > 1}">
 
     <!-- Employee selector -->
     <form method="get" th:action="@{/dailyreport/overtime}" class="card mb-3">
