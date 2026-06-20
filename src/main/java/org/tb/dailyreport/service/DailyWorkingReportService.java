@@ -94,7 +94,7 @@ public class DailyWorkingReportService {
         var totals = report.getDailyReports().stream()
             .collect(groupingBy(DailyReportData::getEmployeeorderId))
             .entrySet().stream()
-            .map(e -> doCreateDailyReports(report.getDate(), e.getKey(), e.getValue(), upsert))
+            .map(e -> doCreateDailyReports(report.getDate(), e.getKey(), e.getValue(), upsert, contractId))
             .reduce(new BookingCounts(List.of(), List.of()), BookingCounts::add);
 
         return new ImportReport.DayResult(report.getDate(), workingDayCreated, totals.created(), totals.deleted());
@@ -130,7 +130,7 @@ public class DailyWorkingReportService {
         return created;
     }
 
-    private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert) {
+    private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert, long contractId) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
         if (employeeOrder == null) {
             throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
@@ -138,6 +138,9 @@ public class DailyWorkingReportService {
 
         var employeeContract = employeeOrder.getEmployeecontract();
         if (employeeContract == null) {
+            throw new InvalidDataException(TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+        }
+        if (employeeContract.getId() == null || employeeContract.getId() != contractId) {
             throw new InvalidDataException(TR_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 

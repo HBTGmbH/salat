@@ -46,6 +46,7 @@ import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.service.EmployeeorderService;
 
 @RestController
 @RequiredArgsConstructor
@@ -54,6 +55,7 @@ import org.tb.employee.service.EmployeecontractService;
 public class DailyWorkingReportRestEndpoint {
 
     private final EmployeecontractService employeecontractService;
+    private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final WorkingdayService workingdayService;
     private final DailyWorkingReportService dailyWorkingReportService;
@@ -155,7 +157,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.createReports(List.of(report), currentContractId());
+            dailyWorkingReportService.createReports(List.of(report), contractIdFromReports(List.of(report)));
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -181,7 +183,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.updateReports(List.of(report), currentContractId());
+            dailyWorkingReportService.updateReports(List.of(report), contractIdFromReports(List.of(report)));
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -207,7 +209,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.createReports(reports, currentContractId());
+            dailyWorkingReportService.createReports(reports, contractIdFromReports(reports));
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -233,7 +235,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.updateReports(reports, currentContractId());
+            dailyWorkingReportService.updateReports(reports, contractIdFromReports(reports));
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -241,10 +243,16 @@ public class DailyWorkingReportRestEndpoint {
         }
     }
 
-    private long currentContractId() {
-        return employeecontractService.getCurrentContract(authorizedEmployee.getEmployeeId())
-            .map(ec -> ec.getId())
-            .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No active contract for current user"));
+    private long contractIdFromReports(List<DailyWorkingReportData> reports) {
+        return reports.stream()
+            .flatMap(r -> r.getDailyReports().stream())
+            .map(dr -> employeeorderService.getEmployeeorderById(dr.getEmployeeorderId()))
+            .filter(Objects::nonNull)
+            .map(o -> o.getEmployeecontract().getId())
+            .findFirst()
+            .orElseGet(() -> employeecontractService.getCurrentContract(authorizedEmployee.getEmployeeId())
+                .map(ec -> ec.getId())
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No active contract for current user")));
     }
 
     private void checkAuthenticated() {
