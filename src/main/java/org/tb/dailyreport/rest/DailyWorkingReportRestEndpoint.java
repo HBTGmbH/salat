@@ -155,7 +155,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.createReports(List.of(report));
+            dailyWorkingReportService.createReports(List.of(report), currentContractId());
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -181,7 +181,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.updateReports(List.of(report));
+            dailyWorkingReportService.updateReports(List.of(report), currentContractId());
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -207,7 +207,7 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.createReports(reports);
+            dailyWorkingReportService.createReports(reports, currentContractId());
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
@@ -233,12 +233,18 @@ public class DailyWorkingReportRestEndpoint {
     ) {
         checkAuthenticated();
         try {
-            dailyWorkingReportService.updateReports(reports);
+            dailyWorkingReportService.updateReports(reports, currentContractId());
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereport. " + e);
         } catch (InvalidDataException | BusinessRuleException e) {
             throw new ResponseStatusException(BAD_REQUEST, "Could not create timereports. " + e);
         }
+    }
+
+    private long currentContractId() {
+        return employeecontractService.getCurrentContract(authorizedEmployee.getEmployeeId())
+            .map(ec -> ec.getId())
+            .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No active contract for current user"));
     }
 
     private void checkAuthenticated() {
