@@ -90,10 +90,6 @@ spring:
         strategy:
           content:
             enabled: true
-      static-locations:
-        - /style/
-        - /scripts/
-        - /images/
     error:
       include-stacktrace: always
       include-message: always

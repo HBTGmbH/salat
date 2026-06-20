@@ -6,12 +6,9 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.jpa.support.OpenEntityManagerInViewFilter;
-import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.tb.common.filter.LoggingFilter;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 import org.tb.common.filter.PerformanceLoggingFilter;
-import org.tb.common.filter.ResourceUrlEncodingFilter;
-import org.tb.common.filter.ResourceUrlProviderExposingFilter;
 import org.tb.common.filter.UiStateFilter;
 import org.tb.common.web.UiState;
 
@@ -20,33 +17,14 @@ import org.tb.common.web.UiState;
 public class HttpFilterConfiguration {
 
     private final Set<MdcDataSource> mdcDataSources;
-    private final ResourceUrlProvider resourceUrlProvider;
     private final UiState uiState;
-
-    @Bean
-    public FilterRegistrationBean<ResourceUrlEncodingFilter> salatResourceUrlEncodingFilter(){
-        var registrationBean = new FilterRegistrationBean<ResourceUrlEncodingFilter>();
-        registrationBean.setOrder(97);
-        registrationBean.setFilter(new ResourceUrlEncodingFilter());
-        registrationBean.addUrlPatterns("/do/*", "*.jsp");
-        return registrationBean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<ResourceUrlProviderExposingFilter> salatResourceUrlProviderExposingFilter(){
-        var registrationBean = new FilterRegistrationBean<ResourceUrlProviderExposingFilter>();
-        registrationBean.setOrder(98);
-        registrationBean.setFilter(new ResourceUrlProviderExposingFilter(resourceUrlProvider));
-        registrationBean.addUrlPatterns("/do/*", "*.jsp");
-        return registrationBean;
-    }
 
     @Bean
     public FilterRegistrationBean<PerformanceLoggingFilter> performanceLoggingFilter(){
         var registrationBean = new FilterRegistrationBean<PerformanceLoggingFilter>();
         registrationBean.setOrder(99);
         registrationBean.setFilter(new PerformanceLoggingFilter());
-        registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
+        registrationBean.addUrlPatterns("*");
         return registrationBean;
     }
 
@@ -55,7 +33,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<OpenEntityManagerInViewFilter>();
         registrationBean.setOrder(100);
         registrationBean.setFilter(new OpenEntityManagerInViewFilter());
-        registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
+        registrationBean.addUrlPatterns("*");
         return registrationBean;
     }
 
@@ -64,7 +42,7 @@ public class HttpFilterConfiguration {
         var registrationBean = new FilterRegistrationBean<LoggingFilter>();
         registrationBean.setOrder(102);
         registrationBean.setFilter(new LoggingFilter(mdcDataSources));
-        registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
+        registrationBean.addUrlPatterns("/*");
         return registrationBean;
     }
 

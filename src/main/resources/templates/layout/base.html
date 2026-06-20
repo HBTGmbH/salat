@@ -79,16 +79,10 @@
                   <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}" th:text="#{main.general.mainmenu.newreport.text}">
                     Neue Buchung
                   </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowDailyReport}" th:text="#{main.general.mainmenu.daily.text}">
-                    Einzelübersicht
-                  </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/daily}"
                      th:classappend="${subSection == 'daily'} ? 'active' : ''">
                     <span th:text="#{main.general.mainmenu.daily.text}">Einzelübersicht</span>
                     <span class="badge bg-purple-lt ms-1">Beta</span>
-                  </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowMatrix}" th:text="#{main.general.mainmenu.matrixmenu.text}">
-                    Matrixübersicht
                   </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/matrix}"
                      th:classappend="${subSection == 'matrix'} ? 'active' : ''">
@@ -99,10 +93,6 @@
                      th:classappend="${subSection == 'csv'} ? 'active' : ''">
                     <span th:text="#{main.general.mainmenu.csv.text}">CSV Import / Export</span>
                     <span class="badge bg-purple-lt ms-1">Beta</span>
-                  </a>
-                  <a class="dropdown-item" th:href="@{/do/ShowOvertime}" th:text="#{main.general.mainmenu.overtime.text}"
-                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}">
-                    Überstunden
                   </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/overtime}"
                      th:classappend="${subSection == 'overtime'} ? 'active' : ''"
