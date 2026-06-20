@@ -227,6 +227,7 @@
               <th th:text="#{main.dailyreport.csv.format.col.header.text}">Column</th>
               <th th:text="#{main.dailyreport.csv.format.format.header.text}">Format</th>
               <th th:text="#{main.dailyreport.csv.format.example.header.text}">Example</th>
+              <th th:text="#{main.dailyreport.csv.format.import.header.text}">Import</th>
               <th th:text="#{main.dailyreport.csv.format.notes.header.text}">Notes</th>
             </tr>
           </thead>
@@ -236,6 +237,7 @@
               <td class="fw-medium">date</td>
               <td class="text-muted">YYYY-MM-DD</td>
               <td class="font-monospace small">2026-06-02</td>
+              <td class="text-nowrap small fw-medium text-red" th:text="#{main.dailyreport.csv.format.import.required.text}">Required</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.date.notes.text}">Working day date (ISO 8601)</td>
             </tr>
             <tr class="table-active">
@@ -243,6 +245,7 @@
               <td class="fw-medium">type</td>
               <td class="text-muted">WORKED · NOT_WORKED</td>
               <td class="font-monospace small">WORKED</td>
+              <td class="text-nowrap small fw-medium text-red" th:text="#{main.dailyreport.csv.format.import.required.text}">Required</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.type.notes.text}">Working day type; empty if not set</td>
             </tr>
             <tr class="table-active">
@@ -250,6 +253,7 @@
               <td class="fw-medium">startTime</td>
               <td class="text-muted">HH:mm</td>
               <td class="font-monospace small">08:00</td>
+              <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.if.worked.text}">If WORKED</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.starttime.notes.text}">Day start time; empty if not set</td>
             </tr>
             <tr class="table-active">
@@ -257,6 +261,7 @@
               <td class="fw-medium">breakTime</td>
               <td class="text-muted">HH:mm</td>
               <td class="font-monospace small">00:30</td>
+              <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.if.worked.text}">If WORKED</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.breaktime.notes.text}">Break duration; empty if not set</td>
             </tr>
             <tr>
@@ -264,13 +269,15 @@
               <td class="fw-medium">employeeorderId</td>
               <td class="text-muted">integer</td>
               <td class="font-monospace small">78</td>
-              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeeorderid.notes.text}">Internal ID of the employee order; empty for NOT_WORKED rows</td>
+              <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.one.of.text}">One of 4/7</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeeorderid.notes.text}">Order ID; if absent, suborderSign is used</td>
             </tr>
             <tr>
               <td class="text-muted">5</td>
               <td class="fw-medium">orderSign</td>
               <td class="text-muted">text</td>
               <td class="font-monospace small">ALPHA</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.ignored.text}">Ignored</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.ordersign.notes.text}">Project key</td>
             </tr>
             <tr>
@@ -278,6 +285,7 @@
               <td class="fw-medium">orderLabel</td>
               <td class="text-muted">text</td>
               <td class="font-monospace small">Alpha Projekt</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.ignored.text}">Ignored</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.orderlabel.notes.text}">Project name</td>
             </tr>
             <tr>
@@ -285,13 +293,15 @@
               <td class="fw-medium">suborderSign</td>
               <td class="text-muted">text</td>
               <td class="font-monospace small">DEV-BACKEND</td>
-              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.subordersign.notes.text}">Task key</td>
+              <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.one.of.text}">One of 4/7</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.subordersign.notes.text}">Task key; used to look up the order if employeeorderId is absent</td>
             </tr>
             <tr>
               <td class="text-muted">8</td>
               <td class="fw-medium">suborderLabel</td>
               <td class="text-muted">text</td>
               <td class="font-monospace small">Backend Development</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.ignored.text}">Ignored</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.suborderlabel.notes.text}">Task name</td>
             </tr>
             <tr>
@@ -299,6 +309,7 @@
               <td class="fw-medium">workingTime</td>
               <td class="text-muted">HH:mm</td>
               <td class="font-monospace small">03:00</td>
+              <td class="text-nowrap small fw-medium text-red" th:text="#{main.dailyreport.csv.format.import.if.booking.text}">If booking</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.workingtime.notes.text}">Booked duration</td>
             </tr>
             <tr>
@@ -306,6 +317,7 @@
               <td class="fw-medium">comment</td>
               <td class="text-muted">text</td>
               <td class="font-monospace small">PROJ-123 initial setup</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.comment.notes.text}">Work description; quote with &quot; if it contains commas</td>
             </tr>
           </tbody>
