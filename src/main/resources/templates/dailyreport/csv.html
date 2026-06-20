@@ -70,6 +70,17 @@
           <p class="text-muted" th:text="#{main.dailyreport.csv.export.desc.text}">
             Download all working day data and time bookings for a month as CSV.
           </p>
+          <div class="mb-3" th:if="${#lists.size(employeecontracts) > 1}">
+            <label class="form-label" th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</label>
+            <form th:action="@{/dailyreport/csv}" method="get">
+              <select class="form-select tomselect" name="employeeContractId" onchange="this.form.submit()">
+                <option th:each="ec : ${employeecontracts}"
+                        th:value="${ec.id}"
+                        th:text="${ec.employee.name}"
+                        th:selected="${ec.id == selectedContractId}"></option>
+              </select>
+            </form>
+          </div>
           <div class="mb-3">
             <label class="form-label required" th:text="#{main.dailyreport.csv.export.period.label.text}">Period</label>
             <select name="month" form="export-form" class="form-select tomselect">
