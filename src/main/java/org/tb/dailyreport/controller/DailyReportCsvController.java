@@ -33,6 +33,7 @@ import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.web.UiState;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
 import org.tb.dailyreport.service.DailyWorkingReportService;
+import org.tb.dailyreport.service.ImportReport;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.EmployeeService;
 
@@ -84,11 +85,12 @@ public class DailyReportCsvController {
         }
         long ecId = employeeContractId != null ? employeeContractId : effectiveContractId();
         try {
-            var reports = csvConverter.read(file.getInputStream());
+            var readResult = csvConverter.read(file.getInputStream());
             var importReport = "replace".equals(importMode)
-                ? dailyWorkingReportService.updateReports(reports, ecId)
-                : dailyWorkingReportService.createReports(reports, ecId);
-            redirectAttributes.addFlashAttribute("importReport", importReport);
+                ? dailyWorkingReportService.updateReports(readResult.reports(), ecId)
+                : dailyWorkingReportService.createReports(readResult.reports(), ecId);
+            redirectAttributes.addFlashAttribute("importReport",
+                new ImportReport(importReport.days(), readResult.linesRead()));
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.dailyreport.csv.import.success.text"));
         } catch (AuthorizationException | InvalidDataException | BusinessRuleException ex) {

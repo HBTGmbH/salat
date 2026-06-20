@@ -81,7 +81,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return List.of(TEXT_CSV_DAILY_WORKING_REPORT);
     }
 
-    public List<DailyWorkingReportData> read(InputStream inputStream) throws IOException {
+    public record ReadResult(List<DailyWorkingReportData> reports, int linesRead) {}
+
+    public ReadResult read(InputStream inputStream) throws IOException {
         // copy input stream intro byte array
         var contentBytes = IOUtils.toByteArray(inputStream);
         char separator = evalSeparator(contentBytes);
@@ -92,7 +94,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 .withSeparator(separator)
                 .build()
                 .parse();
-            return fromRows(rows);
+            return new ReadResult(fromRows(rows), rows.size());
         }
     }
 
@@ -129,7 +131,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             return List.of();
         }
         try {
-            return read(inputMessage.getBody());
+            return read(inputMessage.getBody()).reports();
         } catch (Exception e){
             throw new RuntimeException(e);
         }

@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-public record ImportReport(List<DayResult> days) implements Serializable {
+public record ImportReport(List<DayResult> days, int linesRead) implements Serializable {
+
+    public ImportReport(List<DayResult> days) { this(days, 0); }
 
     public record BookingDetail(
         String suborderSign,
