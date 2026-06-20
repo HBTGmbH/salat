@@ -48,7 +48,7 @@ spring:
     default: local
   messages:
     basename: org/tb/web/MessageResources
-    encoding: ISO-8859-1
+    encoding: UTF-8
     fallback-to-system-locale: false
   datasource:
     # driver-class-name: com.p6spy.engine.spy.P6SpyDriver
