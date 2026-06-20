@@ -111,6 +111,79 @@
 
   </div>
 
+  <!-- Import report -->
+  <div class="card mb-3" th:if="${importReport != null}">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="ti ti-report me-2 text-blue"></i>
+        <span th:text="#{main.dailyreport.csv.import.report.title.text}">Import Report</span>
+      </h3>
+      <div class="card-options">
+        <span class="badge bg-green-lt me-1">
+          <th:block th:text="#{main.dailyreport.csv.import.report.created.total.text}">Created</th:block>:
+          <strong th:text="${importReport.totalBookingsCreated()}">0</strong>
+        </span>
+        <span class="badge bg-red-lt" th:if="${importReport.totalBookingsDeleted() > 0}">
+          <th:block th:text="#{main.dailyreport.csv.import.report.deleted.total.text}">Deleted</th:block>:
+          <strong th:text="${importReport.totalBookingsDeleted()}">0</strong>
+        </span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div th:each="day : ${importReport.days()}" class="border-bottom px-3 py-2">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="fw-medium font-monospace" th:text="${#temporals.format(day.date(), 'yyyy-MM-dd')}">2026-06-02</span>
+          <span class="badge bg-green-lt" th:if="${day.workingDayCreated()}" th:text="#{main.dailyreport.csv.import.report.workingday.created.text}">Working day created</span>
+          <span class="badge bg-azure-lt" th:unless="${day.workingDayCreated()}" th:text="#{main.dailyreport.csv.import.report.workingday.updated.text}">Working day updated</span>
+        </div>
+        <div th:if="${!day.bookingsCreated().isEmpty()}" class="mb-1">
+          <small class="text-green fw-medium" th:text="#{main.dailyreport.csv.import.report.created.text}">Created</small>
+          <table class="table table-sm table-borderless mb-0">
+            <thead class="text-muted">
+              <tr>
+                <th th:text="#{main.dailyreport.csv.import.report.col.suborder.text}">Suborder</th>
+                <th th:text="#{main.dailyreport.csv.import.report.col.description.text}">Description</th>
+                <th th:text="#{main.dailyreport.csv.import.report.col.duration.text}">Duration</th>
+                <th th:text="#{main.dailyreport.csv.import.report.col.comment.text}">Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="b : ${day.bookingsCreated()}">
+                <td class="text-nowrap font-monospace small" th:text="${b.suborderSign()}">ALPHA-DEV</td>
+                <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
+                <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
+                <td class="small text-muted" th:text="${b.comment()}">PROJ-123 initial setup</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div th:if="${!day.bookingsDeleted().isEmpty()}">
+          <small class="text-red fw-medium" th:text="#{main.dailyreport.csv.import.report.deleted.text}">Deleted</small>
+          <table class="table table-sm table-borderless mb-0">
+            <thead class="text-muted">
+              <tr>
+                <th th:text="#{main.dailyreport.csv.import.report.col.suborder.text}">Suborder</th>
+                <th th:text="#{main.dailyreport.csv.import.report.col.description.text}">Description</th>
+                <th th:text="#{main.dailyreport.csv.import.report.col.duration.text}">Duration</th>
+                <th th:text="#{main.dailyreport.csv.import.report.col.comment.text}">Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="b : ${day.bookingsDeleted()}">
+                <td class="text-nowrap font-monospace small" th:text="${b.suborderSign()}">ALPHA-DEV</td>
+                <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
+                <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
+                <td class="small text-muted" th:text="${b.comment()}">PROJ-123 initial setup</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <small class="text-muted" th:if="${day.bookingsCreated().isEmpty() and day.bookingsDeleted().isEmpty()}"
+               th:text="#{main.dailyreport.csv.import.report.no.bookings.text}">No bookings</small>
+      </div>
+    </div>
+  </div>
+
   <!-- Format reference -->
   <div class="card">
     <div class="card-header">

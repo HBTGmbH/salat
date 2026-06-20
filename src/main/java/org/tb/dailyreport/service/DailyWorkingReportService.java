@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,19 +71,19 @@ public class DailyWorkingReportService {
         return builder.build();
     }
 
-    public void createReports(List<DailyWorkingReportData> reports)
+    public ImportReport createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        reports.forEach(report -> doCreateReport(report, false));
+        return new ImportReport(reports.stream().map(r -> doCreateReport(r, false)).toList());
     }
 
-    public void updateReports(List<DailyWorkingReportData> reports)
+    public ImportReport updateReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        reports.forEach(report -> doCreateReport(report, true));
+        return new ImportReport(reports.stream().map(r -> doCreateReport(r, true)).toList());
     }
 
-    private void doCreateReport(DailyWorkingReportData report, boolean upsert)
+    private ImportReport.DayResult doCreateReport(DailyWorkingReportData report, boolean upsert)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
         var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
@@ -91,18 +92,22 @@ public class DailyWorkingReportService {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
-        doCreateWorkingDay(report, employeecontract);
+        boolean workingDayCreated = doCreateWorkingDay(report, employeecontract);
 
-        report.getDailyReports().stream().collect(groupingBy(DailyReportData::getEmployeeorderId))
-                .forEach((employeeOrderId, bookingsOfOrder) -> {
-                    doCreateDailyReports(report.getDate(), employeeOrderId, bookingsOfOrder, upsert);
-                });
+        var totals = report.getDailyReports().stream()
+            .collect(groupingBy(DailyReportData::getEmployeeorderId))
+            .entrySet().stream()
+            .map(e -> doCreateDailyReports(report.getDate(), e.getKey(), e.getValue(), upsert))
+            .reduce(new BookingCounts(List.of(), List.of()), BookingCounts::add);
+
+        return new ImportReport.DayResult(report.getDate(), workingDayCreated, totals.created(), totals.deleted());
     }
 
-    private void doCreateWorkingDay(DailyWorkingReportData report, Employeecontract employeecontract) {
+    private boolean doCreateWorkingDay(DailyWorkingReportData report, Employeecontract employeecontract) {
         var existingWorkingDay = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
                 report.getDate(), requireNonNull(employeecontract.getId(), "ID of contract is required")));
 
+        boolean created = existingWorkingDay.isEmpty();
         var workingDay = existingWorkingDay.orElseGet(() -> {
             var newWorkingDay = new Workingday();
             newWorkingDay.setEmployeecontract(employeecontract);
@@ -125,9 +130,10 @@ public class DailyWorkingReportService {
         });
         workingDay.setType(report.getType());
         workingdayService.upsertWorkingday(workingDay);
+        return created;
     }
 
-    private void doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert) {
+    private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
         if (employeeOrder == null) {
             throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
@@ -152,6 +158,22 @@ public class DailyWorkingReportService {
         }
 
         newBookings.forEach(booking -> doCreateDailyReport(day, booking, employeeOrder, employeeContract));
+        var createdDetails = newBookings.stream().map(DailyWorkingReportService::toBookingDetail).toList();
+        var deletedDetails = upsert ? oldBookings.stream().map(DailyWorkingReportService::toBookingDetail).toList() : List.<ImportReport.BookingDetail>of();
+        return new BookingCounts(createdDetails, deletedDetails);
+    }
+
+    private static ImportReport.BookingDetail toBookingDetail(DailyReportData b) {
+        return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment());
+    }
+
+    private record BookingCounts(List<ImportReport.BookingDetail> created, List<ImportReport.BookingDetail> deleted) {
+        BookingCounts add(BookingCounts other) {
+            return new BookingCounts(
+                Stream.concat(created.stream(), other.created.stream()).toList(),
+                Stream.concat(deleted.stream(), other.deleted.stream()).toList()
+            );
+        }
     }
 
     private void doCreateDailyReport(LocalDate day, DailyReportData booking, Employeeorder employeeorder, Employeecontract employeeContract) {
