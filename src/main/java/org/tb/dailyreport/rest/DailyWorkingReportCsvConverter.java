@@ -216,7 +216,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
     }
 
     private static boolean isEmptyTimeReport(CsvRow row){
-        return row.getEmployeeorderId() == null && row.getSuborderSign() == null;
+        return (row.getEmployeeorderId() == null && row.getSuborderSign() == null)
+            || row.getWorkingTime() == null;
     }
 
     @Override
