@@ -5,216 +5,209 @@
       th:with="title=${pageTitle}">
 <section layout:fragment="content">
 
-  <div class="row justify-content-center">
-    <div class="col-lg-9 col-xl-8">
-
-      <div class="row g-3 mb-3">
-
-        <!-- Import card -->
-        <div class="col-md-6">
-          <div class="card h-100">
-            <div class="card-header">
-              <h3 class="card-title">
-                <i class="ti ti-upload me-2 text-blue"></i>
-                <span th:text="#{main.dailyreport.csv.import.title.text}">Import</span>
-              </h3>
-            </div>
-            <form th:action="@{/dailyreport/csv/import}" method="post" enctype="multipart/form-data">
-              <div class="card-body">
-                <p class="text-muted" th:text="#{main.dailyreport.csv.import.desc.text}">
-                  Upload a CSV file to load working day data and time bookings.
-                </p>
-                <div class="mb-3">
-                  <label class="form-label required" th:text="#{main.dailyreport.csv.import.file.label.text}">CSV file</label>
-                  <input type="file" name="file" class="form-control" accept=".csv" required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label" th:text="#{main.dailyreport.csv.import.mode.label.text}">Import mode</label>
-                  <div class="d-flex flex-column gap-2">
-                    <label class="form-check">
-                      <input class="form-check-input" type="radio" name="importMode" value="add" checked>
-                      <span class="form-check-label">
-                        <strong th:text="#{main.dailyreport.csv.import.mode.add.text}">Add</strong>
-                        &ndash; <span th:text="#{main.dailyreport.csv.import.mode.add.desc.text}">skip days that already have entries</span>
-                      </span>
-                    </label>
-                    <label class="form-check">
-                      <input class="form-check-input" type="radio" name="importMode" value="replace">
-                      <span class="form-check-label">
-                        <strong th:text="#{main.dailyreport.csv.import.mode.replace.text}">Replace</strong>
-                        &ndash; <span th:text="#{main.dailyreport.csv.import.mode.replace.desc.text}">overwrite existing entries with imported data</span>
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <div class="card-footer">
-                <button type="submit" class="btn btn-primary">
-                  <i class="ti ti-upload me-1"></i>
-                  <span th:text="#{main.dailyreport.csv.import.button.text}">Import</span>
-                </button>
-                <small class="text-muted ms-3" th:text="#{main.dailyreport.csv.import.hint.text}">
-                  Days outside your contract period are skipped.
-                </small>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Export card -->
-        <div class="col-md-6">
-          <div class="card h-100">
-            <div class="card-header">
-              <h3 class="card-title">
-                <i class="ti ti-download me-2 text-green"></i>
-                <span th:text="#{main.dailyreport.csv.export.title.text}">Export</span>
-              </h3>
-            </div>
-            <div class="card-body">
-              <p class="text-muted" th:text="#{main.dailyreport.csv.export.desc.text}">
-                Download all working day data and time bookings for a month as CSV.
-              </p>
-              <div class="mb-3">
-                <label class="form-label required" th:text="#{main.dailyreport.csv.export.period.label.text}">Period</label>
-                <select name="month" form="export-form" class="form-select tomselect">
-                  <option th:each="m : ${availableMonths}"
-                          th:value="${m}"
-                          th:text="${#temporals.format(m.atDay(1), 'MMMM yyyy')}"
-                          th:selected="${m.toString() == selectedMonth}">
-                  </option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label" th:text="#{main.dailyreport.csv.export.format.label.text}">Format</label>
-                <div class="form-control bg-light text-muted" th:text="#{main.dailyreport.csv.export.format.value.text}">
-                  CSV &ndash; UTF-8, comma-separated, first row is header
-                </div>
-              </div>
-            </div>
-            <div class="card-footer">
-              <form id="export-form" th:action="@{/dailyreport/csv/export}" method="get">
-                <button type="submit" class="btn btn-success">
-                  <i class="ti ti-download me-1"></i>
-                  <span th:text="#{main.dailyreport.csv.export.button.text}">Export CSV</span>
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Format reference -->
-      <div class="card">
+  <div class="row mb-3">
+    <!-- Import card -->
+    <div class="col-md-6">
+      <div class="card h-100">
         <div class="card-header">
-          <h3 class="card-title" th:text="#{main.dailyreport.csv.format.title.text}">CSV Format</h3>
+          <h3 class="card-title">
+            <i class="ti ti-upload me-2 text-blue"></i>
+            <span th:text="#{main.dailyreport.csv.import.title.text}">Import</span>
+          </h3>
+        </div>
+        <form th:action="@{/dailyreport/csv/import}" method="post" enctype="multipart/form-data">
+          <div class="card-body">
+            <p class="text-muted" th:text="#{main.dailyreport.csv.import.desc.text}">
+              Upload a CSV file to load working day data and time bookings.
+            </p>
+            <div class="mb-3">
+              <label class="form-label required" th:text="#{main.dailyreport.csv.import.file.label.text}">CSV file</label>
+              <input type="file" name="file" class="form-control" accept=".csv" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" th:text="#{main.dailyreport.csv.import.mode.label.text}">Import mode</label>
+              <div class="d-flex flex-column gap-2">
+                <label class="form-check">
+                  <input class="form-check-input" type="radio" name="importMode" value="add" checked>
+                  <span class="form-check-label">
+                    <strong th:text="#{main.dailyreport.csv.import.mode.add.text}">Add</strong>
+                    &ndash; <span th:text="#{main.dailyreport.csv.import.mode.add.desc.text}">skip days that already have entries</span>
+                  </span>
+                </label>
+                <label class="form-check">
+                  <input class="form-check-input" type="radio" name="importMode" value="replace">
+                  <span class="form-check-label">
+                    <strong th:text="#{main.dailyreport.csv.import.mode.replace.text}">Replace</strong>
+                    &ndash; <span th:text="#{main.dailyreport.csv.import.mode.replace.desc.text}">overwrite existing entries with imported data</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="ti ti-upload me-1"></i>
+              <span th:text="#{main.dailyreport.csv.import.button.text}">Import</span>
+            </button>
+            <small class="text-muted ms-3" th:text="#{main.dailyreport.csv.import.hint.text}">
+              Days outside your contract period are skipped.
+            </small>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Export card -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="ti ti-download me-2 text-green"></i>
+            <span th:text="#{main.dailyreport.csv.export.title.text}">Export</span>
+          </h3>
         </div>
         <div class="card-body">
-          <p class="text-muted mb-3" th:text="#{main.dailyreport.csv.format.desc.text}">
-            Each row represents one time booking. Working day fields repeat for every booking on the same day.
-            Days with no bookings appear as a single row with booking columns left empty.
+          <p class="text-muted" th:text="#{main.dailyreport.csv.export.desc.text}">
+            Download all working day data and time bookings for a month as CSV.
           </p>
-          <div class="table-responsive">
-            <table class="table table-vcenter card-table">
-              <thead>
-                <tr>
-                  <th class="text-nowrap">#</th>
-                  <th th:text="#{main.dailyreport.csv.format.col.header.text}">Column</th>
-                  <th th:text="#{main.dailyreport.csv.format.format.header.text}">Format</th>
-                  <th th:text="#{main.dailyreport.csv.format.example.header.text}">Example</th>
-                  <th th:text="#{main.dailyreport.csv.format.notes.header.text}">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="table-active">
-                  <td class="text-muted">0</td>
-                  <td class="fw-medium">date</td>
-                  <td class="text-muted">YYYY-MM-DD</td>
-                  <td class="font-monospace small">2026-06-02</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.date.notes.text}">Working day date (ISO 8601)</td>
-                </tr>
-                <tr class="table-active">
-                  <td class="text-muted">1</td>
-                  <td class="fw-medium">type</td>
-                  <td class="text-muted">WORKED · NOT_WORKED</td>
-                  <td class="font-monospace small">WORKED</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.type.notes.text}">Working day type; empty if not set</td>
-                </tr>
-                <tr class="table-active">
-                  <td class="text-muted">2</td>
-                  <td class="fw-medium">startTime</td>
-                  <td class="text-muted">HH:mm</td>
-                  <td class="font-monospace small">08:00</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.starttime.notes.text}">Day start time; empty if not set</td>
-                </tr>
-                <tr class="table-active">
-                  <td class="text-muted">3</td>
-                  <td class="fw-medium">breakTime</td>
-                  <td class="text-muted">HH:mm</td>
-                  <td class="font-monospace small">00:30</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.breaktime.notes.text}">Break duration; empty if not set</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">4</td>
-                  <td class="fw-medium">employeeorderId</td>
-                  <td class="text-muted">integer</td>
-                  <td class="font-monospace small">78</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeeorderid.notes.text}">Internal ID of the employee order; empty for NOT_WORKED rows</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">5</td>
-                  <td class="fw-medium">orderSign</td>
-                  <td class="text-muted">text</td>
-                  <td class="font-monospace small">ALPHA</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.ordersign.notes.text}">Project key</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">6</td>
-                  <td class="fw-medium">orderLabel</td>
-                  <td class="text-muted">text</td>
-                  <td class="font-monospace small">Alpha Projekt</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.orderlabel.notes.text}">Project name</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">7</td>
-                  <td class="fw-medium">suborderSign</td>
-                  <td class="text-muted">text</td>
-                  <td class="font-monospace small">DEV-BACKEND</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.subordersign.notes.text}">Task key</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">8</td>
-                  <td class="fw-medium">suborderLabel</td>
-                  <td class="text-muted">text</td>
-                  <td class="font-monospace small">Backend Development</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.suborderlabel.notes.text}">Task name</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">9</td>
-                  <td class="fw-medium">workingTime</td>
-                  <td class="text-muted">HH:mm</td>
-                  <td class="font-monospace small">03:00</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.workingtime.notes.text}">Booked duration</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">10</td>
-                  <td class="fw-medium">comment</td>
-                  <td class="text-muted">text</td>
-                  <td class="font-monospace small">PROJ-123 initial setup</td>
-                  <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.comment.notes.text}">Work description; quote with &quot; if it contains commas</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="mb-3">
+            <label class="form-label required" th:text="#{main.dailyreport.csv.export.period.label.text}">Period</label>
+            <select name="month" form="export-form" class="form-select tomselect">
+              <option th:each="m : ${availableMonths}"
+                      th:value="${m}"
+                      th:text="${#temporals.format(m.atDay(1), 'MMMM yyyy')}"
+                      th:selected="${m.toString() == selectedMonth}">
+              </option>
+            </select>
           </div>
-          <p class="text-muted small mb-1 mt-3" th:text="#{main.dailyreport.csv.format.example.two.bookings.text}">Example &mdash; day with two bookings:</p>
-          <pre class="bg-light rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
-2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,DEV-BACKEND,Backend Development,03:00,PROJ-123 initial setup
-2026-06-02,,,,78,ALPHA,Alpha Projekt,DEV-FRONTEND,Frontend Development,01:30,PROJ-124 refactoring</pre>
-          <p class="text-muted small mb-1" th:text="#{main.dailyreport.csv.format.example.not.worked.text}">Example &mdash; not-worked day (no bookings):</p>
-          <pre class="bg-light rounded p-3 small mb-0">2026-06-09,NOT_WORKED,,,,,,,,,</pre>
+          <div class="mb-3">
+            <label class="form-label" th:text="#{main.dailyreport.csv.export.format.label.text}">Format</label>
+            <div class="form-control bg-light text-muted" th:text="#{main.dailyreport.csv.export.format.value.text}">
+              CSV &ndash; UTF-8, comma-separated, first row is header
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <form id="export-form" th:action="@{/dailyreport/csv/export}" method="get">
+            <button type="submit" class="btn btn-success">
+              <i class="ti ti-download me-1"></i>
+              <span th:text="#{main.dailyreport.csv.export.button.text}">Export CSV</span>
+            </button>
+          </form>
         </div>
       </div>
+    </div>
 
+  </div>
+
+  <!-- Format reference -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.dailyreport.csv.format.title.text}">CSV Format</h3>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-3" th:text="#{main.dailyreport.csv.format.desc.text}">
+        Each row represents one time booking. Working day fields repeat for every booking on the same day.
+        Days with no bookings appear as a single row with booking columns left empty.
+      </p>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th class="text-nowrap">#</th>
+              <th th:text="#{main.dailyreport.csv.format.col.header.text}">Column</th>
+              <th th:text="#{main.dailyreport.csv.format.format.header.text}">Format</th>
+              <th th:text="#{main.dailyreport.csv.format.example.header.text}">Example</th>
+              <th th:text="#{main.dailyreport.csv.format.notes.header.text}">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="table-active">
+              <td class="text-muted">0</td>
+              <td class="fw-medium">date</td>
+              <td class="text-muted">YYYY-MM-DD</td>
+              <td class="font-monospace small">2026-06-02</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.date.notes.text}">Working day date (ISO 8601)</td>
+            </tr>
+            <tr class="table-active">
+              <td class="text-muted">1</td>
+              <td class="fw-medium">type</td>
+              <td class="text-muted">WORKED · NOT_WORKED</td>
+              <td class="font-monospace small">WORKED</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.type.notes.text}">Working day type; empty if not set</td>
+            </tr>
+            <tr class="table-active">
+              <td class="text-muted">2</td>
+              <td class="fw-medium">startTime</td>
+              <td class="text-muted">HH:mm</td>
+              <td class="font-monospace small">08:00</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.starttime.notes.text}">Day start time; empty if not set</td>
+            </tr>
+            <tr class="table-active">
+              <td class="text-muted">3</td>
+              <td class="fw-medium">breakTime</td>
+              <td class="text-muted">HH:mm</td>
+              <td class="font-monospace small">00:30</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.breaktime.notes.text}">Break duration; empty if not set</td>
+            </tr>
+            <tr>
+              <td class="text-muted">4</td>
+              <td class="fw-medium">employeeorderId</td>
+              <td class="text-muted">integer</td>
+              <td class="font-monospace small">78</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeeorderid.notes.text}">Internal ID of the employee order; empty for NOT_WORKED rows</td>
+            </tr>
+            <tr>
+              <td class="text-muted">5</td>
+              <td class="fw-medium">orderSign</td>
+              <td class="text-muted">text</td>
+              <td class="font-monospace small">ALPHA</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.ordersign.notes.text}">Project key</td>
+            </tr>
+            <tr>
+              <td class="text-muted">6</td>
+              <td class="fw-medium">orderLabel</td>
+              <td class="text-muted">text</td>
+              <td class="font-monospace small">Alpha Projekt</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.orderlabel.notes.text}">Project name</td>
+            </tr>
+            <tr>
+              <td class="text-muted">7</td>
+              <td class="fw-medium">suborderSign</td>
+              <td class="text-muted">text</td>
+              <td class="font-monospace small">DEV-BACKEND</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.subordersign.notes.text}">Task key</td>
+            </tr>
+            <tr>
+              <td class="text-muted">8</td>
+              <td class="fw-medium">suborderLabel</td>
+              <td class="text-muted">text</td>
+              <td class="font-monospace small">Backend Development</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.suborderlabel.notes.text}">Task name</td>
+            </tr>
+            <tr>
+              <td class="text-muted">9</td>
+              <td class="fw-medium">workingTime</td>
+              <td class="text-muted">HH:mm</td>
+              <td class="font-monospace small">03:00</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.workingtime.notes.text}">Booked duration</td>
+            </tr>
+            <tr>
+              <td class="text-muted">10</td>
+              <td class="fw-medium">comment</td>
+              <td class="text-muted">text</td>
+              <td class="font-monospace small">PROJ-123 initial setup</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.comment.notes.text}">Work description; quote with &quot; if it contains commas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted small mb-1 mt-3" th:text="#{main.dailyreport.csv.format.example.two.bookings.text}">Example &mdash; day with two bookings:</p>
+      <pre class="rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,DEV-BACKEND,Backend Development,03:00,PROJ-123 initial setup
+2026-06-02,,,,78,ALPHA,Alpha Projekt,DEV-FRONTEND,Frontend Development,01:30,PROJ-124 refactoring</pre>
+      <p class="text-muted small mb-1" th:text="#{main.dailyreport.csv.format.example.not.worked.text}">Example &mdash; not-worked day (no bookings):</p>
+      <pre class="rounded p-3 small mb-0">2026-06-09,NOT_WORKED,,,,,,,,,</pre>
     </div>
   </div>
 
