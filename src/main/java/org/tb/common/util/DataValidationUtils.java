@@ -2,7 +2,6 @@ package org.tb.common.util;
 
 import java.time.LocalDate;
 import lombok.experimental.UtilityClass;
-import org.apache.commons.validator.GenericValidator;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 
@@ -22,7 +21,7 @@ public class DataValidationUtils {
   }
 
   public static void isTrue(boolean expression, ErrorCode errorCode) {
-    if (expression == false) {
+    if (!expression) {
       throw new InvalidDataException(errorCode);
     }
   }
@@ -43,7 +42,7 @@ public class DataValidationUtils {
   }
 
   public static boolean isInRange(int value, int min, int max) {
-    return GenericValidator.isInRange(value, min, max);
+    return value >= min && value <= max;
   }
 
 }

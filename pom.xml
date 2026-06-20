@@ -34,7 +34,6 @@
     <salat.image.tag>latest</salat.image.tag>
     <spotbugs-maven-plugin.version>4.10.2.0</spotbugs-maven-plugin.version>
     <springdoc-openapi-starter-webmvc-ui.version>3.0.3</springdoc-openapi-starter-webmvc-ui.version>
-    <struts-weblegacy.version>1.5.0-RC2</struts-weblegacy.version>
     <thymeleaf-layout-dialect.version>4.0.1</thymeleaf-layout-dialect.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <webjars-bootstrap-icons.version>1.13.1</webjars-bootstrap-icons.version>
@@ -137,27 +136,6 @@
       <artifactId>archunit-junit5</artifactId>
       <version>${archunit.version}</version>
       <scope>test</scope>
-    </dependency>
-    <!-- struts -->
-    <dependency>
-      <groupId>io.github.weblegacy</groupId>
-      <artifactId>struts-core</artifactId>
-      <version>${struts-weblegacy.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.antlr</groupId>
-          <artifactId>antlr4-runtime</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>io.github.weblegacy</groupId>
-      <artifactId>struts-el</artifactId>
-      <version>${struts-weblegacy.version}</version>
     </dependency>
     <!-- other stuff -->
     <dependency>
