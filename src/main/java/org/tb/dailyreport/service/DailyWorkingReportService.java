@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
@@ -79,6 +80,36 @@ public class DailyWorkingReportService {
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
         return new ImportReport(reports.stream().map(r -> doCreateReport(r, true, contractId)).toList());
+    }
+
+    public ImportReport createReports(List<DailyWorkingReportData> reports)
+            throws AuthorizationException, InvalidDataException, BusinessRuleException
+    {
+        return new ImportReport(groupByContractId(reports).entrySet().stream()
+            .flatMap(e -> e.getValue().stream().map(r -> doCreateReport(r, false, e.getKey())))
+            .toList());
+    }
+
+    public ImportReport updateReports(List<DailyWorkingReportData> reports)
+            throws AuthorizationException, InvalidDataException, BusinessRuleException
+    {
+        return new ImportReport(groupByContractId(reports).entrySet().stream()
+            .flatMap(e -> e.getValue().stream().map(r -> doCreateReport(r, true, e.getKey())))
+            .toList());
+    }
+
+    private Map<Long, List<DailyWorkingReportData>> groupByContractId(List<DailyWorkingReportData> reports) {
+        return reports.stream().collect(groupingBy(this::contractIdForReport));
+    }
+
+    private long contractIdForReport(DailyWorkingReportData report) {
+        return report.getDailyReports().stream()
+            .map(dr -> employeeorderDAO.getEmployeeorderById(dr.getEmployeeorderId()))
+            .filter(Objects::nonNull)
+            .map(o -> o.getEmployeecontract().getId())
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(() -> new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND));
     }
 
     private ImportReport.DayResult doCreateReport(DailyWorkingReportData report, boolean upsert, long contractId)
