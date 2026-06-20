@@ -2,6 +2,7 @@ package org.tb.dailyreport.service;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public record ImportReport(List<DayResult> days) implements Serializable {
@@ -17,9 +18,13 @@ public record ImportReport(List<DayResult> days) implements Serializable {
     public record DayResult(
         LocalDate date,
         boolean workingDayCreated,
+        boolean workingDayDataChanged,
+        LocalTime startTime,
+        LocalTime breakDuration,
         List<BookingDetail> bookingsCreated,
         List<BookingDetail> bookingsDeleted
     ) implements Serializable {
+        public boolean workingDayChanged() { return workingDayCreated || workingDayDataChanged; }
         public int bookingsCreatedCount() { return bookingsCreated.size(); }
         public int bookingsDeletedCount() { return bookingsDeleted.size(); }
     }

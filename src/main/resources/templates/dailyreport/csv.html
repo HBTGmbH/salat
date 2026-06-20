@@ -142,8 +142,22 @@
       <div th:each="day : ${importReport.days()}" class="border-bottom px-3 py-2">
         <div class="d-flex align-items-center gap-2 mb-1">
           <span class="fw-medium font-monospace" th:text="${#temporals.format(day.date(), 'yyyy-MM-dd')}">2026-06-02</span>
-          <span class="badge bg-green-lt" th:if="${day.workingDayCreated()}" th:text="#{main.dailyreport.csv.import.report.workingday.created.text}">Working day created</span>
-          <span class="badge bg-azure-lt" th:unless="${day.workingDayCreated()}" th:text="#{main.dailyreport.csv.import.report.workingday.updated.text}">Working day updated</span>
+          <th:block th:if="${day.workingDayCreated()}">
+            <span class="badge bg-green-lt" th:text="#{main.dailyreport.csv.import.report.workingday.created.text}">Working day created</span>
+            <span class="text-muted small font-monospace" th:if="${day.startTime() != null}">
+              <th:block th:text="${#temporals.format(day.startTime(), 'HH:mm')}">08:00</th:block>
+              &middot;
+              <th:block th:text="${day.breakDuration() != null ? #temporals.format(day.breakDuration(), 'HH:mm') : '00:00'}">00:30</th:block>
+            </span>
+          </th:block>
+          <th:block th:if="${day.workingDayDataChanged()}">
+            <span class="badge bg-azure-lt" th:text="#{main.dailyreport.csv.import.report.workingday.updated.text}">Working day updated</span>
+            <span class="text-muted small font-monospace" th:if="${day.startTime() != null}">
+              <th:block th:text="${#temporals.format(day.startTime(), 'HH:mm')}">08:00</th:block>
+              &middot;
+              <th:block th:text="${day.breakDuration() != null ? #temporals.format(day.breakDuration(), 'HH:mm') : '00:00'}">00:30</th:block>
+            </span>
+          </th:block>
         </div>
         <div th:if="${!day.bookingsCreated().isEmpty()}" class="mb-1">
           <small class="text-green fw-medium" th:text="#{main.dailyreport.csv.import.report.created.text}">Created</small>
