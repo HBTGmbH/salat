@@ -110,12 +110,21 @@
         Each row represents one time booking. Working day fields repeat for every booking on the same day.
         Days with no bookings appear as a single row with booking columns left empty.
       </p>
-      <p class="text-muted mb-3">
+      <p class="text-muted mb-2">
         <span th:text="#{main.dailyreport.csv.format.delimiter.export.label.text}">Export delimiter:</span>
         <code>,</code>
         &nbsp;&middot;&nbsp;
         <span th:text="#{main.dailyreport.csv.format.delimiter.import.label.text}">Import: auto-detected from first row, supported:</span>
         <code>,&nbsp;&nbsp;;&nbsp;&nbsp;&bsol;t&nbsp;&nbsp;|&nbsp;&nbsp;:</code>
+      </p>
+      <p class="text-muted mb-3">
+        <span th:text="#{main.dailyreport.csv.format.dateformat.label.text}">Date format:</span>
+        <code>yyyy-MM-dd</code>
+        <span class="text-muted small" th:text="#{main.dailyreport.csv.format.dateformat.fallback.text}">(import also accepts dd.MM.yyyy)</span>
+        &nbsp;&middot;&nbsp;
+        <span th:text="#{main.dailyreport.csv.format.timeformat.label.text}">Time format:</span>
+        <code>HH:mm</code>
+        <span class="text-muted small" th:text="#{main.dailyreport.csv.format.timeformat.fallback.text}">(import also accepts HH:mm:ss, seconds ignored)</span>
       </p>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
