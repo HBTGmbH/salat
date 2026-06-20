@@ -2,7 +2,6 @@ package org.tb.order.domain;
 
 /**
  * Data transfer object carrying suborder field values for create/update operations.
- * Replaces the dependency on the legacy Struts {@code AddSuborderForm} in the service layer.
  */
 public record SuborderDTO(
     Long customerorderId,

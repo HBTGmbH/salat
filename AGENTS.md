@@ -11,18 +11,7 @@ See also README.md
   - Module boundaries define allowed dependencies and collaboration patterns.
 
 ## Technology Positioning
-- Legacy UI stack (maintenance mode):
-  - Struts 1.2
-  - JSP
-  - Notes:
-    - Existing screens may continue to function but should not receive major new features.
-    - Any new UI work should avoid adding to the legacy stack.
-  - URL format:
-    - Legacy Struts actions use the format `/do/<ActionName>` (e.g., `/do/ShowEmployee`, `/do/CreateDailyReport`)
-    - Do NOT use the `.do` suffix format (e.g., `/ShowEmployee.do` is incorrect)
-    - When linking to legacy Struts pages from Thymeleaf templates, use: `th:href="@{/do/ActionName}"`
-
-- Target UI and presentation stack (future direction):
+- UI and presentation stack:
   - Spring Web MVC (controllers, validation, handler methods)
   - Thymeleaf templates (server-side rendering)
   - Bootstrap 5 for styling and components
@@ -46,11 +35,6 @@ See also README.md
   - **Prefer the `salat:` custom dialect** for reusable form and table components over raw `th:replace` fragment calls. The dialect provides cleaner, attribute-based tags that are easier to read and IDE-friendly.
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
-
-## Migration Guidance
-- Do not expand Struts/JSP usage for new features. New screens/features should use Spring MVC + Thymeleaf.
-- When touching legacy screens for significant changes, consider opportunistic migration to the target stack.
-- Maintain compatibility during migration; multiple UI technologies may coexist temporarily.
 
 ## Testing and Quality
 - Preserve unit, integration, and UI tests across module boundaries.
@@ -112,7 +96,7 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] Security: `@PreAuthorize` on every controller write method; `@Authorized` + runtime guard in the service
 
 ### Views (if UI changed)
-- [ ] Uses Spring MVC + Thymeleaf (no new Struts/JSP)
+- [ ] Uses Spring MVC + Thymeleaf
 - [ ] Leaf-level form components use the `salat:` custom dialect; layout/structural reuse uses fragments
 - [ ] Bootstrap 5 + Tabler components for layout and widgets
 - [ ] CSRF protection relies solely on `th:action="@{...}"` — no explicit `_csrf` hidden input
@@ -185,8 +169,6 @@ A feature or fix is considered done when **all** of the following are true:
 <!-- fails: @beanName prohibited inside @{} -->
 <a th:href="@{${@salatProperties.docsUrl}}">...</a>
 ```
-
-> Note: `BuildInformationProvider.contextInitialized()` registers `buildProperties`, `gitProperties`, and `serverTimeHelper` as servlet context attributes. This is legacy wiring for Struts/JSP pages. Thymeleaf templates use `${@beanName}` (Spring bean lookup) directly and do not rely on servlet context attributes.
 
 ## TomSelect Dropdowns
 
@@ -275,7 +257,6 @@ Top-level packages under `org.tb`, one module per domain capability:
 | Package | Responsibility |
 |---|---|
 | `auth` | Authentication, authorization beans and annotations |
-| `chicoree` | Legacy Struts time-reporting UI (maintenance only) |
 | `common` | Shared base classes, exceptions, events, utilities |
 | `customer` | Customer management |
 | `dailyreport` | Time reports and working days |
@@ -368,7 +349,7 @@ Entities are divided into two categories (→ ADR-0011):
 - Form validation errors: call the service inside `try/catch(ErrorCodeException)`, convert via `ErrorCodeViewHelper.toViewMessages(ex)`, add to model, and re-render the form view (do not redirect)
 - HTMX partial updates: use `th:hx-post`, `hx-swap=”none”`, `hx-include=”closest form”`, `hx-trigger=”change”` on select/input elements; detect `HX-Request` header in the controller and return `”view :: fragmentName”` for partial responses
 - CSRF tokens: **never** add an explicit `<input type=”hidden” th:name=”${_csrf.parameterName}” th:value=”${_csrf.token}” />`. Spring Security 6 uses deferred tokens — `_csrf` is null when accessed directly in templates. Using `th:action=”@{...}”` is sufficient; Thymeleaf's `CsrfRequestDataValueProcessor` injects the token automatically into every POST form.
-- **No direct `HttpSession` access** (→ ADR-0013): new Spring MVC controllers must not read or write `HttpSession` for UI state. Pass state via URL parameters, path variables, or form fields. User selection state (e.g. currently selected employee contract) must be expressed in the URL or stored in a cookie — not the session. Exceptions (`AuthorizedUser`, `AuthorizedEmployee`, impersonation) must be documented with a comment `// ADR-0013: Ausnahme — [Begründung]` at the point of use. When linking from new Thymeleaf pages to legacy Struts actions that rely on `HttpSession`, pass the required state as URL parameters.
+- **No direct `HttpSession` access** (→ ADR-0013): new Spring MVC controllers must not read or write `HttpSession` for UI state. Pass state via URL parameters, path variables, or form fields. User selection state (e.g. currently selected employee contract) must be expressed in the URL or stored in a cookie — not the session. Exceptions (`AuthorizedUser`, `AuthorizedEmployee`, impersonation) must be documented with a comment `// ADR-0013: Ausnahme — [Begründung]` at the point of use.
 
 ### The `hide` Flag (UX Declutter)
 The `hide` boolean flag is a UX feature: it removes an entity from all dropdown select inputs in forms, keeping the app compact when a customer, order, or suborder is no longer actively used but must not be deleted (e.g. historical records still referenced by time reports). Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.
@@ -560,19 +541,11 @@ Rules:
 ### i18n Message Bundles
 - **The application is German-first.** German is the primary/default language.
 - Files: `src/main/resources/org/tb/web/MessageResources.properties` (German, default) and `MessageResources_en.properties` (English)
-  - Both files contain the full set of `main.*` Thymeleaf keys as well as legacy Struts/chicoree keys.
+  - Both files contain the full set of `main.*` Thymeleaf keys.
   - `MessageResources.properties` is the German default bundle; it is served for `de_DE` and any locale that has no specific bundle.
   - `MessageResources_en.properties` is served for the `en` locale.
-- **Encoding**: both files are **ISO-8859-1**. Never use the Edit/Write tools on these files — they write UTF-8 and corrupt the content. Always use Python with `encoding='iso-8859-1'`.
+- **Encoding**: both files are **UTF-8**.
 - **Key order**: keys are sorted alphabetically. The correct workflow: append new key(s) to the file, then sort all lines. Never try to find the insertion point manually.
-  ```python
-  path = 'src/main/resources/org/tb/web/MessageResources.properties'
-  with open(path, encoding='iso-8859-1') as f:
-      lines = set(l for l in f.read().splitlines() if l.strip())
-  lines.add('new.key=Value')
-  with open(path, 'w', encoding='iso-8859-1') as f:
-      f.write('\n'.join(sorted(lines)) + '\n')
-  ```
 - When adding a new feature, add matching keys to **both** bundles — German translation in `MessageResources.properties`, English in `MessageResources_en.properties`.
 
 ### Database Migration Convention
