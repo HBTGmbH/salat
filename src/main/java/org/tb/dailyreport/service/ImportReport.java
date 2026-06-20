@@ -48,4 +48,8 @@ public record ImportReport(List<DayResult> days) implements Serializable {
     public int totalBookingsUpdated() {
         return days.stream().mapToInt(DayResult::bookingsUpdatedCount).sum();
     }
+
+    public long totalWorkingDaysChanged() {
+        return days.stream().filter(DayResult::workingDayChanged).count();
+    }
 }

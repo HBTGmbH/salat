@@ -128,15 +128,19 @@
         <span th:text="#{main.dailyreport.csv.import.report.title.text}">Import Report</span>
       </h3>
       <div class="card-options">
-        <span class="badge bg-green-lt me-1" th:if="${importReport.totalBookingsCreated() > 0}">
+        <span class="badge bg-blue-lt me-1">
+          <th:block th:text="#{main.dailyreport.csv.import.report.workingdays.total.text}">Working days</th:block>:
+          <strong th:text="${importReport.totalWorkingDaysChanged()}">0</strong>
+        </span>
+        <span class="badge bg-green-lt me-1">
           <th:block th:text="#{main.dailyreport.csv.import.report.created.total.text}">Created</th:block>:
           <strong th:text="${importReport.totalBookingsCreated()}">0</strong>
         </span>
-        <span class="badge bg-azure-lt me-1" th:if="${importReport.totalBookingsUpdated() > 0}">
+        <span class="badge bg-azure-lt me-1">
           <th:block th:text="#{main.dailyreport.csv.import.report.updated.total.text}">Updated</th:block>:
           <strong th:text="${importReport.totalBookingsUpdated()}">0</strong>
         </span>
-        <span class="badge bg-red-lt" th:if="${importReport.totalBookingsDeleted() > 0}">
+        <span class="badge bg-red-lt">
           <th:block th:text="#{main.dailyreport.csv.import.report.deleted.total.text}">Deleted</th:block>:
           <strong th:text="${importReport.totalBookingsDeleted()}">0</strong>
         </span>
