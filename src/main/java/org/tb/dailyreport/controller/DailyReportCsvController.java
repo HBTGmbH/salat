@@ -83,11 +83,10 @@ public class DailyReportCsvController {
         }
         try {
             var reports = csvConverter.read(file.getInputStream());
-            if ("replace".equals(importMode)) {
-                dailyWorkingReportService.updateReports(reports);
-            } else {
-                dailyWorkingReportService.createReports(reports);
-            }
+            var importReport = "replace".equals(importMode)
+                ? dailyWorkingReportService.updateReports(reports)
+                : dailyWorkingReportService.createReports(reports);
+            redirectAttributes.addFlashAttribute("importReport", importReport);
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.dailyreport.csv.import.success.text"));
         } catch (AuthorizationException | InvalidDataException | BusinessRuleException ex) {
