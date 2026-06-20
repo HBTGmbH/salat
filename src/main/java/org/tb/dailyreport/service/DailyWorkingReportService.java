@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -140,12 +141,12 @@ public class DailyWorkingReportService {
             .collect(groupingBy(DailyReportData::getEmployeeorderId))
             .entrySet().stream()
             .map(e -> doCreateDailyReports(report.getDate(), e.getKey(), e.getValue(), upsert, contractId))
-            .reduce(new BookingCounts(List.of(), List.of()), BookingCounts::add);
+            .reduce(new BookingCounts(List.of(), List.of(), List.of()), BookingCounts::add);
 
         return new ImportReport.DayResult(report.getDate(),
             wdResult.created(), wdResult.dataChanged(),
             wdResult.startTime(), wdResult.breakDuration(),
-            totals.created(), totals.deleted());
+            totals.created(), totals.deleted(), totals.updated());
     }
 
     private WorkingDayResult doCreateWorkingDay(DailyWorkingReportData report, Employeecontract employeecontract) {
@@ -226,20 +227,26 @@ public class DailyWorkingReportService {
         }
 
         newBookings.forEach(booking -> doCreateDailyReport(day, booking, employeeOrder, employeeContract));
-        var createdDetails = newBookings.stream().map(DailyWorkingReportService::toBookingDetail).toList();
-        var deletedDetails = upsert ? oldBookings.stream().map(DailyWorkingReportService::toBookingDetail).toList() : List.<ImportReport.BookingDetail>of();
-        return new BookingCounts(createdDetails, deletedDetails);
+
+        int pairCount = upsert ? Math.min(newBookings.size(), oldBookings.size()) : 0;
+        var updatedDetails = IntStream.range(0, pairCount)
+            .mapToObj(i -> new ImportReport.UpdatedBookingDetail(toBookingDetail(oldBookings.get(i)), toBookingDetail(newBookings.get(i))))
+            .toList();
+        var pureCreated = newBookings.subList(pairCount, newBookings.size()).stream().map(DailyWorkingReportService::toBookingDetail).toList();
+        var pureDeleted = upsert ? oldBookings.subList(pairCount, oldBookings.size()).stream().map(DailyWorkingReportService::toBookingDetail).toList() : List.<ImportReport.BookingDetail>of();
+        return new BookingCounts(pureCreated, pureDeleted, updatedDetails);
     }
 
     private static ImportReport.BookingDetail toBookingDetail(DailyReportData b) {
         return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment());
     }
 
-    private record BookingCounts(List<ImportReport.BookingDetail> created, List<ImportReport.BookingDetail> deleted) {
+    private record BookingCounts(List<ImportReport.BookingDetail> created, List<ImportReport.BookingDetail> deleted, List<ImportReport.UpdatedBookingDetail> updated) {
         BookingCounts add(BookingCounts other) {
             return new BookingCounts(
                 Stream.concat(created.stream(), other.created.stream()).toList(),
-                Stream.concat(deleted.stream(), other.deleted.stream()).toList()
+                Stream.concat(deleted.stream(), other.deleted.stream()).toList(),
+                Stream.concat(updated.stream(), other.updated.stream()).toList()
             );
         }
     }
