@@ -72,7 +72,7 @@
               <td class="text-nowrap font-monospace small" th:text="${b.suborderSign()}">ALPHA-DEV</td>
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
-              <td class="small text-muted" th:text="${b.comment()}">PROJ-123 initial setup</td>
+              <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">PROJ-123 initial setup</td>
             </tr>
             </tbody>
           </table>
@@ -98,7 +98,7 @@
                         th:text="${#numbers.formatInteger(u.from().hours(),2,'NONE') + ':' + #numbers.formatInteger(u.from().minutes(),2,'NONE')}">02:00</span>
                 <th:block th:text="${#numbers.formatInteger(u.to().hours(),2,'NONE') + ':' + #numbers.formatInteger(u.to().minutes(),2,'NONE')}">03:00</th:block>
               </td>
-              <td class="small text-muted">
+              <td class="small text-muted" style="white-space: pre-wrap">
                   <span th:if="${u.from().comment() ne u.to().comment()}"
                         class="text-decoration-line-through d-block"
                         th:text="${u.from().comment()}">old comment</span>
@@ -124,7 +124,7 @@
               <td class="text-nowrap font-monospace small" th:text="${b.suborderSign()}">ALPHA-DEV</td>
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
-              <td class="small text-muted" th:text="${b.comment()}">PROJ-123 initial setup</td>
+              <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">PROJ-123 initial setup</td>
             </tr>
             </tbody>
           </table>
