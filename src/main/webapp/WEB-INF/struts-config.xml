@@ -24,21 +24,10 @@
 
 	<form-beans>
 
-		<form-bean name="chicoree/TimereportForm" type="org.tb.chicoree.TimereportForm" />
-
 		<form-bean name="addDailyReportForm" type="org.tb.dailyreport.action.AddDailyReportForm" />
 		<form-bean name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixForm" />
 		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportForm" />
 		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
-		<!-- showOvertimeForm removed (migrated to Spring MVC at /dailyreport/overtime) -->
-		<!-- showReleaseForm removed (migrated to Spring MVC) -->
-		<!-- employee/contract/order Struts UI removed (migrated to Spring MVC) -->
-		<!-- customer Struts UI removed (migrated to Spring MVC) -->
-		<!-- customerorder/suborder Struts UI removed (migrated to Spring MVC) -->
-
-		<form-bean name="executeReportForm" type="org.tb.reporting.action.ExecuteReportForm" />
-		<form-bean name="createEditDeleteReportForm" type="org.tb.reporting.action.CreateEditDeleteReportForm" />
-
 
 	</form-beans>
 
@@ -69,40 +58,6 @@
 		<!-- legacy redirect -->
 		<action path="/ShowWelcome" type="org.tb.common.struts.RedirectAction">
 			<forward name="redirect" path="/welcome" redirect="true" />
-		</action>
-
-		<!-- chicoree -->
-		<action path="/chicoree/ShowDashboard" type="org.tb.chicoree.ShowDashboardAction">
-			<forward name="success" path="/chicoree/dashboard.jsp" redirect="true" />
-		</action>
-
-		<action path="/chicoree/ChangeDay" type="org.tb.chicoree.ChangeDayAction">
-			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
-		</action>
-
-		<action path="/chicoree/DeleteTimereport" type="org.tb.chicoree.DeleteTimereportAction"
-			input="/chicoree/dashboard.jsp">
-			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
-		</action>
-
-		<action path="/chicoree/AddTimereport" type="org.tb.chicoree.EditTimereportAction"
-			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
-			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
-		</action>
-
-		<action path="/chicoree/EditTimereport" type="org.tb.chicoree.EditTimereportAction"
-			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
-			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
-		</action>
-
-		<action path="/chicoree/RefreshTimereportFormFields" type="org.tb.chicoree.RefreshTimereportFormFieldsAction"
-			validate="false" input="/chicoree/dashboard.jsp" name="chicoree/TimereportForm">
-			<forward name="success" path="/chicoree/timereport.jsp" redirect="true" />
-		</action>
-
-		<action path="/chicoree/StoreTimereport" type="org.tb.chicoree.StoreTimereportAction"
-			input="/chicoree/timereport.jsp" name="chicoree/TimereportForm" validate="true">
-			<forward name="success" path="/do/chicoree/ShowDashboard" redirect="true" />
 		</action>
 
 		<!-- daily reports -->
@@ -162,33 +117,6 @@
 			<forward name="backtomenu" path="/welcome" redirect="true" />
 			<forward name="print" path="/dailyreport/showMatrixPrint.jsp" />
 		</action>
-		
-		<!-- Customer Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
-		<!-- Customerorder/Suborder Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
-
-		<!-- Employee/EmployeeContract/EmployeeOrder Struts actions removed (migrated to Spring MVC + Thymeleaf) -->
-
-		<!-- reporting -->
-		<action path="/ShowReports" type="org.tb.reporting.action.ShowReportsAction">
-			<forward name="success" path="/reporting/showReports.jsp" />
-		</action>
-		<action path="/ExecuteReport" type="org.tb.reporting.action.ExecuteReportAction" name="executeReportForm">
-			<forward name="showReportParameters" path="/reporting/showReportParameters.jsp" />
-			<forward name="showReportResult" path="/reporting/showReportResult.jsp" />
-		</action>
-		<action path="/CreateReport" type="org.tb.reporting.action.CreateReportAction" name="createEditDeleteReportForm">
-			<forward name="success" path="/reporting/createEditReport.jsp" />
-		</action>
-		<action path="/EditReport" type="org.tb.reporting.action.EditReportAction" name="createEditDeleteReportForm">
-			<forward name="success" path="/reporting/createEditReport.jsp" />
-		</action>
-		<action path="/StoreReport" type="org.tb.reporting.action.StoreReportAction" name="createEditDeleteReportForm">
-			<forward name="success" path="/reporting/showReports.jsp" />
-		</action>
-		<action path="/DeleteReport" type="org.tb.reporting.action.DeleteReportAction" name="createEditDeleteReportForm">
-			<forward name="success" path="/reporting/showReports.jsp" />
-		</action>
-
 
 	</action-mappings>
 
