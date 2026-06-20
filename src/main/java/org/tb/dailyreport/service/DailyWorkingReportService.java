@@ -11,6 +11,7 @@ import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,29 +74,39 @@ public class DailyWorkingReportService {
     public ImportReport createReports(List<DailyWorkingReportData> reports, long contractId)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return new ImportReport(reports.stream().map(r -> doCreateReport(r, false, contractId)).toList());
+        return importReport(reports.stream()
+            .sorted(Comparator.comparing(DailyWorkingReportData::getDate))
+            .map(r -> doCreateReport(r, false, contractId)).toList());
     }
 
     public ImportReport updateReports(List<DailyWorkingReportData> reports, long contractId)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return new ImportReport(reports.stream().map(r -> doCreateReport(r, true, contractId)).toList());
+        return importReport(reports.stream()
+            .sorted(Comparator.comparing(DailyWorkingReportData::getDate))
+            .map(r -> doCreateReport(r, true, contractId)).toList());
     }
 
     public ImportReport createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return new ImportReport(groupByContractId(reports).entrySet().stream()
+        return importReport(groupByContractId(reports).entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(r -> doCreateReport(r, false, e.getKey())))
+            .sorted(Comparator.comparing(ImportReport.DayResult::date))
             .toList());
     }
 
     public ImportReport updateReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return new ImportReport(groupByContractId(reports).entrySet().stream()
+        return importReport(groupByContractId(reports).entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(r -> doCreateReport(r, true, e.getKey())))
+            .sorted(Comparator.comparing(ImportReport.DayResult::date))
             .toList());
+    }
+
+    private static ImportReport importReport(List<ImportReport.DayResult> days) {
+        return new ImportReport(days.stream().sorted(Comparator.comparing(ImportReport.DayResult::date)).toList());
     }
 
     private Map<Long, List<DailyWorkingReportData>> groupByContractId(List<DailyWorkingReportData> reports) {
@@ -120,7 +131,7 @@ public class DailyWorkingReportService {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
-        boolean workingDayCreated = doCreateWorkingDay(report, employeecontract);
+        var wdResult = doCreateWorkingDay(report, employeecontract);
 
         var totals = report.getDailyReports().stream()
             .collect(groupingBy(DailyReportData::getEmployeeorderId))
@@ -128,10 +139,13 @@ public class DailyWorkingReportService {
             .map(e -> doCreateDailyReports(report.getDate(), e.getKey(), e.getValue(), upsert, contractId))
             .reduce(new BookingCounts(List.of(), List.of()), BookingCounts::add);
 
-        return new ImportReport.DayResult(report.getDate(), workingDayCreated, totals.created(), totals.deleted());
+        return new ImportReport.DayResult(report.getDate(),
+            wdResult.created(), wdResult.dataChanged(),
+            wdResult.startTime(), wdResult.breakDuration(),
+            totals.created(), totals.deleted());
     }
 
-    private boolean doCreateWorkingDay(DailyWorkingReportData report, Employeecontract employeecontract) {
+    private WorkingDayResult doCreateWorkingDay(DailyWorkingReportData report, Employeecontract employeecontract) {
         var existingWorkingDay = ofNullable(workingdayDAO.getWorkingdayByDateAndEmployeeContractId(
                 report.getDate(), requireNonNull(employeecontract.getId(), "ID of contract is required")));
 
@@ -142,6 +156,13 @@ public class DailyWorkingReportService {
             newWorkingDay.setRefday(report.getDate());
             return newWorkingDay;
         });
+
+        int oldStartHour = workingDay.getStarttimehour();
+        int oldStartMinute = workingDay.getStarttimeminute();
+        int oldBreakHour = workingDay.getBreakhours();
+        int oldBreakMinute = workingDay.getBreakminutes();
+        var oldType = workingDay.getType();
+
         ofNullable(report.getBreakDuration()).ifPresentOrElse(bd -> {
             workingDay.setBreakhours(bd.getHour());
             workingDay.setBreakminutes(bd.getMinute());
@@ -158,8 +179,21 @@ public class DailyWorkingReportService {
         });
         workingDay.setType(report.getType());
         workingdayService.upsertWorkingday(workingDay);
-        return created;
+
+        boolean dataChanged = !created && (
+            oldType != workingDay.getType() ||
+            oldStartHour != workingDay.getStarttimehour() ||
+            oldStartMinute != workingDay.getStarttimeminute() ||
+            oldBreakHour != workingDay.getBreakhours() ||
+            oldBreakMinute != workingDay.getBreakminutes()
+        );
+        boolean worked = workingDay.getType() != WorkingDayType.NOT_WORKED;
+        LocalTime startTime = worked ? report.getStartTime() : null;
+        LocalTime breakDuration = worked ? report.getBreakDuration() : null;
+        return new WorkingDayResult(created, dataChanged, startTime, breakDuration);
     }
+
+    private record WorkingDayResult(boolean created, boolean dataChanged, LocalTime startTime, LocalTime breakDuration) {}
 
     private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert, long contractId) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
