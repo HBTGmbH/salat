@@ -1,6 +1,7 @@
 package org.tb.dailyreport.controller;
 
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.tb.common.util.DateUtils.today;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,6 +56,10 @@ public class DailyReportCsvController {
         List<YearMonth> availableMonths = IntStream.range(0, 12)
             .mapToObj(current::minusMonths)
             .toList();
+        var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
+        long ecId = effectiveContractId();
+        model.addAttribute("employeecontracts", contracts);
+        model.addAttribute("selectedContractId", ecId);
         model.addAttribute("availableMonths", availableMonths);
         model.addAttribute("selectedMonth", current.toString());
         model.addAttribute("section", "dailyreport");
