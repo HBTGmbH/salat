@@ -23,7 +23,8 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0007](0007-repository-dao-hybrid.md) | Repository + DAO Hybrid Pattern | Accepted | 2026-05-24 |
 | [0008](0008-exception-hierarchie-mit-errorcode.md) | Exception-Hierarchie mit ErrorCode | Accepted | 2026-05-24 |
 | [0009](0009-liquibase-datenbankmigrationen.md) | Liquibase für Datenbankmigrationen | Accepted | 2026-05-24 |
-| [0010](0010-deutsch-first-i18n.md) | Deutsch als Primärsprache und ISO-8859-1-Encoding | Accepted | 2026-05-24 |
+| [0010](0010-deutsch-first-i18n.md) | Deutsch als Primärsprache und UTF-8-Encoding | Accepted | 2026-05-24 |
 | [0011](0011-stammdaten-vs-bewegungsdaten.md) | Stammdaten vs. Bewegungsdaten | Accepted | 2026-05-30 |
 | [0012](0012-archivierung-von-stammdaten.md) | Archivierung von Stammdaten: `hide`-Flag und Gültigkeitsspannen | Accepted | 2026-06-04 |
 | [0013](0013-kein-httpsession-in-neuen-controllern.md) | Kein direktes HttpSession-Zugriff in neuen Spring-MVC-Controllern | Accepted | 2026-06-10 |
+| [0014](0014-uistate-fuer-benutzerbezogenen-selektionszustand.md) | UiState für benutzerbezogenen Selektionszustand | Accepted | 2026-06-18 |

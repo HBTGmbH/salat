@@ -43,17 +43,9 @@ Chosen: **Option C**, weil ein vollständiges Verbot die schrittweise Migration 
 
 Weitere Ausnahmen sind grundsätzlich möglich, müssen aber mit einem Kommentar `// ADR-0013: Ausnahme — [Begründung]` am Ort der `HttpSession`-Nutzung dokumentiert werden.
 
-### Transition-Problem: neue UI → Legacy-Struts-Actions
-
-Wenn eine neue Thymeleaf-Seite auf eine Legacy-Struts-Action verlinkt, die ihren Zustand aus der `HttpSession` liest, muss der Zielzustand im URL mitgegeben werden. Die Struts-Action kann den URL-Parameter prüfen und damit die Session befüllen (wie `ShowDailyReportAction` bereits für `day`/`month`/`year` tut).
-
-Solange nicht migrierte Struts-Actions erreichbar sind, ist diese Übergabe per URL-Parameter der einzig korrekte Weg — Session-Voraussetzungen in Legacy-Actions dürfen nicht in neuen Controllern erfüllt werden.
-
 ### Consequences
 
 * Good: neue Controller sind einfach unit-testbar (kein `MockHttpSession` notwendig)
 * Good: Requests sind idempotent und bookmarkbar
 * Good: tab-safe — mehrere Browser-Tabs können unterschiedliche Filtereinstellungen haben
 * Bad: mehr URL-Parameter, längere URLs bei komplexen Filtern
-* Bad: Übergangsaufwand beim Verlinken neue UI → Legacy (URL-Param muss explizit gesetzt werden)
-* Neutral: Legacy-Struts-Screens sind von dieser Regel nicht betroffen

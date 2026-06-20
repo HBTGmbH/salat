@@ -1,7 +1,7 @@
-# ADR-0010 Deutsch als Primärsprache und ISO-8859-1-Encoding
+# ADR-0010 Deutsch als Primärsprache und UTF-8-Encoding
 
 Date: 2026-05-24
-Status: Accepted
+Status: Accepted (Encoding-Entscheidung aktualisiert 2026-06-21)
 
 ## Context and Problem Statement
 
@@ -18,14 +18,12 @@ Die Anwendung hat eine klar definierte Zielgruppe: deutschsprachige Mitarbeitend
 
 Chosen: **Deutsch als Primärsprache** (`MessageResources.properties`), weil die Zielgruppe deutschsprachig ist und eine englische Primärsprache nur Übersetzungsaufwand ohne Mehrwert erzeugen würde.
 
-Chosen: **ISO-8859-1-Encoding**, weil Struts 1.2 dieses Encoding für seine Message-Resources voraussetzt. Solange Struts aktiv im Einsatz ist, kann nicht auf UTF-8 gewechselt werden.
-
-Mit vollständiger Ablösung von Struts (→ ADR-0002) entfällt diese Einschränkung. Eine Migration der Bundles auf UTF-8 ist dann möglich und empfohlen.
+Chosen: **UTF-8-Encoding** (seit 2026-06-21, nach Abschluss der Struts-Migration → ADR-0002). Zuvor war ISO-8859-1 erzwungen, weil Struts 1.2 dieses Encoding für seine Message-Resources voraussetzt. Mit vollständiger Ablösung von Struts entfiel diese Einschränkung; die Bundles wurden auf UTF-8 umkodiert und `spring.messages.encoding` entsprechend gesetzt.
 
 ### Consequences
 
 * Good: deutsche Texte sind direkt lesbar, kein mentaler Übersetzungsschritt für das Entwicklungsteam
-* Bad: ISO-8859-1 ist durch Struts erzwungen — Tools und Editoren müssen das Encoding explizit angeben, sonst werden Umlaute korrumpiert (Details in AGENTS.md)
+* Good: UTF-8 — Umlaute und Sonderzeichen sind in allen Tools ohne Encoding-Konfiguration korrekt darstellbar
 * Neutral: Englische Texte in `MessageResources_en.properties` sind optional aber erwünscht; fehlende Keys fallen auf den deutschen Default zurück
 
 ## Bundle-Struktur

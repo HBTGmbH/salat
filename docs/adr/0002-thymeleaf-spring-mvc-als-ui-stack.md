@@ -24,13 +24,9 @@ Für Styling und Komponenten: Bootstrap 5 mit Tabler-Design-System als Overlay.
 
 * Good: kein separater Frontend-Build-Prozess (kein npm/webpack im CI)
 * Good: Spring Security und Session-Management funktionieren unverändert
-* Good: schrittweise Migration möglich — Struts/JSP und Thymeleaf koexistieren während der Übergangsphase
 * Bad: kein reaktives/SPA-Frontend ohne zusätzlichen Aufwand
 * Bad: HTMX für partielle Updates nötig, wenn clientseitige Interaktivität gefordert ist
-* Neutral: Legacy-Struts-Screens bleiben funktional, erhalten aber keine neuen Features mehr
 
 ## Migration
 
-- Neue Screens: immer Spring MVC + Thymeleaf
-- Legacy-Screens: opportunistische Migration bei signifikanten Änderungen
-- URL-Konvention Legacy: `/do/<ActionName>`; neue Controller: sprechende REST-ähnliche Pfade
+**Migration abgeschlossen (2026-06-21).** Die Struts-Schicht (Actions, JSPs, Viewhelper, struts-config.xml) wurde vollständig entfernt. Die URL-Konvention `/do/<ActionName>` existiert nicht mehr; alle Endpunkte folgen REST-ähnlichen Pfaden.
