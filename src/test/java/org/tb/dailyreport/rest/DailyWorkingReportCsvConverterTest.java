@@ -136,7 +136,7 @@ class DailyWorkingReportCsvConverterTest {
         when(authorizedEmployee.getSign()).thenReturn(employee.getSign());
 
         // when
-        var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8));
+        var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)).reports();
 
         // then
         assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
