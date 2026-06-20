@@ -24,11 +24,6 @@
 
 	<form-beans>
 
-		<form-bean name="addDailyReportForm" type="org.tb.dailyreport.action.AddDailyReportForm" />
-		<form-bean name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixForm" />
-		<form-bean name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportForm" />
-		<form-bean name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportForm" />
-
 	</form-beans>
 
 	<!-- ========================================= Global Exception Definitions -->
@@ -54,69 +49,6 @@
 	<!-- =========================================== Action Mapping Definitions -->
 
 	<action-mappings>
-
-		<!-- legacy redirect -->
-		<action path="/ShowWelcome" type="org.tb.common.struts.RedirectAction">
-			<forward name="redirect" path="/welcome" redirect="true" />
-		</action>
-
-		<!-- daily reports -->
-		<action path="/CreateDailyReport" name="addDailyReportForm"
-			type="org.tb.dailyreport.action.CreateDailyReportAction">
-			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/StoreDailyReport" input="/dailyreport/addDailyReport.jsp" validate="true"
-			name="addDailyReportForm" type="org.tb.dailyreport.action.StoreDailyReportAction">
-			<forward name="success" path="/dailyreport/addDailyReport.jsp" redirect="true" />
-			<forward name="addDaily" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="showDaily" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
-			<forward name="cancel" path="/welcome" redirect="true" />
-			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/UpdateDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
-			name="updateDailyReportForm" type="org.tb.dailyreport.action.UpdateDailyReportAction">
-      <forward name="success" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
-			<forward name="cancel" path="/welcome" redirect="true" />
-			<forward name="reset" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/EditDailyReport" name="addDailyReportForm"
-			type="org.tb.dailyreport.action.EditDailyReportAction">
-			<forward name="success" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/DeleteTimereportFromDailyDisplay" input="/dailyreport/showDailyReport.jsp"
-			name="showDailyReportForm" type="org.tb.dailyreport.action.DeleteTimereportFromDailyDisplayAction">
-			<forward name="success" path="/do/ShowDailyReport?task=refreshTimereports" redirect="true" />
-			<forward name="error" path="/error.jsp" />
-		</action>
-
-		<action path="/ShowDailyReport" input="/dailyreport/showDailyReport.jsp" validate="true"
-			name="showDailyReportForm" type="org.tb.dailyreport.action.ShowDailyReportAction">
-			<forward name="success" path="/dailyreport/showDailyReport.jsp" />
-			<forward name="error" path="/error.jsp" />
-			<forward name="newreport" path="/dailyreport/addDailyReport.jsp" />
-			<forward name="backtomenu" path="/welcome" redirect="true" />
-			<forward name="print" path="/dailyreport/showDailyReportPrint.jsp" />
-		</action>
-
-		<!-- ShowOvertime removed (migrated to Spring MVC at /dailyreport/overtime) -->
-
-		<!-- ShowRelease removed (migrated to Spring MVC at /release and /acceptance) -->
-
-		<action path="/ShowMatrix" input="/dailyreport/showMatrix.jsp" validate="true"
-			name="showMatrixForm" type="org.tb.dailyreport.action.ShowMatrixAction">
-			<forward name="success" path="/dailyreport/showMatrix.jsp" />
-			<forward name="error" path="/error.jsp" />
-			<forward name="backtomenu" path="/welcome" redirect="true" />
-			<forward name="print" path="/dailyreport/showMatrixPrint.jsp" />
-		</action>
 
 	</action-mappings>
 
