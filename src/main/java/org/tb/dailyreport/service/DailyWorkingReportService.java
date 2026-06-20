@@ -106,7 +106,10 @@ public class DailyWorkingReportService {
     }
 
     private static ImportReport importReport(List<ImportReport.DayResult> days) {
-        return new ImportReport(days.stream().sorted(Comparator.comparing(ImportReport.DayResult::date)).toList());
+        return new ImportReport(days.stream()
+            .filter(ImportReport.DayResult::hasChanges)
+            .sorted(Comparator.comparing(ImportReport.DayResult::date))
+            .toList());
     }
 
     private Map<Long, List<DailyWorkingReportData>> groupByContractId(List<DailyWorkingReportData> reports) {
