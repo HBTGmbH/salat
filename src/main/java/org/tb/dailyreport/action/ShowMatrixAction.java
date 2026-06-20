@@ -114,11 +114,14 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
 
         // TODO: remove Struts CSV import — replaced by /dailyreport/csv (DailyReportCsvController), follow-up to #720
         if("importCsv".equals(task) && reportForm.getImportFile() != null) {
-            var reports = dailyWorkingReportCsvConverter.read(reportForm.getImportFile().getInputStream());
-            if("replace".equals(reportForm.getImportMode())){
-                dailyWorkingReportService.updateReports(reports);
-            } else if("add".equals(reportForm.getImportMode())){
-                dailyWorkingReportService.createReports(reports);
+            var csvContract = getEmployeeContractFromRequest(request);
+            if (csvContract != null) {
+                var reports = dailyWorkingReportCsvConverter.read(reportForm.getImportFile().getInputStream());
+                if("replace".equals(reportForm.getImportMode())){
+                    dailyWorkingReportService.updateReports(reports, csvContract.getId());
+                } else if("add".equals(reportForm.getImportMode())){
+                    dailyWorkingReportService.createReports(reports, csvContract.getId());
+                }
             }
         }
 

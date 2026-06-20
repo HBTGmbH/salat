@@ -27,7 +27,6 @@ import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.rest.DailyReportData;
 import org.tb.dailyreport.rest.DailyWorkingReportData;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
@@ -44,7 +43,6 @@ public class DailyWorkingReportService {
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
     private final TimereportDAO timereportDAO;
-    private final AuthorizedEmployee authorizedEmployee;
 
     @Transactional(readOnly = true)
     public List<DailyWorkingReportData> getReportsForMonth(YearMonth month, long employeeContractId) {
@@ -71,23 +69,22 @@ public class DailyWorkingReportService {
         return builder.build();
     }
 
-    public ImportReport createReports(List<DailyWorkingReportData> reports)
+    public ImportReport createReports(List<DailyWorkingReportData> reports, long contractId)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return new ImportReport(reports.stream().map(r -> doCreateReport(r, false)).toList());
+        return new ImportReport(reports.stream().map(r -> doCreateReport(r, false, contractId)).toList());
     }
 
-    public ImportReport updateReports(List<DailyWorkingReportData> reports)
+    public ImportReport updateReports(List<DailyWorkingReportData> reports, long contractId)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return new ImportReport(reports.stream().map(r -> doCreateReport(r, true)).toList());
+        return new ImportReport(reports.stream().map(r -> doCreateReport(r, true, contractId)).toList());
     }
 
-    private ImportReport.DayResult doCreateReport(DailyWorkingReportData report, boolean upsert)
+    private ImportReport.DayResult doCreateReport(DailyWorkingReportData report, boolean upsert, long contractId)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        var employeecontract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(
-            authorizedEmployee.getEmployeeId(), report.getDate());
+        var employeecontract = employeecontractDAO.getEmployeecontractById(contractId);
         if(employeecontract == null) {
             throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
         }

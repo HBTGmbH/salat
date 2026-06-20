@@ -75,17 +75,19 @@ public class DailyReportCsvController {
     public String importCsv(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "add") String importMode,
+            @RequestParam(required = false) Long employeeContractId,
             RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("toastError",
                 messages.getMessage("main.dailyreport.csv.import.error.file.required.text"));
             return "redirect:/dailyreport/csv";
         }
+        long ecId = employeeContractId != null ? employeeContractId : effectiveContractId();
         try {
             var reports = csvConverter.read(file.getInputStream());
             var importReport = "replace".equals(importMode)
-                ? dailyWorkingReportService.updateReports(reports)
-                : dailyWorkingReportService.createReports(reports);
+                ? dailyWorkingReportService.updateReports(reports, ecId)
+                : dailyWorkingReportService.createReports(reports, ecId);
             redirectAttributes.addFlashAttribute("importReport", importReport);
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.dailyreport.csv.import.success.text"));

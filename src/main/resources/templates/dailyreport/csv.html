@@ -20,6 +20,15 @@
             <p class="text-muted" th:text="#{main.dailyreport.csv.import.desc.text}">
               Upload a CSV file to load working day data and time bookings.
             </p>
+            <div class="mb-3" th:if="${#lists.size(employeecontracts) > 1}">
+              <label class="form-label" th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</label>
+              <select class="form-select tomselect" name="employeeContractId">
+                <option th:each="ec : ${employeecontracts}"
+                        th:value="${ec.id}"
+                        th:text="${ec.employee.name}"
+                        th:selected="${ec.id == selectedContractId}"></option>
+              </select>
+            </div>
             <div class="mb-3">
               <label class="form-label required" th:text="#{main.dailyreport.csv.import.file.label.text}">CSV file</label>
               <input type="file" name="file" class="form-control" accept=".csv" required>
