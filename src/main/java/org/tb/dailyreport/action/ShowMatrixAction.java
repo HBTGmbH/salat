@@ -116,7 +116,7 @@ public class ShowMatrixAction extends DailyReportAction<ShowMatrixForm> {
         if("importCsv".equals(task) && reportForm.getImportFile() != null) {
             var csvContract = getEmployeeContractFromRequest(request);
             if (csvContract != null) {
-                var reports = dailyWorkingReportCsvConverter.read(reportForm.getImportFile().getInputStream());
+                var reports = dailyWorkingReportCsvConverter.read(reportForm.getImportFile().getInputStream()).reports();
                 if("replace".equals(reportForm.getImportMode())){
                     dailyWorkingReportService.updateReports(reports, csvContract.getId());
                 } else if("add".equals(reportForm.getImportMode())){
