@@ -12,13 +12,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.tb.common.web.LoginSignProvider;
 import org.tb.common.web.UiState;
 import org.tb.common.web.UiStateKey;
 import org.tb.common.web.UiStateKeyRegistry;
 
+@Component
 @RequiredArgsConstructor
+@Order(102)
 public class UiStateFilter extends OncePerRequestFilter {
 
     static final String COOKIE_NAME = "salat_uistate";

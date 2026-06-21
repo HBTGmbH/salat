@@ -7,8 +7,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
+@Order(99)
 public class PerformanceLoggingFilter extends HttpFilter {
 
     @Override

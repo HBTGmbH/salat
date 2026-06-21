@@ -14,9 +14,13 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @RequiredArgsConstructor
+@Component
+@Order(101)
 public class LoggingFilter extends HttpFilter {
 
   private final Set<MdcDataSource> mdcDataSources;
