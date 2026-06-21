@@ -6,6 +6,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,19 +64,24 @@ public class UiStateFilter extends OncePerRequestFilter {
     }
 
     private String buildCookieValue(Map<UiStateKey, String> all) {
-        return all.entrySet().stream()
+        String plain = all.entrySet().stream()
             .map(e -> e.getKey().getName() + "=" + e.getValue())
             .collect(Collectors.joining("&"));
+        return Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(plain.getBytes(StandardCharsets.UTF_8));
     }
 
     private Map<String, String> parseCookieValue(String raw) {
         Map<String, String> result = new HashMap<>();
-        for (String pair : raw.split("&")) {
-            int idx = pair.indexOf('=');
-            if (idx > 0) {
-                result.put(pair.substring(0, idx), pair.substring(idx + 1));
+        try {
+            String plain = new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8);
+            for (String pair : plain.split("&")) {
+                int idx = pair.indexOf('=');
+                if (idx > 0) {
+                    result.put(pair.substring(0, idx), pair.substring(idx + 1));
+                }
             }
-        }
+        } catch (IllegalArgumentException ignored) {}
         return result;
     }
 
