@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.tb.common.web.LoginSignProvider;
 import org.tb.common.web.UiState;
 import org.tb.common.web.UiStateKey;
 import org.tb.common.web.UiStateKeyRegistry;
@@ -21,9 +22,11 @@ import org.tb.common.web.UiStateKeyRegistry;
 public class UiStateFilter extends OncePerRequestFilter {
 
     static final String COOKIE_NAME = "salat_uistate";
+    static final String COOKIE_KEY_LOGIN_SIGN = "_ls";
 
     private final UiState uiState;
     private final UiStateKeyRegistry uiStateKeyRegistry;
+    private final LoginSignProvider loginSignProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
@@ -37,18 +40,25 @@ public class UiStateFilter extends OncePerRequestFilter {
             }
         });
 
-        // Phase 2: fill still-unset slots from the merged cookie
+        // Phase 2: fill still-unset slots from the merged cookie, but only when the stored
+        // login sign matches the current effective login sign (guards against stale state
+        // left behind by a previous user or an impersonation switch).
+        String effectiveLoginSign = loginSignProvider.getEffectiveLoginSign();
         Cookie[] cookies = req.getCookies();
         if (cookies != null) {
             for (Cookie c : cookies) {
                 if (COOKIE_NAME.equals(c.getName())) {
-                    parseCookieValue(c.getValue()).forEach((keyName, value) ->
-                        uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
-                            if (uiState.getValue(key) == null) {
-                                uiState.setValue(key, value);
-                            }
-                        })
-                    );
+                    Map<String, String> parsed = parseCookieValue(c.getValue());
+                    String storedLoginSign = parsed.get(COOKIE_KEY_LOGIN_SIGN);
+                    if (effectiveLoginSign != null && effectiveLoginSign.equals(storedLoginSign)) {
+                        parsed.forEach((keyName, value) ->
+                            uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
+                                if (uiState.getValue(key) == null) {
+                                    uiState.setValue(key, value);
+                                }
+                            })
+                        );
+                    }
                     break;
                 }
             }
@@ -57,16 +67,19 @@ public class UiStateFilter extends OncePerRequestFilter {
         // Write the merged cookie with the full current state
         Map<UiStateKey, String> all = uiState.getAll();
         if (!all.isEmpty()) {
-            writeCookie(res, buildCookieValue(uiState.getAll()));
+            writeCookie(res, buildCookieValue(all, effectiveLoginSign));
         }
 
         chain.doFilter(req, res);
     }
 
-    private String buildCookieValue(Map<UiStateKey, String> all) {
-        String plain = all.entrySet().stream()
+    private String buildCookieValue(Map<UiStateKey, String> all, String loginSign) {
+        String statePart = all.entrySet().stream()
             .map(e -> e.getKey().getName() + "=" + e.getValue())
             .collect(Collectors.joining("&"));
+        String plain = loginSign != null
+            ? COOKIE_KEY_LOGIN_SIGN + "=" + loginSign + "&" + statePart
+            : statePart;
         return Base64.getUrlEncoder().withoutPadding()
             .encodeToString(plain.getBytes(StandardCharsets.UTF_8));
     }
