@@ -36,6 +36,24 @@ See also README.md
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
 
+## Legacy URL Redirects
+
+When a URL changes (controller rename, module move, path restructuring), register a permanent redirect in `org.tb.common.configuration.LegacyUrlRedirectConfig` so that bookmarks, history, and external links continue to work.
+
+```java
+// in LegacyUrlRedirectConfig.addViewControllers():
+redirect(registry, "/old-path", "/new-path");
+```
+
+- Every entry is a **301 Moved Permanently** — browsers and crawlers update their records.
+- Add one line per changed URL; do not remove old entries (they are the permanent record of URL history).
+
+**Known redirects**
+
+| Old URL | New URL | Since |
+|---|---|---|
+| `/welcome` | `/dailyreport/dashboard` | #724 |
+
 ## Testing and Quality
 - Preserve unit, integration, and UI tests across module boundaries.
 - Prefer testing observable behavior at module boundaries over implementation details.
