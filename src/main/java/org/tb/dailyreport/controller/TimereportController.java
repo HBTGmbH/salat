@@ -436,8 +436,8 @@ public class TimereportController {
     }
 
     private long effectiveContractId() {
-        Long fromCookie = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
-        if (fromCookie != null && fromCookie > 0) return fromCookie;
+        Long fromUiState = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
+        if (fromUiState != null && fromUiState > 0) return fromUiState;
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
             .map(c -> c.getId())
