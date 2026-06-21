@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="sectionTitle=#{error.page.section.title}">
+<section layout:fragment="content">
+
+  <!-- Friendly error card -->
+  <div class="card mb-4">
+    <div class="card-body text-center py-5">
+      <div class="mb-3">
+        <span class="display-4 fw-bold text-danger" th:text="${errorInfo.status > 0 ? errorInfo.status : '?'}">500</span>
+        <span class="ms-3 fs-3 text-muted align-middle" th:text="${errorInfo.error}">Internal Server Error</span>
+      </div>
+      <p class="text-secondary fs-5 mb-4" th:text="#{error.page.message}">
+        Ein unerwarteter Fehler ist aufgetreten.
+      </p>
+      <div class="btn-list justify-content-center">
+        <a href="javascript:history.back()" class="btn btn-secondary">
+          <i class="ti ti-arrow-left me-1"></i>
+          <span th:text="#{error.page.back.button}">Zurück</span>
+        </a>
+        <a th:href="@{/dailyreport/dashboard}" class="btn btn-primary">
+          <i class="ti ti-home me-1"></i>
+          <span th:text="#{error.page.back.dashboard}">Zum Dashboard</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technical details card -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3 class="card-title mb-0">
+        <i class="ti ti-info-circle me-2 text-muted"></i>
+        <span th:text="#{error.page.technical.details}">Technische Details</span>
+      </h3>
+      <button class="btn btn-sm btn-outline-secondary" id="copyBtn" onclick="copyErrorDetails()">
+        <i class="ti ti-clipboard me-1"></i>
+        <span id="copyBtnLabel" th:text="#{error.page.copy.button}">Fehlerdetails kopieren</span>
+      </button>
+    </div>
+    <div class="card-body p-0">
+
+      <!-- Error details -->
+      <details open>
+        <summary class="px-4 py-3 border-bottom fw-semibold cursor-pointer list-group-item list-group-item-action">
+          <i class="ti ti-bug me-2 text-danger"></i>
+          <span th:text="#{error.page.section.error}">Fehler</span>
+        </summary>
+        <div class="table-responsive">
+          <table class="table table-sm table-borderless mb-0">
+            <tbody>
+              <tr>
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap w-25" style="min-width:160px" th:text="#{error.page.label.status}">HTTP-Status</td>
+                <td class="py-2 fw-semibold">
+                  <span class="badge bg-danger-lt" th:text="${errorInfo.status}">500</span>
+                  <span class="ms-2" th:text="${errorInfo.error}"></span>
+                </td>
+              </tr>
+              <tr th:if="${not #strings.isEmpty(errorInfo.exception)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.exception}">Ausnahme</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.exception}"></td>
+              </tr>
+              <tr th:if="${not #strings.isEmpty(errorInfo.message)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.message}">Fehlermeldung</td>
+                <td class="py-2" th:text="${errorInfo.message}"></td>
+              </tr>
+              <tr>
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.timestamp}">Zeitstempel</td>
+                <td class="py-2 font-monospace small" th:text="${#dates.format(errorInfo.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <!-- Request details -->
+      <details open>
+        <summary class="px-4 py-3 border-top border-bottom fw-semibold cursor-pointer list-group-item list-group-item-action">
+          <i class="ti ti-world me-2 text-blue"></i>
+          <span th:text="#{error.page.section.request}">Anfrage</span>
+        </summary>
+        <div class="table-responsive">
+          <table class="table table-sm table-borderless mb-0">
+            <tbody>
+              <tr th:if="${not #strings.isEmpty(errorInfo.requestMethod)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap w-25" style="min-width:160px" th:text="#{error.page.label.method}">HTTP-Methode</td>
+                <td class="py-2">
+                  <span class="badge bg-blue-lt font-monospace" th:text="${errorInfo.requestMethod}">GET</span>
+                </td>
+              </tr>
+              <tr th:if="${not #strings.isEmpty(errorInfo.requestPath)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.path}">Anfrage-URL</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.requestPath}"></td>
+              </tr>
+              <tr th:if="${not #strings.isEmpty(errorInfo.queryString)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.query}">Query-String</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.queryString}"></td>
+              </tr>
+              <tr th:if="${not #strings.isEmpty(errorInfo.contentType)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.content.type}">Content-Type</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.contentType}"></td>
+              </tr>
+              <tr th:if="${not #maps.isEmpty(errorInfo.parameters)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap align-top" th:text="#{error.page.label.params}">Parameter</td>
+                <td class="py-2">
+                  <div th:each="entry : ${errorInfo.parameters}" class="font-monospace small">
+                    <span class="text-secondary" th:text="${entry.key}"></span>=<span th:text="${entry.value}"></span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <!-- User & session details -->
+      <details open>
+        <summary class="px-4 py-3 border-top border-bottom fw-semibold cursor-pointer list-group-item list-group-item-action">
+          <i class="ti ti-user me-2 text-green"></i>
+          <span th:text="#{error.page.section.user}">Benutzer &amp; Sitzung</span>
+        </summary>
+        <div class="table-responsive">
+          <table class="table table-sm table-borderless mb-0">
+            <tbody>
+              <tr th:if="${errorInfo.authenticated}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap w-25" style="min-width:160px" th:text="#{error.page.label.login}">Login</td>
+                <td class="py-2 font-monospace" th:text="${errorInfo.loginSign}"></td>
+              </tr>
+              <tr th:if="${errorInfo.authenticated and not #strings.isEmpty(errorInfo.effectiveLoginSign) and not errorInfo.effectiveLoginSign.equals(errorInfo.loginSign)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.impersonate}">Impersoniert als</td>
+                <td class="py-2 font-monospace" th:text="${errorInfo.effectiveLoginSign}"></td>
+              </tr>
+              <tr th:if="${errorInfo.authenticated and not #strings.isEmpty(errorInfo.loginStatus)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.role}">Rolle</td>
+                <td class="py-2">
+                  <span class="badge bg-purple-lt" th:text="#{${'main.employee.status.' + errorInfo.loginStatus}}"></span>
+                </td>
+              </tr>
+              <tr th:if="${not #strings.isEmpty(errorInfo.employeeName)}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.employee}">Mitarbeiter</td>
+                <td class="py-2">
+                  <span th:text="${errorInfo.employeeName}"></span>
+                  <span class="text-muted ms-2 small" th:if="${not #strings.isEmpty(errorInfo.employeeSign)}"
+                        th:text="'(' + errorInfo.employeeSign + ', id: ' + errorInfo.employeeId + ')'"></span>
+                </td>
+              </tr>
+              <tr th:if="${not errorInfo.authenticated}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.login}">Login</td>
+                <td class="py-2 text-secondary"><em>nicht angemeldet</em></td>
+              </tr>
+              <tr th:if="${errorInfo.selectedContractId != null}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.contract}">Ausgewählter Vertrag</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedContractId}"></td>
+              </tr>
+              <tr th:if="${errorInfo.selectedCustomerId != null}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.customer}">Ausgewählter Kunde</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedCustomerId}"></td>
+              </tr>
+              <tr th:if="${errorInfo.selectedOrderId != null}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.order}">Ausgewählter Auftrag</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedOrderId}"></td>
+              </tr>
+              <tr th:if="${errorInfo.selectedSuborderId != null}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.suborder}">Ausgewählter Unterauftrag</td>
+                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedSuborderId}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <!-- Stack trace -->
+      <details th:if="${not #strings.isEmpty(errorInfo.trace)}">
+        <summary class="px-4 py-3 border-top fw-semibold cursor-pointer list-group-item list-group-item-action">
+          <i class="ti ti-stack me-2 text-orange"></i>
+          <span th:text="#{error.page.stacktrace}">Stacktrace</span>
+        </summary>
+        <div class="px-4 py-3 border-top">
+          <pre class="bg-dark text-white p-3 rounded small overflow-auto mb-0" style="max-height:400px" th:text="${errorInfo.trace}"></pre>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <!-- Hidden text for clipboard copy -->
+  <pre id="error-details-text" style="display:none" th:text="${errorDetailsText}"></pre>
+
+  <th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+      const copySuccessLabel = /*[[#{error.page.copy.success}]]*/ 'Kopiert!';
+      const copyDefaultLabel = /*[[#{error.page.copy.button}]]*/ 'Fehlerdetails kopieren';
+
+      function copyErrorDetails() {
+        const text = document.getElementById('error-details-text').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById('copyBtnLabel');
+          btn.textContent = copySuccessLabel;
+          setTimeout(() => { btn.textContent = copyDefaultLabel; }, 2000);
+        });
+      }
+    </script>
+  </th:block>
+
+</section>
+</html>
