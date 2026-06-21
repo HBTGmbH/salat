@@ -11,7 +11,7 @@ import org.tb.common.filter.LoggingFilter.MdcDataSource;
 import org.tb.common.filter.PerformanceLoggingFilter;
 import org.tb.common.filter.UiStateFilter;
 import org.tb.common.web.UiState;
-import org.tb.common.web.UiStateKey;
+import org.tb.common.web.UiStateKeyRegistry;
 
 @Configuration
 @RequiredArgsConstructor
@@ -19,7 +19,7 @@ public class HttpFilterConfiguration {
 
     private final Set<MdcDataSource> mdcDataSources;
     private final UiState uiState;
-    private final UiStateKey uiStateKey;
+    private final UiStateKeyRegistry uiStateKeyRegistry;
 
     @Bean
     public FilterRegistrationBean<PerformanceLoggingFilter> performanceLoggingFilter(){
@@ -52,7 +52,7 @@ public class HttpFilterConfiguration {
     public FilterRegistrationBean<UiStateFilter> uiStateFilter() {
         var registrationBean = new FilterRegistrationBean<UiStateFilter>();
         registrationBean.setOrder(103);
-        registrationBean.setFilter(new UiStateFilter(uiState, uiStateKey));
+        registrationBean.setFilter(new UiStateFilter(uiState, uiStateKeyRegistry));
         registrationBean.addUrlPatterns("/*");
         return registrationBean;
     }
