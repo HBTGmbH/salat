@@ -1,4 +1,4 @@
-package org.tb.management.controller;
+package org.tb.dailyreport.controller;
 
 import static org.tb.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
 import static org.tb.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
@@ -67,9 +67,9 @@ public class MyAccountsController {
         var yearEnd = LocalDate.of(currentYear, 12, 31);
 
         model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.my.accounts.title"));
-        model.addAttribute("section", "management");
+        model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "my-accounts");
-        model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.management.text"));
+        model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
 
         // --- Tab 1: Working time account ---
         populateWorkingTimeTab(model, contract, today, currentYear);
@@ -80,7 +80,7 @@ public class MyAccountsController {
         // --- Tab 3: Training ---
         populateTrainingTab(model, contract, today, yearStart);
 
-        return "management/my-accounts";
+        return "dailyreport/my-accounts";
     }
 
     private void populateWorkingTimeTab(Model model, Employeecontract contract, LocalDate today, int currentYear) {
