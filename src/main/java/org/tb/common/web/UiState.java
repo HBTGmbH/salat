@@ -11,17 +11,22 @@ import org.springframework.web.context.annotation.RequestScope;
 @RequestScope(proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class UiState {
 
-    private final Map<UiStateKey, Long> values = new HashMap<>();
+    private final Map<UiStateKey, String> values = new HashMap<>();
 
-    public Long getLong(UiStateKey key) {
+    public String getValue(UiStateKey key) {
         return values.get(key);
     }
 
-    public void setLong(UiStateKey key, Long value) {
-        values.put(key, value);
+    public Long getLongValue(UiStateKey key) {
+        String raw = values.get(key);
+        return raw != null ? Long.parseLong(raw) : null;
     }
 
-    public Map<UiStateKey, Long> getAll() {
+    public void setLong(UiStateKey key, Long value) {
+        values.put(key, String.valueOf(value));
+    }
+
+    public Map<UiStateKey, String> getAll() {
         return Collections.unmodifiableMap(values);
     }
 }
