@@ -100,7 +100,7 @@
 
     <!-- Recalculate — only shown when stored static overtime is stale -->
     <form th:if="${@authorizedUser.manager and overtimeMismatch != null}"
-          method="post" th:action="@{/dailyreport/overtime/correct}" class="card">
+          method="post" th:action="@{/dailyreport/overtime/correct(employeeContractId=${selectedContractId})}" class="card">
       <div class="card-body border-bottom pb-3 mb-3">
         <div class="text-muted small mb-1" th:text="#{main.overtime.mismatch.text}"></div>
         <div class="fw-semibold"

@@ -101,6 +101,7 @@ class UiStateFilterTest {
 
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.setCookies(new Cookie(COOKIE_NAME, encode("_ls=alice&contract=42")));
+        req.addParameter(PARAM, "99"); // request param overrides cookie → dirty = true
         MockHttpServletResponse res = new MockHttpServletResponse();
 
         filter.doFilter(req, res, mock(FilterChain.class));
@@ -110,7 +111,20 @@ class UiStateFilterTest {
         String cookieValue = setCookie.split(";")[0].split("=", 2)[1];
         String decoded = new String(Base64.getUrlDecoder().decode(cookieValue), StandardCharsets.UTF_8);
         assertThat(decoded).contains(COOKIE_KEY_LOGIN_SIGN + "=alice");
-        assertThat(decoded).contains("contract=42");
+        assertThat(decoded).contains("contract=99");
+    }
+
+    @Test
+    void noCookieWrittenWhenStateUnchanged() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode("_ls=alice&contract=42")));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, mock(FilterChain.class));
+
+        assertThat(res.getHeader("Set-Cookie")).isNull();
     }
 
     @Test
@@ -125,6 +139,37 @@ class UiStateFilterTest {
         filter.doFilter(req, res, mock(FilterChain.class));
 
         assertThat(uiState.getValue(KEY)).isEqualTo("99");
+    }
+
+    @Test
+    void uiStateValuesExposedAsFallbackRequestParameters() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode("_ls=alice&contract=42")));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        var seenParam = new String[1];
+        filter.doFilter(req, res, (chainReq, chainRes) ->
+            seenParam[0] = ((HttpServletRequest) chainReq).getParameter(PARAM));
+
+        assertThat(seenParam[0]).isEqualTo("42");
+    }
+
+    @Test
+    void explicitRequestParamNotOverriddenByUiStateFallback() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addParameter(PARAM, "77");
+        req.setCookies(new Cookie(COOKIE_NAME, encode("_ls=alice&contract=42")));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        var seenParam = new String[1];
+        filter.doFilter(req, res, (chainReq, chainRes) ->
+            seenParam[0] = ((HttpServletRequest) chainReq).getParameter(PARAM));
+
+        assertThat(seenParam[0]).isEqualTo("77");
     }
 
     private static String encode(String plain) {

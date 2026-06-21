@@ -23,10 +23,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
-import org.tb.common.web.UiState;
-import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
@@ -57,11 +56,10 @@ public class MyAccountsController {
     private final MessageSourceAccessor messageSourceAccessor;
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
-    private final UiState uiState;
 
     @GetMapping
-    public String show(HttpSession session, Model model) {
-        var contract = currentContract();
+    public String show(@RequestParam(required = false) Long employeeContractId, HttpSession session, Model model) {
+        var contract = currentContract(employeeContractId);
         var today = today();
         var currentYear = today.getYear();
         var yearStart = LocalDate.of(currentYear, 1, 1);
@@ -315,10 +313,9 @@ public class MyAccountsController {
         return timereport.isTraining() || COMPLETE_ORDER_SIGN_TRAINING.equals(timereport.getCompleteOrderSign());
     }
 
-    private Employeecontract currentContract() {
-        Long contractId = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
-        if (contractId != null && contractId > 0) {
-            var contract = employeecontractService.getEmployeecontractById(contractId);
+    private Employeecontract currentContract(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) {
+            var contract = employeecontractService.getEmployeecontractById(employeeContractId);
             if (contract != null) return contract;
         }
         var loginEmployee = employeeService.getLoginEmployee();

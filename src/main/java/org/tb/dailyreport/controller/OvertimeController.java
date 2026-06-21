@@ -4,6 +4,7 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,10 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
-import org.tb.common.web.UiState;
-import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.employee.domain.Employeecontract;
@@ -32,12 +32,11 @@ public class OvertimeController {
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
-    private final UiState uiState;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public String show(Model model) {
-        long ecId = effectiveContractId();
+    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
+        long ecId = effectiveContractId(employeeContractId);
         var contracts = employeecontractService
             .getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         OvertimeReport report = ecId > 0
@@ -79,8 +78,8 @@ public class OvertimeController {
 
     @PostMapping("/correct")
     @PreAuthorize("hasRole('MANAGER')")
-    public String correctOvertime(RedirectAttributes redirectAttributes) {
-        long ecId = effectiveContractId();
+    public String correctOvertime(@RequestParam(required = false) Long employeeContractId, RedirectAttributes redirectAttributes) {
+        long ecId = effectiveContractId(employeeContractId);
         if (ecId > 0) {
             overtimeService.updateOvertimeStatic(ecId);
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -89,9 +88,10 @@ public class OvertimeController {
         return "redirect:/dailyreport/overtime";
     }
 
-    private long effectiveContractId() {
-        Long fromUiState = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
-        if (fromUiState != null && fromUiState > 0) return fromUiState;
+    private long effectiveContractId(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) {
+            return employeeContractId;
+        }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
             .map(Employeecontract::getId)
