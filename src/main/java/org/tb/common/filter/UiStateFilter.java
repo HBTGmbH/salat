@@ -36,15 +36,7 @@ public class UiStateFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
             FilterChain chain) throws ServletException, IOException {
 
-        // Phase 1: explicit request params take precedence
-        uiStateKeyRegistry.getParamToKey().forEach((param, key) -> {
-            String raw = req.getParameter(param);
-            if (raw != null && !raw.isBlank()) {
-                uiState.setValue(key, raw);
-            }
-        });
-
-        // Phase 2: fill still-unset slots from the merged cookie, but only when the stored
+        // Phase 1: fill slots from the cookie, but only when the stored
         // login sign matches the current effective login sign (guards against stale state
         // left behind by a previous user or an impersonation switch).
         String effectiveLoginSign = loginSignProvider.getEffectiveLoginSign();
@@ -57,9 +49,7 @@ public class UiStateFilter extends OncePerRequestFilter {
                     if (effectiveLoginSign != null && effectiveLoginSign.equals(storedLoginSign)) {
                         parsed.forEach((keyName, value) ->
                             uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
-                                if (uiState.getValue(key) == null) {
-                                    uiState.setValue(key, value);
-                                }
+                                uiState.setValue(key, value);
                             })
                         );
                     }
@@ -68,9 +58,20 @@ public class UiStateFilter extends OncePerRequestFilter {
             }
         }
 
+        // Phase 2: explicit request params take precedence (override cookie value)
+        var dirty = false;
+        for(var entry : uiStateKeyRegistry.getParamToKey().entrySet()) {
+            var param = entry.getKey();
+            var key = entry.getValue();
+            String raw = req.getParameter(param);
+            if (raw != null && !raw.isBlank()) {
+                dirty |= uiState.setValue(key, raw);
+            }
+        }
+
         // Write the merged cookie with the full current state
         Map<UiStateKey, String> all = uiState.getAll();
-        if (!all.isEmpty()) {
+        if (!all.isEmpty() && dirty) {
             writeCookie(res, buildCookieValue(all, effectiveLoginSign));
         }
 
