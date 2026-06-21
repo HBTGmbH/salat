@@ -30,6 +30,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -58,6 +59,7 @@ public class DashboardController {
     private final PublicholidayService publicholidayService;
     private final MessageSourceAccessor messageSourceAccessor;
     private final AuthorizedUser authorizedUser;
+    private final AuthorizedEmployee authorizedEmployee;
     private final UiState uiState;
 
     @GetMapping
@@ -93,7 +95,7 @@ public class DashboardController {
         model.addAttribute("employeecontracts", employeecontracts);
         model.addAttribute("loginEmployees", loginEmployees);
         model.addAttribute("currentEmployeeContractId", employeecontract.getId());
-        model.addAttribute("currentLoginEmployeeId", employeecontract.getEmployee().getId());
+        model.addAttribute("currentLoginEmployeeId", authorizedEmployee.getEmployeeId());
         model.addAttribute("effectiveLoginSign", authorizedUser.getEffectiveLoginSign());
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
         model.addAttribute("warnings", warnings);
