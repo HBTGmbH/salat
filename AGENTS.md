@@ -276,6 +276,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 |---|---|
 | `auth` | Authentication, authorization beans and annotations |
 | `common` | Shared base classes, exceptions, events, utilities |
+| `error` | Custom error page (cross-cutting; may depend on auth, employee, common) |
 | `customer` | Customer management |
 | `dailyreport` | Time reports and working days |
 | `employee` | Employee and contract management |
