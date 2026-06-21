@@ -17,13 +17,14 @@ public class UiStateFilter extends OncePerRequestFilter {
     static final String COOKIE_PREFIX = "salat_";
 
     private final UiState uiState;
+    private final UiStateKey uiStateKey;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
             FilterChain chain) throws ServletException, IOException {
 
         // Phase 1: explicit request params take precedence — update cookie and bean
-        UiStateKey.PARAM_TO_KEY.forEach((param, key) -> {
+        uiStateKey.getParamToKey().forEach((param, key) -> {
             String raw = req.getParameter(param);
             if (raw != null) {
                 try {

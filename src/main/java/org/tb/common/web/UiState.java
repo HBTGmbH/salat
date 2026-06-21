@@ -1,5 +1,6 @@
 package org.tb.common.web;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.context.annotation.ScopedProxyMode;
@@ -20,7 +21,7 @@ public class UiState {
         values.put(key, value);
     }
 
-    public Long getSelectedContractId() {
-        return getLong(UiStateKey.SELECTED_CONTRACT);
+    public Map<String, Long> getAll() {
+        return Collections.unmodifiableMap(values);
     }
 }

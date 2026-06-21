@@ -150,21 +150,9 @@
                 <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.login}">Login</td>
                 <td class="py-2 text-secondary"><em>nicht angemeldet</em></td>
               </tr>
-              <tr th:if="${errorInfo.selectedContractId != null}">
-                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.contract}">Ausgewählter Vertrag</td>
-                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedContractId}"></td>
-              </tr>
-              <tr th:if="${errorInfo.selectedCustomerId != null}">
-                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.customer}">Ausgewählter Kunde</td>
-                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedCustomerId}"></td>
-              </tr>
-              <tr th:if="${errorInfo.selectedOrderId != null}">
-                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.order}">Ausgewählter Auftrag</td>
-                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedOrderId}"></td>
-              </tr>
-              <tr th:if="${errorInfo.selectedSuborderId != null}">
-                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.suborder}">Ausgewählter Unterauftrag</td>
-                <td class="py-2 font-monospace small" th:text="${errorInfo.selectedSuborderId}"></td>
+              <tr th:each="entry : ${errorInfo.uiState}" th:if="${entry.value != null}">
+                <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="${entry.key}"></td>
+                <td class="py-2 font-monospace small" th:text="${entry.value}"></td>
               </tr>
             </tbody>
           </table>

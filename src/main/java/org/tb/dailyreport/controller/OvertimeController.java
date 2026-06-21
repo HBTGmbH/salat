@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.web.UiState;
+import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.employee.domain.Employeecontract;
@@ -89,7 +90,7 @@ public class OvertimeController {
     }
 
     private long effectiveContractId() {
-        Long fromCookie = uiState.getSelectedContractId();
+        Long fromCookie = uiState.getLong(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
         if (fromCookie != null && fromCookie > 0) return fromCookie;
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
