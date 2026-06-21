@@ -143,7 +143,7 @@
                 <td class="py-2">
                   <span th:text="${errorInfo.employeeName}"></span>
                   <span class="text-muted ms-2 small" th:if="${not #strings.isEmpty(errorInfo.employeeSign)}"
-                        th:text="'(' + errorInfo.employeeSign + ', id: ' + errorInfo.employeeId + ')'"></span>
+                        th:text="${'(' + errorInfo.employeeSign + ', id: ' + errorInfo.employeeId + ')'}"></span>
                 </td>
               </tr>
               <tr th:if="${not errorInfo.authenticated}">
@@ -172,7 +172,7 @@
       </details>
 
       <!-- Stack trace -->
-      <details th:if="${not #strings.isEmpty(errorInfo.trace)}">
+      <details th:if="${not #strings.isEmpty(errorInfo.trace)}" open>
         <summary class="px-4 py-3 border-top fw-semibold cursor-pointer list-group-item list-group-item-action">
           <i class="ti ti-stack me-2 text-orange"></i>
           <span th:text="#{error.page.stacktrace}">Stacktrace</span>
