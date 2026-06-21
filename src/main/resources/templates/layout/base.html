@@ -59,7 +59,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <h1 class="navbar-brand navbar-brand-autodark">
-        <a th:href="@{/welcome}">
+        <a th:href="@{/dailyreport/dashboard}">
           <img th:src="@{/images/logo-salat-neu.png}" width="110" height="32" alt="SALAT" class="navbar-brand-image">
           SALAT
         </a>
@@ -76,10 +76,10 @@
             <div class="dropdown-menu" th:classappend="${section == 'dailyreport'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
-                  <a class="dropdown-item" th:href="@{/welcome}"
-                     th:classappend="${subSection == 'welcome'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.overview.text}">
-                    Übersicht
+                  <a class="dropdown-item" th:href="@{/dailyreport/dashboard}"
+                     th:classappend="${subSection == 'dashboard'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.dashboard.text}">
+                    Dashboard
                   </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}" th:text="#{main.general.mainmenu.newreport.text}">
                     Neue Buchung
