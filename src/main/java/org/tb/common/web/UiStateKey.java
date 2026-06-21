@@ -1,22 +1,13 @@
 package org.tb.common.web;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
+import lombok.Data;
 
-@Component
+/**
+ * A typed, named key for a slot in {@link UiState}.
+ * Module-specific constants are declared in the module's {@link UiStateKeyContributor}.
+ */
+@Data
 public class UiStateKey {
 
-    private final Map<String, String> paramToKey;
-
-    public UiStateKey(List<UiStateKeyContributor> contributors) {
-        this.paramToKey = contributors.stream()
-            .flatMap(c -> c.getParamToKeyMappings().entrySet().stream())
-            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    public Map<String, String> getParamToKey() {
-        return paramToKey;
-    }
+    private final String name;
 }
