@@ -28,3 +28,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0012](0012-archivierung-von-stammdaten.md) | Archivierung von Stammdaten: `hide`-Flag und Gültigkeitsspannen | Accepted | 2026-06-04 |
 | [0013](0013-kein-httpsession-in-neuen-controllern.md) | Kein direktes HttpSession-Zugriff in neuen Spring-MVC-Controllern | Accepted | 2026-06-10 |
 | [0014](0014-uistate-fuer-benutzerbezogenen-selektionszustand.md) | UiState für benutzerbezogenen Selektionszustand | Accepted | 2026-06-18 |
+| [0015](0015-error-modul-fuer-fehlerseite.md) | Eigenes `error`-Modul für die Fehlerseite | Accepted | 2026-06-21 |
