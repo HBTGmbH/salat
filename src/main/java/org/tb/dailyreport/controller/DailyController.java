@@ -24,14 +24,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
-import org.tb.common.web.UiState;
-import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.DailyService;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import java.time.Duration;
@@ -55,10 +54,10 @@ public class DailyController {
     private final EmployeeorderService employeeorderService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final UiState uiState;
 
     @GetMapping
     public String show(
+            @RequestParam(required = false) Long employeeContractId,
             @RequestParam(required = false) String mode,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Integer month,
@@ -67,7 +66,7 @@ public class DailyController {
 
         var today = today();
         var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
-        long ecId = effectiveContractId();
+        long ecId = effectiveContractId(employeeContractId);
 
         String effectiveMode = (mode != null && mode.equals("list")) ? "list" : "daily";
 
@@ -132,16 +131,17 @@ public class DailyController {
     @PostMapping("/workingday")
     @PreAuthorize("isAuthenticated()")
     public String saveWorkingday(
+            @RequestParam(required = false) Long employeeContractId,
             @ModelAttribute WorkingdayForm form,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model,
             RedirectAttributes redirectAttributes) {
-        long employeeContractId = effectiveContractId();
+        long effEmployeeContractId = effectiveContractId(employeeContractId);
         LocalDate date = form.getDate();
         try {
-            var contract = employeecontractService.getEmployeecontractById(employeeContractId);
-            Workingday workingday = workingdayService.getWorkingday(employeeContractId, date);
+            var contract = employeecontractService.getEmployeecontractById(effEmployeeContractId);
+            Workingday workingday = workingdayService.getWorkingday(effEmployeeContractId, date);
             if (workingday == null) {
                 workingday = new Workingday();
                 workingday.setEmployeecontract(contract);
@@ -164,7 +164,7 @@ public class DailyController {
             }
             workingdayService.upsertWorkingday(workingday);
             if ("true".equals(request.getHeader("HX-Request"))) {
-                var dailyData = dailyService.buildDailyView(date, employeeContractId);
+                var dailyData = dailyService.buildDailyView(date, effEmployeeContractId);
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
                 var updatedForm = new WorkingdayForm();
@@ -175,7 +175,7 @@ public class DailyController {
                 updatedForm.setBreakTime(dailyData.breakTime());
                 model.addAttribute("workingdayForm", updatedForm);
                 model.addAttribute("date", date);
-                model.addAttribute("selectedContractId", employeeContractId);
+                model.addAttribute("selectedContractId", effEmployeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
                 model.addAttribute("favorites", buildFavoriteViews());
@@ -188,7 +188,7 @@ public class DailyController {
                 .map(Object::toString).findFirst().orElse("Error");
             if ("true".equals(request.getHeader("HX-Request"))) {
                 response.setHeader("HX-Trigger", "{\"showError\":\"" + errMsg.replace("\"", "'") + "\"}");
-                var dailyData = dailyService.buildDailyView(date, employeeContractId);
+                var dailyData = dailyService.buildDailyView(date, effEmployeeContractId);
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
                 var updatedForm = new WorkingdayForm();
@@ -199,7 +199,7 @@ public class DailyController {
                 updatedForm.setBreakTime(dailyData.breakTime());
                 model.addAttribute("workingdayForm", updatedForm);
                 model.addAttribute("date", date);
-                model.addAttribute("selectedContractId", employeeContractId);
+                model.addAttribute("selectedContractId", effEmployeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
                 model.addAttribute("favorites", buildFavoriteViews());
@@ -277,12 +277,13 @@ public class DailyController {
     @PostMapping("/apply-favourite")
     @PreAuthorize("isAuthenticated()")
     public String applyFavourite(
+            @RequestParam(required = false) Long employeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model) {
-        long ecId = effectiveContractId();
+        long ecId = effectiveContractId(employeeContractId);
         try {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
             timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
@@ -313,10 +314,11 @@ public class DailyController {
     @PostMapping("/delete-favourite")
     @PreAuthorize("isAuthenticated()")
     public String deleteFavourite(
+            @RequestParam(required = false) Long employeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             Model model) {
-        long ecId = effectiveContractId();
+        long ecId = effectiveContractId(employeeContractId);
         try {
             favoriteService.deleteFavorite(favoriteId);
         } catch (Exception ex) {
@@ -356,13 +358,14 @@ public class DailyController {
         return new FavoriteView(f.getId(), label, f.getComment(), duration);
     }
 
-    private long effectiveContractId() {
-        Long fromUiState = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
-        if (fromUiState != null && fromUiState > 0) return fromUiState;
+    private long effectiveContractId(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) {
+            return employeeContractId;
+        }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
-            .map(c -> c.getId())
-            .orElse(-1L);
+                .map(Employeecontract::getId)
+                .orElse(-1L);
     }
 
     private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
@@ -400,10 +403,11 @@ public class DailyController {
     @PostMapping("/fill-not-worked")
     @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
+            @RequestParam(required = false) Long employeeContractId,
             @RequestParam Integer month,
             @RequestParam Integer year,
             RedirectAttributes redirectAttributes) {
-        long ecId = effectiveContractId();
+        long ecId = effectiveContractId(employeeContractId);
         try {
             matrixService.fillNotWorked(YearMonth.of(year, month), ecId);
             redirectAttributes.addFlashAttribute("toastSuccess",

@@ -36,6 +36,8 @@ public class UiStateFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
             FilterChain chain) throws ServletException, IOException {
 
+        var dirty = false;
+
         // Phase 1: fill slots from the cookie, but only when the stored
         // login sign matches the current effective login sign (guards against stale state
         // left behind by a previous user or an impersonation switch).
@@ -46,12 +48,16 @@ public class UiStateFilter extends OncePerRequestFilter {
                 if (COOKIE_NAME.equals(c.getName())) {
                     Map<String, String> parsed = parseCookieValue(c.getValue());
                     String storedLoginSign = parsed.get(COOKIE_KEY_LOGIN_SIGN);
-                    if (effectiveLoginSign != null && effectiveLoginSign.equals(storedLoginSign)) {
-                        parsed.forEach((keyName, value) ->
-                            uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
-                                uiState.setValue(key, value);
-                            })
-                        );
+                    if (effectiveLoginSign != null) {
+                        if(effectiveLoginSign.equals(storedLoginSign)) {
+                            parsed.forEach((keyName, value) ->
+                                    uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
+                                        uiState.setValue(key, value);
+                                    })
+                            );
+                        } else {
+                            dirty = true;
+                        }
                     }
                     break;
                 }
@@ -59,7 +65,6 @@ public class UiStateFilter extends OncePerRequestFilter {
         }
 
         // Phase 2: explicit request params take precedence (override cookie value)
-        var dirty = false;
         for(var entry : uiStateKeyRegistry.getParamToKey().entrySet()) {
             var param = entry.getKey();
             var key = entry.getValue();
@@ -75,7 +80,16 @@ public class UiStateFilter extends OncePerRequestFilter {
             writeCookie(res, buildCookieValue(all, effectiveLoginSign));
         }
 
-        chain.doFilter(req, res);
+        // Phase 3: expose UiState values as fallback request parameters
+        Map<String, String> fallbacks = new java.util.HashMap<>();
+        uiStateKeyRegistry.getParamToKey().forEach((paramName, key) -> {
+            String value = uiState.getValue(key);
+            if (value != null) fallbacks.put(paramName, value);
+        });
+        HttpServletRequest wrappedReq = fallbacks.isEmpty() ? req
+            : new UiStateParameterRequestWrapper(req, fallbacks);
+
+        chain.doFilter(wrappedReq, res);
     }
 
     private String buildCookieValue(Map<UiStateKey, String> all, String loginSign) {

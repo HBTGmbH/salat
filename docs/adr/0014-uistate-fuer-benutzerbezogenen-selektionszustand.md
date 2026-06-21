@@ -41,11 +41,15 @@ Chosen: **Option B**, weil sie ADR-0013 umsetzt ohne Boilerplate in jedem Contro
 ```java
 @RequiredArgsConstructor
 public class SomeController {
-    private final UiState uiState;
 
-    private long effectiveContractId() {
-        Long fromCookie = uiState.getSelectedContractId();
-        if (fromCookie != null && fromCookie > 0) return fromCookie;
+    @GetMapping
+    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
+        long ecId = effectiveContractId(employeeContractId);
+        // ...
+    }
+
+    private long effectiveContractId(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) return employeeContractId;
         // Fallback auf den aktuellen Vertrag des eingeloggten Mitarbeiters
         return employeecontractService.getCurrentContract(loginEmployee.getId())
             .map(EmployeeContract::getId).orElse(-1L);
@@ -53,11 +57,13 @@ public class SomeController {
 }
 ```
 
-Die Selektion wird im HTML per verstecktem Feld oder als Query-Parameter übergeben; der Filter erkennt sie automatisch und aktualisiert Cookie + UiState.
+Der Filter stellt UiState-Werte als Fallback-Request-Parameter bereit (Phase 3: `UiStateParameterRequestWrapper`). Dadurch empfängt Spring MVC den Cookie-Wert automatisch als `@RequestParam`, ohne dass Controller `UiState` direkt einbinden müssen. Ein explizit übermittelter Request-Parameter hat weiterhin Vorrang.
 
 ### Weiterentwicklung
 
 Die Key-Konstanten und HTTP-Param-Mappings wurden in ADR-0016 in das jeweilige Fachmodul verschoben (`EmployeeUiStateKeyContributor`, `OrderUiStateKeyContributor`). `UiStateKey` ist seitdem ein `@Component` mit Contributor-Muster. `UiState` hat keine domänenspezifischen Methoden mehr.
+
+`UiState` und `UiStateFilter` wurden anschließend um eine Phase 3 erweitert: Nach dem Befüllen des UiState-Beans (Phasen 1+2) wrapat der Filter den `HttpServletRequest` mit einem `UiStateParameterRequestWrapper`, der UiState-Werte als Fallback-Request-Parameter anbietet. Controller müssen `UiState` daher nicht mehr direkt per Dependency Injection einbinden.
 
 ### Consequences
 

@@ -25,8 +25,6 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
-import org.tb.common.web.UiState;
-import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -61,11 +59,11 @@ public class DashboardController {
     private final MessageSourceAccessor messageSourceAccessor;
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
-    private final UiState uiState;
 
     @GetMapping
-    public String dashboard(HttpSession session, Model model) {
-        var employeecontract = currentContract();
+    public String dashboard(@RequestParam(required = false) Long employeeContractId,
+                            HttpSession session, Model model) {
+        var employeecontract = currentContract(employeeContractId);
         session.setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
         session.setAttribute("currentEmployeeContract", employeecontract);
 
@@ -221,15 +219,14 @@ public class DashboardController {
         return "redirect:/dailyreport/dashboard";
     }
 
-    private Employeecontract currentContract() {
-        Long contractId = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
-        if (contractId != null && contractId > 0) {
-            var contract = employeecontractService.getEmployeecontractById(contractId);
+    private Employeecontract currentContract(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) {
+            var contract = employeecontractService.getEmployeecontractById(employeeContractId);
             if (contract != null) return contract;
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
-            .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
+                .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
     }
 
     /** Returns "success", "warning", or "danger" based on total overtime thresholds (in hours). */

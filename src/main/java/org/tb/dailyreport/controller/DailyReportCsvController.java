@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +29,10 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.common.web.UiState;
-import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
 import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.ImportReport;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.EmployeeService;
 
@@ -50,16 +48,15 @@ public class DailyReportCsvController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final UiState uiState;
 
     @GetMapping
-    public String show(Model model) {
+    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
         YearMonth current = YearMonth.now();
         List<YearMonth> availableMonths = IntStream.range(0, 12)
             .mapToObj(current::minusMonths)
             .toList();
         var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
-        long ecId = effectiveContractId();
+        long ecId = effectiveContractId(employeeContractId);
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("availableMonths", availableMonths);
@@ -84,7 +81,7 @@ public class DailyReportCsvController {
                 messages.getMessage("main.dailyreport.csv.import.error.file.required.text"));
             return "redirect:/dailyreport/csv";
         }
-        long ecId = employeeContractId != null ? employeeContractId : effectiveContractId();
+        long ecId = employeeContractId != null ? employeeContractId : effectiveContractId(employeeContractId);
         try {
             var readResult = csvConverter.read(file.getInputStream());
             var importReport = "replace".equals(importMode)
@@ -107,9 +104,9 @@ public class DailyReportCsvController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> exportCsv(@RequestParam String month) throws IOException {
+    public ResponseEntity<byte[]> exportCsv(@RequestParam(required = false) Long employeeContractId, @RequestParam String month) throws IOException {
         YearMonth yearMonth = YearMonth.parse(month);
-        long ecId = effectiveContractId();
+        long ecId = effectiveContractId(employeeContractId);
         var reports = dailyWorkingReportService.getReportsForMonth(yearMonth, ecId);
         var baos = new ByteArrayOutputStream();
         csvConverter.write(reports, null, new HttpOutputMessage() {
@@ -122,12 +119,13 @@ public class DailyReportCsvController {
             .body(baos.toByteArray());
     }
 
-    private long effectiveContractId() {
-        Long fromUiState = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
-        if (fromUiState != null && fromUiState > 0) return fromUiState;
+    private long effectiveContractId(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) {
+            return employeeContractId;
+        }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
-            .map(c -> c.getId())
-            .orElse(-1L);
+                .map(Employeecontract::getId)
+                .orElse(-1L);
     }
 }
