@@ -1,4 +1,4 @@
-package org.tb.management.controller;
+package org.tb.dailyreport.controller;
 
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.getWorkingDayDistance;
@@ -87,9 +87,9 @@ public class WelcomeController {
         boolean displayEmployeeInfo = !TRUE.equals(employeecontract.getFreelancer());
 
         model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.overview.text"));
-        model.addAttribute("section", "management");
+        model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "welcome");
-        model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.management.text"));
+        model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("employeecontracts", employeecontracts);
         model.addAttribute("loginEmployees", loginEmployees);
         model.addAttribute("currentEmployeeContractId", employeecontract.getId());
@@ -112,7 +112,7 @@ public class WelcomeController {
 
         calculateEmployeeInfo(model, employeecontract);
 
-        return "management/welcome";
+        return "dailyreport/welcome";
     }
 
     private void calculateEmployeeInfo(Model model, Employeecontract employeecontract) {
