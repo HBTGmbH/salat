@@ -5,8 +5,8 @@
       th:with="title=${pageTitle},sectionTitle=#{main.general.mainmenu.timereports.text}">
 <section layout:fragment="content">
 
-  <form th:action="@{/welcome}" method="post" id="welcomeForm">
-    <input type="hidden" name="task" id="welcomeTask" value=""/>
+  <form th:action="@{/dailyreport/dashboard}" method="post" id="dashboardForm">
+    <input type="hidden" name="task" id="dashboardTask" value=""/>
 
     <div class="card mb-3" th:if="${employeecontracts.size() > 1 || loginEmployees.size() > 1}">
       <div class="card-body">
@@ -14,7 +14,7 @@
 
           <div class="col-12 col-md-6" th:if="${employeecontracts.size() > 1}">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}"></label>
-            <select name="employeeContractId" class="form-select tomselect" onchange="submitWelcomeTask('refresh')">
+            <select name="employeeContractId" class="form-select tomselect" onchange="submitDashboardTask('refresh')">
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:selected="${ec.id == currentEmployeeContractId}"
@@ -25,7 +25,7 @@
 
           <div class="col-12 col-md-4" th:if="${loginEmployees.size() > 1}">
             <label class="form-label" th:text="#{main.welcome.switchlogin.text}"></label>
-            <select name="loginEmployeeId" class="form-select tomselect" onchange="submitWelcomeTask('switch-login')">
+            <select name="loginEmployeeId" class="form-select tomselect" onchange="submitDashboardTask('switch-login')">
               <option th:each="emp : ${loginEmployees}"
                       th:value="${emp.id}"
                       th:selected="${emp.id == currentLoginEmployeeId}"
@@ -318,9 +318,9 @@
   </div>
 
   <script>
-    function submitWelcomeTask(task) {
-      document.getElementById('welcomeTask').value = task;
-      document.getElementById('welcomeForm').submit();
+    function submitDashboardTask(task) {
+      document.getElementById('dashboardTask').value = task;
+      document.getElementById('dashboardForm').submit();
     }
   </script>
 

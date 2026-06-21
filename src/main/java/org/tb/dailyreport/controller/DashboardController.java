@@ -36,9 +36,9 @@ import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.EmployeeorderService;
 
 @Controller
-@RequestMapping("/welcome")
+@RequestMapping("/dailyreport/dashboard")
 @RequiredArgsConstructor
-public class WelcomeController {
+public class DashboardController {
 
     @Getter
     @AllArgsConstructor
@@ -61,7 +61,7 @@ public class WelcomeController {
     private final UiState uiState;
 
     @GetMapping
-    public String welcome(HttpSession session, Model model) {
+    public String dashboard(HttpSession session, Model model) {
         var employeecontract = currentContract();
         session.setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
         session.setAttribute("currentEmployeeContract", employeecontract);
@@ -86,9 +86,9 @@ public class WelcomeController {
 
         boolean displayEmployeeInfo = !TRUE.equals(employeecontract.getFreelancer());
 
-        model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.overview.text"));
+        model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.dashboard.text"));
         model.addAttribute("section", "dailyreport");
-        model.addAttribute("subSection", "welcome");
+        model.addAttribute("subSection", "dashboard");
         model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("employeecontracts", employeecontracts);
         model.addAttribute("loginEmployees", loginEmployees);
@@ -112,7 +112,7 @@ public class WelcomeController {
 
         calculateEmployeeInfo(model, employeecontract);
 
-        return "dailyreport/welcome";
+        return "dailyreport/dashboard";
     }
 
     private void calculateEmployeeInfo(Model model, Employeecontract employeecontract) {
@@ -208,14 +208,14 @@ public class WelcomeController {
         var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
         session.setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
         session.setAttribute("currentEmployeeContract", employeecontract);
-        return "redirect:/welcome";
+        return "redirect:/dailyreport/dashboard";
     }
 
     @PostMapping(params = "task=switch-login")
     public String switchLogin(@RequestParam Long loginEmployeeId) {
         var switchedToEmployee = employeeService.getEmployeeById(loginEmployeeId);
         authService.switchLogin(switchedToEmployee.getLoginname());
-        return "redirect:/welcome";
+        return "redirect:/dailyreport/dashboard";
     }
 
     private Employeecontract currentContract() {
