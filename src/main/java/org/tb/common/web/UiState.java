@@ -22,8 +22,12 @@ public class UiState {
         return raw != null ? Long.parseLong(raw) : null;
     }
 
+    public void setValue(UiStateKey key, String value) {
+        values.put(key, value);
+    }
+
     public void setLong(UiStateKey key, Long value) {
-        values.put(key, String.valueOf(value));
+        setValue(key, String.valueOf(value));
     }
 
     public Map<UiStateKey, String> getAll() {
