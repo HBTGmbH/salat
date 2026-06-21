@@ -107,7 +107,7 @@ public class MatrixController {
     }
 
     private long effectiveContractId() {
-        Long fromCookie = uiState.getLong(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
+        Long fromCookie = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
         if (fromCookie != null && fromCookie > 0) return fromCookie;
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

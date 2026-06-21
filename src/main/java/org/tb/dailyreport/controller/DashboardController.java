@@ -222,7 +222,7 @@ public class DashboardController {
     }
 
     private Employeecontract currentContract() {
-        Long contractId = uiState.getLong(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
+        Long contractId = uiState.getLongValue(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
         if (contractId != null && contractId > 0) {
             var contract = employeecontractService.getEmployeecontractById(contractId);
             if (contract != null) return contract;

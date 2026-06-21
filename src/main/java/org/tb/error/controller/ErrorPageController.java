@@ -6,7 +6,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.error.ErrorAttributeOptions.Include;
@@ -77,7 +76,8 @@ public class ErrorPageController implements ErrorController {
             authorizedUser.isPeopleLead(), authorizedUser.isBackoffice(),
             employeeName, employeeSign, employeeId, employeeEmail,
             uiState.getAll().entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey().getName(), Map.Entry::getValue, (a, b) -> a, TreeMap::new))
+                .collect(java.util.stream.Collectors.toMap(
+                    e -> e.getKey().getName(), Map.Entry::getValue, (a, b) -> a, TreeMap::new))
         );
 
         model.addAttribute("errorInfo", errorInfo);
@@ -157,7 +157,7 @@ public class ErrorPageController implements ErrorController {
         String employeeSign,
         Long employeeId,
         String employeeEmail,
-        Map<String, Long> uiState
+        Map<String, String> uiState
     ) {}
 
 }

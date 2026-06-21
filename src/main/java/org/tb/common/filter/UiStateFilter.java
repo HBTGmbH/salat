@@ -44,7 +44,7 @@ public class UiStateFilter extends OncePerRequestFilter {
                 if (c.getName().startsWith(COOKIE_PREFIX)) {
                     String keyName = c.getName().substring(COOKIE_PREFIX.length());
                     uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
-                        if (uiState.getLong(key) == null) {
+                        if (uiState.getLongValue(key) == null) {
                             try { uiState.setLong(key, Long.parseLong(c.getValue())); }
                             catch (NumberFormatException ignored) {}
                         }
