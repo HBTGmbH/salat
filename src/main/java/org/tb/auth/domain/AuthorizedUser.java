@@ -13,6 +13,7 @@ import lombok.Getter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
+import org.tb.common.web.LoginSignProvider;
 
 // ADR-0013: Ausnahme — session-scoped Bean für Sicherheits- und Identitätszustand des eingeloggten
 // Nutzers (Rollen, Login-Kennung). Session-Scope ist hier korrekt; dies ist kein UI-Selektionszustand.
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
 @Getter
-public class AuthorizedUser implements Serializable {
+public class AuthorizedUser implements Serializable, LoginSignProvider {
 
   private static final long serialVersionUID = 1L;
 
