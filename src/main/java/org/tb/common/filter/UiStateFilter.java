@@ -26,14 +26,9 @@ public class UiStateFilter extends OncePerRequestFilter {
         // Phase 1: explicit request params take precedence — update cookie and bean
         uiStateKeyRegistry.getParamToKey().forEach((param, key) -> {
             String raw = req.getParameter(param);
-            if (raw != null) {
-                try {
-                    long id = Long.parseLong(raw);
-                    if (id > 0) {
-                        uiState.setLong(key, id);
-                        writeCookie(res, key.getName(), id);
-                    }
-                } catch (NumberFormatException ignored) {}
+            if (raw != null && !raw.isBlank()) {
+                uiState.setValue(key, raw);
+                writeCookie(res, key.getName(), raw);
             }
         });
 
@@ -44,9 +39,8 @@ public class UiStateFilter extends OncePerRequestFilter {
                 if (c.getName().startsWith(COOKIE_PREFIX)) {
                     String keyName = c.getName().substring(COOKIE_PREFIX.length());
                     uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
-                        if (uiState.getLongValue(key) == null) {
-                            try { uiState.setLong(key, Long.parseLong(c.getValue())); }
-                            catch (NumberFormatException ignored) {}
+                        if (uiState.getValue(key) == null) {
+                            uiState.setValue(key, c.getValue());
                         }
                     });
                 }
@@ -56,7 +50,7 @@ public class UiStateFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    private void writeCookie(HttpServletResponse res, String keyName, long value) {
+    private void writeCookie(HttpServletResponse res, String keyName, String value) {
         // Use Set-Cookie header directly: Servlet API < 6 has no SameSite support on Cookie class
         res.addHeader("Set-Cookie",
             COOKIE_PREFIX + keyName + "=" + value + "; Path=/; HttpOnly; SameSite=Strict");
