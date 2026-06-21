@@ -137,7 +137,6 @@
                 onchange="this.form.submit()" style="min-width: 200px">
           <option th:each="ec : ${employeecontracts}"
                   th:value="${ec.id}"
-                  th:text="${ec.employee.name}"
                   th:selected="${ec.id == selectedContractId}">
           </option>
         </select>
@@ -188,11 +187,11 @@
               th:classappend="${matrixData.dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.weekend ? 'bg-azure-lt' : (cell.publicHoliday ? 'bg-warning-lt' : '')}">
             <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
             <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail p-10 d-none">
-              <div th:each="d : ${cell.details}" class="text-start text-nowrap">
-                <strong th:text="${d.durationString}">1:00</strong>
-                <span th:if="${d.taskDescription != null and not #strings.isEmpty(d.taskDescription)}"
-                      th:text="${' – ' + d.taskDescription}"></span>
-              </div>
+              <pre th:each="d : ${cell.details}"
+                   class="text-start p-1 m-1"
+                   th:text="${d.durationString + ': ' + d.taskDescription}">
+                MOS-16345 did something
+              </pre>
             </div>
           </td>
           <td class="matrix-last-col text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>
