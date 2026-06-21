@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.web.UiState;
+import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.employee.service.EmployeecontractService;
@@ -106,7 +107,7 @@ public class MatrixController {
     }
 
     private long effectiveContractId() {
-        Long fromCookie = uiState.getSelectedContractId();
+        Long fromCookie = uiState.getLong(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
         if (fromCookie != null && fromCookie > 0) return fromCookie;
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

@@ -55,6 +55,10 @@ public class SomeController {
 
 Die Selektion wird im HTML per verstecktem Feld oder als Query-Parameter übergeben; der Filter erkennt sie automatisch und aktualisiert Cookie + UiState.
 
+### Weiterentwicklung
+
+Die Key-Konstanten und HTTP-Param-Mappings wurden in ADR-0016 in das jeweilige Fachmodul verschoben (`EmployeeUiStateKeyContributor`, `OrderUiStateKeyContributor`). `UiStateKey` ist seitdem ein `@Component` mit Contributor-Muster. `UiState` hat keine domänenspezifischen Methoden mehr.
+
 ### Consequences
 
 * Good: kein Cookie-Boilerplate in Controllern

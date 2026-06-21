@@ -31,6 +31,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.web.UiState;
+import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
 import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.ImportReport;
@@ -122,7 +123,7 @@ public class DailyReportCsvController {
     }
 
     private long effectiveContractId() {
-        Long fromCookie = uiState.getSelectedContractId();
+        Long fromCookie = uiState.getLong(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
         if (fromCookie != null && fromCookie > 0) return fromCookie;
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

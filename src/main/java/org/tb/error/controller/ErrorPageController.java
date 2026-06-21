@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.web.UiState;
-import org.tb.common.web.UiStateKey;
 import org.tb.employee.domain.AuthorizedEmployee;
 
 @Controller
@@ -69,11 +68,6 @@ public class ErrorPageController implements ErrorController {
         Long employeeId = authorizedEmployee.getEmployeeId();
         String employeeEmail = authorizedEmployee.getEmailAddress();
 
-        Long selectedContractId = uiState.getLong(UiStateKey.SELECTED_CONTRACT);
-        Long selectedCustomerId = uiState.getLong(UiStateKey.SELECTED_CUSTOMER);
-        Long selectedOrderId = uiState.getLong(UiStateKey.SELECTED_ORDER);
-        Long selectedSuborderId = uiState.getLong(UiStateKey.SELECTED_SUBORDER);
-
         var errorInfo = new ErrorInfo(
             status, error, message, exception, trace, timestamp,
             requestPath, requestMethod, queryString, parameters, contentType,
@@ -81,7 +75,7 @@ public class ErrorPageController implements ErrorController {
             authorizedUser.isAdmin(), authorizedUser.isManager(),
             authorizedUser.isPeopleLead(), authorizedUser.isBackoffice(),
             employeeName, employeeSign, employeeId, employeeEmail,
-            selectedContractId, selectedCustomerId, selectedOrderId, selectedSuborderId
+            new TreeMap<>(uiState.getAll())
         );
 
         model.addAttribute("errorInfo", errorInfo);
@@ -123,11 +117,10 @@ public class ErrorPageController implements ErrorController {
         } else {
             sb.append("Login: nicht angemeldet\n");
         }
-        sb.append("\n--- UI-Zustand ---\n");
-        if (e.selectedContractId()  != null) sb.append("Vertrag:      ").append(e.selectedContractId()).append("\n");
-        if (e.selectedCustomerId()  != null) sb.append("Kunde:        ").append(e.selectedCustomerId()).append("\n");
-        if (e.selectedOrderId()     != null) sb.append("Auftrag:      ").append(e.selectedOrderId()).append("\n");
-        if (e.selectedSuborderId()  != null) sb.append("Unterauftrag: ").append(e.selectedSuborderId()).append("\n");
+        if (e.uiState() != null && !e.uiState().isEmpty()) {
+            sb.append("\n--- UI-Zustand ---\n");
+            e.uiState().forEach((k, v) -> sb.append(k).append(": ").append(v).append("\n"));
+        }
         if (notEmpty(e.trace())) {
             sb.append("\n--- Stacktrace ---\n").append(e.trace());
         }
@@ -162,10 +155,7 @@ public class ErrorPageController implements ErrorController {
         String employeeSign,
         Long employeeId,
         String employeeEmail,
-        Long selectedContractId,
-        Long selectedCustomerId,
-        Long selectedOrderId,
-        Long selectedSuborderId
+        Map<String, Long> uiState
     ) {}
 
 }

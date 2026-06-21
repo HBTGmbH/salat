@@ -26,6 +26,7 @@ import org.tb.auth.service.AuthService;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.web.UiState;
+import org.tb.employee.controller.EmployeeUiStateKeyContributor;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -221,7 +222,7 @@ public class DashboardController {
     }
 
     private Employeecontract currentContract() {
-        Long contractId = uiState.getSelectedContractId();
+        Long contractId = uiState.getLong(EmployeeUiStateKeyContributor.SELECTED_CONTRACT);
         if (contractId != null && contractId > 0) {
             var contract = employeecontractService.getEmployeecontractById(contractId);
             if (contract != null) return contract;

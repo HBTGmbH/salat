@@ -1,21 +1,20 @@
 package org.tb.common.web;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
-public final class UiStateKey {
+@Component
+@RequiredArgsConstructor
+public class UiStateKey {
 
-    public static final String SELECTED_CONTRACT = "selectedContract";
-    public static final String SELECTED_CUSTOMER = "selectedCustomer";
-    public static final String SELECTED_ORDER    = "selectedOrder";
-    public static final String SELECTED_SUBORDER = "selectedSuborder";
+    private final List<UiStateKeyContributor> contributors;
 
-    /** Maps HTTP request-param name → UI state key. */
-    public static final Map<String, String> PARAM_TO_KEY = Map.of(
-        "employeeContractId", SELECTED_CONTRACT,
-        "customerId",         SELECTED_CUSTOMER,
-        "orderId",            SELECTED_ORDER,
-        "suborderId",         SELECTED_SUBORDER
-    );
-
-    private UiStateKey() {}
+    public Map<String, String> getParamToKey() {
+        return contributors.stream()
+            .flatMap(c -> c.getParamToKeyMappings().entrySet().stream())
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 }
