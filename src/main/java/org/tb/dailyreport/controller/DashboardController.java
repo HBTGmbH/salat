@@ -29,6 +29,7 @@ import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -77,7 +78,9 @@ public class DashboardController {
         session.setAttribute("employeecontracts", employeecontracts);
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
-        var vacations = vacationService.getVacations(employeecontract);
+        var vacations = vacationService.getVacations(employeecontract).stream()
+            .map(info -> VacationViewHelper.from(employeecontract, info))
+            .toList();
 
         var warnings = timereportService.createTimeReportWarnings(employeecontract.getId(), messageSourceAccessor);
 
