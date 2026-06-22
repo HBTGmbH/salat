@@ -27,6 +27,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -133,7 +134,9 @@ public class MyAccountsController {
 
     private void populateVacationTab(Model model, Employeecontract contract,
             LocalDate today, int currentYear, LocalDate yearStart, LocalDate yearEnd) {
-        var vacations = vacationService.getVacations(contract);
+        var vacations = vacationService.getVacations(contract).stream()
+            .map(info -> VacationViewHelper.from(contract, info))
+            .toList();
 
         double annualEntitlementDays = 0;
         double previousYearCarryoverDays = 0;

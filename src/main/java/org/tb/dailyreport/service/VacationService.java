@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.dailyreport.viewhelper.VacationViewHelper;
+import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.service.EmployeeorderService;
 
@@ -21,20 +21,16 @@ public class VacationService {
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
 
-    public List<VacationViewHelper> getVacations(Employeecontract employeecontract) {
-        var vacations = new ArrayList<VacationViewHelper>();
+    public List<VacationInfo> getVacations(Employeecontract employeecontract) {
+        var vacations = new ArrayList<VacationInfo>();
         var orders = employeeorderService.getVacationEmployeeOrders(employeecontract.getId());
         for (var employeeorder : orders) {
             if (SUBRORDER_SIGN_VACATION_SPECIAL.equals(employeeorder.getSuborder().getSign())) continue;
-            var vacationView = new VacationViewHelper(employeecontract);
-            vacationView.setSuborderSign(employeeorder.getSuborder().getSign());
-            if (employeeorder.getDebithours() != null) {
-                vacationView.setBudget(employeeorder.getDebithours());
-            }
-            long vacationMinutes = timereportService.getTotalDurationMinutesForSuborderAndEmployeeContract(
+            var suborderSign = employeeorder.getSuborder().getSign();
+            var budget = employeeorder.getDebithours();
+            long usedVacationMinutes = timereportService.getTotalDurationMinutesForSuborderAndEmployeeContract(
                 employeeorder.getSuborder().getId(), employeecontract.getId());
-            vacationView.addVacationMinutes(vacationMinutes);
-            vacations.add(vacationView);
+            vacations.add(new VacationInfo(suborderSign, budget, usedVacationMinutes));
         }
         return vacations;
     }

@@ -9,6 +9,7 @@ import java.text.NumberFormat;
 import java.time.Duration;
 import lombok.Data;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.employee.domain.Employeecontract;
 
 @Data
@@ -18,6 +19,14 @@ public class VacationViewHelper {
     private String suborderSign;
     private Duration budget;
     private long usedVacationMinutes;
+
+    public static VacationViewHelper from(Employeecontract employeecontract, VacationInfo info) {
+        var helper = new VacationViewHelper(employeecontract);
+        helper.setSuborderSign(info.suborderSign());
+        helper.setBudget(info.budget());
+        helper.setUsedVacationMinutes(info.usedVacationMinutes());
+        return helper;
+    }
 
     public void addVacationMinutes(long minutes) {
         this.usedVacationMinutes += minutes;
