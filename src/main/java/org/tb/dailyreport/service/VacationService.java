@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.dailyreport.domain.VacationViewHelper;
+import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.order.service.EmployeeorderService;
 

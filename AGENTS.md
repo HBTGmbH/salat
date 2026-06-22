@@ -303,6 +303,8 @@ Each module uses a consistent sub-package structure:
 | `rest` | REST endpoints |
 | `viewhelper` | View decorators and model-prep helpers |
 
+**`viewhelper` package rule:** View helper classes (model-prep helpers, view decorators) **must stay in the `viewhelper` sub-package** of their module. They must not be placed in `domain`, `service`, or any other sub-package. View helpers may not use `HttpSession` directly; pass computed data as method parameters or inject a service.
+
 ### Entity Classification: Stammdaten vs. Bewegungsdaten
 Entities are divided into two categories (→ ADR-0011):
 
