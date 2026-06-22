@@ -304,7 +304,7 @@ Each module uses a consistent sub-package structure:
 | `viewhelper` | View decorators and model-prep helpers |
 
 **`viewhelper` package rule:** View helper classes (model-prep helpers, view decorators) **must stay in the `viewhelper` sub-package** of their module. They must not be placed in `domain`, `service`, or any other sub-package. Rules:
-- View helpers are **only used by controllers** — never by services or other view helpers.
+- View helpers are used by **controllers**, by **other view helpers**, and **directly in Thymeleaf templates** — never by services.
 - Services must not import or return view helper types; they return domain objects or DTOs.
 - View helpers may not use `HttpSession` directly; they receive domain data as constructor arguments and provide formatted/computed values for templates.
 - The typical pattern: service returns `List<SomeDomainDTO>`, controller maps to `List<SomeViewHelper>` via a static `from(contract, dto)` factory, then puts the view helpers in the model.
