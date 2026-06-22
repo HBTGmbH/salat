@@ -3,16 +3,13 @@ package org.tb.dailyreport.controller;
 import static org.tb.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
 import static org.tb.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
-import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import lombok.AllArgsConstructor;
@@ -29,7 +26,7 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.dailyreport.viewhelper.VacationViewHelper;
+import org.tb.dailyreport.service.VacationService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -51,6 +48,7 @@ public class MyAccountsController {
     }
 
     private final OvertimeService overtimeService;
+    private final VacationService vacationService;
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final MessageSourceAccessor messageSourceAccessor;
@@ -58,7 +56,7 @@ public class MyAccountsController {
     private final EmployeeService employeeService;
 
     @GetMapping
-    public String show(@RequestParam(required = false) Long employeeContractId, HttpSession session, Model model) {
+    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
         var contract = currentContract(employeeContractId);
         var today = today();
         var currentYear = today.getYear();
@@ -74,7 +72,7 @@ public class MyAccountsController {
         populateWorkingTimeTab(model, contract, today, currentYear);
 
         // --- Tab 2: Vacation account ---
-        populateVacationTab(session, model, contract, today, currentYear, yearStart, yearEnd);
+        populateVacationTab(model, contract, today, currentYear, yearStart, yearEnd);
 
         // --- Tab 3: Training ---
         populateTrainingTab(model, contract, today, yearStart);
@@ -133,11 +131,9 @@ public class MyAccountsController {
         model.addAttribute("chartTarget", chartTarget);
     }
 
-    private void populateVacationTab(HttpSession session, Model model, Employeecontract contract,
+    private void populateVacationTab(Model model, Employeecontract contract,
             LocalDate today, int currentYear, LocalDate yearStart, LocalDate yearEnd) {
-        calculateAndSetVacations(session, contract, employeeorderService, timereportService);
-        @SuppressWarnings("unchecked")
-        var vacations = (List<VacationViewHelper>) session.getAttribute("vacations");
+        var vacations = vacationService.getVacations(contract);
 
         double annualEntitlementDays = 0;
         double previousYearCarryoverDays = 0;
