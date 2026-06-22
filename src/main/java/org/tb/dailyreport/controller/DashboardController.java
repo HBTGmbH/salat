@@ -3,13 +3,12 @@ package org.tb.dailyreport.controller;
 import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.getWorkingDayDistance;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.dailyreport.viewhelper.OvertimeViewHelper.calculateAndSetOvertime;
-import static org.tb.dailyreport.viewhelper.VacationViewHelper.calculateAndSetVacations;
 
 import jakarta.servlet.http.HttpSession;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
@@ -24,9 +23,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.LocalDateRange;
+import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
+import org.tb.dailyreport.service.VacationService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -53,6 +55,7 @@ public class DashboardController {
     private final EmployeeService employeeService;
     private final AuthService authService;
     private final OvertimeService overtimeService;
+    private final VacationService vacationService;
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
@@ -73,8 +76,8 @@ public class DashboardController {
         var employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         session.setAttribute("employeecontracts", employeecontracts);
 
-        calculateAndSetOvertime(session, employeecontract, overtimeService);
-        calculateAndSetVacations(session, employeecontract, employeeorderService, timereportService);
+        var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
+        var vacations = vacationService.getVacations(employeecontract);
 
         var warnings = timereportService.createTimeReportWarnings(employeecontract.getId(), messageSourceAccessor);
 
@@ -102,14 +105,29 @@ public class DashboardController {
         model.addAttribute("releaseColorClass", employeecontract.getReleaseWarning() ? "danger" : "success");
         model.addAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
         model.addAttribute("acceptanceColorClass", employeecontract.getAcceptanceWarning() ? "danger" : "success");
-        model.addAttribute("overtime", session.getAttribute("overtime"));
-        model.addAttribute("overtimeIsNegative", session.getAttribute("overtimeIsNegative"));
-        model.addAttribute("overtimeColorClass", overtimeColorClass(employeecontract.getId()));
-        model.addAttribute("monthlyOvertime", session.getAttribute("monthlyOvertime"));
-        model.addAttribute("monthlyOvertimeIsNegative", session.getAttribute("monthlyOvertimeIsNegative"));
-        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(employeecontract.getId()));
-        model.addAttribute("overtimeMonth", session.getAttribute("overtimeMonth"));
-        model.addAttribute("vacations", session.getAttribute("vacations"));
+        String overtime = "";
+        boolean overtimeIsNegative = false;
+        String monthlyOvertime = "";
+        boolean monthlyOvertimeIsNegative = false;
+        String overtimeMonth = "";
+        if (overtimeStatus.isPresent()) {
+            var status = overtimeStatus.get();
+            overtime = DurationUtils.format(status.getTotal().getDuration());
+            overtimeIsNegative = status.getTotal().isNegative();
+            if (status.getCurrentMonth() != null) {
+                monthlyOvertime = DurationUtils.format(status.getCurrentMonth().getDuration());
+                monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
+                overtimeMonth = DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM");
+            }
+        }
+        model.addAttribute("overtime", overtime);
+        model.addAttribute("overtimeIsNegative", overtimeIsNegative);
+        model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus));
+        model.addAttribute("monthlyOvertime", monthlyOvertime);
+        model.addAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
+        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus));
+        model.addAttribute("overtimeMonth", overtimeMonth);
+        model.addAttribute("vacations", vacations);
 
         calculateEmployeeInfo(model, employeecontract);
 
@@ -229,32 +247,26 @@ public class DashboardController {
                 .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
     }
 
-    /** Returns "success", "warning", or "danger" based on total overtime thresholds (in hours). */
-    private String overtimeColorClass(long employeecontractId) {
-        return overtimeService.calculateOvertime(employeecontractId, true)
-            .map(status -> {
-                if(status.getTotal() == null) return "success";
-                long hours = status.getTotal().getDuration().toHours();
-                long signedHours = status.getTotal().isNegative() ? -hours : hours;
-                if (signedHours > 80 || signedHours < -40) return "danger";
-                if (signedHours > 40 || signedHours < -20) return "warning";
-                return "success";
-            })
-            .orElse("success");
+    private String overtimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
+        return overtimeStatus.map(status -> {
+            if (status.getTotal() == null) return "success";
+            long hours = status.getTotal().getDuration().toHours();
+            long signedHours = status.getTotal().isNegative() ? -hours : hours;
+            if (signedHours > 80 || signedHours < -40) return "danger";
+            if (signedHours > 40 || signedHours < -20) return "warning";
+            return "success";
+        }).orElse("success");
     }
 
-    /** Returns "success", "warning", or "danger" based on monthly overtime thresholds (in hours). */
-    private String monthlyOvertimeColorClass(long employeecontractId) {
-        return overtimeService.calculateOvertime(employeecontractId, true)
-            .map(status -> {
-                if(status.getCurrentMonth() == null) return "success";
-                long hours = status.getCurrentMonth().getDuration().toHours();
-                long signedHours = status.getTotal().isNegative() ? -hours : hours;
-                if (signedHours > 30 || signedHours < -30) return "danger";
-                if (signedHours > 15 || signedHours < -15) return "warning";
-                return "success";
-            })
-            .orElse("success");
+    private String monthlyOvertimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
+        return overtimeStatus.map(status -> {
+            if (status.getCurrentMonth() == null) return "success";
+            long hours = status.getCurrentMonth().getDuration().toHours();
+            long signedHours = status.getTotal().isNegative() ? -hours : hours;
+            if (signedHours > 30 || signedHours < -30) return "danger";
+            if (signedHours > 15 || signedHours < -15) return "warning";
+            return "success";
+        }).orElse("success");
     }
 
 }
