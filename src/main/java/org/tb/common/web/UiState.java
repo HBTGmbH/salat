@@ -14,7 +14,6 @@ import org.springframework.web.context.annotation.RequestScope;
 public class UiState {
 
     private final Map<UiStateKey, String> values = new HashMap<>();
-    private boolean dirty = false;
 
     public String getValue(UiStateKey key) {
         return values.get(key);
