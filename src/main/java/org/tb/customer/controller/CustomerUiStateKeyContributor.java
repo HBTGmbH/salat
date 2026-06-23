@@ -11,14 +11,14 @@ import static java.util.Map.of;
 @Component
 public class CustomerUiStateKeyContributor implements UiStateKeyContributor {
 
-    public static final UiStateKey FILTER = new UiStateKey("filter");
-    public static final UiStateKey SHOW_HIDDEN = new UiStateKey("showHidden");
+    public static final UiStateKey CUSTOMER_FILTER = new UiStateKey("customer.Filter");
+    public static final UiStateKey CUSTOMER_SHOW_HIDDEN = new UiStateKey("customer.ShowHidden");
 
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
         return of(
-                "filter", FILTER,
-                "showHidden", SHOW_HIDDEN
+                "cFilter", CUSTOMER_FILTER,
+                "cShowHidden", CUSTOMER_SHOW_HIDDEN
         );
     }
 }

@@ -36,14 +36,14 @@ public class CustomerController {
   private final UiState uiState;
 
   @GetMapping
-  public String list(@RequestParam(value = "filter", required = false) String filter,
-                     @RequestParam(value = "showHidden", required = false) Boolean showHidden,
+  public String list(@RequestParam(required = false) String cFilter,
+                     @RequestParam(required = false) Boolean cShowHidden,
                      Model model) {
-    boolean showHiddenFlag = Boolean.TRUE.equals(showHidden);
+    boolean showHiddenFlag = Boolean.TRUE.equals(cShowHidden);
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
-    model.addAttribute("filter", filter);
-    model.addAttribute("showHidden", showHiddenFlag);
-    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(filter, showHiddenFlag));
+    model.addAttribute("cFilter", cFilter);
+    model.addAttribute("cShowHidden", showHiddenFlag);
+    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(cFilter, showHiddenFlag));
     return "customer/customer-list";
   }
 
@@ -118,7 +118,7 @@ public class CustomerController {
     }
 
     if (isCreate) {
-      uiState.clearState(CustomerUiStateKeyContributor.FILTER);
+      uiState.clearState(CustomerUiStateKeyContributor.CUSTOMER_FILTER);
     }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));

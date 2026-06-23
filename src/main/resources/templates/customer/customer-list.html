@@ -9,7 +9,7 @@
       <form method="get" th:action="@{/customers}" data-filter-form="cu">
         <div class="row g-2 align-items-end">
           <div class="col-md-6">
-            <input type="text" class="form-control" name="filter" th:value="${filter}"
+            <input type="text" class="form-control" name="cFilter" th:value="${cFilter}"
                    th:placeholder="#{main.general.filter.text}" />
           </div>
           <div class="col-auto">
@@ -27,7 +27,7 @@
         <div class="row g-2 align-items-end mt-2">
           <div class="col-auto ms-2">
             <label class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+              <input class="form-check-input" type="checkbox" name="cShowHidden" value="true" th:checked="${cShowHidden}"/>
               <span class="form-check-label" th:text="#{main.customer.showhidden.text}">Show hidden</span>
             </label>
           </div>
