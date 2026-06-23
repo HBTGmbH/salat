@@ -4,7 +4,6 @@ import static java.lang.Boolean.TRUE;
 import static org.tb.common.util.DateUtils.getWorkingDayDistance;
 import static org.tb.common.util.DateUtils.today;
 
-import jakarta.servlet.http.HttpSession;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.util.Comparator;
@@ -207,10 +206,7 @@ public class DashboardController {
     }
 
     @PostMapping(params = "task=refresh")
-    public String refresh(@RequestParam Long employeeContractId, HttpSession session) {
-        var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
-        session.setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-        session.setAttribute("currentEmployeeContract", employeecontract);
+    public String refresh(@RequestParam Long employeeContractId) {
         return "redirect:/dailyreport/dashboard";
     }
 
