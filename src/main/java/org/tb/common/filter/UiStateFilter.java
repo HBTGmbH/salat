@@ -9,12 +9,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.tb.common.web.LoginSignProvider;
 import org.tb.common.web.UiState;
 import org.tb.common.web.UiStateKey;
@@ -28,9 +31,24 @@ public class UiStateFilter extends OncePerRequestFilter {
     static final String COOKIE_NAME = "salat_uistate";
     static final String COOKIE_KEY_LOGIN_SIGN = "_ls";
 
+    private static final AntPathMatcher ANT = new AntPathMatcher();
+    private static final List<String> STATIC_PATTERNS = List.of(
+        "/images/**", "/webjars/**",
+        "/**/*.css", "/**/*.js",
+        "/**/*.gif", "/**/*.png", "/**/*.jpg", "/**/*.jpeg",
+        "/**/*.svg", "/**/*.ico",
+        "/**/*.woff", "/**/*.woff2", "/**/*.ttf", "/**/*.eot",
+        "/**/*.map", "/**/*.webp");
+
     private final UiState uiState;
     private final UiStateKeyRegistry uiStateKeyRegistry;
     private final LoginSignProvider loginSignProvider;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return STATIC_PATTERNS.stream().anyMatch(p -> ANT.match(p, path));
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
@@ -74,11 +92,8 @@ public class UiStateFilter extends OncePerRequestFilter {
             }
         }
 
-        // Write the merged cookie with the full current state
-        Map<UiStateKey, String> all = uiState.getAll();
-        if (!all.isEmpty() && dirty) {
-            writeCookie(res, buildCookieValue(all, effectiveLoginSign));
-        }
+        Map<UiStateKey, String> stateBeforeChain = new HashMap<>(uiState.getAll());
+        var bufferingRes = new BufferingResponseWrapper(res);
 
         // Phase 3: expose UiState values as fallback request parameters
         Map<String, String> fallbacks = new java.util.HashMap<>();
@@ -89,7 +104,18 @@ public class UiStateFilter extends OncePerRequestFilter {
         HttpServletRequest wrappedReq = fallbacks.isEmpty() ? req
             : new UiStateParameterRequestWrapper(req, fallbacks);
 
-        chain.doFilter(wrappedReq, res);
+        chain.doFilter(wrappedReq, bufferingRes);
+
+        // Write cookie after the chain so any UiState mutations (e.g. clearState) are captured.
+        // BufferingResponseWrapper suppresses all commits, so the response is always uncommitted
+        // here and the Set-Cookie header can always be added.
+        Map<UiStateKey, String> stateAfterChain = uiState.getAll();
+        if (dirty || !stateAfterChain.equals(stateBeforeChain)) {
+            if (!stateAfterChain.isEmpty()) {
+                writeCookie(bufferingRes, buildCookieValue(stateAfterChain, effectiveLoginSign));
+            }
+        }
+        bufferingRes.writeAndCommit();
     }
 
     private String buildCookieValue(Map<UiStateKey, String> all, String loginSign) {
@@ -121,5 +147,51 @@ public class UiStateFilter extends OncePerRequestFilter {
         // Use Set-Cookie header directly: Servlet API < 6 has no SameSite support on Cookie class
         res.addHeader("Set-Cookie",
             COOKIE_NAME + "=" + value + "; Path=/; HttpOnly; SameSite=Strict");
+    }
+
+    private static class BufferingResponseWrapper extends ContentCachingResponseWrapper {
+
+        private String deferredRedirectLocation;
+        private Integer deferredErrorStatus;
+        private String deferredErrorMessage;
+
+        BufferingResponseWrapper(HttpServletResponse response) {
+            super(response);
+        }
+
+        @Override
+        public void sendRedirect(String location) {
+            this.deferredRedirectLocation = location;
+        }
+
+        @Override
+        public void sendError(int sc) {
+            this.deferredErrorStatus = sc;
+        }
+
+        @Override
+        public void sendError(int sc, String msg) {
+            this.deferredErrorStatus = sc;
+            this.deferredErrorMessage = msg;
+        }
+
+        @Override
+        public void flushBuffer() {
+            // Suppress premature flush — body and headers are committed by writeAndCommit().
+        }
+
+        void writeAndCommit() throws IOException {
+            if (deferredRedirectLocation != null) {
+                super.sendRedirect(deferredRedirectLocation);
+            } else if (deferredErrorStatus != null) {
+                if (deferredErrorMessage != null) {
+                    super.sendError(deferredErrorStatus, deferredErrorMessage);
+                } else {
+                    super.sendError(deferredErrorStatus);
+                }
+            } else {
+                copyBodyToResponse();
+            }
+        }
     }
 }
