@@ -172,6 +172,56 @@ class UiStateFilterTest {
         assertThat(seenParam[0]).isEqualTo("77");
     }
 
+    @Test
+    void cookieReflectsClearStateDuringChain() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode("_ls=alice&contract=42")));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, (chainReq, chainRes) -> uiState.clearState(KEY));
+
+        // State is now empty — no cookie should be written (nothing to persist)
+        assertThat(res.getHeader("Set-Cookie")).isNull();
+        assertThat(uiState.getValue(KEY)).isNull();
+    }
+
+    @Test
+    void cookieReflectsSetValueDuringChain() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, (chainReq, chainRes) -> uiState.setValue(KEY, "77"));
+
+        String setCookie = res.getHeader("Set-Cookie");
+        assertThat(setCookie).isNotNull();
+        String cookieValue = setCookie.split(";")[0].split("=", 2)[1];
+        String decoded = new String(Base64.getUrlDecoder().decode(cookieValue), StandardCharsets.UTF_8);
+        assertThat(decoded).contains("contract=77");
+    }
+
+    @Test
+    void cookieWrittenBeforeRedirectIsIssued() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addParameter(PARAM, "55"); // dirty via Phase 2
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, (chainReq, chainRes) ->
+            ((HttpServletResponse) chainRes).sendRedirect("/next"));
+
+        assertThat(res.getRedirectedUrl()).isEqualTo("/next");
+        String setCookie = res.getHeader("Set-Cookie");
+        assertThat(setCookie).isNotNull();
+        String cookieValue = setCookie.split(";")[0].split("=", 2)[1];
+        String decoded = new String(Base64.getUrlDecoder().decode(cookieValue), StandardCharsets.UTF_8);
+        assertThat(decoded).contains("contract=55");
+    }
+
     private static String encode(String plain) {
         return Base64.getUrlEncoder().withoutPadding()
             .encodeToString(plain.getBytes(StandardCharsets.UTF_8));
