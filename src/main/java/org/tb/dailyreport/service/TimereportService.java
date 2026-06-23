@@ -49,10 +49,8 @@ import static org.tb.common.util.DateUtils.getFirstDay;
 import static org.tb.common.util.DateUtils.getLastDay;
 import static org.tb.common.util.DateUtils.getYear;
 import static org.tb.common.util.DateUtils.getYearMonth;
-import static org.tb.common.util.UrlUtils.absoluteUrl;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
-import jakarta.servlet.ServletContext;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -70,14 +68,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
-import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.common.Warning;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
@@ -102,7 +98,6 @@ import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
-import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
@@ -127,8 +122,6 @@ public class TimereportService {
   private final TimereportRepository timereportRepository;
   private final PublicholidayDAO publicholidayDAO;
   private final WorkingdayDAO workingdayDAO;
-  private final EmployeecontractService employeecontractService;
-  private final ServletContext servletContext;
   private final AuthorizedUser authorizedUser;
   private final TimereportAuthorization timereportAuthorization;
 
@@ -548,40 +541,6 @@ public class TimereportService {
 
   static boolean isRelevantForWorkingTimeValidation(OrderType orderType) {
     return orderType != null && orderType == OrderType.STANDARD;
-  }
-
-  public List<Warning> createTimeReportWarnings(long employeecontractId, MessageSourceAccessor messages) {
-
-    var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
-
-    List<Warning> warnings = new ArrayList<>();
-
-    List<TimereportDTO> timereports = getTimereportsOutOfRangeForEmployeeContract(employeecontract.getId());
-    for (TimereportDTO timereport : timereports) {
-      Warning warning = new Warning();
-      warning.setSort(messages.getMessage("main.info.warning.timereportnotinrange"));
-      warning.setText(timereport.getTimeReportAsString());
-      warnings.add(warning);
-    }
-
-    timereports = getTimereportsOutOfRangeForEmployeeOrder(employeecontract.getId());
-    for (TimereportDTO timereport : timereports) {
-      Warning warning = new Warning();
-      warning.setSort(messages.getMessage("main.info.warning.timereportnotinrangeforeo"));
-      warning.setText(timereport.getTimeReportAsString() + " " + timereport.getEmployeeOrderAsString());
-      warnings.add(warning);
-    }
-
-    timereports = getTimereportsWithoutDurationForEmployeeContractId(employeecontract.getId(), employeecontract.getReportReleaseDate());
-    for (TimereportDTO timereport : timereports) {
-      Warning warning = new Warning();
-      warning.setSort(messages.getMessage("main.info.warning.timereport.noduration"));
-      warning.setText(timereport.getTimeReportAsString());
-      warning.setLink(absoluteUrl("/do/EditDailyReport?trId=" + timereport.getId(), servletContext));
-      warnings.add(warning);
-    }
-
-    return warnings;
   }
 
   public void updateReleaseData(long timereportId, String status, String releasedBy, LocalDateTime releasedDate,

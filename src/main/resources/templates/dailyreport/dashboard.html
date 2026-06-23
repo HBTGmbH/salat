@@ -297,26 +297,6 @@
 
   </div>
 
-  <!-- Warnings -->
-  <div class="card border-danger mb-3" th:if="${not #lists.isEmpty(warnings)}">
-    <div class="card-header bg-danger-lt">
-      <h4 class="card-title text-danger mb-0" th:text="#{main.info.headline.warning}">Warnungen</h4>
-    </div>
-    <div class="card-body p-0">
-      <table class="table table-sm mb-0">
-        <tbody>
-          <tr th:each="w : ${warnings}">
-            <td class="text-danger fw-bold" style="width: 30%" th:text="${w.sort + ':'}"></td>
-            <td>
-              <a th:if="${not #strings.isEmpty(w.link)}" th:href="${w.link}" class="text-danger" th:text="${w.text}"></a>
-              <span th:unless="${not #strings.isEmpty(w.link)}" th:text="${w.text}"></span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
   <script>
     function submitDashboardTask(task) {
       document.getElementById('dashboardTask').value = task;

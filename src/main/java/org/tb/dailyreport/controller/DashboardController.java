@@ -36,7 +36,6 @@ import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.order.service.EmployeeorderService;
 
 @Controller
 @RequestMapping("/dailyreport/dashboard")
@@ -57,7 +56,6 @@ public class DashboardController {
     private final AuthService authService;
     private final OvertimeService overtimeService;
     private final VacationService vacationService;
-    private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
     private final MessageSourceAccessor messageSourceAccessor;
@@ -65,31 +63,15 @@ public class DashboardController {
     private final AuthorizedEmployee authorizedEmployee;
 
     @GetMapping
-    public String dashboard(@RequestParam(required = false) Long employeeContractId,
-                            HttpSession session, Model model) {
+    public String dashboard(@RequestParam(required = false) Long employeeContractId, Model model) {
         var employeecontract = currentContract(employeeContractId);
-        session.setAttribute("currentEmployeeId", employeecontract.getEmployee().getId());
-        session.setAttribute("currentEmployeeContract", employeecontract);
-
         var loginEmployees = employeeService.getLoginEmployees();
-        session.setAttribute("loginEmployees", loginEmployees);
-
         var employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
-        session.setAttribute("employeecontracts", employeecontracts);
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
         var vacations = vacationService.getVacations(employeecontract).stream()
             .map(info -> VacationViewHelper.from(employeecontract, info))
             .toList();
-
-        var warnings = timereportService.createTimeReportWarnings(employeecontract.getId(), messageSourceAccessor);
-
-        session.setAttribute("releaseWarning", employeecontract.getReleaseWarning());
-        session.setAttribute("acceptanceWarning", employeecontract.getAcceptanceWarning());
-        session.setAttribute("releasedUntil", employeecontract.getReportReleaseDate());
-        session.setAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
-        session.setAttribute("warnings", warnings);
-        session.setAttribute("warningsPresent", !warnings.isEmpty());
 
         boolean displayEmployeeInfo = !TRUE.equals(employeecontract.getFreelancer());
 
@@ -103,7 +85,6 @@ public class DashboardController {
         model.addAttribute("currentLoginEmployeeId", authorizedEmployee.getEmployeeId());
         model.addAttribute("effectiveLoginSign", authorizedUser.getEffectiveLoginSign());
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
-        model.addAttribute("warnings", warnings);
         model.addAttribute("releasedUntil", employeecontract.getReportReleaseDate());
         model.addAttribute("releaseColorClass", employeecontract.getReleaseWarning() ? "danger" : "success");
         model.addAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
