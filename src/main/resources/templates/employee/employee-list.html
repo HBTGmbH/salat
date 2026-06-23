@@ -12,7 +12,7 @@
         <!-- Primary filter row -->
         <div class="row g-2 align-items-end">
           <div class="col-md-6">
-            <input type="text" class="form-control" name="filter" th:value="${filter}" />
+            <input type="text" class="form-control" name="eFilter" th:value="${eFilter}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary"><i class="icon ti ti-filter m-0"></i></button>
@@ -28,7 +28,7 @@
         <div class="row g-2 align-items-end mt-2">
           <div class="col-auto ms-2">
             <label class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+              <input class="form-check-input" type="checkbox" name="eShowHidden" value="true" th:checked="${eShowHidden}"/>
               <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
             </label>
           </div>

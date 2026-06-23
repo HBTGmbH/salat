@@ -19,6 +19,11 @@ public class UiState {
         return values.get(key);
     }
 
+    public Long getLongValue(UiStateKey key) {
+        var value = values.get(key);
+        return value != null ? Long.valueOf(value) : null;
+    }
+
     public void clearState(UiStateKey key) {
         values.remove(key);
     }

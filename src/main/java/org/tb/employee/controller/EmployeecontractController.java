@@ -4,8 +4,6 @@ import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DurationUtils.validateDuration;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,6 +31,7 @@ import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.web.UiState;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -51,27 +50,15 @@ public class EmployeecontractController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final UiState uiState;
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) String filter,
+            @RequestParam(required = false) String ecFilter,
             @RequestParam(required = false) Long employeeId,
-            @RequestParam(required = false) Boolean show,
-            @RequestParam(required = false) Boolean showHidden,
-            HttpServletRequest request,
-            HttpSession session,
+            @RequestParam(required = false) Boolean ecShowInvalid,
+            @RequestParam(required = false) Boolean ecShowHidden,
             Model model) {
-        if (request.getParameterMap().containsKey("filter")) {
-            session.setAttribute("employees.contracts.filter", filter);
-            session.setAttribute("employees.contracts.employeeId", employeeId);
-            session.setAttribute("employees.contracts.show", show);
-            session.setAttribute("employees.contracts.showHidden", showHidden);
-        } else {
-            filter = (String) session.getAttribute("employees.contracts.filter");
-            employeeId = (Long) session.getAttribute("employees.contracts.employeeId");
-            show = (Boolean) session.getAttribute("employees.contracts.show");
-            showHidden = (Boolean) session.getAttribute("employees.contracts.showHidden");
-        }
         var employees = employeecontractService.getVisibleEmployeeContracts().stream()
                 .map(Employeecontract::getEmployee)
                 .distinct()
@@ -80,13 +67,13 @@ public class EmployeecontractController {
         if (employeeId == null && employees.size() == 1) {
             employeeId = employees.getFirst().getId();
         }
-        var contracts = employeecontractService.getEmployeeContractViewsByFilters(show, filter, employeeId, showHidden);
+        var contracts = employeecontractService.getEmployeeContractViewsByFilters(ecShowInvalid, ecFilter, employeeId, ecShowHidden);
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("employees", employees);
-        model.addAttribute("filter", filter);
+        model.addAttribute("ecFilter", ecFilter);
         model.addAttribute("employeeId", employeeId);
-        model.addAttribute("show", show);
-        model.addAttribute("showHidden", showHidden);
+        model.addAttribute("ecShowInvalid", ecShowInvalid);
+        model.addAttribute("ecShowHidden", ecShowHidden);
         addListModel(model);
         return "employee/employee-contract-list";
     }
@@ -152,7 +139,6 @@ public class EmployeecontractController {
     public String store(@ModelAttribute("employeecontractForm") EmployeecontractForm form,
                         BindingResult bindingResult,
                         Model model,
-                        HttpSession session,
                         RedirectAttributes redirectAttributes) {
         validateContractForm(form, bindingResult);
 
@@ -215,8 +201,10 @@ public class EmployeecontractController {
         }
 
         if (isCreate) {
-            session.setAttribute("employees.contracts.employeeId", form.getEmployeeId());
-            session.setAttribute("employees.contracts.filter", null);
+            uiState.clearState(EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_FILTER);
+            if(!Objects.equals(form.getEmployeeId(), uiState.getLongValue(EmployeeUiStateKeyContributor.EMPLOYEE_ID))) {
+                uiState.clearState(EmployeeUiStateKeyContributor.EMPLOYEE_ID);
+            }
         }
         if (!logs.isEmpty()) {
             redirectAttributes.addFlashAttribute("logs", logs);

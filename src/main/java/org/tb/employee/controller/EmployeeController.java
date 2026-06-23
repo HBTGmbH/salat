@@ -1,7 +1,5 @@
 package org.tb.employee.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -23,6 +21,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.web.UiState;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 
@@ -35,26 +34,18 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final UiState uiState;
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) String filter,
-            @RequestParam(required = false) Boolean showHidden,
-            HttpServletRequest request,
-            HttpSession session,
+            @RequestParam(required = false) String eFilter,
+            @RequestParam(required = false) Boolean eShowHidden,
             Model model) {
-        if (request.getParameterMap().containsKey("filter")) {
-            session.setAttribute("employees.filter", filter);
-            session.setAttribute("employees.showHidden", showHidden);
-        } else {
-            filter = (String) session.getAttribute("employees.filter");
-            showHidden = (Boolean) session.getAttribute("employees.showHidden");
-        }
-        var employees = employeeService.getEmployeesByFilter(filter, showHidden);
+        var employees = employeeService.getEmployeesByFilter(eFilter, eShowHidden);
         employees.sort(Comparator.comparing(Employee::getLastname).thenComparing(Employee::getFirstname));
         model.addAttribute("employees", employees);
-        model.addAttribute("filter", filter);
-        model.addAttribute("showHidden", showHidden);
+        model.addAttribute("eFilter", eFilter);
+        model.addAttribute("eShowHidden", eShowHidden);
         addListModel(model);
         return "employee/employee-list";
     }
@@ -102,7 +93,6 @@ public class EmployeeController {
     public String store(@ModelAttribute("employeeForm") EmployeeForm form,
                         BindingResult bindingResult,
                         Model model,
-                        HttpSession session,
                         RedirectAttributes redirectAttributes) {
         validateForm(form, bindingResult);
 
@@ -137,7 +127,7 @@ public class EmployeeController {
         }
 
         if (isCreate) {
-            session.setAttribute("employees.filter", null);
+            uiState.clearState(EmployeeUiStateKeyContributor.EMPLOYEE_FILTER);
         }
         redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("form.employee.message.stored", "Employee saved successfully"));
