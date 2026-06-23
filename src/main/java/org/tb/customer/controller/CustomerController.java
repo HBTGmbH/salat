@@ -4,8 +4,6 @@ import static org.tb.common.GlobalConstants.CUSTOMERADDRESS_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.CUSTOMERNAME_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.CUSTOMERSHORTNAME_MAX_LENGTH;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -22,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.web.UiState;
 import org.tb.customer.domain.CustomerDTO;
 import org.tb.customer.service.CustomerService;
 
@@ -34,20 +33,12 @@ public class CustomerController {
   private final CustomerService customerService;
   private final MessageSourceAccessor messageSourceAccessor;
   private final ErrorCodeViewHelper errorCodeViewHelper;
+  private final UiState uiState;
 
   @GetMapping
   public String list(@RequestParam(value = "filter", required = false) String filter,
                      @RequestParam(value = "showHidden", required = false) Boolean showHidden,
-                     HttpServletRequest request,
-                     HttpSession session,
                      Model model) {
-    if (request.getParameterMap().containsKey("filter") || request.getParameterMap().containsKey("showHidden")) {
-      session.setAttribute("customers.filter", filter);
-      session.setAttribute("customers.showHidden", showHidden);
-    } else {
-      filter = (String) session.getAttribute("customers.filter");
-      showHidden = (Boolean) session.getAttribute("customers.showHidden");
-    }
     boolean showHiddenFlag = Boolean.TRUE.equals(showHidden);
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
     model.addAttribute("filter", filter);
@@ -80,7 +71,6 @@ public class CustomerController {
   public String store(@Valid @ModelAttribute("customer") CustomerDTO form,
                       BindingResult bindingResult,
                       Model model,
-                      HttpSession session,
                       RedirectAttributes redirectAttributes) {
     if (form.getShortName() == null || form.getShortName().isBlank()) {
       bindingResult.rejectValue("shortName", "error.shortName",
@@ -128,7 +118,7 @@ public class CustomerController {
     }
 
     if (isCreate) {
-      session.setAttribute("customers.filter", null);
+      uiState.clearState(CustomerUiStateKeyContributor.FILTER);
     }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));

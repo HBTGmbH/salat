@@ -19,9 +19,8 @@ public class UiState {
         return values.get(key);
     }
 
-    public Long getLongValue(UiStateKey key) {
-        String raw = values.get(key);
-        return raw != null ? Long.parseLong(raw) : null;
+    public void clearState(UiStateKey key) {
+        values.remove(key);
     }
 
     /**
