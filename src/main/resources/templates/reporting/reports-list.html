@@ -9,13 +9,13 @@
     <div class="card-body">
       <form class="row g-2" method="get" th:action="@{/reporting/reports}">
         <div class="col-md-6">
-          <input type="text" class="form-control" name="filter" placeholder="Filter" th:value="${filter}" />
+          <input type="text" class="form-control" name="rFilter" placeholder="Filter" th:value="${rFilter}" />
         </div>
         <div class="col-auto">
           <button class="btn btn-primary" type="submit"><i class="icon ti ti-filter m-0"></i></button>
         </div>
         <div class="col-auto ms-auto" th:if="${#authorization.expression('hasAnyRole(''MANAGER'',''PEOPLE_LEAD'')')}">
-          <a class="btn btn-success" th:href="@{/reporting/reports/create(filter=${filter})}"><i class="icon ti ti-file-plus"></i> New Report</a>
+          <a class="btn btn-success" th:href="@{/reporting/reports/create}"><i class="icon ti ti-file-plus"></i> New Report</a>
         </div>
       </form>
     </div>
@@ -39,15 +39,14 @@
           <td class="d-none d-sm-table-cell" th:text="${#temporals.format(report.lastupdate, 'yyyy-MM-dd HH:mm')}"></td>
           <td class="d-none d-sm-table-cell" th:text="${report.lastupdatedby}"></td>
           <td>
-            <a class="btn btn-success" th:href="@{/reporting/reports/execute(id=${report.id}, filter=${filter})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+            <a class="btn btn-success" th:href="@{/reporting/reports/execute(id=${report.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
           </td>
           <td>
-            <a th:if="${mayEdit[report.id]}" class="btn btn-outline-primary" th:href="@{/reporting/reports/edit(id=${report.id}, filter=${filter})}"><i class="icon ti ti-pencil m-0"></i></a>
+            <a th:if="${mayEdit[report.id]}" class="btn btn-outline-primary" th:href="@{/reporting/reports/edit(id=${report.id})}"><i class="icon ti ti-pencil m-0"></i></a>
           </td>
           <td>
             <form th:if="${mayDelete[report.id]}" th:action="@{/reporting/reports/delete}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
               <input type="hidden" name="id" th:value="${report.id}"/>
-              <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
               <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
             </form>
           </td>

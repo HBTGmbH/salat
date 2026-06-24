@@ -6,11 +6,10 @@ import static java.util.Collections.emptySet;
 import static java.util.Set.of;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
+import static org.tb.reporting.controller.ReportingUiStateKeyContributor.REPORT_FILTER;
 
 import com.google.common.annotations.VisibleForTesting;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +43,7 @@ import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.util.DateTimeUtils;
+import org.tb.common.web.UiState;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
@@ -61,18 +61,12 @@ public class ReportController {
   private final ReportService reportService;
   private final ReportAuthorization reportAuthorization;
   private final ExcelExportService excelExportService;
+  private final UiState uiState;
 
   @GetMapping
-  public String list(@RequestParam(value = "filter", required = false) String filter, Model model, SessionStatus status,
-                     HttpServletRequest request, HttpSession session) {
+  public String list(@RequestParam(value = "rFilter", required = false) String rFilter, Model model, SessionStatus status) {
     status.setComplete(); // remove old report result
-    if (request.getParameterMap().containsKey("filter")) {
-      session.setAttribute("reporting.reports.filter", filter);
-    } else {
-      filter = (String) session.getAttribute("reporting.reports.filter");
-    }
-
-    var reports = reportService.getReportDefinitionsByFilter(filter);
+    var reports = reportService.getReportDefinitionsByFilter(rFilter);
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
     for (ReportDefinition r : reports) {
@@ -86,28 +80,25 @@ public class ReportController {
     model.addAttribute("reports", reports);
     model.addAttribute("mayEdit", mayEdit);
     model.addAttribute("mayDelete", mayDelete);
-    model.addAttribute("filter", filter);
+    model.addAttribute("rFilter", rFilter);
     return "reporting/reports-list";
   }
 
   @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
   @GetMapping("/create")
-  public String createForm(@RequestParam(value = "filter", required = false) String filter, Model model) {
+  public String createForm(Model model) {
     model.addAttribute("pageTitle", "Create Report");
     model.addAttribute("section", "reports");
     model.addAttribute("subSection", "reports");
     model.addAttribute("sectionTitle", "Reports");
     model.addAttribute("report", new ReportForm());
     model.addAttribute("isEdit", false);
-    model.addAttribute("filter", filter);
     return "reporting/report-form";
   }
 
   @GetMapping("/edit")
   @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
-  public String editForm(@RequestParam("id") Long id,
-                         @RequestParam(value = "filter", required = false) String filter,
-                         Model model) {
+  public String editForm(@RequestParam("id") Long id, Model model) {
     var rd = reportService.getReportDefinition(id);
     if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
     var form = new ReportForm();
@@ -121,7 +112,6 @@ public class ReportController {
     model.addAttribute("report", form);
     model.addAttribute("isEdit", true);
     model.addAttribute("reportAuthorizations", reportAuthorization.getAuthorizations(rd));
-    model.addAttribute("filter", filter);
     return "reporting/report-form";
   }
 
@@ -130,9 +120,7 @@ public class ReportController {
   public String store(@ModelAttribute("report") ReportForm form,
                       BindingResult bindingResult,
                       Model model,
-                      HttpSession session,
-                      RedirectAttributes redirectAttributes,
-                      @RequestParam(value = "filter", required = false) String filter) {
+                      RedirectAttributes redirectAttributes) {
 
     if (form.getName() == null || form.getName().isBlank()) {
       bindingResult.rejectValue("name", "error.name", "Name is required");
@@ -147,35 +135,27 @@ public class ReportController {
       model.addAttribute("subSection", "reports");
       model.addAttribute("sectionTitle", "Reports");
       model.addAttribute("isEdit", form.getId() != null);
-      model.addAttribute("filter", filter);
       return "reporting/report-form";
     }
 
     if (form.getId() == null) {
       reportService.create(form.getName(), form.getSql());
-      session.setAttribute("reporting.reports.filter", null);
+      uiState.clearState(REPORT_FILTER);
       redirectAttributes.addFlashAttribute("toastSuccess", "Report created successfully");
-      return "redirect:/reporting/reports";
     } else {
       reportService.update(form.getId(), form.getName(), form.getSql());
       redirectAttributes.addFlashAttribute("toastSuccess", "Report updated successfully");
     }
 
-    return filter == null || filter.isBlank()
-        ? "redirect:/reporting/reports"
-        : "redirect:/reporting/reports?filter=" + filter;
+    return "redirect:/reporting/reports";
   }
 
   @PostMapping("/delete")
   @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
-  public String delete(@RequestParam("id") Long id,
-                       @RequestParam(value = "filter", required = false) String filter,
-                       RedirectAttributes redirectAttributes) {
+  public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     reportService.deleteReportDefinition(id);
     redirectAttributes.addFlashAttribute("toastSuccess", "Report deleted successfully");
-    return filter == null || filter.isBlank()
-        ? "redirect:/reporting/reports"
-        : "redirect:/reporting/reports?filter=" + filter;
+    return "redirect:/reporting/reports";
   }
 
   @GetMapping("/execute")
@@ -201,7 +181,6 @@ public class ReportController {
       model.addAttribute("report", rd);
       model.addAttribute("execute", paramForm);
       model.addAttribute("missingParameters", missingParameters);
-      model.addAttribute("filter", allParams.get("filter"));
       return "reporting/report-parameters";
     } else {
       ReportResult reportResult = reportService.execute(id, parametersFromRequest);
@@ -213,17 +192,14 @@ public class ReportController {
       model.addAttribute("report", rd);
       model.addAttribute("reportResult", reportResult);
       model.addAttribute("params", parametersFromRequest);
-      model.addAttribute("filter", allParams.get("filter"));
       return "reporting/report-result";
     }
   }
 
   @PostMapping("/execute")
-  public String executeWithForm(@ModelAttribute("execute") ExecuteForm form,
-                                @RequestParam(value = "filter", required = false) String filter) {
+  public String executeWithForm(@ModelAttribute("execute") ExecuteForm form) {
     String queryParams = renderQueryParams(form.getParameters());
-    String filterParam = (filter == null || filter.isBlank()) ? "" : "&filter=" + filter;
-    return "redirect:/reporting/reports/execute?id=" + form.getReportId() + queryParams + filterParam;
+    return "redirect:/reporting/reports/execute?id=" + form.getReportId() + queryParams;
   }
 
   @PostMapping("/export")
