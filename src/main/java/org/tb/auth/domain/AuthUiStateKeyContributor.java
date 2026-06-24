@@ -14,6 +14,9 @@ public class AuthUiStateKeyContributor implements UiStateKeyContributor {
     public static final SensitiveUiStateKey IMPERSONATE_LOGIN_SIGN =
         new SensitiveUiStateKey("impersonateLoginSign");
 
+    public static final SensitiveUiStateKey IMPERSONATE_LOGIN_STATUS =
+        new SensitiveUiStateKey("impersonateLoginStatus");
+
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
         return Map.of();
@@ -21,6 +24,6 @@ public class AuthUiStateKeyContributor implements UiStateKeyContributor {
 
     @Override
     public Collection<UiStateKey> getAllKeys() {
-        return Set.of(IMPERSONATE_LOGIN_SIGN);
+        return Set.of(IMPERSONATE_LOGIN_SIGN, IMPERSONATE_LOGIN_STATUS);
     }
 }
