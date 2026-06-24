@@ -5,43 +5,62 @@
       th:with="section='reports',subSection='scheduled-report-jobs',title='Scheduled Report Jobs',sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
 
-  <div th:replace="~{fragments/master-table :: masterTable(
-      addHref=@{/reporting/jobs/create}, addLabel=${'Schedule Report'},
-      thead=~{::theadContent}, tbody=~{::tbodyContent},
-      addIf=${true},
-      addIcon='ti-clock-plus'
-    )}">
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-6"></div>
+        <div class="col-auto"></div>
+        <div class="col-auto ms-auto">
+          <a class="btn btn-success" th:href="@{/reporting/jobs/create}"><i class="icon ti ti-clock-plus"></i> Schedule Report</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <thead th:fragment="theadContent">
-      <tr>
-        <th th:replace="~{fragments/master-table :: colHeaderPrimary(label=${'Name'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Report'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Recipients'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Enabled'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Schedule'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-      </tr>
-    </thead>
-
-    <tbody th:fragment="tbodyContent">
-      <tr th:each="job : ${jobs}">
-        <td th:replace="~{fragments/master-table :: colTextPrimary(text=${job.name})}"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${job.reportDefinition != null ? job.reportDefinition.name : '�'})}"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${job.recipientEmails})}"></td>
-        <td th:replace="~{fragments/master-table :: colYesNo(enabled=${job.enabled})}"></td>
-        <td th:replace="~{fragments/master-table :: colTextAdd(text=${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}, additional=${cronDescriptions[job.id]})}"></td>
-        <td th:replace="~{fragments/master-table :: colDate(date=${job.lastupdate})}"></td>
-        <td>
-          <a class="btn btn-success" th:href="@{'/reporting/jobs/run'(id=${job.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
-        </td>
-        <td th:replace="~{fragments/master-table :: colEditLink(href=@{'/reporting/jobs/edit'(id=${job.id})})}"></td>
-        <td th:replace="~{fragments/master-table :: colDeleteForm(id=${job.id}, action=@{'/reporting/jobs/delete'})}"></td>
-      </tr>
-    </tbody>
-
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th class="d-none d-sm-table-cell">Report</th>
+          <th class="d-none d-sm-table-cell">Recipients</th>
+          <th class="d-none d-sm-table-cell">Enabled</th>
+          <th class="d-none d-sm-table-cell">Schedule</th>
+          <th class="d-none d-sm-table-cell">Last Updated</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="job : ${jobs}">
+          <td th:text="${job.name}"></td>
+          <td class="d-none d-sm-table-cell" th:text="${job.reportDefinition != null ? job.reportDefinition.name : '-'}"></td>
+          <td class="d-none d-sm-table-cell" th:text="${job.recipientEmails}"></td>
+          <td class="d-none d-sm-table-cell">
+            <span th:if="${job.enabled}" class="text-success"><i class="icon ti ti-circle-check"></i> Yes</span>
+            <span th:if="${!job.enabled}" class="text-danger"><i class="icon ti ti-circle-x"></i> No</span>
+          </td>
+          <td class="d-none d-sm-table-cell">
+            <div th:text="${#strings.isEmpty(job.cronExpression) ? defaultCron : job.cronExpression}"></div>
+            <small class="text-muted" th:text="${cronDescriptions[job.id]}"></small>
+          </td>
+          <td class="d-none d-sm-table-cell" th:text="${#temporals.format(job.lastupdate, 'yyyy-MM-dd HH:mm')}"></td>
+          <td>
+            <a class="btn btn-success" th:href="@{/reporting/jobs/run(id=${job.id})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+          </td>
+          <td>
+            <a class="btn btn-outline-primary" th:href="@{/reporting/jobs/edit(id=${job.id})}"><i class="icon ti ti-pencil m-0"></i></a>
+          </td>
+          <td>
+            <form th:action="@{/reporting/jobs/delete}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
+              <input type="hidden" name="id" th:value="${job.id}"/>
+              <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
 </main>

@@ -5,39 +5,55 @@
       th:with="section='reports',subSection='reports',title='Reports',sectionTitle=#{main.general.mainmenu.reporting.text}">
 <main layout:fragment="content">
 
-  <div th:replace="~{fragments/master-table :: masterTableFilter(
-      addHref=@{'/reporting/reports/create'(filter=${filter})}, addLabel='New Report',
-      thead=~{::theadContent}, tbody=~{::tbodyContent},
-      addIf=${#authorization.expression('hasAnyRole(''MANAGER'',''PEOPLE_LEAD'')')},
-      addIcon='ti-file-plus',
-      filterHref=@{/reporting/reports},
-      filterValue=${filter}
-    )}">
+  <div class="card mb-3">
+    <div class="card-body">
+      <form class="row g-2" method="get" th:action="@{/reporting/reports}">
+        <div class="col-md-6">
+          <input type="text" class="form-control" name="filter" placeholder="Filter" th:value="${filter}" />
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary" type="submit"><i class="icon ti ti-filter m-0"></i></button>
+        </div>
+        <div class="col-auto ms-auto" th:if="${#authorization.expression('hasAnyRole(''MANAGER'',''PEOPLE_LEAD'')')}">
+          <a class="btn btn-success" th:href="@{/reporting/reports/create(filter=${filter})}"><i class="icon ti ti-file-plus"></i> New Report</a>
+        </div>
+      </form>
+    </div>
+  </div>
 
-    <thead th:fragment="theadContent">
-      <tr>
-        <th th:replace="~{fragments/master-table :: colHeaderPrimary(label=${'Name'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeader(label=${'Last Updated By'})}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-        <th th:replace="~{fragments/master-table :: colHeaderActionIcon()}"></th>
-      </tr>
-    </thead>
-
-    <tbody th:fragment="tbodyContent">
-      <tr th:each="report : ${reports}">
-        <td th:replace="~{fragments/master-table :: colTextPrimary(text=${report.name})}"></td>
-        <td th:replace="~{fragments/master-table :: colDate(date=${report.lastupdate})}" class="d-none d-sm-table-cell"></td>
-        <td th:replace="~{fragments/master-table :: colText(text=${report.lastupdatedby})}" class="d-none d-sm-table-cell"></td>
-        <td>
-          <a class="btn btn-success" th:href="@{'/reporting/reports/execute'(id=${report.id}, filter=${filter})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
-        </td>
-        <td th:replace="~{fragments/master-table :: colEditLinkIf(href=@{'/reporting/reports/edit'(id=${report.id}, filter=${filter})}, ifCondition=${mayEdit[report.id]})}"></td>
-        <td th:replace="~{fragments/master-table :: colDeleteFormIf(id=${report.id}, action=@{'/reporting/reports/delete'}, ifCondition=${mayDelete[report.id]})}"></td>
-      </tr>
-    </tbody>
-
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th class="d-none d-sm-table-cell">Last Updated</th>
+          <th class="d-none d-sm-table-cell">Last Updated By</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="report : ${reports}">
+          <td th:text="${report.name}"></td>
+          <td class="d-none d-sm-table-cell" th:text="${#temporals.format(report.lastupdate, 'yyyy-MM-dd HH:mm')}"></td>
+          <td class="d-none d-sm-table-cell" th:text="${report.lastupdatedby}"></td>
+          <td>
+            <a class="btn btn-success" th:href="@{/reporting/reports/execute(id=${report.id}, filter=${filter})}"><i class="icon ti ti-player-play" style="margin-right: 0; margin-left: 0"></i></a>
+          </td>
+          <td>
+            <a th:if="${mayEdit[report.id]}" class="btn btn-outline-primary" th:href="@{/reporting/reports/edit(id=${report.id}, filter=${filter})}"><i class="icon ti ti-pencil m-0"></i></a>
+          </td>
+          <td>
+            <form th:if="${mayDelete[report.id]}" th:action="@{/reporting/reports/delete}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
+              <input type="hidden" name="id" th:value="${report.id}"/>
+              <input type="hidden" name="filter" th:if="${filter}" th:value="${filter}" />
+              <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
 </main>
