@@ -137,6 +137,7 @@
                 onchange="this.form.submit()" style="min-width: 200px">
           <option th:each="ec : ${employeecontracts}"
                   th:value="${ec.id}"
+                  th:text="${ec.employee.name}"
                   th:selected="${ec.id == selectedContractId}">
           </option>
         </select>
