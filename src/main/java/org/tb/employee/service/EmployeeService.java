@@ -49,6 +49,10 @@ public class EmployeeService {
   private final AuthorizedUser authorizedUser;
   private final EmployeeAuthorization employeeAuthorization;
 
+  public Employee getEmployeeByLoginname(String loginname) {
+    return employeeDAO.getLoginEmployee(loginname);
+  }
+
   public Employee getLoginEmployee() {
     var loginEmployee = employeeDAO.getLoginEmployee(authorizedUser.getEffectiveLoginSign());
     var allowedLoginEmployees = getLoginEmployees();
