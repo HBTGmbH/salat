@@ -4,9 +4,13 @@ import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.validateDuration;
+import static org.tb.employee.controller.EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_ID;
+import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ID;
+import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ORDER_ID;
+import static org.tb.order.controller.OrderUiStateKeyContributor.EMPLOYEEORDER_FILTER;
+import static org.tb.order.controller.OrderUiStateKeyContributor.SUBORDER_ID;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +34,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.web.UiState;
 import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
@@ -57,6 +62,7 @@ public class EmployeeorderController {
     private final AuthorizedEmployee authorizedEmployee;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final UiState uiState;
 
     @GetMapping
     public String list(
@@ -64,40 +70,19 @@ public class EmployeeorderController {
             @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) Long orderId,
             @RequestParam(required = false) Long suborderId,
-            @RequestParam(required = false) String filter,
-            @RequestParam(required = false) Boolean show,
-            @RequestParam(required = false) Boolean showActualHours,
-            @RequestParam(required = false) Boolean showHidden,
+            @RequestParam(required = false) String eoFilter,
+            @RequestParam(required = false) Boolean eoShowInvalid,
+            @RequestParam(required = false) Boolean eoShowActualHours,
+            @RequestParam(required = false) Boolean eoShowHidden,
             HttpServletRequest request,
-            HttpSession session,
             Model model) {
-        if (request.getParameterMap().containsKey("filter")) {
-            session.setAttribute("orders.employeeorders.filter", filter);
-            session.setAttribute("orders.employeeorders.customerId", customerId);
-            session.setAttribute("orders.employeeorders.employeeContractId", employeeContractId);
-            session.setAttribute("orders.employeeorders.orderId", orderId);
-            session.setAttribute("orders.employeeorders.suborderId", suborderId);
-            session.setAttribute("orders.employeeorders.show", show);
-            session.setAttribute("orders.employeeorders.showActualHours", showActualHours);
-            session.setAttribute("orders.employeeorders.showHidden", showHidden);
-        } else {
-            filter = (String) session.getAttribute("orders.employeeorders.filter");
-            employeeContractId = (Long) session.getAttribute("orders.employeeorders.employeeContractId");
-            customerId = (Long) session.getAttribute("orders.employeeorders.customerId");
-            orderId = (Long) session.getAttribute("orders.employeeorders.orderId");
-            suborderId = (Long) session.getAttribute("orders.employeeorders.suborderId");
-            show = (Boolean) session.getAttribute("orders.employeeorders.show");
-            showActualHours = (Boolean) session.getAttribute("orders.employeeorders.showActualHours");
-            showHidden = (Boolean) session.getAttribute("orders.employeeorders.showHidden");
-        }
-
         var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
         if (employeeContractId == null && employeeContracts.size() == 1) {
             employeeContractId = employeeContracts.getFirst().getId();
         }
-        var orders = customerorderService.getCustomerordersByFilters(show, filter, customerId, showHidden);
+        var orders = customerorderService.getCustomerordersByFilters(eoShowInvalid, eoFilter, customerId, eoShowHidden);
 
-        var filterSet = (filter != null && !filter.isEmpty()) ||
+        var filterSet = (eoFilter != null && !eoFilter.isEmpty()) ||
                         customerId != null ||
                         employeeContractId != null ||
                         orderId != null ||
@@ -106,7 +91,7 @@ public class EmployeeorderController {
         List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
             employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                show, filter, employeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(showActualHours), showHidden);
+                eoShowInvalid, eoFilter, employeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(eoShowActualHours), eoShowHidden);
         }
 
         List<Suborder> suborders = List.of();
@@ -122,11 +107,10 @@ public class EmployeeorderController {
         model.addAttribute("employeeContractId", employeeContractId);
         model.addAttribute("orderId", orderId);
         model.addAttribute("suborderId", suborderId);
-        model.addAttribute("filter", filter);
-        model.addAttribute("show", show);
-        model.addAttribute("showHidden", showHidden);
-        model.addAttribute("showActualHours", showActualHours);
-        model.addAttribute("showActualHoursToggle", Boolean.TRUE.equals(showActualHours));
+        model.addAttribute("eoFilter", eoFilter);
+        model.addAttribute("eoShowInvalid", eoShowInvalid);
+        model.addAttribute("eoShowHidden", eoShowHidden);
+        model.addAttribute("eoShowActualHours", Boolean.TRUE.equals(eoShowActualHours));
         addListModel(model);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
@@ -242,7 +226,6 @@ public class EmployeeorderController {
             @ModelAttribute("employeeorderForm") EmployeeorderForm form,
             BindingResult bindingResult,
             Model model,
-            HttpSession session,
             RedirectAttributes redirectAttributes,
             @RequestParam(required = false) String saveAndNew) {
 
@@ -291,11 +274,19 @@ public class EmployeeorderController {
         }
 
         if (isCreate) {
-            session.setAttribute("orders.employeeorders.employeeContractId", form.getEmployeeContractId());
-            session.setAttribute("orders.employeeorders.customerId", form.getCustomerId());
-            session.setAttribute("orders.employeeorders.orderId", form.getOrderId());
-            session.setAttribute("orders.employeeorders.suborderId", form.getSuborderId());
-            session.setAttribute("orders.employeeorders.filter", null);
+            uiState.clearState(EMPLOYEEORDER_FILTER);
+            if (!Objects.equals(form.getEmployeeContractId(), uiState.getLongValue(EMPLOYEE_CONTRACT_ID))) {
+                uiState.clearState(EMPLOYEE_CONTRACT_ID);
+            }
+            if (!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
+                uiState.clearState(CUSTOMER_ID);
+            }
+            if (!Objects.equals(form.getOrderId(), uiState.getLongValue(CUSTOMER_ORDER_ID))) {
+                uiState.clearState(CUSTOMER_ORDER_ID);
+            }
+            if (!Objects.equals(form.getSuborderId(), uiState.getLongValue(SUBORDER_ID))) {
+                uiState.clearState(SUBORDER_ID);
+            }
         }
         redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("form.employeeorder.message.stored", "Employee order saved successfully"));

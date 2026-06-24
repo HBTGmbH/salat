@@ -21,6 +21,10 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey SUBORDER_SHOW_INVALID = new UiStateKey("suborder.ShowInvalid");
     public static final UiStateKey SUBORDER_SHOW_HIDDEN = new UiStateKey("suborder.ShowHidden");
     public static final UiStateKey SUBORDER_SHOW_ACTUAL_HOURS = new UiStateKey("suborder.ShowActualHours");
+    public static final UiStateKey EMPLOYEEORDER_FILTER = new UiStateKey("employeeOrder.Filter");
+    public static final UiStateKey EMPLOYEEORDER_SHOW_INVALID = new UiStateKey("employeeOrder.ShowInvalid");
+    public static final UiStateKey EMPLOYEEORDER_SHOW_HIDDEN = new UiStateKey("employeeOrder.ShowHidden");
+    public static final UiStateKey EMPLOYEEORDER_SHOW_ACTUAL_HOURS = new UiStateKey("employeeOrder.ShowActualHours");
 
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
@@ -37,6 +41,10 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
         map.put("soShowInvalid", SUBORDER_SHOW_INVALID);
         map.put("soShowHidden", SUBORDER_SHOW_HIDDEN);
         map.put("csoShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
+        map.put("eoFilter", EMPLOYEEORDER_FILTER);
+        map.put("eoShowInvalid", EMPLOYEEORDER_SHOW_INVALID);
+        map.put("eoShowHidden", EMPLOYEEORDER_SHOW_HIDDEN);
+        map.put("eoShowActualHours", EMPLOYEEORDER_SHOW_ACTUAL_HOURS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 
