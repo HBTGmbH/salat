@@ -37,8 +37,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.util.DateTimeUtils;
@@ -54,7 +52,6 @@ import org.tb.reporting.service.ReportService;
 @Controller
 @RequestMapping("/reporting/reports")
 @RequiredArgsConstructor
-@SessionAttributes("reportResult")
 public class ReportController {
 
   private final ReportService reportService;
@@ -63,8 +60,7 @@ public class ReportController {
   private final UiState uiState;
 
   @GetMapping
-  public String list(@RequestParam(value = "rFilter", required = false) String rFilter, Model model, SessionStatus status) {
-    status.setComplete(); // remove old report result
+  public String list(@RequestParam(value = "rFilter", required = false) String rFilter, Model model) {
     var reports = reportService.getReportDefinitionsByFilter(rFilter);
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
@@ -160,8 +156,7 @@ public class ReportController {
   @GetMapping("/execute")
   public String execute(@RequestParam("id") Long id,
                         @RequestParam Map<String, String> allParams,
-                        Model model,
-                        SessionStatus status) {
+                        Model model) {
     var rd = reportService.getReportDefinition(id);
     if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
 
@@ -169,7 +164,6 @@ public class ReportController {
     var missingParameters = getMissingParameters(parametersFromRequest, rd.getSql());
 
     if (!missingParameters.isEmpty()) {
-      status.setComplete();
       var paramForm = new ExecuteForm();
       paramForm.setReportId(id);
       paramForm.initParameters(parametersFromRequest, missingParameters);
@@ -203,10 +197,12 @@ public class ReportController {
 
   @PostMapping("/export")
   public void export(@RequestParam("id") Long id,
-                     @ModelAttribute("reportResult") ReportResult reportResult,
+                     @RequestParam Map<String, String> allParams,
                      HttpServletResponse response) throws IOException {
     var rd = reportService.getReportDefinition(id);
     if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
+    var parameters = nonEmpty(getParametersFromRequest(allParams, rd.getSql()));
+    var reportResult = reportService.execute(id, parameters);
     var bytes = excelExportService.exportToExcel(reportResult);
     var fileName = createFileName(rd, reportResult.getParameters());
     response.setHeader("Content-disposition", "attachment; filename=" + fileName);
