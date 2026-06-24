@@ -17,6 +17,10 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey CUSTOMER_ORDER_SHOW_HIDDEN = new UiStateKey("customerOrder.ShowHidden");
     public static final UiStateKey CUSTOMER_ORDER_SHOW_ACTUAL_HOURS = new UiStateKey("customerOrder.ShowActualHours");
     public static final UiStateKey SUBORDER_ID = new UiStateKey("suborder.Id");
+    public static final UiStateKey SUBORDER_FILTER = new UiStateKey("suborder.Filter");
+    public static final UiStateKey SUBORDER_SHOW_INVALID = new UiStateKey("suborder.ShowInvalid");
+    public static final UiStateKey SUBORDER_SHOW_HIDDEN = new UiStateKey("suborder.ShowHidden");
+    public static final UiStateKey SUBORDER_SHOW_ACTUAL_HOURS = new UiStateKey("suborder.ShowActualHours");
 
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
@@ -29,6 +33,10 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
         map.put("coShowInvalid", CUSTOMER_ORDER_SHOW_INVALID);
         map.put("coShowHidden", CUSTOMER_ORDER_SHOW_HIDDEN);
         map.put("coShowActualHours", CUSTOMER_ORDER_SHOW_ACTUAL_HOURS);
+        map.put("soFilter", SUBORDER_FILTER);
+        map.put("soShowInvalid", SUBORDER_SHOW_INVALID);
+        map.put("soShowHidden", SUBORDER_SHOW_HIDDEN);
+        map.put("csoShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 

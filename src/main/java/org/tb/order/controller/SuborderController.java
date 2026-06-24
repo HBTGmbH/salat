@@ -3,9 +3,9 @@ package org.tb.order.controller;
 import static org.tb.common.GlobalConstants.YESNO_NO;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.util.DateUtils.format;
+import static org.tb.order.controller.OrderUiStateKeyContributor.*;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -34,6 +34,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.web.UiState;
 import org.tb.customer.service.CustomerService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
@@ -54,36 +55,21 @@ public class SuborderController {
   private final CustomerService customerService;
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
+  private final UiState uiState;
 
   @GetMapping
   public String list(
-      @RequestParam(required = false) String filter,
+      @RequestParam(required = false) String soFilter,
       @RequestParam(required = false) Long customerOrderId,
       @RequestParam(required = false) Long customerId,
-      @RequestParam(required = false) Boolean show,
-      @RequestParam(required = false) Boolean showActualHours,
-      @RequestParam(required = false) Boolean showHidden,
+      @RequestParam(required = false) Boolean soShowInvalid,
+      @RequestParam(required = false) Boolean soShowActualHours,
+      @RequestParam(required = false) Boolean soShowHidden,
       HttpServletRequest request,
-      HttpSession session,
       Model model) {
-    if (request.getParameterMap().containsKey("filter")) {
-      session.setAttribute("orders.suborders.filter", filter);
-      session.setAttribute("orders.suborders.customerOrderId", customerOrderId);
-      session.setAttribute("orders.suborders.customerId", customerId);
-      session.setAttribute("orders.suborders.show", show);
-      session.setAttribute("orders.suborders.showActualHours", showActualHours);
-      session.setAttribute("orders.suborders.showHidden", showHidden);
-    } else {
-      filter = (String) session.getAttribute("orders.suborders.filter");
-      customerOrderId = (Long) session.getAttribute("orders.suborders.customerOrderId");
-      customerId = (Long) session.getAttribute("orders.suborders.customerId");
-      show = (Boolean) session.getAttribute("orders.suborders.show");
-      showActualHours = (Boolean) session.getAttribute("orders.suborders.showActualHours");
-      showHidden = (Boolean) session.getAttribute("orders.suborders.showHidden");
-    }
-    var filterSet = (filter != null && !filter.isEmpty()) || customerId != null || customerOrderId != null;
-    var suborders = filterSet ? suborderService.getSubordersByFilters(show, filter, customerOrderId, customerId, showHidden) : List.<Suborder>of();
-    if (Boolean.TRUE.equals(showActualHours)) {
+    var filterSet = (soFilter != null && !soFilter.isEmpty()) || customerId != null || customerOrderId != null;
+    var suborders = filterSet ? suborderService.getSubordersByFilters(soShowInvalid, soFilter, customerOrderId, customerId, soShowHidden) : List.<Suborder>of();
+    if (Boolean.TRUE.equals(soShowActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {
         decorators.add(new SuborderViewDecorator(suborderService, so));
@@ -101,12 +87,12 @@ public class SuborderController {
     }
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
     model.addAttribute("visibleCustomerOrders", visibleCustomerOrders);
-    model.addAttribute("filter", filter);
+    model.addAttribute("soFilter", soFilter);
     model.addAttribute("customerId", customerId);
     model.addAttribute("customerOrderId", customerOrderId);
-    model.addAttribute("show", show);
-    model.addAttribute("showHidden", showHidden);
-    model.addAttribute("showActualHours", Boolean.TRUE.equals(showActualHours));
+    model.addAttribute("soShowInvalid", soShowInvalid);
+    model.addAttribute("soShowHidden", soShowHidden);
+    model.addAttribute("soShowActualHours", Boolean.TRUE.equals(soShowActualHours));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "suborders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
@@ -152,7 +138,6 @@ public class SuborderController {
   public String store(@ModelAttribute("suborderForm") SuborderForm form,
                       BindingResult bindingResult,
                       Model model,
-                      HttpSession session,
                       RedirectAttributes redirectAttributes) {
     validateForm(form, bindingResult);
 
@@ -198,9 +183,13 @@ public class SuborderController {
     }
 
     if (isCreate) {
-      session.setAttribute("orders.suborders.customerOrderId", form.getCustomerorderId());
-      session.setAttribute("orders.suborders.customerId", form.getCustomerId());
-      session.setAttribute("orders.suborders.filter", null);
+      uiState.clearState(SUBORDER_FILTER);
+      if(!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
+        uiState.clearState(CUSTOMER_ID);
+      }
+      if(!Objects.equals(form.getCustomerorderId(), uiState.getLongValue(CUSTOMER_ORDER_ID))) {
+        uiState.clearState(CUSTOMER_ORDER_ID);
+      }
     }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"));
