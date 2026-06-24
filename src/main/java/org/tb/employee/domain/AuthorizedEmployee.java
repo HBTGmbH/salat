@@ -1,20 +1,15 @@
 package org.tb.employee.domain;
 
-import static org.springframework.web.context.WebApplicationContext.SCOPE_SESSION;
+import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 
-import java.io.Serializable;
 import lombok.Getter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
-// ADR-0013: Ausnahme — session-scoped Bean für Identitätsdaten des eingeloggten Mitarbeiters
-// (Name, ID, Kennung, E-Mail). Session-Scope ist hier korrekt; dies ist kein UI-Selektionszustand.
 @Component
-@Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
-public class AuthorizedEmployee implements Serializable {
-
-  private static final long serialVersionUID = 1L;
+@Scope(value = SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class AuthorizedEmployee {
 
   @Getter
   private String name;
