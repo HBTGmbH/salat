@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.support.SessionStatus;
-import org.springframework.web.bind.annotation.SessionAttributes;
 import org.tb.common.GlobalConstants;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
@@ -39,7 +37,6 @@ import org.tb.order.service.SuborderService;
 @RequestMapping("/invoice")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('BACKOFFICE')")
-@SessionAttributes("invoiceData")
 public class InvoiceController {
 
     private final CustomerorderService customerorderService;
@@ -50,9 +47,7 @@ public class InvoiceController {
     private final MessageSourceAccessor messages;
 
     @GetMapping
-    public String createForm(Model model, SessionStatus sessionStatus) {
-        sessionStatus.setComplete();
-        model.addAttribute("invoiceData", null);
+    public String createForm(Model model) {
         var form = createInitialForm();
         model.addAttribute("invoiceForm", form);
         addCommonModel(model, form);
@@ -60,10 +55,7 @@ public class InvoiceController {
     }
 
     @PostMapping
-    public String updateOptions(@ModelAttribute("invoiceForm") InvoiceForm form,
-                                SessionStatus sessionStatus, Model model) {
-        sessionStatus.setComplete();
-        model.addAttribute("invoiceData", null);
+    public String updateOptions(@ModelAttribute("invoiceForm") InvoiceForm form, Model model) {
         addCommonModel(model, form);
         return "invoice/invoice-form";
     }
@@ -100,10 +92,11 @@ public class InvoiceController {
 
     @PostMapping("/print")
     public String print(@ModelAttribute("invoiceForm") InvoiceForm form,
-                        @ModelAttribute("invoiceData") InvoiceData invoiceData,
                         @RequestParam(name = "invoice-settings", required = false, defaultValue = "HBT") String invoiceSettingsName,
                         Model model) {
+        var invoiceData = buildInvoiceData(form);
         updateVisibleFlags(form, invoiceData);
+        model.addAttribute("invoiceData", invoiceData);
 
         InvoiceSettings invoiceSettings = invoiceSettingsService.getAllSettings().stream()
             .filter(s -> s.getName().equals(invoiceSettingsName))
@@ -122,8 +115,8 @@ public class InvoiceController {
 
     @PostMapping("/export")
     public void export(@ModelAttribute("invoiceForm") InvoiceForm form,
-                       @ModelAttribute("invoiceData") InvoiceData invoiceData,
                        HttpServletResponse response) throws Exception {
+        var invoiceData = buildInvoiceData(form);
         updateVisibleFlags(form, invoiceData);
         var displayOptions = InvoiceOptions.builder()
             .showTimereports(form.isTimereportsbox())
