@@ -177,7 +177,6 @@ public class ReportController {
       return "reporting/report-parameters";
     } else {
       ReportResult reportResult = reportService.execute(id, parametersFromRequest);
-      // Ergebnis in HTTP-Session ablegen, damit andere Endpunkte (z.B. Export) darauf zugreifen können
       model.addAttribute("pageTitle", "Report Result");
       model.addAttribute("section", "reports");
       model.addAttribute("subSection", "reports");
