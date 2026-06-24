@@ -23,9 +23,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AccessLevel;
+import org.tb.auth.domain.AuthUiStateKeyContributor;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.event.AuthorizedUserChangedEvent;
@@ -34,6 +34,7 @@ import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.LocalDateRange;
 import org.tb.common.SalatProperties;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.web.UiState;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +47,7 @@ public class AuthService {
   private final SalatUserRepository salatUserRepository;
   private final SalatProperties salatProperties;
   private final ApplicationEventPublisher applicationEventPublisher;
+  private final UiState uiState;
 
   private long cacheExpiryMillis;
   private Map<String, Set<Rule>> cacheEntries = new HashMap<>();
@@ -58,27 +60,19 @@ public class AuthService {
 
   @EventListener
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
-    Authentication authentication = event.getAuthentication();
-    if(!authorizedUser.isAuthenticated() || !authorizedUser.getLoginSign().equals(authentication.getName())) {
-      var loginname = authentication.getName();
-      var user = salatUserRepository.findByLoginname(loginname).orElseThrow();
-      authorizedUser.login(user);
-      applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
-    } else {
-      // already logged in
-    }
+    applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
 
   @Authorized
   public void switchLogin(String loginname) {
-    // check if switch login is allowed
-    if(!authorizedUser.getLoginSign().equals(loginname)) {
-      if(!isAuthorizedAnyObject(loginname, "EMPLOYEE", today(), LOGIN, true)) {
+    if (!authorizedUser.getLoginSign().equals(loginname)) {
+      if (!isAuthorizedAnyObject(loginname, "EMPLOYEE", today(), LOGIN, true)) {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
+      uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN, loginname);
+    } else {
+      uiState.clearState(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN);
     }
-    var user = salatUserRepository.findByLoginname(loginname).orElseThrow();
-    authorizedUser.impersonate(user);
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
 
