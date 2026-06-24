@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthUiStateKeyContributor;
@@ -60,6 +61,7 @@ public class AuthService {
 
   @EventListener
   public void onApplicationEvent(AuthenticationSuccessEvent event) {
+    SecurityContextHolder.getContext().setAuthentication(event.getAuthentication()); // ensure Security Context is set
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
 
