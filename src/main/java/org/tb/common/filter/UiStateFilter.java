@@ -87,7 +87,7 @@ public class UiStateFilter extends OncePerRequestFilter {
             var param = entry.getKey();
             var key = entry.getValue();
             String raw = req.getParameter(param);
-            if (raw != null && !raw.isBlank()) {
+            if (raw != null) {
                 dirty |= uiState.setValue(key, raw);
             }
         }

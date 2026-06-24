@@ -3,6 +3,8 @@ package org.tb.employee.controller;
 import static org.tb.common.GlobalConstants.DEFAULT_VACATION_PER_YEAR;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DurationUtils.validateDuration;
+import static org.tb.employee.controller.EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_FILTER;
+import static org.tb.employee.controller.EmployeeUiStateKeyContributor.EMPLOYEE_ID;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -201,9 +203,9 @@ public class EmployeecontractController {
         }
 
         if (isCreate) {
-            uiState.clearState(EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_FILTER);
-            if(!Objects.equals(form.getEmployeeId(), uiState.getLongValue(EmployeeUiStateKeyContributor.EMPLOYEE_ID))) {
-                uiState.clearState(EmployeeUiStateKeyContributor.EMPLOYEE_ID);
+            uiState.clearState(EMPLOYEE_CONTRACT_FILTER);
+            if(!Objects.equals(form.getEmployeeId(), uiState.getLongValue(EMPLOYEE_ID))) {
+                uiState.clearState(EMPLOYEE_ID);
             }
         }
         if (!logs.isEmpty()) {

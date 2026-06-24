@@ -2,9 +2,10 @@ package org.tb.order.controller;
 
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ID;
+import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ORDER_FILTER;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,6 +30,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.GlobalConstants;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.web.UiState;
 import org.tb.customer.service.CustomerService;
 import org.tb.customer.domain.Customer;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -52,33 +54,20 @@ public class CustomerorderController {
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final AuthorizedEmployee authorizedEmployee;
+  private final UiState uiState;
 
   @GetMapping
   public String list(
-      @RequestParam(required = false) String filter,
+      @RequestParam(required = false) String coFilter,
       @RequestParam(required = false) Long customerId,
-      @RequestParam(required = false) Boolean show,
-      @RequestParam(required = false) Boolean showActualHours,
-      @RequestParam(required = false) Boolean showHidden,
+      @RequestParam(required = false) Boolean coShowInvalid,
+      @RequestParam(required = false) Boolean coShowActualHours,
+      @RequestParam(required = false) Boolean coShowHidden,
       HttpServletRequest request,
-      HttpSession session,
       Model model) {
-    if (request.getParameterMap().containsKey("filter")) {
-      session.setAttribute("orders.customerorders.filter", filter);
-      session.setAttribute("orders.customerorders.customerId", customerId);
-      session.setAttribute("orders.customerorders.show", show);
-      session.setAttribute("orders.customerorders.showActualHours", showActualHours);
-      session.setAttribute("orders.customerorders.showHidden", showHidden);
-    } else {
-      filter = (String) session.getAttribute("orders.customerorders.filter");
-      customerId = (Long) session.getAttribute("orders.customerorders.customerId");
-      show = (Boolean) session.getAttribute("orders.customerorders.show");
-      showActualHours = (Boolean) session.getAttribute("orders.customerorders.showActualHours");
-      showHidden = (Boolean) session.getAttribute("orders.customerorders.showHidden");
-    }
-    var filterSet = (filter != null && !filter.isEmpty()) || customerId != null;
-    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(show, filter, customerId, showHidden) : List.<Customerorder>of();
-    if (Boolean.TRUE.equals(showActualHours)) {
+    var filterSet = (coFilter != null && !coFilter.isEmpty()) || customerId != null;
+    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(coShowInvalid, coFilter, customerId, coShowHidden) : List.<Customerorder>of();
+    if (Boolean.TRUE.equals(coShowActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
       for (Customerorder co : customerorders) {
         decorators.add(new CustomerOrderViewDecorator(customerorderService, co));
@@ -88,11 +77,11 @@ public class CustomerorderController {
       model.addAttribute("customerorders", customerorders);
     }
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
-    model.addAttribute("filter", filter);
+    model.addAttribute("coFilter", coFilter);
     model.addAttribute("customerId", customerId);
-    model.addAttribute("show", show);
-    model.addAttribute("showHidden", showHidden);
-    model.addAttribute("showActualHours", Boolean.TRUE.equals(showActualHours));
+    model.addAttribute("coShowInvalid", coShowInvalid);
+    model.addAttribute("coShowHidden", coShowHidden);
+    model.addAttribute("coShowActualHours", Boolean.TRUE.equals(coShowActualHours));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.customerorders.text", "Customer Orders"));
@@ -130,7 +119,6 @@ public class CustomerorderController {
   public String store(@ModelAttribute("customerorderForm") CustomerorderForm form,
                       BindingResult bindingResult,
                       Model model,
-                      HttpSession session,
                       RedirectAttributes redirectAttributes) {
     validateForm(form, bindingResult);
 
@@ -164,8 +152,10 @@ public class CustomerorderController {
     }
 
     if (newId != null) {
-      session.setAttribute("orders.customerorders.customerId", form.getCustomerId());
-      session.setAttribute("orders.customerorders.filter", null);
+      uiState.clearState(CUSTOMER_ORDER_FILTER);
+      if(!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
+        uiState.clearState(CUSTOMER_ID);
+      }
     }
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"));
