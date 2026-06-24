@@ -74,6 +74,8 @@ public class AuthorizedUser implements LoginSignProvider {
 
     public String getLoginStatus() {
         if (jobMode) return jobLoginStatus;
+        String impersonateStatus = getImpersonateLoginStatus();
+        if (impersonateStatus != null) return impersonateStatus;
         if (hasAuthority("ROLE_ADMIN")) return EMPLOYEE_STATUS_ADM;
         if (hasAuthority("ROLE_MANAGER")) return EMPLOYEE_STATUS_BL;
         if (hasAuthority("ROLE_PEOPLE_LEAD")) return EMPLOYEE_STATUS_PV;
@@ -84,27 +86,54 @@ public class AuthorizedUser implements LoginSignProvider {
 
     public boolean isRestricted() {
         if (jobMode) return jobRestricted;
+        String impersonateStatus = getImpersonateLoginStatus();
+        if (impersonateStatus != null) return EMPLOYEE_STATUS_RESTRICTED.equalsIgnoreCase(impersonateStatus);
         return hasAuthority("ROLE_RESTRICTED");
     }
 
     public boolean isAdmin() {
         if (jobMode) return jobAdmin;
+        String impersonateStatus = getImpersonateLoginStatus();
+        if (impersonateStatus != null) return EMPLOYEE_STATUS_ADM.equalsIgnoreCase(impersonateStatus);
         return hasAuthority("ROLE_ADMIN");
     }
 
     public boolean isManager() {
         if (jobMode) return jobManager;
+        String impersonateStatus = getImpersonateLoginStatus();
+        if (impersonateStatus != null) {
+            return EMPLOYEE_STATUS_ADM.equalsIgnoreCase(impersonateStatus)
+                || EMPLOYEE_STATUS_BL.equalsIgnoreCase(impersonateStatus);
+        }
         return hasAuthority("ROLE_MANAGER");
     }
 
     public boolean isPeopleLead() {
         if (jobMode) return jobPeopleLead;
+        String impersonateStatus = getImpersonateLoginStatus();
+        if (impersonateStatus != null) {
+            return EMPLOYEE_STATUS_ADM.equalsIgnoreCase(impersonateStatus)
+                || EMPLOYEE_STATUS_BL.equalsIgnoreCase(impersonateStatus)
+                || EMPLOYEE_STATUS_PV.equalsIgnoreCase(impersonateStatus);
+        }
         return hasAuthority("ROLE_PEOPLE_LEAD");
     }
 
     public boolean isBackoffice() {
         if (jobMode) return jobBackoffice;
+        String impersonateStatus = getImpersonateLoginStatus();
+        if (impersonateStatus != null) {
+            return EMPLOYEE_STATUS_ADM.equalsIgnoreCase(impersonateStatus)
+                || EMPLOYEE_STATUS_BL.equalsIgnoreCase(impersonateStatus)
+                || EMPLOYEE_STATUS_BO.equalsIgnoreCase(impersonateStatus);
+        }
         return hasAuthority("ROLE_BACKOFFICE");
+    }
+
+    private String getImpersonateLoginStatus() {
+        if (jobMode) return null;
+        if (getImpersonateLoginSign() == null) return null;
+        return uiState.getValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS);
     }
 
     private Authentication getAuth() {
