@@ -1,6 +1,13 @@
 package org.tb.auth.configuration;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +50,8 @@ public class LocalDevSecurityConfiguration {
   private final AuthorizedUser authorizedUser;
   private final Set<AuthViewHelper> authViewHelpers;
   private final AuthService authService;
+
+  private static final String DEV_LOGIN_COOKIE = "salat_dev_login";
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
@@ -109,8 +118,8 @@ public class LocalDevSecurityConfiguration {
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
           String loginName = request.getParameter("login-name");
-          Object sessionLogin = request.getSession(false) != null ? request.getSession(false).getAttribute("login-name") : null;
-          if ((loginName == null || loginName.isBlank()) && (sessionLogin == null || sessionLogin.toString().isBlank())) {
+          String cookieLogin = readLoginCookie(request);
+          if ((loginName == null || loginName.isBlank()) && (cookieLogin == null || cookieLogin.isBlank())) {
             response.sendRedirect("/?login-name=bm");
           } else {
             response.sendError(401);
@@ -131,12 +140,25 @@ public class LocalDevSecurityConfiguration {
   private AbstractPreAuthenticatedProcessingFilter preAuthenticatedProcessingFilter(AuthenticationManager authenticationManager, boolean useSession) {
     AbstractPreAuthenticatedProcessingFilter preAuthenticatedProcessingFilter = new AbstractPreAuthenticatedProcessingFilter() {
       @Override
+      public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        if (useSession) {
+          HttpServletRequest request = (HttpServletRequest) req;
+          HttpServletResponse response = (HttpServletResponse) res;
+          String loginName = request.getParameter("login-name");
+          if (loginName != null && !loginName.isBlank()) {
+            Cookie cookie = new Cookie(DEV_LOGIN_COOKIE, loginName);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+          }
+        }
+        super.doFilter(req, res, chain);
+      }
+
+      @Override
       protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         String loginName = request.getParameter("login-name");
-        if(loginName == null && useSession) {
-          loginName = (String) request.getSession().getAttribute("login-name");
-        } else if(useSession) {
-          request.getSession().setAttribute("login-name", loginName);
+        if (loginName == null && useSession) {
+          loginName = readLoginCookie(request);
         }
         return loginName;
       }
@@ -149,6 +171,18 @@ public class LocalDevSecurityConfiguration {
     preAuthenticatedProcessingFilter.setAuthenticationManager(authenticationManager);
     preAuthenticatedProcessingFilter.setCheckForPrincipalChanges(true);
     return preAuthenticatedProcessingFilter;
+  }
+
+  private static String readLoginCookie(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (DEV_LOGIN_COOKIE.equals(cookie.getName())) {
+          return cookie.getValue();
+        }
+      }
+    }
+    return null;
   }
 
   @Bean
