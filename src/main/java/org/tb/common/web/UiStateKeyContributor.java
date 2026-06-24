@@ -1,5 +1,6 @@
 package org.tb.common.web;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -30,4 +31,8 @@ public interface UiStateKeyContributor {
      * in {@link UiState}.
      */
     Map<String, UiStateKey> getParamToKeyMappings();
+
+    default Collection<UiStateKey> getAllKeys() {
+        return getParamToKeyMappings().values();
+    }
 }

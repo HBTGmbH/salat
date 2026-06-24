@@ -16,6 +16,7 @@ public class SalatProperties {
   private String apiDocsUrl;
   private Auth auth;
   private AuthService authService;
+  private UiState uiState = new UiState();
 
   @Data
   public static class Auth {
@@ -46,6 +47,11 @@ public class SalatProperties {
   @Data
   public static class AuthService {
     private Duration cacheExpiry;
+  }
+
+  @Data
+  public static class UiState {
+    private String signingKey;
   }
 
 }

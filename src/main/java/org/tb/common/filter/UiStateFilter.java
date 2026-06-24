@@ -1,5 +1,6 @@
 package org.tb.common.filter;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -7,18 +8,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.UUID;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.tb.common.SalatProperties;
 import org.tb.common.web.LoginSignProvider;
+import org.tb.common.web.SensitiveUiStateKey;
 import org.tb.common.web.UiState;
 import org.tb.common.web.UiStateKey;
 import org.tb.common.web.UiStateKeyRegistry;
@@ -43,6 +49,18 @@ public class UiStateFilter extends OncePerRequestFilter {
     private final UiState uiState;
     private final UiStateKeyRegistry uiStateKeyRegistry;
     private final LoginSignProvider loginSignProvider;
+    private final SalatProperties salatProperties;
+
+    private byte[] signingKeyBytes;
+
+    @PostConstruct
+    void initSigningKey() {
+        String configured = salatProperties.getUiState() != null
+            ? salatProperties.getUiState().getSigningKey() : null;
+        String key = (configured != null && !configured.isBlank())
+            ? configured : UUID.randomUUID().toString();
+        signingKeyBytes = key.getBytes(StandardCharsets.UTF_8);
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -58,7 +76,9 @@ public class UiStateFilter extends OncePerRequestFilter {
 
         // Phase 1: fill slots from the cookie, but only when the stored
         // login sign matches the current effective login sign (guards against stale state
-        // left behind by a previous user or an impersonation switch).
+        // left behind by a previous user). At this point UiState is empty, so
+        // getEffectiveLoginSign() returns the base login sign from SecurityContextHolder,
+        // which is what we store in _ls (not the impersonated sign).
         String effectiveLoginSign = loginSignProvider.getEffectiveLoginSign();
         Cookie[] cookies = req.getCookies();
         if (cookies != null) {
@@ -67,12 +87,20 @@ public class UiStateFilter extends OncePerRequestFilter {
                     Map<String, String> parsed = parseCookieValue(c.getValue());
                     String storedLoginSign = parsed.get(COOKIE_KEY_LOGIN_SIGN);
                     if (effectiveLoginSign != null) {
-                        if(effectiveLoginSign.equals(storedLoginSign)) {
-                            parsed.forEach((keyName, value) ->
-                                    uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
-                                        uiState.setValue(key, value);
-                                    })
-                            );
+                        if (effectiveLoginSign.equals(storedLoginSign)) {
+                            parsed.forEach((keyName, value) -> {
+                                if (keyName.startsWith("_sig_")) return;
+                                uiStateKeyRegistry.findByName(keyName).ifPresent(key -> {
+                                    if (key instanceof SensitiveUiStateKey) {
+                                        String storedSig = parsed.get("_sig_" + keyName);
+                                        if (storedSig == null) return;
+                                        byte[] expected = computeHmacBytes(keyName, value);
+                                        byte[] actual = Base64.getUrlDecoder().decode(storedSig);
+                                        if (!MessageDigest.isEqual(expected, actual)) return;
+                                    }
+                                    uiState.setValue(key, value);
+                                });
+                            });
                         } else {
                             dirty = true;
                         }
@@ -83,7 +111,7 @@ public class UiStateFilter extends OncePerRequestFilter {
         }
 
         // Phase 2: explicit request params take precedence (override cookie value)
-        for(var entry : uiStateKeyRegistry.getParamToKey().entrySet()) {
+        for (var entry : uiStateKeyRegistry.getParamToKey().entrySet()) {
             var param = entry.getKey();
             var key = entry.getValue();
             String raw = req.getParameter(param);
@@ -107,26 +135,32 @@ public class UiStateFilter extends OncePerRequestFilter {
         chain.doFilter(wrappedReq, bufferingRes);
 
         // Write cookie after the chain so any UiState mutations (e.g. clearState) are captured.
-        // BufferingResponseWrapper suppresses all commits, so the response is always uncommitted
-        // here and the Set-Cookie header can always be added.
+        // Always write when state changed (including to empty) so the browser cookie is cleared.
         Map<UiStateKey, String> stateAfterChain = uiState.getAll();
-        if (dirty || !stateAfterChain.equals(stateBeforeChain)) {
-            if (!stateAfterChain.isEmpty()) {
-                writeCookie(bufferingRes, buildCookieValue(stateAfterChain, effectiveLoginSign));
-            }
+        if ((dirty || !stateAfterChain.equals(stateBeforeChain)) && effectiveLoginSign != null) {
+            writeCookie(bufferingRes, buildCookieValue(stateAfterChain, effectiveLoginSign));
         }
         bufferingRes.writeAndCommit();
     }
 
     private String buildCookieValue(Map<UiStateKey, String> all, String loginSign) {
-        String statePart = all.entrySet().stream()
-            .map(e -> e.getKey().getName() + "=" + e.getValue())
-            .collect(Collectors.joining("&"));
-        String plain = loginSign != null
-            ? COOKIE_KEY_LOGIN_SIGN + "=" + loginSign + "&" + statePart
-            : statePart;
+        StringBuilder sb = new StringBuilder();
+        if (loginSign != null) {
+            sb.append(COOKIE_KEY_LOGIN_SIGN).append("=").append(loginSign);
+        }
+        for (Map.Entry<UiStateKey, String> entry : all.entrySet()) {
+            String keyName = entry.getKey().getName();
+            String value = entry.getValue();
+            if (sb.length() > 0) sb.append("&");
+            sb.append(keyName).append("=").append(value);
+            if (entry.getKey() instanceof SensitiveUiStateKey) {
+                String hmac = Base64.getUrlEncoder().withoutPadding()
+                    .encodeToString(computeHmacBytes(keyName, value));
+                sb.append("&_sig_").append(keyName).append("=").append(hmac);
+            }
+        }
         return Base64.getUrlEncoder().withoutPadding()
-            .encodeToString(plain.getBytes(StandardCharsets.UTF_8));
+            .encodeToString(sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     private Map<String, String> parseCookieValue(String raw) {
@@ -141,6 +175,16 @@ public class UiStateFilter extends OncePerRequestFilter {
             }
         } catch (IllegalArgumentException ignored) {}
         return result;
+    }
+
+    private byte[] computeHmacBytes(String keyName, String value) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(signingKeyBytes, "HmacSHA256"));
+            return mac.doFinal((keyName + "=" + value).getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new IllegalStateException("HMAC computation failed", e);
+        }
     }
 
     private void writeCookie(HttpServletResponse res, String value) {

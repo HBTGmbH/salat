@@ -1,84 +1,119 @@
 package org.tb.auth.domain;
 
-import static org.springframework.web.context.WebApplicationContext.SCOPE_SESSION;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_ADM;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_MA;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 
-import java.io.Serializable;
-import java.util.Objects;
-
-import lombok.Getter;
-import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.RequestScope;
 import org.tb.common.web.LoginSignProvider;
+import org.tb.common.web.UiState;
 
-// ADR-0013: Ausnahme — session-scoped Bean für Sicherheits- und Identitätszustand des eingeloggten
-// Nutzers (Rollen, Login-Kennung). Session-Scope ist hier korrekt; dies ist kein UI-Selektionszustand.
-// Die Impersonation (impersonate/login) ist ebenfalls erlaubt: sie ist ein Identitätswechsel für
-// Support-Zwecke, kein UI-Zustand der per URL oder Cookie ausgedrückt werden könnte.
 @Component
-@Scope(value = SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)
-@Getter
-public class AuthorizedUser implements Serializable, LoginSignProvider {
+@RequestScope(proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class AuthorizedUser implements LoginSignProvider {
 
-  private static final long serialVersionUID = 1L;
+    private final UiState uiState;
 
-  private boolean authenticated;
-  private String loginSign;
-  private String loginStatus;
-  private boolean restricted;
-  private boolean backoffice;
-  private boolean admin;
-  private boolean manager;
-  private boolean peopleLead;
+    // Set only during scheduled job execution (no HTTP request / no SecurityContext available).
+    private boolean jobMode = false;
+    private boolean jobAuthenticated;
+    private String jobLoginSign;
+    private String jobLoginStatus;
+    private boolean jobRestricted;
+    private boolean jobAdmin;
+    private boolean jobManager;
+    private boolean jobPeopleLead;
+    private boolean jobBackoffice;
 
-  private String impersonateLoginSign;
-
-  public String getEffectiveLoginSign() {
-    return impersonateLoginSign != null ? impersonateLoginSign : loginSign;
-  }
-
-  public void impersonate(SalatUser user) {
-    this.impersonateLoginSign = user.getLoginname();
-    setPermissions(user);
-    if(Objects.equals(loginSign, impersonateLoginSign)) {
-      impersonateLoginSign = null;
+    public AuthorizedUser(UiState uiState) {
+        this.uiState = uiState;
     }
-  }
 
-  public void login(SalatUser user) {
-    this.loginSign = user.getLoginname();
-    this.impersonateLoginSign = null;
-    this.authenticated = true;
-    setPermissions(user);
-  }
+    public void initForJob() {
+        jobMode = true;
+        jobAuthenticated = true;
+        jobLoginSign = "SYSTEM";
+        jobLoginStatus = "job";
+        jobRestricted = false;
+        jobAdmin = false;
+        jobManager = true;
+        jobPeopleLead = true;
+        jobBackoffice = true;
+    }
 
-  public void initForJob() {
-    authenticated = true;
-    loginSign = "SYSTEM";
-    loginStatus = "job";
-    restricted = false;
-    admin = false;
-    manager = true;
-    peopleLead = true;
-    backoffice = true;
-    impersonateLoginSign = null;
-  }
+    public boolean isAuthenticated() {
+        if (jobMode) return jobAuthenticated;
+        Authentication auth = getAuth();
+        return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
+    }
 
-  private void setPermissions(SalatUser user) {
-    this.restricted = user.isRestricted();
-    this.loginStatus = user.getStatus();
-    boolean isAdmin = loginStatus.equals(EMPLOYEE_STATUS_ADM);
-    this.admin = isAdmin;
-    boolean isManager = loginStatus.equals(EMPLOYEE_STATUS_BL);
-    this.manager = isAdmin || isManager;
-    boolean isPeopleLead = loginStatus.equals(EMPLOYEE_STATUS_PV);
-    this.peopleLead = isAdmin || isManager || isPeopleLead;
-    boolean isBackoffice = loginStatus.equals(EMPLOYEE_STATUS_BO);
-    this.backoffice = isBackoffice || isManager || isAdmin;
-  }
+    public String getLoginSign() {
+        if (jobMode) return jobLoginSign;
+        Authentication auth = getAuth();
+        return auth != null ? auth.getName() : null;
+    }
 
+    public String getImpersonateLoginSign() {
+        if (jobMode) return null;
+        return uiState.getValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN);
+    }
+
+    @Override
+    public String getEffectiveLoginSign() {
+        String impersonate = getImpersonateLoginSign();
+        return impersonate != null ? impersonate : getLoginSign();
+    }
+
+    public String getLoginStatus() {
+        if (jobMode) return jobLoginStatus;
+        if (hasAuthority("ROLE_ADMIN")) return EMPLOYEE_STATUS_ADM;
+        if (hasAuthority("ROLE_MANAGER")) return EMPLOYEE_STATUS_BL;
+        if (hasAuthority("ROLE_PEOPLE_LEAD")) return EMPLOYEE_STATUS_PV;
+        if (hasAuthority("ROLE_BACKOFFICE")) return EMPLOYEE_STATUS_BO;
+        if (hasAuthority("ROLE_RESTRICTED")) return EMPLOYEE_STATUS_RESTRICTED;
+        return EMPLOYEE_STATUS_MA;
+    }
+
+    public boolean isRestricted() {
+        if (jobMode) return jobRestricted;
+        return hasAuthority("ROLE_RESTRICTED");
+    }
+
+    public boolean isAdmin() {
+        if (jobMode) return jobAdmin;
+        return hasAuthority("ROLE_ADMIN");
+    }
+
+    public boolean isManager() {
+        if (jobMode) return jobManager;
+        return hasAuthority("ROLE_MANAGER");
+    }
+
+    public boolean isPeopleLead() {
+        if (jobMode) return jobPeopleLead;
+        return hasAuthority("ROLE_PEOPLE_LEAD");
+    }
+
+    public boolean isBackoffice() {
+        if (jobMode) return jobBackoffice;
+        return hasAuthority("ROLE_BACKOFFICE");
+    }
+
+    private Authentication getAuth() {
+        return SecurityContextHolder.getContext().getAuthentication();
+    }
+
+    private boolean hasAuthority(String role) {
+        Authentication auth = getAuth();
+        return auth != null && auth.getAuthorities().stream()
+            .anyMatch(ga -> role.equals(ga.getAuthority()));
+    }
 }

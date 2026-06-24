@@ -24,7 +24,8 @@ public class UiStateKeyRegistry {
         this.paramToKey = contributors.stream()
             .flatMap(c -> c.getParamToKeyMappings().entrySet().stream())
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-        this.nameToKey = paramToKey.values().stream()
+        this.nameToKey = contributors.stream()
+            .flatMap(c -> c.getAllKeys().stream())
             .collect(Collectors.toUnmodifiableMap(UiStateKey::getName, identity(), (a, b) -> a));
     }
 

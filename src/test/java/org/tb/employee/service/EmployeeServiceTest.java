@@ -45,6 +45,9 @@ public class EmployeeServiceTest {
 	@MockitoBean
 	private AuthorizedUser authorizedUser;
 
+	@MockitoBean
+	private org.tb.common.web.UiState uiState;
+
 	@BeforeEach
 	public void initAuthorizedUser() {
 		when(authorizedUser.isAuthenticated()).thenReturn(true);

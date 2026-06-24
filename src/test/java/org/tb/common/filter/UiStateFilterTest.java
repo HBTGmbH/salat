@@ -11,14 +11,19 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.tb.common.SalatProperties;
 import org.tb.common.web.LoginSignProvider;
+import org.tb.common.web.SensitiveUiStateKey;
 import org.tb.common.web.UiState;
 import org.tb.common.web.UiStateKey;
 import org.tb.common.web.UiStateKeyContributor;
@@ -28,6 +33,8 @@ class UiStateFilterTest {
 
     private static final UiStateKey KEY = new UiStateKey("contract");
     private static final String PARAM = "contractId";
+    private static final SensitiveUiStateKey SENSITIVE_KEY = new SensitiveUiStateKey("sensitiveKey");
+    private static final String SIGNING_KEY = "test-signing-key";
 
     private UiState uiState;
     private UiStateKeyRegistry registry;
@@ -37,10 +44,22 @@ class UiStateFilterTest {
     @BeforeEach
     void setUp() {
         uiState = new UiState();
-        UiStateKeyContributor contributor = () -> Map.of(PARAM, KEY);
+        UiStateKeyContributor contributor = new UiStateKeyContributor() {
+            @Override
+            public Map<String, UiStateKey> getParamToKeyMappings() {
+                return Map.of(PARAM, KEY);
+            }
+            @Override
+            public java.util.Collection<UiStateKey> getAllKeys() {
+                return List.of(KEY, SENSITIVE_KEY);
+            }
+        };
         registry = new UiStateKeyRegistry(List.of(contributor));
         loginSignProvider = mock(LoginSignProvider.class);
-        filter = new UiStateFilter(uiState, registry, loginSignProvider);
+        SalatProperties props = new SalatProperties();
+        props.getUiState().setSigningKey(SIGNING_KEY);
+        filter = new UiStateFilter(uiState, registry, loginSignProvider, props);
+        filter.initSigningKey();
     }
 
     @Test
@@ -182,8 +201,13 @@ class UiStateFilterTest {
 
         filter.doFilter(req, res, (chainReq, chainRes) -> uiState.clearState(KEY));
 
-        // State is now empty — no cookie should be written (nothing to persist)
-        assertThat(res.getHeader("Set-Cookie")).isNull();
+        // State was cleared — cookie IS written to remove the old value from the browser.
+        String setCookie = res.getHeader("Set-Cookie");
+        assertThat(setCookie).isNotNull();
+        String cookieValue = setCookie.split(";")[0].split("=", 2)[1];
+        String decoded = new String(Base64.getUrlDecoder().decode(cookieValue), StandardCharsets.UTF_8);
+        assertThat(decoded).contains(COOKIE_KEY_LOGIN_SIGN + "=alice");
+        assertThat(decoded).doesNotContain("contract=");
         assertThat(uiState.getValue(KEY)).isNull();
     }
 
@@ -222,8 +246,86 @@ class UiStateFilterTest {
         assertThat(decoded).contains("contract=55");
     }
 
+    @Test
+    void sensitiveCookieValueLoadedWhenHmacValid() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        String value = "bob";
+        String hmac = computeHmac("sensitiveKey", value);
+        String cookieContent = "_ls=alice&sensitiveKey=" + value + "&_sig_sensitiveKey=" + hmac;
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode(cookieContent)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, mock(FilterChain.class));
+
+        assertThat(uiState.getValue(SENSITIVE_KEY)).isEqualTo("bob");
+    }
+
+    @Test
+    void sensitiveCookieValueRejectedWhenHmacInvalid() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        String cookieContent = "_ls=alice&sensitiveKey=bob&_sig_sensitiveKey=invalidsig";
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode(cookieContent)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, mock(FilterChain.class));
+
+        assertThat(uiState.getValue(SENSITIVE_KEY)).isNull();
+    }
+
+    @Test
+    void sensitiveCookieValueRejectedWhenHmacMissing() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        String cookieContent = "_ls=alice&sensitiveKey=bob";
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode(cookieContent)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, mock(FilterChain.class));
+
+        assertThat(uiState.getValue(SENSITIVE_KEY)).isNull();
+    }
+
+    @Test
+    void sensitiveCookieValueWrittenWithHmac() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, (chainReq, chainRes) -> uiState.setValue(SENSITIVE_KEY, "secret"));
+
+        String setCookie = res.getHeader("Set-Cookie");
+        assertThat(setCookie).isNotNull();
+        String cookieValue = setCookie.split(";")[0].split("=", 2)[1];
+        String decoded = new String(Base64.getUrlDecoder().decode(cookieValue), StandardCharsets.UTF_8);
+        assertThat(decoded).contains("sensitiveKey=secret");
+        assertThat(decoded).contains("_sig_sensitiveKey=");
+
+        String expectedHmac = computeHmac("sensitiveKey", "secret");
+        assertThat(decoded).contains("_sig_sensitiveKey=" + expectedHmac);
+    }
+
     private static String encode(String plain) {
         return Base64.getUrlEncoder().withoutPadding()
             .encodeToString(plain.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String computeHmac(String keyName, String value) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(SIGNING_KEY.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] raw = mac.doFinal((keyName + "=" + value).getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
