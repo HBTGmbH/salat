@@ -93,18 +93,21 @@
             <div class="col-auto ms-2">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
+                <input type="hidden" name="show" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+                <input type="hidden" name="showHidden" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
+                <input type="hidden" name="showActualHours" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
               </label>
             </div>

@@ -28,6 +28,7 @@
           <div class="col-auto ms-2">
             <label class="form-check form-switch">
               <input class="form-check-input" type="checkbox" name="cShowHidden" value="true" th:checked="${cShowHidden}"/>
+              <input type="hidden" name="cShowHidden" value="false"/>
               <span class="form-check-label" th:text="#{main.customer.showhidden.text}">Show hidden</span>
             </label>
           </div>

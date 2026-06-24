@@ -64,12 +64,14 @@
             <div class="col-auto ms-2">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="ecShowInvalid" value="true" th:checked="${ecShowInvalid}"/>
+                <input type="hidden" name="ecShowInvalid" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="ecShowHidden" value="true" th:checked="${ecShowHidden}"/>
+                <input type="hidden" name="ecShowHidden" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
               </label>
             </div>

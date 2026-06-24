@@ -46,7 +46,7 @@
         <div class="collapse mt-3" id="advanced-filters">
           <div class="row g-2 align-items-end">
             <div class="col-md-4">
-              <input type="text" class="form-control" name="filter" th:value="${filter}" />
+              <input type="text" class="form-control" name="coFilter" th:value="${coFilter}" />
             </div>
             <div class="col-auto">
               <button class="btn btn-primary" type="submit" title="Apply text filter">
@@ -57,19 +57,22 @@
           <div class="row g-2 align-items-end mt-3">
             <div class="col-auto ms-2">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="show" value="true" th:checked="${show}"/>
+                <input class="form-check-input" type="checkbox" name="coShowInvalid" value="true" th:checked="${coShowInvalid}"/>
+                <input type="hidden" name="coShowInvalid" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="showHidden" value="true" th:checked="${showHidden}"/>
+                <input class="form-check-input" type="checkbox" name="coShowHidden" value="true" th:checked="${coShowHidden}"/>
+                <input type="hidden" name="coShowHidden" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="showActualHours" value="true" th:checked="${showActualHours}"/>
+                <input class="form-check-input" type="checkbox" name="coShowActualHours" value="true" th:checked="${coShowActualHours}"/>
+                <input type="hidden" name="coShowActualHours" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
               </label>
             </div>
@@ -91,8 +94,8 @@
           <th class="d-none d-md-table-cell" th:text="#{main.customerorder.valid.text}">Valid</th>
           <th class="d-none d-md-table-cell" th:text="#{main.customerorder.table.responsiblehbt.text}">Responsible HBT</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
-          <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
-          <th class="d-none d-lg-table-cell" th:if="${showActualHours}" th:text="#{main.general.difference.text}">Diff</th>
+          <th class="d-none d-lg-table-cell" th:if="${coShowActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
+          <th class="d-none d-lg-table-cell" th:if="${coShowActualHours}" th:text="#{main.general.difference.text}">Diff</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
@@ -133,10 +136,10 @@
               <span th:if="${co.debithoursunit == 12}" th:text="' / ' + #{main.general.month.text}"></span>
             </span>
           </td>
-          <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
+          <td class="d-none d-lg-table-cell" th:if="${coShowActualHours}">
             <span th:text="${@durationUtils.format(co.duration)}">0:00</span>
           </td>
-          <td class="d-none d-lg-table-cell" th:if="${showActualHours}">
+          <td class="d-none d-lg-table-cell" th:if="${coShowActualHours}">
             <span th:if="${co.difference != null and co.debithoursunit != 0 and co.debithoursunit != 1 and co.debithoursunit != 12}"
                   class="text-primary" th:text="${@durationUtils.format(co.difference)}">0:00</span>
             <span th:if="${co.difference != null and co.difference.negative
