@@ -8,15 +8,21 @@ on:
   schedule:
     - cron: '0 2 * * 0'
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+      actions: read           # resolve workflow run metadata for analysis
+      contents: read          # checkout the repository
+      security-events: write  # upload CodeQL results to code scanning
 
     strategy:
       fail-fast: false
@@ -25,17 +31,19 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287  # v5
         with:
           distribution: 'temurin'
           java-version: '25'
           cache: 'maven'  # Speed up builds
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
         with:
           languages: ${{ matrix.language }}
 
@@ -43,6 +51,6 @@ jobs:
         run: ./mvnw clean package -DskipTests
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
         with:
           upload: true  # Explicit upload to GitHub Security tab
