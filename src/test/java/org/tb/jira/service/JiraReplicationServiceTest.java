@@ -1,6 +1,5 @@
 package org.tb.jira.service;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
@@ -75,7 +74,7 @@ class JiraReplicationServiceTest {
 
   @Test
   void testRunReplicationUpdatesLastMaxUpdated() {
-    LocalDateTime mockUpdated = LocalDateTime.now().truncatedTo(SECONDS);
+    LocalDateTime mockUpdated = LocalDateTime.of(2026, 6, 25, 11, 20, 25);
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(ticketRepo.findMaxUpdatedTs(config.getCustomerorderSign())).thenReturn(null);
