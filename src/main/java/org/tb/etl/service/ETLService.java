@@ -15,6 +15,7 @@ import org.tb.auth.domain.AccessLevel;
 import org.tb.common.LocalDateRange;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.etl.auth.ETLAuthorization;
 import org.tb.etl.domain.ETLDefinition;
@@ -29,7 +30,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -186,7 +186,7 @@ public class ETLService {
         historyRepo.save(ETLExecutionHistory.builder()
             .etlId(def.getId())
             .etlName(def.getName())
-            .executedAt(LocalDateTime.now()).success(success).message(message.toString()).build());
+            .executedAt(DateTimeUtils.now()).success(success).message(message.toString()).build());
       }
     }
   }

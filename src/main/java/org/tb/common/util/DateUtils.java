@@ -228,7 +228,7 @@ public class DateUtils {
     }
 
     public static LocalDate today() {
-        return LocalDate.now(ZoneId.of(DEFAULT_TIMEZONE_ID));
+        return ClockProvider.today();
     }
 
     public static String format(LocalDate date) {
@@ -372,11 +372,11 @@ public class DateUtils {
     }
 
     public static LocalDate getFirstDay(Year year) {
-        return LocalDate.now().withYear(year.getValue()).with(firstDayOfYear());
+        return ClockProvider.today().withYear(year.getValue()).with(firstDayOfYear());
     }
 
     public static LocalDate getLastDay(Year year) {
-        return LocalDate.now().withYear(year.getValue()).with(lastDayOfYear());
+        return ClockProvider.today().withYear(year.getValue()).with(lastDayOfYear());
     }
 
   public static LocalDate max(LocalDate date1, LocalDate date2) {

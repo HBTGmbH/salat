@@ -110,7 +110,7 @@ public class EmployeecontractService {
       create(overtime);
     }
 
-    createVacation(employeecontract.getId(), Year.now(), vacationEntitlement);
+    createVacation(employeecontract.getId(), Year.from(today()), vacationEntitlement);
     return info;
   }
 

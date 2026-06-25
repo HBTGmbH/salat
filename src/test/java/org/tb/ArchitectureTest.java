@@ -8,6 +8,7 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeGradleTestFixtures;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeJars;
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
@@ -22,6 +23,7 @@ import java.util.Set;
 import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.tb.common.util.ClockProvider;
 
 @AnalyzeClasses(packages = "org.tb", importOptions = {DoNotIncludeTests.class, DoNotIncludeJars.class, DoNotIncludeGradleTestFixtures.class})
 public class ArchitectureTest {
@@ -103,6 +105,33 @@ public class ArchitectureTest {
 
   @ArchTest
   static final ArchRule beFreeOfCycles = slices().matching("org.tb.(*)..").should().beFreeOfCycles();
+
+  private static final Set<String> JAVA_TIME_NOW_OWNERS = Set.of(
+      "java.time.LocalDate", "java.time.LocalDateTime", "java.time.LocalTime",
+      "java.time.Instant", "java.time.ZonedDateTime", "java.time.OffsetDateTime",
+      "java.time.OffsetTime", "java.time.Year", "java.time.YearMonth", "java.time.MonthDay");
+
+  // Matches the no-arg java.time now() calls (e.g. LocalDate.now(), LocalDateTime.now()) that read
+  // the ambient system clock. The explicit now(Clock) overload used by ClockProvider takes a
+  // parameter and is therefore not matched.
+  private static final DescribedPredicate<JavaMethodCall> AMBIENT_NOW =
+      new DescribedPredicate<>("read the current time from the ambient system clock via java.time now()") {
+        @Override
+        public boolean test(JavaMethodCall call) {
+          var target = call.getTarget();
+          return "now".equals(target.getName())
+              && target.getRawParameterTypes().isEmpty()
+              && JAVA_TIME_NOW_OWNERS.contains(target.getOwner().getFullName());
+        }
+      };
+
+  @ArchTest
+  static final ArchRule readCurrentTimeOnlyViaClockProvider = priority(HIGH).noClasses()
+      .that().doNotBelongToAnyOf(ClockProvider.class)
+      .and().haveSimpleNameNotEndingWith("OpenApiConfiguration") // build-timestamp fallback only
+      .should().callMethodWhere(AMBIENT_NOW)
+      .because("the current date/time must be read via ClockProvider (or DateUtils.today() / "
+          + "DateTimeUtils.now()) so it can be fixed deterministically in tests");
 
   private static class OnlyOwnDependencyPredicate extends DescribedPredicate<JavaClass> {
 

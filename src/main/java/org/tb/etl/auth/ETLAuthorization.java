@@ -1,6 +1,6 @@
 package org.tb.etl.auth;
 
-import static java.time.LocalDate.now;
+import static org.tb.common.util.DateUtils.today;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ public class ETLAuthorization {
   public boolean isAuthorized(ETLDefinition etlDefinition, AccessLevel accessLevel) {
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isAdmin()) return true;
-    return authService.isAuthorized(AUTH_CATEGORY, now(), accessLevel, etlDefinition.getName());
+    return authService.isAuthorized(AUTH_CATEGORY, today(), accessLevel, etlDefinition.getName());
   }
 
 }

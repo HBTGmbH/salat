@@ -1,7 +1,6 @@
 package org.tb.statistic.service;
 
 import static java.time.Duration.ofMinutes;
-import static java.time.LocalDateTime.now;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -16,6 +15,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.common.domain.AuditedEntity;
+import org.tb.common.util.DateTimeUtils;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent;
@@ -51,11 +52,11 @@ public class StatisticService {
     var minDate = timereports.stream()
         .map(TimereportDTO::getReferenceday)
         .min(LocalDate::compareTo)
-        .orElse(LocalDate.now());
+        .orElse(DateUtils.today());
     var maxDate = timereports.stream()
         .map(TimereportDTO::getReferenceday)
         .max(LocalDate::compareTo)
-        .orElse(LocalDate.now());
+        .orElse(DateUtils.today());
 
     var employeeorders = timereports.stream()
         .map(TimereportDTO::getEmployeeorderId)
@@ -64,7 +65,7 @@ public class StatisticService {
         .map(employeeorderService::getEmployeeorderById)
         .toList();
     
-    var comment = "time report(s) created or updated @ %s".formatted(now());
+    var comment = "time report(s) created or updated @ %s".formatted(DateTimeUtils.now());
 
     generateOrderStatistics(employeeorders, minDate, maxDate, comment);
   }
@@ -78,10 +79,10 @@ public class StatisticService {
         .toList();
     var minDate = referencedDays.stream()
         .min(LocalDate::compareTo)
-        .orElse(LocalDate.now());
+        .orElse(DateUtils.today());
     var maxDate = referencedDays.stream()
         .max(LocalDate::compareTo)
-        .orElse(LocalDate.now());
+        .orElse(DateUtils.today());
 
     var employeeorders = event.getIds().stream()
         .map(TimereportDeleteId::getEmployeeorderId)
@@ -90,7 +91,7 @@ public class StatisticService {
         .filter(Objects::nonNull) // because of async, object may no longer be available
         .toList();
 
-    var comment = "time report(s) deleted @ %s".formatted(now());
+    var comment = "time report(s) deleted @ %s".formatted(DateTimeUtils.now());
 
     generateOrderStatistics(employeeorders, minDate, maxDate, comment);
   }

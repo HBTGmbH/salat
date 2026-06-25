@@ -28,6 +28,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.AbstractRequestAttributes;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.util.ClockProvider;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.event.ReportScheduledEvent;
 import org.tb.reporting.event.ReportUnscheduledEvent;
@@ -174,7 +175,7 @@ public class ScheduledReportJobScheduler {
       if (future != null && !future.isCancelled()) {
         long delay = future.getDelay(TimeUnit.SECONDS);
         if (delay > 0) {
-          return Instant.now().plusSeconds(delay + 1); // +1 helps with strange values
+          return ClockProvider.instant().plusSeconds(delay + 1); // +1 helps with strange values
         }
       }
       return null;
