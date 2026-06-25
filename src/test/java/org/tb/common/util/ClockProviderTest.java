@@ -11,8 +11,9 @@ class ClockProviderTest {
 
   @Test
   @FixedClock
-  void fixedClock_pinsNowToDefaultFixture() {
+  void fixedClock_pinsNowToDefaultFixture() throws InterruptedException {
     assertThat(ClockProvider.now()).isEqualTo(LocalDateTime.of(2026, 6, 25, 10, 15, 30));
+    Thread.sleep(1100L); // <- advance at least one second
     assertThat(DateTimeUtils.now()).isEqualTo(LocalDateTime.of(2026, 6, 25, 10, 15, 30));
     assertThat(DateUtils.today()).isEqualTo(LocalDate.of(2026, 6, 25));
   }
@@ -25,9 +26,9 @@ class ClockProviderTest {
   }
 
   @Test
-  void withoutFixedClock_usesLiveSystemTime() {
-    // No @FixedClock here: confirms the funnel reflects a live clock and is not left pinned
-    // by a previous test (the extension resets after each test).
-    assertThat(DateUtils.today()).isAfter(LocalDate.of(2020, 1, 1));
+  void withoutFixedClock_usesLiveSystemTime() throws InterruptedException {
+    LocalDateTime now = DateTimeUtils.now();
+    Thread.sleep(100L); // <- advance time a tiny bit (LocalDateTime.now() has nanoseconds precision)
+    assertThat(DateTimeUtils.now()).isAfter(now);
   }
 }

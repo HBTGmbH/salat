@@ -43,15 +43,22 @@ class OrderRestEndpointTest {
     assertThat(res.getFirst().getSuborder().size()).isEqualTo(3);
   }
 
+  // deterministic, collision-free ids for fixtures (counter resets per test instance)
+  private long nextId = 1;
+
+  private long nextId() {
+    return nextId++;
+  }
+
   private Employeeorder newEmployeeorder() {
     Employeeorder res = new Employeeorder();
-    ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+    ReflectionTestUtils.setField(res, "id", nextId());
     return res;
   }
 
   private Employeecontract newEmployeecontract() {
     Employeecontract res = new Employeecontract();
-    ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+    ReflectionTestUtils.setField(res, "id", nextId());
     return res;
   }
 
@@ -65,7 +72,7 @@ class OrderRestEndpointTest {
   private Customerorder createCustomerOrder() {
     Customerorder res = new Customerorder();
 
-    ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+    ReflectionTestUtils.setField(res, "id", nextId());
     res.setShortdescription("Customerorder " + res.getId());
     return res;
   }
@@ -80,7 +87,7 @@ class OrderRestEndpointTest {
 
   private Suborder createTestData(int depth, Customerorder customerOrder) {
     Suborder res = new Suborder();
-    ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+    ReflectionTestUtils.setField(res, "id", nextId());
     res.setDescription("order " + res.getId());
     res.setCustomerorder(customerOrder);
     res.setSuborders(createTestDatList(depth - 1, depth, customerOrder));

@@ -249,22 +249,29 @@ class DailyReportRestEndpointTest {
 
     // fixtures
 
+    // deterministic, collision-free ids for fixtures (counter resets per test instance)
+    private long nextId = 1;
+
+    private long nextId() {
+        return nextId++;
+    }
+
     private Employee employee() {
         Employee res = new Employee();
-        ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+        ReflectionTestUtils.setField(res, "id", nextId());
         return res;
     }
 
     private Employeecontract employeeContract(Employee employee) {
         Employeecontract res = new Employeecontract();
-        ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+        ReflectionTestUtils.setField(res, "id", nextId());
         res.setEmployee(employee);
         return res;
     }
 
     private Employeeorder employeeOrder(Employeecontract employeeContract) {
         Employeeorder res = new Employeeorder();
-        ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+        ReflectionTestUtils.setField(res, "id", nextId());
         res.setEmployeecontract(employeeContract);
         return res;
     }
