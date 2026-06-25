@@ -21,6 +21,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.reporting.domain.JobExecutionResult;
 import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ScheduledReportExecutionHistory;
@@ -116,7 +117,7 @@ public class ScheduledReportJobService {
   private JobExecutionResult executeJob(ScheduledReportJob job) {
     log.info("Executing scheduled report job: {} (ID: {})", job.getName(), job.getId());
 
-    LocalDateTime executedAt = LocalDateTime.now();
+    LocalDateTime executedAt = DateTimeUtils.now();
     List<ReportParameter> parameters = parseParameters(job.getReportParameters());
     String[] recipients = parseRecipients(job.getRecipientEmails());
 

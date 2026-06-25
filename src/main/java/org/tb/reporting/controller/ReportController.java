@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -40,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.util.DateTimeUtils;
+import org.tb.common.util.DateUtils;
 import org.tb.common.web.UiState;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
@@ -346,13 +346,13 @@ public class ReportController {
 
     private String getValue(String parameterName) {
       if(of("jahr", "year").contains(parameterName.toLowerCase())) {
-        return Year.now().toString();
+        return Year.from(DateUtils.today()).toString();
       }
       if(of("monat", "month").contains(parameterName.toLowerCase())) {
-        return Integer.toString(YearMonth.now().getMonthValue());
+        return Integer.toString(YearMonth.from(DateUtils.today()).getMonthValue());
       }
       if(of("datum", "date", "from", "to", "von", "bis").contains(parameterName.toLowerCase())) {
-        return LocalDate.now().toString();
+        return DateUtils.today().toString();
       }
       return "";
     }

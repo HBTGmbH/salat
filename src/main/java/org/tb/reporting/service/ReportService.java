@@ -114,7 +114,7 @@ public class ReportService {
         resolvedSql = resolvedSql.replace("###-AUTH-USER-SIGN-###", authorizedUser.getEffectiveLoginSign()); // ensure the sign is filled in as requested
       }
       // Resolve reporting placeholders based only on today's date (no FROM/UNTIL)
-      LocalDate today = LocalDate.now();
+      LocalDate today = DateUtils.today();
       resolvedSql = reportParameterResolver.resolve(resolvedSql, today);
     }
 

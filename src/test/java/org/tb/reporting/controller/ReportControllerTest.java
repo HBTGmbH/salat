@@ -3,7 +3,6 @@ package org.tb.reporting.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -11,9 +10,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.tb.common.test.FixedClock;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
 
+@FixedClock
 @ExtendWith(MockitoExtension.class)
 class ReportControllerTest {
 
@@ -54,7 +56,7 @@ class ReportControllerTest {
 
     String result = ReportController.createFileName(reportDefinition, parameters);
 
-    String expectedDateTimePart = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "_");
+    String expectedDateTimePart = DateTimeUtils.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "_");
     assertEquals(
         "report-Sales_Report-[2025-12]-" + expectedDateTimePart + ".xlsx",
         result
@@ -70,7 +72,7 @@ class ReportControllerTest {
 
     String result = ReportController.createFileName(reportDefinition, parameters);
 
-    String expectedDateTimePart = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "_");
+    String expectedDateTimePart = DateTimeUtils.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "_");
     assertEquals(
         "report-Summary_Report-[]-" + expectedDateTimePart + ".xlsx",
         result
@@ -89,7 +91,7 @@ class ReportControllerTest {
 
     String result = ReportController.createFileName(reportDefinition, parameters);
 
-    String expectedDateTimePart = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "_");
+    String expectedDateTimePart = DateTimeUtils.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "_");
     assertEquals(
         "report-Special_Report_2025-[2025-12-01-2025-12-31]-" + expectedDateTimePart + ".xlsx",
         result

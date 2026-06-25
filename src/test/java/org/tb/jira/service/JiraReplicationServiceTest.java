@@ -11,6 +11,7 @@ import static org.springframework.util.ReflectionUtils.findField;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
 import static org.springframework.util.ReflectionUtils.setField;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.common.domain.AuditedEntity;
+import org.tb.common.test.FixedClock;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraTicket;
 import org.tb.jira.persistence.JiraReplicationConfigRepository;
@@ -27,6 +30,7 @@ import org.tb.jira.persistence.JiraTicketRepository;
 import org.tb.jira.service.JiraClient.JiraIssue;
 import org.tb.jira.service.JiraClient.JiraSearchResult;
 
+@FixedClock
 @SpringBootTest
 class JiraReplicationServiceTest {
 
@@ -102,7 +106,7 @@ class JiraReplicationServiceTest {
   }
 
   private JiraSearchResult createMockJiraSearchResult() {
-    return createMockJiraSearchResult(LocalDateTime.now());
+    return createMockJiraSearchResult(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
   }
 
   private JiraSearchResult createMockJiraSearchResult(LocalDateTime updated) {
@@ -112,7 +116,7 @@ class JiraReplicationServiceTest {
     issue.setFields(Map.of(
         "summary", "Mock Summary",
         "updated", updated.toString(),
-        "created", LocalDateTime.now().toString(),
+        "created", DateTimeUtils.now().toString(),
         "issuetype", Map.of("name", "Task")
     ));
     return result(issue);

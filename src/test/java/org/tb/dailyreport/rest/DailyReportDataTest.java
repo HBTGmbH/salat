@@ -12,7 +12,7 @@ class DailyReportDataTest {
     var timereport = DailyReportData.builder()
         .id(10L)
         .employeeorderId(1L)
-        .date(LocalDate.now().toString())
+        .date(LocalDate.of(2026, 6, 25).toString())
         .orderLabel("test")
         .suborderLabel("test")
         .comment("test")

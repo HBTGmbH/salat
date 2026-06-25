@@ -51,7 +51,7 @@ public class DailyReportCsvController {
 
     @GetMapping
     public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
-        YearMonth current = YearMonth.now();
+        YearMonth current = YearMonth.from(today());
         List<YearMonth> availableMonths = IntStream.range(0, 12)
             .mapToObj(current::minusMonths)
             .toList();

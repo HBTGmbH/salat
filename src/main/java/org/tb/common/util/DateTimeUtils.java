@@ -228,6 +228,6 @@ public class DateTimeUtils {
   }
 
   public static LocalDateTime now() {
-      return LocalDateTime.now();
+      return ClockProvider.now();
   }
 }

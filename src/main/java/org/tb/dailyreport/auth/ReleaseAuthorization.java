@@ -1,6 +1,6 @@
 package org.tb.dailyreport.auth;
 
-import static java.time.LocalDate.now;
+import static org.tb.common.util.DateUtils.today;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ public class ReleaseAuthorization {
     if (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) return true;
     if (authorizedUser.isAdmin()) return true;
     String grantorSign = employeecontract.getEmployee().getSign();
-    return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_RELEASE, now(), accessLevel);
+    return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_RELEASE, today(), accessLevel);
   }
 
   public boolean isAcceptAuthorized(Employeecontract employeecontract, AccessLevel accessLevel) {
@@ -34,7 +34,7 @@ public class ReleaseAuthorization {
     if (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) return true;
     if (authorizedUser.isAdmin()) return true;
     String grantorSign = employeecontract.getEmployee().getSign();
-    return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_ACCEPT, now(), accessLevel);
+    return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_ACCEPT, today(), accessLevel);
   }
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {
