@@ -10,3 +10,11 @@ updates:
     open-pull-requests-limit: 20
     schedule:
       interval: "daily"
+    cooldown: # Wait before adopting freshly published versions (supply-chain hygiene)
+      default-days: 7
+  - package-ecosystem: "github-actions" # Keep SHA-pinned action versions current
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7

@@ -1,0 +1,34 @@
+name: GitHub Actions Security
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/**"]
+  pull_request:
+    branches: [main]
+    paths: [".github/**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: Audit workflows
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # upload zizmor findings to code scanning
+      contents: read          # checkout the workflows to audit
+      actions: read           # resolve referenced actions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@192e21d79ab29983730a13d1382995c2307fbcaa  # v0.5.7
+        with:
+          version: v1.26.1
+          persona: pedantic
