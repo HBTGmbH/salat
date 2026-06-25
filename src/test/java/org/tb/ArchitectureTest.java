@@ -19,11 +19,16 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import jakarta.persistence.Entity;
+import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.tb.common.util.ClockProvider;
+import org.tb.order.jsptags.OrderTreeTag;
+import org.tb.reporting.service.ScheduledReportJobScheduler;
 
 @AnalyzeClasses(packages = "org.tb", importOptions = {DoNotIncludeTests.class, DoNotIncludeJars.class, DoNotIncludeGradleTestFixtures.class})
 public class ArchitectureTest {
@@ -132,6 +137,19 @@ public class ArchitectureTest {
       .should().callMethodWhere(AMBIENT_NOW)
       .because("the current date/time must be read via ClockProvider (or DateUtils.today() / "
           + "DateTimeUtils.now()) so it can be fixed deterministically in tests");
+
+  @ArchTest
+  static final ArchRule useDeterministicRandomness = priority(HIGH).noClasses()
+      // carve-outs for intentional production randomness: OrderTreeTag generates unique JSP
+      // image-label names; ScheduledReportJobScheduler mints an internal mock-request session id.
+      .that().doNotBelongToAnyOf(OrderTreeTag.class, ScheduledReportJobScheduler.class)
+      .should().callMethod(Math.class, "random")
+      .orShould().callMethod(UUID.class, "randomUUID")
+      .orShould().callMethod(ThreadLocalRandom.class, "current")
+      .orShould().callConstructor(Random.class)
+      .because("non-deterministic randomness (Math.random(), new Random() without a seed, "
+          + "UUID.randomUUID(), ThreadLocalRandom) makes behaviour and tests non-reproducible; "
+          + "seed a Random or inject the value instead");
 
   private static class OnlyOwnDependencyPredicate extends DescribedPredicate<JavaClass> {
 

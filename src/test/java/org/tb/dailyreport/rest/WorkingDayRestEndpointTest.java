@@ -115,9 +115,16 @@ class WorkingDayRestEndpointTest {
 
     // fixtures
 
+    // deterministic, collision-free ids for fixtures (counter resets per test instance)
+    private long nextId = 1;
+
+    private long nextId() {
+        return nextId++;
+    }
+
     private Employeecontract employeeContract() {
         Employeecontract res = new Employeecontract();
-        ReflectionTestUtils.setField(res, "id", (long) (Math.random() * 100));
+        ReflectionTestUtils.setField(res, "id", nextId());
         return res;
     }
 }
