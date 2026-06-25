@@ -214,8 +214,10 @@ public class JiraReplicationService {
     if (dateTimeValue == null || dateTimeValue.isBlank()) {
       return null;
     }
-    // e.g. 2024-05-31T13:43:33
-    return LocalDateTime.parse(dateTimeValue.substring(0, 19));
+    // e.g. 2024-05-31T13:43:33.000+0200; strip fraction/offset, but tolerate a
+    // value without a seconds field (LocalDateTime.parse accepts yyyy-MM-ddTHH:mm).
+    String s = dateTimeValue.length() >= 19 ? dateTimeValue.substring(0, 19) : dateTimeValue;
+    return LocalDateTime.parse(s);
   }
 
   private static String getString(Map<?, ?> map, String key) {
