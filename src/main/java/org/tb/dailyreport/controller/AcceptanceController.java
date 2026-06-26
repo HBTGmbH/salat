@@ -81,10 +81,10 @@ public class AcceptanceController {
         model.addAttribute("releaseDateStr", defaultReleaseDateStr(selected));
         model.addAttribute("acceptanceDateStr", defaultAcceptanceDateStr(selected));
         model.addAttribute("reopenDateStr", defaultReleaseDateStr(selected));
-        model.addAttribute("section", "dailyreport");
+        model.addAttribute("section", "backoffice");
         model.addAttribute("subSection", "acceptance");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.acceptance.text"));
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
         return "dailyreport/acceptance";
     }
 

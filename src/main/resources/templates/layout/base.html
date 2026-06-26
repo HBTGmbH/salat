@@ -110,18 +110,6 @@
                      th:text="#{main.general.mainmenu.release.text}">
                     Freigabe
                   </a>
-                  <a class="dropdown-item" th:href="@{/acceptance}"
-                     th:if="${#authorization.expression('hasRole(''PEOPLE_LEAD'')')}"
-                     th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.acceptance.text}">
-                    Abnahme
-                  </a>
-                  <a class="dropdown-item" th:href="@{/dailyreports/move}"
-                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-                     th:classappend="${subSection == 'move-timereports'} ? 'active' : ''">
-                    <span th:text="#{main.general.mainmenu.movetimereports.text}">Buchungen umbuchen</span>
-                    <span class="badge bg-purple-lt ms-1">New</span>
-                  </a>
                   <a class="dropdown-item" th:href="@{/my-accounts}"
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}"
                      th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
@@ -236,6 +224,18 @@
                      th:classappend="${subSection == 'invoice'} ? 'active' : ''"
                      th:if="${#authorization.expression('hasRole(''BACKOFFICE'')')}">
                     Rechnungsanlage
+                  </a>
+                  <a class="dropdown-item" th:href="@{/acceptance}"
+                     th:if="${#authorization.expression('hasRole(''PEOPLE_LEAD'')')}"
+                     th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.acceptance.text}">
+                    Abnahme
+                  </a>
+                  <a class="dropdown-item" th:href="@{/dailyreports/move}"
+                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                     th:classappend="${subSection == 'move-timereports'} ? 'active' : ''">
+                    <span th:text="#{main.general.mainmenu.movetimereports.text}">Buchungen umbuchen</span>
+                    <span class="badge bg-purple-lt ms-1">New</span>
                   </a>
                   <a class="dropdown-item" th:href="@{/orders/revenue-upload}"
                      th:classappend="${subSection == 'revenue-upload'} ? 'active' : ''"
