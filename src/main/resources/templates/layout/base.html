@@ -77,12 +77,13 @@
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
                   <a class="dropdown-item" th:href="@{/dailyreport/dashboard}"
-                     th:classappend="${subSection == 'dashboard'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.dashboard.text}">
-                    Dashboard
+                     th:classappend="${subSection == 'dashboard'} ? 'active' : ''">
+                    <span th:text="#{main.general.mainmenu.dashboard.text}">Dashboard</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
-                  <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}" th:text="#{main.general.mainmenu.newreport.text}">
-                    Neue Buchung
+                  <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}">
+                    <span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
+                    <span class="badge bg-purple-lt ms-1">Beta</span>
                   </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/daily}"
                      th:classappend="${subSection == 'daily'} ? 'active' : ''">
@@ -106,9 +107,9 @@
                   </a>
                   <a class="dropdown-item" th:href="@{/my-accounts}"
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}"
-                     th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
-                     th:text="#{main.my.accounts.title}">
-                    Meine Konten
+                     th:classappend="${subSection == 'my-accounts'} ? 'active' : ''">
+                    <span th:text="#{main.my.accounts.title}">Meine Konten</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                 </div>
               </div>
@@ -229,12 +230,12 @@
                      th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
                      th:classappend="${subSection == 'move-timereports'} ? 'active' : ''">
                     <span th:text="#{main.general.mainmenu.movetimereports.text}">Buchungen umbuchen</span>
-                    <span class="badge bg-purple-lt ms-1">New</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                   <a class="dropdown-item" th:href="@{/orders/revenue-upload}"
-                     th:classappend="${subSection == 'revenue-upload'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.orderrevenue.upload.text}">
-                    Umsatz-/Kosten-Upload
+                     th:classappend="${subSection == 'revenue-upload'} ? 'active' : ''">
+                    <span th:text="#{main.general.mainmenu.orderrevenue.upload.text}">Umsatz-Upload</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                 </div>
               </div>
