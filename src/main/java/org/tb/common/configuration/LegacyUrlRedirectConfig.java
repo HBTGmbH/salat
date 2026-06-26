@@ -15,6 +15,7 @@ class LegacyUrlRedirectConfig implements WebMvcConfigurer {
         redirect(registry, "/do/ShowDailyReport", "/dailyreport/daily");
         redirect(registry, "/do/ShowMatrix", "/dailyreport/matrix");
         redirect(registry, "/do/CreateDailyReport", "/dailyreport/timereports/new");
+        redirect(registry, "/dailyreport/overtime", "/my-accounts");
     }
 
     private static void redirect(ViewControllerRegistry registry, String from, String to) {

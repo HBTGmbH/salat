@@ -27,6 +27,12 @@
             <span th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a href="#tab-overtime" class="nav-link" data-bs-toggle="tab" id="tab-overtime-button">
+            <i class="bi bi-clock-history me-1"></i>
+            <span th:text="#{main.my.accounts.tab.overtime}">Überstundenkonto</span>
+          </a>
+        </li>
       </ul>
     </div>
     <div class="card-body">
@@ -280,6 +286,94 @@
 
         </div><!-- end tab-training -->
 
+        <!-- ── Tab 4: Overtime ───────────────────────────────────────── -->
+        <div class="tab-pane" id="tab-overtime">
+
+          <div th:if="${overtimeReport != null}" class="card">
+            <div class="table-responsive">
+              <table class="table table-vcenter card-table table-striped">
+                <thead>
+                <tr>
+                  <th class="w-100" th:text="#{main.headlinedescription.overtime.report.yearmonth.text}"></th>
+                  <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.actual.text}"></th>
+                  <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.adjustment.text}"></th>
+                  <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.sum.text}"></th>
+                  <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.target.text}"></th>
+                  <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.diff.text}"></th>
+                  <th class="text-end text-nowrap" th:text="#{main.headlinedescription.overtime.report.diffcumulative.text}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="fw-bold">
+                  <td th:text="#{main.headlinedescription.overtime.report.total.text}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.actual)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.adjustment)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.sum)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(overtimeReport.total.target)}"></td>
+                  <td class="text-end text-nowrap"
+                      th:classappend="${overtimeReport.total.diff.negative} ? 'text-danger' : ''"
+                      th:text="${@durationUtils.format(overtimeReport.total.diff)}"></td>
+                  <td class="text-end text-nowrap"
+                      th:classappend="${overtimeReport.total.diffCumulative.negative} ? 'text-danger' : ''"
+                      th:text="${@durationUtils.format(overtimeReport.total.diffCumulative)}"></td>
+                </tr>
+                <tr th:each="month : ${overtimeReport.months}">
+                  <td class="d-flex justify-content-between align-items-center">
+                    <span th:text="${@dateUtils.format(month.yearMonth)}"></span>
+                    <span>
+                      <span th:if="${reportReleaseDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportReleaseDate)}"
+                            class="badge bg-teal-lt ms-2"
+                            th:title="#{main.release.released.until.text}">
+                        <i class="bi bi-send"></i>
+                      </span>
+                      <span th:if="${reportAcceptanceDate != null and !month.yearMonth.atEndOfMonth().isAfter(reportAcceptanceDate)}"
+                            class="badge bg-green-lt ms-1"
+                            th:title="#{main.release.accepted.until.text}">
+                        <i class="bi bi-patch-check"></i>
+                      </span>
+                    </span>
+                  </td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.actual)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.adjustment)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.sum)}"></td>
+                  <td class="text-end text-nowrap" th:text="${@durationUtils.format(month.target)}"></td>
+                  <td class="text-end text-nowrap"
+                      th:classappend="${month.diff.negative} ? 'text-danger' : ''"
+                      th:text="${@durationUtils.format(month.diff)}"></td>
+                  <td class="text-end text-nowrap"
+                      th:classappend="${month.diffCumulative.negative} ? 'text-danger' : ''"
+                      th:text="${@durationUtils.format(month.diffCumulative)}"></td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div th:if="${overtimeReport == null}" class="card">
+            <div class="card-body text-center text-muted py-4">
+              <span th:text="#{main.general.noentries.text}"></span>
+            </div>
+          </div>
+
+          <div class="card mb-3" th:if="${@authorizedUser.manager and overtimeMismatch != null}">
+            <div class="card-body py-2">
+              <form method="post" th:action="@{/my-accounts/overtime/correct(employeeContractId=${selectedContractId})}" class="card">
+                <div class="card-body border-bottom pb-3 mb-3">
+                  <div class="text-muted small mb-1" th:text="#{main.overtime.mismatch.text}"></div>
+                  <div class="fw-semibold"
+                       th:classappend="${overtimeMismatch.negative} ? 'text-danger' : 'text-warning'"
+                       th:text="${@durationUtils.format(overtimeMismatch)}"></div>
+                </div>
+                <div class="card-body pt-0">
+                  <button type="submit" class="btn btn-outline-secondary w-100"
+                          th:text="#{main.overtime.employeecontract.correct.label}"></button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div><!-- end tab-overtime -->
+
       </div><!-- tab-content -->
     </div><!-- card-body -->
   </div><!-- card -->
@@ -336,6 +430,16 @@
         document.getElementById('tab-training-button').addEventListener('shown.bs.tab', function() {
           Plotly.Plots.resize('trainingChart');
         });
+      }
+      // Sync URL hash with active tab
+      document.querySelectorAll('#myAccountsTabs [data-bs-toggle="tab"]').forEach(function(tab) {
+        tab.addEventListener('shown.bs.tab', function(e) {
+          history.replaceState(null, '', e.target.getAttribute('href'));
+        });
+      });
+      if (window.location.hash) {
+        var initialTab = document.querySelector('#myAccountsTabs [href="' + window.location.hash + '"]');
+        if (initialTab) bootstrap.Tab.getOrCreateInstance(initialTab).show();
       }
     })();
   </script>

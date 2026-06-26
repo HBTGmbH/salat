@@ -16,11 +16,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -78,7 +81,20 @@ public class MyAccountsController {
         // --- Tab 3: Training ---
         populateTrainingTab(model, contract, today, yearStart);
 
+        // --- Tab 4: Overtime ---
+        populateOvertimeTab(model, contract);
+
         return "dailyreport/my-accounts";
+    }
+
+    @PostMapping("/overtime/correct")
+    @PreAuthorize("hasRole('MANAGER')")
+    public String correctOvertime(@RequestParam(required = false) Long employeeContractId, RedirectAttributes redirectAttributes) {
+        var contract = currentContract(employeeContractId);
+        overtimeService.updateOvertimeStatic(contract.getId());
+        redirectAttributes.addFlashAttribute("toastSuccess",
+            messageSourceAccessor.getMessage("main.overtime.employeecontract.correct.label"));
+        return "redirect:/my-accounts";
     }
 
     private void populateWorkingTimeTab(Model model, Employeecontract contract, LocalDate today, int currentYear) {
@@ -306,6 +322,25 @@ public class MyAccountsController {
         model.addAttribute("trainingBookings", bookings);
         model.addAttribute("trainingChartLabels", trainingChartLabels);
         model.addAttribute("trainingChartHours", trainingChartHours);
+    }
+
+    private void populateOvertimeTab(Model model, Employeecontract contract) {
+        long ecId = contract.getId();
+        var report = overtimeService.createDetailedReportForEmployee(ecId);
+        Duration overtimeMismatch = null;
+        var storedOvertime = overtimeService.calculateOvertime(ecId, true);
+        if (storedOvertime.isPresent()) {
+            Duration detailed = report.getTotal().getDiffCumulative();
+            Duration stored = storedOvertime.get().getTotal().getDuration();
+            if (!detailed.equals(stored)) {
+                overtimeMismatch = detailed.minus(stored);
+            }
+        }
+        model.addAttribute("selectedContractId", ecId);
+        model.addAttribute("overtimeReport", report);
+        model.addAttribute("overtimeMismatch", overtimeMismatch);
+        model.addAttribute("reportReleaseDate", contract.getReportReleaseDate());
+        model.addAttribute("reportAcceptanceDate", contract.getReportAcceptanceDate());
     }
 
     private boolean isTraining(TimereportDTO timereport) {
