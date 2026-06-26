@@ -291,7 +291,7 @@
           <!-- Page title actions -->
           <div class="col-auto ms-auto d-print-none">
             <div class="d-flex align-items-center gap-2">
-              <div th:if="${@employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
+              <div th:if="${section == 'dailyreport' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
                 <select class="form-select tomselect" id="globalEmployeeContractId"
                         onchange="selectContract(this.value)">
                   <option th:each="ec : ${@employeeContractSelectorViewHelper.viewableContracts}"
