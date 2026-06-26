@@ -21,6 +21,7 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey SUBORDER_SHOW_INVALID = new UiStateKey("suborder.ShowInvalid");
     public static final UiStateKey SUBORDER_SHOW_HIDDEN = new UiStateKey("suborder.ShowHidden");
     public static final UiStateKey SUBORDER_SHOW_ACTUAL_HOURS = new UiStateKey("suborder.ShowActualHours");
+    public static final UiStateKey EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID = new UiStateKey("employeeOrder.EmployeeContract.Id");
     public static final UiStateKey EMPLOYEEORDER_FILTER = new UiStateKey("employeeOrder.Filter");
     public static final UiStateKey EMPLOYEEORDER_SHOW_INVALID = new UiStateKey("employeeOrder.ShowInvalid");
     public static final UiStateKey EMPLOYEEORDER_SHOW_HIDDEN = new UiStateKey("employeeOrder.ShowHidden");
@@ -40,7 +41,8 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
         map.put("soFilter", SUBORDER_FILTER);
         map.put("soShowInvalid", SUBORDER_SHOW_INVALID);
         map.put("soShowHidden", SUBORDER_SHOW_HIDDEN);
-        map.put("csoShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
+        map.put("soShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
+        map.put("eoEmployeeContractId", EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID);
         map.put("eoFilter", EMPLOYEEORDER_FILTER);
         map.put("eoShowInvalid", EMPLOYEEORDER_SHOW_INVALID);
         map.put("eoShowHidden", EMPLOYEEORDER_SHOW_HIDDEN);

@@ -36,7 +36,6 @@ import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.web.UiState;
 import org.tb.customer.service.CustomerService;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
@@ -59,14 +58,13 @@ public class EmployeeorderController {
     private final EmployeecontractService employeecontractService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
-    private final AuthorizedEmployee authorizedEmployee;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final UiState uiState;
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long eoEmployeeContractId,
             @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) Long orderId,
             @RequestParam(required = false) Long suborderId,
@@ -77,21 +75,21 @@ public class EmployeeorderController {
             HttpServletRequest request,
             Model model) {
         var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
-        if (employeeContractId == null && employeeContracts.size() == 1) {
-            employeeContractId = employeeContracts.getFirst().getId();
+        if (eoEmployeeContractId == null && employeeContracts.size() == 1) {
+            eoEmployeeContractId = employeeContracts.getFirst().getId();
         }
         var orders = customerorderService.getCustomerordersByFilters(eoShowInvalid, eoFilter, customerId, eoShowHidden);
 
         var filterSet = (eoFilter != null && !eoFilter.isEmpty()) ||
                         customerId != null ||
-                        employeeContractId != null ||
+                        eoEmployeeContractId != null ||
                         orderId != null ||
                         suborderId != null;
 
         List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
             employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                eoShowInvalid, eoFilter, employeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(eoShowActualHours), eoShowHidden);
+                eoShowInvalid, eoFilter, eoEmployeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(eoShowActualHours), eoShowHidden);
         }
 
         List<Suborder> suborders = List.of();
@@ -104,7 +102,7 @@ public class EmployeeorderController {
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
         model.addAttribute("employeeorders", employeeOrders);
-        model.addAttribute("employeeContractId", employeeContractId);
+        model.addAttribute("eoEmployeeContractId", eoEmployeeContractId);
         model.addAttribute("orderId", orderId);
         model.addAttribute("suborderId", suborderId);
         model.addAttribute("eoFilter", eoFilter);
@@ -120,7 +118,7 @@ public class EmployeeorderController {
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/create")
     public String createForm(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long eoEmployeeContractId,
             @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) Long orderId,
             @RequestParam(required = false) Long suborderId,
@@ -129,7 +127,7 @@ public class EmployeeorderController {
         var form = (EmployeeorderForm) model.asMap().get("prefillForm");
         if (form == null) {
             form = new EmployeeorderForm();
-            form.setEmployeeContractId(employeeContractId);
+            form.setEmployeeContractId(eoEmployeeContractId);
             form.setCustomerId(customerId);
             form.setOrderId(orderId);
             form.setSuborderId(suborderId);
@@ -316,14 +314,14 @@ public class EmployeeorderController {
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/adjust-dates")
     public String adjustDates(
-            @RequestParam(required = false, defaultValue = "-1") Long employeeContractId,
+            @RequestParam(required = false, defaultValue = "-1") Long eoEmployeeContractId,
             @RequestParam(required = false, defaultValue = "-1") Long orderId,
             @RequestParam(required = false, defaultValue = "-1") Long suborderId,
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             RedirectAttributes redirectAttributes) {
 
-        Long filterEmployeeContractId = employeeContractId == -1 ? null : employeeContractId;
+        Long filterEmployeeContractId = eoEmployeeContractId == -1 ? null : eoEmployeeContractId;
         Long filterOrderId = orderId == -1 ? null : orderId;
         Long filterSuborderId = suborderId == -1 ? null : suborderId;
         var employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId, null);

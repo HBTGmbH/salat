@@ -15,12 +15,12 @@
         <div class="row g-2 align-items-end">
           <div class="col-md-8">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
-            <select class="form-select tomselect" name="employeeContractId">
+            <select class="form-select tomselect" name="eoEmployeeContractId">
               <option value="" th:text="#{main.employee.select.please}">--- Please select ---</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}"
-                      th:selected="${employeeContractId != null and employeeContractId == ec.id}"></option>
+                      th:selected="${eoEmployeeContractId != null and eoEmployeeContractId == ec.id}"></option>
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
