@@ -4,17 +4,18 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.boot.security.oauth2.server.resource.autoconfigure.OAuth2ResourceServerProperties;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
@@ -25,17 +26,18 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.util.Assert;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.EmployeeStatusAuthorities;
-import org.tb.auth.filter.AuthFilter;
-import org.tb.auth.filter.AuthViewHelper;
 import org.tb.auth.service.AuthService;
 import org.tb.common.SalatProperties;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
+
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @Profile({ "production", "staging", "localeasyauth" })
@@ -44,7 +46,6 @@ import org.tb.common.filter.LoggingFilter.MdcDataSource;
 public class AzureEasyAuthSecurityConfiguration {
 
   private final AuthorizedUser authorizedUser;
-  private final Set<AuthViewHelper> authViewHelpers;
   private final ObjectFactory<HttpServletRequest> requestProvider;
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
@@ -55,19 +56,8 @@ public class AzureEasyAuthSecurityConfiguration {
       "/webjars/**",
       "/favicon.ico",
       "/api/doc/**",
-      "/actuator/health",
-      "/http-headers*",
-      "/error*"
+      "/actuator/health"
   };
-
-  @Bean
-  public FilterRegistrationBean<AuthFilter> authenticationFilter(){
-    var registrationBean = new FilterRegistrationBean<AuthFilter>();
-    registrationBean.setOrder(101);
-    registrationBean.setFilter(new AuthFilter(authorizedUser, authViewHelpers));
-    registrationBean.addUrlPatterns("/do/*", "/api/*", "/rest/*", "*.jsp");
-    return registrationBean;
-  }
 
   @Bean
   public MdcDataSource authenticationMdcDataSource() {
@@ -84,11 +74,11 @@ public class AzureEasyAuthSecurityConfiguration {
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
     http.securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
-        .requestCache(cache -> cache.disable())
-        .securityContext(security -> security.disable())
-        .sessionManagement(session -> session.disable())
-        .cors(cors -> cors.disable())
-        .csrf(csrf -> csrf.disable());
+        .requestCache(RequestCacheConfigurer::disable)
+        .securityContext(AbstractHttpConfigurer::disable)
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .cors(AbstractHttpConfigurer::disable)
+        .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
 
@@ -98,10 +88,10 @@ public class AzureEasyAuthSecurityConfiguration {
     http.securityMatcher("/api/**", "/rest/**")
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-        .requestCache(cache -> cache.disable())
+        .requestCache(RequestCacheConfigurer::disable)
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf(csrf -> csrf.disable());
+        .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
 
@@ -113,8 +103,10 @@ public class AzureEasyAuthSecurityConfiguration {
   ) {
     http.authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-        .cors(cors -> cors.disable())
-        .csrf(csrf -> csrf.disable());
+        .cors(AbstractHttpConfigurer::disable)
+        .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
+        .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+    ;
     return http.build();
   }
 

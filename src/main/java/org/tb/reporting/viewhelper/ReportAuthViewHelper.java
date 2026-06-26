@@ -8,14 +8,13 @@ import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.auth.filter.AuthViewHelper;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 
 @Component
 @Scope(value = SCOPE_REQUEST, proxyMode = ScopedProxyMode.TARGET_CLASS)
 @RequiredArgsConstructor
-public class ReportAuthViewHelper implements AuthViewHelper {
+public class ReportAuthViewHelper {
 
   private final ReportAuthorization reportAuthorization;
   private final AuthorizedUser authorizedUser;
@@ -32,8 +31,4 @@ public class ReportAuthViewHelper implements AuthViewHelper {
     return authorizedUser.isPeopleLead();
   }
 
-  @Override
-  public String getName() {
-    return "reportAuthViewHelper";
-  }
 }
