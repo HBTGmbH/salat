@@ -254,9 +254,18 @@
             <p class="text-secondary">Angemeldet als</p>
             <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@authorizedEmployee.emailAddress)}" th:src="${url}" alt="User avatar"/>
             <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
-            <div class="text-secondary">
+            <div class="text-secondary d-inline-flex align-items-center justify-content-center gap-1">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
               <span th:if="${@authorizedUser.impersonateLoginSign ne null}">acts as [[${@authorizedUser.impersonateLoginSign}]]</span>
+              <button type="button"
+                      class="btn btn-icon btn-ghost-secondary btn-sm p-0"
+                      style="width: 1.25rem; height: 1.25rem;"
+                      th:if="${@loginSwitchViewHelper.visible}"
+                      data-bs-toggle="modal"
+                      data-bs-target="#loginSwitchModal"
+                      title="Benutzer wechseln">
+                <i class="ti ti-switch-2" style="font-size: 0.8rem;"></i>
+              </button>
             </div>
             <div class="mt-3">
               <span class="badge bg-purple-lt" th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>
@@ -490,5 +499,40 @@
   document.addEventListener('htmx:afterSettle', applyFormTabOrder);
 </script>
 <th:block layout:fragment="scripts"></th:block>
+
+<div class="modal modal-blur fade" id="loginSwitchModal" tabindex="-1" role="dialog"
+     th:if="${@loginSwitchViewHelper.visible}">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="ti ti-switch-2 me-2 text-muted"></i>
+          Benutzer wechseln
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="list-group list-group-flush">
+          <form th:action="@{/auth/switch-login}" method="post"
+                th:each="emp : ${@loginSwitchViewHelper.switchableLoginEmployees}">
+            <input type="hidden" name="loginEmployeeId" th:value="${emp.id}"/>
+            <button type="submit"
+                    class="list-group-item list-group-item-action border-0 d-flex align-items-center gap-3 p-3">
+              <img class="avatar avatar-sm rounded"
+                   th:with="url=${@gravatarViewHelper.gravatarUrl(emp.emailAddress)}"
+                   th:src="${url}"
+                   th:alt="${emp.name}"/>
+              <div class="flex-fill text-start">
+                <div class="fw-medium" th:text="${emp.name}">Max Mustermann</div>
+                <div class="text-muted small" th:text="${emp.sign}">mm</div>
+              </div>
+              <i class="ti ti-chevron-right text-muted"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

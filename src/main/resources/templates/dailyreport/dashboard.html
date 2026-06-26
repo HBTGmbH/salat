@@ -5,30 +5,6 @@
       th:with="title=${pageTitle},sectionTitle=#{main.general.mainmenu.timereports.text}">
 <section layout:fragment="content">
 
-  <form th:action="@{/dailyreport/dashboard}" method="post" id="dashboardForm">
-    <input type="hidden" name="task" id="dashboardTask" value=""/>
-
-    <div class="card mb-3" th:if="${loginEmployees.size() > 1}">
-      <div class="card-body">
-        <div class="row g-3 align-items-end">
-
-          <div class="col-12 col-md-4">
-            <label class="form-label" th:text="#{main.welcome.switchlogin.text}"></label>
-            <select name="loginEmployeeId" class="form-select tomselect" onchange="submitDashboardTask('switch-login')">
-              <option th:each="emp : ${loginEmployees}"
-                      th:value="${emp.id}"
-                      th:selected="${emp.id == currentLoginEmployeeId}"
-                      th:text="${emp.name + ' | ' + emp.sign}">
-              </option>
-            </select>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-  </form>
-
   <!-- KPI row: week hours, month hours, last log, reports status -->
   <div class="row g-3 mb-3">
 
@@ -286,12 +262,6 @@
 
   </div>
 
-  <script>
-    function submitDashboardTask(task) {
-      document.getElementById('dashboardTask').value = task;
-      document.getElementById('dashboardForm').submit();
-    }
-  </script>
 
 </section>
 </html>

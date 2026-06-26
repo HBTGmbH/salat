@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.tb.auth.domain.AuthorizedUser;
-import org.tb.auth.service.AuthService;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -31,7 +29,6 @@ import org.tb.dailyreport.service.VacationService;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -52,19 +49,14 @@ public class DashboardController {
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
-    private final AuthService authService;
     private final OvertimeService overtimeService;
     private final VacationService vacationService;
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
     private final MessageSourceAccessor messageSourceAccessor;
-    private final AuthorizedUser authorizedUser;
-    private final AuthorizedEmployee authorizedEmployee;
-
     @GetMapping
     public String dashboard(@RequestParam(required = false) Long employeeContractId, Model model) {
         var employeecontract = currentContract(employeeContractId);
-        var loginEmployees = employeeService.getLoginEmployees();
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
         var vacations = vacationService.getVacations(employeecontract).stream()
@@ -77,9 +69,6 @@ public class DashboardController {
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "dashboard");
         model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
-        model.addAttribute("loginEmployees", loginEmployees);
-        model.addAttribute("currentLoginEmployeeId", authorizedEmployee.getEmployeeId());
-        model.addAttribute("effectiveLoginSign", authorizedUser.getEffectiveLoginSign());
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
         model.addAttribute("releasedUntil", employeecontract.getReportReleaseDate());
         model.addAttribute("releaseColorClass", employeecontract.getReleaseWarning() ? "danger" : "success");
@@ -204,13 +193,6 @@ public class DashboardController {
 
     @PostMapping(params = "task=refresh")
     public String refresh(@RequestParam Long employeeContractId) {
-        return "redirect:/dailyreport/dashboard";
-    }
-
-    @PostMapping(params = "task=switch-login")
-    public String switchLogin(@RequestParam Long loginEmployeeId) {
-        var switchedToEmployee = employeeService.getEmployeeById(loginEmployeeId);
-        authService.switchLogin(switchedToEmployee.getLoginname());
         return "redirect:/dailyreport/dashboard";
     }
 
