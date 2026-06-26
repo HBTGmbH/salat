@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.tb.common.filter.UiStateFilter;
 import org.tb.common.util.ClockProvider;
 import org.tb.order.jsptags.OrderTreeTag;
 import org.tb.reporting.service.ScheduledReportJobScheduler;
@@ -141,8 +142,10 @@ public class ArchitectureTest {
   @ArchTest
   static final ArchRule useDeterministicRandomness = priority(HIGH).noClasses()
       // carve-outs for intentional production randomness: OrderTreeTag generates unique JSP
-      // image-label names; ScheduledReportJobScheduler mints an internal mock-request session id.
-      .that().doNotBelongToAnyOf(OrderTreeTag.class, ScheduledReportJobScheduler.class)
+      // image-label names; ScheduledReportJobScheduler mints an internal mock-request session id;
+      // UiStateFilter mints a random fallback HMAC signing key when none is configured (the key
+      // must stay unpredictable, so it cannot be made deterministic).
+      .that().doNotBelongToAnyOf(OrderTreeTag.class, ScheduledReportJobScheduler.class, UiStateFilter.class)
       .should().callMethod(Math.class, "random")
       .orShould().callMethod(UUID.class, "randomUUID")
       .orShould().callMethod(ThreadLocalRandom.class, "current")
