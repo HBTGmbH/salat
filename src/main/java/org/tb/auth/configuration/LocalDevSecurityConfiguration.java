@@ -148,6 +148,7 @@ public class LocalDevSecurityConfiguration {
           if (loginName != null && !loginName.isBlank()) {
             Cookie cookie = new Cookie(DEV_LOGIN_COOKIE, loginName);
             cookie.setPath("/");
+            cookie.setSecure(true);
             response.addCookie(cookie);
           }
         }
