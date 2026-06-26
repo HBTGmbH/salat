@@ -7,7 +7,7 @@
 
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title" th:text="${loginEmployee.name}"></h3>
+      <h3 class="card-title" th:text="${employee.name}"></h3>
       <div class="card-options d-none d-sm-flex">
         <span class="text-muted small">
           <span th:text="#{main.release.released.until.text}">freigegeben bis</span>:
@@ -22,7 +22,7 @@
     </div>
     <div class="card-body">
 
-      <form th:if="${loginEmployeeContract != null}" method="post" th:action="@{/release}">
+      <form th:if="${employeeContract != null}" method="post" th:action="@{/release}">
         <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
@@ -36,7 +36,7 @@
         </div>
       </form>
 
-      <div th:if="${loginEmployeeContract == null}" class="text-muted">
+      <div th:if="${employeeContract == null}" class="text-muted">
         <i class="bi bi-info-circle me-1"></i>
         <span th:text="#{main.release.no.active.contract.text}">Kein aktiver Mitarbeitervertrag gefunden.</span>
       </div>
