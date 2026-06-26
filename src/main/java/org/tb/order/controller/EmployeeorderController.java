@@ -4,7 +4,6 @@ import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.validateDuration;
-import static org.tb.employee.controller.EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_ID;
 import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ID;
 import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ORDER_ID;
 import static org.tb.order.controller.OrderUiStateKeyContributor.EMPLOYEEORDER_FILTER;
@@ -273,9 +272,6 @@ public class EmployeeorderController {
 
         if (isCreate) {
             uiState.clearState(EMPLOYEEORDER_FILTER);
-            if (!Objects.equals(form.getEmployeeContractId(), uiState.getLongValue(EMPLOYEE_CONTRACT_ID))) {
-                uiState.clearState(EMPLOYEE_CONTRACT_ID);
-            }
             if (!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
                 uiState.clearState(CUSTOMER_ID);
             }

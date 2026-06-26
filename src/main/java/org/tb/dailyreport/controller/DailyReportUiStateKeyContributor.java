@@ -11,13 +11,12 @@ import static java.util.Map.of;
 @Component
 public class DailyReportUiStateKeyContributor implements UiStateKeyContributor {
 
-    //public static final UiStateKey SHOW_HIDDEN = new UiStateKey("showHidden");
+    public static final UiStateKey EMPLOYEE_CONTRACT_ID = new UiStateKey("employeeContract.Id");
 
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
         return of(
-                // "filter", FILTER,
-
+            "employeeContractId", EMPLOYEE_CONTRACT_ID
         );
     }
 }

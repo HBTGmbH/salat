@@ -1,8 +1,8 @@
-package org.tb.employee.viewhelper;
+package org.tb.dailyreport.viewhelper;
 
 import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.employee.controller.EmployeeUiStateKeyContributor.EMPLOYEE_CONTRACT_ID;
+import static org.tb.dailyreport.controller.DailyReportUiStateKeyContributor.EMPLOYEE_CONTRACT_ID;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;

@@ -10,7 +10,6 @@ import static java.util.Map.of;
 @Component
 public class EmployeeUiStateKeyContributor implements UiStateKeyContributor {
 
-    public static final UiStateKey EMPLOYEE_CONTRACT_ID = new UiStateKey("employeeContract.Id");
     public static final UiStateKey EMPLOYEE_CONTRACT_SHOW_INVALID = new UiStateKey("employeeContract.ShowInvalid");
     public static final UiStateKey EMPLOYEE_CONTRACT_SHOW_HIDDEN = new UiStateKey("employeeContract.ShowHidden");
     public static final UiStateKey EMPLOYEE_CONTRACT_FILTER = new UiStateKey("employeeContract.Filter");
@@ -21,7 +20,6 @@ public class EmployeeUiStateKeyContributor implements UiStateKeyContributor {
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
         return of(
-                "employeeContractId", EMPLOYEE_CONTRACT_ID,
                 "employeeId", EMPLOYEE_ID,
                 "ecShowInvalid", EMPLOYEE_CONTRACT_SHOW_INVALID,
                 "ecShowHidden", EMPLOYEE_CONTRACT_SHOW_HIDDEN,
