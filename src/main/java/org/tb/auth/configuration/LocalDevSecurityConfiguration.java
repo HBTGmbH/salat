@@ -8,7 +8,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,23 +23,26 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.domain.EmployeeStatusAuthorities;
 import org.tb.auth.filter.AuthFilter;
 import org.tb.auth.filter.AuthViewHelper;
 import org.tb.auth.service.AuthService;
-import org.tb.common.GlobalConstants;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
+
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @Profile("local")
@@ -61,9 +63,7 @@ public class LocalDevSecurityConfiguration {
       "/webjars/**",
       "/favicon.ico",
       "/api/doc/**",
-      "/actuator/health",
-      "/http-headers*",
-      "/error*"
+      "/actuator/health"
   };
 
   @Bean
@@ -90,11 +90,11 @@ public class LocalDevSecurityConfiguration {
   SecurityFilterChain resources(HttpSecurity http) throws Exception {
     http.securityMatcher(UNAUTHENTICATED_URL_PATTERNS)
         .authorizeHttpRequests((authorize) -> authorize.anyRequest().permitAll())
-        .requestCache(cache -> cache.disable())
-        .securityContext(security -> security.disable())
-        .sessionManagement(session -> session.disable())
-        .cors(cors -> cors.disable())
-        .csrf(csrf -> csrf.disable());
+        .requestCache(RequestCacheConfigurer::disable)
+        .securityContext(AbstractHttpConfigurer::disable)
+        .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
+        .cors(AbstractHttpConfigurer::disable)
+        .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
 
@@ -105,9 +105,9 @@ public class LocalDevSecurityConfiguration {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilter(preAuthenticatedProcessingFilter(authenticationManager, false))
         .authorizeHttpRequests(authz -> authz.anyRequest().authenticated())
-        .requestCache(cache -> cache.disable())
-        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .csrf(csrf -> csrf.disable());
+        .requestCache(RequestCacheConfigurer::disable)
+        .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
+        .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
 
@@ -125,8 +125,9 @@ public class LocalDevSecurityConfiguration {
             response.sendError(401);
           }
         }))
-        .cors(cors -> cors.disable())
-        .csrf(csrf -> csrf.disable());
+        .cors(AbstractHttpConfigurer::disable)
+        .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
+        .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
     return http.build();
   }
 
@@ -198,19 +199,7 @@ public class LocalDevSecurityConfiguration {
         if (status == null) {
           throw new UsernameNotFoundException("No salat user found for sign: " + sign);
         }
-        Set<GrantedAuthority> authorities = new HashSet<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        boolean isRestricted = GlobalConstants.EMPLOYEE_STATUS_RESTRICTED.equalsIgnoreCase(status);
-        boolean isAdmin = GlobalConstants.EMPLOYEE_STATUS_ADM.equalsIgnoreCase(status);
-        boolean isManager = isAdmin || GlobalConstants.EMPLOYEE_STATUS_BL.equalsIgnoreCase(status);
-        boolean isPeopleLead = isManager || GlobalConstants.EMPLOYEE_STATUS_PV.equalsIgnoreCase(status);
-        boolean isBackoffice = isManager || GlobalConstants.EMPLOYEE_STATUS_BO.equalsIgnoreCase(status);
-        if (isRestricted) authorities.add(new SimpleGrantedAuthority("ROLE_RESTRICTED"));
-        if (isAdmin) authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        if (isManager) authorities.add(new SimpleGrantedAuthority("ROLE_MANAGER"));
-        if (isPeopleLead) authorities.add(new SimpleGrantedAuthority("ROLE_PEOPLE_LEAD"));
-        if (isBackoffice) authorities.add(new SimpleGrantedAuthority("ROLE_BACKOFFICE"));
-        return new User(sign, "N/A", authorities);
+        return new User(sign, "N/A", EmployeeStatusAuthorities.from(status));
     });
     return provider;
   }

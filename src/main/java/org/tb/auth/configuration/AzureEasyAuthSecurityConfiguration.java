@@ -1,7 +1,7 @@
 package org.tb.auth.configuration;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.HashSet;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,8 +16,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.JwtClaimValidator;
@@ -32,10 +30,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.domain.EmployeeStatusAuthorities;
 import org.tb.auth.filter.AuthFilter;
 import org.tb.auth.filter.AuthViewHelper;
 import org.tb.auth.service.AuthService;
-import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.common.filter.LoggingFilter.MdcDataSource;
 
@@ -142,19 +140,7 @@ public class AzureEasyAuthSecurityConfiguration {
       if (status == null) {
         throw new UsernameNotFoundException("No salat user found for sign: " + sign);
       }
-      Set<GrantedAuthority> authorities = new HashSet<>();
-      authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-      boolean isRestricted = GlobalConstants.EMPLOYEE_STATUS_RESTRICTED.equalsIgnoreCase(status);
-      boolean isAdmin = GlobalConstants.EMPLOYEE_STATUS_ADM.equalsIgnoreCase(status);
-      boolean isManager = isAdmin || GlobalConstants.EMPLOYEE_STATUS_BL.equalsIgnoreCase(status);
-      boolean isPeopleLead = isManager || GlobalConstants.EMPLOYEE_STATUS_PV.equalsIgnoreCase(status);
-      boolean isBackoffice = isManager || GlobalConstants.EMPLOYEE_STATUS_BO.equalsIgnoreCase(status);
-      if (isRestricted) authorities.add(new SimpleGrantedAuthority("ROLE_RESTRICTED"));
-      if (isAdmin) authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-      if (isManager) authorities.add(new SimpleGrantedAuthority("ROLE_MANAGER"));
-      if (isPeopleLead) authorities.add(new SimpleGrantedAuthority("ROLE_PEOPLE_LEAD"));
-      if (isBackoffice) authorities.add(new SimpleGrantedAuthority("ROLE_BACKOFFICE"));
-      return authorities;
+      return EmployeeStatusAuthorities.from(status);
     });
     return converter;
   }
