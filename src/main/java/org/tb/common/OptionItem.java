@@ -4,8 +4,7 @@ import java.io.Serializable;
 import lombok.Data;
 
 /**
- * Util class to build up a list collection to be used with html:options collection=...
- * in a JSP
+ * Util class to build up a list collection.
  */
 @Data
 public class OptionItem implements Serializable {
