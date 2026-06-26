@@ -37,15 +37,17 @@ public class ReleaseController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
 
     @GetMapping
-    public String show(Model model) {
-        var loginEmployee = employeeService.getLoginEmployee();
-        var contract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElse(null);
+    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
 
-        model.addAttribute("loginEmployee", loginEmployee);
-        model.addAttribute("loginEmployeeContract", contract);
+        var effectiveContractId = effectiveContractId(employeeContractId);
+        var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
+        var employee = contract.getEmployee();
+
+        model.addAttribute("employee", employee);
+        model.addAttribute("employeeContract", contract);
         model.addAttribute("selfReleaseDateStr", defaultReleaseDateStr(contract));
-        model.addAttribute("releasedUntil", contract != null ? format(contract.getReportReleaseDate()) : "");
-        model.addAttribute("acceptedUntil", contract != null ? format(contract.getReportAcceptanceDate()) : "");
+        model.addAttribute("releasedUntil", format(contract.getReportReleaseDate()));
+        model.addAttribute("acceptedUntil", format(contract.getReportAcceptanceDate()));
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "release");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.release.text"));
@@ -54,10 +56,11 @@ public class ReleaseController {
     }
 
     @PostMapping
-    public String release(@RequestParam(required = false) String selfReleaseDate,
+    public String release(@RequestParam(required = false) Long employeeContractId,
+                          @RequestParam(required = false) String selfReleaseDate,
                           RedirectAttributes redirectAttributes) {
-        var loginEmployee = employeeService.getLoginEmployee();
-        var contract = employeecontractService.getCurrentContract(loginEmployee.getId()).orElse(null);
+        var effectiveContractId = effectiveContractId(employeeContractId);
+        var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
         if (contract == null) {
             return "redirect:/release";
         }
@@ -69,6 +72,16 @@ public class ReleaseController {
             redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
         }
         return "redirect:/release";
+    }
+
+    private long effectiveContractId(Long employeeContractId) {
+        if (employeeContractId != null && employeeContractId > 0) {
+            return employeeContractId;
+        }
+        var loginEmployee = employeeService.getLoginEmployee();
+        return employeecontractService.getCurrentContract(loginEmployee.getId())
+                .map(Employeecontract::getId)
+                .orElse(-1L);
     }
 
     private String defaultReleaseDateStr(Employeecontract contract) {
