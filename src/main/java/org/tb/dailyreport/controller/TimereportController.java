@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -52,7 +51,6 @@ public class TimereportController {
     private final WorkingdayService workingdayService;
     private final FavoriteService favoriteService;
     private final EmployeeService employeeService;
-    private final AuthorizedUser authorizedUser;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
 
@@ -178,11 +176,6 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
-        if (authorizedUser.isPeopleLead()) {
-            model.addAttribute("employeecontracts",
-                employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
-                    date != null ? date : today()));
-        }
         model.addAttribute("oobSidebar", true);
         return "dailyreport/timereport-form :: ordersRefreshCompositeFragment";
     }
@@ -215,11 +208,6 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
-        if (authorizedUser.isPeopleLead()) {
-            model.addAttribute("employeecontracts",
-                employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
-                    date != null ? date : today()));
-        }
         model.addAttribute("oobSidebar", true);
         return "dailyreport/timereport-form :: suborderRefreshCompositeFragment";
     }
@@ -237,11 +225,6 @@ public class TimereportController {
             model.addAttribute("todaysBookings", List.of());
         }
         model.addAttribute("recentComments", loadRecentComments(employeeContractId, form));
-        if (authorizedUser.isPeopleLead()) {
-            model.addAttribute("employeecontracts",
-                employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(
-                    form.getReferenceday() != null ? form.getReferenceday() : today()));
-        }
         return "dailyreport/timereport-form :: sidebarFragment";
     }
 
@@ -378,6 +361,13 @@ public class TimereportController {
                 model.addAttribute("liveBookingStartMinutes", startMinutes);
             }
         }
+        if (ecId > 0) {
+            var ec = employeecontractService.getEmployeecontractById(ecId);
+            if (ec != null) {
+                model.addAttribute("selectedEmployeeName", ec.getEmployee().getName() + " | " + ec.getEmployee().getSign()
+                    + "  (" + ec.getTimeString() + (ec.getOpenEnd() ? " ∞" : "") + ")");
+            }
+        }
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
@@ -386,10 +376,6 @@ public class TimereportController {
             messages.getMessage(isEdit
                 ? "main.timereport.form.title.edit"
                 : "main.timereport.form.title.create"));
-        if (authorizedUser.isPeopleLead()) {
-            model.addAttribute("employeecontracts",
-                employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(date));
-        }
     }
 
     private List<String> loadRecentComments(Long employeeContractId, TimereportForm form) {

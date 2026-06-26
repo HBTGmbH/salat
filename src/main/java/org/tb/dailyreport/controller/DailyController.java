@@ -65,13 +65,18 @@ public class DailyController {
             Model model) {
 
         var today = today();
-        var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
         long ecId = effectiveContractId(employeeContractId);
 
         String effectiveMode = (mode != null && mode.equals("list")) ? "list" : "daily";
 
-        model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
+        if (ecId > 0) {
+            var ec = employeecontractService.getEmployeecontractById(ecId);
+            if (ec != null) {
+                model.addAttribute("selectedEmployeeName", ec.getEmployee().getName() + " | " + ec.getEmployee().getSign()
+                    + "  (" + ec.getTimeString() + (ec.getOpenEnd() ? " ∞" : "") + ")");
+            }
+        }
         model.addAttribute("mode", effectiveMode);
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "daily");
@@ -400,7 +405,7 @@ public class DailyController {
         return "redirect:/dailyreport/daily?mode=daily&date=" + date;
     }
 
-    @PostMapping("/fill-not-worked")
+    @GetMapping("/fill-not-worked")
     @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
             @RequestParam(required = false) Long employeeContractId,

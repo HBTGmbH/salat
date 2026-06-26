@@ -37,8 +37,6 @@ public class OvertimeController {
     @PreAuthorize("isAuthenticated()")
     public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
         long ecId = effectiveContractId(employeeContractId);
-        var contracts = employeecontractService
-            .getViewableEmployeeContractsForAuthorizedUserValidAt(today());
         OvertimeReport report = ecId > 0
             ? overtimeService.createDetailedReportForEmployee(ecId)
             : null;
@@ -55,15 +53,13 @@ public class OvertimeController {
                     overtimeMismatch = detailed.minus(stored);
                 }
             }
-            var contract = contracts.stream()
-                .filter(ec -> ec.getId() == ecId)
-                .findFirst()
-                .orElseGet(() -> employeecontractService.getEmployeecontractById(ecId));
+            var contract = employeecontractService.getEmployeecontractById(ecId);
             reportReleaseDate = contract.getReportReleaseDate();
             reportAcceptanceDate = contract.getReportAcceptanceDate();
+            model.addAttribute("selectedEmployeeName", contract.getEmployee().getName() + " | " + contract.getEmployee().getSign()
+                + "  (" + contract.getTimeString() + (contract.getOpenEnd() ? " ∞" : "") + ")");
         }
 
-        model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("overtimeReport", report);
         model.addAttribute("overtimeMismatch", overtimeMismatch);

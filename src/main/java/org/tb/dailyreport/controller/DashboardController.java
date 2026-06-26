@@ -65,7 +65,6 @@ public class DashboardController {
     public String dashboard(@RequestParam(required = false) Long employeeContractId, Model model) {
         var employeecontract = currentContract(employeeContractId);
         var loginEmployees = employeeService.getLoginEmployees();
-        var employeecontracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
         var vacations = vacationService.getVacations(employeecontract).stream()
@@ -78,9 +77,7 @@ public class DashboardController {
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "dashboard");
         model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
-        model.addAttribute("employeecontracts", employeecontracts);
         model.addAttribute("loginEmployees", loginEmployees);
-        model.addAttribute("currentEmployeeContractId", employeecontract.getId());
         model.addAttribute("currentLoginEmployeeId", authorizedEmployee.getEmployeeId());
         model.addAttribute("effectiveLoginSign", authorizedUser.getEffectiveLoginSign());
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
