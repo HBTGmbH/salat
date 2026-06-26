@@ -290,13 +290,26 @@
           </div>
           <!-- Page title actions -->
           <div class="col-auto ms-auto d-print-none">
-            <div class="btn-list">
-              <button class="btn hide-theme-dark" aria-label="Enable dark mode" onclick="toggleTheme('dark')">
-                <i class="ti ti-moon ti-size-3"></i>
-              </button>
-              <button class="btn hide-theme-light" aria-label="Enable light mode" onclick="toggleTheme('light')">
-                <i class="ti ti-sun-high ti-size-3"></i>
-              </button>
+            <div class="d-flex align-items-center gap-2">
+              <div th:if="${@employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
+                <select class="form-select tomselect" id="globalEmployeeContractId"
+                        onchange="selectContract(this.value)">
+                  <option th:each="ec : ${@employeeContractSelectorViewHelper.viewableContracts}"
+                          th:value="${ec.id}"
+                          th:selected="${ec.id == @employeeContractSelectorViewHelper.selectedContractId}"
+                          th:text="${ec.employee.name + ' | ' + ec.employee.sign
+                                    + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'}">
+                  </option>
+                </select>
+              </div>
+              <div class="btn-list">
+                <button class="btn hide-theme-dark" aria-label="Enable dark mode" onclick="toggleTheme('dark')">
+                  <i class="ti ti-moon ti-size-3"></i>
+                </button>
+                <button class="btn hide-theme-light" aria-label="Enable light mode" onclick="toggleTheme('light')">
+                  <i class="ti ti-sun-high ti-size-3"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -430,6 +443,12 @@
   function toggleTheme(theme) {
     localStorage.setItem('tabler-theme', theme)
     document.documentElement.setAttribute('data-bs-theme', theme)
+  }
+  function selectContract(id) {
+    // Preserves all existing GET query params; only sets/replaces employeeContractId.
+    const url = new URL(window.location.href)
+    url.searchParams.set('employeeContractId', id)
+    window.location.href = url.toString()
   }
 </script>
 <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>

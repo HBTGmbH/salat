@@ -22,6 +22,11 @@
 
           <div class="card-body">
 
+            <div th:if="${selectedEmployeeName != null}" class="mb-3">
+              <div class="form-label mb-1" th:text="#{main.employeecontract.employee.text}">Mitarbeiter</div>
+              <div th:text="${selectedEmployeeName}"></div>
+            </div>
+
             <!-- Row 1: Date + Duration/Begin-End -->
             <div class="row g-3 mb-3">
 
@@ -195,26 +200,6 @@
     <div class="col-lg-5">
       <div id="form-sidebar" th:fragment="sidebarFragment"
            th:attr="hx-swap-oob=${oobSidebar == true ? 'outerHTML' : null}">
-
-        <!-- Employee selector (People Lead / Manager only) -->
-        <form th:if="${employeecontracts != null}" method="get"
-              th:action="@{/dailyreport/timereports/new}"
-              class="card mb-3">
-          <div class="card-header">
-            <h3 class="card-title">
-              <span th:text="#{main.timereport.sidebar.employee.title}">Mitarbeiter</span>
-            </h3>
-          </div>
-          <div class="card-body">
-            <input type="hidden" name="date" th:value="${timereportForm.referenceday}"/>
-            <select class="form-select tomselect" name="employeeContractId" onchange="this.form.submit()">
-              <option th:each="ec : ${employeecontracts}"
-                      th:value="${ec.id}"
-                      th:text="${ec.employee.name}"
-                      th:selected="${ec.id == selectedContractId}"></option>
-            </select>
-          </div>
-        </form>
 
         <!-- Today's bookings -->
         <div class="card mb-3">

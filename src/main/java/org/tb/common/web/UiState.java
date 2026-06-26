@@ -21,7 +21,7 @@ public class UiState {
 
     public Long getLongValue(UiStateKey key) {
         var value = values.get(key);
-        return value != null ? Long.valueOf(value) : null;
+        return value != null && !value.isBlank() ? Long.valueOf(value) : null;
     }
 
     public void clearState(UiStateKey key) {

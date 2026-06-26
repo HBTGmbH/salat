@@ -8,22 +8,11 @@
   <form th:action="@{/dailyreport/dashboard}" method="post" id="dashboardForm">
     <input type="hidden" name="task" id="dashboardTask" value=""/>
 
-    <div class="card mb-3" th:if="${employeecontracts.size() > 1 || loginEmployees.size() > 1}">
+    <div class="card mb-3" th:if="${loginEmployees.size() > 1}">
       <div class="card-body">
         <div class="row g-3 align-items-end">
 
-          <div class="col-12 col-md-6" th:if="${employeecontracts.size() > 1}">
-            <label class="form-label" th:text="#{main.employeecontract.employee.text}"></label>
-            <select name="employeeContractId" class="form-select tomselect" onchange="submitDashboardTask('refresh')">
-              <option th:each="ec : ${employeecontracts}"
-                      th:value="${ec.id}"
-                      th:selected="${ec.id == currentEmployeeContractId}"
-                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'}">
-              </option>
-            </select>
-          </div>
-
-          <div class="col-12 col-md-4" th:if="${loginEmployees.size() > 1}">
+          <div class="col-12 col-md-4">
             <label class="form-label" th:text="#{main.welcome.switchlogin.text}"></label>
             <select name="loginEmployeeId" class="form-select tomselect" onchange="submitDashboardTask('switch-login')">
               <option th:each="emp : ${loginEmployees}"

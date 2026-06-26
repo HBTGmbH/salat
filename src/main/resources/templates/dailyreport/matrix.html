@@ -117,32 +117,10 @@
         </a>
       </div>
       <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}">Heute</a>
-
-      <!-- Fill not worked -->
-      <form th:if="${selectedContractId > 0}" method="post" th:action="@{/dailyreport/matrix/fill-not-worked}">
-        <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
-        <input type="hidden" name="year" th:value="${yearMonth.year}"/>
-        <button type="submit" class="btn btn-sm btn-outline-secondary"
-                th:disabled="${monthReleased}"
-                th:title="${monthReleased} ? #{main.matrix.fillnotworked.disabled.title} : null"
-                th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
-      </form>
-
-      <!-- Employee selector (only when multiple contracts are viewable) -->
-      <form class="ms-auto" method="get" th:action="@{/dailyreport/matrix}"
-            th:if="${#lists.size(employeecontracts) > 1}">
-        <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
-        <input type="hidden" name="year" th:value="${yearMonth.year}"/>
-        <select name="employeeContractId" class="form-select form-select-sm tomselect"
-                onchange="this.form.submit()" style="min-width: 200px">
-          <option th:each="ec : ${employeecontracts}"
-                  th:value="${ec.id}"
-                  th:text="${ec.employee.name}"
-                  th:selected="${ec.id == selectedContractId}">
-          </option>
-        </select>
-      </form>
-
+      <a th:if="${!monthReleased and selectedContractId > 0}"
+         class="btn btn-sm btn-outline-secondary"
+         th:href="@{/dailyreport/matrix/fill-not-worked(month=${yearMonth.monthValue},year=${yearMonth.year})}"
+         th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</a>
     </div>
   </div>
 </div>

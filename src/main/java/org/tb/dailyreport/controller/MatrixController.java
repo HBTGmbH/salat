@@ -10,7 +10,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -66,8 +65,10 @@ public class MatrixController {
             .map(c -> c.getReportReleaseDate() != null && !c.getReportReleaseDate().isBefore(yearMonth.atEndOfMonth()))
             .orElse(false);
 
+        selectedContract.ifPresent(c -> model.addAttribute("selectedEmployeeName",
+            c.getEmployee().getName() + " | " + c.getEmployee().getSign()
+                + "  (" + c.getTimeString() + (c.getOpenEnd() ? " ∞" : "") + ")"));
         model.addAttribute("matrixData", matrixData);
-        model.addAttribute("employeecontracts", contracts);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("monthReleased", monthReleased);
         model.addAttribute("showBeginBreakEnd", showBeginBreakEnd);
@@ -86,7 +87,7 @@ public class MatrixController {
         return "dailyreport/matrix";
     }
 
-    @PostMapping("/fill-not-worked")
+    @GetMapping("/fill-not-worked")
     @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
             @RequestParam(required = false) Long employeeContractId,
