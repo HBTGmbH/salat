@@ -248,7 +248,7 @@
   <!-- Page content -->
   <div class="page-wrapper">
     <header class="page-header d-print-none">
-      <div class="container-md">
+      <div class="container-fluid">
         <div class="row g-2 align-items-center">
           <div class="col">
             <!-- Page pre-title -->
@@ -287,7 +287,7 @@
       </div>
     </header>
     <div class="page-body">
-      <div class="container-xl my-4" th:if="${not #strings.isEmpty(toastSuccess)}">
+      <div class="container-fluid my-4" th:if="${not #strings.isEmpty(toastSuccess)}">
         <div class="alert alert-success alert-dismissible align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-check"></i>
@@ -309,7 +309,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       </div>
-      <div class="container-xl my-4" th:if="${not #strings.isEmpty(toastError)}">
+      <div class="container-fluid my-4" th:if="${not #strings.isEmpty(toastError)}">
         <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
@@ -325,7 +325,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       </div>
-      <div class="container-xl my-4" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
+      <div class="container-fluid my-4" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
         <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
@@ -349,7 +349,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       </div>
-      <div class="container-xl my-4" th:if="${errors != null && !errors.isEmpty()}">
+      <div class="container-fluid my-4" th:if="${errors != null && !errors.isEmpty()}">
         <div class="alert alert-danger alert-dismissible align-items-start gap-3" role="alert">
           <div class="icon">
             <i class="ti ti-circle-x"></i>
@@ -365,12 +365,12 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       </div>
-      <div th:class="${containerClass ?: 'container-xl'}" layout:fragment="content">
+      <div class="container-fluid" layout:fragment="content">
         <!-- page specific content -->
       </div>
     </div>
     <footer class="footer footer-transparent d-print-none">
-      <div class="container-xl">
+      <div class="container-fluid">
         <div class="row text-center align-items-center flex-row-reverse">
           <div class="col-lg-auto ms-lg-auto">
             <ul class="list-inline list-inline-dots mb-0">

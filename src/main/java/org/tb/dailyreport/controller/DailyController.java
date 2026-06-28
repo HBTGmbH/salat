@@ -79,7 +79,6 @@ public class DailyController {
         model.addAttribute("mode", effectiveMode);
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "daily");
-        model.addAttribute("containerClass", "container-xl");
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.daily.text"));
 

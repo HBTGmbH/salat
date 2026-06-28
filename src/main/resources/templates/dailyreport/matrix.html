@@ -261,6 +261,73 @@
   </div>
 </div>
 
+<!-- Quick Actions -->
+<div class="row g-3 mt-3">
+
+  <div class="col-12 col-sm-4 d-flex">
+    <a th:href="@{/dailyreport/timereports/new}" class="card card-link h-100 w-100 text-decoration-none">
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-auto">
+            <span class="avatar avatar-rounded bg-azure-lt text-azure" style="font-size: 1.4rem;">
+              <i class="bi bi-plus-circle"></i>
+            </span>
+          </div>
+          <div class="col">
+            <div class="fw-medium" th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</div>
+            <div class="text-muted small" th:text="#{main.welcome.action.logwork.subtitle.text}">Arbeitszeit erfassen</div>
+          </div>
+          <div class="col-auto text-muted">
+            <i class="bi bi-chevron-right"></i>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-12 col-sm-4 d-flex">
+    <a th:href="@{/dailyreport/dashboard}" class="card card-link h-100 w-100 text-decoration-none">
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-auto">
+            <span class="avatar avatar-rounded bg-indigo-lt text-indigo" style="font-size: 1.4rem;">
+              <i class="bi bi-grid-3x3-gap"></i>
+            </span>
+          </div>
+          <div class="col">
+            <div class="fw-medium" th:text="#{main.general.mainmenu.dashboard.text}">Dashboard</div>
+            <div class="text-muted small" th:text="#{main.welcome.action.dashboard.subtitle.text}">Dashboard anzeigen</div>
+          </div>
+          <div class="col-auto text-muted">
+            <i class="bi bi-chevron-right"></i>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-12 col-sm-4 d-flex">
+    <a th:href="@{/release}" class="card card-link h-100 w-100 text-decoration-none">
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-auto">
+            <span class="avatar avatar-rounded bg-green-lt text-green" style="font-size: 1.4rem;">
+              <i class="bi bi-check-circle"></i>
+            </span>
+          </div>
+          <div class="col">
+            <div class="fw-medium" th:text="#{main.general.mainmenu.release.text}">Freigabe</div>
+            <div class="text-muted small" th:text="#{main.welcome.action.release.subtitle.text}">Buchungen freigeben</div>
+          </div>
+          <div class="col-auto text-muted">
+            <i class="bi bi-chevron-right"></i>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+</div>
 
 </section>
 

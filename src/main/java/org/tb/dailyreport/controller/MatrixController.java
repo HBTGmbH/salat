@@ -80,7 +80,6 @@ public class MatrixController {
         model.addAttribute("nextYear", next.getYear());
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "matrix");
-        model.addAttribute("containerClass", "container-fluid");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.matrixmenu.text"));
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("title", messages.getMessage(monthKey) + " " + targetYear);

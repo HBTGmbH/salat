@@ -53,6 +53,10 @@ body {
     transition: width 0.25s ease;
   }
 
+  .container-fluid {
+    padding-left: 2rem;
+  }
+
   .page-wrapper {
     transition: margin-left 0.25s ease;
   }
