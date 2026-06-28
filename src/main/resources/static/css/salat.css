@@ -1,0 +1,228 @@
+@import url('https://rsms.me/inter/inter.css');
+:root {
+  --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+  --bs-body-bg: var(--tblr-body-bg);
+  --bs-body-color: var(--tblr-body-color);
+  --bs-border-color: var(--tblr-border-color);
+  --bs-border-radius: var(--tblr-border-radius);
+  --bs-primary: var(--tblr-primary);
+  --bs-font-sans-serif: var(--tblr-font-sans-serif);
+}
+
+.ts-control, .ts-dropdown-content {
+  color: var(--tblr-body-color);
+}
+
+.ts-dropdown-content > .active {
+  color: var(--tblr-primary)
+}
+
+.ts-wrapper.form-select .ts-control {
+  padding-top: .5625rem;
+  padding-bottom: .5625rem;
+}
+
+body {
+  font-feature-settings: "cv03", "cv04", "cv11";
+}
+
+.card-table > tbody > tr:last-child {
+  border-bottom-color: transparent;
+}
+
+.bi-layout-sidebar::before {
+  display: none !important;
+}
+
+.navbar-brand a:hover {
+  text-decoration: none !important;
+}
+
+#salat-nav .navbar-brand {
+  justify-content: flex-start;
+  padding-left: 0.75rem;
+}
+
+/* ===== Collapsible sidebar ===== */
+#nav-toggle {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  #salat-nav {
+    transition: width 0.25s ease;
+  }
+
+  .page-wrapper {
+    transition: margin-left 0.25s ease;
+  }
+
+  #nav-toggle {
+    display: flex;
+    position: fixed;
+    top: 1.25rem;
+    left: 14rem;
+    z-index: 200;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    background: #1f2937;
+    color: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: left 0.25s ease;
+  }
+
+  #nav-toggle:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  #nav-toggle-icon {
+    transition: transform 0.25s ease;
+    font-size: 0.85rem;
+  }
+
+  body.nav-collapsed #salat-nav {
+    width: 3.5rem;
+  }
+
+  body.nav-collapsed .navbar-expand-md.navbar-vertical ~ .page-wrapper {
+    margin-left: 3.5rem;
+  }
+
+  body.nav-collapsed #nav-toggle {
+    left: 2.5rem;
+  }
+
+  body.nav-collapsed #nav-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  body.nav-collapsed .nav-link-title,
+  body.nav-collapsed .navbar-brand-text {
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    white-space: nowrap;
+    vertical-align: middle;
+    transition: max-width 0.2s ease, opacity 0.15s ease;
+  }
+
+  body.nav-collapsed #salat-nav .navbar-brand-image {
+    width: 1.75rem !important;
+    height: auto !important;
+    object-fit: contain;
+  }
+
+  body.nav-collapsed #salat-nav .card {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  body.nav-collapsed .navbar-nav .nav-link {
+    justify-content: flex-start;
+    padding-left: 0.875rem;
+    padding-right: 0;
+    transition: padding-left 0.25s ease;
+  }
+
+  body.nav-collapsed .nav-link-icon {
+    margin: 0 !important;
+  }
+
+  body.nav-collapsed #salat-nav .dropdown-item {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  body.nav-collapsed #salat-nav .dropdown-item span {
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: middle;
+    transition: max-width 0.2s ease;
+  }
+
+  body.nav-collapsed .dropdown-item-icon {
+    margin-right: 0 !important;
+  }
+
+  body.nav-collapsed #salat-nav .nav-link.dropdown-toggle::after {
+    display: none;
+  }
+
+  body.nav-collapsed .dropdown-menu-column {
+    min-width: 0;
+  }
+
+  body.nav-collapsed #salat-nav {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 99;
+    overflow: hidden;
+  }
+
+  body.nav-collapsed #salat-nav:hover {
+    width: 14rem;
+    overflow-y: auto;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.4);
+  }
+
+  body.nav-collapsed #salat-nav:hover ~ #nav-toggle {
+    display: none;
+  }
+
+  body.nav-collapsed #salat-nav:hover .nav-link-title,
+  body.nav-collapsed #salat-nav:hover .navbar-brand-text {
+    max-width: 20rem;
+    opacity: 1;
+    transition: max-width 0.25s ease 0.2s, opacity 0.15s ease 0.22s;
+  }
+
+  body.nav-collapsed #salat-nav:hover .card {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.15s ease 0.22s;
+  }
+
+  body.nav-collapsed #salat-nav:hover .navbar-nav .nav-link {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  body.nav-collapsed #salat-nav:hover .dropdown-item {
+    opacity: 1;
+    transition: opacity 0.15s ease 0.22s;
+  }
+
+  body.nav-collapsed #salat-nav:hover .dropdown-item span {
+    max-width: 20rem;
+    transition: max-width 0.25s ease 0.2s;
+  }
+
+  body.nav-collapsed #salat-nav:hover .dropdown-item-icon {
+    margin-right: 0.5rem !important;
+  }
+
+  body.nav-collapsed #salat-nav:hover .nav-link.dropdown-toggle::after {
+    display: inline-block;
+  }
+
+  body.nav-collapsed #salat-nav:hover .nav-link.dropdown-toggle {
+    font-size: inherit;
+  }
+
+  body.nav-collapsed #salat-nav:hover .dropdown-menu-column {
+    min-width: 10rem;
+  }
+}
