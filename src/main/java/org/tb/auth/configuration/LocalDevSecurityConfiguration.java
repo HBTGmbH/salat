@@ -111,9 +111,9 @@ public class LocalDevSecurityConfiguration {
             response.sendError(401);
           }
         }))
-        .cors(AbstractHttpConfigurer::disable)
         .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
-        .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+        .cors(AbstractHttpConfigurer::disable)
+        .csrf(AbstractHttpConfigurer::disable);
     return http.build();
   }
 
