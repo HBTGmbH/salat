@@ -178,16 +178,17 @@
       <table class="table table-vcenter card-table">
         <thead>
           <tr>
-            <th th:text="#{main.customer.name.text}">Kunde</th>
             <th>Auftrag</th>
             <th class="text-end">Stunden</th>
           </tr>
         </thead>
         <tbody>
           <tr th:each="o : ${orderHours}">
-            <td class="text-muted" th:text="${o.customer}"></td>
-            <td><code th:text="${o.orderSign}"></code></td>
-            <td class="text-end fw-medium" th:text="${o.hoursString}"></td>
+            <td>
+              <div class="text-muted small" th:text="|${o.customerOrderSign} · ${o.orderDescription} · ${o.customer}|"></div>
+              <div class="fw-medium" th:text="|${o.orderSign} · ${o.suborderDescription}|"></div>
+            </td>
+            <td class="text-end"><span class="badge bg-blue-lt" th:text="${o.hoursString}"></span></td>
           </tr>
         </tbody>
       </table>

@@ -42,7 +42,10 @@ public class DashboardController {
     @AllArgsConstructor
     static class OrderHourSummary {
         private final String customer;
+        private final String customerOrderSign;
         private final String orderSign;
+        private final String orderDescription;
+        private final String suborderDescription;
         private final String hoursString;
         private final long minutes;
     }
@@ -171,8 +174,12 @@ public class DashboardController {
                 var sum = e.getValue().stream()
                     .map(TimereportDTO::getDuration)
                     .reduce(Duration.ZERO, Duration::plus);
-                var customer = e.getValue().getFirst().getCustomerShortname();
-                return new OrderHourSummary(customer, e.getKey(), DurationUtils.format(sum), sum.toMinutes());
+                var first = e.getValue().getFirst();
+                var customer = first.getCustomerShortname();
+                var customerOrderSign = first.getCustomerorderSign();
+                var orderDescription = first.getCustomerorderDescription();
+                var suborderDescription = first.getSuborderDescription();
+                return new OrderHourSummary(customer, customerOrderSign, e.getKey(), orderDescription, suborderDescription, DurationUtils.format(sum), sum.toMinutes());
             })
             .sorted(Comparator.comparingLong(OrderHourSummary::getMinutes).reversed())
             .toList();
