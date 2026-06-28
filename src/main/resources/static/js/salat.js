@@ -29,6 +29,7 @@ const tomSelectConfig = (el) => ({
   create: false,
   maxItems: el.classList.contains('tomselect-multi') ? null : 1,
   maxOptions: 1000,
+  plugins: ['dropdown_input'],
   sortField: [{ field: '$order' }],
   placeholder: el.getAttribute('placeholder') || 'Select an option...',
 });
