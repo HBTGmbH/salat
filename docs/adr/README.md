@@ -31,3 +31,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0015](0015-error-modul-fuer-fehlerseite.md) | Eigenes `error`-Modul für die Fehlerseite | Accepted | 2026-06-21 |
 | [0016](0016-uistate-key-ownership-per-modul.md) | UiState-Key-Ownership pro Modul | Accepted | 2026-06-21 |
 | [0017](0017-viewhelper-fuer-darstellungslogik.md) | ViewHelper-Klassen für darstellungsspezifische Aufbereitung | Accepted | 2026-06-22 |
+| [0018](0018-csrf-schutz-mit-cookie-tokenrepository.md) | CSRF-Schutz mit CookieCsrfTokenRepository und CsrfTokenRequestAttributeHandler | Accepted | 2026-06-28 |
