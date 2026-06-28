@@ -94,7 +94,7 @@ public class UiStateFilter extends OncePerRequestFilter {
                                     if (key instanceof SensitiveUiStateKey) {
                                         String storedSig = parsed.get("_sig_" + keyName);
                                         if (storedSig == null) return;
-                                        byte[] expected = computeHmacBytes(keyName, value);
+                                        byte[] expected = computeHmacBytes(keyName, value, storedLoginSign);
                                         byte[] actual = Base64.getUrlDecoder().decode(storedSig);
                                         if (!MessageDigest.isEqual(expected, actual)) return;
                                     }
@@ -155,7 +155,7 @@ public class UiStateFilter extends OncePerRequestFilter {
             sb.append(keyName).append("=").append(value);
             if (entry.getKey() instanceof SensitiveUiStateKey) {
                 String hmac = Base64.getUrlEncoder().withoutPadding()
-                    .encodeToString(computeHmacBytes(keyName, value));
+                    .encodeToString(computeHmacBytes(keyName, value, loginSign));
                 sb.append("&_sig_").append(keyName).append("=").append(hmac);
             }
         }
@@ -177,11 +177,12 @@ public class UiStateFilter extends OncePerRequestFilter {
         return result;
     }
 
-    private byte[] computeHmacBytes(String keyName, String value) {
+    private byte[] computeHmacBytes(String keyName, String value, String loginSign) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(signingKeyBytes, "HmacSHA256"));
-            return mac.doFinal((keyName + "=" + value).getBytes(StandardCharsets.UTF_8));
+            String message = COOKIE_KEY_LOGIN_SIGN + "=" + loginSign + "&" + keyName + "=" + value;
+            return mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new IllegalStateException("HMAC computation failed", e);
         }

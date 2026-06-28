@@ -251,7 +251,7 @@ class UiStateFilterTest {
         when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
 
         String value = "bob";
-        String hmac = computeHmac("sensitiveKey", value);
+        String hmac = computeHmac("alice", "sensitiveKey", value);
         String cookieContent = "_ls=alice&sensitiveKey=" + value + "&_sig_sensitiveKey=" + hmac;
 
         MockHttpServletRequest req = new MockHttpServletRequest();
@@ -268,6 +268,24 @@ class UiStateFilterTest {
         when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
 
         String cookieContent = "_ls=alice&sensitiveKey=bob&_sig_sensitiveKey=invalidsig";
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setCookies(new Cookie(COOKIE_NAME, encode(cookieContent)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, mock(FilterChain.class));
+
+        assertThat(uiState.getValue(SENSITIVE_KEY)).isNull();
+    }
+
+    @Test
+    void sensitiveCookieValueRejectedWhenHmacCopiedFromDifferentUser() throws Exception {
+        // alice's legitimately-issued HMAC for the same (keyName, value)
+        String aliceHmac = computeHmac("alice", "sensitiveKey", "bob");
+        // charlie constructs a cookie that uses _ls=charlie but alice's signature
+        String cookieContent = "_ls=charlie&sensitiveKey=bob&_sig_sensitiveKey=" + aliceHmac;
+
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("charlie");
 
         MockHttpServletRequest req = new MockHttpServletRequest();
         req.setCookies(new Cookie(COOKIE_NAME, encode(cookieContent)));
@@ -309,7 +327,7 @@ class UiStateFilterTest {
         assertThat(decoded).contains("sensitiveKey=secret");
         assertThat(decoded).contains("_sig_sensitiveKey=");
 
-        String expectedHmac = computeHmac("sensitiveKey", "secret");
+        String expectedHmac = computeHmac("alice", "sensitiveKey", "secret");
         assertThat(decoded).contains("_sig_sensitiveKey=" + expectedHmac);
     }
 
@@ -318,11 +336,12 @@ class UiStateFilterTest {
             .encodeToString(plain.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static String computeHmac(String keyName, String value) {
+    private static String computeHmac(String loginSign, String keyName, String value) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(SIGNING_KEY.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] raw = mac.doFinal((keyName + "=" + value).getBytes(StandardCharsets.UTF_8));
+            String message = COOKIE_KEY_LOGIN_SIGN + "=" + loginSign + "&" + keyName + "=" + value;
+            byte[] raw = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
             return Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
         } catch (Exception e) {
             throw new RuntimeException(e);
