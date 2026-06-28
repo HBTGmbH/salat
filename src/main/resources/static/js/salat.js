@@ -46,6 +46,17 @@ document.addEventListener('htmx:afterSettle', function () {
   });
 });
 
+document.addEventListener('htmx:afterSettle', function () {
+  const raw = document.cookie.split('; ')
+    .find(r => r.startsWith('XSRF-TOKEN='))
+    ?.split('=')[1];
+  if (raw) {
+    const token = decodeURIComponent(raw);
+    document.querySelectorAll('input[name="_csrf"]')
+      .forEach(function (el) { el.value = token; });
+  }
+});
+
 function applyFormTabOrder() {
   var wrapper = document.querySelector('.page-body');
   if (!wrapper) return;
