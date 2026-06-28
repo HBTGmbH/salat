@@ -12,7 +12,6 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -134,7 +133,6 @@ public class DailyController {
     }
 
     @PostMapping("/workingday")
-    @PreAuthorize("isAuthenticated()")
     public String saveWorkingday(
             @RequestParam(required = false) Long employeeContractId,
             @ModelAttribute WorkingdayForm form,
@@ -216,7 +214,6 @@ public class DailyController {
     }
 
     @PostMapping("/timereport/{id}/update-inline")
-    @PreAuthorize("isAuthenticated()")
     public String updateTimereportInline(
             @PathVariable long id,
             @RequestParam(required = false) String duration,
@@ -280,17 +277,16 @@ public class DailyController {
     }
 
     @PostMapping("/apply-favourite")
-    @PreAuthorize("isAuthenticated()")
     public String applyFavourite(
             @RequestParam(required = false) Long employeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            HttpServletRequest request,
             HttpServletResponse response,
             Model model) {
         long ecId = effectiveContractId(employeeContractId);
         try {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
+            workingdayService.seedWorkingday(ecId, date, 8, 0);
             timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
                 fav.getComment(), false, fav.getHours(), fav.getMinutes(), 1);
         } catch (ErrorCodeException ex) {
@@ -317,7 +313,6 @@ public class DailyController {
     }
 
     @PostMapping("/delete-favourite")
-    @PreAuthorize("isAuthenticated()")
     public String deleteFavourite(
             @RequestParam(required = false) Long employeeContractId,
             @RequestParam Long favoriteId,
@@ -382,7 +377,6 @@ public class DailyController {
     }
 
     @PostMapping("/delete-timereport")
-    @PreAuthorize("isAuthenticated()")
     public String deleteTimereport(
             @RequestParam Long timereportId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -406,7 +400,6 @@ public class DailyController {
     }
 
     @GetMapping("/fill-not-worked")
-    @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
             @RequestParam(required = false) Long employeeContractId,
             @RequestParam Integer month,

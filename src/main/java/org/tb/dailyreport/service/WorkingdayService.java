@@ -196,6 +196,24 @@ public class WorkingdayService {
     return Duration.ofHours(MAX_HOURS_PER_DAY).minus(workedTime).isNegative();
   }
 
+  public void seedWorkingday(long ecId, LocalDate date, int beginHour, int beginMinute) {
+    var workingday = getWorkingday(ecId, date);
+    if (workingday == null) {
+      workingday = new Workingday();
+      workingday.setEmployeecontract(employeecontractService.getEmployeecontractById(ecId));
+      workingday.setRefday(date);
+      workingday.setBreakhours(0);
+      workingday.setBreakminutes(0);
+      workingday.setStarttimehour(beginHour);
+      workingday.setStarttimeminute(beginMinute);
+    } else {
+      if (workingday.getStarttimehour() == 0) workingday.setStarttimehour(beginHour);
+      if (workingday.getStarttimeminute() == 0) workingday.setStarttimeminute(beginMinute);
+    }
+    workingday.setType(Workingday.WorkingDayType.WORKED);
+    upsertWorkingday(workingday);
+  }
+
   @EventListener
   void onEmployeecontractDelete(EmployeecontractDeleteEvent event) {
     var workingdays = workingdayRepository.findAllByEmployeecontractId(event.getId());
