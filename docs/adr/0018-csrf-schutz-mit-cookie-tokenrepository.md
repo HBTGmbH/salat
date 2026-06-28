@@ -7,7 +7,7 @@ Status: Accepted
 
 CSRF-Schutz war in allen Spring Security Filter Chains deaktiviert. Die Anwendung verwendet eine stateless Session-Policy (`STATELESS`), daher ist ein `HttpSession`-basiertes Token-Speichermodell nicht praktikabel. Gleichzeitig werden Thymeleaf-Formulare (reguläre POST-Submissions) und HTMX 2.0 (partielle Updates via `hx-post`) für die UI verwendet.
 
-Ziel: CSRF-Schutz für alle Production-/Staging-/LocalEasyAuth- und LocalDev-Filter-Chains aktivieren, ohne HttpSession-Abhängigkeit einzuführen, und transparent für Thymeleaf-Formulare sowie HTMX-Anfragen.
+Ziel: CSRF-Schutz für Production-/Staging-/LocalEasyAuth-Filter-Chains aktivieren, ohne HttpSession-Abhängigkeit einzuführen, und transparent für Thymeleaf-Formulare sowie HTMX-Anfragen. Der `local`-Profile-Chain bleibt deaktiviert (siehe Consequences).
 
 ## Considered Options
 
@@ -27,6 +27,7 @@ Chosen: **Option A**, weil `CsrfTokenRequestAttributeHandler` cookie-Wert, Formu
 * Good: Nach einem HTMX-Response werden veraltete `_csrf` Hidden-Felder per `htmx:afterSettle`-Handler in `salat.js` aktualisiert.
 * Bad (BREACH-Trade-off): `XorCsrfTokenRequestAttributeHandler` würde pro Render einen anderen XOR-maskierten Wert liefern und damit BREACH-Angriffe erschweren. `CsrfTokenRequestAttributeHandler` omitiert dieses Masking. Für diese Anwendung akzeptabel, weil: (a) ein Angreifer, der komprimierte Antwortinhalte kontrolliert, ein unrealistisches Bedrohungsmodell für eine interne Zeiterfassungsanwendung darstellt; (b) HTMX-Anfragen senden den Raw-Token ohnehin als Header; (c) die Cookie-Refresh-Anforderung macht XOR-Masking ohne server-seitige Koordination nicht praktikabel.
 * Neutral: REST-API-Chains (`/api/**`, `/rest/**`) und statische Ressourcen (Order 0) behalten `csrf(disable)` — sie verwenden Token-basierte Authentifizierung bzw. haben keine State-modifizierenden Formulare.
+* Neutral: `LocalDevSecurityConfiguration` (`local`-Profil) behält `csrf(disable)`. Grund: Chrome sendet Cookies ohne explizites `SameSite`-Attribut bei Plain-HTTP auf localhost nicht zuverlässig, was zu 403-Fehlern beim Lokaltesting führt. Da der lokale Dev-Server nicht aus dem Internet erreichbar ist, ist das Risiko akzeptabel.
 
 ## Token-Speicher und Verarbeitung
 
