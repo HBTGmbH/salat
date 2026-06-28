@@ -1,3 +1,12 @@
+document.addEventListener("htmx:configRequest", function(evt) {
+  const token = document.cookie.split("; ")
+    .find(r => r.startsWith("XSRF-TOKEN="))
+    ?.split("=")[1];
+  if (token) {
+    evt.detail.headers["X-XSRF-TOKEN"] = decodeURIComponent(token);
+  }
+});
+
 document.addEventListener('close.bs.alert', e => {
   const wrapper = e.target.parentElement;
   e.target.addEventListener('closed.bs.alert', () => wrapper?.remove(), { once: true });

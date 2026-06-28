@@ -405,16 +405,6 @@
 </div>
 <script th:src="@{/webjars/tabler__core/dist/js/tabler.min.js}"></script>
 <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
-<script>
-  document.addEventListener("htmx:configRequest", function(evt) {
-    const token = document.cookie.split("; ")
-      .find(r => r.startsWith("XSRF-TOKEN="))
-      ?.split("=")[1];
-    if (token) {
-      evt.detail.headers["X-XSRF-TOKEN"] = decodeURIComponent(token);
-    }
-  });
-</script>
 <script th:src="@{/webjars/tom-select/dist/js/tom-select.complete.min.js}"></script>
 <script th:src="@{/js/salat.js}"></script>
 <th:block layout:fragment="scripts"></th:block>
