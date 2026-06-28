@@ -107,8 +107,9 @@ public class AzureEasyAuthSecurityConfiguration {
         .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
         .cors(AbstractHttpConfigurer::disable)
         .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()));
+          .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+          .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+        );
     return http.build();
   }
 
