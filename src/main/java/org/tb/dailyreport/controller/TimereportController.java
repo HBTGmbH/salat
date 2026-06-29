@@ -275,16 +275,16 @@ public class TimereportController {
             // seed workingday start time for all serial days when not yet set
             if (!isEdit) {
                 boolean useBegin = "beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null;
-                int[] begin;
+                LocalTime beginTime;
                 if (useBegin) {
-                    begin = parseTime(form.getBeginTime());
+                    int[] begin = parseTime(form.getBeginTime());
+                    beginTime = LocalTime.of(begin[0], begin[1]);
                 } else {
-                    LocalTime wds = userPreferenceService.getWorkDayStart();
-                    begin = new int[]{ wds.getHour(), wds.getMinute() };
+                    beginTime = userPreferenceService.getWorkDayStart();
                 }
                 var serialDates = timereportService.getWorkableSerialDates(date, form.getNumberOfSerialDays());
                 for (LocalDate serialDate : serialDates) {
-                    seedWorkingday(ecId, serialDate, begin);
+                    seedWorkingday(ecId, serialDate, beginTime);
                 }
             }
 
@@ -395,8 +395,8 @@ public class TimereportController {
         return List.of();
     }
 
-    private void seedWorkingday(long ecId, LocalDate date, int[] begin) {
-        workingdayService.seedWorkingday(ecId, date, begin[0], begin[1]);
+    private void seedWorkingday(long ecId, LocalDate date, LocalTime beginTime) {
+        workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
     }
 
     private List<SuborderOption> suborderOptions(long ecId, long orderId, LocalDate date) {
