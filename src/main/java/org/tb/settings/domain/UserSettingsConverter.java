@@ -1,6 +1,7 @@
 package org.tb.settings.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 public class UserSettingsConverter implements AttributeConverter<UserSettings, String> {
 
   private static final ObjectMapper objectMapper = new ObjectMapper()
-      .findAndRegisterModules();
+      .findAndRegisterModules()
+      .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
+      .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS);
 
   @Override
   public String convertToDatabaseColumn(UserSettings settings) {
