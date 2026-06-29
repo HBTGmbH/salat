@@ -4,6 +4,7 @@ import static java.math.BigDecimal.valueOf;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -22,7 +23,6 @@ import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.Employeecontract;
@@ -53,6 +53,7 @@ public class TimereportController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final org.tb.settings.service.UserPreferenceService userPreferenceService;
 
     @GetMapping("/new")
     public String createForm(@RequestParam(required = false) Long employeeContractId,
@@ -274,7 +275,13 @@ public class TimereportController {
             // seed workingday start time for all serial days when not yet set
             if (!isEdit) {
                 boolean useBegin = "beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null;
-                int[] begin = useBegin ? parseTime(form.getBeginTime()) : new int[]{8, 0};
+                int[] begin;
+                if (useBegin) {
+                    begin = parseTime(form.getBeginTime());
+                } else {
+                    LocalTime wds = userPreferenceService.getWorkDayStart();
+                    begin = new int[]{ wds.getHour(), wds.getMinute() };
+                }
                 var serialDates = timereportService.getWorkableSerialDates(date, form.getNumberOfSerialDays());
                 for (LocalDate serialDate : serialDates) {
                     seedWorkingday(ecId, serialDate, begin);

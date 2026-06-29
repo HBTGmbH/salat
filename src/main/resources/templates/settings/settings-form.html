@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}">
+
+<head>
+  <title th:text="#{main.settings.title}">Settings</title>
+</head>
+
+<body>
+
+<main layout:fragment="content" class="container-xl">
+
+  <salat:form th:action="@{/settings/store}" th:object="${settingsForm}" th:id-property="id">
+    <salat:inputs>
+      <salat:textInput type="time"
+                       th:field="*{workDayStart}"
+                       th:label="#{main.settings.workdaystart.label}"
+                       required="true" />
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/}" />
+    </salat:buttons>
+  </salat:form>
+
+</main>
+
+</body>
+
+</html>

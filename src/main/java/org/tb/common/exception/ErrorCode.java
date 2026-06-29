@@ -96,6 +96,8 @@ public enum ErrorCode {
 
   ETL_INVALID_DATE_RANGE("ETL-0001", "etl definition executed with invalid date range"),
 
+  SE_USER_NOT_FOUND("SE-0001", "salat user not found for current login"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   ;
