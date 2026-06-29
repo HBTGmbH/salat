@@ -32,6 +32,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.settings.service.UserPreferenceService;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class DailyService {
     private final OvertimeService overtimeService;
     private final EmployeecontractService employeecontractService;
     private final AuthorizedUser authorizedUser;
+    private final UserPreferenceService userPreferenceService;
 
     @Transactional(readOnly = true)
     public DailyViewData buildDailyView(LocalDate date, long employeeContractId) {
@@ -67,10 +69,10 @@ public class DailyService {
         boolean notWorked = workingday != null && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
         String startTime = workingday != null
             ? String.format("%02d:%02d", workingday.getStarttimehour(), workingday.getStarttimeminute())
-            : "08:00";
+            : String.format("%02d:%02d", userPreferenceService.getWorkDayStart().getHour(), userPreferenceService.getWorkDayStart().getMinute());
         String breakTime = workingday != null
             ? String.format("%02d:%02d", workingday.getBreakhours(), workingday.getBreakminutes())
-            : "00:30";
+            : "00:00";
         String dailyWorkingTimeFormatted = workingday != null
             ? DurationUtils.format(workingday.getEmployeecontract().getDailyWorkingTime())
             : null;
