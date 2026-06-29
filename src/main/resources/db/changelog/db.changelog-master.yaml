@@ -1816,6 +1816,53 @@ databaseChangeLog:
         - dropColumn:
             tableName: employeecontract
             columnName: SUPERVISOR_ID
+  - changeSet:
+      id: 52
+      author: kr
+      comment: Create user_preference table with JSON settings storage
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_preference
+      changes:
+        - createTable:
+            tableName: user_preference
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: salat_user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_user_preference_salat_user
+                    references: salat_user(id)
+              - column:
+                  name: settings
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
