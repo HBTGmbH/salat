@@ -121,7 +121,7 @@ A feature or fix is considered done when **all** of the following are true:
 
 ### Internationalisation (if new keys added)
 - [ ] Keys added to both `MessageResources.properties` (German) and `MessageResources_en.properties` (English)
-- [ ] Both files written with Python using `encoding='iso-8859-1'` and sorted after the change
+- [ ] Both files sorted after the change
 - [ ] Every new `ErrorCode` has a matching `errorcode.*` key in both bundles
 
 ### Database (if schema changed)

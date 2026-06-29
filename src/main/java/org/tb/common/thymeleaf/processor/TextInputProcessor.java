@@ -22,6 +22,7 @@ public class TextInputProcessor extends AbstractSalatProcessor {
         var required = Boolean.parseBoolean(tag.getAttributeValue("required"));
         var maxlength = tag.getAttributeValue("maxlength");
         var helpText = tag.getAttributeValue("th:helpText");
+        var inputType = tag.getAttributeValue("type");
 
         var mf = context.getModelFactory();
         var newModel = mf.createModel();
@@ -36,7 +37,7 @@ public class TextInputProcessor extends AbstractSalatProcessor {
         newModel.add(mf.createCloseElementTag("label"));
 
         Map<String, String> inputAttrs = new LinkedHashMap<>();
-        inputAttrs.put("type", "text");
+        inputAttrs.put("type", inputType != null && !inputType.isBlank() ? inputType : "text");
         inputAttrs.put("class", "form-control");
         inputAttrs.put("th:field", field);
         inputAttrs.put("th:errorclass", "is-invalid");
