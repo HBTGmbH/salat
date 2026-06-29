@@ -1,6 +1,5 @@
 package org.tb.employee.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -18,11 +17,10 @@ public class LoginSwitchController {
     private final AuthService authService;
 
     @PostMapping("/auth/switch-login")
-    public String switchLogin(@RequestParam Long loginEmployeeId, HttpServletRequest request) {
+    public String switchLogin(@RequestParam Long loginEmployeeId) {
         var employee = employeeService.getEmployeeById(loginEmployeeId);
         authService.switchLogin(employee.getLoginname());
-        var referer = request.getHeader("Referer");
-        return "redirect:" + (referer != null ? referer : "/dailyreport/dashboard");
+        return "redirect:/dailyreport/dashboard";
     }
 
 }

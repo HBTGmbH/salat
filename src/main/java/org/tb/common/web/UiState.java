@@ -38,4 +38,9 @@ public class UiState {
     public Map<UiStateKey, String> getAll() {
         return Collections.unmodifiableMap(values);
     }
+
+    public void clearAll() {
+        values.clear();
+    }
+
 }

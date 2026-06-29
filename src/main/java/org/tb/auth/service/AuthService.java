@@ -67,15 +67,13 @@ public class AuthService {
 
   @Authorized
   public void switchLogin(String loginname) {
+    uiState.clearAll();
     if (!authorizedUser.getLoginSign().equals(loginname)) {
       if (!isAuthorizedAnyObject(loginname, "EMPLOYEE", today(), LOGIN, true)) {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
       uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN, loginname);
       uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS, getStatusByLoginname(loginname));
-    } else {
-      uiState.clearState(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN);
-      uiState.clearState(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS);
     }
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
   }
