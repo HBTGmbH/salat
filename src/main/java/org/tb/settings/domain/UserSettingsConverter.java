@@ -9,7 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 @Converter(autoApply = false)
 public class UserSettingsConverter implements AttributeConverter<UserSettings, String> {
 
-  private static final ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper objectMapper = new ObjectMapper()
+      .findAndRegisterModules();
 
   @Override
   public String convertToDatabaseColumn(UserSettings settings) {
