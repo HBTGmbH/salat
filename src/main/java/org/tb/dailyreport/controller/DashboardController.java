@@ -24,6 +24,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.VacationService;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
@@ -63,6 +64,7 @@ public class DashboardController {
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
         var vacations = vacationService.getVacations(employeecontract).stream()
+            .filter(this::isMeaningFullVacationInfo)
             .map(info -> VacationViewHelper.from(employeecontract, info))
             .toList();
 
@@ -104,6 +106,10 @@ public class DashboardController {
         calculateEmployeeInfo(model, employeecontract);
 
         return "dailyreport/dashboard";
+    }
+
+    private boolean isMeaningFullVacationInfo(VacationInfo info) {
+        return !info.budget().isZero() || info.usedVacationMinutes() > 0;
     }
 
     private void calculateEmployeeInfo(Model model, Employeecontract employeecontract) {
