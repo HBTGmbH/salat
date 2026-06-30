@@ -53,7 +53,7 @@ public class AzureEasyAuthSecurityConfiguration {
       "/*.png",
       "/images/**",
       "/style/**",
-      "/scripts/**",
+      "/js/**",
       "/webjars/**",
       "/favicon.ico",
       "/api/doc/**",
