@@ -36,7 +36,7 @@ import java.time.Duration;
 import org.tb.favorites.domain.Favorite;
 import org.tb.favorites.service.FavoriteService;
 import org.tb.order.service.EmployeeorderService;
-import org.tb.settings.service.UserPreferenceService;
+import org.tb.dailyreport.preferences.DailyPreferenceService;
 
 @Controller
 @RequestMapping("/dailyreport/daily")
@@ -54,7 +54,7 @@ public class DailyController {
     private final EmployeeorderService employeeorderService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final UserPreferenceService userPreferenceService;
+    private final DailyPreferenceService dailyPreferenceService;
 
     @GetMapping
     public String show(
@@ -287,7 +287,7 @@ public class DailyController {
         long ecId = effectiveContractId(employeeContractId);
         try {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
-            var beginTime = userPreferenceService.getWorkDayStart();
+            var beginTime = dailyPreferenceService.getForCurrentUser().workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
             timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
                 fav.getComment(), false, fav.getHours(), fav.getMinutes(), 1);

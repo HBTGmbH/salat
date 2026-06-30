@@ -2,7 +2,7 @@ package org.tb.settings.service;
 
 import static org.tb.common.exception.ErrorCode.SE_USER_NOT_FOUND;
 
-import java.time.LocalTime;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,7 +13,7 @@ import org.tb.auth.domain.SalatUser;
 import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.settings.domain.UserPreference;
-import org.tb.settings.domain.UserSettings;
+import org.tb.settings.domain.UserPreferenceMap;
 import org.tb.settings.persistence.UserPreferenceRepository;
 
 @Slf4j
@@ -28,52 +28,41 @@ public class UserPreferenceService {
   private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
-  public UserPreference getOrCreateForCurrentUser() {
-    SalatUser user = currentSalatUser();
+  public Map<String, Object> getModuleSettings(String moduleKey) {
+    return getOrCreateForCurrentUser().getSettings().getModule(moduleKey);
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> getModuleSettings(SalatUser user, String moduleKey) {
     return repository.findBySalatUser(user)
-        .orElseGet(() -> newPreferenceFor(user));
+        .map(p -> p.getSettings().getModule(moduleKey))
+        .orElse(Map.of());
   }
 
   @Transactional(readOnly = true)
-  public UserSettings getSettingsFor(SalatUser salatUser) {
-    return repository.findBySalatUser(salatUser)
-        .map(UserPreference::getSettings)
-        .orElse(UserSettings.defaults());
-  }
-
-  @Transactional(readOnly = true)
-  public UserSettings getSettingsFor(long salatUserId) {
+  public Map<String, Object> getModuleSettings(long salatUserId, String moduleKey) {
     return repository.findBySalatUserId(salatUserId)
-        .map(UserPreference::getSettings)
-        .orElse(UserSettings.defaults());
+        .map(p -> p.getSettings().getModule(moduleKey))
+        .orElse(Map.of());
   }
 
   @Transactional(readOnly = true)
-  public UserSettings getSettingsFor(String loginName) {
+  public Map<String, Object> getModuleSettings(String loginName, String moduleKey) {
     SalatUser user = salatUserRepository.findByLoginname(loginName)
         .orElseThrow(() -> new InvalidDataException(SE_USER_NOT_FOUND));
-    return getSettingsFor(user);
+    return getModuleSettings(user, moduleKey);
   }
 
-  // Backward compatibility: returns work day start from settings
-  @Transactional(readOnly = true)
-  public LocalTime getWorkDayStart() {
-    SalatUser user = currentSalatUser();
-    return getSettingsFor(user).workDayStart();
-  }
-
-  public void saveSettings(SalatUser salatUser, UserSettings settings) {
-    UserPreference pref = repository.findBySalatUser(salatUser)
-        .orElseGet(() -> newPreferenceFor(salatUser));
-    pref.setSettings(settings);
+  public void saveModuleSettings(String moduleKey, Map<String, Object> settings) {
+    UserPreference pref = getOrCreateForCurrentUser();
+    pref.setSettings(pref.getSettings().withModule(moduleKey, settings));
     repository.save(pref);
   }
 
-  // Backward compatibility
-  public void saveForCurrentUser(LocalTime workDayStart) {
+  UserPreference getOrCreateForCurrentUser() {
     SalatUser user = currentSalatUser();
-    UserSettings settings = new UserSettings(workDayStart);
-    saveSettings(user, settings);
+    return repository.findBySalatUser(user)
+        .orElseGet(() -> newPreferenceFor(user));
   }
 
   private SalatUser currentSalatUser() {
