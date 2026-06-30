@@ -67,7 +67,7 @@ public class DailyService {
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
 
         boolean notWorked = workingday != null && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
-        var preferredStart = workingday == null ? dailyPreferenceService.getForCurrentUser().workDayStart() : null;
+        var preferredStart = workingday == null ? dailyPreferenceService.getForEmployeeContractId(employeeContractId).workDayStart() : null;
         String startTime = workingday != null
             ? String.format("%02d:%02d", workingday.getStarttimehour(), workingday.getStarttimeminute())
             : String.format("%02d:%02d", preferredStart.getHour(), preferredStart.getMinute());

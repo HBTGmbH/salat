@@ -104,7 +104,7 @@
 
               <!-- Start — hidden when not worked -->
               <div id="start-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
-                   th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
+                   th:if="${!workingdayForm.notWorked}">
                 <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
@@ -113,7 +113,7 @@
 
               <!-- Break — hidden when not worked -->
               <div id="break-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
-                   th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
+                   th:if="${!workingdayForm.notWorked}">
                 <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
@@ -388,7 +388,7 @@
 
             <!-- Start — hidden when not worked -->
             <div id="start-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
-                 th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
+                 th:if="${!workingdayForm.notWorked}">
               <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
               <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
@@ -397,7 +397,7 @@
 
             <!-- Break — hidden when not worked -->
             <div id="break-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
-                 th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
+                 th:if="${!workingdayForm.notWorked}">
               <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
               <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                      th:disabled="${!dailyData.workingdayEditable}"

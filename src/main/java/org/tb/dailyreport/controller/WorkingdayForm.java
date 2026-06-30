@@ -9,6 +9,6 @@ public class WorkingdayForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate date;
     private boolean notWorked;
-    private String startTime = "08:00";
-    private String breakTime = "00:30";
+    private String startTime;
+    private String breakTime;
 }
