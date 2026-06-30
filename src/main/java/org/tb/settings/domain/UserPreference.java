@@ -26,7 +26,7 @@ public class UserPreference extends AuditedEntity {
   private SalatUser salatUser;
 
   @Column(nullable = false, columnDefinition = "TEXT")
-  @Convert(converter = UserSettingsConverter.class)
-  private UserSettings settings = UserSettings.defaults();
+  @Convert(converter = UserPreferenceConverter.class)
+  private UserPreferenceMap settings = UserPreferenceMap.empty();
 
 }

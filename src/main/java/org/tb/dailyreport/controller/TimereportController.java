@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
+import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -53,7 +54,7 @@ public class TimereportController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final org.tb.settings.service.UserPreferenceService userPreferenceService;
+    private final DailyPreferenceService dailyPreferenceService;
 
     @GetMapping("/new")
     public String createForm(@RequestParam(required = false) Long employeeContractId,
@@ -280,7 +281,7 @@ public class TimereportController {
                     int[] begin = parseTime(form.getBeginTime());
                     beginTime = LocalTime.of(begin[0], begin[1]);
                 } else {
-                    beginTime = userPreferenceService.getWorkDayStart();
+                    beginTime = dailyPreferenceService.getForCurrentUser().workDayStart();
                 }
                 var serialDates = timereportService.getWorkableSerialDates(date, form.getNumberOfSerialDays());
                 for (LocalDate serialDate : serialDates) {

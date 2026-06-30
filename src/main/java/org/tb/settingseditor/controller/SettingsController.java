@@ -1,4 +1,4 @@
-package org.tb.settings.controller;
+package org.tb.settingseditor.controller;
 
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 
@@ -15,9 +15,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.tb.settings.domain.UserPreference;
-import org.tb.settings.domain.UserSettings;
-import org.tb.settings.service.UserPreferenceService;
+import org.tb.dailyreport.preferences.DailyPreferenceService;
+import org.tb.dailyreport.preferences.DailyPreferences;
 
 @Controller
 @RequestMapping("/settings")
@@ -25,43 +24,35 @@ import org.tb.settings.service.UserPreferenceService;
 @PreAuthorize("isAuthenticated()")
 public class SettingsController {
 
-  private final UserPreferenceService userPreferenceService;
+  private final DailyPreferenceService dailyPreferenceService;
   private final MessageSourceAccessor messages;
 
   @GetMapping
   public String show(Model model) {
-    UserPreference pref = userPreferenceService.getOrCreateForCurrentUser();
-    UserPreferenceForm form = new UserPreferenceForm();
-    form.setWorkDayStart(pref.getSettings().workDayStart());
+    DailyPreferences daily = dailyPreferenceService.getForCurrentUser();
+    SettingsForm form = new SettingsForm();
+    form.setWorkDayStart(daily.workDayStart());
     model.addAttribute("settingsForm", form);
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
     model.addAttribute("title", messages.getMessage("main.settings.title"));
-    return "settings/settings-form";
+    return "settingseditor/settings-form";
   }
 
   @PostMapping("/store")
-  public String store(@ModelAttribute UserPreferenceForm form,
+  public String store(@ModelAttribute SettingsForm form,
                       RedirectAttributes redirectAttributes) {
-    UserPreference pref = userPreferenceService.getOrCreateForCurrentUser();
-    UserSettings settings = new UserSettings(form.getWorkDayStart());
-    userPreferenceService.saveSettings(pref.getSalatUser(), settings);
+    dailyPreferenceService.saveForCurrentUser(new DailyPreferences(form.getWorkDayStart()));
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("main.settings.save.success"));
     return "redirect:/settings";
   }
 
   @Data
-  public static class UserPreferenceForm {
+  public static class SettingsForm {
 
     @DateTimeFormat(pattern = "HH:mm")
     private LocalTime workDayStart = LocalTime.of(DEFAULT_WORK_DAY_START, 0);
-
-    public static UserPreferenceForm from(UserPreference pref) {
-      UserPreferenceForm f = new UserPreferenceForm();
-      f.setWorkDayStart(pref.getSettings().workDayStart());
-      return f;
-    }
 
   }
 

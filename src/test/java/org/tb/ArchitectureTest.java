@@ -66,6 +66,20 @@ public class ArchitectureTest {
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("order must only import common,auth,customer,employee", "org.tb.common.", "org.tb.auth.", "org.tb.employee.", "org.tb.customer.", "org.tb.order."));
 
   @ArchTest
+  static final ArchRule settingsShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.settings..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "settings must only import common, auth",
+          "org.tb.common.", "org.tb.auth.", "org.tb.settings."));
+
+  @ArchTest
+  static final ArchRule settingsEditorMayAccessCommonAuthSettingsDailyreport = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.settingseditor..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "settingseditor must only import common, auth, settings, dailyreport",
+          "org.tb.common.", "org.tb.auth.", "org.tb.settings.", "org.tb.dailyreport.", "org.tb.settingseditor."));
+
+  @ArchTest
   static final ArchRule entitiesDoNotAccessServicesDAOsRepositories = priority(HIGH).noClasses().that()
       .areAnnotatedWith(Entity.class)
       .should().accessClassesThat().areAnnotatedWith(Repository.class)
