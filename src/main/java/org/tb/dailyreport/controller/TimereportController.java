@@ -281,7 +281,7 @@ public class TimereportController {
                     int[] begin = parseTime(form.getBeginTime());
                     beginTime = LocalTime.of(begin[0], begin[1]);
                 } else {
-                    beginTime = dailyPreferenceService.getForCurrentUser().workDayStart();
+                    beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
                 }
                 var serialDates = timereportService.getWorkableSerialDates(date, form.getNumberOfSerialDays());
                 for (LocalDate serialDate : serialDates) {

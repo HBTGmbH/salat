@@ -158,8 +158,9 @@ public class DailyController {
                 workingday.setBreakhours(0);
                 workingday.setBreakminutes(0);
             } else {
-                int[] start = parseTime(form.getStartTime(), 8, 0);
-                int[] brk   = parseTime(form.getBreakTime(), 0, 30);
+                var beginTime = dailyPreferenceService.getForEmployeeContractId(effEmployeeContractId).workDayStart();
+                int[] start = parseTime(form.getStartTime(), beginTime.getHour(), beginTime.getMinute());
+                int[] brk   = parseTime(form.getBreakTime(), 0, 0);
                 workingday.setType(Workingday.WorkingDayType.WORKED);
                 workingday.setStarttimehour(start[0]);
                 workingday.setStarttimeminute(start[1]);
@@ -287,7 +288,7 @@ public class DailyController {
         long ecId = effectiveContractId(employeeContractId);
         try {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
-            var beginTime = dailyPreferenceService.getForCurrentUser().workDayStart();
+            var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
             timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
                 fav.getComment(), false, fav.getHours(), fav.getMinutes(), 1);

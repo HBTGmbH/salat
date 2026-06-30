@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.SalatUser;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.settings.service.UserPreferenceService;
 
 @Service
@@ -15,6 +16,7 @@ import org.tb.settings.service.UserPreferenceService;
 public class DailyPreferenceService {
 
   private final UserPreferenceService userPreferenceService;
+  private final EmployeecontractService employeecontractService;
 
   @Transactional(readOnly = true)
   public DailyPreferences getForCurrentUser() {
@@ -23,15 +25,10 @@ public class DailyPreferenceService {
   }
 
   @Transactional(readOnly = true)
-  public DailyPreferences getFor(SalatUser user) {
+  public DailyPreferences getForEmployeeContractId(long employeeContractId) {
+    var contract = employeecontractService.getEmployeecontractById(employeeContractId);
     return DailyPreferences.from(
-        userPreferenceService.getModuleSettings(user, DailyPreferences.MODULE_KEY));
-  }
-
-  @Transactional(readOnly = true)
-  public DailyPreferences getFor(long salatUserId) {
-    return DailyPreferences.from(
-        userPreferenceService.getModuleSettings(salatUserId, DailyPreferences.MODULE_KEY));
+        userPreferenceService.getModuleSettings(contract.getEmployee().getSalatUser(), DailyPreferences.MODULE_KEY));
   }
 
   public void saveForCurrentUser(DailyPreferences preferences) {
