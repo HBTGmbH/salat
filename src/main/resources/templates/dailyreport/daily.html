@@ -351,6 +351,62 @@
         </a>
       </div>
 
+      <!-- OOB: workday form -->
+      <form th:if="${isHtmxRequest == true and isDailyMode == true}" method="post"
+            hx-swap-oob="outerHTML:#workingday-form"
+            th:action="@{/dailyreport/daily/workingday}" id="workingday-form"
+            th:object="${workingdayForm}"
+            th:attr="hx-post=@{/dailyreport/daily/workingday}"
+            hx-target="#daily-bookings-area"
+            hx-swap="outerHTML">
+          <input type="hidden" name="date" th:value="${date}"/>
+
+          <div class="d-flex align-items-center">
+
+            <!-- Not-worked toggle -->
+            <div class="flex-fill d-flex justify-content-center">
+                <span th:if="${dailyData != null and !dailyData.timereports.isEmpty()}"
+                      data-bs-toggle="tooltip"
+                      th:title="#{main.daily.workingday.notworked.hasbookings.tooltip}"
+                      style="cursor:not-allowed">
+                  <div class="form-check form-switch mb-0" style="pointer-events:none">
+                    <input class="form-check-input" type="checkbox" th:field="*{notWorked}" id="notWorked"
+                           disabled>
+                    <label class="form-check-label" for="notWorked"
+                           th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
+                  </div>
+                </span>
+              <div th:unless="${dailyData != null and !dailyData.timereports.isEmpty()}"
+                   class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" th:field="*{notWorked}" id="notWorked"
+                       th:disabled="${!dailyData.workingdayEditable}"
+                       onchange="notWorkedChanged(this.checked)">
+                <label class="form-check-label" for="notWorked"
+                       th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</label>
+              </div>
+            </div>
+
+            <!-- Start — hidden when not worked -->
+            <div id="start-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
+                 th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
+              <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
+              <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
+                     th:disabled="${!dailyData.workingdayEditable}"
+                     style="width:auto" onblur="saveTime()">
+            </div>
+
+            <!-- Break — hidden when not worked -->
+            <div id="break-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
+                 th:classappend="${workingdayForm.notWorked} ? 'd-none':''">
+              <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
+              <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
+                     th:disabled="${!dailyData.workingdayEditable}"
+                     style="width:auto" onblur="saveTime()">
+            </div>
+
+          </div>
+        </form>
+
       <!-- OOB: favourites sidebar refresh after apply/delete -->
       <div th:if="${oobFavourites == true}"
            id="daily-favourites-panel"
