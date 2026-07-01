@@ -1864,7 +1864,7 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
-    - changeSet:
+  - changeSet:
       id: 53
       author: kr
       comment: Create notification table for cross-module notification system
@@ -1884,7 +1884,7 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
               - column:
-                  name: recipient_employee_id
+                  name: recipient_user_id
                   type: bigint
                   constraints:
                     nullable: false

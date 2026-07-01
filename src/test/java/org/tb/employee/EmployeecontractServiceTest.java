@@ -52,6 +52,9 @@ public class EmployeecontractServiceTest {
 	@MockitoBean
 	private org.tb.common.web.UiState uiState;
 
+	@MockitoBean
+	private org.tb.notification.service.NotificationService notificationService;
+
 	@BeforeEach
 	public void initAuthorizedUser() {
 		when(authorizedUser.isAuthenticated()).thenReturn(true);

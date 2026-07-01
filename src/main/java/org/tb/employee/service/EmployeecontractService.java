@@ -72,6 +72,7 @@ public class EmployeecontractService {
   private final VacationRepository vacationRepository;
   private final OvertimeRepository overtimeRepository;
   private final EmployeecontractAuthorization employeecontractAuthorization;
+  private final org.tb.notification.service.NotificationService notificationService;
 
   @Authorized(requiresManager = true)
   public ContractStoredInfo createEmployeecontract(
@@ -111,7 +112,21 @@ public class EmployeecontractService {
     }
 
     createVacation(employeecontract.getId(), Year.from(today()), vacationEntitlement);
+    emitContractCreatedNotification(employeecontract);
     return info;
+  }
+
+  private void emitContractCreatedNotification(Employeecontract employeecontract) {
+    var salatUser = employeecontract.getEmployee().getSalatUser();
+    if (salatUser == null || salatUser.getId() == null) return;
+    notificationService.emitNotification(
+        List.of(salatUser.getId()),
+        "notification.employeecontract.created.title",
+        List.of(),
+        null,
+        null,
+        "/employees/contracts/view?id=" + employeecontract.getId(),
+        null);
   }
 
   @Authorized(requiresManager = true)
