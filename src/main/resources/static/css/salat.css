@@ -38,6 +38,12 @@ body {
   text-decoration: none !important;
 }
 
+.navbar-brand a {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 #salat-nav .navbar-brand {
   justify-content: flex-start;
   padding-left: 0.75rem;
