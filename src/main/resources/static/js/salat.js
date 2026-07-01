@@ -64,6 +64,17 @@ const tomSelectConfig = (el) => {
             this.options[opt.value].subtext = subtext;
           }
         });
+        const subtextEl = el.id ? document.getElementById(el.id + '-subtext') : null;
+        if (subtextEl) {
+          const selected = el.options[el.selectedIndex];
+          subtextEl.textContent = selected?.dataset.subtext || '';
+        }
+      },
+      onChange(value) {
+        const subtextEl = el.id ? document.getElementById(el.id + '-subtext') : null;
+        if (subtextEl) {
+          subtextEl.textContent = (value && this.options[value]?.subtext) || '';
+        }
       },
       render: {
         option(data, escape) {
