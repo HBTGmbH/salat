@@ -274,7 +274,7 @@
                 </select>
                 <th:block th:if="${@employeeContractSelectorViewHelper.multiContractEmployee}"
                           th:with="sel=${@employeeContractSelectorViewHelper.selectedContract}">
-                  <span th:class="${sel.past ? 'badge bg-warning-lt text-nowrap' : 'badge bg-secondary-lt text-nowrap'}"
+                  <span th:class="${sel.past ? 'badge bg-warning-lt text-nowrap w-100' : 'badge bg-secondary-lt text-nowrap w-100'}"
                         th:text="${sel.timeString + (sel.openEnd ? ' ∞' : '')}"></span>
                 </th:block>
               </div>
