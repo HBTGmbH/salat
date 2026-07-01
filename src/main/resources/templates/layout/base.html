@@ -268,8 +268,8 @@
                   <option th:each="ec : ${@employeeContractSelectorViewHelper.viewableContracts}"
                           th:value="${ec.id}"
                           th:selected="${ec.id == @employeeContractSelectorViewHelper.selectedContractId}"
-                          th:text="${ec.employee.name + ' | ' + ec.employee.sign
-                                    + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'}">
+                          th:text="${ec.employee.name + ' | ' + ec.employee.sign}"
+                          th:attr="data-subtext=${ec.timeString + (ec.openEnd ? ' ∞' : '')}">
                   </option>
                 </select>
               </div>

@@ -34,14 +34,53 @@ function selectContract(id) {
   window.location.href = url.toString();
 }
 
-const tomSelectConfig = (el) => ({
-  create: false,
-  maxItems: el.classList.contains('tomselect-multi') ? null : 1,
-  maxOptions: 1000,
-  plugins: ['dropdown_input'],
-  sortField: [{ field: '$order' }],
-  placeholder: el.getAttribute('placeholder') || 'Select an option...',
-});
+const tomSelectConfig = (el) => {
+  const hasSubtext = Array.from(el.options).some(opt => opt.dataset.subtext);
+
+  const config = {
+    create: false,
+    maxItems: el.classList.contains('tomselect-multi') ? null : 1,
+    maxOptions: 1000,
+    plugins: ['dropdown_input'],
+    sortField: [{ field: '$order' }],
+    placeholder: el.getAttribute('placeholder') || 'Select an option...',
+    onDropdownOpen(dropdown) {
+      dropdown.style.width = 'max-content';
+      dropdown.style.minWidth = this.wrapper.offsetWidth + 'px';
+      this.control.style.minHeight = '39px';
+    },
+    onDropdownClose() {
+      this.control.style.minHeight = '';
+    },
+  };
+
+  if (hasSubtext) {
+    Object.assign(config, {
+      searchField: ['text', 'subtext'],
+      onInitialize() {
+        Array.from(el.options).forEach(opt => {
+          const subtext = opt.dataset.subtext;
+          if (subtext && this.options[opt.value]) {
+            this.options[opt.value].subtext = subtext;
+          }
+        });
+      },
+      render: {
+        option(data, escape) {
+          return '<div class="d-flex flex-column py-1">'
+            + '<span class="text-nowrap">' + escape(data.text) + '</span>'
+            + (data.subtext ? '<small class="text-muted lh-1 mb-1">' + escape(data.subtext) + '</small>' : '')
+            + '</div>';
+        },
+        item(data, escape) {
+          return '<div>' + escape(data.text) + '</div>';
+        },
+      },
+    });
+  }
+
+  return config;
+};
 
 document.querySelectorAll('select.tomselect').forEach((el) => {
   new TomSelect(el, tomSelectConfig(el));
