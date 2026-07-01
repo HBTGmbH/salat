@@ -17,6 +17,7 @@ public class SalatProperties {
   private Auth auth;
   private AuthService authService;
   private UiState uiState = new UiState();
+  private Notifications notifications = new Notifications();
 
   @Data
   public static class Auth {
@@ -52,6 +53,11 @@ public class SalatProperties {
   @Data
   public static class UiState {
     private String signingKey;
+  }
+
+  @Data
+  public static class Notifications {
+    private int retentionDays = 30;
   }
 
 }

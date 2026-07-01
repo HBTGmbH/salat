@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='',title=#{notification.page.title},sectionTitle=#{notification.page.title}">
+<main layout:fragment="content">
+
+  <div class="card mb-3" th:if="${#lists.isEmpty(notifications)}">
+    <div class="card-body text-center text-secondary py-5">
+      <i class="ti ti-bell-off" style="font-size: 2rem;"></i>
+      <p class="mt-2 mb-0" th:text="#{notification.list.empty}">Keine Benachrichtigungen</p>
+    </div>
+  </div>
+
+  <div th:if="${not #lists.isEmpty(notifications)}" class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h3 class="card-title" th:text="#{notification.page.title}">Benachrichtigungen</h3>
+      <form th:action="@{/notifications/clear-all}" method="post">
+        <button type="submit" class="btn btn-sm btn-ghost-danger">
+          <i class="ti ti-trash me-1"></i>
+          <span th:text="#{notification.action.clear-all}">Alle löschen</span>
+        </button>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{notification.column.title}">Benachrichtigung</th>
+            <th th:text="#{notification.column.created}">Zeitpunkt</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="n : ${notifications}" th:classappend="${n.read()} ? '' : 'fw-semibold'">
+            <td>
+              <div th:text="${n.title()}">Titel</div>
+              <div class="text-secondary small" th:if="${n.description() != null}" th:text="${n.description()}"></div>
+              <a th:if="${n.actionUrl() != null}"
+                 th:href="${n.actionUrl()}"
+                 class="text-primary small"
+                 th:text="${n.actionLabel() != null} ? ${n.actionLabel()} : #{notification.action.open}">Öffnen</a>
+            </td>
+            <td class="text-secondary text-nowrap"
+                th:text="${#temporals.format(n.created(), 'dd.MM.yyyy HH:mm')}">01.01.2025 10:00</td>
+            <td class="text-end">
+              <form th:action="@{/notifications/{id}/delete(id=${n.id()})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-ghost-danger" th:title="#{notification.action.delete}">
+                  <i class="ti ti-x"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</html>

@@ -24,6 +24,8 @@ salat:
   cache:
     max-entries: 1000                # env: SALAT_CACHE_MAX_ENTRIES
     expiry-tti: 10                   # env: SALAT_CACHE_EXPIRY_TTI
+  notifications:
+    retention-days: 30               # env: SALAT_NOTIFICATIONS_RETENTION_DAYS — days to keep notifications before auto-delete
   reporting:
     scheduler:
       cron: "0 0 5 * * ?"           # env: SALAT_REPORTING_SCHEDULER_CRON — Daily at 5:00 AM
