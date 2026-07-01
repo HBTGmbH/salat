@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="bellDropdown">
+  <div class="dropdown-header d-flex align-items-center justify-content-between">
+    <span th:text="#{notification.dropdown.title}">Benachrichtigungen</span>
+    <a th:href="@{/notifications}" class="text-primary small" th:text="#{notification.action.show-all}">Alle anzeigen</a>
+  </div>
+
+  <div th:if="${#lists.isEmpty(notifications)}" class="text-center text-secondary py-3 px-3">
+    <i class="ti ti-bell-off d-block mb-1" style="font-size: 1.4rem;"></i>
+    <span class="small" th:text="#{notification.list.empty}">Keine Benachrichtigungen</span>
+  </div>
+
+  <th:block th:each="n : ${notifications}">
+    <div class="dropdown-item d-flex align-items-start gap-2 py-2"
+         th:classappend="${n.read()} ? '' : 'bg-blue-lt'">
+      <div class="flex-fill overflow-hidden">
+        <div class="fw-medium text-truncate" th:text="${n.title()}">Titel</div>
+        <div th:if="${n.description() != null}" class="text-secondary small text-truncate"
+             th:text="${n.description()}"></div>
+        <a th:if="${n.actionUrl() != null}"
+           th:href="${n.actionUrl()}"
+           class="text-primary small"
+           th:text="${n.actionLabel() != null} ? ${n.actionLabel()} : #{notification.action.open}">Öffnen</a>
+        <div class="text-muted" style="font-size: 0.7rem;"
+             th:text="${#temporals.format(n.created(), 'dd.MM. HH:mm')}">01.01. 10:00</div>
+      </div>
+      <form th:action="@{/notifications/{id}/delete(id=${n.id()})}" method="post" class="flex-shrink-0">
+        <button type="submit" class="btn btn-sm btn-ghost-secondary p-1" th:title="#{notification.action.delete}">
+          <i class="ti ti-x" style="font-size: 0.75rem;"></i>
+        </button>
+      </form>
+    </div>
+  </th:block>
+
+  <div class="dropdown-divider" th:if="${not #lists.isEmpty(notifications)}"></div>
+  <div class="d-flex justify-content-between px-3 py-2" th:if="${not #lists.isEmpty(notifications)}">
+    <a th:href="@{/notifications}" class="text-primary small" th:text="#{notification.action.show-all}">Alle anzeigen</a>
+    <form th:action="@{/notifications/clear-all}" method="post" class="d-inline">
+      <button type="submit" class="btn btn-sm btn-ghost-danger p-0 small"
+              th:text="#{notification.action.clear-all}">Alle löschen</button>
+    </form>
+  </div>
+</th:block>
+</body>
+</html>

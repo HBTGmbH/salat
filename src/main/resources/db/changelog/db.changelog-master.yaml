@@ -1864,5 +1864,71 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+    - changeSet:
+      id: 53
+      author: kr
+      comment: Create notification table for cross-module notification system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: notification
+      changes:
+        - createTable:
+            tableName: notification
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: recipient_employee_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title_key
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title_params
+                  type: varchar(2000)
+              - column:
+                  name: description_key
+                  type: varchar(500)
+              - column:
+                  name: description_params
+                  type: varchar(2000)
+              - column:
+                  name: action_url
+                  type: varchar(2000)
+              - column:
+                  name: action_label
+                  type: varchar(500)
+              - column:
+                  name: read
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
