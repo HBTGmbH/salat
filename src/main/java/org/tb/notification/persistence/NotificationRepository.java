@@ -11,17 +11,17 @@ import org.tb.notification.domain.Notification;
 
 public interface NotificationRepository extends PagingAndSortingRepository<Notification, Long>, CrudRepository<Notification, Long> {
 
-    List<Notification> findByRecipientEmployeeIdOrderByCreatedDesc(Long recipientEmployeeId, Pageable pageable);
+    List<Notification> findByRecipientUserIdOrderByCreatedDesc(Long recipientUserId, Pageable pageable);
 
-    List<Notification> findByRecipientEmployeeIdOrderByCreatedDesc(Long recipientEmployeeId);
+    List<Notification> findByRecipientUserIdOrderByCreatedDesc(Long recipientUserId);
 
-    long countByRecipientEmployeeIdAndReadFalse(Long recipientEmployeeId);
+    long countByRecipientUserIdAndReadFalse(Long recipientUserId);
 
     @Modifying
-    @Query("UPDATE Notification n SET n.read = true WHERE n.recipientEmployeeId = :employeeId")
-    void markAllReadByRecipientEmployeeId(Long employeeId);
+    @Query("UPDATE Notification n SET n.read = true WHERE n.recipientUserId = :userId")
+    void markAllReadByRecipientUserId(Long userId);
 
-    void deleteByRecipientEmployeeId(Long employeeId);
+    void deleteByRecipientUserId(Long userId);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.created < :before")

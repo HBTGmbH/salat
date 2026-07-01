@@ -10,11 +10,12 @@ import org.springframework.context.MessageSource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.Authorized;
+import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
-import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.notification.domain.Notification;
 import org.tb.notification.persistence.NotificationRepository;
 
@@ -30,11 +31,12 @@ public class NotificationService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final NotificationRepository notificationRepository;
-    private final AuthorizedEmployee authorizedEmployee;
+    private final SalatUserRepository salatUserRepository;
+    private final AuthorizedUser authorizedUser;
     private final MessageSource messageSource;
 
     public void emitNotification(
-            List<Long> recipientEmployeeIds,
+            List<Long> recipientUserIds,
             String titleKey,
             List<String> titleParams,
             String descriptionKey,
@@ -42,9 +44,9 @@ public class NotificationService {
             String actionUrl,
             String actionLabel) {
         validateKey(titleKey);
-        for (Long employeeId : recipientEmployeeIds) {
+        for (Long userId : recipientUserIds) {
             Notification n = new Notification();
-            n.setRecipientEmployeeId(employeeId);
+            n.setRecipientUserId(userId);
             n.setTitleKey(titleKey);
             n.setTitleParams(toJson(titleParams));
             n.setDescriptionKey(descriptionKey);
@@ -58,37 +60,41 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public List<Notification> getLatestForCurrentUser() {
-        return notificationRepository.findByRecipientEmployeeIdOrderByCreatedDesc(
-                authorizedEmployee.getEmployeeId(), PageRequest.of(0, BELL_LIMIT));
+        return notificationRepository.findByRecipientUserIdOrderByCreatedDesc(
+                currentUserId(), PageRequest.of(0, BELL_LIMIT));
     }
 
     @Transactional(readOnly = true)
     public List<Notification> getAllForCurrentUser() {
-        return notificationRepository.findByRecipientEmployeeIdOrderByCreatedDesc(
-                authorizedEmployee.getEmployeeId());
+        return notificationRepository.findByRecipientUserIdOrderByCreatedDesc(currentUserId());
     }
 
     @Transactional(readOnly = true)
     public long countUnreadForCurrentUser() {
-        return notificationRepository.countByRecipientEmployeeIdAndReadFalse(
-                authorizedEmployee.getEmployeeId());
+        return notificationRepository.countByRecipientUserIdAndReadFalse(currentUserId());
     }
 
     public void markAllReadForCurrentUser() {
-        notificationRepository.markAllReadByRecipientEmployeeId(authorizedEmployee.getEmployeeId());
+        notificationRepository.markAllReadByRecipientUserId(currentUserId());
     }
 
     public void deleteNotification(Long id) {
         Notification n = notificationRepository.findById(id)
                 .orElseThrow(() -> new InvalidDataException(ErrorCode.XX_DATA_MISSING));
-        if (!n.getRecipientEmployeeId().equals(authorizedEmployee.getEmployeeId())) {
+        if (!n.getRecipientUserId().equals(currentUserId())) {
             throw new AuthorizationException(ErrorCode.AA_NOT_ATHORIZED);
         }
         notificationRepository.deleteById(id);
     }
 
     public void deleteAllForCurrentUser() {
-        notificationRepository.deleteByRecipientEmployeeId(authorizedEmployee.getEmployeeId());
+        notificationRepository.deleteByRecipientUserId(currentUserId());
+    }
+
+    private Long currentUserId() {
+        return salatUserRepository.findByLoginname(authorizedUser.getEffectiveLoginSign())
+                .orElseThrow(() -> new InvalidDataException(ErrorCode.SE_USER_NOT_FOUND))
+                .getId();
     }
 
     private void validateKey(String key) {
