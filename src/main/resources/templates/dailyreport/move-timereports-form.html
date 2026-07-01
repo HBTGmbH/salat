@@ -134,7 +134,8 @@
             <select class="form-select tomselect tomselect-multi" th:field="*{employeeContractIds}" multiple>
               <option th:each="ec : ${employeeContracts}"
                       th:value="${ec.id}"
-                      th:text="${ec.employee.name + ' (' + ec.employee.sign + ')'}"></option>
+                      th:text="${ec.employee.name + ' (' + ec.employee.sign + ')'}"
+                      th:attr="data-subtext=${ec.timeString + (ec.openEnd ? ' ∞' : '')}"></option>
             </select>
           </div>
         </div>

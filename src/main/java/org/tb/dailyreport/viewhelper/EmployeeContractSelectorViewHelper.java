@@ -45,4 +45,22 @@ public class EmployeeContractSelectorViewHelper {
                 .orElse(null);
     }
 
+    public Employeecontract getSelectedContract() {
+        var id = getSelectedContractId();
+        if (id == null) return null;
+        return getViewableContracts().stream()
+                .filter(ec -> ec.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public boolean isMultiContractEmployee() {
+        var selected = getSelectedContract();
+        if (selected == null) return false;
+        long empId = selected.getEmployee().getId();
+        return getViewableContracts().stream()
+                .filter(ec -> ec.getEmployee().getId() == empId)
+                .count() > 1;
+    }
+
 }

@@ -262,7 +262,7 @@
           <!-- Page title actions -->
           <div class="col-auto ms-auto d-print-none">
             <div class="d-flex align-items-center gap-2">
-              <div class="d-none d-md-block" th:if="${section == 'dailyreport' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
+              <div class="d-none d-md-flex align-items-center gap-2" th:if="${section == 'dailyreport' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
                 <select class="form-select tomselect" id="globalEmployeeContractId"
                         onchange="selectContract(this.value)">
                   <option th:each="ec : ${@employeeContractSelectorViewHelper.viewableContracts}"
@@ -272,6 +272,11 @@
                           th:attr="data-subtext=${ec.timeString + (ec.openEnd ? ' ∞' : '')}">
                   </option>
                 </select>
+                <th:block th:if="${@employeeContractSelectorViewHelper.multiContractEmployee}"
+                          th:with="sel=${@employeeContractSelectorViewHelper.selectedContract}">
+                  <span th:class="${sel.past ? 'badge bg-warning-lt text-nowrap' : 'badge bg-secondary-lt text-nowrap'}"
+                        th:text="${sel.timeString + (sel.openEnd ? ' ∞' : '')}"></span>
+                </th:block>
               </div>
               <div class="btn-list">
                 <div class="dropdown">
