@@ -38,7 +38,7 @@ public record NotificationViewHelper(
                 description,
                 n.getActionUrl(),
                 n.getActionLabel(),
-                Boolean.TRUE.equals(n.getRead()),
+                n.getRead(),
                 n.getCreated());
     }
 

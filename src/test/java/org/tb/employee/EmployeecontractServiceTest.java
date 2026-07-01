@@ -23,6 +23,7 @@ import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.web.UiState;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee;
@@ -31,6 +32,7 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.notification.service.NotificationService;
 import org.tb.testutils.EmployeeTestUtils;
 import org.tb.testutils.EmployeecontractTestUtils;
 
@@ -50,10 +52,10 @@ public class EmployeecontractServiceTest {
 	private AuthorizedUser authorizedUser;
 
 	@MockitoBean
-	private org.tb.common.web.UiState uiState;
+	private UiState uiState;
 
 	@MockitoBean
-	private org.tb.notification.service.NotificationService notificationService;
+	private NotificationService notificationService;
 
 	@BeforeEach
 	public void initAuthorizedUser() {
