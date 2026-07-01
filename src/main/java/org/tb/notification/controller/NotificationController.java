@@ -3,7 +3,7 @@ package org.tb.notification.controller;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,7 +20,7 @@ import org.tb.notification.viewhelper.NotificationViewHelper;
 @Controller
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
+@Authorized
 public class NotificationController {
 
     private final NotificationService notificationService;

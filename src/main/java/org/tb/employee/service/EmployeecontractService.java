@@ -57,6 +57,7 @@ import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.EmployeecontractRepository;
 import org.tb.employee.persistence.OvertimeRepository;
 import org.tb.employee.persistence.VacationRepository;
+import org.tb.notification.service.NotificationService;
 
 @Slf4j
 @Service
@@ -72,7 +73,7 @@ public class EmployeecontractService {
   private final VacationRepository vacationRepository;
   private final OvertimeRepository overtimeRepository;
   private final EmployeecontractAuthorization employeecontractAuthorization;
-  private final org.tb.notification.service.NotificationService notificationService;
+  private final NotificationService notificationService;
 
   @Authorized(requiresManager = true)
   public ContractStoredInfo createEmployeecontract(
