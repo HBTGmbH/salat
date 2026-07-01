@@ -19,8 +19,8 @@
       <div th:if="${supervisors != null}" class="row mb-3">
         <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.supervisor.text}">People Lead</label>
         <div class="col-sm-5">
-          <select class="form-select"
-                  onchange="window.location='/acceptance?supervisorId=' + encodeURIComponent(this.value)">
+          <select class="form-select tomselect"
+                  onchange="window.location='/acceptance?accSupervisorId=' + encodeURIComponent(this.value)">
             <option value="-1"
                     th:selected="${supervisorId == null or supervisorId == -1}"
                     th:text="#{main.general.all.text}">Alle</option>
@@ -36,7 +36,7 @@
       <div class="row">
         <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.employee.text}">Mitarbeiter</label>
         <div class="col-sm-5">
-          <select class="form-select"
+          <select class="form-select tomselect"
                   id="employee-contract-select"
                   th:if="${not #lists.isEmpty(employeeContracts)}"
                   th:data-supervisor-id="${supervisorId}">
@@ -192,10 +192,10 @@
       }
       contractSelect.addEventListener('change', function () {
         var url = new URL('/acceptance', window.location.origin);
-        url.searchParams.set('contractId', contractSelect.value);
+        url.searchParams.set('accEmployeeContractId', contractSelect.value);
         var supervisorId = contractSelect.dataset.supervisorId;
         if (supervisorId) {
-          url.searchParams.set('supervisorId', supervisorId);
+          url.searchParams.set('accSupervisorId', supervisorId);
         }
         window.location.assign(url.pathname + url.search);
       });
