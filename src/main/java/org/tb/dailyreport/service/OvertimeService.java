@@ -235,11 +235,11 @@ public class OvertimeService {
     return new OvertimeInfo(actual, adjustment, actual.plus(adjustment), target, diff);
   }
 
-  public OvertimeReport createDetailedReportForEmployee(long employeecontractId) {
+  public OvertimeReport createDetailedReportForEmployee(long employeecontractId, boolean includeToday) {
     var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
 
-    // iterate over the months of the contract until today - calc overtime for every month seperately
-    var today = DateUtils.today();
+    // iterate over the months of the contract until today - calc overtime for every month separately
+    var today = includeToday ? today() : today().minusDays(1);
     var months = new ArrayList<OvertimeReportMonth>();
     var rangeStart = contract.getValidFrom();
     var rangeEnd = today;

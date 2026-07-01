@@ -62,7 +62,7 @@ public class DashboardController {
     public String dashboard(@RequestParam(required = false) Long employeeContractId, Model model) {
         var employeecontract = currentContract(employeeContractId);
 
-        var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), true);
+        var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), false);
         var vacations = vacationService.getVacations(employeecontract).stream()
             .filter(this::isMeaningFullVacationInfo)
             .map(info -> VacationViewHelper.from(employeecontract, info))
@@ -81,9 +81,9 @@ public class DashboardController {
         model.addAttribute("acceptanceColorClass", employeecontract.getAcceptanceWarning() ? "danger" : "success");
         String overtime = "";
         boolean overtimeIsNegative = false;
-        String monthlyOvertime = "";
+        String monthlyOvertime = "0:00";
         boolean monthlyOvertimeIsNegative = false;
-        String overtimeMonth = "";
+        String overtimeMonth = DateUtils.format(today(), "yyyy-MM");
         if (overtimeStatus.isPresent()) {
             var status = overtimeStatus.get();
             overtime = DurationUtils.format(status.getTotal().getDuration());

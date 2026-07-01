@@ -73,7 +73,7 @@ public class MyAccountsController {
         model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
 
         // --- Tab 1: Working time account ---
-        populateWorkingTimeTab(model, contract, today, currentYear);
+        populateWorkingTimeTab(model, contract, currentYear);
 
         // --- Tab 2: Vacation account ---
         populateVacationTab(model, contract, today, currentYear, yearStart, yearEnd);
@@ -97,8 +97,8 @@ public class MyAccountsController {
         return "redirect:/my-accounts";
     }
 
-    private void populateWorkingTimeTab(Model model, Employeecontract contract, LocalDate today, int currentYear) {
-        var overtimeStatus = overtimeService.calculateOvertime(contract.getId(), true);
+    private void populateWorkingTimeTab(Model model, Employeecontract contract, int currentYear) {
+        var overtimeStatus = overtimeService.calculateOvertime(contract.getId(), false);
 
         String balance = overtimeStatus.map(s -> DurationUtils.format(s.getTotal().getDuration())).orElse("0:00");
         boolean balanceIsNegative = overtimeStatus.map(s -> s.getTotal().isNegative()).orElse(false);
@@ -124,7 +124,7 @@ public class MyAccountsController {
         }
 
         // Bar chart: last 6 months in ascending order
-        var overtimeReport = overtimeService.createDetailedReportForEmployee(contract.getId());
+        var overtimeReport = overtimeService.createDetailedReportForEmployee(contract.getId(), false);
         var monthsDesc = overtimeReport.getMonths(); // already sorted descending
         int count = Math.min(6, monthsDesc.size());
         var chartLabels = new ArrayList<String>();
@@ -326,9 +326,9 @@ public class MyAccountsController {
 
     private void populateOvertimeTab(Model model, Employeecontract contract) {
         long ecId = contract.getId();
-        var report = overtimeService.createDetailedReportForEmployee(ecId);
+        var report = overtimeService.createDetailedReportForEmployee(ecId, false);
         Duration overtimeMismatch = null;
-        var storedOvertime = overtimeService.calculateOvertime(ecId, true);
+        var storedOvertime = overtimeService.calculateOvertime(ecId, false);
         if (storedOvertime.isPresent()) {
             Duration detailed = report.getTotal().getDiffCumulative();
             Duration stored = storedOvertime.get().getTotal().getDuration();
