@@ -265,7 +265,7 @@
               <div class="d-none d-md-flex align-items-center gap-2" th:if="${section == 'dailyreport' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
                 <th:block th:if="${@employeeContractSelectorViewHelper.multiContractEmployee}"
                           th:with="sel=${@employeeContractSelectorViewHelper.selectedContract}">
-                  <span th:class="${sel.past ? 'badge bg-warning-lt text-nowrap w-100' : 'badge bg-secondary-lt text-nowrap w-100'}"
+                  <span th:class="'w-100' + ${sel.past ? 'badge bg-warning-lt text-nowrap' : 'badge bg-secondary-lt text-nowrap'}"
                         th:text="${sel.timeString + (sel.openEnd ? ' ∞' : '')}"></span>
                 </th:block>
                 <select class="form-select tomselect" id="globalEmployeeContractId"
