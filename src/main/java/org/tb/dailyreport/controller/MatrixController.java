@@ -4,6 +4,8 @@ import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.YearMonth;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -48,10 +50,8 @@ public class MatrixController {
         long ecId = effectiveContractId(employeeContractId);
 
         var matrixData = matrixService.buildMatrix(yearMonth, ecId);
-        var contracts = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today);
-        boolean showBeginBreakEnd = contracts.stream()
-            .filter(c -> c.getId() == ecId)
-            .findFirst()
+        var selectedContract = Optional.ofNullable(employeecontractService.getEmployeecontractById(ecId));
+        boolean showBeginBreakEnd = selectedContract
             .map(c -> !c.getFreelancer())
             .orElse(false);
 
@@ -60,7 +60,6 @@ public class MatrixController {
 
         String monthKey = "main.timereport.select.month." + formatMonth(yearMonth.atDay(1)).toLowerCase() + ".text";
 
-        var selectedContract = contracts.stream().filter(c -> c.getId() == ecId).findFirst();
         boolean monthReleased = selectedContract
             .map(c -> c.getReportReleaseDate() != null && !c.getReportReleaseDate().isBefore(yearMonth.atEndOfMonth()))
             .orElse(false);

@@ -130,31 +130,24 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
-    private List<Employeecontract> getAllVisibleEmployeeContracts(LocalDate validAt) {
-        return employeecontractRepository.findAllValidAtAndNotHidden(validAt).stream()
-            .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
-            .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
-            .collect(Collectors.toList());
-    }
-
-    public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
-        return getAllVisibleEmployeeContracts(DateUtils.today()).stream()
-            .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
-            .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
-            .collect(Collectors.toList());
-    }
-
-    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(LocalDate validAt) {
-        return getViewableEmployeeContractsForAuthorizedUser(true, validAt);
-    }
-
-    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(boolean limitAccess, LocalDate validAt) {
-        if (limitAccess) {
-            return getAllVisibleEmployeeContracts(validAt).stream()
-                .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
+    private List<Employeecontract> getAllVisibleEmployeeContracts() {
+        return employeecontractRepository.findAllNotHidden().stream()
+                .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+                .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
                 .collect(Collectors.toList());
+    }
+
+    public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
+        return getVisibleEmployeeContractsForAuthorizedUser(true);
+    }
+
+    public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser(boolean limitAccess) {
+        if (limitAccess) {
+            return getAllVisibleEmployeeContracts().stream()
+                    .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
+                    .collect(Collectors.toList());
         } else {
-            return getAllVisibleEmployeeContracts(validAt);
+            return getAllVisibleEmployeeContracts();
         }
     }
 

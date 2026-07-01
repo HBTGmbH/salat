@@ -1,7 +1,5 @@
 package org.tb.dailyreport.controller;
 
-import static org.tb.common.util.DateUtils.today;
-
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -169,7 +167,7 @@ public class MoveTimereportsController {
     model.addAttribute("form", form);
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
     model.addAttribute("employeeContracts",
-        employeecontractService.getViewableEmployeeContractsValidAt(today()));
+        employeecontractService.getVisibleEmployeeContractsForAuthorizedUser());
     var sourceCustomerOrders = form.getSourceCustomerId() != null
         ? customerorderService.getCustomerordersByFilters(null, null, form.getSourceCustomerId(), null)
         : Collections.emptyList();

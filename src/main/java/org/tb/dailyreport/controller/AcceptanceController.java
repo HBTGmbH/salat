@@ -48,7 +48,7 @@ public class AcceptanceController {
         var loginEmployee = employeeService.getLoginEmployee();
 
         if (authorizedUser.isManager()) {
-            var allViewable = employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
+            var allViewable = employeecontractService.getVisibleEmployeeContractsForAuthorizedUser();
             List<Employee> supervisors = allViewable.stream()
                 .flatMap(ec -> ec.getSupervisors().stream())
                 .distinct()
@@ -160,7 +160,7 @@ public class AcceptanceController {
     private List<Employeecontract> loadContracts(Employee loginEmployee, Long supervisorId) {
         if (authorizedUser.isManager()) {
             if (supervisorId == null || supervisorId == -1L) {
-                return employeecontractService.getViewableEmployeeContractsForAuthorizedUserValidAt(today());
+                return employeecontractService.getVisibleEmployeeContractsForAuthorizedUser();
             }
             return employeecontractService.getTeamContracts(supervisorId);
         }

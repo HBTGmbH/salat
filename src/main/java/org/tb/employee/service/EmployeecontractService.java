@@ -464,16 +464,8 @@ public class EmployeecontractService {
     return employeecontractDAO.getVisibleEmployeeContracts();
   }
 
-  public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate validAt) {
-    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(validAt);
-  }
-
-  public List<Employeecontract> getViewableEmployeeContractsValidAt(LocalDate validAt) {
-    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(false, validAt);
-  }
-
-  public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
-    return employeecontractDAO.getTimeReportableEmployeeContractsForAuthorizedUser();
+  public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
+    return employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
   }
 
   public Optional<Employeecontract> getCurrentContract(long employeeId) {
