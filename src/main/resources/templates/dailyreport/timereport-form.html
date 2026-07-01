@@ -82,45 +82,23 @@
               </div>
             </div>
 
-            <!-- Orders + Suborders (combined HTMX swap target for date changes) -->
-            <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment">
-
-              <!-- Order -->
-              <div class="mb-3">
-                <label class="form-label required" th:text="#{main.timereport.form.order.label}">Auftrag</label>
-                <select class="form-select tomselect" name="orderId" id="orderId"
-                        hx-post="/dailyreport/timereports/refresh-suborders"
-                        hx-include="closest form"
-                        hx-target="#suborder-select-wrapper"
-                        hx-swap="outerHTML"
-                        hx-trigger="change">
-                  <option value="" th:text="#{main.timereport.form.order.placeholder}">— Auftrag wählen —</option>
-                  <option th:each="o : ${orders}"
-                          th:value="${o.id}"
-                          th:text="${o.sign + ' · ' + o.shortdescription}"
-                          th:selected="${timereportForm.orderId != null and timereportForm.orderId == o.id}"></option>
-                </select>
-              </div>
-
-              <!-- Suborder (also standalone HTMX swap target for order changes) -->
-              <div id="suborder-select-wrapper" th:fragment="suborderFragment" class="mb-3">
-                <label class="form-label required" th:text="#{main.timereport.form.suborder.label}">Unterauftrag</label>
-                <select class="form-select tomselect"
-                        name="suborderId" id="suborderId"
-                        hx-post="/dailyreport/timereports/refresh-sidebar"
-                        hx-include="closest form"
-                        hx-target="#form-sidebar"
-                        hx-swap="outerHTML"
-                        hx-trigger="change">
-                  <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
-                  <option th:each="s : ${suborders}"
-                          th:value="${s.id}"
-                          th:text="${s.label}"
-                          th:attr="data-cnr=${s.commentNecessary}"
-                          th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
-                </select>
-              </div>
-
+            <!-- Employee order (HTMX swap target for date changes) -->
+            <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment" class="mb-3">
+              <label class="form-label required" th:text="#{main.timereport.form.suborder.label}">Unterauftrag</label>
+              <select class="form-select tomselect"
+                      name="suborderId" id="suborderId"
+                      hx-post="/dailyreport/timereports/refresh-sidebar"
+                      hx-include="closest form"
+                      hx-target="#form-sidebar"
+                      hx-swap="outerHTML"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
+                <option th:each="s : ${suborders}"
+                        th:value="${s.id}"
+                        th:text="${s.label}"
+                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary}"
+                        th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
+              </select>
             </div>
 
             <!-- Comment -->
@@ -370,10 +348,5 @@
   <th:block th:replace="~{:: sidebarFragment}"/>
 </th:block>
 
-<!-- Composite fragment returned by refresh-suborders. -->
-<th:block th:fragment="suborderRefreshCompositeFragment">
-  <th:block th:replace="~{:: suborderFragment}"/>
-  <th:block th:replace="~{:: sidebarFragment}"/>
-</th:block>
 
 </html>
