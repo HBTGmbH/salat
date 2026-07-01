@@ -4,7 +4,6 @@
 <th:block th:fragment="bellDropdown">
   <div class="dropdown-header d-flex align-items-center justify-content-between">
     <span th:text="#{notification.dropdown.title}">Benachrichtigungen</span>
-    <a th:href="@{/notifications}" class="text-primary small" th:text="#{notification.action.show-all}">Alle anzeigen</a>
   </div>
 
   <div th:if="${#lists.isEmpty(notifications)}" class="text-center text-secondary py-3 px-3">
