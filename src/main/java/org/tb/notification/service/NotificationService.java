@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.persistence.SalatUserRepository;
+import org.tb.common.SalatProperties;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
@@ -26,14 +27,13 @@ import org.tb.notification.persistence.NotificationRepository;
 @Authorized
 public class NotificationService {
 
-    static final int BELL_LIMIT = 10;
-
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final NotificationRepository notificationRepository;
     private final SalatUserRepository salatUserRepository;
     private final AuthorizedUser authorizedUser;
     private final MessageSource messageSource;
+    private final SalatProperties salatProperties;
 
     public void emitNotification(
             List<Long> recipientUserIds,
@@ -61,7 +61,7 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public List<Notification> getLatestForCurrentUser() {
         return notificationRepository.findByRecipientUserIdOrderByCreatedDesc(
-                currentUserId(), PageRequest.of(0, BELL_LIMIT));
+                currentUserId(), PageRequest.of(0, salatProperties.getNotifications().getBellLimit()));
     }
 
     @Transactional(readOnly = true)

@@ -58,6 +58,7 @@ public class SalatProperties {
   @Data
   public static class Notifications {
     private int retentionDays = 30;
+    private int bellLimit = 10;
   }
 
 }
