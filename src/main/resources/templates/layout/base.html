@@ -276,7 +276,7 @@
               <div class="btn-list">
                 <div class="dropdown">
                   <button type="button"
-                          class="btn"
+                          class="btn btn-icon"
                           data-bs-toggle="dropdown"
                           data-bs-auto-close="outside"
                           hx-get="/notifications/bell"
@@ -284,13 +284,9 @@
                           hx-trigger="click"
                           hx-swap="innerHTML"
                           th:aria-label="#{notification.bell.label}">
-                    <span class="position-relative d-inline-block">
-                      <i class="ti ti-bell ti-size-3"></i>
-                      <span th:if="${@notificationBellViewHelper.unreadCount > 0}"
-                            class="badge bg-red"
-                            style="position:absolute;top:-4px;right:-6px;min-width:1rem;padding:0.1em 0.3em;font-size:0.6rem;line-height:1.2;"
-                            th:text="${@notificationBellViewHelper.unreadCount}">0</span>
-                    </span>
+                    <i class="ti ti-bell ti-size-3"></i>
+                    <span th:if="${@notificationBellViewHelper.unreadCount > 0}"
+                          class="badge badge-dot bg-red badge-notification badge-blink"></span>
                   </button>
                   <div class="dropdown-menu dropdown-menu-end p-0"
                        id="notification-bell-menu"
