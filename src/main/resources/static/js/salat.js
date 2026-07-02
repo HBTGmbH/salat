@@ -107,14 +107,14 @@ const tomSelectConfig = (el) => {
         option(data, escape) {
           const starHtml = favoriteTarget
             ? '<i class="bi ' + (data.isFavorite ? 'bi-star-fill text-warning' : 'bi-star opacity-25')
-              + ' ts-fav me-2 flex-shrink-0" style="cursor:pointer;font-size:1rem"></i>'
+              + ' ts-fav ms-auto flex-shrink-0 ps-2" style="cursor:pointer;font-size:1rem"></i>'
             : '';
           return '<div class="d-flex align-items-center py-1">'
-            + starHtml
-            + '<div class="d-flex flex-column">'
+            + '<div class="d-flex flex-column flex-grow-1">'
             + '<span class="text-nowrap">' + escape(data.text) + '</span>'
             + (data.subtext ? '<small class="text-muted lh-1 mb-1">' + escape(data.subtext) + '</small>' : '')
             + '</div>'
+            + starHtml
             + '</div>';
         },
         item(data, escape) {
