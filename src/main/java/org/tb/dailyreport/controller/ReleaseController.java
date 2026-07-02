@@ -69,7 +69,6 @@ public class ReleaseController {
         try {
             var review = releaseService.getMonthBookingsForReview(contract.getId(), releaseDate);
             model.addAttribute("review", review);
-            model.addAttribute("errors", errorCodeViewHelper.toViewMessages(review.errors()));
             model.addAttribute("selfReleaseDate", selfReleaseDate);
             model.addAttribute("employeeContractId", contract.getId());
             model.addAttribute("employee", contract.getEmployee());

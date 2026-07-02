@@ -101,7 +101,6 @@ public class AcceptanceController {
         try {
             var review = releaseService.getMonthBookingsForReview(contractId, parseEndOfMonth(releaseDate));
             model.addAttribute("review", review);
-            model.addAttribute("errors", errorCodeViewHelper.toViewMessages(review.errors()));
             model.addAttribute("contractId", contractId);
             model.addAttribute("releaseDate", releaseDate);
             model.addAttribute("accSupervisorId", accSupervisorId);

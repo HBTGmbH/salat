@@ -19,16 +19,8 @@
 
     <div class="card-body">
 
-      <!-- Validation errors alert -->
-      <div class="alert alert-danger" th:if="${not #lists.isEmpty(errors)}">
-        <h5 class="alert-title" th:text="#{main.release.preview.errors.title.text}"></h5>
-        <ul class="mb-0">
-          <li th:each="err : ${errors}" th:text="${err.resolved()}"></li>
-        </ul>
-      </div>
-
       <!-- Success hint when no errors -->
-      <div class="alert alert-success" th:if="${#lists.isEmpty(errors) and not #lists.isEmpty(review.days())}">
+      <div class="alert alert-success" th:if="${review.canRelease() and not #lists.isEmpty(review.days())}">
         <i class="bi bi-check-circle me-1"></i>
         <span th:text="#{main.release.preview.errors.none.text}"></span>
       </div>
@@ -52,37 +44,32 @@
                 <td>
                   <span th:if="${iterStat.first}"
                         th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></span>
-                  <span th:if="${not iterStat.first}" class="text-muted">&#x200B;</span>
                 </td>
                 <td><code th:text="${tr.completeOrderSign}"></code></td>
-                <td class="text-nowrap">
-                  <span th:text="${tr.durationhours + 'h' + (tr.durationminutes > 0 ? ' ' + tr.durationminutes + 'min' : '')}"></span>
-                </td>
+                <td class="text-nowrap"
+                    th:text="${tr.durationhours + 'h' + (tr.durationminutes > 0 ? ' ' + tr.durationminutes + 'min' : '')}"></td>
                 <td class="d-none d-md-table-cell text-muted"
                     th:text="${tr.taskdescription}"></td>
               </tr>
               <!-- Daily sum row (only when more than one booking on a day) -->
               <tr th:if="${#lists.size(day.timereports()) > 1}"
                   th:classappend="${not #lists.isEmpty(day.errors())} ? 'table-warning fw-semibold' : 'fw-semibold'">
-                <td th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></td>
+                <td></td>
                 <td><em th:text="#{main.release.preview.total.text}"></em></td>
-                <td class="text-nowrap">
-                  <span th:text="${day.totalHours() + 'h' + (day.totalMinutes() > 0 ? ' ' + day.totalMinutes() + 'min' : '')}"></span>
-                </td>
-                <td class="d-none d-md-table-cell">
-                  <span th:each="err : ${day.errors()}"
-                        class="badge bg-warning-lt me-1"
-                        th:text="${err.errorCode.code}"></span>
-                </td>
+                <td class="text-nowrap"
+                    th:text="${day.totalHours() + 'h' + (day.totalMinutes() > 0 ? ' ' + day.totalMinutes() + 'min' : '')}"></td>
+                <td class="d-none d-md-table-cell"></td>
               </tr>
-              <!-- Error badges on single-booking days -->
-              <tr th:if="${#lists.size(day.timereports()) == 1 and not #lists.isEmpty(day.errors())}"
-                  class="table-warning">
-                <td colspan="3"></td>
-                <td class="d-none d-md-table-cell">
-                  <span th:each="err : ${day.errors()}"
-                        class="badge bg-warning-lt me-1"
-                        th:text="${err.errorCode.code}"></span>
+              <!-- Inline error row for this day -->
+              <tr th:if="${not #lists.isEmpty(day.errors())}" class="table-danger">
+                <td></td>
+                <td colspan="3">
+                  <div th:each="err : ${day.errors()}" class="small text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <span th:text="${#messages.msg(
+                        'errorcode.' + #strings.replace(#strings.toLowerCase(err.errorCode.code), '-', '.'),
+                        #temporals.format(day.date(), 'dd.MM.yyyy'))}"></span>
+                  </div>
                 </td>
               </tr>
             </th:block>
