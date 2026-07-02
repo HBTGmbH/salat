@@ -592,7 +592,7 @@
             <!-- Day row -->
             <tr th:classappend="${day.isToday} ? 'daily-today' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : ''))">
               <td class="w-1 text-center align-top text-nowrap">
-                <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},employeeContractId=${selectedContractId})}"
+                <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date})}"
                    class="d-inline-block text-decoration-none text-center rounded px-2 py-1"
                    th:classappend="${day.isToday} ? 'bg-primary-lt' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                    th:title="#{main.daily.viewday.title}"

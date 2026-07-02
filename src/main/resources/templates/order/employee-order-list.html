@@ -24,7 +24,7 @@
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a id="create-button" class="btn btn-success" th:href="@{/orders/employeeorders/create(orderId=${orderId}, employeeContractId=${employeeContractId}, customerId=${customerId}, suborderId=${suborderId})}">
+            <a id="create-button" class="btn btn-success" th:href="@{/orders/employeeorders/create}">
               <i class="icon ti ti-file-plus"></i>
               <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
             </a>
@@ -216,7 +216,7 @@
     </div>
     <a id="create-button"
        class="btn btn-success"
-       th:href="@{/orders/employeeorders/create(orderId=${orderId}, employeeContractId=${employeeContractId}, customerId=${customerId}, suborderId=${suborderId})}"
+       th:href="@{/orders/employeeorders/create}"
        hx-swap-oob="true">
       <i class="icon ti ti-file-plus"></i>
       <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
