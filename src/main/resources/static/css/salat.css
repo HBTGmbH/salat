@@ -17,12 +17,13 @@
   color: var(--tblr-primary)
 }
 
-.ts-wrapper.form-select .ts-control {
+.ts-wrapper.form-select .ts-control,
+.ts-wrapper.form-select.multi .ts-control {
   padding-top: .5625rem;
   padding-bottom: .5625rem;
 }
 
-.ts-wrapper.form-select.multi .ts-control {
+.ts-wrapper.form-select.multi.has-items .ts-control {
   padding-top: calc(.5625rem - 2.5px);
   padding-bottom: calc(.5625rem - 2.5px);
 }
