@@ -121,7 +121,7 @@
           <td class="d-none d-md-table-cell">
             <div>
               <span class="badge bg-primary-lt me-1" th:title="#{main.customerorder.responsiblehbt.execution.text}"><i class="bi-diagram-3"></i></span>
-              <span th:text="${co.responsible_hbt != null ? co.responsible_hbt.name : ''}"></span>
+              <span th:text="${#strings.listJoin(co.responsibleHbt.![name], ', ')}"></span>
             </div>
             <div class="mt-1">
               <span class="badge bg-primary-lt me-1" th:title="#{main.customerorder.responsiblehbt.contract.text}"><i class="bi-shield-check"></i></span>

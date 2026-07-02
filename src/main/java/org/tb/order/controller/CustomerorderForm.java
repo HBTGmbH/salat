@@ -1,5 +1,7 @@
 package org.tb.order.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.tb.order.domain.OrderType;
@@ -21,10 +23,10 @@ public class CustomerorderForm {
   private String debithours;
   private Byte debithoursunit;
   private Boolean hide;
-  private Long employeeId;
+  private List<Long> responsibleHbtIds = new ArrayList<>();
+  private List<Long> storedResponsibleHbtIds = new ArrayList<>();
   private Long respContrEmployeeId;
-  /** Employee IDs as stored in the DB when the edit form was opened; never mutated by the form lifecycle. */
-  private Long storedEmployeeId;
+  /** Employee ID as stored in the DB when the edit form was opened; never mutated by the form lifecycle. */
   private Long storedRespContrEmployeeId;
   private OrderType orderType;
 

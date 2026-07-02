@@ -7,12 +7,16 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -61,12 +65,15 @@ public class Customerorder extends AuditedEntity implements Serializable {
     private String responsible_customer_contractually;
 
     /**
-     * Responsible employee of HBT
+     * Responsible employees of HBT
      */
-    @ManyToOne
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "customerorder_responsible_hbt",
+        joinColumns = @JoinColumn(name = "CUSTOMERORDER_ID"),
+        inverseJoinColumns = @JoinColumn(name = "EMPLOYEE_ID"))
     @Fetch(FetchMode.SELECT)
-    @JoinColumn(name = "RESPONSIBLE_HBT_ID")
-    private Employee responsible_hbt;
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private List<Employee> responsibleHbt = new ArrayList<>();
 
     /**
      * contractually responsible employee of HBT

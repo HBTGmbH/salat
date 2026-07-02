@@ -83,13 +83,13 @@ public class CustomerorderService {
     co.setResponsible_customer_contractually(dto.responsibleCustomerContractually());
     co.setResponsible_customer_technical(dto.responsibleCustomerTechnical());
 
-    if (dto.responsibleHbtId() == null) {
+    if (dto.responsibleHbtIds() == null || dto.responsibleHbtIds().isEmpty()) {
       throw new InvalidDataException(ErrorCode.CO_RESPONSIBLE_HBT_REQUIRED);
     }
     if (dto.respEmpHbtContractId() == null) {
       throw new InvalidDataException(ErrorCode.CO_RESP_CONTRACT_EMPLOYEE_REQUIRED);
     }
-    co.setResponsible_hbt(employeeDAO.getEmployeeById(dto.responsibleHbtId()));
+    co.setResponsibleHbt(dto.responsibleHbtIds().stream().map(employeeDAO::getEmployeeById).toList());
     co.setRespEmpHbtContract(employeeDAO.getEmployeeById(dto.respEmpHbtContractId()));
 
     if (dto.debithours() == null

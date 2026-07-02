@@ -40,7 +40,9 @@ public class TimereportAuthorization {
 
     if(accessLevel == READ) {
       // every project manager may see the time reports of her project
-      if(authorizedUser.getEffectiveLoginSign().equals(timereport.getSuborder().getCustomerorder().getResponsible_hbt().getSalatUser().getLoginname())) {
+      var loginSign = authorizedUser.getEffectiveLoginSign();
+      if(timereport.getSuborder().getCustomerorder().getResponsibleHbt().stream()
+          .anyMatch(e -> loginSign.equals(e.getSalatUser().getLoginname()))) {
         return true;
       }
       if(authorizedUser.getEffectiveLoginSign().equals(timereport.getSuborder().getCustomerorder().getRespEmpHbtContract().getSalatUser().getLoginname())) {
