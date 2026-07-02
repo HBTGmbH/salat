@@ -60,6 +60,8 @@ import org.tb.common.service.MailService.MailContact;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.ReleaseReviewDTO;
+import org.tb.dailyreport.domain.ReleaseReviewDay;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
@@ -191,7 +193,48 @@ public class ReleaseService {
   @VisibleForTesting
   protected void validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
+    assertReleaseDateValid(contract, releaseDate);
+    var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate);
+    var errorPairs = collectValidationErrors(employeeContractId, releaseDate, contract, timereports);
+    var messages = errorPairs.stream().sorted(Comparator.comparing(Pair::getFirst)).map(Pair::getSecond).toList();
+    if (!messages.isEmpty()) {
+      throw new BusinessRuleException(messages);
+    }
+  }
 
+  @Transactional(readOnly = true)
+  public ReleaseReviewDTO getMonthBookingsForReview(long employeeContractId, LocalDate releaseDate) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
+    if (!releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)) {
+      throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
+    }
+    assertReleaseDateValid(contract, releaseDate);
+
+    var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate);
+    var errorPairs = collectValidationErrors(employeeContractId, releaseDate, contract, timereports);
+
+    var errorsByDate = errorPairs.stream()
+        .collect(groupingBy(Pair::getFirst, Collectors.mapping(Pair::getSecond, Collectors.toList())));
+    var globalErrors = errorPairs.stream()
+        .sorted(Comparator.comparing(Pair::getFirst))
+        .map(Pair::getSecond)
+        .toList();
+
+    var byDate = timereports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
+    var days = byDate.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .map(e -> new ReleaseReviewDay(
+            e.getKey(),
+            e.getValue().stream().sorted(Comparator.comparing(TimereportDTO::getSequencenumber)).toList(),
+            e.getValue().stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus),
+            errorsByDate.getOrDefault(e.getKey(), List.of())
+        ))
+        .toList();
+
+    return new ReleaseReviewDTO(employeeContractId, releaseDate, days, globalErrors);
+  }
+
+  private void assertReleaseDateValid(Employeecontract contract, LocalDate releaseDate) {
     if (releaseDate == null
         || releaseDate.isBefore(contract.getValidFrom())
         || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))) {
@@ -200,6 +243,11 @@ public class ReleaseService {
     if (contract.getReportAcceptanceDate() != null && releaseDate.isBefore(contract.getReportAcceptanceDate())) {
       throw new BusinessRuleException(RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
     }
+  }
+
+  private List<Pair<LocalDate, ServiceFeedbackMessage>> collectValidationErrors(
+      long employeeContractId, LocalDate releaseDate, Employeecontract contract,
+      List<TimereportDTO> timereports) {
 
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
 
@@ -208,10 +256,10 @@ public class ReleaseService {
     var end = releaseDate;
 
     // ensure begin and end dates fit to contract
-    if(contract.getValidFrom().isAfter(begin)) {
+    if (contract.getValidFrom().isAfter(begin)) {
       begin = contract.getValidFrom();
     }
-    if(contract.getValidUntil() != null && contract.getValidUntil().isBefore(end)) {
+    if (contract.getValidUntil() != null && contract.getValidUntil().isBefore(end)) {
       end = contract.getValidUntil();
     }
 
@@ -219,14 +267,14 @@ public class ReleaseService {
         .getWorkingdaysByEmployeeContractId(employeeContractId, begin.minusDays(1), end)
         .stream()
         .collect(toMap(Workingday::getRefday, identity()));
-    var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, releaseDate);
+
     // restricted/external users are not in scope of regulations by law
-    if(timereportService.needsWorkingHoursLawValidation(employeeContractId)) {
+    if (timereportService.needsWorkingHoursLawValidation(employeeContractId)) {
       final var timeReportsByDate = timereports
           .stream()
           .filter(timeReport -> isRelevantForWorkingTimeValidation(timeReport.getOrderType()))
           .collect(groupingBy(TimereportDTO::getReferenceday));
-      if(!timeReportsByDate.isEmpty()) {
+      if (!timeReportsByDate.isEmpty()) {
         var dates = timeReportsByDate.keySet().stream().sorted().toList();
 
         // load timereports from the day before (which is not open anymore thus not already loaded)
@@ -235,7 +283,7 @@ public class ReleaseService {
         LocalDate theDayBefore = minTimereportDate.minusDays(1);
         extendedTimeReportsByDate.put(theDayBefore, timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore));
 
-        for(var date : dates) {
+        for (var date : dates) {
           validateBeginOfWorkingDay(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
           validateBreakTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
           validateRestTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
@@ -257,24 +305,16 @@ public class ReleaseService {
     begin.datesUntil(end.plusDays(1))
         .filter(date -> date.getDayOfWeek() != SATURDAY && date.getDayOfWeek() != SUNDAY)
         .filter(date -> !publicHolidays.contains(date))
-        .map(date -> {
-          Optional<Pair<LocalDate, ServiceFeedbackMessage>> result = empty();
+        .forEach(date -> {
           var workingDay = workingDays.get(date);
           var workingDayType = WORKED; // this is the default
-          if(workingDay != null) workingDayType = workingDay.getType();
-          if(workingDayType != NOT_WORKED && noTimeReportsFound(timeReportsByDate, date)) {
-            result = of(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date)));
+          if (workingDay != null) workingDayType = workingDay.getType();
+          if (workingDayType != NOT_WORKED && noTimeReportsFound(timeReportsByDate, date)) {
+            errors.add(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date)));
           }
-          return result;
-        })
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .forEach(errors::add);
+        });
 
-    var messages = errors.stream().sorted(Comparator.comparing(Pair::getFirst)).map(Pair::getSecond).toList();
-    if(!messages.isEmpty()) {
-      throw new BusinessRuleException(messages);
-    }
+    return errors;
   }
 
   private void releaseTimereport(long timereportId, String releasedBy) {

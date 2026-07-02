@@ -55,6 +55,35 @@ public class ReleaseController {
         return "dailyreport/release";
     }
 
+    @PostMapping("/preview")
+    public String preview(@RequestParam(required = false) Long employeeContractId,
+                          @RequestParam(required = false) String selfReleaseDate,
+                          Model model,
+                          RedirectAttributes redirectAttributes) {
+        var effectiveContractId = effectiveContractId(employeeContractId);
+        var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
+        if (contract == null) {
+            return "redirect:/release";
+        }
+        LocalDate releaseDate = parseEndOfMonth(selfReleaseDate);
+        try {
+            var review = releaseService.getMonthBookingsForReview(contract.getId(), releaseDate);
+            model.addAttribute("review", review);
+            model.addAttribute("errors", errorCodeViewHelper.toViewMessages(review.errors()));
+            model.addAttribute("selfReleaseDate", selfReleaseDate);
+            model.addAttribute("employeeContractId", contract.getId());
+            model.addAttribute("employee", contract.getEmployee());
+            model.addAttribute("section", "dailyreport");
+            model.addAttribute("subSection", "release");
+            model.addAttribute("pageTitle", messages.getMessage("main.release.preview.title.text"));
+            model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
+            return "dailyreport/release-preview";
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
+            return "redirect:/release";
+        }
+    }
+
     @PostMapping
     public String release(@RequestParam(required = false) Long employeeContractId,
                           @RequestParam(required = false) String selfReleaseDate,

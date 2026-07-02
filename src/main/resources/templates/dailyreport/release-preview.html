@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=${sectionTitle}">
+<section layout:fragment="content">
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <span th:text="${employee.name}"></span>
+        &ndash;
+        <span th:text="#{main.release.preview.title.text}"></span>
+        <span class="text-muted ms-1"
+              th:with="ym=${#temporals.format(review.releaseMonth(), 'MMMM yyyy')}"
+              th:text="${ym}"></span>
+      </h3>
+    </div>
+
+    <div class="card-body">
+
+      <!-- Validation errors alert -->
+      <div class="alert alert-danger" th:if="${not #lists.isEmpty(errors)}">
+        <h5 class="alert-title" th:text="#{main.release.preview.errors.title.text}"></h5>
+        <ul class="mb-0">
+          <li th:each="err : ${errors}" th:text="${err.resolved()}"></li>
+        </ul>
+      </div>
+
+      <!-- Success hint when no errors -->
+      <div class="alert alert-success" th:if="${#lists.isEmpty(errors) and not #lists.isEmpty(review.days())}">
+        <i class="bi bi-check-circle me-1"></i>
+        <span th:text="#{main.release.preview.errors.none.text}"></span>
+      </div>
+
+      <!-- Bookings table -->
+      <div th:if="${not #lists.isEmpty(review.days())}" class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th th:text="#{main.release.preview.col.date.text}"></th>
+              <th th:text="#{main.release.preview.col.order.text}"></th>
+              <th th:text="#{main.release.preview.col.duration.text}"></th>
+              <th class="d-none d-md-table-cell" th:text="#{main.release.preview.col.description.text}"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <th:block th:each="day : ${review.days()}">
+              <!-- Individual booking rows -->
+              <tr th:each="tr, iterStat : ${day.timereports()}"
+                  th:classappend="${not #lists.isEmpty(day.errors())} ? 'table-warning' : ''">
+                <td>
+                  <span th:if="${iterStat.first}"
+                        th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></span>
+                  <span th:if="${not iterStat.first}" class="text-muted">&#x200B;</span>
+                </td>
+                <td><code th:text="${tr.completeOrderSign}"></code></td>
+                <td class="text-nowrap">
+                  <span th:text="${tr.durationhours + 'h' + (tr.durationminutes > 0 ? ' ' + tr.durationminutes + 'min' : '')}"></span>
+                </td>
+                <td class="d-none d-md-table-cell text-muted"
+                    th:text="${tr.taskdescription}"></td>
+              </tr>
+              <!-- Daily sum row (only when more than one booking on a day) -->
+              <tr th:if="${#lists.size(day.timereports()) > 1}"
+                  th:classappend="${not #lists.isEmpty(day.errors())} ? 'table-warning fw-semibold' : 'fw-semibold'">
+                <td th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></td>
+                <td><em th:text="#{main.release.preview.total.text}"></em></td>
+                <td class="text-nowrap">
+                  <span th:text="${day.totalHours() + 'h' + (day.totalMinutes() > 0 ? ' ' + day.totalMinutes() + 'min' : '')}"></span>
+                </td>
+                <td class="d-none d-md-table-cell">
+                  <span th:each="err : ${day.errors()}"
+                        class="badge bg-warning-lt me-1"
+                        th:text="${err.errorCode.code}"></span>
+                </td>
+              </tr>
+              <!-- Error badges on single-booking days -->
+              <tr th:if="${#lists.size(day.timereports()) == 1 and not #lists.isEmpty(day.errors())}"
+                  class="table-warning">
+                <td colspan="3"></td>
+                <td class="d-none d-md-table-cell">
+                  <span th:each="err : ${day.errors()}"
+                        class="badge bg-warning-lt me-1"
+                        th:text="${err.errorCode.code}"></span>
+                </td>
+              </tr>
+            </th:block>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div th:if="${#lists.isEmpty(review.days())}" class="text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        <span th:text="#{main.release.preview.no.bookings.text}"></span>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <form method="post" th:action="@{/release}" class="d-inline">
+        <input type="hidden" name="selfReleaseDate" th:value="${selfReleaseDate}" />
+        <input type="hidden" name="employeeContractId" th:value="${employeeContractId}" />
+        <button type="submit" class="btn btn-primary me-2"
+                th:disabled="${not review.canRelease()}"
+                th:text="#{main.release.preview.confirm.text}"></button>
+      </form>
+      <a class="btn btn-secondary" th:href="@{/release}"
+         th:text="#{main.release.preview.back.text}"></a>
+    </div>
+  </div>
+
+</section>
+</html>
