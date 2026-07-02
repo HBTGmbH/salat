@@ -5,7 +5,6 @@ import java.util.Map;
 import org.thymeleaf.context.ITemplateContext;
 import org.thymeleaf.model.AttributeValueQuotes;
 import org.thymeleaf.model.IModel;
-import org.thymeleaf.model.IModelFactory;
 import org.thymeleaf.model.IOpenElementTag;
 import org.thymeleaf.processor.element.AbstractElementModelProcessor;
 import org.thymeleaf.processor.element.IElementModelStructureHandler;
