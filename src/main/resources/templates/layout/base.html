@@ -219,12 +219,23 @@
               <button type="button"
                       class="btn btn-icon btn-ghost-secondary btn-sm p-0"
                       style="width: 1.25rem; height: 1.25rem;"
-                      th:if="${@loginSwitchViewHelper.visible}"
+                      th:if="${@loginSwitchViewHelper.visible and @authorizedUser.impersonateLoginSign == null}"
                       data-bs-toggle="modal"
                       data-bs-target="#loginSwitchModal"
                       title="Benutzer wechseln">
                 <i class="ti ti-switch-2" style="font-size: 0.8rem;"></i>
               </button>
+              <form th:if="${@authorizedUser.impersonateLoginSign != null}"
+                    th:action="@{/auth/exit-impersonation}"
+                    method="post"
+                    style="display: inline;">
+                <button type="submit"
+                        class="btn btn-icon btn-ghost-danger btn-sm p-0"
+                        style="width: 1.25rem; height: 1.25rem;"
+                        title="Benutzer-Wechsel beenden">
+                  <i class="ti ti-x" style="font-size: 0.8rem;"></i>
+                </button>
+              </form>
             </div>
             <div class="mt-3">
               <span class="badge bg-purple-lt" th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>
