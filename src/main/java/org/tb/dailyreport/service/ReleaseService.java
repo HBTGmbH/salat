@@ -35,9 +35,11 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +64,7 @@ import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.ReleaseReviewDTO;
 import org.tb.dailyreport.domain.ReleaseReviewDay;
+import org.tb.dailyreport.domain.ReleaseReviewEntry;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
@@ -220,18 +223,74 @@ public class ReleaseService {
         .map(Pair::getSecond)
         .toList();
 
-    var byDate = timereports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
-    var days = byDate.entrySet().stream()
-        .sorted(Map.Entry.comparingByKey())
-        .map(e -> new ReleaseReviewDay(
-            e.getKey(),
-            e.getValue().stream().sorted(Comparator.comparing(TimereportDTO::getSequencenumber)).toList(),
-            e.getValue().stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus),
-            errorsByDate.getOrDefault(e.getKey(), List.of())
-        ))
+    var currentReleaseDate = contract.getReportReleaseDate();
+    var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
+    var end = releaseDate;
+    if (contract.getValidFrom().isAfter(begin)) begin = contract.getValidFrom();
+    if (contract.getValidUntil() != null && contract.getValidUntil().isBefore(end)) end = contract.getValidUntil();
+
+    var timereportsByDate = timereports.stream().collect(groupingBy(TimereportDTO::getReferenceday));
+    var workingDayMap = workingdayDAO
+        .getWorkingdaysByEmployeeContractId(employeeContractId, begin.minusDays(1), end)
+        .stream().collect(toMap(Workingday::getRefday, identity()));
+    var publicHolidayMap = publicholidayDAO.getPublicHolidaysBetween(begin, end)
+        .stream().collect(toMap(Publicholiday::getRefdate, Publicholiday::getName));
+
+    var finalBegin = begin;
+    var days = finalBegin.datesUntil(end.plusDays(1))
+        .filter(date -> date.getDayOfWeek() != SATURDAY && date.getDayOfWeek() != SUNDAY)
+        .map(date -> buildReviewDay(date, timereportsByDate, errorsByDate, workingDayMap, publicHolidayMap))
         .toList();
 
     return new ReleaseReviewDTO(employeeContractId, releaseDate, days, globalErrors);
+  }
+
+  private ReleaseReviewDay buildReviewDay(
+      LocalDate date,
+      Map<LocalDate, List<TimereportDTO>> timereportsByDate,
+      Map<LocalDate, List<ServiceFeedbackMessage>> errorsByDate,
+      Map<LocalDate, Workingday> workingDayMap,
+      Map<LocalDate, String> publicHolidayMap) {
+
+    var dayTimereports = timereportsByDate.getOrDefault(date, List.of())
+        .stream().sorted(Comparator.comparing(TimereportDTO::getSequencenumber)).toList();
+
+    var grouped = new LinkedHashMap<Long, List<TimereportDTO>>();
+    for (var tr : dayTimereports) {
+      grouped.computeIfAbsent(tr.getEmployeeorderId(), k -> new ArrayList<>()).add(tr);
+    }
+    var entries = grouped.values().stream()
+        .map(list -> {
+          var first = list.getFirst();
+          var dur = list.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+          var comments = list.stream()
+              .map(TimereportDTO::getTaskdescription)
+              .filter(s -> s != null && !s.isBlank())
+              .toList();
+          return new ReleaseReviewEntry(
+              first.getCustomerorderSign(),
+              first.getCustomerorderDescription(),
+              first.getCustomerShortname(),
+              first.getCompleteOrderSign(),
+              first.getSuborderDescription(),
+              dur,
+              comments);
+        })
+        .toList();
+
+    var totalDuration = dayTimereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+    var errors = errorsByDate.getOrDefault(date, List.of());
+    var workingDay = workingDayMap.get(date);
+
+    var notWorked = workingDay != null && workingDay.getType() == NOT_WORKED;
+    LocalTime startTime = null;
+    var breakLength = Duration.ZERO;
+    if (workingDay != null && workingDay.getStarttimehour() > 0) {
+      startTime = LocalTime.of(workingDay.getStarttimehour(), workingDay.getStarttimeminute());
+      breakLength = workingDay.getBreakLength();
+    }
+
+    return new ReleaseReviewDay(date, entries, totalDuration, errors, startTime, breakLength, notWorked, publicHolidayMap.get(date));
   }
 
   private void assertReleaseDateValid(Employeecontract contract, LocalDate releaseDate) {

@@ -602,33 +602,36 @@ class ReleaseServiceTest {
 
         @Test
         void whenMultipleBookingsOnSameDay_shouldGroupAndSumDuration() {
-            final LocalDate sunday = LocalDate.of(2024, 1, 7);
+            // two bookings on different orders for the same Monday → two separate entries
+            final LocalDate monday = LocalDate.of(2024, 1, 8);
             final TimereportDTO tr1 = TimereportDTO.builder()
-                .referenceday(sunday)
+                .referenceday(monday)
                 .orderType(OrderType.STANDARD)
                 .duration(Duration.ofHours(2))
                 .sequencenumber(1)
+                .employeeorderId(1L)
                 .completeOrderSign("A")
                 .build();
             final TimereportDTO tr2 = TimereportDTO.builder()
-                .referenceday(sunday)
+                .referenceday(monday)
                 .orderType(OrderType.STANDARD)
                 .duration(Duration.ofHours(3))
                 .sequencenumber(2)
+                .employeeorderId(2L)
                 .completeOrderSign("B")
                 .build();
             when(releaseAuthorization.isReleaseAuthorized(any(), eq(AccessLevel.WRITE))).thenReturn(true);
-            when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contractFrom(sunday));
-            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(CONTRACT_ID, sunday)).thenReturn(List.of(tr1, tr2));
+            when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contractFrom(monday));
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(CONTRACT_ID, monday)).thenReturn(List.of(tr1, tr2));
             when(workingdayDAO.getWorkingdaysByEmployeeContractId(eq(CONTRACT_ID), any(), any())).thenReturn(List.of());
-            when(publicholidayDAO.getPublicHolidaysBetween(sunday, sunday)).thenReturn(List.of());
+            when(publicholidayDAO.getPublicHolidaysBetween(monday, monday)).thenReturn(List.of());
 
-            var result = classUnderTest.getMonthBookingsForReview(CONTRACT_ID, sunday);
+            var result = classUnderTest.getMonthBookingsForReview(CONTRACT_ID, monday);
 
             assertThat(result.days()).hasSize(1);
             var day = result.days().getFirst();
-            assertThat(day.date()).isEqualTo(sunday);
-            assertThat(day.timereports()).hasSize(2);
+            assertThat(day.date()).isEqualTo(monday);
+            assertThat(day.entries()).hasSize(2);
             assertThat(day.totalDuration()).isEqualTo(Duration.ofHours(5));
             assertThat(result.canRelease()).isTrue();
         }
