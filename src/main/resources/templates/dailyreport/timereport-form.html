@@ -87,6 +87,8 @@
               <label class="form-label required" th:text="#{main.timereport.form.suborder.label}">Unterauftrag</label>
               <select class="form-select tomselect"
                       name="suborderId" id="suborderId"
+                      data-favorite-target="/dailyreport/timereports/preferences/favorite-suborder"
+                      th:attr="data-favorite-id=${favoriteSuborderId}"
                       hx-post="/dailyreport/timereports/refresh-sidebar"
                       hx-include="closest form"
                       hx-target="#form-sidebar"

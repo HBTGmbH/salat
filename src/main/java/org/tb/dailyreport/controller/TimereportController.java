@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.tb.auth.domain.Authorized;
 import org.tb.dailyreport.preferences.DailyPreferenceService;
+import org.tb.dailyreport.preferences.TimereportPreferenceService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -54,6 +57,7 @@ public class TimereportController {
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final DailyPreferenceService dailyPreferenceService;
+    private final TimereportPreferenceService timereportPreferenceService;
 
     @GetMapping("/new")
     public String createForm(@RequestParam(required = false) Long employeeContractId,
@@ -152,6 +156,7 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
+        model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         model.addAttribute("oobSidebar", true);
         return "dailyreport/timereport-form :: ordersRefreshCompositeFragment";
     }
@@ -170,6 +175,14 @@ public class TimereportController {
         }
         model.addAttribute("recentComments", loadRecentComments(employeeContractId, form));
         return "dailyreport/timereport-form :: sidebarFragment";
+    }
+
+    @PostMapping("/preferences/favorite-suborder")
+    @PreAuthorize("isAuthenticated()")
+    @ResponseBody
+    public ResponseEntity<Void> setFavoriteSuborder(@RequestParam(required = false) Long suborderId) {
+        timereportPreferenceService.toggleFavoriteSuborder(suborderId);
+        return ResponseEntity.noContent().build();
     }
 
     // ---- private helpers ----
@@ -311,6 +324,7 @@ public class TimereportController {
                     + "  (" + ec.getTimeString() + (ec.getOpenEnd() ? " ∞" : "") + ")");
             }
         }
+        model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",

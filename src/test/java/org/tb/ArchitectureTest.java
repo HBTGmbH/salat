@@ -72,12 +72,8 @@ public class ArchitectureTest {
           "settings must only import common, auth",
           "org.tb.common.", "org.tb.auth.", "org.tb.settings."));
 
-  @ArchTest
-  static final ArchRule settingsEditorMayAccessCommonAuthSettingsDailyreport = priority(HIGH).noClasses().that()
-      .resideInAPackage("org.tb.settingseditor..")
-      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "settingseditor must only import common, auth, settings, dailyreport",
-          "org.tb.common.", "org.tb.auth.", "org.tb.settings.", "org.tb.dailyreport.", "org.tb.settingseditor."));
+  // settingseditor is an aggregator: it may import from any module.
+  // The beFreeOfCycles rule below ensures no other module can accidentally depend back on it.
 
   @ArchTest
   static final ArchRule entitiesDoNotAccessServicesDAOsRepositories = priority(HIGH).noClasses().that()

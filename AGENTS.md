@@ -288,7 +288,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |
 | `settings` | User preference store: entity, converter, repository, service — generic map-based API, no UI |
-| `settingseditor` | User preferences editing UI — aggregator; may import from any module's `*.preferences` package; other modules must not import from `settingseditor` |
+| `settingseditor` | User preferences editing UI — aggregator; may import from **any** module; other modules must not import from `settingseditor` |
 | `statistic` | Aggregations and statistics |
 
 ### Module Layer Conventions

@@ -18,6 +18,26 @@
                        th:field="*{workDayStart}"
                        th:label="#{main.settings.workdaystart.label}"
                        required="true" />
+
+      <div class="mb-3 row">
+        <label class="col-sm-3 col-form-label"
+               for="favoriteSuborderId"
+               th:text="#{main.settings.timereport.favorite.label}">Bevorzugter Unterauftrag</label>
+        <div class="col-sm-9">
+          <select class="form-select tomselect"
+                  id="favoriteSuborderId"
+                  name="favoriteSuborderId">
+            <option value="" th:text="#{main.settings.timereport.favorite.none}">— Kein Favorit —</option>
+            <option th:each="s : ${suborders}"
+                    th:value="${s.id}"
+                    th:text="${s.label}"
+                    th:attr="data-subtext=${s.subtext}"
+                    th:selected="${settingsForm.favoriteSuborderId != null and settingsForm.favoriteSuborderId == s.id.toString()}"></option>
+          </select>
+          <small id="favoriteSuborderId-subtext" class="form-text text-muted mt-1"></small>
+        </div>
+      </div>
+
     </salat:inputs>
     <salat:buttons>
       <salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/}" />

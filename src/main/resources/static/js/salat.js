@@ -36,6 +36,7 @@ function selectContract(id) {
 
 const tomSelectConfig = (el) => {
   const hasSubtext = Array.from(el.options).some(opt => opt.dataset.subtext);
+  const favoriteTarget = el.dataset.favoriteTarget || null;
 
   const config = {
     create: false,
@@ -54,20 +55,46 @@ const tomSelectConfig = (el) => {
     },
   };
 
-  if (hasSubtext) {
+  if (hasSubtext || favoriteTarget) {
+    const favoriteId = el.dataset.favoriteId || null;
+
     Object.assign(config, {
       searchField: ['text', 'subtext'],
       onInitialize() {
         Array.from(el.options).forEach(opt => {
-          const subtext = opt.dataset.subtext;
-          if (subtext && this.options[opt.value]) {
-            this.options[opt.value].subtext = subtext;
-          }
+          const val = this.options[opt.value];
+          if (!val) return;
+          if (opt.dataset.subtext) val.subtext = opt.dataset.subtext;
+          if (favoriteTarget) val.isFavorite = !!(favoriteId && opt.value === favoriteId);
         });
         const subtextEl = el.id ? document.getElementById(el.id + '-subtext') : null;
         if (subtextEl) {
           const selected = el.options[el.selectedIndex];
           subtextEl.textContent = selected?.dataset.subtext || '';
+        }
+        if (favoriteTarget) {
+          this.dropdown.addEventListener('mousedown', (e) => {
+            const star = e.target.closest('.ts-fav');
+            if (!star) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const optionEl = star.closest('[data-value]');
+            const value = optionEl?.dataset.value;
+            if (!value) return;
+            const isCurrent = this.options[value]?.isFavorite;
+            const newFavId = isCurrent ? null : value;
+            const raw = document.cookie.split('; ').find(r => r.startsWith('XSRF-TOKEN='))?.split('=')[1];
+            fetch(favoriteTarget + (newFavId ? '?suborderId=' + newFavId : ''), {
+              method: 'POST',
+              headers: { 'X-XSRF-TOKEN': raw ? decodeURIComponent(raw) : '' },
+            }).then(() => {
+              Object.keys(this.options).forEach(k => {
+                this.options[k].isFavorite = k === newFavId;
+              });
+              if (this.renderCache) this.renderCache['option'] = {};
+              this.refreshOptions(false);
+            });
+          }, true);
         }
       },
       onChange(value) {
@@ -78,9 +105,16 @@ const tomSelectConfig = (el) => {
       },
       render: {
         option(data, escape) {
-          return '<div class="d-flex flex-column py-1">'
+          const starHtml = favoriteTarget
+            ? '<i class="bi ' + (data.isFavorite ? 'bi-star-fill text-warning' : 'bi-star opacity-25')
+              + ' ts-fav me-2 flex-shrink-0" style="cursor:pointer;font-size:1rem"></i>'
+            : '';
+          return '<div class="d-flex align-items-center py-1">'
+            + starHtml
+            + '<div class="d-flex flex-column">'
             + '<span class="text-nowrap">' + escape(data.text) + '</span>'
             + (data.subtext ? '<small class="text-muted lh-1 mb-1">' + escape(data.subtext) + '</small>' : '')
+            + '</div>'
             + '</div>';
         },
         item(data, escape) {
