@@ -22,6 +22,11 @@
   padding-bottom: .5625rem;
 }
 
+.ts-wrapper.form-select.multi .ts-control {
+  padding-top: calc(.5625rem - 2.5px);
+  padding-bottom: calc(.5625rem - 2.5px);
+}
+
 body {
   font-feature-settings: "cv03", "cv04", "cv11";
 }
