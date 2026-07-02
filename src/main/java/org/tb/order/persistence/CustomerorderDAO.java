@@ -100,7 +100,7 @@ public class CustomerorderDAO {
             || containsIgnoreCase(customer.getName(), upper)
             || containsIgnoreCase(co.getSign(), upper)
             || containsIgnoreCase(co.getDescription(), upper)
-            || (co.getResponsible_hbt() != null && containsIgnoreCase(co.getResponsible_hbt().getName(), upper))
+            || co.getResponsibleHbt().stream().anyMatch(e -> containsIgnoreCase(e.getName(), upper))
             || (co.getRespEmpHbtContract() != null && containsIgnoreCase(co.getRespEmpHbtContract().getName(), upper));
     }
 

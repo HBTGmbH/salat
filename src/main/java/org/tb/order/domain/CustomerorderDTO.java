@@ -1,6 +1,7 @@
 package org.tb.order.domain;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Data transfer object carrying customer order field values for create/update operations.
@@ -15,7 +16,7 @@ public record CustomerorderDTO(
     String orderCustomer,
     String responsibleCustomerContractually,
     String responsibleCustomerTechnical,
-    Long responsibleHbtId,
+    List<Long> responsibleHbtIds,
     Long respEmpHbtContractId,
     String debithours,
     Byte debithoursunit,

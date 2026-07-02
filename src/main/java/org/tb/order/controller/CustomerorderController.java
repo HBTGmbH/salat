@@ -97,7 +97,7 @@ public class CustomerorderController {
     var form = new CustomerorderForm();
     form.setValidFrom(format(today()));
     form.setOrderType(OrderType.STANDARD);
-    form.setEmployeeId(authorizedEmployee.getEmployeeId());
+    form.setResponsibleHbtIds(new java.util.ArrayList<>(List.of(authorizedEmployee.getEmployeeId())));
     form.setRespContrEmployeeId(authorizedEmployee.getEmployeeId());
     form.setCustomerId(customerId);
     form.setHide(false);
@@ -133,7 +133,7 @@ public class CustomerorderController {
             form.getCustomerId(), fromDate, untilDate, form.getSign(),
             form.getDescription(), form.getShortdescription(), form.getOrderCustomer(),
             form.getResponsibleCustomerContractually(), form.getResponsibleCustomerTechnical(),
-            form.getEmployeeId(), form.getRespContrEmployeeId(),
+            form.getResponsibleHbtIds(), form.getRespContrEmployeeId(),
             form.getDebithours(), form.getDebithoursunit(), form.getHide(), form.getOrderType());
         if (form.getId() == null) {
           newId = customerorderService.create(dto).getId();
@@ -261,8 +261,8 @@ public class CustomerorderController {
           messages.getMessage("form.timereport.error.date.wrongformat", "Invalid date format"));
     }
 
-    if (form.getEmployeeId() == null) {
-      bindingResult.rejectValue("employeeId", "error.employeeId",
+    if (form.getResponsibleHbtIds() == null || form.getResponsibleHbtIds().isEmpty()) {
+      bindingResult.rejectValue("responsibleHbtIds", "error.responsibleHbtIds",
           messages.getMessage("form.customerorder.error.responsiblehbt.required", "Responsible HBT employee is required"));
     }
 
@@ -296,7 +296,9 @@ public class CustomerorderController {
     // In edit mode, ensure assigned employees appear even if hidden or their contracts have expired.
     // Fall back to stored IDs when the form fields are null (e.g. after validation failure with empty select).
     if (isEdit) {
-      addEmployeeIfAbsent(employees, form.getEmployeeId() != null ? form.getEmployeeId() : form.getStoredEmployeeId());
+      var effectiveHbtIds = (form.getResponsibleHbtIds() != null && !form.getResponsibleHbtIds().isEmpty())
+          ? form.getResponsibleHbtIds() : form.getStoredResponsibleHbtIds();
+      effectiveHbtIds.forEach(id -> addEmployeeIfAbsent(employees, id));
       addEmployeeIfAbsent(employees, form.getRespContrEmployeeId() != null ? form.getRespContrEmployeeId() : form.getStoredRespContrEmployeeId());
       employees.sort(Comparator.comparing(Employee::getName));
     }
@@ -330,10 +332,9 @@ public class CustomerorderController {
     form.setOrderCustomer(co.getOrder_customer());
     form.setResponsibleCustomerContractually(co.getResponsible_customer_contractually());
     form.setResponsibleCustomerTechnical(co.getResponsible_customer_technical());
-    if (co.getResponsible_hbt() != null) {
-      form.setEmployeeId(co.getResponsible_hbt().getId());
-      form.setStoredEmployeeId(co.getResponsible_hbt().getId());
-    }
+    var responsibleHbtIds = co.getResponsibleHbt().stream().map(Employee::getId).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
+    form.setResponsibleHbtIds(responsibleHbtIds);
+    form.setStoredResponsibleHbtIds(new java.util.ArrayList<>(responsibleHbtIds));
     if (co.getRespEmpHbtContract() != null) {
       form.setRespContrEmployeeId(co.getRespEmpHbtContract().getId());
       form.setStoredRespContrEmployeeId(co.getRespEmpHbtContract().getId());

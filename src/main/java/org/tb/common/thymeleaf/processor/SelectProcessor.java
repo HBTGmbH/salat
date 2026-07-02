@@ -22,6 +22,7 @@ public class SelectProcessor extends AbstractElementModelProcessor {
         var field = openTag.getAttributeValue("th:field");
         var label = openTag.getAttributeValue("th:label");
         var required = Boolean.parseBoolean(openTag.getAttributeValue("required"));
+        var multiple = openTag.getAttribute("multiple") != null;
         var fieldName = extractFieldName(field);
 
         var mf = context.getModelFactory();
@@ -37,9 +38,12 @@ public class SelectProcessor extends AbstractElementModelProcessor {
         newModel.add(mf.createCloseElementTag("label"));
 
         Map<String, String> selectAttrs = new LinkedHashMap<>();
-        selectAttrs.put("class", "form-select tomselect");
+        selectAttrs.put("class", multiple ? "form-select tomselect tomselect-multi" : "form-select tomselect");
         selectAttrs.put("th:field", field);
         selectAttrs.put("th:errorclass", "is-invalid");
+        if (multiple) {
+            selectAttrs.put("multiple", "multiple");
+        }
         newModel.add(mf.createOpenElementTag("select", selectAttrs, AttributeValueQuotes.DOUBLE, false));
 
         for (int i = 1; i < model.size() - 1; i++) {

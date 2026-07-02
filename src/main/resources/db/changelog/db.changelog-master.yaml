@@ -1930,5 +1930,51 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 54
+      author: kr
+      comment: Create customerorder_responsible_hbt join table and migrate existing responsible_hbt data
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: customerorder_responsible_hbt
+      changes:
+        - createTable:
+            tableName: customerorder_responsible_hbt
+            columns:
+              - column:
+                  name: CUSTOMERORDER_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_corhbt_customerorder
+                    references: customerorder(id)
+              - column:
+                  name: EMPLOYEE_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_corhbt_employee
+                    references: employee(id)
+        - sql:
+            sql: "INSERT INTO customerorder_responsible_hbt (CUSTOMERORDER_ID, EMPLOYEE_ID) SELECT id, RESPONSIBLE_HBT_ID FROM customerorder WHERE RESPONSIBLE_HBT_ID IS NOT NULL"
+  - changeSet:
+      id: 55
+      author: kr
+      comment: Drop legacy RESPONSIBLE_HBT_ID column from customerorder after join table migration
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: customerorder
+            columnName: RESPONSIBLE_HBT_ID
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: customerorder
+            constraintName: FKB0BA7210F5620BCF
+        - dropColumn:
+            tableName: customerorder
+            columnName: RESPONSIBLE_HBT_ID
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

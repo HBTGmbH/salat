@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
       layout:decorate="~{layout/base}"
       th:with="section='orders',subSection='customerorders',title=${pageTitle},sectionTitle=#{main.general.mainmenu.orders.text}">
 <main layout:fragment="content">
@@ -8,7 +9,9 @@
   <form th:action="@{/orders/customerorders/store}" th:object="${customerorderForm}" method="post" class="card">
     <div class="card-body">
       <input type="hidden" th:field="*{id}" />
-      <input type="hidden" th:field="*{storedEmployeeId}" />
+      <th:block th:each="sid : *{storedResponsibleHbtIds}">
+        <input type="hidden" name="storedResponsibleHbtIds" th:value="${sid}" />
+      </th:block>
       <input type="hidden" th:field="*{storedRespContrEmployeeId}" />
 
       <div class="row">
@@ -75,10 +78,9 @@
 
       <div class="row">
         <div class="col-md-6">
-          <div th:replace="~{fragments/form-fields :: selectInput(
-            field='employeeId', label=#{main.customerorder.responsiblehbt.text}, required=true,
-            placeholder=null, options=${employees}, optionValue='id', optionLabel='name'
-          )}"></div>
+          <salat:select th:field="*{responsibleHbtIds}" th:label="#{main.customerorder.responsiblehbt.text}" required multiple>
+            <option th:each="e : ${employees}" th:value="${e.id}" th:text="${e.name}"></option>
+          </salat:select>
         </div>
         <div class="col-md-6">
           <div th:replace="~{fragments/form-fields :: selectInput(

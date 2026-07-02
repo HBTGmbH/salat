@@ -14,7 +14,7 @@ import org.tb.order.domain.Customerorder;
 public interface CustomerorderRepository extends PagingAndSortingRepository<Customerorder, Long>,
     JpaSpecificationExecutor<Customerorder>, CrudRepository<Customerorder, Long> {
 
-  @Query("select c from Customerorder c where c.responsible_hbt.id = :responsibleHbtId")
+  @Query("select c from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
   List<Customerorder> findAllByResponsibleHbt(long responsibleHbtId);
 
   List<Customerorder> findAllByCustomerId(long customerId);
