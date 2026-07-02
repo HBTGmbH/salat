@@ -1,6 +1,8 @@
 package org.tb.dailyreport.service;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
@@ -13,10 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
+import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
@@ -42,6 +46,8 @@ class ReleaseServiceTest {
     private PublicholidayDAO publicholidayDAO;
     @Mock
     private TimereportService timereportService;
+    @Mock
+    private ReleaseAuthorization releaseAuthorization;
 
     @Nested
     class ValidateForRelease {
@@ -552,6 +558,118 @@ class ReleaseServiceTest {
             } catch(ErrorCodeException e) {
                 return e.getMessages();
             }
+        }
+    }
+
+    @Nested
+    class GetMonthBookingsForReview {
+
+        private static final long CONTRACT_ID = 42L;
+
+        @Test
+        void whenNoBookings_onSunday_shouldReturnNoDaysAndNoErrors() {
+            // given a Sunday as both validFrom and releaseDate – weekday check is skipped
+            final LocalDate sunday = LocalDate.of(2024, 1, 7);
+            when(releaseAuthorization.isReleaseAuthorized(any(), eq(AccessLevel.WRITE))).thenReturn(true);
+            when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contractFrom(sunday));
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(CONTRACT_ID, sunday)).thenReturn(List.of());
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(eq(CONTRACT_ID), any(), any())).thenReturn(List.of());
+            when(publicholidayDAO.getPublicHolidaysBetween(sunday, sunday)).thenReturn(List.of());
+
+            var result = classUnderTest.getMonthBookingsForReview(CONTRACT_ID, sunday);
+
+            assertThat(result.days()).isEmpty();
+            assertThat(result.errors()).isEmpty();
+            assertThat(result.canRelease()).isTrue();
+        }
+
+        @Test
+        void whenWeekdayHasNoBooking_shouldReturnErrorAndCannotRelease() {
+            // given a Monday with no booking → WD_NO_TIMEREPORT expected
+            final LocalDate monday = LocalDate.of(2024, 1, 8);
+            when(releaseAuthorization.isReleaseAuthorized(any(), eq(AccessLevel.WRITE))).thenReturn(true);
+            when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contractFrom(monday));
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(CONTRACT_ID, monday)).thenReturn(List.of());
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(eq(CONTRACT_ID), any(), any())).thenReturn(List.of());
+            when(publicholidayDAO.getPublicHolidaysBetween(monday, monday)).thenReturn(List.of());
+
+            var result = classUnderTest.getMonthBookingsForReview(CONTRACT_ID, monday);
+
+            assertThat(result.errors()).hasSize(1);
+            assertThat(result.errors().getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_NO_TIMEREPORT);
+            assertThat(result.canRelease()).isFalse();
+        }
+
+        @Test
+        void whenMultipleBookingsOnSameDay_shouldGroupAndSumDuration() {
+            // two bookings on different orders for the same Monday → two separate entries
+            final LocalDate monday = LocalDate.of(2024, 1, 8);
+            final TimereportDTO tr1 = TimereportDTO.builder()
+                .referenceday(monday)
+                .orderType(OrderType.STANDARD)
+                .duration(Duration.ofHours(2))
+                .sequencenumber(1)
+                .employeeorderId(1L)
+                .completeOrderSign("A")
+                .build();
+            final TimereportDTO tr2 = TimereportDTO.builder()
+                .referenceday(monday)
+                .orderType(OrderType.STANDARD)
+                .duration(Duration.ofHours(3))
+                .sequencenumber(2)
+                .employeeorderId(2L)
+                .completeOrderSign("B")
+                .build();
+            when(releaseAuthorization.isReleaseAuthorized(any(), eq(AccessLevel.WRITE))).thenReturn(true);
+            when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contractFrom(monday));
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(CONTRACT_ID, monday)).thenReturn(List.of(tr1, tr2));
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(eq(CONTRACT_ID), any(), any())).thenReturn(List.of());
+            when(publicholidayDAO.getPublicHolidaysBetween(monday, monday)).thenReturn(List.of());
+
+            var result = classUnderTest.getMonthBookingsForReview(CONTRACT_ID, monday);
+
+            assertThat(result.days()).hasSize(1);
+            var day = result.days().getFirst();
+            assertThat(day.date()).isEqualTo(monday);
+            assertThat(day.entries()).hasSize(2);
+            assertThat(day.totalDuration()).isEqualTo(Duration.ofHours(5));
+            assertThat(result.canRelease()).isTrue();
+        }
+
+        @Test
+        void whenDayHasValidationError_perDayErrorIsAssigned() {
+            // given a Monday with a booking but also a validation error (injected by triggering break check)
+            final LocalDate monday = LocalDate.of(2024, 1, 8);
+            final TimereportDTO tr = TimereportDTO.builder()
+                .referenceday(monday)
+                .orderType(OrderType.STANDARD)
+                .duration(Duration.ofHours(7))
+                .sequencenumber(1)
+                .build();
+            final Workingday wd = new Workingday();
+            wd.setRefday(monday);
+            wd.setBreakminutes(0);
+            when(releaseAuthorization.isReleaseAuthorized(any(), eq(AccessLevel.WRITE))).thenReturn(true);
+            when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contractFrom(monday));
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(CONTRACT_ID, monday)).thenReturn(List.of(tr));
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(eq(CONTRACT_ID), any(), any())).thenReturn(List.of(wd));
+            when(publicholidayDAO.getPublicHolidaysBetween(monday, monday)).thenReturn(List.of());
+            when(timereportService.needsWorkingHoursLawValidation(CONTRACT_ID)).thenReturn(true);
+
+            var result = classUnderTest.getMonthBookingsForReview(CONTRACT_ID, monday);
+
+            assertThat(result.canRelease()).isFalse();
+            assertThat(result.days()).hasSize(1);
+            assertThat(result.days().getFirst().errors()).isNotEmpty();
+        }
+
+        private Employeecontract contractFrom(LocalDate validFrom) {
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(validFrom);
+            return contract;
         }
     }
 }

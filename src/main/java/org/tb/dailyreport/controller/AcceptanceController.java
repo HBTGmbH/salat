@@ -88,6 +88,34 @@ public class AcceptanceController {
         return "dailyreport/acceptance";
     }
 
+    @PostMapping("/release/preview")
+    public String releasePreview(@RequestParam Long contractId,
+                                 @RequestParam(required = false) String releaseDate,
+                                 @RequestParam(required = false) Long accSupervisorId,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
+        var contract = employeecontractService.getEmployeecontractById(contractId);
+        if (contract == null) {
+            return "redirect:/acceptance";
+        }
+        try {
+            var review = releaseService.getMonthBookingsForReview(contractId, parseEndOfMonth(releaseDate));
+            model.addAttribute("review", review);
+            model.addAttribute("contractId", contractId);
+            model.addAttribute("releaseDate", releaseDate);
+            model.addAttribute("accSupervisorId", accSupervisorId);
+            model.addAttribute("employee", contract.getEmployee());
+            model.addAttribute("section", "backoffice");
+            model.addAttribute("subSection", "acceptance");
+            model.addAttribute("pageTitle", messages.getMessage("main.release.preview.title.text"));
+            model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
+            return "dailyreport/acceptance-release-preview";
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
+            return "redirect:/acceptance?accEmployeeContractId=" + contractId;
+        }
+    }
+
     @PostMapping("/release")
     public String release(@RequestParam Long contractId,
                           @RequestParam(required = false) String releaseDate,
