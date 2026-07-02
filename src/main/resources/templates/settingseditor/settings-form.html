@@ -19,6 +19,13 @@
                        th:label="#{main.settings.workdaystart.label}"
                        required="true" />
 
+      <salat:select th:field="*{locale}"
+                    th:label="#{main.settings.locale.label}">
+        <option value="-browser-" th:text="#{main.settings.locale.browser}">— Browser —</option>
+        <option value="de" th:text="#{main.settings.locale.de}">Deutsch</option>
+        <option value="en" th:text="#{main.settings.locale.en}">English</option>
+      </salat:select>
+
       <salat:select th:field="*{favoriteSuborderId}"
                     th:label="#{main.settings.timereport.favorite.label}">
         <option value="" th:text="#{main.settings.timereport.favorite.none}">— Kein Favorit —</option>

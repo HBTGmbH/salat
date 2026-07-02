@@ -24,6 +24,7 @@ salat:
   cache:
     max-entries: 1000                # env: SALAT_CACHE_MAX_ENTRIES
     expiry-tti: 10                   # env: SALAT_CACHE_EXPIRY_TTI
+  locale-cookie-name: SALAT_LOCALE    # env: SALAT_LOCALE_COOKIE_NAME — name of the browser cookie used to persist the user's language preference
   notifications:
     retention-days: 30               # env: SALAT_NOTIFICATIONS_RETENTION_DAYS — days to keep notifications before auto-delete
     bell-limit: 10                   # env: SALAT_NOTIFICATIONS_BELL_LIMIT — max notifications shown in bell dropdown

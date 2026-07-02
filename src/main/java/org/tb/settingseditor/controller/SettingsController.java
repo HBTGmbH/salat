@@ -3,8 +3,11 @@ package org.tb.settingseditor.controller;
 import static org.tb.common.GlobalConstants.DEFAULT_WORK_DAY_START;
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.dailyreport.preferences.DailyPreferences;
 import org.tb.dailyreport.preferences.TimereportPreferenceService;
@@ -25,6 +29,8 @@ import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
+import org.tb.settings.service.UiPreferenceService;
+import org.tb.settings.web.LocaleSyncInterceptor;
 
 @Controller
 @RequestMapping("/settings")
@@ -39,6 +45,9 @@ public class SettingsController {
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final MessageSourceAccessor messages;
+  private final CookieLocaleResolver localeResolver;
+  private final UiPreferenceService uiPreferenceService;
+  private final LocaleSyncInterceptor localeSyncInterceptor;
 
   @GetMapping
   public String show(Model model) {
@@ -49,6 +58,7 @@ public class SettingsController {
     form.setWorkDayStart(daily.workDayStart());
     form.setFavoriteSuborderId(timereport.favoriteSuborderId() != null
         ? timereport.favoriteSuborderId().toString() : "");
+    form.setLocale(uiPreferenceService.getLocaleForCurrentUser());
 
     model.addAttribute("settingsForm", form);
     model.addAttribute("suborders", loadSuborders());
@@ -60,7 +70,10 @@ public class SettingsController {
 
   @PostMapping("/store")
   public String store(@ModelAttribute SettingsForm form,
-                      RedirectAttributes redirectAttributes) {
+                      RedirectAttributes redirectAttributes,
+                      HttpServletRequest request,
+                      HttpServletResponse response) {
+    uiPreferenceService.saveLocaleForCurrentUser(form.getLocale());
     dailyPreferenceService.saveForCurrentUser(new DailyPreferences(form.getWorkDayStart()));
 
     Long favSuborderId = null;
@@ -71,6 +84,14 @@ public class SettingsController {
       }
     }
     timereportPreferenceService.saveForCurrentUser(new TimereportPreferences(favSuborderId));
+
+    String localeValue = form.getLocale() != null ? form.getLocale() : "";
+    switch (localeValue) {
+      case "de" -> localeResolver.setLocale(request, response, Locale.GERMAN);
+      case "en" -> localeResolver.setLocale(request, response, Locale.ENGLISH);
+      // browser detection: write "auto" sentinel so subsequent requests skip the DB lookup
+      default -> localeSyncInterceptor.writeSentinelCookie(response);
+    }
 
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("main.settings.save.success"));
@@ -104,6 +125,8 @@ public class SettingsController {
     private LocalTime workDayStart = LocalTime.of(DEFAULT_WORK_DAY_START, 0);
 
     private String favoriteSuborderId = "";
+
+    private String locale = "-browser-";
 
   }
 
