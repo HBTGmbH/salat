@@ -73,6 +73,12 @@ const tomSelectConfig = (el) => {
           subtextEl.textContent = selected?.dataset.subtext || '';
         }
         if (favoriteTarget) {
+          this.dropdown.addEventListener('click', (e) => {
+            if (e.target.closest('.ts-fav')) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            }
+          }, true);
           this.dropdown.addEventListener('mousedown', (e) => {
             const star = e.target.closest('.ts-fav');
             if (!star) return;
@@ -89,10 +95,16 @@ const tomSelectConfig = (el) => {
               headers: { 'X-XSRF-TOKEN': raw ? decodeURIComponent(raw) : '' },
             }).then(() => {
               Object.keys(this.options).forEach(k => {
-                this.options[k].isFavorite = k === newFavId;
+                this.options[k].isFavorite = (newFavId !== null && k === newFavId);
               });
-              if (this.renderCache) this.renderCache['option'] = {};
-              this.refreshOptions(false);
+              // Direct DOM update — also updates the cached DOM element in place
+              this.dropdown_content.querySelectorAll('[data-value] .ts-fav').forEach(starEl => {
+                const isFav = newFavId !== null && starEl.closest('[data-value]')?.dataset.value === newFavId;
+                starEl.classList.toggle('bi-star-fill', isFav);
+                starEl.classList.toggle('text-warning', isFav);
+                starEl.classList.toggle('bi-star', !isFav);
+                starEl.classList.toggle('opacity-25', !isFav);
+              });
             });
           }, true);
         }

@@ -238,6 +238,7 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 | `<salat:textInput />` | `th:field` (field), `th:label` (expr), `required`, `maxlength`, `th:helpText` (optional expr) | `fragments/form-fields :: textInput / textInputHelp` |
 | `<salat:textarea />` | `th:field` (field), `th:label` (expr), `required`, `rows` (default 3), `monospace`, `th:helpText` (optional expr) | `fragments/form-fields :: textareaInput / textareaInputHelp` |
 | `<salat:checkboxSwitch />` | `th:field` (field), `th:label` (expr) | `fragments/form-fields :: checkboxSwitch` |
+| `<salat:select>` | `th:field` (field), `th:label` (expr), `required` (optional) | `<div class="mb-3">` with stacked label, `<select class="form-select tomselect">`, auto `<small id="{field}-subtext">` for subtext, and `invalid-feedback` div; body is the `<option>` elements |
 | `<salat:formButtons />` | `th:saveLabel` (expr), `th:cancelHref` (expr) | `fragments/form-fields :: formButtons` |
 
 ### Usage

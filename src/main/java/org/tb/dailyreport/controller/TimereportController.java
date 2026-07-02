@@ -68,11 +68,16 @@ public class TimereportController {
         long ecId = effectiveContractId(employeeContractId);
 
         var suborders = suborderOptions(ecId, effectiveDate);
-        Long firstSuborderId = suborders.isEmpty() ? null : suborders.get(0).id();
+        Long favoriteId = timereportPreferenceService.getForCurrentUser().favoriteSuborderId();
+        Long defaultSuborderId = suborders.stream()
+                .map(SuborderOption::id)
+                .filter(id -> id.equals(favoriteId))
+                .findFirst()
+                .orElse(suborders.isEmpty() ? null : suborders.get(0).id());
 
         var form = new TimereportForm();
         form.setReferenceday(effectiveDate);
-        form.setSuborderId(firstSuborderId);
+        form.setSuborderId(defaultSuborderId);
 
         populateModel(employeeContractId, model, form, suborders, ecId, effectiveDate, false);
         return "dailyreport/timereport-form";
