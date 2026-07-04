@@ -369,42 +369,28 @@ public class TimereportController {
             // Handle sharing (in edit and create modes)
             if (shareWithColleagues != null && shareWithColleagues &&
                     recipientUserIds != null && !recipientUserIds.isEmpty()) {
-                var tr = isEdit ?
-                    timereportService.getTimereportById(form.getId()) :
-                    timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date).stream()
-                        .filter(t -> t.getSuborderId() == form.getSuborderId())
-                        .findFirst()
-                        .orElse(null);
-
-                if (tr != null) {
-                    String senderDisplayName = authorizedUser.getLoginSign();
-                    var duration = String.format("%02d:%02d", tr.getDurationhours(), tr.getDurationminutes());
-                    String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
-                        tr.getSuborderId(),
-                        tr.getReferenceday(),
-                        java.net.URLEncoder.encode(duration, java.nio.charset.StandardCharsets.UTF_8),
-                        java.net.URLEncoder.encode(tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
-                            java.nio.charset.StandardCharsets.UTF_8),
-                        tr.isTraining()
-                    );
-
-                    String trainingStr = tr.isTraining() ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
-                    notificationService.emitNotification(
-                        recipientUserIds.stream().toList(),
-                        "main.timereport.share.notification.title",
-                        List.of(senderDisplayName),
-                        "main.timereport.share.notification.description",
-                        List.of(
-                            tr.getCompleteOrderSign(),
-                            tr.getReferenceday().toString(),
-                            duration,
-                            tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
-                            trainingStr
-                        ),
-                        actionUrl,
-                        messages.getMessage("main.timereport.share.notification.action")
-                    );
-                }
+                String senderDisplayName = authorizedUser.getLoginSign();
+                String duration = form.getDurationTime();
+                String comment = form.getComment() != null ? form.getComment() : "";
+                boolean training = form.isTraining();
+                String completeOrderSign = suborderService.getSuborderById(form.getSuborderId()).getCompleteOrderSign();
+                String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
+                    form.getSuborderId(),
+                    date,
+                    java.net.URLEncoder.encode(duration, java.nio.charset.StandardCharsets.UTF_8),
+                    java.net.URLEncoder.encode(comment, java.nio.charset.StandardCharsets.UTF_8),
+                    training
+                );
+                String trainingStr = training ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
+                notificationService.emitNotification(
+                    recipientUserIds.stream().toList(),
+                    "main.timereport.share.notification.title",
+                    List.of(senderDisplayName),
+                    "main.timereport.share.notification.description",
+                    List.of(completeOrderSign, date.toString(), duration, comment, trainingStr),
+                    actionUrl,
+                    messages.getMessage("main.timereport.share.notification.action")
+                );
             }
 
             redirectAttributes.addFlashAttribute("toastSuccess",
