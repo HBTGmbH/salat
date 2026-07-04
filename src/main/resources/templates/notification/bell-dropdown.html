@@ -16,8 +16,8 @@
          th:classappend="${n.read()} ? '' : 'bg-blue-lt'">
       <div class="flex-fill overflow-hidden">
         <div class="fw-medium text-truncate" th:text="${n.title()}">Titel</div>
-        <div th:if="${n.description() != null}" class="text-secondary small text-truncate"
-             th:text="${n.description()}"></div>
+        <div th:if="${n.description() != null}" class="text-secondary small"
+             th:text="${n.description()}" style="white-space: pre-line;"></div>
         <a th:if="${n.actionUrl() != null}"
            th:href="${n.actionUrl()}"
            class="text-primary small"
