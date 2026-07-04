@@ -37,4 +37,17 @@ public class GravatarViewHelper {
     int s = size > 0 ? size : DEFAULT_SIZE;
     return "https://www.gravatar.com/avatar/" + hash + "?s=" + s + "&d=" + DEFAULT_IMAGE;
   }
+
+  /**
+   * Build a Gravatar probe URL with {@code d=404} — returns HTTP 404 when no Gravatar is registered
+   * for the email, so callers can detect unregistered addresses without showing a fallback image.
+   *
+   * @param email the user's email address (may be null)
+   * @return the Gravatar URL with d=404 fallback
+   */
+  public String gravatarCheckUrl(String email) {
+    String normalized = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    String hash = DigestUtils.md5DigestAsHex(normalized.getBytes(StandardCharsets.UTF_8));
+    return "https://www.gravatar.com/avatar/" + hash + "?d=404";
+  }
 }

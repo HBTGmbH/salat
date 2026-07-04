@@ -211,7 +211,16 @@
         <div class="card border-0">
           <div class="card-body p-4 text-center">
             <p class="text-secondary">Angemeldet als</p>
-            <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}" th:src="${url}" alt="User avatar"/>
+            <a th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
+               href="https://gravatar.com"
+               target="_blank"
+               rel="noopener noreferrer"
+               id="gravatar-sidebar-link"
+               th:title="#{main.gravatar.link.manage}"
+               th:data-title-register="#{main.gravatar.link.register}"
+               th:data-check-url="${checkUrl}">
+              <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}" th:src="${url}" alt="User avatar"/>
+            </a>
             <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
             <div class="text-secondary d-inline-flex align-items-center justify-content-center gap-1">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
@@ -446,6 +455,18 @@
 <script th:src="@{/webjars/tom-select/dist/js/tom-select.complete.min.js}"></script>
 <script th:src="@{/js/salat.js}"></script>
 <th:block layout:fragment="scripts"></th:block>
+<script>
+  (function () {
+    var link = document.getElementById('gravatar-sidebar-link');
+    if (!link) return;
+    var probe = new Image();
+    probe.onerror = function () {
+      link.title = link.dataset.titleRegister;
+      link.href = 'https://gravatar.com/signup';
+    };
+    probe.src = link.dataset.checkUrl;
+  })();
+</script>
 
 <div class="modal modal-blur fade" id="loginSwitchModal" tabindex="-1" role="dialog"
      th:if="${@loginSwitchViewHelper.visible}">
