@@ -5,7 +5,6 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.tb.common.util.DateUtils.today;
 
-import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -252,7 +251,7 @@ public class TimereportController {
             return "redirect:/dailyreport/daily?mode=daily&date=" + tr.getReferenceday();
         }
 
-        String senderDisplayName = authorizedUser.getLoginSign();
+        String senderDisplayName = authorizedEmployee.getName();
         var duration = String.format("%02d:%02d", tr.getDurationhours(), tr.getDurationminutes());
         String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
             tr.getSuborderId(),
