@@ -807,7 +807,7 @@ public class TimereportService {
         .filter(eo -> eo.isValidAt(referenceDate))
         .filter(eo -> eo.getEmployeecontract().getId() != currentEmployeeContractId)
         .map(eo -> new SharedBookingRecipient(
-            eo.getEmployeecontract().getEmployee().getId(),
+            eo.getEmployeecontract().getEmployee().getSalatUser().getId(),
             eo.getEmployeecontract().getEmployee().getSign(),
             eo.getEmployeecontract().getEmployee().getName()
         ))
