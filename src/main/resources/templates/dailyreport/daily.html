@@ -264,14 +264,24 @@
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
                     <a th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id})}" class="btn btn-outline-primary"
-                       style="padding:1px 5px; font-size:0.7rem">
+                       style="padding:1px 5px; font-size:0.7rem"
+                       th:title="#{main.timereport.action.edit.tooltip}">
                       <i class="icon ti ti-pencil m-0"></i>
                     </a>
+                    <button type="button" class="btn btn-outline-success"
+                            style="padding:1px 5px; font-size:0.7rem"
+                            th:attr="data-tr-id=${tr.id}"
+                            onclick="openShareModal(this)"
+                            data-bs-toggle="modal" data-bs-target="#shareModal"
+                            th:title="#{main.timereport.action.share.tooltip}">
+                      <i class="icon ti ti-share m-0"></i>
+                    </button>
                     <button type="button" class="btn btn-outline-danger"
                             style="padding:1px 5px; font-size:0.7rem"
                             th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-date=${date}"
                             onclick="openDeleteModal(this)"
-                            data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            data-bs-toggle="modal" data-bs-target="#deleteModal"
+                            th:title="#{main.timereport.action.delete.tooltip}">
                       <i class="icon ti ti-trash m-0"></i>
                     </button>
                   </div>
@@ -666,6 +676,27 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- Delete confirmation modal                                   -->
 <!-- ═══════════════════════════════════════════════════════════ -->
+<div class="modal modal-blur fade" id="shareModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" th:text="#{main.timereport.share.modal.title}">Buchung mit Kollegen teilen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="shareRecipientsList" hx-trigger="shown.bs.modal" hx-swap="innerHTML"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+        <form id="shareForm" method="post" th:action="@{/dailyreport/timereports/{id}/share}" style="display:inline;">
+          <button type="submit" class="btn btn-primary" th:text="#{main.timereport.share.modal.confirm}">Teilen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -690,6 +721,19 @@
 </div>
 
 <script th:inline="javascript">
+  function openShareModal(btn) {
+    var trId = btn.dataset.trId;
+    var shareRecipientsList = document.getElementById('shareRecipientsList');
+    var shareForm = document.getElementById('shareForm');
+
+    shareForm.action = '/dailyreport/timereports/' + trId + '/share';
+
+    htmx.ajax('GET', '/dailyreport/timereports/' + trId + '/share-recipients', {
+      target: '#shareRecipientsList',
+      swap: 'innerHTML'
+    });
+  }
+
   function openDeleteModal(btn) {
     document.getElementById('deleteTimereportId').value = btn.dataset.trId;
     document.getElementById('deleteModalDesc').textContent = btn.dataset.trDesc || '';
