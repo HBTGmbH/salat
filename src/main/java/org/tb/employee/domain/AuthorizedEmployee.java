@@ -18,17 +18,9 @@ public class AuthorizedEmployee {
   @Getter
   private String sign;
 
-  @Getter
-  private String gravatarEmail;
-
   public void login(Employee employee) {
     this.name = employee.getName();
     this.employeeId = employee.getId();
     this.sign = employee.getSign();
-    this.gravatarEmail = null;
-  }
-
-  public void setGravatarEmail(String gravatarEmail) {
-    this.gravatarEmail = gravatarEmail;
   }
 }
