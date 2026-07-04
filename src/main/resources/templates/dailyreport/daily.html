@@ -270,7 +270,7 @@
                     </a>
                     <button type="button" class="btn btn-outline-success"
                             style="padding:1px 5px; font-size:0.7rem"
-                            th:attr="data-tr-id=${tr.id}"
+                            th:attr="data-tr-id=${tr.id},data-suborder-id=${tr.suborderId},data-date=${tr.referenceday}"
                             onclick="openShareModal(this)"
                             data-bs-toggle="modal" data-bs-target="#shareModal"
                             th:title="#{main.timereport.action.share.tooltip}">
@@ -723,12 +723,18 @@
 <script th:inline="javascript">
   function openShareModal(btn) {
     var trId = btn.dataset.trId;
-    var shareRecipientsList = document.getElementById('shareRecipientsList');
+    var suborderId = btn.dataset.suborderId;
+    var date = btn.dataset.date;
     var shareForm = document.getElementById('shareForm');
 
     shareForm.action = '/dailyreport/timereports/' + trId + '/share';
 
-    htmx.ajax('GET', '/dailyreport/timereports/' + trId + '/share-recipients', {
+    var params = new URLSearchParams();
+    if (suborderId) params.append('suborderId', suborderId);
+    if (date) params.append('date', date);
+    var url = '/dailyreport/share-recipients?' + params.toString();
+
+    htmx.ajax('GET', url, {
       target: '#shareRecipientsList',
       swap: 'innerHTML'
     });
