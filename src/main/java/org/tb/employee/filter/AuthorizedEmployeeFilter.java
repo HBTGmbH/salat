@@ -14,7 +14,6 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.employee.domain.AuthorizedEmployee;
-import org.tb.employee.preferences.EmployeePreferenceService;
 import org.tb.employee.service.EmployeeService;
 
 @Slf4j
@@ -35,7 +34,6 @@ public class AuthorizedEmployeeFilter extends OncePerRequestFilter {
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
     private final EmployeeService employeeService;
-    private final EmployeePreferenceService employeePreferenceService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -44,7 +42,6 @@ public class AuthorizedEmployeeFilter extends OncePerRequestFilter {
             var employee = employeeService.getEmployeeByLoginname(authorizedUser.getEffectiveLoginSign());
             if (employee != null) {
                 authorizedEmployee.login(employee);
-                authorizedEmployee.setGravatarEmail(employeePreferenceService.getGravatarEmailFor(employee));
             } else {
                 log.warn("No employee found for login sign '{}'", authorizedUser.getEffectiveLoginSign());
             }

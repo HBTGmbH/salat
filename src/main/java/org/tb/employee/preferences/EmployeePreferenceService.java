@@ -29,6 +29,11 @@ public class EmployeePreferenceService {
   }
 
   @Transactional(readOnly = true)
+  public String getGravatarEmailForCurrentUser() {
+    return getForCurrentUser().gravatarEmail();
+  }
+
+  @Transactional(readOnly = true)
   public String getNotificationEmailFor(Employee employee) {
     return getForEmployee(employee).notificationEmail();
   }
