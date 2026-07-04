@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
 import org.tb.settings.service.UserPreferenceService;
 
@@ -35,12 +36,19 @@ public class EmployeePreferenceService {
 
   @Transactional(readOnly = true)
   public String getNotificationEmailFor(Employee employee) {
-    return getForEmployee(employee).notificationEmail();
+    String preference = getForEmployee(employee).notificationEmail();
+    return (preference != null && !preference.isBlank()) ? preference : defaultEmailFor(employee);
   }
 
   @Transactional(readOnly = true)
   public String getGravatarEmailFor(Employee employee) {
-    return getForEmployee(employee).gravatarEmail();
+    String preference = getForEmployee(employee).gravatarEmail();
+    return (preference != null && !preference.isBlank()) ? preference : defaultEmailFor(employee);
+  }
+
+  private static String defaultEmailFor(Employee employee) {
+    if (employee == null) return null;
+    return employee.getSign() + "@" + GlobalConstants.MAIL_DOMAIN;
   }
 
   public void saveForCurrentUser(EmployeePreferences preferences) {
