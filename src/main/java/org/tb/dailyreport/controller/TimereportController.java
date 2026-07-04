@@ -1,8 +1,11 @@
 package org.tb.dailyreport.controller;
 
 import static java.math.BigDecimal.valueOf;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.tb.common.util.DateUtils.today;
 
+import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -29,6 +32,7 @@ import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
@@ -62,6 +66,7 @@ public class TimereportController {
     private final TimereportPreferenceService timereportPreferenceService;
     private final NotificationService notificationService;
     private final AuthorizedUser authorizedUser;
+    private final AuthorizedEmployee authorizedEmployee;
 
     @GetMapping("/new")
     public String createForm(@RequestParam(required = false) Long employeeContractId,
@@ -252,9 +257,9 @@ public class TimereportController {
         String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
             tr.getSuborderId(),
             tr.getReferenceday(),
-            java.net.URLEncoder.encode(duration, java.nio.charset.StandardCharsets.UTF_8),
-            java.net.URLEncoder.encode(tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
-                java.nio.charset.StandardCharsets.UTF_8),
+            encode(duration, UTF_8),
+            encode(tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
+                UTF_8),
             tr.isTraining()
         );
 
@@ -369,7 +374,7 @@ public class TimereportController {
             // Handle sharing (in edit and create modes)
             if (shareWithColleagues != null && shareWithColleagues &&
                     recipientUserIds != null && !recipientUserIds.isEmpty()) {
-                String senderDisplayName = authorizedUser.getLoginSign();
+                String senderDisplayName = authorizedEmployee.getName();
                 String duration = form.getDurationTime();
                 String comment = form.getComment() != null ? form.getComment() : "";
                 boolean training = form.isTraining();
@@ -377,8 +382,8 @@ public class TimereportController {
                 String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
                     form.getSuborderId(),
                     date,
-                    java.net.URLEncoder.encode(duration, java.nio.charset.StandardCharsets.UTF_8),
-                    java.net.URLEncoder.encode(comment, java.nio.charset.StandardCharsets.UTF_8),
+                    encode(duration, UTF_8),
+                    encode(comment, UTF_8),
                     training
                 );
                 String trainingStr = training ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
