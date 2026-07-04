@@ -462,6 +462,8 @@ public class TimereportController {
             }
         }
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
+        boolean canShare = !isEdit || ecId == effectiveContractId(employeeContractId);
+        model.addAttribute("canShare", canShare);
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",

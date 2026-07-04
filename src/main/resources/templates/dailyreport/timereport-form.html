@@ -124,8 +124,8 @@
               </label>
             </div>
 
-            <!-- Share toggle (create and edit) -->
-            <div class="mb-3">
+            <!-- Share toggle (create and edit, only for own timereports) -->
+            <div class="mb-3" th:if="${canShare}">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
                        onchange="loadShareRecipients()"/>

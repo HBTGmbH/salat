@@ -57,9 +57,18 @@
     </div>
     <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">
       <a th:href="@{/dailyreport/timereports/{id}/edit(id=${singleTr.id})}" class="btn btn-outline-primary"
-         style="padding:1px 5px; font-size:0.7rem">
+         style="padding:1px 5px; font-size:0.7rem"
+         th:title="#{main.timereport.action.edit.tooltip}">
         <i class="icon ti ti-pencil m-0"></i>
       </a>
+      <button type="button" class="btn btn-outline-success"
+              style="padding:1px 5px; font-size:0.7rem"
+              th:attr="data-tr-id=${singleTr.id},data-suborder-id=${singleTr.suborderId},data-date=${singleTrDate}"
+              onclick="openShareModal(this)"
+              data-bs-toggle="modal" data-bs-target="#shareModal"
+              th:title="#{main.timereport.action.share.tooltip}">
+        <i class="icon ti ti-share m-0"></i>
+      </button>
       <button type="button" class="btn btn-outline-danger"
               style="padding:1px 5px; font-size:0.7rem"
               th:attr="data-tr-id=${singleTr.id},data-tr-desc=${singleTr.completeOrderSign},data-mode='list',data-date=${singleTrDate},data-month=${singleTrYearMonth.monthValue},data-year=${singleTrYearMonth.year}"
