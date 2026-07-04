@@ -38,7 +38,7 @@
                        hx-target="#orders-suborders-wrapper"
                        hx-swap="outerHTML"
                        hx-trigger="change"
-                       hx-on="htmx:afterSettle: htmx.trigger('#shareRecipientsContainer', 'dateChange')"/>
+                       hx-on="htmx:afterSettle: refreshShareRecipientsOnFieldChange()"/>
               </div>
 
               <div class="col-auto">
@@ -95,7 +95,7 @@
                       hx-target="#form-sidebar"
                       hx-swap="outerHTML"
                       hx-trigger="change"
-                      hx-on="htmx:afterSettle: htmx.trigger('#shareRecipientsContainer', 'suborderChange')">
+                      hx-on="htmx:afterSettle: refreshShareRecipientsOnFieldChange()">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
@@ -126,28 +126,20 @@
 
             <!-- Share toggle (create and edit) -->
             <div class="mb-3">
-              <label class="form-check form-switch" th:if="${isEdit}">
+              <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
+                       th:if="${isEdit}"
                        hx-target="#shareRecipientsContainer"
                        hx-get="@{/dailyreport/timereports/{id}/share-recipients(id=${timereportForm.id})}"
                        hx-swap="innerHTML"
                        hx-trigger="change from:#shareToggle[checked]"/>
+                <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
+                       th:if="${!isEdit}"
+                       onchange="loadShareRecipients()"/>
                 <span class="form-check-label" th:text="#{main.timereport.form.share.label}">Mit Kollegen teilen</span>
               </label>
-              <label class="form-check form-switch" th:if="${!isEdit}">
-                <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"/>
-                <span class="form-check-label" th:text="#{main.timereport.form.share.label}">Mit Kollegen teilen</span>
-              </label>
-              <small class="form-text text-muted" th:if="${!isEdit}">
-                <span th:text="#{main.timereport.form.share.create.hint}">Nach dem Speichern können Sie Kollegen auswählen.</span>
-              </small>
-              <div id="shareRecipientsSection" class="mt-3 d-none" th:if="${isEdit}"
-                   hx-trigger="shareToggleChange"
-                   hx-on="htmx:load: (evt) => document.getElementById('shareToggle').checked && this.classList.remove('d-none') || this.classList.add('d-none')">
-                <div id="shareRecipientsContainer"
-                     hx-get="@{/dailyreport/timereports/{id}/share-recipients(id=${timereportForm.id})}"
-                     hx-trigger="suborderChange from:body, dateChange from:body"
-                     hx-swap="innerHTML">
+              <div id="shareRecipientsSection" class="mt-3 d-none">
+                <div id="shareRecipientsContainer">
                 </div>
               </div>
             </div>
@@ -332,21 +324,41 @@
         }
       }
     }
+    function loadShareRecipients() {
+      var shareToggle = document.getElementById('shareToggle');
+      var shareSection = document.getElementById('shareRecipientsSection');
+      if (!shareToggle || !shareSection) return;
+
+      if (shareToggle.checked) {
+        shareSection.classList.remove('d-none');
+        var suborderId = document.getElementById('suborderId')?.value;
+        var date = document.getElementById('referenceday')?.value;
+        var url = '/dailyreport/timereports/null/share-recipients';
+        var params = new URLSearchParams();
+        if (suborderId) params.append('suborderId', suborderId);
+        if (date) params.append('date', date);
+        if (params.toString()) url += '?' + params.toString();
+        htmx.ajax('GET', url, {target: '#shareRecipientsContainer', swap: 'innerHTML'});
+      } else {
+        shareSection.classList.add('d-none');
+      }
+    }
+
+    function refreshShareRecipientsOnFieldChange() {
+      var shareToggle = document.getElementById('shareToggle');
+      if (!shareToggle || !shareToggle.checked) return;
+      loadShareRecipients();
+    }
+
     document.addEventListener('htmx:afterSettle', function(event) {
       var shareToggle = document.getElementById('shareToggle');
       var shareSection = document.getElementById('shareRecipientsSection');
-      if (shareToggle && shareSection) {
-        shareToggle.addEventListener('change', function() {
-          if (this.checked) {
-            shareSection.classList.remove('d-none');
-            htmx.ajax('GET', '/dailyreport/timereports/' + (document.querySelector('input[name="id"]')?.value || '') + '/share-recipients', {
-              target: '#shareRecipientsContainer',
-              swap: 'innerHTML'
-            });
-          } else {
-            shareSection.classList.add('d-none');
-          }
-        });
+      if (shareToggle && shareSection && shareToggle.checked) {
+        var suborderId = document.getElementById('suborderId')?.value;
+        var date = document.getElementById('referenceday')?.value;
+        if (suborderId && date) {
+          refreshShareRecipientsOnFieldChange();
+        }
       }
     });
     function durationMask(e) {
