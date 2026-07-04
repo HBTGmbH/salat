@@ -37,7 +37,8 @@
                        hx-include="closest form"
                        hx-target="#orders-suborders-wrapper"
                        hx-swap="outerHTML"
-                       hx-trigger="change"/>
+                       hx-trigger="change"
+                       onchange="refreshShareRecipients()"/>
               </div>
 
               <div class="col-auto">
@@ -93,7 +94,8 @@
                       hx-include="closest form"
                       hx-target="#form-sidebar"
                       hx-swap="outerHTML"
-                      hx-trigger="change">
+                      hx-trigger="change"
+                      onchange="refreshShareRecipients()">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
@@ -120,6 +122,22 @@
                 <input class="form-check-input" type="checkbox" th:field="*{training}"/>
                 <span class="form-check-label" th:text="#{main.timereport.form.training.label}">Fortbildung</span>
               </label>
+            </div>
+
+            <!-- Share toggle (edit only) -->
+            <div class="mb-3" th:if="${isEdit}">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
+                       onchange="toggleShareRecipients(this.checked)"/>
+                <span class="form-check-label" th:text="#{main.timereport.form.share.label}">Mit Kollegen teilen</span>
+              </label>
+              <div id="shareRecipientsSection" class="mt-3 d-none">
+                <div id="shareRecipientsContainer"
+                     hx-get="@{/dailyreport/timereports/{id}/share-recipients(id=${timereportForm.id})}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                </div>
+              </div>
             </div>
 
             <!-- Serial booking (create only) -->
@@ -301,6 +319,29 @@
           badge.textContent = '';
         }
       }
+    }
+    function toggleShareRecipients(checked) {
+      var section = document.getElementById('shareRecipientsSection');
+      if (checked) {
+        section.classList.remove('d-none');
+        refreshShareRecipients();
+      } else {
+        section.classList.add('d-none');
+      }
+    }
+    function refreshShareRecipients() {
+      var shareToggle = document.getElementById('shareToggle');
+      if (!shareToggle || !shareToggle.checked) return;
+      var container = document.getElementById('shareRecipientsContainer');
+      if (!container) return;
+      var timereportId = document.querySelector('input[th\\:field="\\*\\{id\\}"]')?.value || document.querySelector('input[name="id"]')?.value;
+      if (!timereportId) return;
+      var suborderId = document.getElementById('suborderId')?.value;
+      var date = document.getElementById('referenceday')?.value;
+      var url = '/dailyreport/timereports/' + timereportId + '/share-recipients';
+      if (suborderId) url += '?suborderId=' + suborderId;
+      if (date) url += (suborderId ? '&' : '?') + 'date=' + date;
+      htmx.ajax('GET', url, {target: container, swap: 'innerHTML'});
     }
     function durationMask(e) {
       var input = e.target;

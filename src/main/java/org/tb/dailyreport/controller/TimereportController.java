@@ -37,6 +37,8 @@ import org.tb.favorites.service.FavoriteService;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.EmployeeorderService;
 import org.tb.order.service.SuborderService;
+import org.tb.notification.service.NotificationService;
+import org.tb.auth.domain.AuthorizedUser;
 
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 
@@ -58,10 +60,16 @@ public class TimereportController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final DailyPreferenceService dailyPreferenceService;
     private final TimereportPreferenceService timereportPreferenceService;
+    private final NotificationService notificationService;
+    private final AuthorizedUser authorizedUser;
 
     @GetMapping("/new")
     public String createForm(@RequestParam(required = false) Long employeeContractId,
                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                             @RequestParam(required = false) Long suborderId,
+                             @RequestParam(required = false) String duration,
+                             @RequestParam(required = false) String comment,
+                             @RequestParam(required = false) Boolean training,
             Model model) {
 
         LocalDate effectiveDate = date != null ? date : today();
@@ -69,7 +77,7 @@ public class TimereportController {
 
         var suborders = suborderOptions(ecId, effectiveDate);
         Long favoriteId = timereportPreferenceService.getForCurrentUser().favoriteSuborderId();
-        Long defaultSuborderId = suborders.stream()
+        Long defaultSuborderId = suborderId != null ? suborderId : suborders.stream()
                 .map(SuborderOption::id)
                 .filter(id -> id.equals(favoriteId))
                 .findFirst()
@@ -78,6 +86,15 @@ public class TimereportController {
         var form = new TimereportForm();
         form.setReferenceday(effectiveDate);
         form.setSuborderId(defaultSuborderId);
+        if (duration != null && !duration.isBlank()) {
+            form.setDurationTime(duration);
+        }
+        if (comment != null && !comment.isBlank()) {
+            form.setComment(comment);
+        }
+        if (training != null) {
+            form.setTraining(training);
+        }
 
         populateModel(employeeContractId, model, form, suborders, ecId, effectiveDate, false);
         return "dailyreport/timereport-form";
@@ -116,9 +133,11 @@ public class TimereportController {
     public String create(
             @RequestParam(required = false) Long employeeContractId,
             @ModelAttribute TimereportForm form,
+            @RequestParam(required = false) Boolean shareWithColleagues,
+            @RequestParam(required = false) List<Long> recipientUserIds,
             RedirectAttributes redirectAttributes,
             Model model) {
-        return saveTimereport(employeeContractId, form, false, redirectAttributes, model);
+        return saveTimereport(employeeContractId, form, false, shareWithColleagues, recipientUserIds, redirectAttributes, model);
     }
 
     @PostMapping("/{id}")
@@ -127,10 +146,12 @@ public class TimereportController {
             @PathVariable Long id,
             @RequestParam(required = false) Long employeeContractId,
             @ModelAttribute TimereportForm form,
+            @RequestParam(required = false) Boolean shareWithColleagues,
+            @RequestParam(required = false) List<Long> recipientUserIds,
             RedirectAttributes redirectAttributes,
             Model model) {
         form.setId(id);
-        return saveTimereport(employeeContractId, form, true, redirectAttributes, model);
+        return saveTimereport(employeeContractId, form, true, shareWithColleagues, recipientUserIds, redirectAttributes, model);
     }
 
     @PostMapping("/refresh-orders")
@@ -190,9 +211,81 @@ public class TimereportController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/share-recipients")
+    @PreAuthorize("isAuthenticated()")
+    public String getShareRecipients(@PathVariable Long id,
+                                     @RequestParam(required = false) Long suborderId,
+                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                     Model model) {
+        var tr = timereportService.getTimereportById(id);
+        if (tr == null) {
+            return "error";
+        }
+
+        long effectiveSuborderId = suborderId != null ? suborderId : tr.getSuborderId();
+        LocalDate effectiveDate = date != null ? date : tr.getReferenceday();
+        long currentEcId = tr.getEmployeecontractId();
+
+        var recipients = timereportService.getEligibleShareRecipients(effectiveSuborderId, effectiveDate, currentEcId);
+        model.addAttribute("recipients", recipients);
+        return "dailyreport/timereport-share-recipients :: recipientsPicker";
+    }
+
+    @PostMapping("/{id}/share")
+    @PreAuthorize("isAuthenticated()")
+    public String shareTimereport(@PathVariable Long id,
+                                  @RequestParam List<Long> recipientUserIds,
+                                  RedirectAttributes redirectAttributes) {
+        var tr = timereportService.getTimereportById(id);
+        if (tr == null) {
+            redirectAttributes.addFlashAttribute("toastError",
+                messages.getMessage("main.timereport.share.error.notfound"));
+            return "redirect:/dailyreport/daily";
+        }
+
+        if (recipientUserIds == null || recipientUserIds.isEmpty()) {
+            redirectAttributes.addFlashAttribute("toastWarning",
+                messages.getMessage("main.timereport.share.warning.norecipients"));
+            return "redirect:/dailyreport/daily?mode=daily&date=" + tr.getReferenceday();
+        }
+
+        String senderDisplayName = authorizedUser.getLoginSign();
+        var duration = String.format("%02d:%02d", tr.getDurationhours(), tr.getDurationminutes());
+        String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
+            tr.getSuborderId(),
+            tr.getReferenceday(),
+            java.net.URLEncoder.encode(duration, java.nio.charset.StandardCharsets.UTF_8),
+            java.net.URLEncoder.encode(tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
+                java.nio.charset.StandardCharsets.UTF_8),
+            tr.isTraining()
+        );
+
+        String trainingStr = tr.isTraining() ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
+        notificationService.emitNotification(
+            recipientUserIds.stream().toList(),
+            "main.timereport.share.notification.title",
+            List.of(senderDisplayName),
+            "main.timereport.share.notification.description",
+            List.of(
+                tr.getCompleteOrderSign(),
+                tr.getReferenceday().toString(),
+                duration,
+                tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
+                trainingStr
+            ),
+            actionUrl,
+            messages.getMessage("main.timereport.share.notification.action")
+        );
+
+        redirectAttributes.addFlashAttribute("toastSuccess",
+            messages.getMessage("main.timereport.share.success"));
+        return "redirect:/dailyreport/daily?mode=daily&date=" + tr.getReferenceday();
+    }
+
     // ---- private helpers ----
 
     private String saveTimereport(Long employeeContractId, TimereportForm form, boolean isEdit,
+            Boolean shareWithColleagues, List<Long> recipientUserIds,
             RedirectAttributes redirectAttributes, Model model) {
 
         long ecId = effectiveContractId(employeeContractId);
@@ -273,6 +366,41 @@ public class TimereportController {
                     .comment(form.getComment())
                     .build();
                 favoriteService.addFavorite(fav);
+            }
+
+            // Handle sharing (only in edit mode)
+            if (isEdit && shareWithColleagues != null && shareWithColleagues &&
+                    recipientUserIds != null && !recipientUserIds.isEmpty()) {
+                var tr = timereportService.getTimereportById(form.getId());
+                if (tr != null) {
+                    String senderDisplayName = authorizedUser.getLoginSign();
+                    var duration = String.format("%02d:%02d", tr.getDurationhours(), tr.getDurationminutes());
+                    String actionUrl = String.format("/dailyreport/timereports/new?suborderId=%d&date=%s&duration=%s&comment=%s&training=%s",
+                        tr.getSuborderId(),
+                        tr.getReferenceday(),
+                        java.net.URLEncoder.encode(duration, java.nio.charset.StandardCharsets.UTF_8),
+                        java.net.URLEncoder.encode(tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
+                            java.nio.charset.StandardCharsets.UTF_8),
+                        tr.isTraining()
+                    );
+
+                    String trainingStr = tr.isTraining() ? messages.getMessage("main.general.yes") : messages.getMessage("main.general.no");
+                    notificationService.emitNotification(
+                        recipientUserIds.stream().toList(),
+                        "main.timereport.share.notification.title",
+                        List.of(senderDisplayName),
+                        "main.timereport.share.notification.description",
+                        List.of(
+                            tr.getCompleteOrderSign(),
+                            tr.getReferenceday().toString(),
+                            duration,
+                            tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
+                            trainingStr
+                        ),
+                        actionUrl,
+                        messages.getMessage("main.timereport.share.notification.action")
+                    );
+                }
             }
 
             redirectAttributes.addFlashAttribute("toastSuccess",

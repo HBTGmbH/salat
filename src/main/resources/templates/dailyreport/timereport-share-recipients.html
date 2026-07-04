@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="recipientsPicker">
+  <div th:if="${#lists.isEmpty(recipients)}" class="alert alert-info mb-0" role="alert">
+    <i class="ti ti-info-circle me-2"></i>
+    <span th:text="#{main.timereport.share.recipients.none}">Keine berechtigten Empfänger für diesen Auftrag verfügbar.</span>
+  </div>
+
+  <div th:if="${not #lists.isEmpty(recipients)}">
+    <label class="form-label" th:text="#{main.timereport.share.recipients.label}">Kollegen auswählen</label>
+    <select class="form-select tomselect tomselect-multi" name="recipientUserIds" multiple required>
+      <option value="">-- Kollegen wählen --</option>
+      <option th:each="recipient : ${recipients}"
+              th:value="${recipient.employeeId()}"
+              th:text="${recipient.sign()} + ' - ' + ${recipient.name()}"></option>
+    </select>
+    <small class="form-text text-muted mt-1" th:text="#{main.timereport.share.recipients.hint}">
+      Wählen Sie einen oder mehrere Kollegen aus, mit denen Sie diese Buchung teilen möchten.
+    </small>
+  </div>
+</div>
+
+</html>

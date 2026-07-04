@@ -799,4 +799,23 @@ public class TimereportService {
     return timereportDAO.getRecentCommentsByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
   }
 
+  @Transactional(readOnly = true)
+  public List<SharedBookingRecipient> getEligibleShareRecipients(long suborderId, LocalDate referenceDate, long currentEmployeeContractId) {
+    var employeeorders = employeeorderDAO.getEmployeeOrdersBySuborderId(suborderId);
+
+    return employeeorders.stream()
+        .filter(eo -> eo.isValidAt(referenceDate))
+        .filter(eo -> eo.getEmployeecontract().getId() != currentEmployeeContractId)
+        .map(eo -> new SharedBookingRecipient(
+            eo.getEmployeecontract().getEmployee().getId(),
+            eo.getEmployeecontract().getEmployee().getSign(),
+            eo.getEmployeecontract().getEmployee().getName()
+        ))
+        .distinct()
+        .sorted((a, b) -> a.sign().compareTo(b.sign()))
+        .collect(Collectors.toList());
+  }
+
+  public static record SharedBookingRecipient(Long employeeId, String sign, String name) {}
+
 }
