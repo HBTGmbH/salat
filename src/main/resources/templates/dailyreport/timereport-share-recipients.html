@@ -14,7 +14,7 @@
         <option value="">-- Kollegen wählen --</option>
         <option th:each="recipient : ${recipients}"
                 th:value="${recipient.employeeId()}"
-                th:text="${recipient.sign()} + ' - ' + ${recipient.name()}"></option>
+                th:text="${recipient.name()} + ' | ' + ${recipient.sign()}"></option>
       </select>
       <small class="form-text text-muted mt-1" th:text="#{main.timereport.share.recipients.hint}">
         Wählen Sie einen oder mehrere Kollegen aus, mit denen Sie diese Buchung teilen möchten.
