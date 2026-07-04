@@ -17,8 +17,6 @@ public class AuthorizedEmployee {
   private Long employeeId;
   @Getter
   private String sign;
-  @Getter
-  private String emailAddress;
 
   @Getter
   private String gravatarEmail;
@@ -27,8 +25,7 @@ public class AuthorizedEmployee {
     this.name = employee.getName();
     this.employeeId = employee.getId();
     this.sign = employee.getSign();
-    this.emailAddress = employee.getEmailAddress();
-    this.gravatarEmail = employee.getEmailAddress();
+    this.gravatarEmail = null;
   }
 
   public void setGravatarEmail(String gravatarEmail) {

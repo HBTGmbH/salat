@@ -30,14 +30,12 @@ public class EmployeePreferenceService {
 
   @Transactional(readOnly = true)
   public String getNotificationEmailFor(Employee employee) {
-    String preference = getForEmployee(employee).notificationEmail();
-    return (preference != null && !preference.isBlank()) ? preference : employee.getEmailAddress();
+    return getForEmployee(employee).notificationEmail();
   }
 
   @Transactional(readOnly = true)
   public String getGravatarEmailFor(Employee employee) {
-    String preference = getForEmployee(employee).gravatarEmail();
-    return (preference != null && !preference.isBlank()) ? preference : employee.getEmailAddress();
+    return getForEmployee(employee).gravatarEmail();
   }
 
   public void saveForCurrentUser(EmployeePreferences preferences) {

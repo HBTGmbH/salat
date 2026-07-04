@@ -332,11 +332,18 @@ public class ReleaseService {
     message.append("bitte gib deine SALAT-Buchungen des abgelaufenen Monats frei.\n\n");
     message.append(sender.getName());
 
+    String senderEmail = employeePreferenceService.getNotificationEmailFor(sender);
+    String recipientEmail = employeePreferenceService.getNotificationEmailFor(recipient);
+    if (senderEmail == null || recipientEmail == null) {
+      log.warn("Skipping release reminder mail: sender={} (email={}), recipient={} (email={})",
+          sender.getSign(), senderEmail, recipient.getSign(), recipientEmail);
+      return;
+    }
     mailService.sendEmail(
         subject,
         message.toString(),
-        new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
-        new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
+        new MailContact(sender.getName(), senderEmail),
+        new MailContact(recipient.getName(), recipientEmail)
     );
   }
 
@@ -366,11 +373,18 @@ public class ReleaseService {
       message.append(" ab.\n\n");
       message.append(sender.getName());
 
+      String senderEmail = employeePreferenceService.getNotificationEmailFor(sender);
+      String recipientEmail = employeePreferenceService.getNotificationEmailFor(recipient);
+      if (senderEmail == null || recipientEmail == null) {
+        log.warn("Skipping acceptance reminder mail: sender={} (email={}), recipient={} (email={})",
+            sender.getSign(), senderEmail, recipient.getSign(), recipientEmail);
+        continue;
+      }
       mailService.sendEmail(
           subject,
           message.toString(),
-          new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
-          new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
+          new MailContact(sender.getName(), senderEmail),
+          new MailContact(recipient.getName(), recipientEmail)
       );
     }
   }
@@ -398,11 +412,18 @@ public class ReleaseService {
       message.append("SALAT-Buchungen freigegeben.\n");
       message.append("Bitte nimm diese ab.");
 
+      String senderEmail = employeePreferenceService.getNotificationEmailFor(sender);
+      String recipientEmail = employeePreferenceService.getNotificationEmailFor(recipient);
+      if (senderEmail == null || recipientEmail == null) {
+        log.warn("Skipping timereports-released mail: sender={} (email={}), recipient={} (email={})",
+            sender.getSign(), senderEmail, recipient.getSign(), recipientEmail);
+        continue;
+      }
       mailService.sendEmail(
           subject,
           message.toString(),
-          new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
-          new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
+          new MailContact(sender.getName(), senderEmail),
+          new MailContact(recipient.getName(), recipientEmail)
       );
     }
   }
