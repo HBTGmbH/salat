@@ -69,6 +69,7 @@ import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.preferences.EmployeePreferenceService;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
@@ -91,6 +92,7 @@ public class ReleaseService {
   private final EmployeecontractService employeecontractService;
   private final TimereportService timereportService;
   private final ReleaseAuthorization releaseAuthorization;
+  private final EmployeePreferenceService employeePreferenceService;
 
   public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
     // check authorization
@@ -333,8 +335,8 @@ public class ReleaseService {
     mailService.sendEmail(
         subject,
         message.toString(),
-        new MailContact(sender.getName(), sender.getEmailAddress()),
-        new MailContact(recipient.getName(), recipient.getEmailAddress())
+        new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
+        new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
     );
   }
 
@@ -367,8 +369,8 @@ public class ReleaseService {
       mailService.sendEmail(
           subject,
           message.toString(),
-          new MailContact(sender.getName(), sender.getEmailAddress()),
-          new MailContact(recipient.getName(), recipient.getEmailAddress())
+          new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
+          new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
       );
     }
   }
@@ -399,8 +401,8 @@ public class ReleaseService {
       mailService.sendEmail(
           subject,
           message.toString(),
-          new MailContact(sender.getName(), sender.getEmailAddress()),
-          new MailContact(recipient.getName(), recipient.getEmailAddress())
+          new MailContact(sender.getName(), employeePreferenceService.getNotificationEmailFor(sender)),
+          new MailContact(recipient.getName(), employeePreferenceService.getNotificationEmailFor(recipient))
       );
     }
   }

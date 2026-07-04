@@ -20,10 +20,18 @@ public class AuthorizedEmployee {
   @Getter
   private String emailAddress;
 
+  @Getter
+  private String gravatarEmail;
+
   public void login(Employee employee) {
     this.name = employee.getName();
     this.employeeId = employee.getId();
     this.sign = employee.getSign();
     this.emailAddress = employee.getEmailAddress();
+    this.gravatarEmail = employee.getEmailAddress();
+  }
+
+  public void setGravatarEmail(String gravatarEmail) {
+    this.gravatarEmail = gravatarEmail;
   }
 }
