@@ -128,13 +128,6 @@
             <div class="mb-3">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
-                       th:if="${isEdit}"
-                       hx-target="#shareRecipientsContainer"
-                       hx-get="@{/dailyreport/timereports/{id}/share-recipients(id=${timereportForm.id})}"
-                       hx-swap="innerHTML"
-                       hx-trigger="change from:#shareToggle[checked]"/>
-                <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
-                       th:if="${!isEdit}"
                        onchange="loadShareRecipients()"/>
                 <span class="form-check-label" th:text="#{main.timereport.form.share.label}">Mit Kollegen teilen</span>
               </label>
@@ -333,11 +326,17 @@
         shareSection.classList.remove('d-none');
         var suborderId = document.getElementById('suborderId')?.value;
         var date = document.getElementById('referenceday')?.value;
-        var url = '/dailyreport/timereports/null/share-recipients';
+
+        if (!suborderId || !date) {
+          document.getElementById('shareRecipientsContainer').innerHTML = '';
+          return;
+        }
+
         var params = new URLSearchParams();
-        if (suborderId) params.append('suborderId', suborderId);
-        if (date) params.append('date', date);
-        if (params.toString()) url += '?' + params.toString();
+        params.append('suborderId', suborderId);
+        params.append('date', date);
+        var url = '/dailyreport/share-recipients?' + params.toString();
+
         htmx.ajax('GET', url, {target: '#shareRecipientsContainer', swap: 'innerHTML'});
       } else {
         shareSection.classList.add('d-none');
@@ -352,8 +351,7 @@
 
     document.addEventListener('htmx:afterSettle', function(event) {
       var shareToggle = document.getElementById('shareToggle');
-      var shareSection = document.getElementById('shareRecipientsSection');
-      if (shareToggle && shareSection && shareToggle.checked) {
+      if (shareToggle && shareToggle.checked) {
         var suborderId = document.getElementById('suborderId')?.value;
         var date = document.getElementById('referenceday')?.value;
         if (suborderId && date) {
