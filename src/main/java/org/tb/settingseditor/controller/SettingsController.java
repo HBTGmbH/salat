@@ -68,7 +68,7 @@ public class SettingsController {
 
     var loginEmployee = employeeService.getLoginEmployee();
     model.addAttribute("settingsForm", form);
-    model.addAttribute("defaultEmail", EmployeePreferenceService.defaultEmailFor(loginEmployee));
+    model.addAttribute("defaultEmail", employeePreferenceService.defaultEmailFor(loginEmployee));
     model.addAttribute("suborders", loadSuborders());
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
