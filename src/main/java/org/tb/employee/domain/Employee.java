@@ -14,7 +14,6 @@ import lombok.AccessLevel;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.auth.domain.SalatUser;
-import org.tb.common.GlobalConstants;
 import org.tb.common.domain.AuditedEntity;
 
 import static org.tb.common.GlobalConstants.GENDER_MALE;
@@ -64,10 +63,6 @@ public class Employee extends AuditedEntity implements Serializable {
 
     public String getName() {
         return getFirstname() + " " + getLastname();
-    }
-
-    public String getEmailAddress() {
-        return getSign() + "@" + GlobalConstants.MAIL_DOMAIN;
     }
 
     @Transient

@@ -18,6 +18,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.web.UiState;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.preferences.EmployeePreferenceService;
 
 @Controller
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ public class ErrorPageController implements ErrorController {
     private final ErrorAttributes errorAttributes;
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
+    private final EmployeePreferenceService employeePreferenceService;
     private final UiState uiState;
 
     @RequestMapping("/error")
@@ -66,7 +68,10 @@ public class ErrorPageController implements ErrorController {
         String employeeName = authorizedEmployee.getName();
         String employeeSign = authorizedEmployee.getSign();
         Long employeeId = authorizedEmployee.getEmployeeId();
-        String employeeEmail = authorizedEmployee.getEmailAddress();
+        String employeeEmail = null;
+        try {
+            employeeEmail = employeePreferenceService.getForCurrentUser().notificationEmail();
+        } catch (Exception ignored) {}
 
         var errorInfo = new ErrorInfo(
             status, error, message, exception, trace, timestamp,
