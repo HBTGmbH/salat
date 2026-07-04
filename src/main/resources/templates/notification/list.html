@@ -35,7 +35,7 @@
           <tr th:each="n : ${notifications}" th:classappend="${n.read()} ? '' : 'fw-semibold'">
             <td>
               <div th:text="${n.title()}">Titel</div>
-              <div class="text-secondary small" th:if="${n.description() != null}" th:text="${n.description()}"></div>
+              <div class="text-secondary small" th:if="${n.description() != null}" th:text="${n.description()}" style="white-space: pre-line;"></div>
               <a th:if="${n.actionUrl() != null}"
                  th:href="${n.actionUrl()}"
                  class="text-primary small"
