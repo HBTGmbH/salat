@@ -732,7 +732,7 @@
     var params = new URLSearchParams();
     if (suborderId) params.append('suborderId', suborderId);
     if (date) params.append('date', date);
-    var url = '/dailyreport/share-recipients?' + params.toString();
+    var url = '/dailyreport/timereports/share-recipients?' + params.toString();
 
     htmx.ajax('GET', url, {
       target: '#shareRecipientsList',

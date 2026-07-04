@@ -335,7 +335,7 @@
         var params = new URLSearchParams();
         params.append('suborderId', suborderId);
         params.append('date', date);
-        var url = '/dailyreport/share-recipients?' + params.toString();
+        var url = '/dailyreport/timereports/share-recipients?' + params.toString();
 
         htmx.ajax('GET', url, {target: '#shareRecipientsContainer', swap: 'innerHTML'});
       } else {
