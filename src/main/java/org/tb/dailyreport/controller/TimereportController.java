@@ -273,8 +273,8 @@ public class TimereportController {
                 tr.getCompleteOrderSign(),
                 tr.getReferenceday().toString(),
                 duration,
-                tr.getTaskdescription() != null ? tr.getTaskdescription() : "",
-                trainingStr
+                trainingStr,
+                tr.getTaskdescription() != null ? tr.getTaskdescription() : ""
             ),
             actionUrl,
             messages.getMessage("main.timereport.share.notification.action")
@@ -392,7 +392,7 @@ public class TimereportController {
                     "main.timereport.share.notification.title",
                     List.of(senderDisplayName),
                     "main.timereport.share.notification.description",
-                    List.of(completeOrderSign, date.toString(), duration, comment, trainingStr),
+                    List.of(completeOrderSign, date.toString(), duration, trainingStr, comment),
                     actionUrl,
                     messages.getMessage("main.timereport.share.notification.action")
                 );
