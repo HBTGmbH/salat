@@ -211,7 +211,7 @@
         <div class="card border-0">
           <div class="card-body p-4 text-center">
             <p class="text-secondary">Angemeldet als</p>
-            <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@authorizedEmployee.emailAddress)}" th:src="${url}" alt="User avatar"/>
+            <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@authorizedEmployee.gravatarEmail)}" th:src="${url}" alt="User avatar"/>
             <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
             <div class="text-secondary d-inline-flex align-items-center justify-content-center gap-1">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
@@ -466,7 +466,7 @@
             <button type="submit"
                     class="list-group-item list-group-item-action border-0 d-flex align-items-center gap-3 p-3">
               <img class="avatar avatar-sm rounded"
-                   th:with="url=${@gravatarViewHelper.gravatarUrl(emp.emailAddress)}"
+                   th:with="url=${@gravatarViewHelper.gravatarUrl(emp.gravatarEmail)}"
                    th:src="${url}"
                    th:alt="${emp.name}"/>
               <div class="flex-fill text-start">

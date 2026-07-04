@@ -35,6 +35,16 @@
                 th:attr="data-subtext=${s.subtext}"></option>
       </salat:select>
 
+      <salat:textInput th:field="*{notificationEmail}"
+                       th:label="#{main.settings.notification.email.label}"
+                       th:helpText="#{main.settings.notification.email.help}"
+                       maxlength="255" />
+
+      <salat:textInput th:field="*{gravatarEmail}"
+                       th:label="#{main.settings.gravatar.email.label}"
+                       th:helpText="#{main.settings.gravatar.email.help}"
+                       maxlength="255" />
+
     </salat:inputs>
     <salat:buttons>
       <salat:formButtons th:saveLabel="#{main.button.save}" th:cancelHref="@{/}" />

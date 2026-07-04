@@ -25,6 +25,8 @@ import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.dailyreport.preferences.DailyPreferences;
 import org.tb.dailyreport.preferences.TimereportPreferenceService;
 import org.tb.dailyreport.preferences.TimereportPreferences;
+import org.tb.employee.preferences.EmployeePreferenceService;
+import org.tb.employee.preferences.EmployeePreferences;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.CustomerorderService;
@@ -40,6 +42,7 @@ public class SettingsController {
 
   private final DailyPreferenceService dailyPreferenceService;
   private final TimereportPreferenceService timereportPreferenceService;
+  private final EmployeePreferenceService employeePreferenceService;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
   private final CustomerorderService customerorderService;
@@ -53,12 +56,15 @@ public class SettingsController {
   public String show(Model model) {
     DailyPreferences daily = dailyPreferenceService.getForCurrentUser();
     TimereportPreferences timereport = timereportPreferenceService.getForCurrentUser();
+    EmployeePreferences employee = employeePreferenceService.getForCurrentUser();
 
     SettingsForm form = new SettingsForm();
     form.setWorkDayStart(daily.workDayStart());
     form.setFavoriteSuborderId(timereport.favoriteSuborderId() != null
         ? timereport.favoriteSuborderId().toString() : "");
     form.setLocale(uiPreferenceService.getLocaleForCurrentUser());
+    form.setNotificationEmail(employee.notificationEmail() != null ? employee.notificationEmail() : "");
+    form.setGravatarEmail(employee.gravatarEmail() != null ? employee.gravatarEmail() : "");
 
     model.addAttribute("settingsForm", form);
     model.addAttribute("suborders", loadSuborders());
@@ -84,6 +90,8 @@ public class SettingsController {
       }
     }
     timereportPreferenceService.saveForCurrentUser(new TimereportPreferences(favSuborderId));
+    employeePreferenceService.saveForCurrentUser(
+        new EmployeePreferences(form.getNotificationEmail(), form.getGravatarEmail()));
 
     String localeValue = form.getLocale() != null ? form.getLocale() : "";
     switch (localeValue) {
@@ -127,6 +135,10 @@ public class SettingsController {
     private String favoriteSuborderId = "";
 
     private String locale = "-browser-";
+
+    private String notificationEmail = "";
+
+    private String gravatarEmail = "";
 
   }
 
