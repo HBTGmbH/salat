@@ -211,20 +211,37 @@ public class TimereportController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/share-recipients")
+    @GetMapping({"/{id}/share-recipients", "/share-recipients"})
     @PreAuthorize("isAuthenticated()")
-    public String getShareRecipients(@PathVariable Long id,
+    public String getShareRecipients(@PathVariable(required = false) Long id,
+                                     @RequestParam(required = false) Long employeeContractId,
                                      @RequestParam(required = false) Long suborderId,
                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                      Model model) {
-        var tr = timereportService.getTimereportById(id);
-        if (tr == null) {
-            return "error";
+        long currentEcId;
+        Long effectiveSuborderId;
+        LocalDate effectiveDate;
+
+        if (id != null) {
+            // Edit mode: get from existing timereport
+            var tr = timereportService.getTimereportById(id);
+            if (tr == null) {
+                return "error";
+            }
+            currentEcId = tr.getEmployeecontractId();
+            effectiveSuborderId = suborderId != null ? suborderId : tr.getSuborderId();
+            effectiveDate = date != null ? date : tr.getReferenceday();
+        } else {
+            // Create mode: get from current user or provided employee contract
+            currentEcId = effectiveContractId(employeeContractId);
+            effectiveSuborderId = suborderId;
+            effectiveDate = date;
         }
 
-        long effectiveSuborderId = suborderId != null ? suborderId : tr.getSuborderId();
-        LocalDate effectiveDate = date != null ? date : tr.getReferenceday();
-        long currentEcId = tr.getEmployeecontractId();
+        if (effectiveSuborderId == null || effectiveDate == null || currentEcId <= 0) {
+            model.addAttribute("recipients", List.of());
+            return "dailyreport/timereport-share-recipients :: recipientsPicker";
+        }
 
         var recipients = timereportService.getEligibleShareRecipients(effectiveSuborderId, effectiveDate, currentEcId);
         model.addAttribute("recipients", recipients);
