@@ -56,7 +56,7 @@
       </div>
     </div>
     <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">
-      <a th:href="@{/dailyreport/timereports/{id}/edit(id=${singleTr.id})}" class="btn btn-outline-primary"
+      <a th:href="@{/dailyreport/timereports/{id}/edit(id=${singleTr.id},returnUrl='/dailyreport/daily?mode=list&month='+${singleTrYearMonth.monthValue}+'&year='+${singleTrYearMonth.year})}" class="btn btn-outline-primary"
          style="padding:1px 5px; font-size:0.7rem"
          th:title="#{main.timereport.action.edit.tooltip}">
         <i class="icon ti ti-pencil m-0"></i>

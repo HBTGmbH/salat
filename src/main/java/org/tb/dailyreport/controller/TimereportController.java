@@ -74,6 +74,7 @@ public class TimereportController {
                              @RequestParam(required = false) String duration,
                              @RequestParam(required = false) String comment,
                              @RequestParam(required = false) Boolean training,
+                             @RequestParam(required = false) String returnUrl,
             Model model) {
 
         LocalDate effectiveDate = date != null ? date : today();
@@ -100,12 +101,13 @@ public class TimereportController {
             form.setTraining(training);
         }
 
-        populateModel(employeeContractId, model, form, suborders, ecId, effectiveDate, false);
+        populateModel(employeeContractId, model, form, suborders, ecId, effectiveDate, false, returnUrl);
         return "dailyreport/timereport-form";
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, @RequestParam(required = false) Long employeeContractId, Model model) {
+    public String editForm(@PathVariable Long id, @RequestParam(required = false) Long employeeContractId,
+                           @RequestParam(required = false) String returnUrl, Model model) {
         var tr = timereportService.getTimereportById(id);
         if (tr == null) {
             return "redirect:/dailyreport/daily";
@@ -128,7 +130,7 @@ public class TimereportController {
 
         var suborders = suborderOptions(ecId, date);
 
-        populateModel(employeeContractId, model, form, suborders, ecId, date, true);
+        populateModel(employeeContractId, model, form, suborders, ecId, date, true, returnUrl);
         return "dailyreport/timereport-form";
     }
 
@@ -139,9 +141,10 @@ public class TimereportController {
             @ModelAttribute TimereportForm form,
             @RequestParam(required = false) Boolean shareWithColleagues,
             @RequestParam(required = false) List<Long> recipientUserIds,
+            @RequestParam(required = false) String returnUrl,
             RedirectAttributes redirectAttributes,
             Model model) {
-        return saveTimereport(employeeContractId, form, false, shareWithColleagues, recipientUserIds, redirectAttributes, model);
+        return saveTimereport(employeeContractId, form, false, shareWithColleagues, recipientUserIds, returnUrl, redirectAttributes, model);
     }
 
     @PostMapping("/{id}")
@@ -152,10 +155,11 @@ public class TimereportController {
             @ModelAttribute TimereportForm form,
             @RequestParam(required = false) Boolean shareWithColleagues,
             @RequestParam(required = false) List<Long> recipientUserIds,
+            @RequestParam(required = false) String returnUrl,
             RedirectAttributes redirectAttributes,
             Model model) {
         form.setId(id);
-        return saveTimereport(employeeContractId, form, true, shareWithColleagues, recipientUserIds, redirectAttributes, model);
+        return saveTimereport(employeeContractId, form, true, shareWithColleagues, recipientUserIds, returnUrl, redirectAttributes, model);
     }
 
     @PostMapping("/refresh-orders")
@@ -237,6 +241,7 @@ public class TimereportController {
     @PreAuthorize("isAuthenticated()")
     public String shareTimereport(@PathVariable Long id,
                                   @RequestParam List<Long> recipientUserIds,
+                                  @RequestParam(required = false) String returnUrl,
                                   RedirectAttributes redirectAttributes) {
         var tr = timereportService.getTimereportById(id);
         if (tr == null) {
@@ -245,10 +250,12 @@ public class TimereportController {
             return "redirect:/dailyreport/daily";
         }
 
+        String redirectTarget = safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + tr.getReferenceday());
+
         if (recipientUserIds == null || recipientUserIds.isEmpty()) {
             redirectAttributes.addFlashAttribute("toastWarning",
                 messages.getMessage("main.timereport.share.warning.norecipients"));
-            return "redirect:/dailyreport/daily?mode=daily&date=" + tr.getReferenceday();
+            return "redirect:" + redirectTarget;
         }
 
         String senderDisplayName = authorizedEmployee.getName();
@@ -281,13 +288,13 @@ public class TimereportController {
 
         redirectAttributes.addFlashAttribute("toastSuccess",
             messages.getMessage("main.timereport.share.success"));
-        return "redirect:/dailyreport/daily?mode=daily&date=" + tr.getReferenceday();
+        return "redirect:" + redirectTarget;
     }
 
     // ---- private helpers ----
 
     private String saveTimereport(Long employeeContractId, TimereportForm form, boolean isEdit,
-            Boolean shareWithColleagues, List<Long> recipientUserIds,
+            Boolean shareWithColleagues, List<Long> recipientUserIds, String returnUrl,
             RedirectAttributes redirectAttributes, Model model) {
 
         long ecId = effectiveContractId(employeeContractId);
@@ -301,11 +308,11 @@ public class TimereportController {
             int[] end = parseTime(form.getEndTime());
             long totalMinutes = (end[0] * 60L + end[1]) - (begin[0] * 60L + begin[1]);
             if (totalMinutes <= 0) {
-                return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit,
+                return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit, returnUrl,
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.positive"));
             }
             if (totalMinutes > 1440) {
-                return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit,
+                return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit, returnUrl,
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
 
             }
@@ -315,7 +322,7 @@ public class TimereportController {
             int[] parts = parseTime(form.getDurationTime());
             long totalMinutes = parts[0] * 60L + parts[1];
             if (totalMinutes <= 0 || totalMinutes > 1440) {
-                return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit,
+                return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit, returnUrl,
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
             }
             durationHours = parts[0];
@@ -323,7 +330,7 @@ public class TimereportController {
         }
 
         if (form.getSuborderId() == null) {
-            return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit,
+            return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit, returnUrl,
                     errorCodeViewHelper.toViewMessage("main.timereport.form.validation.suborder.required"));
         }
 
@@ -401,26 +408,26 @@ public class TimereportController {
                 messages.getMessage(isEdit
                     ? "main.timereport.update.success.text"
                     : "main.timereport.create.success.text"));
-            return "redirect:/dailyreport/daily?mode=daily&date=" + date;
+            return "redirect:" + safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
 
         } catch (ErrorCodeException ex) {
             var suborders = suborderOptions(ecId, date);
-            populateModel(employeeContractId, model, form, suborders, ecId, date, isEdit);
+            populateModel(employeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
             model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
             return "dailyreport/timereport-form";
         }
     }
 
     private String reRenderFormWithError(Long employeeContractId, Model model, TimereportForm form, long ecId, LocalDate date,
-            boolean isEdit, ErrorCodeViewHelper.ViewMessage errorMessage) {
+            boolean isEdit, String returnUrl, ErrorCodeViewHelper.ViewMessage errorMessage) {
         var suborders = suborderOptions(ecId, date);
-        populateModel(employeeContractId, model, form, suborders, ecId, date, isEdit);
+        populateModel(employeeContractId, model, form, suborders, ecId, date, isEdit, returnUrl);
         model.addAttribute("errors", List.of(errorMessage));
         return "dailyreport/timereport-form";
     }
 
     private void populateModel(Long employeeContractId, Model model, TimereportForm form,
-            List<SuborderOption> suborders, long ecId, LocalDate date, boolean isEdit) {
+            List<SuborderOption> suborders, long ecId, LocalDate date, boolean isEdit, String returnUrl) {
         boolean commentNecessary = suborders.stream()
             .filter(s -> s.id().equals(form.getSuborderId()))
             .findFirst().map(SuborderOption::commentNecessary).orElse(false);
@@ -454,6 +461,7 @@ public class TimereportController {
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         boolean canShare = !isEdit || ecId == effectiveContractId(employeeContractId);
         model.addAttribute("canShare", canShare);
+        model.addAttribute("returnUrl", returnUrl);
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
@@ -510,5 +518,12 @@ public class TimereportController {
             return new int[]{Integer.parseInt(p[0]), Integer.parseInt(p[1])};
         }
         return new int[]{0, 0};
+    }
+
+    private static String safeReturnUrl(String returnUrl, String fallback) {
+        if (returnUrl != null && returnUrl.startsWith("/dailyreport/daily")) {
+            return returnUrl;
+        }
+        return fallback;
     }
 }

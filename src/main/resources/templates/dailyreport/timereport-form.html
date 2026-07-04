@@ -19,6 +19,7 @@
           <input type="hidden" th:if="${timereportForm.id != null}" th:field="*{id}"/>
           <input type="hidden" th:field="*{durationMode}" id="durationModeField"/>
           <input type="hidden" id="saveAsFavField" name="saveAsFavorite" value="false"/>
+          <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
 
           <div class="card-body">
 
@@ -170,7 +171,7 @@
               <i class="ti ti-star me-1"></i>
               <span th:text="#{main.timereport.form.savefav.button}">Als Favorit speichern</span>
             </button>
-            <a th:href="@{/dailyreport/daily(mode='daily',date=${timereportForm.referenceday})}"
+            <a th:href="${returnUrl != null} ? ${returnUrl} : @{/dailyreport/daily(mode='daily',date=${timereportForm.referenceday})}"
                class="btn btn-secondary ms-auto"
                th:text="#{main.timereport.form.cancel}">Abbrechen</a>
           </div>
