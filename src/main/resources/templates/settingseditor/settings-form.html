@@ -38,11 +38,13 @@
       <salat:textInput th:field="*{notificationEmail}"
                        th:label="#{main.settings.notification.email.label}"
                        th:helpText="#{main.settings.notification.email.help}"
+                       th:placeholder="${defaultEmail}"
                        maxlength="255" />
 
       <salat:textInput th:field="*{gravatarEmail}"
                        th:label="#{main.settings.gravatar.email.label}"
                        th:helpText="#{main.settings.gravatar.email.help}"
+                       th:placeholder="${defaultEmail}"
                        maxlength="255" />
 
     </salat:inputs>

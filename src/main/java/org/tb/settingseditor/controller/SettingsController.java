@@ -66,7 +66,9 @@ public class SettingsController {
     form.setNotificationEmail(employee.notificationEmail() != null ? employee.notificationEmail() : "");
     form.setGravatarEmail(employee.gravatarEmail() != null ? employee.gravatarEmail() : "");
 
+    var loginEmployee = employeeService.getLoginEmployee();
     model.addAttribute("settingsForm", form);
+    model.addAttribute("defaultEmail", EmployeePreferenceService.defaultEmailFor(loginEmployee));
     model.addAttribute("suborders", loadSuborders());
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
