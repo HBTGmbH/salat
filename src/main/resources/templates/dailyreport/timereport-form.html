@@ -343,20 +343,29 @@
       }
     }
 
-    function refreshShareRecipientsOnFieldChange() {
+    function refreshShareRecipientsIfEnabled() {
       var shareToggle = document.getElementById('shareToggle');
       if (!shareToggle || !shareToggle.checked) return;
-      loadShareRecipients();
+
+      var suborderId = document.getElementById('suborderId')?.value;
+      var date = document.getElementById('referenceday')?.value;
+
+      if (suborderId && date) {
+        loadShareRecipients();
+      }
     }
 
-    document.addEventListener('htmx:afterSettle', function(event) {
-      var shareToggle = document.getElementById('shareToggle');
-      if (shareToggle && shareToggle.checked) {
-        var suborderId = document.getElementById('suborderId')?.value;
-        var date = document.getElementById('referenceday')?.value;
-        if (suborderId && date) {
-          refreshShareRecipientsOnFieldChange();
-        }
+    // Add change listeners to refresh recipients when suborder or date changes
+    document.addEventListener('DOMContentLoaded', function() {
+      var suborderSelect = document.getElementById('suborderId');
+      var dateInput = document.getElementById('referenceday');
+
+      if (suborderSelect) {
+        suborderSelect.addEventListener('change', refreshShareRecipientsIfEnabled);
+      }
+
+      if (dateInput) {
+        dateInput.addEventListener('change', refreshShareRecipientsIfEnabled);
       }
     });
     function durationMask(e) {
