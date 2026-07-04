@@ -22,6 +22,7 @@ public class TextInputProcessor extends AbstractSalatProcessor {
         var required = Boolean.parseBoolean(tag.getAttributeValue("required"));
         var maxlength = tag.getAttributeValue("maxlength");
         var helpText = tag.getAttributeValue("th:helpText");
+        var placeholder = tag.getAttributeValue("th:placeholder");
         var inputType = tag.getAttributeValue("type");
 
         var mf = context.getModelFactory();
@@ -43,6 +44,9 @@ public class TextInputProcessor extends AbstractSalatProcessor {
         inputAttrs.put("th:errorclass", "is-invalid");
         if (maxlength != null && !maxlength.isBlank()) {
             inputAttrs.put("maxlength", maxlength);
+        }
+        if (placeholder != null && !placeholder.isBlank()) {
+            inputAttrs.put("th:placeholder", placeholder);
         }
         if (required) {
             inputAttrs.put("required", "required");

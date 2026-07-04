@@ -46,7 +46,7 @@ public class EmployeePreferenceService {
     return (preference != null && !preference.isBlank()) ? preference : defaultEmailFor(employee);
   }
 
-  private static String defaultEmailFor(Employee employee) {
+  public static String defaultEmailFor(Employee employee) {
     if (employee == null) return null;
     return employee.getSign() + "@" + GlobalConstants.MAIL_DOMAIN;
   }
