@@ -368,10 +368,16 @@ public class TimereportController {
                 favoriteService.addFavorite(fav);
             }
 
-            // Handle sharing (only in edit mode)
-            if (isEdit && shareWithColleagues != null && shareWithColleagues &&
+            // Handle sharing (in edit and create modes)
+            if (shareWithColleagues != null && shareWithColleagues &&
                     recipientUserIds != null && !recipientUserIds.isEmpty()) {
-                var tr = timereportService.getTimereportById(form.getId());
+                var tr = isEdit ?
+                    timereportService.getTimereportById(form.getId()) :
+                    timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date).stream()
+                        .filter(t -> t.getSuborderId() == form.getSuborderId())
+                        .findFirst()
+                        .orElse(null);
+
                 if (tr != null) {
                     String senderDisplayName = authorizedUser.getLoginSign();
                     var duration = String.format("%02d:%02d", tr.getDurationhours(), tr.getDurationminutes());
