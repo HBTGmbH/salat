@@ -679,20 +679,20 @@
 <div class="modal modal-blur fade" id="shareModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-md modal-dialog-centered" role="document">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" th:text="#{main.timereport.share.modal.title}">Buchung mit Kollegen teilen</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div id="shareRecipientsList" hx-trigger="shown.bs.modal" hx-swap="innerHTML"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
-                th:text="#{main.general.button.cancel.text}">Abbrechen</button>
-        <form id="shareForm" method="post" th:action="@{/dailyreport/timereports/{id}/share}" style="display:inline;">
+      <form id="shareForm" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{main.timereport.share.modal.title}">Buchung mit Kollegen teilen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="shareRecipientsList"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                  th:text="#{main.general.button.cancel.text}">Abbrechen</button>
           <button type="submit" class="btn btn-primary" th:text="#{main.timereport.share.modal.confirm}">Teilen</button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -725,16 +725,14 @@
     var trId = btn.dataset.trId;
     var suborderId = btn.dataset.suborderId;
     var date = btn.dataset.date;
-    var shareForm = document.getElementById('shareForm');
 
-    shareForm.action = '/dailyreport/timereports/' + trId + '/share';
+    document.getElementById('shareForm').action = '/dailyreport/timereports/' + trId + '/share';
 
     var params = new URLSearchParams();
     if (suborderId) params.append('suborderId', suborderId);
     if (date) params.append('date', date);
-    var url = '/dailyreport/timereports/share-recipients?' + params.toString();
 
-    htmx.ajax('GET', url, {
+    htmx.ajax('GET', '/dailyreport/timereports/share-recipients?' + params.toString(), {
       target: '#shareRecipientsList',
       swap: 'innerHTML'
     });
