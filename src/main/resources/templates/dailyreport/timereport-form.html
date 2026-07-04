@@ -124,9 +124,9 @@
               </label>
             </div>
 
-            <!-- Share toggle (edit only) -->
-            <div class="mb-3" th:if="${isEdit}">
-              <label class="form-check form-switch">
+            <!-- Share toggle (create and edit) -->
+            <div class="mb-3">
+              <label class="form-check form-switch" th:if="${isEdit}">
                 <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"
                        hx-target="#shareRecipientsContainer"
                        hx-get="@{/dailyreport/timereports/{id}/share-recipients(id=${timereportForm.id})}"
@@ -134,7 +134,14 @@
                        hx-trigger="change from:#shareToggle[checked]"/>
                 <span class="form-check-label" th:text="#{main.timereport.form.share.label}">Mit Kollegen teilen</span>
               </label>
-              <div id="shareRecipientsSection" class="mt-3 d-none"
+              <label class="form-check form-switch" th:if="${!isEdit}">
+                <input class="form-check-input" type="checkbox" id="shareToggle" name="shareWithColleagues"/>
+                <span class="form-check-label" th:text="#{main.timereport.form.share.label}">Mit Kollegen teilen</span>
+              </label>
+              <small class="form-text text-muted" th:if="${!isEdit}">
+                <span th:text="#{main.timereport.form.share.create.hint}">Nach dem Speichern können Sie Kollegen auswählen.</span>
+              </small>
+              <div id="shareRecipientsSection" class="mt-3 d-none" th:if="${isEdit}"
                    hx-trigger="shareToggleChange"
                    hx-on="htmx:load: (evt) => document.getElementById('shareToggle').checked && this.classList.remove('d-none') || this.classList.add('d-none')">
                 <div id="shareRecipientsContainer"
