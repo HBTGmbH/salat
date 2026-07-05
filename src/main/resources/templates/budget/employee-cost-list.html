@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='employee-cost',
+        pageTitle=#{main.employeecost.list.title},sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <!-- Cost categories -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0" th:text="#{main.employeecost.categories.title}">Kostenkategorien</h3>
+    <a class="btn btn-success" th:href="@{/budget/employee-cost/create}">
+      <i class="icon ti ti-plus"></i>
+      <span th:text="#{main.employeecost.button.create}">Neue Kostenkategorie</span>
+    </a>
+  </div>
+
+  <div class="table-responsive card mb-4">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.employeecost.field.name}">Name</th>
+          <th th:text="#{main.employeecost.field.costEuro}">€/h</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.employeecost.field.validFrom}">Gültig ab</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.employeecost.field.validUntil}">Gültig bis</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(costs)}">
+          <td colspan="6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+        </tr>
+        <tr th:each="c : ${costs}">
+          <td th:text="${c.name}"></td>
+          <td th:text="#{main.budget.format.amount(${c.costCentsPerHour / 100.0})}"></td>
+          <td class="d-none d-md-table-cell" th:text="${c.validFrom}"></td>
+          <td class="d-none d-md-table-cell" th:text="${c.validUntil.year != 2999} ? ${c.validUntil} : '-'"></td>
+          <td>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/employee-cost/{id}/edit(id=${c.id})}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td>
+            <form th:action="@{/budget/employee-cost/{id}/delete(id=${c.id})}" method="post"
+                  th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Assignments -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0" th:text="#{main.employeecost.assignments.title}">Mitarbeiterzuordnungen</h3>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form th:action="@{/budget/employee-cost/assignments/store}" method="post"
+            th:object="${assignmentForm}" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" th:text="#{main.employeecost.field.name}">Kategorie</label>
+          <select class="form-select tomselect" th:field="*{employeeCostName}">
+            <option value="" th:text="#{main.employeecost.assignment.select.category}">--- Kategorie ---</option>
+            <option th:each="c : ${costs}" th:value="${c.name}" th:text="${c.name}"></option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.employeecost.assignment.field.employeeSign}">Mitarbeiter</label>
+          <select class="form-select tomselect" th:field="*{employeeSign}">
+            <option value="" th:text="#{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
+            <option th:each="emp : ${employees}"
+                    th:value="${emp.sign}"
+                    th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}|"></option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" th:text="#{main.employeecost.assignment.field.suborderSign}">Unterauftrag (opt.)</label>
+          <select class="form-select tomselect" th:field="*{suborderSign}">
+            <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
+            <option th:each="so : ${suborders}"
+                    th:value="${so.sign}"
+                    th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.employeecost.field.validFrom}">Gültig ab</label>
+          <input type="date" class="form-control" th:field="*{validFrom}" required/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.employeecost.field.validUntil}">Gültig bis</label>
+          <input type="date" class="form-control" th:field="*{validUntil}"/>
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-plus"></i>
+            <span th:text="#{main.employeecost.assignment.button.add}">Hinzufügen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.employeecost.field.name}">Kostenkategorie</th>
+            <th th:text="#{main.employeecost.assignment.field.employeeSign}">Mitarbeiter</th>
+            <th th:text="#{main.employeecost.assignment.field.suborderSign}">Unterauftrag</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.employeecost.field.validFrom}">Gültig ab</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.employeecost.field.validUntil}">Gültig bis</th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(assignments)}">
+            <td colspan="6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="a : ${assignments}">
+            <td th:text="${a.employeeCostName}"></td>
+            <td th:text="${a.employeeSign}"></td>
+            <td th:text="${a.suborderSign} ?: '-'"></td>
+            <td class="d-none d-md-table-cell" th:text="${a.validFrom}"></td>
+            <td class="d-none d-md-table-cell" th:text="${a.validUntil.year != 2999} ? ${a.validUntil} : '-'"></td>
+            <td>
+              <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</html>

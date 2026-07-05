@@ -13,6 +13,8 @@ import org.tb.budget.domain.EmployeeCostAssignment;
 public interface EmployeeCostAssignmentRepository
     extends CrudRepository<EmployeeCostAssignment, Long>, PagingAndSortingRepository<EmployeeCostAssignment, Long> {
 
+    List<EmployeeCostAssignment> findAllByOrderByEmployeeCostNameAscEmployeeSignAsc();
+
     List<EmployeeCostAssignment> findByEmployeeCostName(String employeeCostName);
 
     @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeSign = :emp"
