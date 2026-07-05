@@ -2312,5 +2312,67 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 62
+      author: kr
+      comment: Add audit columns to employee_cost (AuditedEntity)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: employee_cost
+                columnName: updatecounter
+      changes:
+        - addColumn:
+            tableName: employee_cost
+            columns:
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
+  - changeSet:
+      id: 63
+      author: kr
+      comment: Add surrogate PK and audit columns to employee_cost_employee (AuditedEntity)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: employee_cost_employee
+                columnName: id
+      changes:
+        - sql:
+            sql: "ALTER TABLE employee_cost_employee ADD COLUMN id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST"
+        - addColumn:
+            tableName: employee_cost_employee
+            columns:
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
