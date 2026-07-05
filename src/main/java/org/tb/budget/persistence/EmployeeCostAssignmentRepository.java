@@ -17,6 +17,20 @@ public interface EmployeeCostAssignmentRepository
 
     List<EmployeeCostAssignment> findByEmployeeCostName(String employeeCostName);
 
+    @Query("""
+        SELECT a FROM EmployeeCostAssignment a
+        WHERE a.employeeSign = :emp
+          AND ((:so IS NULL AND a.suborderSign IS NULL) OR a.suborderSign = :so)
+          AND a.validFrom <= :until AND a.validUntil >= :from
+          AND (:excludeId IS NULL OR a.id != :excludeId)
+        """)
+    List<EmployeeCostAssignment> findOverlapping(
+        @Param("emp") String employeeSign,
+        @Param("so") String suborderSign,
+        @Param("from") LocalDate validFrom,
+        @Param("until") LocalDate validUntil,
+        @Param("excludeId") Long excludeId);
+
     @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeSign = :emp"
         + " AND a.suborderSign = :so"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")

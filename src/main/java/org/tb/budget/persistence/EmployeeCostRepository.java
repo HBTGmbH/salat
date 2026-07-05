@@ -16,6 +16,18 @@ public interface EmployeeCostRepository
 
     List<EmployeeCost> findAllByOrderByNameAscValidFromAsc();
 
+    @Query("""
+        SELECT c FROM EmployeeCost c
+        WHERE c.name = :name
+          AND c.validFrom <= :until AND c.validUntil >= :from
+          AND (:excludeId IS NULL OR c.id != :excludeId)
+        """)
+    List<EmployeeCost> findOverlapping(
+        @Param("name") String name,
+        @Param("from") LocalDate validFrom,
+        @Param("until") LocalDate validUntil,
+        @Param("excludeId") Long excludeId);
+
     @Query("SELECT c FROM EmployeeCost c WHERE c.name = :name AND c.validFrom <= :date AND c.validUntil >= :date")
     Optional<EmployeeCost> findEffectiveByName(@Param("name") String name, @Param("date") LocalDate date);
 

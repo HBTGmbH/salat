@@ -103,6 +103,8 @@ public enum ErrorCode {
   BU_ADJUSTMENT_NOT_FOUND("BU-0002", "order budget adjustment not found"),
   BU_PRICING_NOT_FOUND("BU-0003", "order pricing not found"),
   BU_PRICING_OVERLAP("BU-0006", "overlapping order pricing record exists"),
+  BU_EMPLOYEE_COST_OVERLAP("BU-0007", "overlapping employee cost record exists for same name"),
+  BU_EMPLOYEE_COST_ASSIGNMENT_OVERLAP("BU-0008", "overlapping employee cost assignment exists for same scope"),
   BU_EMPLOYEE_COST_NOT_FOUND("BU-0004", "employee cost not found"),
   BU_EMPLOYEE_COST_ASSIGNMENT_NOT_FOUND("BU-0005", "employee cost assignment not found"),
 
