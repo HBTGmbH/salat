@@ -140,6 +140,17 @@
             </div>
           </li>
 
+          <!-- Budget (no access for backoffice) -->
+          <li class="nav-item"
+              th:if="${not #authorization.expression('hasRole(''BACKOFFICE'')') and not #authorization.expression('hasRole(''RESTRICTED'')')}"
+              th:classappend="${section == 'budget'} ? 'active' : ''">
+            <a class="nav-link" th:href="@{/budget}"
+               th:classappend="${section == 'budget'} ? 'active' : ''">
+              <i class="nav-link-icon ti ti-report-money"></i>
+              <span class="nav-link-title" th:text="#{main.general.mainmenu.budget.text}">Budget</span>
+            </a>
+          </li>
+
           <!-- Reports -->
           <li class="nav-item dropdown"
               th:if="${(#authorization.expression('hasRole(''MANAGER'')')) or (@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable())}"

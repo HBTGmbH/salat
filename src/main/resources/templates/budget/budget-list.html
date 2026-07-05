@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='budget',subSection='budgets',title=#{main.budget.list.title},sectionTitle=#{main.general.mainmenu.budget.text}">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" th:action="@{/budget}" data-filter-form="budget">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="co : ${customerorders}"
+                      th:value="${co.sign}"
+                      th:text="|${co.sign} - ${co.description}|"
+                      th:selected="${coSign != null and coSign == co.sign}"></option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary" type="submit">
+              <i class="icon ti ti-filter m-0"></i>
+            </button>
+          </div>
+          <div class="col-auto ms-auto" th:if="${isManager}">
+            <a class="btn btn-success" th:href="@{/budget/create}">
+              <i class="icon ti ti-plus"></i>
+              <span th:text="#{main.budget.button.create}">Neuer Budgetplan</span>
+            </a>
+          </div>
+        </div>
+        <div class="row g-2 align-items-end mt-2">
+          <div class="col-auto ms-2">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="showInactive" value="true" th:checked="${showInactive}"/>
+              <input type="hidden" name="showInactive" value="false"/>
+              <span class="form-check-label" th:text="#{main.budget.filter.showinactive}">Inaktive anzeigen</span>
+            </label>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.budget.field.name}">Name</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.budget.field.customerorderSign}">Auftrag</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.budget.field.suborderSign}">Unterauftrag</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.budget.field.validFrom}">Gültig ab</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.budget.field.validUntil}">Gültig bis</th>
+          <th th:text="#{main.general.flags.text}">Status</th>
+          <th class="w-1"></th>
+          <th class="w-1" th:if="${isManager}"></th>
+          <th class="w-1" th:if="${isManager}"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(budgets)}">
+          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+        </tr>
+        <tr th:each="b : ${budgets}" th:classappend="${b.active != true} ? 'table-secondary' : ''">
+          <td>
+            <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a>
+          </td>
+          <td class="d-none d-md-table-cell" th:text="${b.customerorderSign}"></td>
+          <td class="d-none d-md-table-cell" th:text="${b.suborderSign}"></td>
+          <td class="d-none d-lg-table-cell" th:text="${b.validFrom}"></td>
+          <td class="d-none d-lg-table-cell" th:text="${b.validUntil}"></td>
+          <td>
+            <span class="badge" th:classappend="${b.active == true} ? 'bg-success-lt' : 'bg-secondary-lt'"
+                  th:text="${b.active == true} ? #{main.general.active.text} : #{main.general.inactive.text}">Aktiv</span>
+          </td>
+          <td>
+            <a class="btn btn-outline-secondary btn-sm" th:href="@{/budget/{id}(id=${b.id})}">
+              <i class="icon ti ti-eye m-0"></i>
+            </a>
+          </td>
+          <td th:if="${isManager}">
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/{id}/edit(id=${b.id})}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td th:if="${isManager}">
+            <form th:action="@{/budget/{id}/toggle-active(id=${b.id})}" method="post">
+              <button type="submit" class="btn btn-sm"
+                      th:classappend="${b.active == true} ? 'btn-outline-warning' : 'btn-outline-success'"
+                      th:title="${b.active == true} ? #{main.budget.button.deactivate} : #{main.budget.button.activate}">
+                <i class="icon m-0" th:classappend="${b.active == true} ? 'ti ti-player-pause' : 'ti ti-player-play'"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form[data-filter-form]');
+      if (!form) return;
+      form.querySelectorAll('input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.requestSubmit(); });
+      });
+    });
+  </script>
+
+</main>
+</html>
