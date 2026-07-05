@@ -6,14 +6,20 @@
 <main layout:fragment="content">
   <salat:form th:action="@{/customers/store}" th:object="${customer}" th:id-property="*{id}">
     <salat:inputs>
-      <salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" required="true" maxlength="12" />
+      <div class="row">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{shortName}" th:label="#{main.customer.shortname.text}" required="true" maxlength="12" />
+        </div>
+        <div class="col-md-6">
+          <salat:select th:field="*{segmentId}" th:label="#{main.customer.segment.text}">
+            <option value="" th:text="#{main.customer.segment.none}"></option>
+            <option th:each="s : ${segments}" th:value="${s.id}" th:text="${s.name}"></option>
+          </salat:select>
+        </div>
+      </div>
       <salat:textInput th:field="*{name}" th:label="#{main.customer.name.text}" required="true" maxlength="255" />
       <salat:textarea th:field="*{address}" th:label="#{main.customer.address.text}" required="true" rows="3" />
       <salat:checkboxSwitch th:field="*{hide}" th:label="#{main.general.hide}" />
-      <salat:select th:field="*{segmentId}" th:label="#{main.customer.segment.text}">
-        <option value="" th:text="#{main.customer.segment.none}"></option>
-        <option th:each="s : ${segments}" th:value="${s.id}" th:text="${s.name}"></option>
-      </salat:select>
     </salat:inputs>
     <salat:buttons>
       <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}" th:cancelHref="@{/customers}" />
