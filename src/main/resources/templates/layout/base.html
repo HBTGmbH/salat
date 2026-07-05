@@ -140,9 +140,9 @@
             </div>
           </li>
 
-          <!-- Budget (no access for backoffice) -->
+          <!-- Budget: managers and employees responsible for at least one visible order -->
           <li class="nav-item dropdown"
-              th:if="${not #authorization.expression('hasRole(''BACKOFFICE'')') and not #authorization.expression('hasRole(''RESTRICTED'')')}"
+              th:if="${@budgetMenuViewHelper.isBudgetMenuAvailable()}"
               th:classappend="${section == 'budget'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-budget" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button">
