@@ -98,6 +98,9 @@ public enum ErrorCode {
 
   SE_USER_NOT_FOUND("SE-0001", "salat user not found for current login"),
 
+  BU_BUDGET_NOT_FOUND("BU-0001", "order budget not found"),
+  BU_ADJUSTMENT_NOT_FOUND("BU-0002", "order budget adjustment not found"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   ;
