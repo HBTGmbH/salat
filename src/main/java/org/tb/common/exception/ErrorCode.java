@@ -100,6 +100,7 @@ public enum ErrorCode {
 
   BU_BUDGET_NOT_FOUND("BU-0001", "order budget not found"),
   BU_ADJUSTMENT_NOT_FOUND("BU-0002", "order budget adjustment not found"),
+  BU_PRICING_NOT_FOUND("BU-0003", "order pricing not found"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
