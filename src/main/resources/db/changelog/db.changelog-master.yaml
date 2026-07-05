@@ -1976,5 +1976,250 @@ databaseChangeLog:
             tableName: customerorder
             columnName: RESPONSIBLE_HBT_ID
 
+  - changeSet:
+      id: 56
+      author: kr
+      comment: Create tables customer_segment and customer_segment_customer
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: customer_segment
+      changes:
+        - createTable:
+            tableName: customer_segment
+            columns:
+              - column:
+                  name: id
+                  type: bigint unsigned
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_customer_segment
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: customer_segment_name_uindex
+        - createTable:
+            tableName: customer_segment_customer
+            columns:
+              - column:
+                  name: customer_id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_customer_segment_customer
+                    nullable: false
+                    foreignKeyName: customer_segment_customer_customer_id_fk
+                    references: customer(id)
+              - column:
+                  name: customer_segment_id
+                  type: bigint unsigned
+                  constraints:
+                    nullable: false
+                    foreignKeyName: customer_segment_customer_customer_segment_id_fk
+                    references: customer_segment(id)
+
+  - changeSet:
+      id: 57
+      author: kr
+      comment: Create tables employee_cost and employee_cost_employee
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: employee_cost
+      changes:
+        - createTable:
+            tableName: employee_cost
+            columns:
+              - column:
+                  name: id
+                  type: bigint unsigned
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_employee_cost
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cost_cents_per_hour
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+                  defaultValue: '2999-12-31'
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: employee_cost_employee
+            columns:
+              - column:
+                  name: employee_cost_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: employee_sign
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: suborder_sign
+                  type: varchar(255)
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+                  defaultValue: '2999-12-31'
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 58
+      author: kr
+      comment: Create tables order_budget and order_budget_adjustment
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: order_budget
+      changes:
+        - createTable:
+            tableName: order_budget
+            columns:
+              - column:
+                  name: id
+                  type: int unsigned
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_order_budget
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: customerorder_sign
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: suborder_sign
+                  type: varchar(255)
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+                  defaultValue: '2999-12-31'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: tinyint(1)
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: order_budget_adjustment
+            columns:
+              - column:
+                  name: id
+                  type: int unsigned
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_order_budget_adjustment
+                    nullable: false
+              - column:
+                  name: order_budget_id
+                  type: int unsigned
+                  constraints:
+                    nullable: false
+                    foreignKeyName: order_budget_fk1
+                    references: order_budget(id)
+              - column:
+                  name: amount
+                  type: decimal(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: effective
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: varchar(2000)
+
+  - changeSet:
+      id: 59
+      author: kr
+      comment: Create table order_pricing
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: order_pricing
+      changes:
+        - createTable:
+            tableName: order_pricing
+            columns:
+              - column:
+                  name: customerorder_sign
+                  type: varchar(255)
+                  defaultValue: 'TODO'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: suborder_sign
+                  type: varchar(255)
+              - column:
+                  name: employee_sign
+                  type: varchar(255)
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: price_cents_per_hour
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: date
+                  defaultValue: '2999-12-31'
+                  constraints:
+                    nullable: false
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
