@@ -48,8 +48,7 @@
       </div>
       <div class="row">
         <div class="col-md-4">
-          <salat:textInput th:field="*{priceEuro}" type="number" th:label="#{main.pricing.field.priceEuro}" required="true"
-                           th:attr="step='0.01', min='0'" />
+          <salat:textInput th:field="*{priceEuro}" type="text" th:label="#{main.pricing.field.priceEuro}" required="true" />
         </div>
         <div class="col-md-4">
           <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.pricing.field.validFrom}" required="true" />
