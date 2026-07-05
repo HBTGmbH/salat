@@ -54,12 +54,13 @@
           <th class="text-end" th:text="#{main.controlling.col.percent}">Verbrauch</th>
           <th class="text-end" th:text="#{main.controlling.col.budget}">Budget (€)</th>
           <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
+          <th class="text-end" th:text="#{main.controlling.col.budgetused}">Budget genutzt</th>
           <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(result.suborderRows())}">
-          <td th:colspan="${isManager} ? 7 : 6" class="text-center text-muted py-3"
+          <td th:colspan="${isManager} ? 8 : 7" class="text-center text-muted py-3"
               th:text="#{main.controlling.no.suborders}">Keine Subaufträge</td>
         </tr>
 
@@ -76,6 +77,9 @@
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
           <td class="text-end small" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+          <td class="text-end small"
+              th:classappend="${row.hasBudgetPercent()} ? (${row.budgetUsedPercent() > 100} ? 'text-danger' : (${row.budgetUsedPercent() > 80} ? 'text-warning' : '')) : ''"
+              th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
         </tr>
 
@@ -92,6 +96,9 @@
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
           <td class="text-end" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+          <td class="text-end"
+              th:classappend="${row.hasBudgetPercent()} ? (${row.budgetUsedPercent() > 100} ? 'text-danger' : (${row.budgetUsedPercent() > 80} ? 'text-warning' : '')) : ''"
+              th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
         </tr>
       </tbody>
