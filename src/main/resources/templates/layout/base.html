@@ -162,6 +162,12 @@
                      th:text="#{main.pricing.list.title}">
                     Kundenstundensätze
                   </a>
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
+                     th:href="@{/budget/employee-cost}"
+                     th:classappend="${subSection == 'employee-cost'} ? 'active' : ''"
+                     th:text="#{main.employeecost.list.title}">
+                    Mitarbeiterkostensätze
+                  </a>
                 </div>
               </div>
             </div>

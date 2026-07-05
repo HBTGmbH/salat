@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='employee-cost',
+        pageTitle=${isEdit} ? #{main.employeecost.form.title.edit} : #{main.employeecost.form.title.create},sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/budget/employee-cost/store}" th:object="${costForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <salat:textInput th:field="*{name}" th:label="#{main.employeecost.field.name}" required="true" maxlength="255" />
+      <div class="row">
+        <div class="col-md-4">
+          <salat:textInput th:field="*{costEuro}" type="text" th:label="#{main.employeecost.field.costEuro}" required="true" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.employeecost.field.validFrom}" required="true" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.employeecost.field.validUntil}" />
+        </div>
+      </div>
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}" th:cancelHref="@{/budget/employee-cost}" />
+    </salat:buttons>
+  </salat:form>
+
+</main>
+</html>

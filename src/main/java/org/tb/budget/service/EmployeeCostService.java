@@ -32,8 +32,13 @@ public class EmployeeCostService {
     }
 
     @Transactional(readOnly = true)
-    public Iterable<EmployeeCost> getAll() {
-        return employeeCostRepository.findAll();
+    public List<EmployeeCost> getAll() {
+        return employeeCostRepository.findAllByOrderByNameAscValidFromAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EmployeeCostAssignment> getAllAssignments() {
+        return assignmentRepository.findAllByOrderByEmployeeCostNameAscEmployeeSignAsc();
     }
 
     @Transactional(readOnly = true)
