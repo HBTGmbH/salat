@@ -5,7 +5,9 @@
       th:with="
         section='budget',
         subSection='employee-cost',
-        pageTitle=${isEdit} ? #{main.employeecost.form.title.edit} : #{main.employeecost.form.title.create},sectionTitle=#{main.general.mainmenu.budget.text}
+        title=${isEdit} ? #{main.employeecost.form.title.edit} : #{main.employeecost.form.title.create},
+        pageTitle=${isEdit} ? #{main.employeecost.form.title.edit} : #{main.employeecost.form.title.create},
+        sectionTitle=#{main.general.mainmenu.budget.text}
 ">
 <main layout:fragment="content">
 
