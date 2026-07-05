@@ -2183,8 +2183,9 @@ databaseChangeLog:
       comment: Create table order_pricing
       preConditions:
         - onFail: MARK_RAN
-        - tableExists:
-            tableName: order_pricing
+        - not:
+            - tableExists:
+                tableName: order_pricing
       changes:
         - createTable:
             tableName: order_pricing
@@ -2220,6 +2221,64 @@ databaseChangeLog:
                   defaultValue: '2999-12-31'
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 60
+      author: kr
+      comment: Migrate order_budget and order_budget_adjustment to AuditedEntity (bigint ids + audit columns)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_budget
+                columnName: updatecounter
+      changes:
+        - sql:
+            sql: "ALTER TABLE order_budget_adjustment DROP FOREIGN KEY order_budget_fk1"
+        - sql:
+            sql: "ALTER TABLE order_budget MODIFY COLUMN id BIGINT NOT NULL AUTO_INCREMENT"
+        - sql:
+            sql: "ALTER TABLE order_budget_adjustment MODIFY COLUMN id BIGINT NOT NULL AUTO_INCREMENT"
+        - sql:
+            sql: "ALTER TABLE order_budget_adjustment MODIFY COLUMN order_budget_id BIGINT NOT NULL"
+        - sql:
+            sql: "ALTER TABLE order_budget_adjustment ADD CONSTRAINT order_budget_fk1 FOREIGN KEY (order_budget_id) REFERENCES order_budget(id)"
+        - addColumn:
+            tableName: order_budget
+            columns:
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - addColumn:
+            tableName: order_budget_adjustment
+            columns:
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
