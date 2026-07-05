@@ -13,6 +13,7 @@ import org.tb.budget.domain.EmployeeCostAssignmentData;
 import org.tb.budget.domain.EmployeeCostData;
 import org.tb.budget.persistence.EmployeeCostAssignmentRepository;
 import org.tb.budget.persistence.EmployeeCostRepository;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 
@@ -67,6 +68,8 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCost create(EmployeeCostData data) {
+        var until = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkNoCostOverlap(data.name(), data.validFrom(), until, null);
         var cost = new EmployeeCost();
         apply(cost, data);
         return employeeCostRepository.save(cost);
@@ -74,6 +77,8 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public void update(long id, EmployeeCostData data) {
+        var until = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkNoCostOverlap(data.name(), data.validFrom(), until, id);
         var cost = getById(id);
         apply(cost, data);
         employeeCostRepository.save(cost);
@@ -86,6 +91,8 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
+        var until = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkNoAssignmentOverlap(data.employeeSign(), data.suborderSign(), data.validFrom(), until, null);
         var assignment = new EmployeeCostAssignment();
         applyAssignment(assignment, data);
         return assignmentRepository.save(assignment);
@@ -93,6 +100,8 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
+        var until = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkNoAssignmentOverlap(data.employeeSign(), data.suborderSign(), data.validFrom(), until, id);
         var assignment = assignmentRepository.findById(id)
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_NOT_FOUND, id));
         applyAssignment(assignment, data);
@@ -102,6 +111,18 @@ public class EmployeeCostService {
     @Authorized(requiresManager = true)
     public void deleteAssignment(long id) {
         assignmentRepository.deleteById(id);
+    }
+
+    private void checkNoCostOverlap(String name, LocalDate from, LocalDate until, Long excludeId) {
+        if (!employeeCostRepository.findOverlapping(name, from, until, excludeId).isEmpty()) {
+            throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_OVERLAP);
+        }
+    }
+
+    private void checkNoAssignmentOverlap(String employeeSign, String suborderSign, LocalDate from, LocalDate until, Long excludeId) {
+        if (!assignmentRepository.findOverlapping(employeeSign, suborderSign, from, until, excludeId).isEmpty()) {
+            throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_OVERLAP);
+        }
     }
 
     private void apply(EmployeeCost cost, EmployeeCostData data) {
