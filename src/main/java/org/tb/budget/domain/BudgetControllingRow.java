@@ -1,0 +1,48 @@
+package org.tb.budget.domain;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+
+public record BudgetControllingRow(
+    String sign,
+    String label,
+    boolean isSuborder,
+    Duration plannedHours,
+    Duration bookedHours,
+    BigDecimal budgetEuro,
+    BigDecimal revenueEuro,
+    BigDecimal costEuro
+) {
+    public double bookedPercent() {
+        if (plannedHours == null || plannedHours.isZero()) return 0.0;
+        return 100.0 * bookedHours.toMinutes() / plannedHours.toMinutes();
+    }
+
+    public boolean hasPlanned() {
+        return plannedHours != null && !plannedHours.isZero();
+    }
+
+    public boolean hasBooked() {
+        return bookedHours != null && !bookedHours.isZero();
+    }
+
+    public boolean hasBudget() {
+        return budgetEuro != null && budgetEuro.signum() != 0;
+    }
+
+    public boolean hasRevenue() {
+        return revenueEuro != null && revenueEuro.signum() != 0;
+    }
+
+    public boolean hasCost() {
+        return costEuro != null && costEuro.signum() != 0;
+    }
+
+    public String formatHours(Duration d) {
+        if (d == null || d.isZero()) return "—";
+        return d.toHours() + ":" + String.format("%02d", d.toMinutesPart());
+    }
+
+    public String bookedHoursFormatted() { return formatHours(bookedHours); }
+    public String plannedHoursFormatted() { return hasPlanned() ? formatHours(plannedHours) : "—"; }
+}

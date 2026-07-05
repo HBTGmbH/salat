@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='controlling',
+        pageTitle=#{main.controlling.title},sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <!-- Filter form -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" th:action="@{/budget/controlling}" th:object="${filter}" class="row g-2 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label" th:text="#{main.controlling.filter.customerorder}">Auftrag</label>
+          <select class="form-select tomselect" th:field="*{customerorderSign}">
+            <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag wählen ---</option>
+            <option th:each="co : ${customerorders}"
+                    th:value="${co.sign}"
+                    th:text="|${co.sign} - ${co.shortdescription}|"></option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.controlling.filter.from}">Von</label>
+          <input type="date" class="form-control" th:field="*{from}"/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.controlling.filter.until}">Bis</label>
+          <input type="date" class="form-control" th:field="*{until}"/>
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-chart-bar"></i>
+            <span th:text="#{main.controlling.button.show}">Auswerten</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="alert alert-danger" th:if="${controllingError != null}" th:text="${controllingError}"></div>
+
+  <!-- Result table -->
+  <div class="table-responsive card" th:if="${result != null}">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.controlling.col.order}">Auftrag</th>
+          <th class="text-end" th:text="#{main.controlling.col.planned}">Geplant (h)</th>
+          <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
+          <th class="text-end" th:text="#{main.controlling.col.percent}">Verbrauch</th>
+          <th class="text-end" th:text="#{main.controlling.col.budget}">Budget (€)</th>
+          <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
+          <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(result.suborderRows())}">
+          <td th:colspan="${isManager} ? 7 : 6" class="text-center text-muted py-3"
+              th:text="#{main.controlling.no.suborders}">Keine Subaufträge</td>
+        </tr>
+
+        <!-- Suborder rows -->
+        <tr th:each="row : ${result.suborderRows()}">
+          <td class="ps-4">
+            <span class="text-muted small" th:text="${row.sign()}"></span>
+            <span class="ms-1 small" th:text="${row.label()}"></span>
+          </td>
+          <td class="text-end small" th:text="${row.plannedHoursFormatted()}"></td>
+          <td class="text-end small" th:text="${row.bookedHoursFormatted()}"></td>
+          <td class="text-end small"
+              th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
+              th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
+          <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
+          <td class="text-end small" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+          <td class="text-end small" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
+        </tr>
+
+        <!-- Total row -->
+        <tr class="fw-bold table-active" th:with="row=${result.total()}">
+          <td>
+            <span th:text="${row.sign()}"></span>
+            <span class="text-muted fw-normal small ms-1" th:text="${row.label()}"></span>
+          </td>
+          <td class="text-end" th:text="${row.plannedHoursFormatted()}"></td>
+          <td class="text-end" th:text="${row.bookedHoursFormatted()}"></td>
+          <td class="text-end"
+              th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
+              th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
+          <td class="text-end" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
+          <td class="text-end" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+          <td class="text-end" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</html>
