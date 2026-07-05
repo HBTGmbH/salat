@@ -42,9 +42,9 @@
       <thead>
         <tr>
           <th th:text="#{main.customer.shortname.text}">Short Name</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.customer.segment.text}">Segment</th>
           <th class="d-none d-sm-table-cell" th:text="#{main.customer.name.text}">Name</th>
           <th class="d-none d-sm-table-cell" th:text="#{main.customer.address.text}">Address</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.customer.segment.text}">Segment</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
           <th class="w-1"></th>
           <th class="w-1"></th>
@@ -56,9 +56,9 @@
         </tr>
         <tr th:each="cu : ${customers}">
           <td th:text="${cu.shortName}"></td>
+          <td class="d-none d-md-table-cell" th:text="${cu.segmentName}"></td>
           <td class="d-none d-sm-table-cell" th:text="${cu.name}"></td>
           <td class="d-none d-sm-table-cell" th:text="${cu.address}"></td>
-          <td class="d-none d-md-table-cell" th:text="${cu.segmentName}"></td>
           <td class="d-none d-lg-table-cell" th:replace="~{fragments/hide-toggle :: customerHideFlag}"></td>
           <td>
             <a th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
