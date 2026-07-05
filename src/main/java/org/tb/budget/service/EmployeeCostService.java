@@ -19,7 +19,7 @@ import org.tb.common.exception.InvalidDataException;
 @Service
 @Transactional
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requiresManager = true)
 public class EmployeeCostService {
 
     private final EmployeeCostRepository employeeCostRepository;
