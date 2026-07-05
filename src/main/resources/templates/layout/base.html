@@ -141,14 +141,25 @@
           </li>
 
           <!-- Budget (no access for backoffice) -->
-          <li class="nav-item"
+          <li class="nav-item dropdown"
               th:if="${not #authorization.expression('hasRole(''BACKOFFICE'')') and not #authorization.expression('hasRole(''RESTRICTED'')')}"
               th:classappend="${section == 'budget'} ? 'active' : ''">
-            <a class="nav-link" th:href="@{/budget}"
-               th:classappend="${section == 'budget'} ? 'active' : ''">
+            <a class="nav-link dropdown-toggle" href="#navbar-budget" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button">
               <i class="nav-link-icon ti ti-report-money"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.budget.text}">Budget</span>
             </a>
+            <div class="dropdown-menu" th:classappend="${section == 'budget'} ? 'show' : ''">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/budget}"
+                     th:classappend="${subSection == 'budgets'} ? 'active' : ''"
+                     th:text="#{main.budget.list.title}">
+                    Budgetpläne
+                  </a>
+                </div>
+              </div>
+            </div>
           </li>
 
           <!-- Reports -->
