@@ -30,6 +30,7 @@ import org.tb.customer.domain.Customer_;
 import org.tb.customer.event.CustomerDeleteEvent;
 import org.tb.customer.persistence.CustomerDAO;
 import org.tb.customer.persistence.CustomerRepository;
+import org.tb.customer.persistence.CustomerSegmentRepository;
 
 @Service
 @Data
@@ -40,6 +41,7 @@ public class CustomerService {
 
   private final ApplicationEventPublisher eventPublisher;
   private final CustomerRepository customerRepository;
+  private final CustomerSegmentRepository customerSegmentRepository;
   private final AuthorizedUser authorizedUser;
   private final CustomerDAO customerDAO;
 
@@ -102,6 +104,11 @@ public class CustomerService {
     }
 
     customerDTO.copyTo(customer);
+    if (customerDTO.getSegmentId() != null) {
+      customerSegmentRepository.findById(customerDTO.getSegmentId()).ifPresent(customer::setSegment);
+    } else {
+      customer.setSegment(null);
+    }
     customerRepository.save(customer);
     customerDTO.setId(customer.getId());
   }

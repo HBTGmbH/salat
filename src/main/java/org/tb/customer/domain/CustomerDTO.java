@@ -22,6 +22,8 @@ public class CustomerDTO implements Serializable {
   private String shortName;
   private String address;
   private Boolean hide;
+  private Long segmentId;
+  private String segmentName;
   private String createdBy;
   private LocalDateTime createdAt;
   private String updatedBy;
@@ -35,6 +37,8 @@ public class CustomerDTO implements Serializable {
         .shortName(customer.getShortname())
         .address(customer.getAddress())
         .hide(customer.getHide())
+        .segmentId(customer.getSegment() != null ? customer.getSegment().getId() : null)
+        .segmentName(customer.getSegment() != null ? customer.getSegment().getName() : null)
         .createdBy(customer.getCreatedby())
         .createdAt(customer.getCreated())
         .updatedBy(customer.getLastupdatedby())

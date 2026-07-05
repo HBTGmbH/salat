@@ -2374,5 +2374,35 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 64
+      author: kr
+      comment: Add audit columns to customer_segment (AuditedEntity)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: customer_segment
+                columnName: updatecounter
+      changes:
+        - addColumn:
+            tableName: customer_segment
+            columns:
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
