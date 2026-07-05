@@ -353,10 +353,10 @@ Entities are divided into two categories (→ ADR-0011):
 - Standard entity annotations: `@Entity`, `@Getter @Setter` (Lombok), `@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)`
 - Boolean columns in the database must be `bit(1)` — Hibernate maps `Boolean` to `bit`, not `tinyint`. In Liquibase migrations always use `type: bit(1)`.
 
-### Repository + DAO Hybrid Pattern
+### Repository-Zugriff in Services (→ ADR-0019)
 - Spring Data repositories extend `PagingAndSortingRepository<E, Long>` and `CrudRepository<E, Long>`; custom queries use `@Query` with multiline JPQL text blocks
-- DAO components (`@Component`, `@RequiredArgsConstructor`) wrap the repository and expose domain-meaningful method names (e.g. `getCustomers()`, `getCustomersOrderedByShortName()`)
-- Controllers and services call the DAO, not the repository directly — unless no DAO exists for the module
+- **Neue Module**: Services verwenden das Repository direkt — kein DAO-Wrapper. (→ ADR-0019)
+- **Legacy-Module** (Struts-Ära): DAOs (`@Component`, `@RequiredArgsConstructor`) bleiben bestehen und werden nicht aktiv migriert. Neue Features in Legacy-Modulen können den bestehenden DAO erweitern, müssen es aber nicht.
 - Sort fields are referenced via the JPA metamodel class (e.g. `Customer_.NAME`) to avoid string literals
 
 ### Service Pattern

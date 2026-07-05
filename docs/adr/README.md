@@ -20,7 +20,7 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0004](0004-salat-thymeleaf-dialect.md) | Salat Custom Thymeleaf Dialect | Superseded by ADR-0005 | 2026-05-24 |
 | [0005](0005-alle-fragmente-durch-salat-dialect-ersetzen.md) | Alle Thymeleaf-Fragmente durch Salat-Dialect ersetzen | Accepted | 2026-05-24 |
 | [0006](0006-rollenbasierte-autorisierung.md) | Rollenbasierte Autorisierung mit zwei Durchsetzungsebenen | Accepted | 2026-05-24 |
-| [0007](0007-repository-dao-hybrid.md) | Repository + DAO Hybrid Pattern | Accepted | 2026-05-24 |
+| [0007](0007-repository-dao-hybrid.md) | Repository + DAO Hybrid Pattern | Superseded by ADR-0019 | 2026-05-24 |
 | [0008](0008-exception-hierarchie-mit-errorcode.md) | Exception-Hierarchie mit ErrorCode | Accepted | 2026-05-24 |
 | [0009](0009-liquibase-datenbankmigrationen.md) | Liquibase für Datenbankmigrationen | Accepted | 2026-05-24 |
 | [0010](0010-deutsch-first-i18n.md) | Deutsch als Primärsprache und UTF-8-Encoding | Accepted | 2026-05-24 |
@@ -32,3 +32,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0016](0016-uistate-key-ownership-per-modul.md) | UiState-Key-Ownership pro Modul | Accepted | 2026-06-21 |
 | [0017](0017-viewhelper-fuer-darstellungslogik.md) | ViewHelper-Klassen für darstellungsspezifische Aufbereitung | Accepted | 2026-06-22 |
 | [0018](0018-csrf-schutz-mit-cookie-tokenrepository.md) | CSRF-Schutz mit CookieCsrfTokenRepository und CsrfTokenRequestAttributeHandler | Accepted | 2026-06-28 |
+| [0019](0019-direkter-repository-zugriff-in-services.md) | Direkter Repository-Zugriff in Services (kein DAO für neue Module) | Accepted | 2026-07-05 |

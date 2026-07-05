@@ -1,7 +1,7 @@
 # ADR-0007 Repository + DAO Hybrid Pattern mit DTO-Rückgabe und Authorization-Filtering
 
 Date: 2026-05-24
-Status: Accepted
+Status: Superseded by ADR-0019
 
 ## Context and Problem Statement
 
