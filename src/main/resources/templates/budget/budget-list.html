@@ -13,7 +13,7 @@
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="co : ${customerorders}"
                       th:value="${co.sign}"
-                      th:text="|${co.sign} - ${co.description}|"
+                      th:text="|${co.sign} - ${co.shortdescription}|"
                       th:selected="${coSign != null and coSign == co.sign}"></option>
             </select>
           </div>
