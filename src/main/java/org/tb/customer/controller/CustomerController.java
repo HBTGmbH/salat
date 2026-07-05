@@ -22,6 +22,7 @@ import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.web.UiState;
 import org.tb.customer.domain.CustomerDTO;
+import org.tb.customer.service.CustomerSegmentService;
 import org.tb.customer.service.CustomerService;
 
 @Controller
@@ -31,6 +32,7 @@ import org.tb.customer.service.CustomerService;
 public class CustomerController {
 
   private final CustomerService customerService;
+  private final CustomerSegmentService customerSegmentService;
   private final MessageSourceAccessor messageSourceAccessor;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final UiState uiState;
@@ -53,6 +55,7 @@ public class CustomerController {
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.addcustomer.text", "Create Customer"));
     model.addAttribute("isEdit", false);
     model.addAttribute("customer", CustomerDTO.builder().build());
+    model.addAttribute("segments", customerSegmentService.getAll());
     return "customer/customer-form";
   }
 
@@ -63,6 +66,7 @@ public class CustomerController {
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.editcustomer.text", "Edit Customer"));
     model.addAttribute("isEdit", true);
     model.addAttribute("customer", dto);
+    model.addAttribute("segments", customerSegmentService.getAll());
     return "customer/customer-form";
   }
 
@@ -114,6 +118,7 @@ public class CustomerController {
       String titleFallback = isCreate ? "Create Customer" : "Edit Customer";
       model.addAttribute("pageTitle", messageSourceAccessor.getMessage(titleKey, titleFallback));
       model.addAttribute("isEdit", !isCreate);
+      model.addAttribute("segments", customerSegmentService.getAll());
       return "customer/customer-form";
     }
 

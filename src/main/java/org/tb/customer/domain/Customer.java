@@ -1,7 +1,10 @@
 package org.tb.customer.domain;
 
 import jakarta.persistence.Entity;
-
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToOne;
 import java.io.Serial;
 import java.io.Serializable;
 import lombok.Getter;
@@ -23,6 +26,14 @@ public class Customer extends AuditedEntity implements Serializable {
     private String shortname;
     private String address;
     private Boolean hide;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "customer_segment_customer",
+        joinColumns = @JoinColumn(name = "customer_id"),
+        inverseJoinColumns = @JoinColumn(name = "customer_segment_id")
+    )
+    private CustomerSegment segment;
 
     public Boolean getHide() {
         if (hide == null) {
