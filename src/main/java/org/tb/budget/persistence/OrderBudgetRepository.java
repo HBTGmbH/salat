@@ -1,5 +1,6 @@
 package org.tb.budget.persistence;
 
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -17,5 +18,7 @@ public interface OrderBudgetRepository
     List<OrderBudget> findByCustomerorderSignAndSuborderSign(String customerorderSign, String suborderSign);
 
     List<OrderBudget> findAllByOrderByCustomerorderSignAscValidFromAsc();
+
+    boolean existsByCustomerorderSignIn(Collection<String> customerorderSigns);
 
 }
