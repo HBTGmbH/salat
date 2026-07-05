@@ -15,14 +15,11 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.util.WebUtils;
 import org.tb.settings.service.UiPreferenceService;
 
+import static org.tb.common.configuration.InternationalizationConfiguration.LOCALE_COOKIE_VALUE_AUTO;
+
 @Component
 @RequiredArgsConstructor
 public class LocaleSyncInterceptor implements HandlerInterceptor {
-
-    // Sentinel stored in the cookie when the user chose "browser detection".
-    // CookieLocaleResolver rejectInvalidCookies=false silently ignores this
-    // unparseable value and falls back to Accept-Language — exactly what we want.
-    static final String AUTO = "auto";
 
     private final UiPreferenceService uiPreferenceService;
     private final CookieLocaleResolver localeResolver;
@@ -50,9 +47,9 @@ public class LocaleSyncInterceptor implements HandlerInterceptor {
     }
 
     public void writeSentinelCookie(HttpServletResponse response) {
-        var cookie = new Cookie(cookieName, AUTO);
+        var cookie = new Cookie(cookieName, LOCALE_COOKIE_VALUE_AUTO);
         cookie.setPath("/");
-        cookie.setMaxAge(365 * 24 * 3600);
+        cookie.setMaxAge(-1); // until browser closed
         cookie.setHttpOnly(true);
         response.addCookie(cookie);
     }
