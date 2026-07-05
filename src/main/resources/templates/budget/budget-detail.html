@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="section='budget',subSection='budgets',title=${budget.name},sectionTitle=#{main.general.mainmenu.budget.text}">
+<main layout:fragment="content">
+
+  <!-- Budget details card -->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center">
+      <h3 class="card-title me-auto" th:text="${budget.name}">Budgetplan</h3>
+      <span class="badge ms-2" th:classappend="${budget.active == true} ? 'bg-success-lt' : 'bg-secondary-lt'"
+            th:text="${budget.active == true} ? #{main.general.active.text} : #{main.general.inactive.text}">Aktiv</span>
+      <div class="ms-3" th:if="${isManager}">
+        <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/{id}/edit(id=${budget.id})}">
+          <i class="icon ti ti-pencil"></i>
+          <span th:text="#{main.button.label.edit.text}">Bearbeiten</span>
+        </a>
+        <form th:action="@{/budget/{id}/toggle-active(id=${budget.id})}" method="post" class="d-inline ms-1">
+          <button type="submit" class="btn btn-sm"
+                  th:classappend="${budget.active == true} ? 'btn-outline-warning' : 'btn-outline-success'">
+            <i class="icon" th:classappend="${budget.active == true} ? 'ti ti-player-pause' : 'ti ti-player-play'"></i>
+            <span th:text="${budget.active == true} ? #{main.budget.button.deactivate} : #{main.budget.button.activate}">De/Aktivieren</span>
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-5" th:text="#{main.budget.field.customerorderSign}">Auftrag</dt>
+            <dd class="col-sm-7" th:text="${budget.customerorderSign}"></dd>
+            <dt class="col-sm-5" th:text="#{main.budget.field.suborderSign}">Unterauftrag</dt>
+            <dd class="col-sm-7" th:text="${budget.suborderSign} ?: '-'"></dd>
+          </dl>
+        </div>
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-5" th:text="#{main.budget.field.validFrom}">Gültig ab</dt>
+            <dd class="col-sm-7" th:text="${budget.validFrom}"></dd>
+            <dt class="col-sm-5" th:text="#{main.budget.field.validUntil}">Gültig bis</dt>
+            <dd class="col-sm-7" th:text="${budget.validUntil}"></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adjustments -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.budget.adjustments.title}">Anpassungen</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.budget.adjustment.field.effective}">Datum</th>
+            <th th:text="#{main.budget.adjustment.field.amount}">Betrag (€)</th>
+            <th th:text="#{main.budget.adjustment.field.comment}">Kommentar</th>
+            <th class="w-1" th:if="${isManager}"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(budget.adjustments)}">
+            <td colspan="4" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="adj : ${budget.adjustments}">
+            <td th:text="${adj.effective}"></td>
+            <td th:text="${#numbers.formatDecimal(adj.amount, 1, 'COMMA', 2, 'POINT')}"></td>
+            <td th:text="${adj.comment}"></td>
+            <td th:if="${isManager}">
+              <form th:action="@{/budget/{id}/adjustments/{adjId}/delete(id=${budget.id},adjId=${adj.id})}"
+                    method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add adjustment form (managers only) -->
+    <div class="card-footer" th:if="${isManager}">
+      <form th:action="@{/budget/{id}/adjustments/add(id=${budget.id})}" method="post"
+            th:object="${adjustmentForm}" class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.budget.adjustment.field.effective}">Datum</label>
+          <input type="date" class="form-control" th:field="*{effective}" required/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.budget.adjustment.field.amount}">Betrag (€)</label>
+          <input type="number" step="0.01" class="form-control" th:field="*{amount}" required/>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" th:text="#{main.budget.adjustment.field.comment}">Kommentar</label>
+          <input type="text" class="form-control" th:field="*{comment}" maxlength="2000"/>
+        </div>
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-plus"></i>
+            <span th:text="#{main.budget.adjustment.button.add}">Anpassung hinzufügen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <a class="btn btn-outline-secondary" th:href="@{/budget}">
+      <i class="icon ti ti-arrow-left"></i>
+      <span th:text="#{main.general.button.back.text}">Zurück</span>
+    </a>
+  </div>
+
+</main>
+</html>
