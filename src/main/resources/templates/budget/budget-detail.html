@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
-      th:with="section='budget',subSection='budgets',title=${budget.name},sectionTitle=#{main.general.mainmenu.budget.text}">
+      th:with="
+        section='budget',
+        subSection='budgets',
+        title=${budget.name},sectionTitle=#{main.general.mainmenu.budget.text},
+        pageTitle=${budget.name},sectionTitle=#{main.general.mainmenu.budget.text}
+">
 <main layout:fragment="content">
 
   <!-- Budget details card -->

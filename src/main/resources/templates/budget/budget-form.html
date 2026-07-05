@@ -2,7 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:salat="http://hbt.de/salat/thymeleaf"
       layout:decorate="~{layout/base}"
-      th:with="section='budget',subSection='budgets',title=${isEdit} ? #{main.budget.form.title.edit} : #{main.budget.form.title.create},sectionTitle=#{main.general.mainmenu.budget.text}">
+      th:with="
+        section='budget',
+        subSection='budgets',
+        title=${isEdit} ? #{main.budget.form.title.edit} : #{main.budget.form.title.create},sectionTitle=#{main.general.mainmenu.budget.text},
+        pageTitle=${isEdit} ? #{main.budget.form.title.edit} : #{main.budget.form.title.create},sectionTitle=#{main.general.mainmenu.budget.text}
+">
 <main layout:fragment="content">
 
   <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
