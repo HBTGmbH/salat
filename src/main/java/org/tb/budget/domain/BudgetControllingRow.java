@@ -1,6 +1,7 @@
 package org.tb.budget.domain;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 
 public record BudgetControllingRow(
@@ -36,6 +37,16 @@ public record BudgetControllingRow(
 
     public boolean hasCost() {
         return costEuro != null && costEuro.signum() != 0;
+    }
+
+    public boolean hasBudgetPercent() {
+        return budgetEuro != null && budgetEuro.signum() != 0 && revenueEuro != null;
+    }
+
+    public double budgetUsedPercent() {
+        if (!hasBudgetPercent()) return 0.0;
+        return revenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal.valueOf(100)).doubleValue();
     }
 
     public String formatHours(Duration d) {
