@@ -2,6 +2,7 @@ package org.tb.budget.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,7 @@ public class BudgetController {
     private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final MessageSourceAccessor messages;
 
     @GetMapping
     public String list(@RequestParam(required = false) String coSign,
@@ -87,22 +89,22 @@ public class BudgetController {
                         Model model,
                         RedirectAttributes redirectAttributes) {
         if (form.getName() == null || form.getName().isBlank()) {
-            model.addAttribute("formErrors", List.of("Name ist erforderlich."));
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.name.required")));
             addFormModel(model, form, !form.isNew());
             return "budget/budget-form";
         }
         if (form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()) {
-            model.addAttribute("formErrors", List.of("Auftrag ist erforderlich."));
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.order.required")));
             addFormModel(model, form, !form.isNew());
             return "budget/budget-form";
         }
         if (form.getValidFrom() == null || form.getValidUntil() == null) {
-            model.addAttribute("formErrors", List.of("Zeitraum ist erforderlich."));
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.dates.required")));
             addFormModel(model, form, !form.isNew());
             return "budget/budget-form";
         }
         if (form.getValidFrom().isAfter(form.getValidUntil())) {
-            model.addAttribute("formErrors", List.of("Gültig ab muss vor Gültig bis liegen."));
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.dates.invalid")));
             addFormModel(model, form, !form.isNew());
             return "budget/budget-form";
         }
@@ -119,10 +121,10 @@ public class BudgetController {
         try {
             if (form.isNew()) {
                 orderBudgetService.create(data);
-                redirectAttributes.addFlashAttribute("toastSuccess", "Budgetplan angelegt.");
+                redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.message.created"));
             } else {
                 orderBudgetService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess", "Budgetplan gespeichert.");
+                redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.message.updated"));
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",
@@ -140,11 +142,13 @@ public class BudgetController {
             var budget = orderBudgetService.getById(id);
             var newActive = !Boolean.TRUE.equals(budget.getActive());
             orderBudgetService.setActive(id, newActive);
-            redirectAttributes.addFlashAttribute("toastSuccess",
-                newActive ? "Budgetplan aktiviert." : "Budgetplan deaktiviert.");
+            redirectAttributes.addFlashAttribute("toastSuccess", newActive
+                ? messages.getMessage("main.budget.message.activated")
+                : messages.getMessage("main.budget.message.deactivated"));
         } catch (ErrorCodeException ex) {
             redirectAttributes.addFlashAttribute("toastError",
-                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst().orElse("Fehler"));
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
         }
         return "redirect:/budget";
     }
@@ -166,10 +170,11 @@ public class BudgetController {
         try {
             orderBudgetService.addAdjustment(id, new OrderBudgetAdjustmentData(
                 form.getAmount(), form.getEffective(), form.getComment()));
-            redirectAttributes.addFlashAttribute("toastSuccess", "Anpassung gespeichert.");
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.adjustment.message.added"));
         } catch (ErrorCodeException ex) {
             redirectAttributes.addFlashAttribute("toastError",
-                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst().orElse("Fehler"));
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
         }
         return "redirect:/budget/" + id;
     }
@@ -180,10 +185,11 @@ public class BudgetController {
                                    RedirectAttributes redirectAttributes) {
         try {
             orderBudgetService.removeAdjustment(id, adjId);
-            redirectAttributes.addFlashAttribute("toastSuccess", "Anpassung gelöscht.");
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.adjustment.message.deleted"));
         } catch (ErrorCodeException ex) {
             redirectAttributes.addFlashAttribute("toastError",
-                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst().orElse("Fehler"));
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
         }
         return "redirect:/budget/" + id;
     }
