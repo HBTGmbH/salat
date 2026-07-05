@@ -168,6 +168,11 @@
                      th:text="#{main.employeecost.list.title}">
                     Mitarbeiterkostensätze
                   </a>
+                  <a class="dropdown-item" th:href="@{/budget/controlling}"
+                     th:classappend="${subSection == 'controlling'} ? 'active' : ''"
+                     th:text="#{main.controlling.title}">
+                    Soll-Ist-Controlling
+                  </a>
                 </div>
               </div>
             </div>
