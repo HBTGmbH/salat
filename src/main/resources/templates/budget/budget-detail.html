@@ -67,7 +67,7 @@
           </tr>
           <tr th:each="adj : ${budget.adjustments}">
             <td th:text="${adj.effective}"></td>
-            <td th:text="${#numbers.formatDecimal(adj.amount, 1, 'COMMA', 2, 'POINT')}"></td>
+            <td th:text="#{main.budget.format.amount(${adj.amount})}"></td>
             <td th:text="${adj.comment}"></td>
             <td th:if="${isManager}">
               <form th:action="@{/budget/{id}/adjustments/{adjId}/delete(id=${budget.id},adjId=${adj.id})}"
