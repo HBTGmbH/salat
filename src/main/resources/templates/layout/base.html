@@ -157,6 +157,11 @@
                      th:text="#{main.budget.list.title}">
                     Budgetpläne
                   </a>
+                  <a class="dropdown-item" th:href="@{/budget/pricing}"
+                     th:classappend="${subSection == 'pricing'} ? 'active' : ''"
+                     th:text="#{main.pricing.list.title}">
+                    Kundenstundensätze
+                  </a>
                 </div>
               </div>
             </div>

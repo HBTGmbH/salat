@@ -10,6 +10,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.persistence.OrderPricingRepository;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 
@@ -20,6 +21,11 @@ import org.tb.common.exception.InvalidDataException;
 public class OrderPricingService {
 
     private final OrderPricingRepository orderPricingRepository;
+
+    @Transactional(readOnly = true)
+    public List<OrderPricing> getAll() {
+        return orderPricingRepository.findAllByOrderByCustomerorderSignAscValidFromAsc();
+    }
 
     @Transactional(readOnly = true)
     public OrderPricing getById(long id) {
@@ -52,6 +58,9 @@ public class OrderPricingService {
 
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
+        var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
+            data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
         apply(pricing, data);
         orderPricingRepository.save(pricing);
@@ -59,6 +68,9 @@ public class OrderPricingService {
 
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
+        var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
+            data.validFrom(), validUntil, id);
         var pricing = getById(id);
         apply(pricing, data);
         orderPricingRepository.save(pricing);
@@ -67,6 +79,13 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void delete(long id) {
         orderPricingRepository.deleteById(id);
+    }
+
+    private void checkNoOverlap(String co, String so, String emp, LocalDate from, LocalDate until, Long excludeId) {
+        var overlapping = orderPricingRepository.findOverlapping(co, so, emp, from, until, excludeId);
+        if (!overlapping.isEmpty()) {
+            throw new BusinessRuleException(ErrorCode.BU_PRICING_OVERLAP);
+        }
     }
 
     private void apply(OrderPricing pricing, OrderPricingData data) {

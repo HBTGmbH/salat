@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='pricing',
+        pageTitle=#{main.pricing.list.title},sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div class="d-flex justify-content-end mb-3" th:if="${isManager}">
+    <a class="btn btn-success" th:href="@{/budget/pricing/create}">
+      <i class="icon ti ti-plus"></i>
+      <span th:text="#{main.pricing.button.create}">Neuer Stundensatz</span>
+    </a>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.pricing.field.customerorderSign}">Auftrag</th>
+          <th th:text="#{main.pricing.field.suborderSign}">Unterauftrag</th>
+          <th th:text="#{main.pricing.field.employeeSign}">Mitarbeiter</th>
+          <th th:text="#{main.pricing.field.description}">Beschreibung</th>
+          <th th:text="#{main.pricing.field.priceEuro}">€/h</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.pricing.field.validFrom}">Gültig ab</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.pricing.field.validUntil}">Gültig bis</th>
+          <th class="w-1" th:if="${isManager}"></th>
+          <th class="w-1" th:if="${isManager}"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(pricings)}">
+          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+        </tr>
+        <tr th:each="p : ${pricings}">
+          <td th:text="${p.customerorderSign}"></td>
+          <td th:text="${p.suborderSign} ?: '-'"></td>
+          <td th:text="${p.employeeSign} ?: '-'"></td>
+          <td th:text="${p.description} ?: '-'"></td>
+          <td th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
+          <td class="d-none d-md-table-cell" th:text="${p.validFrom}"></td>
+          <td class="d-none d-md-table-cell" th:text="${p.validUntil.year != 2999} ? ${p.validUntil} : '-'"></td>
+          <td th:if="${isManager}">
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/pricing/{id}/edit(id=${p.id})}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td th:if="${isManager}">
+            <form th:action="@{/budget/pricing/{id}/delete(id=${p.id})}" method="post"
+                  th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</html>
