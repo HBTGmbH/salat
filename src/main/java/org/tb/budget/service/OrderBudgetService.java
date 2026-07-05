@@ -9,7 +9,6 @@ import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
 import org.tb.budget.domain.OrderBudgetData;
-import org.tb.budget.persistence.OrderBudgetDAO;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
@@ -20,28 +19,27 @@ import org.tb.common.exception.InvalidDataException;
 @Authorized
 public class OrderBudgetService {
 
-    private final OrderBudgetDAO orderBudgetDAO;
     private final OrderBudgetRepository orderBudgetRepository;
 
     @Transactional(readOnly = true)
     public OrderBudget getById(long id) {
-        return orderBudgetDAO.findById(id)
+        return orderBudgetRepository.findById(id)
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, id));
     }
 
     @Transactional(readOnly = true)
     public List<OrderBudget> getAll() {
-        return orderBudgetDAO.findAll();
+        return orderBudgetRepository.findAllByOrderByCustomerorderSignAscValidFromAsc();
     }
 
     @Transactional(readOnly = true)
     public List<OrderBudget> getByCustomerorderSign(String customerorderSign) {
-        return orderBudgetDAO.findByCustomerorderSign(customerorderSign);
+        return orderBudgetRepository.findByCustomerorderSign(customerorderSign);
     }
 
     @Transactional(readOnly = true)
     public List<OrderBudget> getActiveByCustomerorderSign(String customerorderSign) {
-        return orderBudgetDAO.findActiveByCustomerorderSign(customerorderSign);
+        return orderBudgetRepository.findByCustomerorderSignAndActive(customerorderSign, Boolean.TRUE);
     }
 
     @Authorized(requiresManager = true)
