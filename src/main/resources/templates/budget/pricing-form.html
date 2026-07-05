@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='pricing',
+        pageTitle=${isEdit} ? #{main.pricing.form.title.edit} : #{main.pricing.form.title.create},sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/budget/pricing/store}" th:object="${pricingForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <div class="row">
+        <div class="col-md-6">
+          <salat:select th:field="*{customerorderSign}" th:label="#{main.pricing.field.customerorderSign}">
+            <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+            <option th:each="co : ${customerorders}"
+                    th:value="${co.sign}"
+                    th:text="|${co.sign} - ${co.shortdescription}|"></option>
+          </salat:select>
+        </div>
+        <div class="col-md-6">
+          <salat:select th:field="*{suborderSign}" th:label="#{main.pricing.field.suborderSign}">
+            <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
+            <option th:each="so : ${suborders}"
+                    th:value="${so.sign}"
+                    th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
+          </salat:select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <salat:select th:field="*{employeeSign}" th:label="#{main.pricing.field.employeeSign}">
+            <option value="" th:text="#{main.pricing.field.employeeSign.all}">--- Alle Mitarbeiter ---</option>
+            <option th:each="emp : ${employees}"
+                    th:value="${emp.sign}"
+                    th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}|"></option>
+          </salat:select>
+        </div>
+        <div class="col-md-6">
+          <salat:textInput th:field="*{description}" th:label="#{main.pricing.field.description}" maxlength="255" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <salat:textInput th:field="*{priceEuro}" type="number" th:label="#{main.pricing.field.priceEuro}" required="true"
+                           th:attr="step='0.01', min='0'" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.pricing.field.validFrom}" required="true" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.pricing.field.validUntil}" />
+        </div>
+      </div>
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}" th:cancelHref="@{/budget/pricing}" />
+    </salat:buttons>
+  </salat:form>
+
+</main>
+</html>

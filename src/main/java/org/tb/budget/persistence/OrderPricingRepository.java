@@ -13,7 +13,25 @@ import org.tb.budget.domain.OrderPricing;
 public interface OrderPricingRepository
     extends CrudRepository<OrderPricing, Long>, PagingAndSortingRepository<OrderPricing, Long> {
 
+    List<OrderPricing> findAllByOrderByCustomerorderSignAscValidFromAsc();
+
     List<OrderPricing> findByCustomerorderSign(String customerorderSign);
+
+    @Query("""
+        SELECT p FROM OrderPricing p
+        WHERE p.customerorderSign = :co
+          AND ((:so IS NULL AND p.suborderSign IS NULL) OR p.suborderSign = :so)
+          AND ((:emp IS NULL AND p.employeeSign IS NULL) OR p.employeeSign = :emp)
+          AND p.validFrom <= :until AND p.validUntil >= :from
+          AND (:excludeId IS NULL OR p.id != :excludeId)
+        """)
+    List<OrderPricing> findOverlapping(
+        @Param("co") String customerorderSign,
+        @Param("so") String suborderSign,
+        @Param("emp") String employeeSign,
+        @Param("from") LocalDate validFrom,
+        @Param("until") LocalDate validUntil,
+        @Param("excludeId") Long excludeId);
 
     @Query("SELECT p FROM OrderPricing p WHERE p.customerorderSign = :co"
         + " AND p.suborderSign = :so AND p.employeeSign = :emp"
