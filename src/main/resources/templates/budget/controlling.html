@@ -52,22 +52,21 @@
       <thead>
         <tr>
           <th th:text="#{main.controlling.col.order}">Auftrag</th>
-          <th class="text-end" th:text="#{main.controlling.col.planned}">Geplant (h)</th>
           <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
           <th class="text-end" th:text="#{main.controlling.col.percent}">Verbrauch</th>
           <th class="text-end" th:text="#{main.controlling.col.budget}">Budget (€)</th>
           <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
-          <th class="text-end" th:text="#{main.controlling.col.uncovered}">Ungedeckt (€)</th>
+          <th class="text-end" th:if="${result.total().hasUncoveredRevenue()}" th:text="#{main.controlling.col.uncovered}">Ungedeckt (€)</th>
           <th class="text-end" th:text="#{main.controlling.col.budgetused}">Budget genutzt</th>
           <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
-          <th class="text-end" th:if="${result.forecastAvailable()}" th:text="#{main.controlling.col.forecast.hours}">Prognose (h)</th>
           <th class="text-end" th:if="${result.forecastAvailable()}" th:text="#{main.controlling.col.forecast.revenue}">Prognose-Erlös (€)</th>
           <th class="text-center" th:if="${result.forecastAvailable()}" th:text="#{main.controlling.col.forecast.status}">Ampel</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(result.suborderRows())}">
-          <td th:colspan="${isManager} ? (${result.forecastAvailable()} ? 12 : 9) : (${result.forecastAvailable()} ? 11 : 8)"
+          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, fc=${result.forecastAvailable()} ? 2 : 0, mgr=${isManager} ? 1 : 0"
+              th:colspan="${6 + unc + fc + mgr}"
               class="text-center text-muted py-3"
               th:text="#{main.controlling.no.suborders}">Keine Subaufträge</td>
         </tr>
@@ -78,20 +77,18 @@
             <span class="text-muted small" th:text="${row.sign()}"></span>
             <span class="ms-1 small" th:text="${row.label()}"></span>
           </td>
-          <td class="text-end small" th:text="${row.plannedHoursFormatted()}"></td>
           <td class="text-end small" th:text="${row.bookedHoursFormatted()}"></td>
           <td class="text-end small"
               th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
           <td class="text-end small" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
-          <td class="text-end small text-warning"
+          <td class="text-end small text-warning" th:if="${result.total().hasUncoveredRevenue()}"
               th:text="${row.hasUncoveredRevenue()} ? #{main.budget.format.amount(${row.uncoveredRevenueEuro()})} : '—'"></td>
           <td class="text-end small"
               th:classappend="${row.hasBudgetPercent()} ? (${row.budgetUsedPercent() > 100} ? 'text-danger' : (${row.budgetUsedPercent() > 80} ? 'text-warning' : '')) : ''"
               th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
-          <td class="text-end small" th:if="${result.forecastAvailable()}" th:text="${row.forecastHoursFormatted()}"></td>
           <td class="text-end small" th:if="${result.forecastAvailable()}" th:text="${row.hasForecastRevenue()} ? #{main.budget.format.amount(${row.forecastRevenueEuro()})} : '—'"></td>
           <td class="text-center" th:if="${result.forecastAvailable()}">
             <span th:if="${row.forecastStatus().name() == 'GREEN'}" class="badge bg-success-lt">&#9679;</span>
@@ -107,20 +104,18 @@
             <span th:text="${row.sign()}"></span>
             <span class="text-muted fw-normal small ms-1" th:text="${row.label()}"></span>
           </td>
-          <td class="text-end" th:text="${row.plannedHoursFormatted()}"></td>
           <td class="text-end" th:text="${row.bookedHoursFormatted()}"></td>
           <td class="text-end"
               th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
           <td class="text-end" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
-          <td class="text-end text-warning"
+          <td class="text-end text-warning" th:if="${result.total().hasUncoveredRevenue()}"
               th:text="${row.hasUncoveredRevenue()} ? #{main.budget.format.amount(${row.uncoveredRevenueEuro()})} : '—'"></td>
           <td class="text-end"
               th:classappend="${row.hasBudgetPercent()} ? (${row.budgetUsedPercent() > 100} ? 'text-danger' : (${row.budgetUsedPercent() > 80} ? 'text-warning' : '')) : ''"
               th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
-          <td class="text-end" th:if="${result.forecastAvailable()}" th:text="${row.forecastHoursFormatted()}"></td>
           <td class="text-end" th:if="${result.forecastAvailable()}" th:text="${row.hasForecastRevenue()} ? #{main.budget.format.amount(${row.forecastRevenueEuro()})} : '—'"></td>
           <td class="text-center" th:if="${result.forecastAvailable()}">
             <span th:if="${row.forecastStatus().name() == 'GREEN'}" class="badge bg-success-lt">&#9679;</span>
