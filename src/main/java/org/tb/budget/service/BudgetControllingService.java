@@ -60,13 +60,18 @@ public class BudgetControllingService {
         Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
             .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
 
+        var orderLevelBudgets = budgets.stream()
+            .filter(b -> b.getSuborderSign() == null || b.getSuborderSign().isBlank())
+            .toList();
+        var orderLevelBudget = computeEffectiveBudget(orderLevelBudgets, from, until);
+
         var suborderRows = new ArrayList<BudgetControllingRow>();
         var totalBooked = Duration.ZERO;
         var totalPlanned = Duration.ZERO;
         var totalRevenue = BigDecimal.ZERO;
         var totalCoveredRevenue = BigDecimal.ZERO;
         var totalCost = BigDecimal.ZERO;
-        var totalBudget = BigDecimal.ZERO;
+        var totalBudget = orderLevelBudget;
         var totalForecastRevenue = BigDecimal.ZERO;
         var totalForecastHours = Duration.ZERO;
         var totalForecastKnown = true;
@@ -79,8 +84,10 @@ public class BudgetControllingService {
             var suborderBudgets = budgets.stream()
                 .filter(b -> suborder.getSign().equals(b.getSuborderSign()))
                 .toList();
-            var budget = computeEffectiveBudget(suborderBudgets, from, until);
-            var coveredRevenue = computeCoveredRevenue(suborderBudgets,
+            var hasOwnBudget = suborderBudgets.stream().anyMatch(b -> Boolean.TRUE.equals(b.getActive()));
+            var effectiveBudgets = hasOwnBudget ? suborderBudgets : orderLevelBudgets;
+            var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
+            var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
                 (start, end) -> computeRevenue(
                     reports.stream()
                         .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
@@ -112,24 +119,8 @@ public class BudgetControllingService {
             totalRevenue = totalRevenue.add(revenue);
             totalCoveredRevenue = totalCoveredRevenue.add(coveredRevenue);
             if (includeCosts) totalCost = totalCost.add(cost);
-            totalBudget = totalBudget.add(budget);
+            if (hasOwnBudget) totalBudget = totalBudget.add(budget);
         }
-
-        var orderLevelBudgets = budgets.stream()
-            .filter(b -> b.getSuborderSign() == null || b.getSuborderSign().isBlank())
-            .toList();
-        var orderLevelBudget = computeEffectiveBudget(orderLevelBudgets, from, until);
-        var orderLevelCoveredRevenue = computeCoveredRevenue(orderLevelBudgets,
-            (start, end) -> suborders.stream()
-                .map(so -> computeRevenue(
-                    bySuborder.getOrDefault(so.getId(), List.of()).stream()
-                        .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
-                        .toList(),
-                    customerorderSign, so.getSign()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add),
-            from, until);
-        totalBudget = totalBudget.add(orderLevelBudget);
-        totalCoveredRevenue = totalCoveredRevenue.add(orderLevelCoveredRevenue);
 
         var coPlanned = customerorder.getDebithours() != null ? customerorder.getDebithours() : Duration.ZERO;
         var totalForecastRevenueFinal = forecastAvailable && totalForecastKnown ? totalForecastRevenue : null;
