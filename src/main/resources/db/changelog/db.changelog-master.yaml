@@ -2404,5 +2404,26 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 65
+      author: kr
+      comment: Add alert threshold and sent-at fields to order_budget
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_budget
+                columnName: alert_threshold_percent
+      changes:
+        - addColumn:
+            tableName: order_budget
+            columns:
+              - column:
+                  name: alert_threshold_percent
+                  type: int
+              - column:
+                  name: alert_sent_at
+                  type: date
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

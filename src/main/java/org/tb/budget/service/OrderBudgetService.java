@@ -1,5 +1,6 @@
 package org.tb.budget.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -82,6 +83,12 @@ public class OrderBudgetService {
         orderBudgetRepository.save(budget);
     }
 
+    public void updateAlertSentAt(long id, LocalDate alertSentAt) {
+        var budget = getById(id);
+        budget.setAlertSentAt(alertSentAt);
+        orderBudgetRepository.save(budget);
+    }
+
     private void apply(OrderBudget budget, OrderBudgetData data) {
         budget.setName(data.name());
         budget.setCustomerorderSign(data.customerorderSign());
@@ -89,6 +96,7 @@ public class OrderBudgetService {
         budget.setValidFrom(data.validFrom());
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));
+        budget.setAlertThresholdPercent(data.alertThresholdPercent());
     }
 
 }

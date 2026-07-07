@@ -43,6 +43,7 @@
           <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.budget.field.validUntil}" required="true" />
         </div>
       </div>
+      <salat:textInput th:field="*{alertThresholdPercent}" type="number" th:label="#{main.budget.field.alertThresholdPercent}" />
       <salat:checkboxSwitch th:field="*{active}" th:label="#{main.general.active.text}" />
     </salat:inputs>
     <salat:buttons>

@@ -39,6 +39,12 @@ public class OrderBudget extends AuditedEntity {
     @Column(nullable = false)
     private Boolean active;
 
+    @Column(name = "alert_threshold_percent")
+    private Integer alertThresholdPercent;
+
+    @Column(name = "alert_sent_at")
+    private LocalDate alertSentAt;
+
     @OneToMany(mappedBy = "orderBudget", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<OrderBudgetAdjustment> adjustments = new ArrayList<>();

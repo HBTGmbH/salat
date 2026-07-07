@@ -16,4 +16,6 @@ public interface OrderBudgetRepository
 
     List<OrderBudget> findAllByOrderByCustomerorderSignAscValidFromAsc();
 
+    List<OrderBudget> findByActiveAndAlertThresholdPercentIsNotNull(Boolean active);
+
 }

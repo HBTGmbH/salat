@@ -21,6 +21,7 @@ public class OrderBudgetForm {
     private LocalDate validUntil;
 
     private Boolean active = Boolean.TRUE;
+    private Integer alertThresholdPercent;
 
     public boolean isNew() {
         return id == null;

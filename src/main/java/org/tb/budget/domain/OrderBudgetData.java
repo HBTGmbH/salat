@@ -8,5 +8,6 @@ public record OrderBudgetData(
     String suborderSign,
     LocalDate validFrom,
     LocalDate validUntil,
-    Boolean active
+    Boolean active,
+    Integer alertThresholdPercent
 ) {}

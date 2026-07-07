@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -147,6 +148,60 @@ public class BudgetControllingService {
             forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue), totalForecastUncoveredFinal));
 
         return new BudgetControllingResult(totalRow, suborderRows, forecastAvailable);
+    }
+
+    public record UtilizationInfo(BigDecimal budgetEuro, BigDecimal coveredRevenueEuro) {
+        public double percent() {
+            if (budgetEuro == null || budgetEuro.signum() == 0) return 0.0;
+            return coveredRevenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100)).doubleValue();
+        }
+    }
+
+    public UtilizationInfo computeUtilizationInfo(OrderBudget budget) {
+        var from = budget.getValidFrom();
+        var until = budget.getValidUntil();
+        var coSign = budget.getCustomerorderSign();
+        var soSign = budget.getSuborderSign();
+
+        var effectiveBudget = computeEffectiveBudget(List.of(budget), from, until);
+
+        var customerorder = customerorderService.getCustomerorderBySign(coSign);
+        var allTimereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
+        var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
+
+        BigDecimal coveredRevenue;
+        if (soSign == null || soSign.isBlank()) {
+            Map<Long, List<TimereportDTO>> bySuborder = allTimereports.stream()
+                .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
+            coveredRevenue = BigDecimal.ZERO;
+            for (var so : suborders) {
+                var reports = bySuborder.getOrDefault(so.getId(), List.of());
+                coveredRevenue = coveredRevenue.add(computeCoveredRevenue(List.of(budget),
+                    (start, end) -> computeRevenue(
+                        reports.stream()
+                            .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
+                            .toList(),
+                        coSign, so.getSign()),
+                    from, until));
+            }
+        } else {
+            var soId = suborders.stream()
+                .filter(s -> soSign.equals(s.getSign()))
+                .map(s -> s.getId())
+                .findFirst().orElse(null);
+            var reports = soId == null ? List.<TimereportDTO>of() :
+                allTimereports.stream().filter(r -> Objects.equals(r.getSuborderId(), soId)).toList();
+            coveredRevenue = computeCoveredRevenue(List.of(budget),
+                (start, end) -> computeRevenue(
+                    reports.stream()
+                        .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
+                        .toList(),
+                    coSign, soSign),
+                from, until);
+        }
+
+        return new UtilizationInfo(effectiveBudget, coveredRevenue);
     }
 
     private record ForecastData(Duration hours, BigDecimal coveredRevenue, BigDecimal uncoveredRevenue) {}
