@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -64,6 +64,7 @@ public class BudgetControllingService {
         var totalBooked = Duration.ZERO;
         var totalPlanned = Duration.ZERO;
         var totalRevenue = BigDecimal.ZERO;
+        var totalCoveredRevenue = BigDecimal.ZERO;
         var totalCost = BigDecimal.ZERO;
         var totalBudget = BigDecimal.ZERO;
         var totalForecastRevenue = BigDecimal.ZERO;
@@ -78,9 +79,12 @@ public class BudgetControllingService {
             var suborderBudgets = budgets.stream()
                 .filter(b -> suborder.getSign().equals(b.getSuborderSign()))
                 .toList();
-            var budget = computeEffectiveBudget(suborderBudgets,
-                date -> computeRevenue(
-                    reports.stream().filter(r -> !r.getReferenceday().isAfter(date)).toList(),
+            var budget = computeEffectiveBudget(suborderBudgets, from, until);
+            var coveredRevenue = computeCoveredRevenue(suborderBudgets,
+                (start, end) -> computeRevenue(
+                    reports.stream()
+                        .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
+                        .toList(),
                     customerorderSign, suborder.getSign()),
                 from, until);
 
@@ -99,13 +103,14 @@ public class BudgetControllingService {
             suborderRows.add(new BudgetControllingRow(
                 suborder.getCompleteOrderSign(),
                 suborder.getShortdescription(),
-                true, planned, booked, budget, revenue, cost,
+                true, planned, booked, budget, revenue, coveredRevenue, cost,
                 forecastHours, forecastRevenue,
                 forecastStatus(forecastRevenue, budget)));
 
             totalBooked = totalBooked.plus(booked);
             totalPlanned = totalPlanned.plus(planned);
             totalRevenue = totalRevenue.add(revenue);
+            totalCoveredRevenue = totalCoveredRevenue.add(coveredRevenue);
             if (includeCosts) totalCost = totalCost.add(cost);
             totalBudget = totalBudget.add(budget);
         }
@@ -113,15 +118,18 @@ public class BudgetControllingService {
         var orderLevelBudgets = budgets.stream()
             .filter(b -> b.getSuborderSign() == null || b.getSuborderSign().isBlank())
             .toList();
-        var orderLevelBudget = computeEffectiveBudget(orderLevelBudgets,
-            date -> suborders.stream()
+        var orderLevelBudget = computeEffectiveBudget(orderLevelBudgets, from, until);
+        var orderLevelCoveredRevenue = computeCoveredRevenue(orderLevelBudgets,
+            (start, end) -> suborders.stream()
                 .map(so -> computeRevenue(
                     bySuborder.getOrDefault(so.getId(), List.of()).stream()
-                        .filter(r -> !r.getReferenceday().isAfter(date)).toList(),
+                        .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
+                        .toList(),
                     customerorderSign, so.getSign()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add),
             from, until);
         totalBudget = totalBudget.add(orderLevelBudget);
+        totalCoveredRevenue = totalCoveredRevenue.add(orderLevelCoveredRevenue);
 
         var coPlanned = customerorder.getDebithours() != null ? customerorder.getDebithours() : Duration.ZERO;
         var totalForecastRevenueFinal = forecastAvailable && totalForecastKnown ? totalForecastRevenue : null;
@@ -135,6 +143,7 @@ public class BudgetControllingService {
             totalBooked,
             totalBudget,
             totalRevenue,
+            totalCoveredRevenue,
             includeCosts ? totalCost : null,
             totalForecastHoursFinal,
             totalForecastRevenueFinal,
@@ -219,27 +228,34 @@ public class BudgetControllingService {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private BigDecimal computeEffectiveBudget(List<OrderBudget> budgets,
-                                               Function<LocalDate, BigDecimal> revenueUpTo,
-                                               LocalDate from, LocalDate until) {
+    private BigDecimal computeEffectiveBudget(List<OrderBudget> budgets, LocalDate from, LocalDate until) {
         var total = BigDecimal.ZERO;
         for (var budget : budgets) {
             if (!Boolean.TRUE.equals(budget.getActive())) continue;
             if (budget.getValidUntil().isBefore(from)) continue;
+            if (budget.getValidFrom().isAfter(until)) continue;
 
-            var budgetEnd = budget.getValidUntil().isBefore(until) ? budget.getValidUntil() : until;
-            var allocated = sumBudget(budget.getAdjustments().stream()
-                .filter(a -> !a.getEffective().isBefore(from) && !a.getEffective().isAfter(budgetEnd))
-                .toList());
-
-            if (budget.getValidUntil().isBefore(until)) {
-                // Budget expires before the controlling period ends: forfeit unused portion
-                allocated = allocated.min(revenueUpTo.apply(budget.getValidUntil()));
-            }
-
-            total = total.add(allocated);
+            var adjFrom = budget.getValidFrom().isAfter(from) ? budget.getValidFrom() : from;
+            var adjUntil = budget.getValidUntil().isBefore(until) ? budget.getValidUntil() : until;
+            total = total.add(sumBudget(budget.getAdjustments().stream()
+                .filter(a -> !a.getEffective().isBefore(adjFrom) && !a.getEffective().isAfter(adjUntil))
+                .toList()));
         }
         return total;
+    }
+
+    private BigDecimal computeCoveredRevenue(List<OrderBudget> budgets,
+                                              BiFunction<LocalDate, LocalDate, BigDecimal> revenueInRange,
+                                              LocalDate from, LocalDate until) {
+        return budgets.stream()
+            .filter(b -> Boolean.TRUE.equals(b.getActive()))
+            .filter(b -> !b.getValidUntil().isBefore(from) && !b.getValidFrom().isAfter(until))
+            .map(b -> {
+                var coverStart = b.getValidFrom().isAfter(from) ? b.getValidFrom() : from;
+                var coverEnd = b.getValidUntil().isBefore(until) ? b.getValidUntil() : until;
+                return revenueInRange.apply(coverStart, coverEnd);
+            })
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private BigDecimal sumBudget(List<OrderBudgetAdjustment> adjustments) {
