@@ -12,6 +12,7 @@ public record BudgetControllingRow(
     Duration bookedHours,
     BigDecimal budgetEuro,
     BigDecimal revenueEuro,
+    BigDecimal coveredRevenueEuro,
     BigDecimal costEuro,
     Duration forecastHours,
     BigDecimal forecastRevenueEuro,
@@ -43,13 +44,23 @@ public record BudgetControllingRow(
     }
 
     public boolean hasBudgetPercent() {
-        return budgetEuro != null && budgetEuro.signum() != 0 && revenueEuro != null;
+        return budgetEuro != null && budgetEuro.signum() != 0 && coveredRevenueEuro != null;
     }
 
     public double budgetUsedPercent() {
         if (!hasBudgetPercent()) return 0.0;
-        return revenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
+        return coveredRevenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
             .multiply(BigDecimal.valueOf(100)).doubleValue();
+    }
+
+    public BigDecimal uncoveredRevenueEuro() {
+        if (revenueEuro == null || coveredRevenueEuro == null) return BigDecimal.ZERO;
+        var diff = revenueEuro.subtract(coveredRevenueEuro);
+        return diff.signum() > 0 ? diff : BigDecimal.ZERO;
+    }
+
+    public boolean hasUncoveredRevenue() {
+        return uncoveredRevenueEuro().signum() > 0;
     }
 
     public boolean hasForecast() {
