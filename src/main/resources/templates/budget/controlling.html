@@ -82,7 +82,7 @@
               th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
-          <td class="text-end small" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+          <td class="text-end small" th:text="${row.hasCoveredRevenue()} ? #{main.budget.format.amount(${row.coveredRevenueEuro()})} : '—'"></td>
           <td class="text-end small text-warning" th:if="${result.total().hasUncoveredRevenue()}"
               th:text="${row.hasUncoveredRevenue()} ? #{main.budget.format.amount(${row.uncoveredRevenueEuro()})} : '—'"></td>
           <td class="text-end small"
@@ -109,7 +109,7 @@
               th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
-          <td class="text-end" th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+          <td class="text-end" th:text="${row.hasCoveredRevenue()} ? #{main.budget.format.amount(${row.coveredRevenueEuro()})} : '—'"></td>
           <td class="text-end text-warning" th:if="${result.total().hasUncoveredRevenue()}"
               th:text="${row.hasUncoveredRevenue()} ? #{main.budget.format.amount(${row.uncoveredRevenueEuro()})} : '—'"></td>
           <td class="text-end"
