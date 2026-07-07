@@ -4,5 +4,6 @@ import java.util.List;
 
 public record BudgetControllingResult(
     BudgetControllingRow total,
-    List<BudgetControllingRow> suborderRows
+    List<BudgetControllingRow> suborderRows,
+    boolean forecastAvailable
 ) {}
