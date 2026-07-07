@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.ForecastStatus;
+import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.common.util.DateUtils;
@@ -73,12 +75,14 @@ public class BudgetControllingService {
             var booked = sumDuration(reports);
             var revenue = computeRevenue(reports, customerorderSign, suborder.getSign());
             var cost = includeCosts ? computeCost(reports, suborder.getSign()) : null;
-            var budget = sumBudget(budgets.stream()
+            var suborderBudgets = budgets.stream()
                 .filter(b -> suborder.getSign().equals(b.getSuborderSign()))
-                .filter(b -> Boolean.TRUE.equals(b.getActive()))
-                .flatMap(b -> b.getAdjustments().stream())
-                .filter(a -> !a.getEffective().isBefore(from) && !a.getEffective().isAfter(until))
-                .toList());
+                .toList();
+            var budget = computeEffectiveBudget(suborderBudgets,
+                date -> computeRevenue(
+                    reports.stream().filter(r -> !r.getReferenceday().isAfter(date)).toList(),
+                    customerorderSign, suborder.getSign()),
+                from, until);
 
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
@@ -106,12 +110,17 @@ public class BudgetControllingService {
             totalBudget = totalBudget.add(budget);
         }
 
-        var orderLevelBudget = sumBudget(budgets.stream()
+        var orderLevelBudgets = budgets.stream()
             .filter(b -> b.getSuborderSign() == null || b.getSuborderSign().isBlank())
-            .filter(b -> Boolean.TRUE.equals(b.getActive()))
-            .flatMap(b -> b.getAdjustments().stream())
-            .filter(a -> !a.getEffective().isBefore(from) && !a.getEffective().isAfter(until))
-            .toList());
+            .toList();
+        var orderLevelBudget = computeEffectiveBudget(orderLevelBudgets,
+            date -> suborders.stream()
+                .map(so -> computeRevenue(
+                    bySuborder.getOrDefault(so.getId(), List.of()).stream()
+                        .filter(r -> !r.getReferenceday().isAfter(date)).toList(),
+                    customerorderSign, so.getSign()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add),
+            from, until);
         totalBudget = totalBudget.add(orderLevelBudget);
 
         var coPlanned = customerorder.getDebithours() != null ? customerorder.getDebithours() : Duration.ZERO;
@@ -208,6 +217,29 @@ public class BudgetControllingService {
                     .orElse(BigDecimal.ZERO);
             })
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal computeEffectiveBudget(List<OrderBudget> budgets,
+                                               Function<LocalDate, BigDecimal> revenueUpTo,
+                                               LocalDate from, LocalDate until) {
+        var total = BigDecimal.ZERO;
+        for (var budget : budgets) {
+            if (!Boolean.TRUE.equals(budget.getActive())) continue;
+            if (budget.getValidUntil().isBefore(from)) continue;
+
+            var budgetEnd = budget.getValidUntil().isBefore(until) ? budget.getValidUntil() : until;
+            var allocated = sumBudget(budget.getAdjustments().stream()
+                .filter(a -> !a.getEffective().isBefore(from) && !a.getEffective().isAfter(budgetEnd))
+                .toList());
+
+            if (budget.getValidUntil().isBefore(until)) {
+                // Budget expires before the controlling period ends: forfeit unused portion
+                allocated = allocated.min(revenueUpTo.apply(budget.getValidUntil()));
+            }
+
+            total = total.add(allocated);
+        }
+        return total;
     }
 
     private BigDecimal sumBudget(List<OrderBudgetAdjustment> adjustments) {
