@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import org.tb.common.util.DateUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class BudgetControllingService {
     private final EmployeeCostService employeeCostService;
 
     public BudgetControllingResult compute(String customerorderSign, LocalDate from, LocalDate until, boolean includeCosts) {
-        var today = LocalDate.now();
+        var today = DateUtils.today();
         var forecastAvailable = until.getYear() < 2100;
 
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
