@@ -79,6 +79,7 @@ public class BudgetController {
         form.setValidFrom(budget.getValidFrom());
         form.setValidUntil(budget.getValidUntil());
         form.setActive(budget.getActive());
+        form.setAlertThresholdPercent(budget.getAlertThresholdPercent());
         addFormModel(model, form, true);
         return "budget/budget-form";
     }
@@ -115,7 +116,8 @@ public class BudgetController {
             form.getSuborderSign(),
             form.getValidFrom(),
             form.getValidUntil(),
-            Boolean.TRUE.equals(form.getActive())
+            Boolean.TRUE.equals(form.getActive()),
+            form.getAlertThresholdPercent()
         );
 
         try {

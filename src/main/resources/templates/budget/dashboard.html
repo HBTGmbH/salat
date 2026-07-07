@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='dashboard',
+        title=#{main.budget.dashboard.title},sectionTitle=#{main.general.mainmenu.budget.text},
+        pageTitle=#{main.budget.dashboard.title},sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.budget.dashboard.col.order}">Auftrag</th>
+          <th th:text="#{main.budget.dashboard.col.budget}">Budgetplan</th>
+          <th th:text="#{main.budget.dashboard.col.valid}">Gültigkeitszeitraum</th>
+          <th class="text-end" th:text="#{main.budget.dashboard.col.budgetEuro}">Budget (€)</th>
+          <th class="text-end" th:text="#{main.budget.dashboard.col.coveredRevenue}">Ist-Erlös (€)</th>
+          <th th:text="#{main.budget.dashboard.col.utilization}">Auslastung</th>
+          <th class="text-end" th:text="#{main.budget.dashboard.col.threshold}">Schwellenwert</th>
+          <th class="text-center" th:text="#{main.budget.dashboard.col.status}">Status</th>
+          <th th:text="#{main.budget.dashboard.col.action}">Aktion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(rows)}">
+          <td colspan="9" class="text-center text-muted py-3" th:text="#{main.budget.dashboard.empty}">Keine aktiven Budgetpläne vorhanden.</td>
+        </tr>
+        <tr th:each="row : ${rows}">
+          <td>
+            <span class="text-muted small" th:text="${row.customerorderSign()}"></span>
+            <span class="ms-1 small" th:text="${row.customerorderName()}"></span>
+          </td>
+          <td>
+            <a th:href="@{/budget/{id}(id=${row.budgetId()})}" th:text="${row.budgetName()}"></a>
+          </td>
+          <td class="small text-muted">
+            <span th:text="${#temporals.format(row.validFrom(), 'dd.MM.yyyy')}"></span>
+            –
+            <span th:text="${#temporals.format(row.validUntil(), 'dd.MM.yyyy')}"></span>
+          </td>
+          <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
+          <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.coveredRevenueEuro()})} : '—'"></td>
+          <td style="min-width: 160px;">
+            <div th:if="${row.hasBudget()}">
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar"
+                     th:classappend="${row.isAboveThreshold()} ? 'bg-danger' : (${row.utilizationPercent() > 80} ? 'bg-warning' : 'bg-success')"
+                     role="progressbar"
+                     th:style="'width: ' + ${#numbers.formatDecimal(T(java.lang.Math).min(row.utilizationPercent(), 100), 1, 0)} + '%'">
+                </div>
+              </div>
+              <small class="text-muted" th:classappend="${row.isAboveThreshold()} ? 'text-danger' : ''"
+                     th:text="${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)} + ' %'"></small>
+            </div>
+            <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
+          </td>
+          <td class="text-end small" th:text="${row.hasAlertThreshold()} ? (${row.alertThresholdPercent()} + ' %') : '—'"></td>
+          <td class="text-center">
+            <span th:if="${row.isAboveThreshold()}" class="badge bg-danger-lt" th:text="#{main.budget.dashboard.status.alert}">Alert</span>
+            <span th:if="${row.hasBudget() and !row.isAboveThreshold() and row.hasAlertThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
+            <span th:if="${!row.hasBudget() or !row.hasAlertThreshold()}" class="text-muted">—</span>
+          </td>
+          <td>
+            <a class="btn btn-sm btn-outline-secondary"
+               th:href="@{/budget/controlling(customerorderSign=${row.customerorderSign()})}"
+               th:text="#{main.budget.dashboard.link.controlling}">Controlling</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</html>
