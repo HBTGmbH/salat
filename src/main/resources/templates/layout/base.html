@@ -152,6 +152,11 @@
             <div class="dropdown-menu" th:classappend="${section == 'budget'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
+                  <a class="dropdown-item" th:href="@{/budget/dashboard}"
+                     th:classappend="${subSection == 'dashboard'} ? 'active' : ''"
+                     th:text="#{main.budget.dashboard.nav}">
+                    Dashboard
+                  </a>
                   <a class="dropdown-item" th:href="@{/budget}"
                      th:classappend="${subSection == 'budgets'} ? 'active' : ''"
                      th:text="#{main.budget.list.title}">
@@ -167,11 +172,6 @@
                      th:classappend="${subSection == 'employee-cost'} ? 'active' : ''"
                      th:text="#{main.employeecost.list.title}">
                     Mitarbeiterkostensätze
-                  </a>
-                  <a class="dropdown-item" th:href="@{/budget/dashboard}"
-                     th:classappend="${subSection == 'dashboard'} ? 'active' : ''"
-                     th:text="#{main.budget.dashboard.nav}">
-                    Dashboard
                   </a>
                   <a class="dropdown-item" th:href="@{/budget/controlling}"
                      th:classappend="${subSection == 'controlling'} ? 'active' : ''"
