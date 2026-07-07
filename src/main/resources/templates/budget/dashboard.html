@@ -49,7 +49,7 @@
                 <div class="progress-bar"
                      th:classappend="${row.isAboveThreshold()} ? 'bg-danger' : (${row.utilizationPercent() > 80} ? 'bg-warning' : 'bg-success')"
                      role="progressbar"
-                     th:style="'width: ' + ${#numbers.formatDecimal(T(java.lang.Math).min(row.utilizationPercent(), 100), 1, 0)} + '%'">
+                     th:style="'width: ' + ${#numbers.formatDecimal(row.progressBarPercent(), 1, 0)} + '%'">
                 </div>
               </div>
               <small class="text-muted" th:classappend="${row.isAboveThreshold()} ? 'text-danger' : ''"

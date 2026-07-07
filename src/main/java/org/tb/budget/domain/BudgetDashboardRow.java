@@ -18,4 +18,5 @@ public record BudgetDashboardRow(
     public boolean hasBudget() { return budgetEuro != null && budgetEuro.signum() != 0; }
     public boolean hasAlertThreshold() { return alertThresholdPercent != null; }
     public boolean isAboveThreshold() { return hasAlertThreshold() && utilizationPercent >= alertThresholdPercent; }
+    public double progressBarPercent() { return Math.min(utilizationPercent, 100.0); }
 }
