@@ -112,7 +112,7 @@ public class BudgetControllingService {
                 suborder.getShortdescription(),
                 true, planned, booked, budget, revenue, coveredRevenue, cost,
                 forecastHours, forecastRevenue,
-                forecastStatus(forecastRevenue, budget)));
+                forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue))));
 
             totalBooked = totalBooked.plus(booked);
             totalPlanned = totalPlanned.plus(planned);
@@ -138,7 +138,7 @@ public class BudgetControllingService {
             includeCosts ? totalCost : null,
             totalForecastHoursFinal,
             totalForecastRevenueFinal,
-            forecastStatus(totalForecastRevenueFinal, totalBudget));
+            forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue)));
 
         return new BudgetControllingResult(totalRow, suborderRows, forecastAvailable);
     }
@@ -180,7 +180,8 @@ public class BudgetControllingService {
         return count;
     }
 
-    private ForecastStatus forecastStatus(BigDecimal forecastRevenue, BigDecimal budget) {
+    private ForecastStatus forecastStatus(BigDecimal forecastRevenue, BigDecimal budget, BigDecimal uncoveredRevenue) {
+        if (uncoveredRevenue != null && uncoveredRevenue.signum() > 0) return ForecastStatus.RED;
         if (forecastRevenue == null || budget == null || budget.signum() == 0) return ForecastStatus.UNKNOWN;
         var pct = forecastRevenue.divide(budget, 4, RoundingMode.HALF_UP).doubleValue();
         if (pct <= 0.80) return ForecastStatus.GREEN;
