@@ -16,6 +16,7 @@ public record BudgetControllingRow(
     BigDecimal costEuro,
     Duration forecastHours,
     BigDecimal forecastRevenueEuro,
+    BigDecimal forecastUncoveredRevenueEuro,
     ForecastStatus forecastStatus
 ) {
     public double bookedPercent() {
@@ -73,6 +74,10 @@ public record BudgetControllingRow(
 
     public boolean hasForecastRevenue() {
         return forecastRevenueEuro != null;
+    }
+
+    public boolean hasForecastUncoveredRevenue() {
+        return forecastUncoveredRevenueEuro != null && forecastUncoveredRevenueEuro.signum() > 0;
     }
 
     public String formatHours(Duration d) {
