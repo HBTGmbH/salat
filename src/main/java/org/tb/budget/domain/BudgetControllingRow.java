@@ -39,6 +39,10 @@ public record BudgetControllingRow(
         return revenueEuro != null && revenueEuro.signum() != 0;
     }
 
+    public boolean hasCoveredRevenue() {
+        return coveredRevenueEuro != null && coveredRevenueEuro.signum() != 0;
+    }
+
     public boolean hasCost() {
         return costEuro != null && costEuro.signum() != 0;
     }
