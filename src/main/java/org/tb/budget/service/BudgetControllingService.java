@@ -2,13 +2,13 @@ package org.tb.budget.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import org.tb.common.util.DateUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,9 @@ import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.ForecastStatus;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
@@ -37,10 +39,16 @@ public class BudgetControllingService {
     private final OrderBudgetRepository orderBudgetRepository;
     private final OrderPricingService orderPricingService;
     private final EmployeeCostService employeeCostService;
+    private final PublicholidayService publicholidayService;
 
     public BudgetControllingResult compute(String customerorderSign, LocalDate from, LocalDate until, boolean includeCosts) {
         var today = DateUtils.today();
         var forecastAvailable = until.getYear() < 2100;
+
+        Set<LocalDate> holidays = forecastAvailable
+            ? publicholidayService.getPublicHolidaysBetween(from, until).stream()
+                .map(h -> h.getRefdate()).collect(Collectors.toSet())
+            : Set.of();
 
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
@@ -75,7 +83,7 @@ public class BudgetControllingService {
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
             if (forecastAvailable) {
-                var fc = forecast(booked, revenue, customerorderSign, suborder.getSign(), from, until, today);
+                var fc = forecast(booked, revenue, customerorderSign, suborder.getSign(), from, until, today, holidays);
                 forecastHours = fc.hours();
                 forecastRevenue = fc.revenue();
                 if (forecastRevenue == null) totalForecastKnown = false;
@@ -130,11 +138,13 @@ public class BudgetControllingService {
 
     private ForecastData forecast(Duration booked, BigDecimal currentRevenue,
                                   String coSign, String soSign,
-                                  LocalDate from, LocalDate until, LocalDate today) {
-        var elapsed = ChronoUnit.DAYS.between(from, today.isBefore(until) ? today : until);
+                                  LocalDate from, LocalDate until, LocalDate today,
+                                  Set<LocalDate> holidays) {
+        var elapsedEnd = today.isBefore(until) ? today : until;
+        var elapsed = workingDays(from, elapsedEnd, holidays);
         if (elapsed <= 0) return new ForecastData(Duration.ZERO, currentRevenue);
 
-        var remaining = Math.max(0, ChronoUnit.DAYS.between(today, until));
+        var remaining = today.isBefore(until) ? workingDays(today, until, holidays) : 0;
         if (remaining == 0) return new ForecastData(Duration.ZERO, currentRevenue);
 
         // burn rate in minutes per day
@@ -148,6 +158,17 @@ public class BudgetControllingService {
         var rateEuro = new BigDecimal(effectiveRate.get().getPriceCentsPerHour()).movePointLeft(2);
         var forecastRevenue = currentRevenue.add(minutesToHours(forecastMinutes).multiply(rateEuro));
         return new ForecastData(forecastHours, forecastRevenue);
+    }
+
+    private long workingDays(LocalDate from, LocalDate until, Set<LocalDate> holidays) {
+        long count = 0;
+        for (var d = from; d.isBefore(until); d = d.plusDays(1)) {
+            var dow = d.getDayOfWeek();
+            if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY && !holidays.contains(d)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private ForecastStatus forecastStatus(BigDecimal forecastRevenue, BigDecimal budget) {
