@@ -65,7 +65,7 @@
           </td>
           <td>
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/budget/controlling(customerorderSign=${row.customerorderSign()})}"
+               th:href="@{/budget/controlling(customerorderSign=${row.customerorderSign()},from=${#temporals.format(row.validFrom(),'yyyy-MM-dd')},until=${#temporals.format(row.validUntil(),'yyyy-MM-dd')})}"
                th:text="#{main.budget.dashboard.link.controlling}">Controlling</a>
           </td>
         </tr>
