@@ -73,6 +73,7 @@ public class BudgetControllingService {
         var totalCost = BigDecimal.ZERO;
         var totalBudget = orderLevelBudget;
         var totalForecastRevenue = BigDecimal.ZERO;
+        var totalForecastUncoveredRevenue = BigDecimal.ZERO;
         var totalForecastHours = Duration.ZERO;
         var totalForecastKnown = true;
 
@@ -97,12 +98,15 @@ public class BudgetControllingService {
 
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
+            BigDecimal forecastUncoveredRevenue = null;
             if (forecastAvailable) {
-                var fc = forecast(booked, revenue, customerorderSign, suborder.getSign(), from, until, today, holidays);
+                var fc = forecast(booked, coveredRevenue, customerorderSign, suborder.getSign(), from, until, today, holidays, effectiveBudgets);
                 forecastHours = fc.hours();
-                forecastRevenue = fc.revenue();
+                forecastRevenue = fc.coveredRevenue();
+                forecastUncoveredRevenue = fc.uncoveredRevenue();
                 if (forecastRevenue == null) totalForecastKnown = false;
                 else totalForecastRevenue = totalForecastRevenue.add(forecastRevenue);
+                if (forecastUncoveredRevenue != null) totalForecastUncoveredRevenue = totalForecastUncoveredRevenue.add(forecastUncoveredRevenue);
                 if (forecastHours != null) totalForecastHours = totalForecastHours.plus(forecastHours);
             }
 
@@ -111,8 +115,8 @@ public class BudgetControllingService {
                 suborder.getCompleteOrderSign(),
                 suborder.getShortdescription(),
                 true, planned, booked, budget, revenue, coveredRevenue, cost,
-                forecastHours, forecastRevenue,
-                forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue))));
+                forecastHours, forecastRevenue, forecastUncoveredRevenue,
+                forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue), forecastUncoveredRevenue)));
 
             totalBooked = totalBooked.plus(booked);
             totalPlanned = totalPlanned.plus(planned);
@@ -124,6 +128,7 @@ public class BudgetControllingService {
 
         var coPlanned = customerorder.getDebithours() != null ? customerorder.getDebithours() : Duration.ZERO;
         var totalForecastRevenueFinal = forecastAvailable && totalForecastKnown ? totalForecastRevenue : null;
+        var totalForecastUncoveredFinal = forecastAvailable && totalForecastUncoveredRevenue.signum() > 0 ? totalForecastUncoveredRevenue : null;
         var totalForecastHoursFinal = forecastAvailable ? totalForecastHours : null;
 
         var totalRow = new BudgetControllingRow(
@@ -138,35 +143,47 @@ public class BudgetControllingService {
             includeCosts ? totalCost : null,
             totalForecastHoursFinal,
             totalForecastRevenueFinal,
-            forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue)));
+            totalForecastUncoveredFinal,
+            forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue), totalForecastUncoveredFinal));
 
         return new BudgetControllingResult(totalRow, suborderRows, forecastAvailable);
     }
 
-    private record ForecastData(Duration hours, BigDecimal revenue) {}
+    private record ForecastData(Duration hours, BigDecimal coveredRevenue, BigDecimal uncoveredRevenue) {}
 
-    private ForecastData forecast(Duration booked, BigDecimal currentRevenue,
+    private ForecastData forecast(Duration booked, BigDecimal coveredRevenue,
                                   String coSign, String soSign,
                                   LocalDate from, LocalDate until, LocalDate today,
-                                  Set<LocalDate> holidays) {
+                                  Set<LocalDate> holidays, List<OrderBudget> effectiveBudgets) {
         var elapsedEnd = today.isBefore(until) ? today : until;
         var elapsed = workingDays(from, elapsedEnd, holidays);
-        if (elapsed <= 0) return new ForecastData(Duration.ZERO, currentRevenue);
+        if (elapsed <= 0) return new ForecastData(Duration.ZERO, coveredRevenue, BigDecimal.ZERO);
 
-        var remaining = today.isBefore(until) ? workingDays(today, until, holidays) : 0;
-        if (remaining == 0) return new ForecastData(Duration.ZERO, currentRevenue);
+        long remainingCovered = 0, remainingUncovered = 0;
+        if (today.isBefore(until)) {
+            for (var d = today; d.isBefore(until); d = d.plusDays(1)) {
+                var dow = d.getDayOfWeek();
+                if (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY || holidays.contains(d)) continue;
+                final var day = d;
+                if (effectiveBudgets.stream().anyMatch(b -> Boolean.TRUE.equals(b.getActive())
+                        && !day.isBefore(b.getValidFrom()) && !day.isAfter(b.getValidUntil()))) remainingCovered++;
+                else remainingUncovered++;
+            }
+        }
+        if (remainingCovered + remainingUncovered == 0) return new ForecastData(Duration.ZERO, coveredRevenue, BigDecimal.ZERO);
 
-        // burn rate in minutes per day
         double burnMinutesPerDay = (double) booked.toMinutes() / elapsed;
-        var forecastMinutes = (long) (burnMinutesPerDay * remaining);
+        var forecastMinutes = (long) (burnMinutesPerDay * (remainingCovered + remainingUncovered));
         var forecastHours = Duration.ofMinutes(forecastMinutes);
 
         var effectiveRate = orderPricingService.findEffectiveRate(coSign, soSign, null, today);
-        if (effectiveRate.isEmpty()) return new ForecastData(forecastHours, null);
+        if (effectiveRate.isEmpty()) return new ForecastData(forecastHours, null, null);
 
-        var rateEuro = new BigDecimal(effectiveRate.get().getPriceCentsPerHour()).movePointLeft(2);
-        var forecastRevenue = currentRevenue.add(minutesToHours(forecastMinutes).multiply(rateEuro));
-        return new ForecastData(forecastHours, forecastRevenue);
+        var revenuePerDay = minutesToHours((long) burnMinutesPerDay)
+            .multiply(new BigDecimal(effectiveRate.get().getPriceCentsPerHour()).movePointLeft(2));
+        var forecastCovered = coveredRevenue.add(revenuePerDay.multiply(BigDecimal.valueOf(remainingCovered)));
+        var forecastUncovered = revenuePerDay.multiply(BigDecimal.valueOf(remainingUncovered));
+        return new ForecastData(forecastHours, forecastCovered, forecastUncovered.signum() > 0 ? forecastUncovered : null);
     }
 
     private long workingDays(LocalDate from, LocalDate until, Set<LocalDate> holidays) {
@@ -180,8 +197,10 @@ public class BudgetControllingService {
         return count;
     }
 
-    private ForecastStatus forecastStatus(BigDecimal forecastRevenue, BigDecimal budget, BigDecimal uncoveredRevenue) {
-        if (uncoveredRevenue != null && uncoveredRevenue.signum() > 0) return ForecastStatus.RED;
+    private ForecastStatus forecastStatus(BigDecimal forecastRevenue, BigDecimal budget,
+                                           BigDecimal uncoveredRevenue, BigDecimal forecastUncoveredRevenue) {
+        if ((uncoveredRevenue != null && uncoveredRevenue.signum() > 0)
+                || (forecastUncoveredRevenue != null && forecastUncoveredRevenue.signum() > 0)) return ForecastStatus.RED;
         if (forecastRevenue == null || budget == null || budget.signum() == 0) return ForecastStatus.UNKNOWN;
         var pct = forecastRevenue.divide(budget, 4, RoundingMode.HALF_UP).doubleValue();
         if (pct <= 0.80) return ForecastStatus.GREEN;
