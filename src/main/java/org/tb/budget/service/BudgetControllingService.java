@@ -85,7 +85,7 @@ public class BudgetControllingService {
 
         // add budget adjustments scoped to the order itself (no suborder)
         var orderLevelBudget = sumBudget(budgets.stream()
-            .filter(b -> b.getSuborderSign() == null)
+            .filter(b -> b.getSuborderSign() == null || b.getSuborderSign().isBlank())
             .filter(b -> Boolean.TRUE.equals(b.getActive()))
             .flatMap(b -> b.getAdjustments().stream())
             .filter(a -> !a.getEffective().isBefore(from) && !a.getEffective().isAfter(until))
