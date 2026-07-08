@@ -23,7 +23,7 @@ import org.tb.order.service.CustomerorderService;
 @Service
 @Transactional
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requiresManager = true)
 public class BudgetAlertService {
 
     private final OrderBudgetRepository orderBudgetRepository;

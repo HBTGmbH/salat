@@ -83,6 +83,7 @@ public class OrderBudgetService {
         orderBudgetRepository.save(budget);
     }
 
+    @Authorized(requiresManager = true)
     public void updateAlertSentAt(long id, LocalDate alertSentAt) {
         var budget = getById(id);
         budget.setAlertSentAt(alertSentAt);
