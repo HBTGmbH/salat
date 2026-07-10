@@ -17,6 +17,8 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
 import org.tb.budget.domain.OrderBudgetData;
+import org.tb.budget.domain.OrderBudgetScopeEntryData;
+import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.service.OrderBudgetService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -80,6 +82,7 @@ public class BudgetController {
         form.setValidUntil(budget.getValidUntil());
         form.setActive(budget.getActive());
         form.setAlertThresholdPercent(budget.getAlertThresholdPercent());
+        form.setProgressMode(budget.getProgressMode());
         addFormModel(model, form, true);
         return "budget/budget-form";
     }
@@ -117,7 +120,8 @@ public class BudgetController {
             form.getValidFrom(),
             form.getValidUntil(),
             Boolean.TRUE.equals(form.getActive()),
-            form.getAlertThresholdPercent()
+            form.getAlertThresholdPercent(),
+            form.getProgressMode()
         );
 
         try {
@@ -160,6 +164,8 @@ public class BudgetController {
         var budget = orderBudgetService.getById(id);
         model.addAttribute("budget", budget);
         model.addAttribute("adjustmentForm", new OrderBudgetAdjustmentForm());
+        model.addAttribute("scopeEntryForm", new OrderBudgetScopeEntryForm());
+        model.addAttribute("progressModes", ProgressMode.values());
         model.addAttribute("isManager", authorizedUser.isManager());
         return "budget/budget-detail";
     }
@@ -196,11 +202,44 @@ public class BudgetController {
         return "redirect:/budget/" + id;
     }
 
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/scope-entries/add")
+    public String addScopeEntry(@PathVariable long id,
+                                @ModelAttribute("scopeEntryForm") OrderBudgetScopeEntryForm form,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.addScopeEntry(id, new OrderBudgetScopeEntryData(
+                form.getRefdate(), form.getPercent(), form.getComment()));
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.scope.message.added"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/scope-entries/{entryId}/delete")
+    public String deleteScopeEntry(@PathVariable long id, @PathVariable long entryId,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.removeScopeEntry(id, entryId);
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.scope.message.deleted"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
     private void addFormModel(Model model, OrderBudgetForm form, boolean isEdit) {
         model.addAttribute("budgetForm", form);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
         model.addAttribute("suborders", suborderService.getAllSuborders());
+        model.addAttribute("progressModes", ProgressMode.values());
     }
 
 }

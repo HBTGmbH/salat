@@ -44,6 +44,12 @@
         </div>
       </div>
       <salat:textInput th:field="*{alertThresholdPercent}" type="number" th:label="#{main.budget.field.alertThresholdPercent}" />
+      <salat:select th:field="*{progressMode}" th:label="#{main.budget.field.progressMode}">
+        <option value="" th:text="#{main.budget.field.progressMode.none}">--- Kein Fortschritt ---</option>
+        <option th:each="mode : ${progressModes}"
+                th:value="${mode.name()}"
+                th:text="#{|main.budget.field.progressMode.${mode.name()}|}"></option>
+      </salat:select>
       <salat:checkboxSwitch th:field="*{active}" th:label="#{main.general.active.text}" />
     </salat:inputs>
     <salat:buttons>

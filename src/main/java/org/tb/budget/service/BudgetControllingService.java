@@ -6,6 +6,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +22,9 @@ import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.ForecastStatus;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
+import org.tb.budget.domain.OrderBudgetScopeEntry;
+import org.tb.budget.domain.ProgressMode;
+import org.tb.budget.domain.ProgressStatus;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -48,10 +52,8 @@ public class BudgetControllingService {
         var today = DateUtils.today();
         var forecastAvailable = until.getYear() < 2100;
 
-        Set<LocalDate> holidays = forecastAvailable
-            ? publicholidayService.getPublicHolidaysBetween(from, until).stream()
-                .map(h -> h.getRefdate()).collect(Collectors.toSet())
-            : Set.of();
+        Set<LocalDate> holidays = publicholidayService.getPublicHolidaysBetween(from, until).stream()
+            .map(h -> h.getRefdate()).collect(Collectors.toSet());
 
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
@@ -112,12 +114,20 @@ public class BudgetControllingService {
             }
 
             var planned = suborder.getDebithours() != null ? suborder.getDebithours() : Duration.ZERO;
+            var activeSuborderBudget = effectiveBudgets.stream()
+                .filter(b -> Boolean.TRUE.equals(b.getActive())).findFirst().orElse(null);
+            var progressPercent = computeProgress(activeSuborderBudget, from, until, today, holidays);
+            var budgetUsedPct = (coveredRevenue != null && budget != null && budget.signum() != 0)
+                ? coveredRevenue.divide(budget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
+                : null;
+            var progressStatus = computeProgressStatus(progressPercent, budgetUsedPct);
             suborderRows.add(new BudgetControllingRow(
                 suborder.getCompleteOrderSign(),
                 suborder.getShortdescription(),
                 true, planned, booked, budget, revenue, coveredRevenue, cost,
                 forecastHours, forecastRevenue, forecastUncoveredRevenue,
-                forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue), forecastUncoveredRevenue)));
+                forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue), forecastUncoveredRevenue),
+                progressPercent, progressStatus));
 
             totalBooked = totalBooked.plus(booked);
             totalPlanned = totalPlanned.plus(planned);
@@ -132,6 +142,14 @@ public class BudgetControllingService {
         var totalForecastUncoveredFinal = forecastAvailable && totalForecastUncoveredRevenue.signum() > 0 ? totalForecastUncoveredRevenue : null;
         var totalForecastHoursFinal = forecastAvailable ? totalForecastHours : null;
 
+        var activeOrderBudget = orderLevelBudgets.stream()
+            .filter(b -> Boolean.TRUE.equals(b.getActive())).findFirst().orElse(null);
+        var totalProgressPercent = computeProgress(activeOrderBudget, from, until, today, holidays);
+        var totalBudgetUsedPct = (totalBudget != null && totalBudget.signum() != 0)
+            ? totalCoveredRevenue.divide(totalBudget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
+            : null;
+        var totalProgressStatus = computeProgressStatus(totalProgressPercent, totalBudgetUsedPct);
+
         var totalRow = new BudgetControllingRow(
             customerorderSign,
             customerorder.getShortdescription(),
@@ -145,7 +163,8 @@ public class BudgetControllingService {
             totalForecastHoursFinal,
             totalForecastRevenueFinal,
             totalForecastUncoveredFinal,
-            forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue), totalForecastUncoveredFinal));
+            forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue), totalForecastUncoveredFinal),
+            totalProgressPercent, totalProgressStatus);
 
         return new BudgetControllingResult(totalRow, suborderRows, forecastAvailable);
     }
@@ -239,6 +258,39 @@ public class BudgetControllingService {
         var forecastCovered = coveredRevenue.add(revenuePerDay.multiply(BigDecimal.valueOf(remainingCovered)));
         var forecastUncovered = revenuePerDay.multiply(BigDecimal.valueOf(remainingUncovered));
         return new ForecastData(forecastHours, forecastCovered, forecastUncovered.signum() > 0 ? forecastUncovered : null);
+    }
+
+    private Double computeProgress(OrderBudget budget, LocalDate from, LocalDate until,
+                                    LocalDate today, Set<LocalDate> holidays) {
+        if (budget == null || budget.getProgressMode() == null) return null;
+        if (budget.getProgressMode() == ProgressMode.TIME) {
+            return computeTimeProgress(from, until, today, holidays);
+        }
+        return computeScopeProgress(budget, today);
+    }
+
+    private Double computeTimeProgress(LocalDate from, LocalDate until, LocalDate today, Set<LocalDate> holidays) {
+        var effectiveUntil = today.isBefore(until) ? today : until;
+        var total = workingDays(from, until, holidays);
+        if (total <= 0) return null;
+        var elapsed = workingDays(from, effectiveUntil, holidays);
+        return 100.0 * elapsed / total;
+    }
+
+    private Double computeScopeProgress(OrderBudget budget, LocalDate today) {
+        return budget.getScopeEntries().stream()
+            .filter(e -> !e.getRefdate().isAfter(today))
+            .max(Comparator.comparing(OrderBudgetScopeEntry::getRefdate))
+            .map(e -> (double) e.getPercent())
+            .orElse(null);
+    }
+
+    private ProgressStatus computeProgressStatus(Double progressPercent, Double budgetUsedPercent) {
+        if (progressPercent == null || budgetUsedPercent == null) return ProgressStatus.UNKNOWN;
+        var diff = progressPercent - budgetUsedPercent;
+        if (diff >= 10.0) return ProgressStatus.AHEAD;
+        if (diff <= -10.0) return ProgressStatus.BEHIND;
+        return ProgressStatus.ON_TRACK;
     }
 
     private long workingDays(LocalDate from, LocalDate until, Set<LocalDate> holidays) {
