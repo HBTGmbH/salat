@@ -94,6 +94,15 @@ public record BudgetControllingRow(
 
     public boolean hasGrossProfit() { return grossProfitEuro() != null; }
 
+    public boolean hasGrossProfitMargin() {
+        return hasGrossProfit() && coveredRevenueEuro != null && coveredRevenueEuro.signum() != 0;
+    }
+
+    public double grossProfitMarginPercent() {
+        return grossProfitEuro().divide(coveredRevenueEuro, 4, RoundingMode.HALF_UP)
+            .multiply(BigDecimal.valueOf(100)).doubleValue();
+    }
+
     public boolean hasProgress() { return progressPercent != null; }
 
     public String progressFormatted() {

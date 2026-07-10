@@ -57,13 +57,14 @@
           <th class="text-end" th:text="#{main.controlling.col.budgetused}">Budget genutzt</th>
           <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
           <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">GP (€)</th>
+          <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.margin}">Umsatzmarge (%)</th>
           <th class="text-end" th:if="${result.hasProgressData()}" th:text="#{main.controlling.col.progress}">Fortschritt</th>
           <th class="text-center" th:if="${result.hasProgressData()}" th:text="#{main.controlling.col.progress.status}">Plan-Status</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(result.suborderRows())}">
-          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, mgr=${isManager} ? 2 : 0, prg=${result.hasProgressData()} ? 2 : 0"
+          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, mgr=${isManager} ? 3 : 0, prg=${result.hasProgressData()} ? 2 : 0"
               th:colspan="${6 + unc + mgr + prg}"
               class="text-center text-muted py-3"
               th:text="#{main.controlling.no.suborders}">Keine Subaufträge</td>
@@ -90,6 +91,9 @@
           <td class="text-end small" th:if="${isManager}"
               th:classappend="${row.hasGrossProfit() and row.grossProfitEuro().signum() < 0} ? 'text-danger' : ''"
               th:text="${row.hasGrossProfit()} ? #{main.budget.format.amount(${row.grossProfitEuro()})} : '—'"></td>
+          <td class="text-end small" th:if="${isManager}"
+              th:classappend="${row.hasGrossProfitMargin() and row.grossProfitMarginPercent() < 0} ? 'text-danger' : ''"
+              th:text="${row.hasGrossProfitMargin()} ? (${#numbers.formatDecimal(row.grossProfitMarginPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:if="${result.hasProgressData()}" th:text="${row.progressFormatted()}"></td>
           <td class="text-center small" th:if="${result.hasProgressData()}">
             <span th:if="${row.hasProgress() and row.progressStatus().name() == 'ON_TRACK'}" class="badge bg-success-lt" th:text="#{main.controlling.progress.status.ON_TRACK}">Im Plan</span>
@@ -120,6 +124,9 @@
           <td class="text-end" th:if="${isManager}"
               th:classappend="${row.hasGrossProfit() and row.grossProfitEuro().signum() < 0} ? 'text-danger' : ''"
               th:text="${row.hasGrossProfit()} ? #{main.budget.format.amount(${row.grossProfitEuro()})} : '—'"></td>
+          <td class="text-end" th:if="${isManager}"
+              th:classappend="${row.hasGrossProfitMargin() and row.grossProfitMarginPercent() < 0} ? 'text-danger' : ''"
+              th:text="${row.hasGrossProfitMargin()} ? (${#numbers.formatDecimal(row.grossProfitMarginPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:if="${result.hasProgressData()}" th:text="${row.progressFormatted()}"></td>
           <td class="text-center" th:if="${result.hasProgressData()}">
             <span th:if="${row.hasProgress() and row.progressStatus().name() == 'ON_TRACK'}" class="badge bg-success-lt" th:text="#{main.controlling.progress.status.ON_TRACK}">Im Plan</span>
