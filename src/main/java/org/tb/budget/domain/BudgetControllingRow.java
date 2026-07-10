@@ -87,6 +87,13 @@ public record BudgetControllingRow(
         return d.toHours() + ":" + String.format("%02d", d.toMinutesPart());
     }
 
+    public BigDecimal grossProfitEuro() {
+        if (coveredRevenueEuro == null || costEuro == null) return null;
+        return coveredRevenueEuro.subtract(costEuro);
+    }
+
+    public boolean hasGrossProfit() { return grossProfitEuro() != null; }
+
     public boolean hasProgress() { return progressPercent != null; }
 
     public String progressFormatted() {
