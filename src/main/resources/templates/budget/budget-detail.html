@@ -37,6 +37,9 @@
             <dd class="col-sm-7" th:text="${budget.customerorderSign}"></dd>
             <dt class="col-sm-5" th:text="#{main.budget.field.suborderSign}">Unterauftrag</dt>
             <dd class="col-sm-7" th:text="${budget.suborderSign} ?: '-'"></dd>
+            <dt class="col-sm-5" th:text="#{main.budget.field.progressMode}">Fortschritt</dt>
+            <dd class="col-sm-7"
+                th:text="${budget.progressMode != null} ? #{|main.budget.field.progressMode.${budget.progressMode.name()}|} : #{main.budget.field.progressMode.none}"></dd>
           </dl>
         </div>
         <div class="col-md-6">
@@ -108,6 +111,69 @@
           <button type="submit" class="btn btn-primary">
             <i class="icon ti ti-plus"></i>
             <span th:text="#{main.budget.adjustment.button.add}">Anpassung hinzufügen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scope entries (only shown when progress mode is SCOPE) -->
+  <div class="card mb-3" th:if="${budget.progressMode != null and budget.progressMode.name() == 'SCOPE'}">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.budget.scope.title}">Fortschrittseinträge</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.budget.scope.field.refdate}">Datum</th>
+            <th class="text-end" th:text="#{main.budget.scope.field.percent}">Fortschritt (%)</th>
+            <th th:text="#{main.budget.scope.field.comment}">Kommentar</th>
+            <th class="w-1" th:if="${isManager}"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(budget.scopeEntries)}">
+            <td colspan="4" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="entry : ${budget.scopeEntries}">
+            <td th:text="${entry.refdate}"></td>
+            <td class="text-end" th:text="${entry.percent} + ' %'"></td>
+            <td th:text="${entry.comment}"></td>
+            <td th:if="${isManager}">
+              <form th:action="@{/budget/{id}/scope-entries/{entryId}/delete(id=${budget.id},entryId=${entry.id})}"
+                    method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add scope entry form (managers only) -->
+    <div class="card-footer" th:if="${isManager}">
+      <form th:action="@{/budget/{id}/scope-entries/add(id=${budget.id})}" method="post"
+            th:object="${scopeEntryForm}" class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.budget.scope.field.refdate}">Datum</label>
+          <input type="date" class="form-control" th:field="*{refdate}" required/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" th:text="#{main.budget.scope.field.percent}">Fortschritt (%)</label>
+          <input type="number" min="0" max="100" class="form-control" th:field="*{percent}" required/>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" th:text="#{main.budget.scope.field.comment}">Kommentar</label>
+          <input type="text" class="form-control" th:field="*{comment}" maxlength="2000"/>
+        </div>
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-plus"></i>
+            <span th:text="#{main.budget.scope.button.add}">Eintrag hinzufügen</span>
           </button>
         </div>
       </form>

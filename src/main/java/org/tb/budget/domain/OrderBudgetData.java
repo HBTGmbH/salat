@@ -9,5 +9,6 @@ public record OrderBudgetData(
     LocalDate validFrom,
     LocalDate validUntil,
     Boolean active,
-    Integer alertThresholdPercent
+    Integer alertThresholdPercent,
+    ProgressMode progressMode
 ) {}

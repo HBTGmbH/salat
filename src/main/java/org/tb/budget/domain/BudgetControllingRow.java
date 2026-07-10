@@ -17,7 +17,9 @@ public record BudgetControllingRow(
     Duration forecastHours,
     BigDecimal forecastRevenueEuro,
     BigDecimal forecastUncoveredRevenueEuro,
-    ForecastStatus forecastStatus
+    ForecastStatus forecastStatus,
+    Double progressPercent,
+    ProgressStatus progressStatus
 ) {
     public double bookedPercent() {
         if (plannedHours == null || plannedHours.isZero()) return 0.0;
@@ -83,6 +85,12 @@ public record BudgetControllingRow(
     public String formatHours(Duration d) {
         if (d == null || d.isZero()) return "—";
         return d.toHours() + ":" + String.format("%02d", d.toMinutesPart());
+    }
+
+    public boolean hasProgress() { return progressPercent != null; }
+
+    public String progressFormatted() {
+        return hasProgress() ? String.format("%.1f", progressPercent) + " %" : "—";
     }
 
     public String bookedHoursFormatted() { return formatHours(bookedHours); }

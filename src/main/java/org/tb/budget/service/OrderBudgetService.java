@@ -10,6 +10,8 @@ import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
 import org.tb.budget.domain.OrderBudgetData;
+import org.tb.budget.domain.OrderBudgetScopeEntry;
+import org.tb.budget.domain.OrderBudgetScopeEntryData;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
@@ -90,6 +92,25 @@ public class OrderBudgetService {
         orderBudgetRepository.save(budget);
     }
 
+    @Authorized(requiresManager = true)
+    public void addScopeEntry(long budgetId, OrderBudgetScopeEntryData data) {
+        var budget = getById(budgetId);
+        var entry = new OrderBudgetScopeEntry();
+        entry.setOrderBudget(budget);
+        entry.setRefdate(data.refdate());
+        entry.setPercent(data.percent());
+        entry.setComment(data.comment());
+        budget.getScopeEntries().add(entry);
+        orderBudgetRepository.save(budget);
+    }
+
+    @Authorized(requiresManager = true)
+    public void removeScopeEntry(long budgetId, long entryId) {
+        var budget = getById(budgetId);
+        budget.getScopeEntries().removeIf(e -> e.getId() != null && e.getId().equals(entryId));
+        orderBudgetRepository.save(budget);
+    }
+
     private void apply(OrderBudget budget, OrderBudgetData data) {
         budget.setName(data.name());
         budget.setCustomerorderSign(data.customerorderSign());
@@ -98,6 +119,7 @@ public class OrderBudgetService {
         budget.setValidUntil(data.validUntil());
         budget.setActive(Boolean.TRUE.equals(data.active()));
         budget.setAlertThresholdPercent(data.alertThresholdPercent());
+        budget.setProgressMode(data.progressMode());
     }
 
 }

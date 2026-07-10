@@ -3,6 +3,8 @@ package org.tb.budget.domain;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
@@ -45,8 +47,16 @@ public class OrderBudget extends AuditedEntity {
     @Column(name = "alert_sent_at")
     private LocalDate alertSentAt;
 
+    @Column(name = "progress_mode", length = 10)
+    @Enumerated(EnumType.STRING)
+    private ProgressMode progressMode;
+
     @OneToMany(mappedBy = "orderBudget", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private List<OrderBudgetAdjustment> adjustments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "orderBudget", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private List<OrderBudgetScopeEntry> scopeEntries = new ArrayList<>();
 
 }

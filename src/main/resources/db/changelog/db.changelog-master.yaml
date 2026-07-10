@@ -2425,5 +2425,77 @@ databaseChangeLog:
                   name: alert_sent_at
                   type: date
 
+  - changeSet:
+      id: 66
+      author: kr
+      comment: Add progress_mode to order_budget
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_budget
+                columnName: progress_mode
+      changes:
+        - addColumn:
+            tableName: order_budget
+            columns:
+              - column:
+                  name: progress_mode
+                  type: varchar(10)
+
+  - changeSet:
+      id: 67
+      author: kr
+      comment: Create order_budget_scope_entry table
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: order_budget_scope_entry
+      changes:
+        - createTable:
+            tableName: order_budget_scope_entry
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_budget_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: refdate
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: percent
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: varchar(2000)
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
