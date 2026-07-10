@@ -448,8 +448,8 @@ public class EmployeecontractService {
     return employeecontractDAO.getVisibleEmployeeContracts();
   }
 
-  public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate validAt) {
-    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser(validAt);
+  public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUserValidAt(LocalDate ignore) {
+    return employeecontractDAO.getViewableEmployeeContractsForAuthorizedUser();
   }
 
   public List<Employeecontract> getViewableEmployeeContractsValidAt(LocalDate validAt) {

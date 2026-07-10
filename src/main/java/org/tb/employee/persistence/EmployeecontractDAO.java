@@ -137,11 +137,24 @@ public class EmployeecontractDAO {
             .collect(Collectors.toList());
     }
 
+    private List<Employeecontract> getAllVisibleEmployeeContracts() {
+        return employeecontractRepository.findAllNotHidden().stream()
+                .filter(c -> !c.getEmployee().getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
+                .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
+                .collect(Collectors.toList());
+    }
+
     public List<Employeecontract> getTimeReportableEmployeeContractsForAuthorizedUser() {
         return getAllVisibleEmployeeContracts(DateUtils.today()).stream()
             .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
             .sorted(comparing((Employeecontract e) -> e.getEmployee().getName()).thenComparing(Employeecontract::getValidFrom))
             .collect(Collectors.toList());
+    }
+
+    public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser() {
+        return getAllVisibleEmployeeContracts().stream()
+                .filter(e -> employeecontractAuthorization.isAuthorized(e, AccessLevel.READ))
+                .collect(Collectors.toList());
     }
 
     public List<Employeecontract> getViewableEmployeeContractsForAuthorizedUser(LocalDate validAt) {
