@@ -43,9 +43,6 @@
   <!-- Error -->
   <div class="alert alert-danger" th:if="${controllingError != null}" th:text="${controllingError}"></div>
 
-  <!-- Forecast not available notice -->
-  <div class="alert alert-info" th:if="${result != null and !result.forecastAvailable()}" th:text="#{main.controlling.forecast.no.until}"></div>
-
   <!-- Result table -->
   <div class="table-responsive card" th:if="${result != null}">
     <table class="table table-vcenter card-table">
@@ -59,17 +56,14 @@
           <th class="text-end" th:if="${result.total().hasUncoveredRevenue()}" th:text="#{main.controlling.col.uncovered}">Ungedeckt (€)</th>
           <th class="text-end" th:text="#{main.controlling.col.budgetused}">Budget genutzt</th>
           <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
-          <th class="text-end" th:if="${result.forecastAvailable()}" th:text="#{main.controlling.col.forecast.revenue}">Prognose-Erlös (€)</th>
-          <th class="text-end" th:if="${result.forecastAvailable() and result.total().hasForecastUncoveredRevenue()}" th:text="#{main.controlling.col.forecast.uncovered}">Prognose Ungedeckt (€)</th>
-          <th class="text-center" th:if="${result.forecastAvailable()}" th:text="#{main.controlling.col.forecast.status}">Ampel</th>
           <th class="text-end" th:if="${result.hasProgressData()}" th:text="#{main.controlling.col.progress}">Fortschritt</th>
           <th class="text-center" th:if="${result.hasProgressData()}" th:text="#{main.controlling.col.progress.status}">Plan-Status</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(result.suborderRows())}">
-          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, fc=${result.forecastAvailable()} ? 2 : 0, fcu=${result.forecastAvailable() and result.total().hasForecastUncoveredRevenue()} ? 1 : 0, mgr=${isManager} ? 1 : 0, prg=${result.hasProgressData()} ? 2 : 0"
-              th:colspan="${6 + unc + fc + fcu + mgr + prg}"
+          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, mgr=${isManager} ? 1 : 0, prg=${result.hasProgressData()} ? 2 : 0"
+              th:colspan="${6 + unc + mgr + prg}"
               class="text-center text-muted py-3"
               th:text="#{main.controlling.no.suborders}">Keine Subaufträge</td>
         </tr>
@@ -92,15 +86,6 @@
               th:classappend="${row.hasBudgetPercent()} ? (${row.budgetUsedPercent() > 100} ? 'text-danger' : (${row.budgetUsedPercent() > 80} ? 'text-warning' : '')) : ''"
               th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
-          <td class="text-end small" th:if="${result.forecastAvailable()}" th:text="${row.hasForecastRevenue()} ? #{main.budget.format.amount(${row.forecastRevenueEuro()})} : '—'"></td>
-          <td class="text-end small text-warning" th:if="${result.forecastAvailable() and result.total().hasForecastUncoveredRevenue()}"
-              th:text="${row.hasForecastUncoveredRevenue()} ? #{main.budget.format.amount(${row.forecastUncoveredRevenueEuro()})} : '—'"></td>
-          <td class="text-center" th:if="${result.forecastAvailable()}">
-            <span th:if="${row.forecastStatus().name() == 'GREEN'}" class="badge bg-success-lt">&#9679;</span>
-            <span th:if="${row.forecastStatus().name() == 'YELLOW'}" class="badge bg-warning-lt">&#9679;</span>
-            <span th:if="${row.forecastStatus().name() == 'RED'}" class="badge bg-danger-lt">&#9679;</span>
-            <span th:if="${row.forecastStatus().name() == 'UNKNOWN'}" class="text-muted">—</span>
-          </td>
           <td class="text-end small" th:if="${result.hasProgressData()}" th:text="${row.progressFormatted()}"></td>
           <td class="text-center small" th:if="${result.hasProgressData()}">
             <span th:if="${row.hasProgress() and row.progressStatus().name() == 'ON_TRACK'}" class="badge bg-success-lt" th:text="#{main.controlling.progress.status.ON_TRACK}">Im Plan</span>
@@ -128,15 +113,6 @@
               th:classappend="${row.hasBudgetPercent()} ? (${row.budgetUsedPercent() > 100} ? 'text-danger' : (${row.budgetUsedPercent() > 80} ? 'text-warning' : '')) : ''"
               th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:if="${isManager}" th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
-          <td class="text-end" th:if="${result.forecastAvailable()}" th:text="${row.hasForecastRevenue()} ? #{main.budget.format.amount(${row.forecastRevenueEuro()})} : '—'"></td>
-          <td class="text-end text-warning" th:if="${result.forecastAvailable() and result.total().hasForecastUncoveredRevenue()}"
-              th:text="${row.hasForecastUncoveredRevenue()} ? #{main.budget.format.amount(${row.forecastUncoveredRevenueEuro()})} : '—'"></td>
-          <td class="text-center" th:if="${result.forecastAvailable()}">
-            <span th:if="${row.forecastStatus().name() == 'GREEN'}" class="badge bg-success-lt">&#9679;</span>
-            <span th:if="${row.forecastStatus().name() == 'YELLOW'}" class="badge bg-warning-lt">&#9679;</span>
-            <span th:if="${row.forecastStatus().name() == 'RED'}" class="badge bg-danger-lt">&#9679;</span>
-            <span th:if="${row.forecastStatus().name() == 'UNKNOWN'}" class="text-muted">—</span>
-          </td>
           <td class="text-end" th:if="${result.hasProgressData()}" th:text="${row.progressFormatted()}"></td>
           <td class="text-center" th:if="${result.hasProgressData()}">
             <span th:if="${row.hasProgress() and row.progressStatus().name() == 'ON_TRACK'}" class="badge bg-success-lt" th:text="#{main.controlling.progress.status.ON_TRACK}">Im Plan</span>
