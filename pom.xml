@@ -30,7 +30,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <salat.image.name>ghcr.io/hbtgmbh/salat</salat.image.name>
     <salat.image.tag>latest</salat.image.tag>
-    <spotbugs-maven-plugin.version>4.10.2.0</spotbugs-maven-plugin.version>
+    <spotbugs-maven-plugin.version>4.10.3.0</spotbugs-maven-plugin.version>
     <springdoc-openapi-starter-webmvc-ui.version>3.0.3</springdoc-openapi-starter-webmvc-ui.version>
     <thymeleaf-layout-dialect.version>4.0.1</thymeleaf-layout-dialect.version>
     <timestamp>${maven.build.timestamp}</timestamp>
