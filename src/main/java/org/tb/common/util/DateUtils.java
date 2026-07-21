@@ -21,6 +21,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
+import java.util.Locale;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,10 @@ public class DateUtils {
 
     private static final DateTimeFormatter dayOfMonthFormatter = DateTimeFormatter
         .ofPattern("dd")
+        .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
+
+    private static final DateTimeFormatter displayDateFormatter = DateTimeFormatter
+        .ofPattern("dd.MM.yyyy")
         .withZone(ZoneId.of(DEFAULT_TIMEZONE_ID));
 
     private static final DateTimeFormatter hourFormatter = DateTimeFormatter
@@ -234,6 +239,21 @@ public class DateUtils {
     public static String format(LocalDate date) {
         if(date == null) return "";
         return dateFormatter.format(date);
+    }
+
+    public static String formatDisplay(LocalDate date) {
+        if(date == null) return "";
+        return displayDateFormatter.format(date);
+    }
+
+    public static String formatDisplayWithDow(LocalDate date, Locale locale) {
+        if(date == null) return "";
+        return DateTimeFormatter.ofPattern("EE dd.MM.yyyy", locale).format(date);
+    }
+
+    public static String formatYearMonth(LocalDate date, Locale locale) {
+        if(date == null) return "";
+        return DateTimeFormatter.ofPattern("MMMM yyyy", locale).format(date);
     }
 
     public static String format(YearMonth date) {
