@@ -73,8 +73,9 @@
     <div class="card-body">
 
       <!-- Release form -->
-      <form method="post" th:action="@{/acceptance/release}" class="mb-3">
+      <form method="post" th:action="@{/acceptance/release/preview}" class="mb-3">
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
+        <input type="hidden" name="accSupervisorId" th:value="${supervisorId}" />
         <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
@@ -82,7 +83,6 @@
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary"
-                    th:onclick="|return confirm('#{main.general.confirmrelease.text}')|"
                     th:text="#{main.general.button.release.text}">Freigeben</button>
           </div>
         </div>

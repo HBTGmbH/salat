@@ -22,7 +22,7 @@
     </div>
     <div class="card-body">
 
-      <form th:if="${employeeContract != null}" method="post" th:action="@{/release}">
+      <form th:if="${employeeContract != null}" method="post" th:action="@{/release/preview}">
         <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
@@ -30,7 +30,6 @@
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary"
-                    th:onclick="|return confirm('#{main.general.confirmrelease.text}')|"
                     th:text="#{main.general.button.release.text}">Freigeben</button>
           </div>
         </div>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=${sectionTitle}">
+<section layout:fragment="content">
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <span th:text="${employee.name}"></span>
+        &ndash;
+        <span th:text="#{main.release.preview.title.text}"></span>
+        <span th:text="${@dateUtils.formatYearMonth(review.releaseMonth(), #locale)}"></span>
+      </h3>
+    </div>
+
+    <div class="card-body">
+
+      <!-- Success hint when no errors -->
+      <div class="alert alert-success" th:if="${review.canRelease() and not #lists.isEmpty(review.days())}">
+        <i class="bi bi-check-circle me-1"></i>
+        <span th:text="#{main.release.preview.errors.none.text}"></span>
+      </div>
+
+      <!-- Bookings table -->
+      <div th:if="${not #lists.isEmpty(review.days())}" class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th th:text="#{main.release.preview.col.date.text}"></th>
+              <th class="d-none d-md-table-cell" th:text="#{main.release.preview.col.start.text}"></th>
+              <th class="d-none d-md-table-cell" th:text="#{main.release.preview.col.break.text}"></th>
+              <th class="d-none d-md-table-cell" th:text="#{main.release.preview.col.end.text}"></th>
+              <th th:text="#{main.release.preview.col.order.text}"></th>
+              <th th:text="#{main.release.preview.col.duration.text}"></th>
+              <th class="d-none d-md-table-cell" th:text="#{main.release.preview.col.description.text}"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <th:block th:each="day : ${review.days()}">
+
+              <!-- Public holiday row -->
+              <tr th:if="${day.publicHoliday()}" class="text-muted">
+                <td th:text="${@dateUtils.formatWithDow(day.date(), #locale)}"></td>
+                <td colspan="6" class="fst-italic">
+                  <i class="bi bi-bank me-1"></i>
+                  <span th:text="${day.publicHolidayName()}"></span>
+                </td>
+              </tr>
+
+              <!-- Not-worked row -->
+              <tr th:if="${day.notWorked() and not day.publicHoliday()}" class="text-muted">
+                <td th:text="${@dateUtils.formatWithDow(day.date(), #locale)}"></td>
+                <td colspan="6" class="fst-italic" th:text="#{main.release.preview.not.worked.text}"></td>
+              </tr>
+
+              <!-- Normal day: entry rows -->
+              <th:block th:if="${not day.notWorked() and not day.publicHoliday()}">
+
+                <!-- Row for each merged booking entry -->
+                <tr th:each="entry, iterStat : ${day.entries()}"
+                    th:classappend="${not #lists.isEmpty(day.errors())} ? 'table-warning' : ''">
+                  <td>
+                    <span th:if="${iterStat.first}"
+                          th:text="${@dateUtils.formatWithDow(day.date(), #locale)}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell">
+                    <span th:if="${iterStat.first and day.startTime() != null}"
+                          th:text="${#temporals.format(day.startTime(), 'HH:mm')}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell">
+                    <span th:if="${iterStat.first and day.startTime() != null and not day.breakLength().isZero()}"
+                          th:text="${day.breakLength().toMinutes() + ' min'}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell">
+                    <span th:if="${iterStat.first and day.endTime() != null}"
+                          th:text="${#temporals.format(day.endTime(), 'HH:mm')}"></span>
+                  </td>
+                  <td class="text-nowrap">
+                    <div class="text-muted small"
+                         th:text="${entry.customerorderSign() + ' · ' + entry.customerorderDescription() + ' · ' + entry.customerShortname()}"></div>
+                    <div class="fw-medium"
+                         th:text="${entry.completeOrderSign() + ' · ' + entry.suborderDescription()}"></div>
+                  </td>
+                  <td class="text-end">
+                    <span class="badge bg-blue-lt" th:text="${@durationUtils.format(entry.totalDuration())}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell">
+                    <div th:each="comment : ${entry.comments()}"
+                         th:text="${comment}"
+                         style="white-space: pre-line"></div>
+                  </td>
+                </tr>
+
+                <!-- Placeholder row when no entries (error-only day) -->
+                <tr th:if="${#lists.isEmpty(day.entries())}"
+                    th:classappend="${not #lists.isEmpty(day.errors())} ? 'table-warning' : ''">
+                  <td th:text="${@dateUtils.formatWithDow(day.date(), #locale)}"></td>
+                  <td class="d-none d-md-table-cell">
+                    <span th:if="${day.startTime() != null}"
+                          th:text="${#temporals.format(day.startTime(), 'HH:mm')}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell">
+                    <span th:if="${day.startTime() != null and not day.breakLength().isZero()}"
+                          th:text="${day.breakLength().toMinutes() + ' min'}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell"></td>
+                  <td></td>
+                  <td></td>
+                  <td class="d-none d-md-table-cell"></td>
+                </tr>
+
+                <!-- Daily total row when more than one entry -->
+                <tr th:if="${#lists.size(day.entries()) > 1}"
+                    th:classappend="${not #lists.isEmpty(day.errors())} ? 'table-warning fw-semibold' : 'fw-semibold'">
+                  <td></td>
+                  <td colspan="3" class="d-none d-md-table-cell"></td>
+                  <td><em th:text="#{main.release.preview.total.text}"></em></td>
+                  <td class="text-end">
+                    <span class="badge bg-blue-lt" th:text="${@durationUtils.format(day.totalDuration())}"></span>
+                  </td>
+                  <td class="d-none d-md-table-cell"></td>
+                </tr>
+
+                <!-- Inline error row -->
+                <tr th:if="${not #lists.isEmpty(day.errors())}" class="table-danger">
+                  <td></td>
+                  <td colspan="3" class="d-none d-md-table-cell"></td>
+                  <td colspan="3">
+                    <div th:each="err : ${day.errors()}" class="small text-danger">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                      <span th:text="${#messages.msg(
+                          'errorcode.' + #strings.replace(#strings.toLowerCase(err.errorCode.code), '-', '.'),
+                          @dateUtils.format(day.date()))}"></span>
+                    </div>
+                  </td>
+                </tr>
+
+              </th:block>
+
+            </th:block>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div th:if="${#lists.isEmpty(review.days())}" class="text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        <span th:text="#{main.release.preview.no.bookings.text}"></span>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <form method="post" th:action="@{/release}" class="d-inline">
+        <input type="hidden" name="selfReleaseDate" th:value="${selfReleaseDate}" />
+        <input type="hidden" name="employeeContractId" th:value="${employeeContractId}" />
+        <button type="submit" class="btn btn-primary me-2"
+                th:disabled="${not review.canRelease()}"
+                th:text="#{main.release.preview.confirm.text}"></button>
+      </form>
+      <a class="btn btn-secondary" th:href="@{/release}"
+         th:text="#{main.release.preview.back.text}"></a>
+    </div>
+  </div>
+
+</section>
+</html>

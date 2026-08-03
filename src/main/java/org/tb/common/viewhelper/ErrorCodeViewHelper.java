@@ -16,7 +16,11 @@ public class ErrorCodeViewHelper {
   private final MessageSourceAccessor messages;
 
   public List<ViewMessage> toViewMessages(ErrorCodeException ex) {
-    return ex.getMessages().stream().map(m -> {
+    return toViewMessages(ex.getMessages());
+  }
+
+  public List<ViewMessage> toViewMessages(List<ServiceFeedbackMessage> feedbackMessages) {
+    return feedbackMessages.stream().map(m -> {
       String key = toErrorKey(m);
       Object[] args = m.getArguments().toArray();
       String resolved = messages.getMessage(key, args, "???" + key + "???");
