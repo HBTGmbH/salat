@@ -43,7 +43,7 @@ jobs:
       # exec-plugin execution below.
       - name: Install Chrome
         if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@e574b4b3a21156ab45dd6b5f67e884fd26eed829  # v2.1.2
+        uses: browser-actions/setup-chrome@2e1d749697dd1612b833dba4a722266286fbefcd  # v2.1.2
         with:
           chrome-version: stable
 
