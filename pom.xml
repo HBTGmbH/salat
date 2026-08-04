@@ -374,6 +374,8 @@
       Runs the Playwright E2E test suite (Chrome + Firefox) against the dailyreport module.
       Requires a one-time local browser install: jenv exec ./mvnw -Pe2e test-compile exec:java@install-playwright-browsers
       Usage: jenv exec ./mvnw test -Pe2e
+      Watch it run in a visible, slowed-down browser: jenv exec ./mvnw test -Pe2e -De2e.headless=false -De2e.slowmo=500
+      Run only one browser (used by the CI matrix): -De2e.browsers=chrome (or firefox)
     -->
     <profile>
       <id>e2e</id>
