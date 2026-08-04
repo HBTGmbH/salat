@@ -26,6 +26,7 @@
     <opencsv.version>5.12.0</opencsv.version>
     <org.mapstruct.version>1.6.3</org.mapstruct.version>
     <p6spy.version>3.9.1</p6spy.version>
+    <playwright.version>1.61.0</playwright.version>
     <poi.version>5.5.1</poi.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <salat.image.name>ghcr.io/hbtgmbh/salat</salat.image.name>
@@ -133,6 +134,12 @@
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit-junit5</artifactId>
       <version>${archunit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.playwright</groupId>
+      <artifactId>playwright</artifactId>
+      <version>${playwright.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- other stuff -->
@@ -354,10 +361,62 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <argLine>-Dspring.profiles.active=unittest -XX:+EnableDynamicAgentLoading</argLine>
+          <excludes>
+            <exclude>**/*E2ETest.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      Runs the Playwright E2E test suite (Chrome + Firefox) against the dailyreport module.
+      Requires a one-time local browser install: jenv exec ./mvnw -Pe2e test-compile exec:java@install-playwright-browsers
+      Usage: jenv exec ./mvnw test -Pe2e
+    -->
+    <profile>
+      <id>e2e</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <argLine>-Dspring.profiles.active=unittest -XX:+EnableDynamicAgentLoading</argLine>
+              <excludes combine.self="override">
+                <exclude>none</exclude>
+              </excludes>
+              <includes>
+                <include>**/*E2ETest.java</include>
+              </includes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>install-playwright-browsers</id>
+                <phase>none</phase>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+                <configuration>
+                  <mainClass>com.microsoft.playwright.CLI</mainClass>
+                  <classpathScope>test</classpathScope>
+                  <arguments>
+                    <argument>install</argument>
+                    <argument>chromium</argument>
+                    <argument>firefox</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <reporting>
     <plugins>
