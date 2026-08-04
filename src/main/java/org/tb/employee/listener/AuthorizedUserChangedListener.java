@@ -3,6 +3,7 @@ package org.tb.employee.listener;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import org.tb.auth.event.AuthorizedUserChangedEvent;
 import org.tb.common.GlobalConstants;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.event.EmployeecontractChangedEvent;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
@@ -20,6 +22,7 @@ import org.tb.employee.service.EmployeecontractService;
 @RequiredArgsConstructor
 public class AuthorizedUserChangedListener {
 
+  private final ApplicationEventPublisher eventPublisher;
   private final AuthorizedUser authorizedUser;
   private final EmployeeService employeeService;
   private final EmployeecontractService employeecontractService;
@@ -39,6 +42,9 @@ public class AuthorizedUserChangedListener {
       log.error("No valid contract found for {}.", loginEmployee.getSign());
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid contract found for " + loginEmployee.getSign());
     }
+
+    employeecontract.ifPresent(contract ->
+        eventPublisher.publishEvent(new EmployeecontractChangedEvent(this, contract.getId())));
 
   }
 
