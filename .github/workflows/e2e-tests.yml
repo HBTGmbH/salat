@@ -1,0 +1,72 @@
+name: E2E Tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  e2e:
+    name: E2E (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [ chrome, firefox ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95  # v5.6.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven  # zizmor: ignore[cache-poisoning]
+
+      # Playwright drives the real, locally installed Chrome via channel="chrome" (see
+      # E2EBrowser) rather than a Playwright-managed Chromium build, so it must be present on
+      # the runner. Firefox is Playwright's own managed build, installed via the Maven
+      # exec-plugin execution below.
+      - name: Install Chrome
+        if: matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@e574b4b3a21156ab45dd6b5f67e884fd26eed829  # v2.1.2
+        with:
+          chrome-version: stable
+
+      - name: Install Playwright Firefox
+        if: matrix.browser == 'firefox'
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress \
+            -Pe2e test-compile org.codehaus.mojo:exec-maven-plugin:3.1.0:java@install-playwright-browsers
+
+      - name: Run E2E tests (${{ matrix.browser }})
+        env:
+          E2E_BROWSER: ${{ matrix.browser }}
+        run: |
+          ./mvnw test \
+            --batch-mode \
+            --no-transfer-progress \
+            -Pe2e \
+            -De2e.browsers="$E2E_BROWSER"
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: e2e-surefire-reports-${{ matrix.browser }}
+          path: target/surefire-reports
+          retention-days: 7

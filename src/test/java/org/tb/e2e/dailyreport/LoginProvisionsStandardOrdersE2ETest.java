@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.microsoft.playwright.Locator;
 import java.time.Year;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.tb.common.util.ClockProvider;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
@@ -21,7 +21,7 @@ import org.tb.e2e.PlaywrightE2ETestBase;
 class LoginProvisionsStandardOrdersE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
-  @EnumSource(E2EBrowser.class)
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void standard_suborders_are_offered_after_login(E2EBrowser browser) {
     String currentYear = String.valueOf(Year.now(ClockProvider.getClock()).getValue());
 

@@ -406,7 +406,6 @@
                   <classpathScope>test</classpathScope>
                   <arguments>
                     <argument>install</argument>
-                    <argument>chromium</argument>
                     <argument>firefox</argument>
                   </arguments>
                 </configuration>

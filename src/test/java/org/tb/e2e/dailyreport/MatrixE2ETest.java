@@ -4,7 +4,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import java.time.LocalDate;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
 import org.tb.e2e.PlaywrightE2ETestBase;
@@ -17,7 +17,7 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   private static final LocalDate BOOKING_DATE = LocalDate.parse("2026-06-17");
 
   @ParameterizedTest(name = "{0}")
-  @EnumSource(E2EBrowser.class)
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void matrix_shows_a_booking_made_by_the_employee(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN,
         "/dailyreport/timereports/new?date=" + BOOKING_DATE, page -> {
@@ -38,7 +38,7 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   }
 
   @ParameterizedTest(name = "{0}")
-  @EnumSource(E2EBrowser.class)
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void people_lead_can_open_the_matrix(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_PV_SIGN, "/dailyreport/matrix", page ->
         assertThat(page.locator("#matrix")).isVisible());

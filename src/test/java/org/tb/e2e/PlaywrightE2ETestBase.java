@@ -8,7 +8,9 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -49,6 +51,23 @@ import org.tb.order.persistence.SuborderRepository;
 public abstract class PlaywrightE2ETestBase {
 
   static final String FIXED_NOW = "2026-06-15T09:00:00";
+
+  /**
+   * Browsers to run each {@code @ParameterizedTest} against. Defaults to every
+   * {@link E2EBrowser} (local full-coverage runs); a CI matrix leg narrows this to a single
+   * browser via {@code -De2e.browsers=chrome} (or {@code firefox}) so each browser gets its
+   * own job/report without duplicating test code.
+   */
+  static Stream<E2EBrowser> browsers() {
+    String property = System.getProperty("e2e.browsers");
+    if (property == null || property.isBlank()) {
+      return Arrays.stream(E2EBrowser.values());
+    }
+    return Arrays.stream(property.split(","))
+        .map(String::trim)
+        .map(String::toUpperCase)
+        .map(E2EBrowser::valueOf);
+  }
 
   @LocalServerPort
   private int port;
