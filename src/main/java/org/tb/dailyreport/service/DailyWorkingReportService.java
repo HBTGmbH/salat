@@ -60,7 +60,7 @@ public class DailyWorkingReportService {
         var timeReports = timereportService.getTimereportsByDateAndEmployeeContractId(contractId, date)
             .stream().map(DailyReportData::valueOf).toList();
         if (workingDay == null && timeReports.isEmpty()) return null;
-        var builder = DailyWorkingReportData.builder().date(date).dailyReports(timeReports);
+        var builder = DailyWorkingReportData.builder().date(date).dailyReports(timeReports).type(WorkingDayType.WORKED);
         if (workingDay != null) {
             builder.type(workingDay.getType());
             if (workingDay.getType() != WorkingDayType.NOT_WORKED) {
