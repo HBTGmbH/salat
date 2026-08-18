@@ -10,6 +10,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpOutputMessage;
@@ -36,6 +37,7 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.EmployeeService;
 
+@Slf4j
 @Controller
 @RequestMapping("/dailyreport/csv")
 @RequiredArgsConstructor
@@ -101,6 +103,7 @@ public class DailyReportCsvController {
                     .map(Object::toString).findFirst()
                     .orElse(messages.getMessage("main.dailyreport.csv.import.error.parse.text")));
         } catch (IOException ex) {
+            log.error("Could not import CSV.", ex);
             redirectAttributes.addFlashAttribute("toastError",
                 messages.getMessage("main.dailyreport.csv.import.error.parse.text"));
         }
