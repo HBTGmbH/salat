@@ -30,6 +30,14 @@
   .fav-apply-btn:hover {
     background-color: rgba(var(--tblr-primary-rgb), 0.04) !important;
   }
+  /* form-control-sm renders at 12px; below 16px iOS Safari zooms the page whenever a text field
+     gets focus. Only the narrow viewports need the larger text, the desktop row stays compact. */
+  @media (max-width: 767.98px) {
+    #workingday-form input[type="text"],
+    .inline-edit-input {
+      font-size: 1rem;
+    }
+  }
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -157,13 +165,12 @@
                        th:text="#{main.daily.workingday.start.label}">Start</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" oninput="timeMask(event)"
-                       onblur="timeBlur(event); saveTime()"
+                       style="width:5.5rem" oninput="timeMask(event)"
+                       onblur="timeBlur(event); saveTime(event)"
                        inputmode="numeric" maxlength="5" placeholder="HH:MM"
                        th:attr="type=${betaTimeInput} ? 'text' : 'time',
                                 data-time-mode=${betaTimeInput} ? 'time' : null,
                                 data-time-step=${betaTimeInput} ? '15' : null,
-                                data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                                 data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                 data-time-label-increase=#{main.timeinput.increase.tooltip}">
               </div>
@@ -175,13 +182,12 @@
                        th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" oninput="timeMask(event)"
-                       onblur="timeBlur(event); saveTime()"
+                       style="width:5.5rem" oninput="timeMask(event)"
+                       onblur="timeBlur(event); saveTime(event)"
                        inputmode="numeric" maxlength="5" placeholder="HH:MM"
                        th:attr="type=${betaTimeInput} ? 'text' : 'time',
                                 data-time-mode=${betaTimeInput} ? 'time' : null,
                                 data-time-step=${betaTimeInput} ? '15' : null,
-                                data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                                 data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                 data-time-label-increase=#{main.timeinput.increase.tooltip}">
               </div>
@@ -429,8 +435,12 @@
         </a>
       </div>
 
-      <!-- OOB: workday form -->
-      <form th:if="${isHtmxRequest == true and isDailyMode == true}" method="post"
+      <!-- OOB: workday form.
+           renderWorkingdayForm is only set by the workingday save itself and is false when just a
+           time changed — swapping the form back then would pull the field out from under the
+           user's caret (#830). Every other endpoint leaves it unset and keeps the swap. -->
+      <form th:if="${isHtmxRequest == true and isDailyMode == true and renderWorkingdayForm != false}"
+            method="post"
             hx-swap-oob="outerHTML:#workingday-form"
             th:action="@{/dailyreport/daily/workingday}" id="workingday-form"
             th:object="${workingdayForm}"
@@ -473,13 +483,12 @@
                      th:text="#{main.daily.workingday.start.label}">Start</label>
               <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" oninput="timeMask(event)"
-                     onblur="timeBlur(event); saveTime()"
+                     style="width:5.5rem" oninput="timeMask(event)"
+                     onblur="timeBlur(event); saveTime(event)"
                      inputmode="numeric" maxlength="5" placeholder="HH:MM"
                      th:attr="type=${betaTimeInput} ? 'text' : 'time',
                               data-time-mode=${betaTimeInput} ? 'time' : null,
                               data-time-step=${betaTimeInput} ? '15' : null,
-                              data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                               data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                               data-time-label-increase=#{main.timeinput.increase.tooltip}">
             </div>
@@ -491,13 +500,12 @@
                      th:text="#{main.daily.workingday.break.label}">Pause</label>
               <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" oninput="timeMask(event)"
-                     onblur="timeBlur(event); saveTime()"
+                     style="width:5.5rem" oninput="timeMask(event)"
+                     onblur="timeBlur(event); saveTime(event)"
                      inputmode="numeric" maxlength="5" placeholder="HH:MM"
                      th:attr="type=${betaTimeInput} ? 'text' : 'time',
                               data-time-mode=${betaTimeInput} ? 'time' : null,
                               data-time-step=${betaTimeInput} ? '15' : null,
-                              data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                               data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                               data-time-label-increase=#{main.timeinput.increase.tooltip}">
             </div>
@@ -851,9 +859,27 @@
     htmx.trigger('#workingday-form', 'submit');
   }
 
-  function saveTime() {
+  // A time change no longer swaps the form back (see renderWorkingdayForm), so the focus survives
+  // the save. The guards below are the belt to that braces: a field that is being removed must not
+  // save on its way out, and two saves must not overlap (#830).
+  var workingdaySaveInFlight = false;
+
+  function saveTime(event) {
+    if (workingdaySaveInFlight) return;
+    if (event && event.target && !event.target.isConnected) return;
+    workingdaySaveInFlight = true;
     htmx.trigger('#workingday-form', 'submit');
   }
+
+  document.addEventListener('htmx:afterOnLoad', function () {
+    workingdaySaveInFlight = false;
+  });
+  document.addEventListener('htmx:responseError', function () {
+    workingdaySaveInFlight = false;
+  });
+  document.addEventListener('htmx:sendError', function () {
+    workingdaySaveInFlight = false;
+  });
 
   // durationMask/durationBlur live in /js/salat.js (#830)
   var inlineEditEscaped = false;

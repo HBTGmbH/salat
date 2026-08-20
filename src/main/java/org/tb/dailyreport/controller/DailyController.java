@@ -154,6 +154,12 @@ public class DailyController {
                 workingday.setEmployeecontract(contract);
                 workingday.setRefday(date);
             }
+            // Only a changed not-worked flag adds or removes the start/break fields, so only then
+            // does the form itself have to be swapped back. Re-rendering it after a plain time
+            // change would replace the field the user is working in and take the focus with it,
+            // which in turn made the removed field fire its own blur and save a second time (#830).
+            boolean wasNotWorked = workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
+            model.addAttribute("renderWorkingdayForm", wasNotWorked != form.isNotWorked());
             if (form.isNotWorked()) {
                 workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
                 workingday.setStarttimehour(0);

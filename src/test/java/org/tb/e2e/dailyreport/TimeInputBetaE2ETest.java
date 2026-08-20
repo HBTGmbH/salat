@@ -1,10 +1,14 @@
 package org.tb.e2e.dailyreport;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.tb.e2e.E2EBrowser;
@@ -123,17 +127,65 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       // beta: a text field, so a phone shows the numeric keypad instead of the OS wheel
       assertThat(page.locator("#startTime")).hasAttribute("type", "text");
 
-      // "830" is normalised to 08:30 and saved
-      page.fill("#startTime", "830");
-      page.locator("#breakTime").click();
-      assertThat(page.locator("#startTime")).hasValue("08:30");
-      page.waitForTimeout(1500);
-      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
-      assertThat(page.locator("#startTime")).hasValue("08:30");
+      // the field is only as wide as an HH:MM value needs
+      assertThat(page.locator("#startTime")).hasCSS("width", "88px");
 
-      // the stepper snaps on the grid here as well
+      List<String> saves = new ArrayList<>();
+      page.onRequest(request -> {
+        if (request.url().contains("/dailyreport/daily/workingday")) {
+          saves.add(request.url());
+        }
+      });
+
+      // typing must not save: the response swaps the form out of the page and would take the
+      // caret with it while the user is still entering digits
+      page.fill("#startTime", "");
+      page.locator("#startTime").click();
+      page.locator("#startTime").pressSequentially("0745", new Locator.PressSequentiallyOptions().setDelay(80));
+      assertThat(page.locator("#startTime")).hasValue("07:45");
+
+      // the stepper snaps on the grid, saves nothing yet and leaves the focus in the field
       page.click("#start-field .input-group > button:last-child");
-      assertThat(page.locator("#startTime")).hasValue("08:45");
+      assertThat(page.locator("#startTime")).hasValue("08:00");
+      page.waitForTimeout(1200);
+      assertEquals(0, saves.size(), "neither typing nor stepping may trigger a save");
+      assertEquals("startTime", page.evaluate("() => document.activeElement.id"));
+
+      // moving on to the next field saves once and leaves the caret there: the response must not
+      // swap the form back when only a time changed
+      page.locator("#breakTime").click();
+      page.waitForTimeout(1200);
+      assertEquals(1, saves.size(), "leaving the field must save exactly once");
+      assertEquals("breakTime", page.evaluate("() => document.activeElement.id"),
+          "the save must not pull the focus out of the next field");
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+      assertThat(page.locator("#startTime")).hasValue("08:00");
+    });
+  }
+
+  /**
+   * The counterpart to the test above: a changed not-worked flag adds or removes the time fields, so
+   * here the form does have to be swapped back.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void toggling_not_worked_still_swaps_the_form_and_hides_the_time_fields(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-29", EMPLOYEE));
+      assertThat(page.locator("#start-field")).isVisible();
+
+      page.locator("#notWorked").check();
+      page.waitForTimeout(1200);
+      assertThat(page.locator("#start-field")).hasCount(0);
+      assertThat(page.locator("#break-field")).hasCount(0);
+
+      page.locator("#notWorked").uncheck();
+      page.waitForTimeout(1200);
+      assertThat(page.locator("#start-field")).isVisible();
+      // and the field is enhanced again after the swap
+      assertThat(page.locator("#start-field .input-group")).isVisible();
     });
   }
 
@@ -166,7 +218,7 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
     page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
   }
 
-  private com.microsoft.playwright.Locator chip(Page page, String label) {
+  private Locator chip(Page page, String label) {
     return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(label));
   }
 
