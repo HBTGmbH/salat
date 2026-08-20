@@ -54,8 +54,9 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       setBeta(page, true);
       openNewBooking(page, LocalDate.parse("2026-06-19"));
 
-      // the hint disappears once the feature is on
+      // the hint gives way to the beta badge, which carries the Slack feedback channel
       assertThat(page.getByText("Schnelleingabe testen")).hasCount(0);
+      assertThat(page.locator("span.badge[title*='#salat']")).isVisible();
 
       // empty field: the first step lands on the grid
       page.click(STEPPER_INCREASE);

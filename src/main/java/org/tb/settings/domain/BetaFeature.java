@@ -6,21 +6,21 @@ import java.util.Optional;
 /**
  * Opt-in beta features a user can switch on in the settings.
  *
- * <p>Every constant here is <strong>temporary by design</strong>. A beta feature is introduced
- * together with an agreed end date and is resolved by exactly one of two actions: the feature
- * becomes the default and the constant is removed, or the feature is withdrawn and the constant is
- * removed. Deleting the constant makes the compiler point at every remaining usage, which is the
- * whole reason the keys are modelled as an enum instead of free-form strings.
+ * <p>A beta feature runs <strong>without a fixed end date</strong>: the switch stays available until
+ * the team decides either to make the feature the default (constant removed, classic branch deleted)
+ * or to withdraw it (constant removed, feature deleted). Modelling the keys as an enum rather than
+ * free-form strings means that whenever that decision comes, deleting the constant makes the
+ * compiler point at every remaining usage.
  *
- * <p>Keys stored for users are matched by {@link #getKey()}; unknown keys (a beta that has since
- * been removed) are silently dropped when the preferences are read, so no cleanup migration is
+ * <p>Keys stored for users are matched by {@link #getKey()}; unknown keys — a beta that has since
+ * been removed — are silently dropped when the preferences are read, so no cleanup migration is
  * needed.
  */
 public enum BetaFeature {
 
   /**
    * #830 — stepper with 15 minute grid, additive quick-add chips and keyboard stepping for time and
-   * duration fields. End of beta: see issue #830.
+   * duration fields. Feedback goes to the Slack channel #salat.
    */
   TIME_INPUT("timeinput");
 

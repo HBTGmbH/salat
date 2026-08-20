@@ -53,6 +53,10 @@
                   <i class="ti ti-bolt"></i>
                   <span th:text="#{main.beta.timeinput.link.label}">Schnelleingabe testen</span>
                 </a>
+                <!-- once active, the badge is the reminder that this is a beta and where to report -->
+                <span th:if="${betaTimeInput}" class="badge bg-azure-lt ms-2"
+                      th:title="#{main.beta.feedback.hint}"
+                      th:text="#{main.beta.badge}">Beta</span>
                 <div class="d-flex flex-wrap align-items-start gap-2">
 
                   <!-- Toggle buttons -->
