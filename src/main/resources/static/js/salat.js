@@ -166,7 +166,8 @@ document.addEventListener('htmx:afterSettle', function () {
  * input itself so that HTMX fragment swaps and the surrounding hx-* wiring stay untouched:
  *
  *   data-time-mode="duration|time"   how to read and write the value (default: duration)
- *   data-time-step="15"              enables stepper buttons and arrow key stepping
+ *   data-time-step="15"              enables stepping via buttons, arrow keys and the wheel;
+ *                                    Shift steps a full hour, Alt a single minute, in all three
  *   data-time-chips="15 30 60"       renders additive quick-add chips plus a reset chip
  *   data-time-chips-target="#id"     optional container for the chips (default: next to the field)
  *
@@ -315,10 +316,25 @@ function timeInputStep(input, direction) {
     : Math.ceil(current / step) * step - step);
 }
 
-/** Quick-add chips and Alt/Shift arrows: plain addition, no snapping. */
+/** Quick-add chips and the modified steps: plain addition, no snapping. */
 function timeInputAdd(input, delta) {
   const current = timeInputRead(input);
   timeInputWrite(input, (current === null ? 0 : current) + delta);
+}
+
+/**
+ * One place for all three ways of stepping — buttons, arrow keys and the wheel — so that the
+ * modifiers mean the same thing everywhere: plain steps on the grid, Shift a full hour, Alt a
+ * single minute.
+ */
+function timeInputStepBy(input, direction, event) {
+  if (event && event.altKey) {
+    timeInputAdd(input, direction);
+  } else if (event && event.shiftKey) {
+    timeInputAdd(input, direction * 60);
+  } else {
+    timeInputStep(input, direction);
+  }
 }
 
 function timeInputClear(input) {
@@ -329,11 +345,18 @@ function timeInputClear(input) {
 
 function timeInputKeydown(event) {
   if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-  const direction = event.key === 'ArrowUp' ? 1 : -1;
   event.preventDefault();
-  if (event.altKey)        timeInputAdd(event.target, direction);
-  else if (event.shiftKey) timeInputAdd(event.target, direction * 60);
-  else                     timeInputStep(event.target, direction);
+  timeInputStepBy(event.target, event.key === 'ArrowUp' ? 1 : -1, event);
+}
+
+/**
+ * Only while the field has the focus, mirroring what browsers do for type=number: otherwise merely
+ * scrolling past the field would silently change a booking.
+ */
+function timeInputWheel(event) {
+  if (document.activeElement !== event.currentTarget || event.deltaY === 0) return;
+  event.preventDefault();
+  timeInputStepBy(event.currentTarget, event.deltaY < 0 ? 1 : -1, event);
 }
 
 function timeInputButton(input, className, content, label) {
@@ -365,6 +388,7 @@ function enhanceTimeInput(input) {
   if (input.disabled || input.readOnly) return;
 
   input.addEventListener('keydown', timeInputKeydown);
+  input.addEventListener('wheel', timeInputWheel, { passive: false });
 
   const group = document.createElement('div');
   group.className = 'input-group flex-nowrap w-auto';
@@ -374,8 +398,8 @@ function enhanceTimeInput(input) {
     input.dataset.timeLabelDecrease);
   const increase = timeInputButton(input, 'btn btn-outline-secondary px-2', '+',
     input.dataset.timeLabelIncrease);
-  decrease.addEventListener('click', () => timeInputStep(input, -1));
-  increase.addEventListener('click', () => timeInputStep(input, 1));
+  decrease.addEventListener('click', (event) => timeInputStepBy(input, -1, event));
+  increase.addEventListener('click', (event) => timeInputStepBy(input, 1, event));
 
   group.appendChild(decrease);
   group.appendChild(input);

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.KeyboardModifier;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +93,58 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("#durationChips")).isHidden();
       page.click("#btnDuration");
       assertThat(page.locator("#durationChips")).isVisible();
+    });
+  }
+
+  /**
+   * Buttons, arrow keys and the wheel are three ways to do the same thing, so the modifiers have to
+   * mean the same thing in all three: plain steps on the grid, Shift a full hour, Alt one minute.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void modifiers_work_the_same_for_buttons_arrow_keys_and_the_wheel(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+      openNewBooking(page, LocalDate.parse("2026-06-19"));
+
+      var shift = new Page.ClickOptions().setModifiers(List.of(KeyboardModifier.SHIFT));
+      var alt = new Page.ClickOptions().setModifiers(List.of(KeyboardModifier.ALT));
+
+      page.fill("#durationTime", "02:07");
+      page.click(STEPPER_INCREASE, shift);
+      assertThat(page.locator("#durationTime")).hasValue("03:07");
+      page.click(STEPPER_DECREASE, shift);
+      assertThat(page.locator("#durationTime")).hasValue("02:07");
+
+      page.click(STEPPER_INCREASE, alt);
+      assertThat(page.locator("#durationTime")).hasValue("02:08");
+      page.click(STEPPER_DECREASE, alt);
+      assertThat(page.locator("#durationTime")).hasValue("02:07");
+
+      // the same combinations on the keyboard
+      page.locator("#durationTime").click();
+      page.keyboard().press("Shift+ArrowUp");
+      assertThat(page.locator("#durationTime")).hasValue("03:07");
+      page.keyboard().press("Alt+ArrowDown");
+      assertThat(page.locator("#durationTime")).hasValue("03:06");
+      page.keyboard().press("ArrowUp");
+      assertThat(page.locator("#durationTime")).hasValue("03:15");
+
+      // and on the wheel, which only acts while the field has the focus
+      page.locator("#durationTime").click();
+      page.mouse().wheel(0, -100);
+      assertThat(page.locator("#durationTime")).hasValue("03:30");
+      page.keyboard().down("Shift");
+      page.mouse().wheel(0, -100);
+      page.keyboard().up("Shift");
+      assertThat(page.locator("#durationTime")).hasValue("04:30");
+
+      // scrolling without the focus must not touch the value
+      page.locator("#commentField").click();
+      page.mouse().move(80, 80);
+      page.mouse().wheel(0, -100);
+      assertThat(page.locator("#durationTime")).hasValue("04:30");
     });
   }
 
