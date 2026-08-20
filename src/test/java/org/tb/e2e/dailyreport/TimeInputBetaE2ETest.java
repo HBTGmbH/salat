@@ -109,6 +109,36 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_beta_turns_the_workingday_times_into_typeable_fields(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, false);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+      // classic: the native picker stays
+      assertThat(page.locator("#startTime")).hasAttribute("type", "time");
+
+      setBeta(page, true);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+
+      // beta: a text field, so a phone shows the numeric keypad instead of the OS wheel
+      assertThat(page.locator("#startTime")).hasAttribute("type", "text");
+
+      // "830" is normalised to 08:30 and saved
+      page.fill("#startTime", "830");
+      page.locator("#breakTime").click();
+      assertThat(page.locator("#startTime")).hasValue("08:30");
+      page.waitForTimeout(1500);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+      assertThat(page.locator("#startTime")).hasValue("08:30");
+
+      // the stepper snaps on the grid here as well
+      page.click("#start-field .input-group > button:last-child");
+      assertThat(page.locator("#startTime")).hasValue("08:45");
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_hint_on_the_daily_page_activates_the_feature(E2EBrowser browser) {
     runAsUser(browser, EMPLOYEE, "/settings", page -> {
 

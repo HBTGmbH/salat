@@ -5,6 +5,7 @@ import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
+import static org.tb.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -514,12 +515,11 @@ public class TimereportController {
                 .orElse(-1L);
     }
 
+    /** Tolerant towards the input formats of the time widget (#830), see DailyController.parseTime. */
     private static int[] parseTime(String hhmm) {
-        if (hhmm != null && hhmm.matches("\\d{1,2}:\\d{2}")) {
-            String[] p = hhmm.split(":");
-            return new int[]{Integer.parseInt(p[0]), Integer.parseInt(p[1])};
-        }
-        return new int[]{0, 0};
+        return parseFlexibleTimeOfDay(hhmm)
+            .map(time -> new int[]{time.getHour(), time.getMinute()})
+            .orElseGet(() -> new int[]{0, 0});
     }
 
     private static String safeReturnUrl(String returnUrl, String fallback) {

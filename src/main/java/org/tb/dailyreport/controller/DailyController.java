@@ -4,6 +4,7 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
+import static org.tb.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -375,12 +376,15 @@ public class DailyController {
                 .orElse(-1L);
     }
 
+    /**
+     * Tolerant towards the input formats of the time widget (#830) — "830" or "8.30" reach this
+     * point when the field is submitted with Enter, before the client had a chance to normalise on
+     * blur. Without that tolerance the value would silently fall back to the default.
+     */
     private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
-        if (hhmm != null && hhmm.matches("\\d{1,2}:\\d{2}")) {
-            String[] p = hhmm.split(":");
-            return new int[]{Integer.parseInt(p[0]), Integer.parseInt(p[1])};
-        }
-        return new int[]{defaultHour, defaultMinute};
+        return parseFlexibleTimeOfDay(hhmm)
+            .map(time -> new int[]{time.getHour(), time.getMinute()})
+            .orElseGet(() -> new int[]{defaultHour, defaultMinute});
     }
 
     @PostMapping("/delete-timereport")

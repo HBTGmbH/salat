@@ -157,8 +157,11 @@
                        th:text="#{main.daily.workingday.start.label}">Start</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" onblur="saveTime()"
-                       th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                       style="width:auto" oninput="timeMask(event)"
+                       onblur="timeBlur(event); saveTime()"
+                       inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                       th:attr="type=${betaTimeInput} ? 'text' : 'time',
+                                data-time-mode=${betaTimeInput} ? 'time' : null,
                                 data-time-step=${betaTimeInput} ? '15' : null,
                                 data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                                 data-time-label-decrease=#{main.timeinput.decrease.tooltip},
@@ -172,8 +175,11 @@
                        th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" onblur="saveTime()"
-                       th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                       style="width:auto" oninput="timeMask(event)"
+                       onblur="timeBlur(event); saveTime()"
+                       inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                       th:attr="type=${betaTimeInput} ? 'text' : 'time',
+                                data-time-mode=${betaTimeInput} ? 'time' : null,
                                 data-time-step=${betaTimeInput} ? '15' : null,
                                 data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                                 data-time-label-decrease=#{main.timeinput.decrease.tooltip},
@@ -467,8 +473,11 @@
                      th:text="#{main.daily.workingday.start.label}">Start</label>
               <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" onblur="saveTime()"
-                     th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                     style="width:auto" oninput="timeMask(event)"
+                     onblur="timeBlur(event); saveTime()"
+                     inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                     th:attr="type=${betaTimeInput} ? 'text' : 'time',
+                              data-time-mode=${betaTimeInput} ? 'time' : null,
                               data-time-step=${betaTimeInput} ? '15' : null,
                               data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                               data-time-label-decrease=#{main.timeinput.decrease.tooltip},
@@ -482,8 +491,11 @@
                      th:text="#{main.daily.workingday.break.label}">Pause</label>
               <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" onblur="saveTime()"
-                     th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                     style="width:auto" oninput="timeMask(event)"
+                     onblur="timeBlur(event); saveTime()"
+                     inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                     th:attr="type=${betaTimeInput} ? 'text' : 'time',
+                              data-time-mode=${betaTimeInput} ? 'time' : null,
                               data-time-step=${betaTimeInput} ? '15' : null,
                               data-time-commit=${betaTimeInput} ? 'saveTime' : null,
                               data-time-label-decrease=#{main.timeinput.decrease.tooltip},
