@@ -51,8 +51,12 @@ public class JiraReplicationService {
         cfg.getId(), cfg.getName(), cfg.getCustomerorderSign(), pageSize);
 
     // Note: We do not modify JQL per requirement. We filter during upsert by updated timestamp.
-    var baseline = ticketRepo.findMaxUpdatedTs(cfg.getCustomerorderSign());
-    if (baseline == null) baseline = cfg.getLastMaxUpdated();
+    // The baseline comes solely from the config watermark, which is only written after a run has
+    // completed (see below). Deriving it from the stored tickets would let a single ticket saved by
+    // an aborted run raise the bar for all other tickets of that customer order, permanently
+    // skipping the ones that were never fetched. Re-fetching is harmless — upsertIfChanged is
+    // idempotent — so the failure mode has to be "fetch again", never "skip".
+    var baseline = cfg.getLastMaxUpdated();
     int startAt = 0;
     int processed = 0;
     LocalDateTime newMax = baseline;

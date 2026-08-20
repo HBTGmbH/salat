@@ -1,9 +1,11 @@
 package org.tb.jira.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,9 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.client.RestClientException;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.common.util.DateTimeUtils;
@@ -50,7 +54,6 @@ class JiraReplicationServiceTest {
   void testRunReplicationWithValidConfig() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(ticketRepo.findMaxUpdatedTs(config.getCustomerorderSign())).thenReturn(null);
     when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(createMockJiraSearchResult());
 
@@ -66,7 +69,6 @@ class JiraReplicationServiceTest {
   void testRunReplicationWithNoIssues() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(ticketRepo.findMaxUpdatedTs(config.getCustomerorderSign())).thenReturn(null);
     when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(emptyResult());
 
@@ -81,7 +83,6 @@ class JiraReplicationServiceTest {
     LocalDateTime mockUpdated = LocalDateTime.of(2026, 6, 25, 11, 20, 25);
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(ticketRepo.findMaxUpdatedTs(config.getCustomerorderSign())).thenReturn(null);
     when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
         .thenReturn(createMockJiraSearchResult(mockUpdated));
 
@@ -89,6 +90,56 @@ class JiraReplicationServiceTest {
 
     verify(configRepo, times(1)).save(config);
     assertEquals(mockUpdated, config.getLastMaxUpdated());
+  }
+
+  @Test
+  void testAbortedRunDoesNotAdvanceLastMaxUpdated() {
+    LocalDateTime watermark = LocalDateTime.of(2026, 6, 1, 8, 0, 0);
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(watermark);
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    // first page succeeds and stores a ticket with a far newer timestamp, second page fails
+    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
+        .thenReturn(pagedResult(mockIssue(LocalDateTime.of(2026, 8, 19, 10, 0, 0)), 2))
+        .thenThrow(new RestClientException("connection reset"));
+
+    assertThrows(RestClientException.class, () -> jiraReplicationService.runReplication(config.getId()));
+
+    verify(ticketRepo, times(1)).save(any(JiraTicket.class));
+    verify(configRepo, never()).save(any(JiraReplicationConfig.class));
+    assertEquals(watermark, config.getLastMaxUpdated());
+  }
+
+  @Test
+  void testBaselineIsTakenFromConfigWatermark() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
+        .thenReturn(emptyResult());
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertEquals("(project = MOCK) AND updated >= '2026-06-01'", capturedJql());
+  }
+
+  @Test
+  void testMissingWatermarkFetchesEverything() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(null);
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
+        .thenReturn(emptyResult());
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertEquals("project = MOCK", capturedJql());
+  }
+
+  private String capturedJql() {
+    var jql = ArgumentCaptor.forClass(String.class);
+    verify(jiraClient).searchIssues(any(), any(), any(), jql.capture(), anyInt(), anyInt(), any());
+    return jql.getValue();
   }
 
   private JiraReplicationConfig createMockReplicationConfig() {
@@ -110,6 +161,10 @@ class JiraReplicationServiceTest {
   }
 
   private JiraSearchResult createMockJiraSearchResult(LocalDateTime updated) {
+    return result(mockIssue(updated));
+  }
+
+  private static JiraIssue mockIssue(LocalDateTime updated) {
     JiraIssue issue = new JiraIssue();
     issue.setId("1001");
     issue.setKey("MOCK-1");
@@ -119,7 +174,7 @@ class JiraReplicationServiceTest {
         "created", DateTimeUtils.now().toString(),
         "issuetype", Map.of("name", "Task")
     ));
-    return result(issue);
+    return issue;
   }
 
   private static JiraSearchResult result(JiraIssue issue) {
@@ -127,6 +182,13 @@ class JiraReplicationServiceTest {
     result.setIssues(List.of(issue));
     result.setMaxResults(1);
     result.setTotal(1);
+    return result;
+  }
+
+  /** One issue, but {@code total} claims more — forces the service to request a further page. */
+  private static JiraSearchResult pagedResult(JiraIssue issue, int total) {
+    var result = result(issue);
+    result.setTotal(total);
     return result;
   }
 
