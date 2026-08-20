@@ -33,6 +33,51 @@
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!-- BETA HINT: new time/duration input (#830)                    -->
+<!-- Remove this block together with the BetaFeature.TIME_INPUT   -->
+<!-- constant when the beta test ends.                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div th:unless="${@betaViewHelper.timeInput}"
+     id="beta-timeinput-hint" class="alert alert-info alert-dismissible d-none" role="alert">
+  <div class="d-flex align-items-start gap-2">
+    <i class="ti ti-bolt mt-1"></i>
+    <div class="flex-fill">
+      <h4 class="alert-title mb-1" th:text="#{main.beta.timeinput.hint.title}">
+        Neu zum Ausprobieren: Zeit und Dauer schneller eingeben
+      </h4>
+      <div class="text-secondary" th:text="#{main.beta.timeinput.hint.text}">
+        15-Minuten-Schritte, Schnellwahl-Buttons und Eingaben wie „830“ oder „2h30“.
+      </div>
+      <div class="btn-list mt-2">
+        <button type="button" class="btn btn-primary"
+                th:attr="hx-post=@{/settings/beta/timeinput/enable}"
+                hx-swap="none"
+                th:text="#{main.beta.timeinput.hint.activate}">Aktivieren</button>
+        <button type="button" class="btn btn-link" onclick="dismissBetaTimeInputHint()"
+                th:text="#{main.beta.timeinput.hint.later}">Später</button>
+      </div>
+    </div>
+    <button type="button" class="btn-close" onclick="dismissBetaTimeInputHint()"
+            th:attr="aria-label=#{main.button.close}"></button>
+  </div>
+</div>
+<script th:inline="none">
+  // Shown at most once per device. Dismissal lives in localStorage, not in the user preferences:
+  // it is a nudge for the duration of the beta, so it should not outlive it in the database.
+  function dismissBetaTimeInputHint() {
+    localStorage.setItem('salat-beta-timeinput-hint', 'dismissed');
+    var hint = document.getElementById('beta-timeinput-hint');
+    if (hint) hint.classList.add('d-none');
+  }
+  (function () {
+    var hint = document.getElementById('beta-timeinput-hint');
+    if (hint && localStorage.getItem('salat-beta-timeinput-hint') !== 'dismissed') {
+      hint.classList.remove('d-none');
+    }
+  }());
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- DAILY MODE                                                  -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div th:if="${mode == 'daily'}">
@@ -72,12 +117,15 @@
         <div class="card-body">
           <form method="post" th:action="@{/dailyreport/daily/workingday}" id="workingday-form"
                 th:object="${workingdayForm}"
+                th:with="betaTimeInput=${@betaViewHelper.timeInput}"
                 th:attr="hx-post=@{/dailyreport/daily/workingday}"
                 hx-target="#daily-bookings-area"
                 hx-swap="outerHTML">
             <input type="hidden" name="date" th:value="${date}"/>
 
-            <div class="d-flex align-items-center">
+            <!-- flex-wrap: three field groups plus their steppers overflow a phone viewport,
+                 so they stack there and stay in one row from md upwards -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
 
               <!-- Not-worked toggle -->
               <div class="flex-fill d-flex justify-content-center">
@@ -105,19 +153,31 @@
               <!-- Start — hidden when not worked -->
               <div id="start-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
                    th:if="${!workingdayForm.notWorked}">
-                <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
+                <label class="form-label mb-0 text-nowrap" for="startTime"
+                       th:text="#{main.daily.workingday.start.label}">Start</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" onblur="saveTime()">
+                       style="width:auto" onblur="saveTime()"
+                       th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                                data-time-step=${betaTimeInput} ? '15' : null,
+                                data-time-commit=${betaTimeInput} ? 'saveTime' : null,
+                                data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                                data-time-label-increase=#{main.timeinput.increase.tooltip}">
               </div>
 
               <!-- Break — hidden when not worked -->
               <div id="break-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
                    th:if="${!workingdayForm.notWorked}">
-                <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
+                <label class="form-label mb-0 text-nowrap" for="breakTime"
+                       th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" onblur="saveTime()">
+                       style="width:auto" onblur="saveTime()"
+                       th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                                data-time-step=${betaTimeInput} ? '15' : null,
+                                data-time-commit=${betaTimeInput} ? 'saveTime' : null,
+                                data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                                data-time-label-increase=#{main.timeinput.increase.tooltip}">
               </div>
 
             </div>
@@ -246,8 +306,10 @@
                     <span class="badge bg-blue-lt inline-edit-display"
                           style="user-select:none"
                           th:text="${@durationUtils.format(tr.duration)}"></span>
+                    <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
                     <input type="text" class="form-control form-control-sm text-center inline-edit-input d-none"
-                           style="width:4rem; font-size:0.8rem"
+                           style="width:5rem; font-size:1rem"
+                           inputmode="decimal" maxlength="8"
                            name="duration"
                            th:value="${@durationUtils.format(tr.duration)}"
                            th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
@@ -366,12 +428,14 @@
             hx-swap-oob="outerHTML:#workingday-form"
             th:action="@{/dailyreport/daily/workingday}" id="workingday-form"
             th:object="${workingdayForm}"
+            th:with="betaTimeInput=${@betaViewHelper.timeInput}"
             th:attr="hx-post=@{/dailyreport/daily/workingday}"
             hx-target="#daily-bookings-area"
             hx-swap="outerHTML">
           <input type="hidden" name="date" th:value="${date}"/>
 
-          <div class="d-flex align-items-center">
+          <!-- flex-wrap: see the main copy above -->
+          <div class="d-flex flex-wrap align-items-center gap-2">
 
             <!-- Not-worked toggle -->
             <div class="flex-fill d-flex justify-content-center">
@@ -399,19 +463,31 @@
             <!-- Start — hidden when not worked -->
             <div id="start-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
                  th:if="${!workingdayForm.notWorked}">
-              <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.start.label}">Start</label>
+              <label class="form-label mb-0 text-nowrap" for="startTime"
+                     th:text="#{main.daily.workingday.start.label}">Start</label>
               <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" onblur="saveTime()">
+                     style="width:auto" onblur="saveTime()"
+                     th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                              data-time-step=${betaTimeInput} ? '15' : null,
+                              data-time-commit=${betaTimeInput} ? 'saveTime' : null,
+                              data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                              data-time-label-increase=#{main.timeinput.increase.tooltip}">
             </div>
 
             <!-- Break — hidden when not worked -->
             <div id="break-field" class="flex-fill d-flex justify-content-center align-items-center gap-2"
                  th:if="${!workingdayForm.notWorked}">
-              <label class="form-label mb-0 text-nowrap" th:text="#{main.daily.workingday.break.label}">Pause</label>
+              <label class="form-label mb-0 text-nowrap" for="breakTime"
+                     th:text="#{main.daily.workingday.break.label}">Pause</label>
               <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" onblur="saveTime()">
+                     style="width:auto" onblur="saveTime()"
+                     th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                              data-time-step=${betaTimeInput} ? '15' : null,
+                              data-time-commit=${betaTimeInput} ? 'saveTime' : null,
+                              data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                              data-time-label-increase=#{main.timeinput.increase.tooltip}">
             </div>
 
           </div>
@@ -767,21 +843,7 @@
     htmx.trigger('#workingday-form', 'submit');
   }
 
-  function durationMask(e) {
-    var input = e.target;
-    var digits = input.value.replace(/\D/g, '').slice(0, 4);
-    if (digits.length === 4)      input.value = digits.slice(0, 2) + ':' + digits.slice(2);
-    else if (digits.length === 3) input.value = digits.slice(0, 1) + ':' + digits.slice(1);
-    else                          input.value = digits;
-  }
-  function durationBlur(e) {
-    var input = e.target;
-    var digits = input.value.replace(/\D/g, '');
-    if      (digits.length === 1) input.value = '0' + digits + ':00';
-    else if (digits.length === 2) input.value = '00:' + digits;
-    else if (digits.length === 3) input.value = '0' + digits.slice(0, 1) + ':' + digits.slice(1);
-  }
-
+  // durationMask/durationBlur live in /js/salat.js (#830)
   var inlineEditEscaped = false;
 
   document.addEventListener('keydown', function(evt) {

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.tb.common.util.DurationUtils.decimalFormat;
 import static org.tb.common.util.DurationUtils.format;
 import static org.tb.common.util.DurationUtils.parseDuration;
+import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
 import static org.tb.common.util.DurationUtils.validateDuration;
 
 import java.time.Duration;
@@ -164,6 +165,65 @@ public class DurationUtilsTest {
     assertThat(decimalFormat(Duration.ofMinutes(0))).isEqualTo("0,00");
     assertThat(decimalFormat(Duration.ofMinutes(-20))).isEqualTo("-0,33");
     assertThat(decimalFormat(Duration.ofMinutes(-2))).isEqualTo("-0,03");
+  }
+
+  @Test
+  public void flexible_input_should_parse_colon_notation() {
+    assertThat(parseFlexibleMinutes("1:30")).hasValue(90);
+    assertThat(parseFlexibleMinutes("01:30")).hasValue(90);
+    assertThat(parseFlexibleMinutes("1:3")).hasValue(63);
+    assertThat(parseFlexibleMinutes("1:")).hasValue(60);
+    assertThat(parseFlexibleMinutes(":30")).hasValue(30);
+    assertThat(parseFlexibleMinutes("10:15")).hasValue(615);
+  }
+
+  @Test
+  public void flexible_input_should_parse_hour_and_minute_suffixes() {
+    assertThat(parseFlexibleMinutes("2h30")).hasValue(150);
+    assertThat(parseFlexibleMinutes("2h30m")).hasValue(150);
+    assertThat(parseFlexibleMinutes("2H30M")).hasValue(150);
+    assertThat(parseFlexibleMinutes("2h 30m")).hasValue(150);
+    assertThat(parseFlexibleMinutes("2h")).hasValue(120);
+    assertThat(parseFlexibleMinutes("90m")).hasValue(90);
+    assertThat(parseFlexibleMinutes("1440m")).hasValue(1440);
+  }
+
+  @Test
+  public void flexible_input_should_parse_decimal_hours() {
+    assertThat(parseFlexibleMinutes("1,5")).hasValue(90);
+    assertThat(parseFlexibleMinutes("1.5")).hasValue(90);
+    assertThat(parseFlexibleMinutes("0,25")).hasValue(15);
+    assertThat(parseFlexibleMinutes("8,0")).hasValue(480);
+    // round trip with the decimal notation produced by decimalFormat
+    assertThat(parseFlexibleMinutes(decimalFormat(Duration.ofMinutes(145)))).hasValue(145);
+  }
+
+  @Test
+  public void flexible_input_should_keep_the_historic_digit_semantics() {
+    assertThat(parseFlexibleMinutes("8")).hasValue(480);     // one digit  = hours
+    assertThat(parseFlexibleMinutes("30")).hasValue(30);     // two digits = minutes
+    assertThat(parseFlexibleMinutes("90")).hasValue(90);
+    assertThat(parseFlexibleMinutes("130")).hasValue(90);    // three digits = H:MM
+    assertThat(parseFlexibleMinutes("1230")).hasValue(750);  // four digits  = HH:MM
+    assertThat(parseFlexibleMinutes("0")).hasValue(0);
+  }
+
+  @Test
+  public void flexible_input_should_normalize_an_overflowing_minutes_part() {
+    assertThat(parseFlexibleMinutes("1:75")).hasValue(135);
+    assertThat(parseFlexibleMinutes("175")).hasValue(135);
+  }
+
+  @Test
+  public void flexible_input_should_be_empty_for_unparseable_values() {
+    assertThat(parseFlexibleMinutes(null)).isEmpty();
+    assertThat(parseFlexibleMinutes("")).isEmpty();
+    assertThat(parseFlexibleMinutes("   ")).isEmpty();
+    assertThat(parseFlexibleMinutes("abc")).isEmpty();
+    assertThat(parseFlexibleMinutes("-1:30")).isEmpty();
+    assertThat(parseFlexibleMinutes("1:2:3")).isEmpty();
+    assertThat(parseFlexibleMinutes("12345")).isEmpty();
+    assertThat(parseFlexibleMinutes("1h2h")).isEmpty();
   }
 
   @Test

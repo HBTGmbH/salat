@@ -1,7 +1,9 @@
 package org.tb.dailyreport.controller;
 
+import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -232,10 +234,12 @@ public class DailyController {
             ecId = tr.getEmployeecontractId();
             long hours = tr.getDurationhours();
             long minutes = tr.getDurationminutes();
-            if (duration != null && duration.matches("\\d{1,3}:\\d{2}")) {
-                String[] parts = duration.split(":");
-                hours = Long.parseLong(parts[0]);
-                minutes = Long.parseLong(parts[1]);
+            // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — unparseable input keeps
+            // the stored value, as before
+            var parsedMinutes = parseFlexibleMinutes(duration);
+            if (parsedMinutes.isPresent()) {
+                hours = parsedMinutes.getAsLong() / MINUTES_PER_HOUR;
+                minutes = parsedMinutes.getAsLong() % MINUTES_PER_HOUR;
             }
             String desc = taskdescription != null ? taskdescription : tr.getTaskdescription();
             timereportService.updateTimereport(id,
