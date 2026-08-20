@@ -419,28 +419,30 @@
         dateInput.addEventListener('change', refreshShareRecipientsIfEnabled);
       }
     });
-    // durationMask/durationBlur live in /js/salat.js (#830)
-    // restore durationMode toggle state on page load (e.g. after validation re-render)
-    (function () {
-      var mode = document.getElementById('durationModeField').value;
-      if (mode === 'beginEnd') showBeginEnd();
-    })();
-    // auto-switch to begin/end mode for live bookings (today with a saved start time)
-    (function () {
-      if (typeof liveBookingStartMinutes === 'undefined' || liveBookingStartMinutes === null) return;
-      if (document.getElementById('durationModeField').value === 'beginEnd') return;
-      var startH = Math.floor(liveBookingStartMinutes / 60);
-      var startM = liveBookingStartMinutes % 60;
-      document.getElementById('beginTimeInput').value =
-        String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
-      var now = new Date();
-      var nowMins = now.getHours() * 60 + now.getMinutes();
-      var endMins = nowMins === 0 ? 0 : Math.ceil(nowMins / 15) * 15;
-      document.getElementById('endTimeInput').value =
-        String(Math.floor(endMins / 60) % 24).padStart(2, '0') + ':' + String(endMins % 60).padStart(2, '0');
-      showBeginEnd();
+    // durationMask/durationBlur/parseTimeValue live in /js/salat.js (#830). That file is loaded at
+    // the end of the body, i.e. after this block, so nothing here may call into it at parse time —
+    // hence DOMContentLoaded rather than an IIFE.
+    document.addEventListener('DOMContentLoaded', function () {
+      // restore the durationMode toggle state (e.g. after a validation re-render)
+      if (document.getElementById('durationModeField').value === 'beginEnd') {
+        showBeginEnd();
+      } else if (typeof liveBookingStartMinutes !== 'undefined' && liveBookingStartMinutes !== null) {
+        // auto-switch to begin/end mode for live bookings (today with a saved start time)
+        var startH = Math.floor(liveBookingStartMinutes / 60);
+        var startM = liveBookingStartMinutes % 60;
+        document.getElementById('beginTimeInput').value =
+          String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
+        var now = new Date();
+        var nowMins = now.getHours() * 60 + now.getMinutes();
+        var endMins = nowMins === 0 ? 0 : Math.ceil(nowMins / 15) * 15;
+        document.getElementById('endTimeInput').value =
+          String(Math.floor(endMins / 60) % 24).padStart(2, '0') + ':' + String(endMins % 60).padStart(2, '0');
+        showBeginEnd();
+      }
+      // the badge is computed on the client only, so it has to be filled once for whatever
+      // begin/end values the server rendered
       updateDurationBadge();
-    })();
+    });
   </script>
 
 </section>

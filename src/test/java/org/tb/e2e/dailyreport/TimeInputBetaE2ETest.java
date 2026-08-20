@@ -95,6 +95,47 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * The duration badge next to begin/end is computed on the client, so it has to be filled once
+   * after the page has loaded — otherwise a form that comes back in begin/end mode shows the two
+   * times without their duration. The computation lives in salat.js, which is loaded at the end of
+   * the body, so the page must not reach for it while it is still parsing either.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_duration_badge_is_filled_when_the_form_loads_in_begin_end_mode(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+
+      List<String> scriptErrors = new ArrayList<>();
+      page.onPageError(scriptErrors::add);
+
+      openNewBooking(page, LocalDate.parse("2026-06-25"));
+      page.click("#btnBeginEnd");
+      page.fill("#beginTimeInput", "900");
+      page.fill("#endTimeInput", "1730");
+      page.locator("#commentField").click();
+      assertThat(page.locator("#durationBadge")).hasText("8h30");
+
+      // clearing the preselected suborder makes the server re-render the form, which is the
+      // reproducible way to get a freshly loaded page in begin/end mode
+      page.evaluate("() => document.getElementById('suborderId').tomselect.clear()");
+      page.click("#timereportMainForm button[type=submit]");
+      page.waitForLoadState();
+
+      assertThat(page.locator("#beginEndSection")).isVisible();
+      assertThat(page.locator("#beginTimeInput")).hasValue("09:00");
+      assertThat(page.locator("#endTimeInput")).hasValue("17:30");
+      assertThat(page.locator("#durationBadge")).hasText("8h30");
+
+      // "bootstrap is not defined" comes from a Tabler script unrelated to this feature
+      assertEquals(List.of(), scriptErrors.stream()
+              .filter(error -> !error.contains("bootstrap")).toList(),
+          "the page must load without script errors");
+    });
+  }
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void an_off_grid_duration_can_still_be_typed_and_saved_with_the_beta_on(E2EBrowser browser) {
