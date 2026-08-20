@@ -127,8 +127,12 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       // beta: a text field, so a phone shows the numeric keypad instead of the OS wheel
       assertThat(page.locator("#startTime")).hasAttribute("type", "text");
 
-      // the field is only as wide as an HH:MM value needs
-      assertThat(page.locator("#startTime")).hasCSS("width", "88px");
+      // sized by character count rather than by a pinned pixel value, so the width follows the
+      // font size (12px on the desktop, 16px below the md breakpoint) instead of fighting it
+      assertThat(page.locator("#startTime")).hasAttribute("size", "5");
+      assertEquals(false, page.locator("#startTime").evaluate(
+          "el => { el.value = '08:30'; return el.scrollWidth > el.clientWidth + 1; }"),
+          "an HH:MM value must fit without scrolling");
 
       List<String> saves = new ArrayList<>();
       page.onRequest(request -> {

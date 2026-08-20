@@ -81,7 +81,7 @@
                   <div id="durationSection">
                     <input type="text" class="form-control" th:field="*{durationTime}"
                            placeholder="HH:MM" maxlength="8" inputmode="decimal"
-                           style="width:100px"
+                           style="width:auto" size="6"
                            th:attr="data-time-mode=${betaTimeInput} ? 'duration' : null,
                                     data-time-step=${betaTimeInput} ? '15' : null,
                                     data-time-chips=${betaTimeInput} ? '15 30 60' : null,
@@ -98,7 +98,7 @@
                          on a phone, so they stack there and stay inline from md upwards -->
                     <div class="d-flex flex-wrap gap-2 align-items-center">
                       <input type="time" class="form-control" th:field="*{beginTime}"
-                             id="beginTimeInput" style="width:120px"
+                             id="beginTimeInput" style="width:auto" size="5"
                              oninput="timeMask(event); updateDurationBadge()"
                              onblur="timeBlur(event); updateDurationBadge()"
                              inputmode="numeric" maxlength="5" placeholder="HH:MM"
@@ -110,7 +110,7 @@
                       <!-- only meaningful while both fields sit next to each other -->
                       <span class="text-muted d-none d-md-inline">–</span>
                       <input type="time" class="form-control" th:field="*{endTime}"
-                             id="endTimeInput" style="width:120px"
+                             id="endTimeInput" style="width:auto" size="5"
                              oninput="timeMask(event); updateDurationBadge()"
                              onblur="timeBlur(event); updateDurationBadge()"
                              inputmode="numeric" maxlength="5" placeholder="HH:MM"
