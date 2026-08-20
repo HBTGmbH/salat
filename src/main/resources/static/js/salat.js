@@ -169,8 +169,11 @@ document.addEventListener('htmx:afterSettle', function () {
  *   data-time-step="15"              enables stepper buttons and arrow key stepping
  *   data-time-chips="15 30 60"       renders additive quick-add chips plus a reset chip
  *   data-time-chips-target="#id"     optional container for the chips (default: next to the field)
- *   data-time-commit="saveTime"      global function called (debounced) after a stepper change,
- *                                    for fields that are saved without a submit button
+ *
+ * The buttons never commit anything themselves: they keep (or take) the focus, so a field that is
+ * saved on blur — Start/Pause in the daily view — is written exactly once, when the user is done.
+ * Saving on every step would swap the surrounding HTMX fragment away mid-edit and take the focus
+ * with it.
  *
  * A field without data-time-step is the classic field: it keeps the tolerant parsing below and
  * gets no extra controls. That is how the beta flag is expressed — one attribute, not a second
@@ -180,7 +183,6 @@ document.addEventListener('htmx:afterSettle', function () {
 const TIME_INPUT_DEFAULT_STEP = 15;
 const TIME_INPUT_MAX_DURATION = 24 * 60;
 const TIME_INPUT_MAX_TIME = 23 * 60 + 59;
-const timeInputCommitTimers = new WeakMap();
 
 function timeInputPad(value) {
   return String(value).padStart(2, '0');
@@ -293,19 +295,11 @@ function timeInputRead(input) {
   return timeInputIsTimeMode(input) ? parseTimeValue(input.value) : parseDurationValue(input.value);
 }
 
-function timeInputCommit(input) {
-  const name = input.dataset.timeCommit;
-  if (!name || typeof window[name] !== 'function') return;
-  clearTimeout(timeInputCommitTimers.get(input));
-  timeInputCommitTimers.set(input, setTimeout(() => window[name](), 600));
-}
-
 function timeInputWrite(input, minutes) {
   const max = timeInputIsTimeMode(input) ? TIME_INPUT_MAX_TIME : TIME_INPUT_MAX_DURATION;
   input.value = timeInputFormat(Math.min(Math.max(minutes, 0), max));
+  // no 'change' event: for fields that save on change/blur it would post mid-edit
   input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-  timeInputCommit(input);
 }
 
 /** Stepper and arrow keys: snap onto the grid first, then move in full steps (08:07 → 08:15 → 08:30). */
@@ -330,8 +324,6 @@ function timeInputAdd(input, delta) {
 function timeInputClear(input) {
   input.value = '';
   input.dispatchEvent(new Event('input', { bubbles: true }));
-  input.dispatchEvent(new Event('change', { bubbles: true }));
-  timeInputCommit(input);
   input.focus();
 }
 
@@ -353,8 +345,11 @@ function timeInputButton(input, className, content, label) {
     button.title = label;
     button.setAttribute('aria-label', label);
   }
-  // keep the focus in the field so that clicking a button does not fire a blur-triggered save
+  // Never let the button take the focus, and put it into the field instead. Two reasons: a
+  // blur-triggered save must not fire between two clicks, and the field ends up focused so the
+  // arrow keys continue where the buttons left off.
   button.addEventListener('mousedown', (event) => event.preventDefault());
+  button.addEventListener('click', () => input.focus());
   return button;
 }
 
