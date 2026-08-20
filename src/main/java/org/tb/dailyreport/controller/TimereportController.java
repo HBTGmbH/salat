@@ -4,6 +4,7 @@ import static java.math.BigDecimal.valueOf;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -319,14 +320,15 @@ public class TimereportController {
             durationHours = totalMinutes / 60;
             durationMinutes = totalMinutes % 60;
         } else {
-            int[] parts = parseTime(form.getDurationTime());
-            long totalMinutes = parts[0] * 60L + parts[1];
+            // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — normalising here also means
+            // an out-of-range minutes part such as "1:75" becomes 2:15 instead of being stored as is
+            long totalMinutes = parseFlexibleMinutes(form.getDurationTime()).orElse(0L);
             if (totalMinutes <= 0 || totalMinutes > 1440) {
                 return reRenderFormWithError(employeeContractId, model, form, ecId, date, isEdit, returnUrl,
                         errorCodeViewHelper.toViewMessage("main.timereport.form.validation.duration.range"));
             }
-            durationHours = parts[0];
-            durationMinutes = parts[1];
+            durationHours = totalMinutes / 60;
+            durationMinutes = totalMinutes % 60;
         }
 
         if (form.getSuborderId() == null) {

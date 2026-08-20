@@ -6,17 +6,20 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -31,6 +34,8 @@ import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
+import org.tb.settings.domain.BetaFeature;
+import org.tb.settings.service.BetaFeatureService;
 import org.tb.settings.service.UiPreferenceService;
 import org.tb.settings.web.LocaleSyncInterceptor;
 
@@ -51,6 +56,7 @@ public class SettingsController {
   private final CookieLocaleResolver localeResolver;
   private final UiPreferenceService uiPreferenceService;
   private final LocaleSyncInterceptor localeSyncInterceptor;
+  private final BetaFeatureService betaFeatureService;
 
   @GetMapping
   public String show(Model model) {
@@ -65,6 +71,10 @@ public class SettingsController {
     form.setLocale(uiPreferenceService.getLocaleForCurrentUser());
     form.setNotificationEmail(employee.notificationEmail() != null ? employee.notificationEmail() : "");
     form.setGravatarEmail(employee.gravatarEmail() != null ? employee.gravatarEmail() : "");
+    form.setBetaFeatures(new ArrayList<>(betaFeatureService.getForCurrentUser().enabled().stream()
+        .map(BetaFeature::getKey)
+        .sorted()
+        .toList()));
 
     var loginEmployee = employeeService.getLoginEmployee();
     model.addAttribute("settingsForm", form);
@@ -94,6 +104,9 @@ public class SettingsController {
     timereportPreferenceService.saveForCurrentUser(new TimereportPreferences(favSuborderId));
     employeePreferenceService.saveForCurrentUser(
         new EmployeePreferences(form.getNotificationEmail(), form.getGravatarEmail()));
+    // null when every beta switch is off — Spring resets the list via the "_betaFeatures" marker
+    betaFeatureService.saveForCurrentUser(
+        form.getBetaFeatures() != null ? form.getBetaFeatures() : List.of());
 
     String localeValue = form.getLocale() != null ? form.getLocale() : "";
     switch (localeValue) {
@@ -106,6 +119,17 @@ public class SettingsController {
     redirectAttributes.addFlashAttribute("toastSuccess",
         messages.getMessage("main.settings.save.success"));
     return "redirect:/settings";
+  }
+
+  /**
+   * Switches on a single beta feature from an in-context link (see the hint on the booking page).
+   * Answers with {@code HX-Refresh} so HTMX reloads the current page with the feature applied,
+   * instead of navigating the user away from the form they were filling in.
+   */
+  @PostMapping("/beta/{key}/enable")
+  public ResponseEntity<Void> enableBetaFeature(@PathVariable String key) {
+    BetaFeature.ofKey(key).ifPresent(betaFeatureService::enableForCurrentUser);
+    return ResponseEntity.noContent().header("HX-Refresh", "true").build();
   }
 
   private List<SuborderOption> loadSuborders() {
@@ -141,6 +165,9 @@ public class SettingsController {
     private String notificationEmail = "";
 
     private String gravatarEmail = "";
+
+    /** Keys of the beta features the user switched on, see {@link BetaFeature}. */
+    private List<String> betaFeatures = new ArrayList<>();
 
   }
 

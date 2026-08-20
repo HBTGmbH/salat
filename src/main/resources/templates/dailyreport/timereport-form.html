@@ -42,9 +42,18 @@
                        hx-on="htmx:afterSettle: refreshShareRecipientsOnFieldChange()"/>
               </div>
 
-              <div class="col-auto">
-                <label class="form-label required" th:text="#{main.timereport.form.duration.label}">Dauer</label>
-                <div class="d-flex align-items-center gap-2">
+              <div class="col-auto" th:with="betaTimeInput=${@betaViewHelper.timeInput}">
+                <label class="form-label required" for="durationTime"
+                       th:text="#{main.timereport.form.duration.label}">Dauer</label>
+                <!-- Beta hint (#830): in-context entry point, disappears once the feature is on -->
+                <a th:unless="${betaTimeInput}"
+                   class="ms-2 small text-decoration-none"
+                   th:href="@{/settings} + '#beta'"
+                   th:title="#{main.beta.timeinput.link.tooltip}">
+                  <i class="ti ti-bolt"></i>
+                  <span th:text="#{main.beta.timeinput.link.label}">Schnelleingabe testen</span>
+                </a>
+                <div class="d-flex flex-wrap align-items-start gap-2">
 
                   <!-- Toggle buttons -->
                   <div class="btn-group flex-shrink-0" role="group">
@@ -63,24 +72,45 @@
                   <!-- Duration entry -->
                   <div id="durationSection">
                     <input type="text" class="form-control" th:field="*{durationTime}"
-                           placeholder="HH:MM" maxlength="5" inputmode="numeric"
+                           placeholder="HH:MM" maxlength="8" inputmode="decimal"
                            style="width:100px"
+                           th:attr="data-time-mode=${betaTimeInput} ? 'duration' : null,
+                                    data-time-step=${betaTimeInput} ? '15' : null,
+                                    data-time-chips=${betaTimeInput} ? '15 30 60' : null,
+                                    data-time-chips-target=${betaTimeInput} ? '#durationChips' : null,
+                                    data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                                    data-time-label-increase=#{main.timeinput.increase.tooltip},
+                                    data-time-label-reset=#{main.timeinput.reset.tooltip}"
                            oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
                   </div>
 
                   <!-- Begin/End entry -->
                   <div id="beginEndSection" class="d-none">
-                    <div class="d-flex gap-2 align-items-center">
+                    <!-- flex-wrap: the two fields plus their steppers do not fit next to each other
+                         on a phone, so they stack there and stay inline from md upwards -->
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
                       <input type="time" class="form-control" th:field="*{beginTime}"
-                             id="beginTimeInput" style="width:120px" oninput="updateDurationBadge()"/>
-                      <span class="text-muted">–</span>
+                             id="beginTimeInput" style="width:120px" oninput="updateDurationBadge()"
+                             th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                                      data-time-step=${betaTimeInput} ? '15' : null,
+                                      data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                                      data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
+                      <!-- only meaningful while both fields sit next to each other -->
+                      <span class="text-muted d-none d-md-inline">–</span>
                       <input type="time" class="form-control" th:field="*{endTime}"
-                             id="endTimeInput" style="width:120px" oninput="updateDurationBadge()"/>
+                             id="endTimeInput" style="width:120px" oninput="updateDurationBadge()"
+                             th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                                      data-time-step=${betaTimeInput} ? '15' : null,
+                                      data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                                      data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
                       <span class="badge bg-secondary-lt text-secondary ms-1" id="durationBadge"></span>
                     </div>
                   </div>
 
                 </div>
+                <!-- Quick-add chips are rendered here (see data-time-chips-target) so that they get
+                     the full width of the column instead of the width of the input itself -->
+                <div id="durationChips" class="mt-2" th:if="${betaTimeInput}"></div>
               </div>
             </div>
 
@@ -254,12 +284,19 @@
     var liveBookingStartMinutes = /*[[${liveBookingStartMinutes}]]*/ null;
   </script>
   <script th:inline="none">
+    // the quick-add chips (#830) belong to the duration field and live outside #durationSection,
+    // so they have to follow the mode toggle explicitly
+    function toggleDurationChips(visible) {
+      var chips = document.getElementById('durationChips');
+      if (chips) chips.classList.toggle('d-none', !visible);
+    }
     function showDuration() {
       document.getElementById('durationSection').classList.remove('d-none');
       document.getElementById('beginEndSection').classList.add('d-none');
       document.getElementById('btnDuration').classList.add('active');
       document.getElementById('btnBeginEnd').classList.remove('active');
       document.getElementById('durationModeField').value = 'duration';
+      toggleDurationChips(true);
     }
     function showBeginEnd() {
       document.getElementById('durationSection').classList.add('d-none');
@@ -267,6 +304,7 @@
       document.getElementById('btnDuration').classList.remove('active');
       document.getElementById('btnBeginEnd').classList.add('active');
       document.getElementById('durationModeField').value = 'beginEnd';
+      toggleDurationChips(false);
     }
     function toggleSaveAsFav() {
       document.getElementById('saveAsFavSection').classList.toggle('d-none');
@@ -369,20 +407,7 @@
         dateInput.addEventListener('change', refreshShareRecipientsIfEnabled);
       }
     });
-    function durationMask(e) {
-      var input = e.target;
-      var digits = input.value.replace(/\D/g, '').slice(0, 4);
-      if (digits.length === 4)      input.value = digits.slice(0, 2) + ':' + digits.slice(2);
-      else if (digits.length === 3) input.value = digits.slice(0, 1) + ':' + digits.slice(1);
-      else                          input.value = digits;
-    }
-    function durationBlur(e) {
-      var input = e.target;
-      var digits = input.value.replace(/\D/g, '');
-      if      (digits.length === 1) input.value = '0' + digits + ':00';
-      else if (digits.length === 2) input.value = '00:' + digits;
-      else if (digits.length === 3) input.value = '0' + digits.slice(0, 1) + ':' + digits.slice(1);
-    }
+    // durationMask/durationBlur live in /js/salat.js (#830)
     // restore durationMode toggle state on page load (e.g. after validation re-render)
     (function () {
       var mode = document.getElementById('durationModeField').value;

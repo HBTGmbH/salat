@@ -6,6 +6,8 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.util.OptionalLong;
+import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -53,6 +55,92 @@ public class DurationUtils {
     }
 
     return Duration.ofMinutes(minutes);
+  }
+
+  private static final Pattern FLEX_HOURS_AND_MINUTES = Pattern.compile("^(\\d{1,3})h(\\d{1,2})m?$");
+  private static final Pattern FLEX_HOURS = Pattern.compile("^(\\d{1,3})h$");
+  private static final Pattern FLEX_MINUTES = Pattern.compile("^(\\d{1,4})m$");
+  private static final Pattern FLEX_COLON = Pattern.compile("^(\\d{1,3}):(\\d{1,2})$");
+  private static final Pattern FLEX_COLON_HOURS = Pattern.compile("^(\\d{1,3}):$");
+  private static final Pattern FLEX_COLON_MINUTES = Pattern.compile("^:(\\d{1,2})$");
+  private static final Pattern FLEX_DECIMAL = Pattern.compile("^(\\d{1,3})[.,](\\d{1,2})$");
+  private static final Pattern FLEX_DIGITS = Pattern.compile("^\\d{1,4}$");
+
+  /**
+   * Parses the tolerant duration input formats offered by the time input widget (#830) and returns
+   * the total number of minutes.
+   *
+   * <p>Accepted, all case insensitive and whitespace tolerant:
+   * <pre>
+   *   1:30  1:3  1:  :30       →  90, 63, 60, 30
+   *   2h30  2h30m  2h  90m     →  150, 150, 120, 90
+   *   1,5   1.5   0,25         →  90, 90, 15   (decimal hours, as produced by decimalFormat)
+   *   8                        →  480          (one digit  = hours)
+   *   30                       →  30           (two digits = minutes)
+   *   130   1230               →  90, 750      (three or four digits = H:MM / HH:MM)
+   * </pre>
+   *
+   * <p>The digit-only rules deliberately mirror the historic client side mask, so that habits built
+   * up with the old {@code durationBlur} keep working: {@code 8} means eight hours, {@code 30} means
+   * thirty minutes.
+   *
+   * <p>Returns an empty result for anything that cannot be understood — callers keep their existing
+   * validation error in that case instead of silently booking a wrong value. Negative values are not
+   * supported here; overtime style fields keep using {@link #parseDuration(String)}.
+   */
+  public static OptionalLong parseFlexibleMinutes(String value) {
+    if(value == null) {
+      return OptionalLong.empty();
+    }
+    var normalized = value.trim().toLowerCase().replace(" ", "");
+    if(normalized.isEmpty()) {
+      return OptionalLong.empty();
+    }
+
+    var hoursAndMinutes = FLEX_HOURS_AND_MINUTES.matcher(normalized);
+    if(hoursAndMinutes.matches()) {
+      return OptionalLong.of(minutes(hoursAndMinutes.group(1), hoursAndMinutes.group(2)));
+    }
+    var hours = FLEX_HOURS.matcher(normalized);
+    if(hours.matches()) {
+      return OptionalLong.of(Long.parseLong(hours.group(1)) * MINUTES_PER_HOUR);
+    }
+    var minutesOnly = FLEX_MINUTES.matcher(normalized);
+    if(minutesOnly.matches()) {
+      return OptionalLong.of(Long.parseLong(minutesOnly.group(1)));
+    }
+    var colon = FLEX_COLON.matcher(normalized);
+    if(colon.matches()) {
+      return OptionalLong.of(minutes(colon.group(1), colon.group(2)));
+    }
+    var colonHours = FLEX_COLON_HOURS.matcher(normalized);
+    if(colonHours.matches()) {
+      return OptionalLong.of(Long.parseLong(colonHours.group(1)) * MINUTES_PER_HOUR);
+    }
+    var colonMinutes = FLEX_COLON_MINUTES.matcher(normalized);
+    if(colonMinutes.matches()) {
+      return OptionalLong.of(Long.parseLong(colonMinutes.group(1)));
+    }
+    var decimal = FLEX_DECIMAL.matcher(normalized);
+    if(decimal.matches()) {
+      var decimalHours = new BigDecimal(decimal.group(1) + "." + decimal.group(2));
+      return OptionalLong.of(decimalHours.multiply(BigDecimal.valueOf(MINUTES_PER_HOUR))
+          .setScale(0, RoundingMode.HALF_UP)
+          .longValueExact());
+    }
+    if(FLEX_DIGITS.matcher(normalized).matches()) {
+      return OptionalLong.of(switch (normalized.length()) {
+        case 1 -> Long.parseLong(normalized) * MINUTES_PER_HOUR;
+        case 2 -> Long.parseLong(normalized);
+        case 3 -> minutes(normalized.substring(0, 1), normalized.substring(1));
+        default -> minutes(normalized.substring(0, 2), normalized.substring(2));
+      });
+    }
+    return OptionalLong.empty();
+  }
+
+  private static long minutes(String hours, String minutes) {
+    return Long.parseLong(hours) * MINUTES_PER_HOUR + Long.parseLong(minutes);
   }
 
   public static boolean validateDuration(String value) {
