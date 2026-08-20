@@ -217,9 +217,47 @@ function parseDurationValue(raw) {
   return null;
 }
 
+/**
+ * Tolerant time-of-day parsing, returns minutes since midnight or null. Mirrors
+ * TimeFormatUtils.parseFlexibleTimeOfDay — note that the rules differ from the duration parser
+ * above on purpose: "13" is one in the afternoon, and "8.30" is half past eight rather than
+ * eight and a half hours.
+ */
 function parseTimeValue(raw) {
-  const match = /^(\d{1,2}):(\d{2})/.exec(String(raw || '').trim());
-  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+  const value = String(raw || '').trim().replace(/\s+/g, '');
+  if (!value) return null;
+  const separated = /^(\d{1,2})[:.,](\d{1,2})$/.exec(value);
+  if (separated) return timeOfDayMinutes(Number(separated[1]), Number(separated[2]));
+  if (!/^\d{1,4}$/.test(value)) return null;
+  if (value.length <= 2) return timeOfDayMinutes(Number(value), 0);
+  if (value.length === 3) return timeOfDayMinutes(Number(value.slice(0, 1)), Number(value.slice(1)));
+  return timeOfDayMinutes(Number(value.slice(0, 2)), Number(value.slice(2)));
+}
+
+function timeOfDayMinutes(hour, minute) {
+  if (hour > 23 || minute > 59) return null;
+  return hour * 60 + minute;
+}
+
+/**
+ * Inserts the colon while typing, as in the duration field. Everything is reduced to digits first,
+ * so that typing on into an already formatted value keeps working ("8:30" + "0" → "18:30" for
+ * "1830") and so that a separator typed by hand does not have to be handled separately.
+ */
+function timeMask(event) {
+  const input = event.target;
+  if (input.type === 'time') return;
+  const digits = input.value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length === 4)      input.value = digits.slice(0, 2) + ':' + digits.slice(2);
+  else if (digits.length === 3) input.value = digits.slice(0, 1) + ':' + digits.slice(1);
+  else                          input.value = digits;
+}
+
+function timeBlur(event) {
+  const minutes = parseTimeValue(event.target.value);
+  if (minutes !== null) {
+    event.target.value = timeInputFormat(minutes);
+  }
 }
 
 /**

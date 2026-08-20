@@ -23,6 +23,17 @@
 
           <div class="card-body">
 
+            <!-- Beta hint (#830): in-context entry point, sits at the top of the card so it cannot
+                 affect the width of the col-auto columns below. Gone once the feature is on. -->
+            <div th:unless="${@betaViewHelper.timeInput}" class="d-flex justify-content-end mb-2">
+              <a class="small text-decoration-none"
+                 th:href="@{/settings} + '#beta'"
+                 th:title="#{main.beta.timeinput.link.tooltip}">
+                <i class="ti ti-bolt"></i>
+                <span th:text="#{main.beta.timeinput.link.label}">Schnelleingabe testen</span>
+              </a>
+            </div>
+
             <div th:if="${selectedEmployeeName != null}" class="mb-3">
               <div class="form-label mb-1" th:text="#{main.employeecontract.employee.text}">Mitarbeiter</div>
               <div th:text="${selectedEmployeeName}"></div>
@@ -43,20 +54,13 @@
               </div>
 
               <div class="col-auto" th:with="betaTimeInput=${@betaViewHelper.timeInput}">
-                <label class="form-label required" for="durationTime"
-                       th:text="#{main.timereport.form.duration.label}">Dauer</label>
-                <!-- Beta hint (#830): in-context entry point, disappears once the feature is on -->
-                <a th:unless="${betaTimeInput}"
-                   class="ms-2 small text-decoration-none"
-                   th:href="@{/settings} + '#beta'"
-                   th:title="#{main.beta.timeinput.link.tooltip}">
-                  <i class="ti ti-bolt"></i>
-                  <span th:text="#{main.beta.timeinput.link.label}">Schnelleingabe testen</span>
-                </a>
-                <!-- once active, the badge is the reminder that this is a beta and where to report -->
-                <span th:if="${betaTimeInput}" class="badge bg-azure-lt ms-2"
-                      th:title="#{main.beta.feedback.hint}"
-                      th:text="#{main.beta.badge}">Beta</span>
+                <label class="form-label required" for="durationTime">
+                  <span th:text="#{main.timereport.form.duration.label}">Dauer</span>
+                  <!-- part of the label so it cannot widen the col-auto column on its own (#830) -->
+                  <span th:if="${betaTimeInput}" class="badge bg-azure-lt ms-2"
+                        th:title="#{main.beta.feedback.hint}"
+                        th:text="#{main.beta.badge}">Beta</span>
+                </label>
                 <div class="d-flex flex-wrap align-items-start gap-2">
 
                   <!-- Toggle buttons -->
@@ -94,16 +98,24 @@
                          on a phone, so they stack there and stay inline from md upwards -->
                     <div class="d-flex flex-wrap gap-2 align-items-center">
                       <input type="time" class="form-control" th:field="*{beginTime}"
-                             id="beginTimeInput" style="width:120px" oninput="updateDurationBadge()"
-                             th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                             id="beginTimeInput" style="width:120px"
+                             oninput="timeMask(event); updateDurationBadge()"
+                             onblur="timeBlur(event); updateDurationBadge()"
+                             inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                             th:attr="type=${betaTimeInput} ? 'text' : 'time',
+                                      data-time-mode=${betaTimeInput} ? 'time' : null,
                                       data-time-step=${betaTimeInput} ? '15' : null,
                                       data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                       data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
                       <!-- only meaningful while both fields sit next to each other -->
                       <span class="text-muted d-none d-md-inline">–</span>
                       <input type="time" class="form-control" th:field="*{endTime}"
-                             id="endTimeInput" style="width:120px" oninput="updateDurationBadge()"
-                             th:attr="data-time-mode=${betaTimeInput} ? 'time' : null,
+                             id="endTimeInput" style="width:120px"
+                             oninput="timeMask(event); updateDurationBadge()"
+                             onblur="timeBlur(event); updateDurationBadge()"
+                             inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                             th:attr="type=${betaTimeInput} ? 'text' : 'time',
+                                      data-time-mode=${betaTimeInput} ? 'time' : null,
                                       data-time-step=${betaTimeInput} ? '15' : null,
                                       data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                       data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
@@ -347,18 +359,14 @@
       updateCommentRequired();
     });
     function updateDurationBadge() {
-      var b = document.getElementById('beginTimeInput').value;
-      var e = document.getElementById('endTimeInput').value;
+      // parseTimeValue (salat.js) also understands the half-typed values a text field produces
+      var begin = parseTimeValue(document.getElementById('beginTimeInput').value);
+      var end = parseTimeValue(document.getElementById('endTimeInput').value);
       var badge = document.getElementById('durationBadge');
-      if (b && e) {
-        var bp = b.split(':').map(Number), ep = e.split(':').map(Number);
-        var mins = (ep[0] * 60 + ep[1]) - (bp[0] * 60 + bp[1]);
-        if (mins > 0) {
-          badge.textContent = Math.floor(mins / 60) + 'h' + String(mins % 60).padStart(2, '0');
-        } else {
-          badge.textContent = '';
-        }
-      }
+      var mins = begin !== null && end !== null ? end - begin : 0;
+      badge.textContent = mins > 0
+        ? Math.floor(mins / 60) + 'h' + String(mins % 60).padStart(2, '0')
+        : '';
     }
     function loadShareRecipients() {
       var shareToggle = document.getElementById('shareToggle');
