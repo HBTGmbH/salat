@@ -165,7 +165,7 @@
                        th:text="#{main.daily.workingday.start.label}">Start</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:5.5rem" oninput="timeMask(event)"
+                       style="width:auto" size="5" oninput="timeMask(event)"
                        onblur="timeBlur(event); saveTime(event)"
                        inputmode="numeric" maxlength="5" placeholder="HH:MM"
                        th:attr="type=${betaTimeInput} ? 'text' : 'time',
@@ -182,7 +182,7 @@
                        th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:5.5rem" oninput="timeMask(event)"
+                       style="width:auto" size="5" oninput="timeMask(event)"
                        onblur="timeBlur(event); saveTime(event)"
                        inputmode="numeric" maxlength="5" placeholder="HH:MM"
                        th:attr="type=${betaTimeInput} ? 'text' : 'time',
@@ -483,7 +483,7 @@
                      th:text="#{main.daily.workingday.start.label}">Start</label>
               <input type="time" class="form-control form-control-sm" th:field="*{startTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:5.5rem" oninput="timeMask(event)"
+                     style="width:auto" size="5" oninput="timeMask(event)"
                      onblur="timeBlur(event); saveTime(event)"
                      inputmode="numeric" maxlength="5" placeholder="HH:MM"
                      th:attr="type=${betaTimeInput} ? 'text' : 'time',
@@ -500,7 +500,7 @@
                      th:text="#{main.daily.workingday.break.label}">Pause</label>
               <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:5.5rem" oninput="timeMask(event)"
+                     style="width:auto" size="5" oninput="timeMask(event)"
                      onblur="timeBlur(event); saveTime(event)"
                      inputmode="numeric" maxlength="5" placeholder="HH:MM"
                      th:attr="type=${betaTimeInput} ? 'text' : 'time',
