@@ -55,11 +55,11 @@ public class DailyService {
         Duration totalBooked = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
         Workingday workingday = workingdayService.getWorkingday(employeeContractId, date);
 
-        String quittingTime = workingdayService.calculateQuittingTime(workingday);
-        String targetEndTime = hasTarget ? workingdayService.calculateWorkingDayEnds(workingday) : null;
+        String quittingTime = workingdayService.calculateQuittingTime(employeeContractId, date);
+        String targetEndTime = hasTarget ? workingdayService.calculateWorkingDayEnds(employeeContractId, date) : null;
         boolean overMaxHours = workingdayService.checkLaborTimeMaximum(timereports);
 
-        long targetMinutes = hasTarget && workingday != null ? workingday.getEmployeecontract().getDailyWorkingTime().toMinutes() : 0;
+        long targetMinutes = hasTarget ? contract.getDailyWorkingTime().toMinutes() : 0;
         int progressPercent = targetMinutes > 0 ? (int) Math.min(100, totalBooked.toMinutes() * 100 / targetMinutes) : 0;
 
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
@@ -70,8 +70,8 @@ public class DailyService {
         String breakTime = workingday != null
             ? String.format("%02d:%02d", workingday.getBreakhours(), workingday.getBreakminutes())
             : "00:00";
-        String dailyWorkingTimeFormatted = workingday != null
-            ? DurationUtils.format(workingday.getEmployeecontract().getDailyWorkingTime())
+        String dailyWorkingTimeFormatted = hasTarget
+            ? DurationUtils.format(contract.getDailyWorkingTime())
             : null;
 
         boolean isOwner = contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
