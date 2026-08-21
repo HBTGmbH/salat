@@ -31,15 +31,18 @@
     </div>
     <div class="card-body">
       <!-- Error Alert -->
-      <div th:if="${reportResult.error}" class="alert alert-danger" role="alert">
+      <!-- The details live on the nested ErrorInfo. Read through a local variable and tolerate it
+           being absent: a missing detail must not turn the error page itself into a 500. -->
+      <div th:if="${reportResult.error}" class="alert alert-danger" role="alert"
+           th:with="errorInfo=${reportResult.errorInfo}">
         <div class="d-flex">
           <div class="me-2"><i class="ti ti-alert-triangle"></i></div>
           <div>
-            <div><strong th:text="${reportResult.errorClass}">BadSqlGrammarException</strong>: <span th:text="${reportResult.errorMessage}">SQL error message</span></div>
-            <div class="small text-muted mt-1">
-              <span th:if="${reportResult.sqlState != null}">SQLState: <code th:text="${reportResult.sqlState}">42000</code></span>
-              <span th:if="${reportResult.sqlState != null && reportResult.errorCode != null}">&nbsp;|&nbsp;</span>
-              <span th:if="${reportResult.errorCode != null}">ErrorCode: <code th:text="${reportResult.errorCode}">1064</code></span>
+            <div><strong th:text="${errorInfo != null ? errorInfo.errorClass : 'Error'}">BadSqlGrammarException</strong>: <span th:text="${errorInfo?.errorMessage}">SQL error message</span></div>
+            <div class="small text-muted mt-1" th:if="${errorInfo != null}">
+              <span th:if="${errorInfo.sqlState != null}">SQLState: <code th:text="${errorInfo.sqlState}">42000</code></span>
+              <span th:if="${errorInfo.sqlState != null && errorInfo.errorCode != null}">&nbsp;|&nbsp;</span>
+              <span th:if="${errorInfo.errorCode != null}">ErrorCode: <code th:text="${errorInfo.errorCode}">1064</code></span>
             </div>
             <details class="mt-2">
               <summary>Show failing SQL</summary>
