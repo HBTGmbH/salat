@@ -85,13 +85,17 @@ class DailyTargetOnNonWorkingDaysE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
-  /** The booked value and the quitting time stay - only the target and its bar are gone. */
+  /**
+   * The booked value and the quitting time stay, the target is gone - and the progress track stays
+   * as an empty hint so the block keeps the height it has on a working day.
+   */
   private void assertNoTargetShown(Page page) {
     var progress = progress(page);
     assertThat(progress).isVisible();
     assertThat(progress).containsText("Gebucht");
     assertThat(progress).not().containsText("von");
     assertThat(progress).containsText("Feierabend");
+    assertThat(progress.locator(".progress")).hasCount(1);
     assertThat(progress.locator(".progress-bar")).hasCount(0);
   }
 

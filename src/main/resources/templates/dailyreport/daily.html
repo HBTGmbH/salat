@@ -225,8 +225,12 @@
                   <strong th:text="${dailyData.quittingTime}"></strong>
                 </span>
               </div>
-              <div class="progress" style="height: 8px" th:if="${dailyData.hasDayTarget}">
-                <div class="progress-bar"
+              <!-- On a day without a target the empty track stays as a hint: it keeps the block at
+                   the same height as on a working day, and without a target there is nothing the
+                   bar could be filled against (#857). -->
+              <div class="progress" style="height: 8px"
+                   th:classappend="${dailyData.hasDayTarget} ? '' : 'opacity-50'">
+                <div class="progress-bar" th:if="${dailyData.hasDayTarget}"
                      th:classappend="${dailyData.overMaxHours} ? 'bg-danger' : 'bg-primary'"
                      role="progressbar"
                      th:style="'width:' + ${dailyData.progressPercent} + '%'">
