@@ -314,21 +314,30 @@
                 </td>
                 <td class="w-1 text-nowrap">
                   <!-- duration: editable or read-only -->
-                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap">
+                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap"
+                       th:with="betaTimeInput=${@betaViewHelper.timeInput}">
                     <span class="badge bg-blue-lt inline-edit-display"
                           style="user-select:none"
                           th:text="${@durationUtils.format(tr.duration)}"></span>
-                    <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
-                    <input type="text" class="form-control form-control-sm text-center inline-edit-input d-none"
-                           style="width:5rem; font-size:1rem"
-                           inputmode="decimal" maxlength="8"
-                           name="duration"
-                           th:value="${@durationUtils.format(tr.duration)}"
-                           th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
-                           hx-trigger="blur"
-                           hx-target="#daily-bookings-area"
-                           hx-swap="outerHTML"
-                           oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
+                    <!-- the wrapper carries the visibility so that the stepper buttons follow it;
+                         no chips here, a table cell has no room for a second row -->
+                    <div class="inline-edit-field d-none">
+                      <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
+                      <input type="text" class="form-control form-control-sm text-center inline-edit-input"
+                             style="width:auto; font-size:1rem" size="6"
+                             inputmode="decimal" maxlength="8"
+                             name="duration"
+                             th:value="${@durationUtils.format(tr.duration)}"
+                             th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})},
+                                      data-time-mode=${betaTimeInput} ? 'duration' : null,
+                                      data-time-step=${betaTimeInput} ? '15' : null,
+                                      data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                                      data-time-label-increase=#{main.timeinput.increase.tooltip}"
+                             hx-trigger="blur"
+                             hx-target="#daily-bookings-area"
+                             hx-swap="outerHTML"
+                             oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
+                    </div>
                   </div>
                   <span th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
                         class="badge bg-blue-lt"
@@ -884,14 +893,29 @@
   // durationMask/durationBlur live in /js/salat.js (#830)
   var inlineEditEscaped = false;
 
+  // Look the partners up through the wrapper instead of via nextElementSibling/previousElementSibling:
+  // an enhanced field (#830) is wrapped in an .input-group, so the two are no longer adjacent.
+  function inlineEditDisplayOf(input) {
+    return input.closest('.inline-edit-wrap').querySelector('.inline-edit-display');
+  }
+
+  function inlineEditInputOf(display) {
+    return display.closest('.inline-edit-wrap').querySelector('.inline-edit-input');
+  }
+
+  // What is shown and hidden: the field wrapper when there is one, otherwise the control itself.
+  // The wrapper exists so that the stepper buttons follow the field's visibility.
+  function inlineEditFieldOf(input) {
+    return input.closest('.inline-edit-field') || input;
+  }
+
   document.addEventListener('keydown', function(evt) {
     var input = document.activeElement;
     if (!input || !input.classList.contains('inline-edit-input')) return;
     if (evt.key === 'Escape') {
       inlineEditEscaped = true;
-      var display = input.previousElementSibling;
-      input.classList.add('d-none');
-      display.classList.remove('d-none');
+      inlineEditFieldOf(input).classList.add('d-none');
+      inlineEditDisplayOf(input).classList.remove('d-none');
       input.blur();
       evt.preventDefault();
       return;
@@ -907,10 +931,10 @@
   document.addEventListener('click', function(evt) {
     var display = evt.target.closest('.inline-edit-display');
     if (!display) return;
-    var input = display.nextElementSibling;
+    var input = inlineEditInputOf(display);
     input.value = display.classList.contains('is-empty') ? '' : display.textContent;
     display.classList.add('d-none');
-    input.classList.remove('d-none');
+    inlineEditFieldOf(input).classList.remove('d-none');
     if (input.tagName === 'TEXTAREA') {
       input.style.height = 'auto';
       input.style.height = input.scrollHeight + 'px';
@@ -945,9 +969,8 @@
     if (!input.classList.contains('inline-edit-input')) return;
     // On error restore display (HTMX replaces on success)
     if (!evt.detail.successful) {
-      var display = input.previousElementSibling;
-      input.classList.add('d-none');
-      display.classList.remove('d-none');
+      inlineEditFieldOf(input).classList.add('d-none');
+      inlineEditDisplayOf(input).classList.remove('d-none');
     }
   });
 
