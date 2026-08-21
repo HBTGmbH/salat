@@ -169,7 +169,8 @@ public class DailyController {
             } else {
                 var beginTime = dailyPreferenceService.getForEmployeeContractId(effEmployeeContractId).workDayStart();
                 int[] start = parseTime(form.getStartTime(), beginTime.getHour(), beginTime.getMinute());
-                int[] brk   = parseTime(form.getBreakTime(), 0, 0);
+                // the break is a duration, not a time of day — "30" means half an hour, not 30 o'clock
+                int[] brk   = parseBreak(form.getBreakTime());
                 workingday.setType(Workingday.WorkingDayType.WORKED);
                 workingday.setStarttimehour(start[0]);
                 workingday.setStarttimeminute(start[1]);
@@ -387,6 +388,16 @@ public class DailyController {
      * point when the field is submitted with Enter, before the client had a chance to normalise on
      * blur. Without that tolerance the value would silently fall back to the default.
      */
+    /**
+     * The break length. Read as a duration, so two digits are minutes: "30" is half an hour, whereas
+     * the same input in a time-of-day field would be an invalid hour and silently fall back to zero
+     * (#833). Anything unparseable means no break.
+     */
+    private static int[] parseBreak(String value) {
+        long minutes = parseFlexibleMinutes(value).orElse(0L);
+        return new int[]{(int) (minutes / MINUTES_PER_HOUR), (int) (minutes % MINUTES_PER_HOUR)};
+    }
+
     private static int[] parseTime(String hhmm, int defaultHour, int defaultMinute) {
         return parseFlexibleTimeOfDay(hhmm)
             .map(time -> new int[]{time.getHour(), time.getMinute()})

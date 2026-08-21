@@ -269,6 +269,8 @@ function timeBlur(event) {
  */
 function durationMask(event) {
   const input = event.target;
+  // a native time input rejects intermediate values, so leave it to the browser (classic break field)
+  if (input.type === 'time') return;
   const raw = input.value;
   if (/[.,hm]/i.test(raw)) {
     const cleaned = raw.replace(/[^\d:.,hm ]/gi, '');
@@ -282,6 +284,7 @@ function durationMask(event) {
 }
 
 function durationBlur(event) {
+  if (event.target.type === 'time') return;
   const minutes = parseDurationValue(event.target.value);
   if (minutes !== null) {
     event.target.value = timeInputFormat(minutes);
