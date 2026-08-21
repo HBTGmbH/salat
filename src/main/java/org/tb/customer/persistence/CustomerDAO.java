@@ -12,10 +12,10 @@ public class CustomerDAO {
     private final CustomerRepository customerRepository;
 
     /**
-     * Get a list of visible (non-hidden) Customers ordered by name.
+     * Get a list of visible (non-hidden) Customers ordered by short name, ignoring case.
      */
     public List<Customer> getCustomers() {
-        return customerRepository.findAllVisible();
+        return customerRepository.findAllVisibleOrderByShortnameIgnoreCase();
     }
 
     /**

@@ -75,7 +75,7 @@ public class E2ETestData {
       SalatUserRepository salatUserRepository,
       VacationRepository vacationRepository) {
 
-    if (customerRepository.findAllVisible().stream()
+    if (customerRepository.findAllVisibleOrderByShortnameIgnoreCase().stream()
         .anyMatch(c -> CUSTOMER_HBT_SHORTNAME.equalsIgnoreCase(c.getShortname()))) {
       return;
     }
