@@ -102,7 +102,7 @@
     <div class="d-flex gap-2 align-items-center flex-wrap">
 
       <!-- Month navigation -->
-      <div th:replace="~{fragments/month-navigation :: monthNavigator('/dailyreport/matrix', ${yearMonth})}"></div>
+      <th:block th:replace="~{fragments/month-navigation :: monthNavigator('/dailyreport/matrix', ${yearMonth})}"></th:block>
       <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}"
          th:text="#{main.daily.nav.today.text}">Heute</a>
       <a th:if="${!monthReleased and selectedContractId > 0}"
