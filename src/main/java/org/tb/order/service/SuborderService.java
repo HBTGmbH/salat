@@ -59,7 +59,8 @@ public class SuborderService {
             s.getId(),
             s.getCompleteOrderSign(),
             s.getShortdescription(),
-            Boolean.TRUE.equals(s.getCommentnecessary())))
+            Boolean.TRUE.equals(s.getCommentnecessary()),
+            Boolean.TRUE.equals(s.getTrainingFlag())))
         .toList();
   }
 

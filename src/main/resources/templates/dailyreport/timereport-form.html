@@ -147,7 +147,7 @@
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
                         th:text="${s.label}"
-                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary}"
+                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
@@ -166,7 +166,9 @@
             <!-- Training -->
             <div class="mb-3">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" th:field="*{training}"/>
+                <!-- explicit id: Thymeleaf numbers the generated ids of checkboxes (training1, ...),
+                     but applySuborderTrainingDefault() needs a stable one -->
+                <input class="form-check-input" type="checkbox" id="trainingSwitch" th:field="*{training}"/>
                 <span class="form-check-label" th:text="#{main.timereport.form.training.label}">Fortbildung</span>
               </label>
             </div>
@@ -348,14 +350,31 @@
         ta.removeAttribute('required');
       }
     }
+    // #836: a suborder can carry a default flag for project based training. Picking such a
+    // suborder switches "Fortbildung" on - and only ever on, never off again, so that neither a
+    // manual choice nor the stored value of an edited booking is silently discarded. Called from
+    // the change event only: the state the server rendered is authoritative for the first paint.
+    function applySuborderTrainingDefault() {
+      var sel = document.getElementById('suborderId');
+      var box = document.getElementById('trainingSwitch');
+      if (!sel || !box) return;
+      var opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.training === 'true') box.checked = true;
+    }
     document.addEventListener('DOMContentLoaded', function() {
       var sel = document.getElementById('suborderId');
-      if (sel) sel.addEventListener('change', updateCommentRequired);
+      if (sel) {
+        sel.addEventListener('change', updateCommentRequired);
+        sel.addEventListener('change', applySuborderTrainingDefault);
+      }
       updateCommentRequired();
     });
     document.addEventListener('htmx:afterSettle', function() {
       var sel = document.getElementById('suborderId');
-      if (sel) sel.addEventListener('change', updateCommentRequired);
+      if (sel) {
+        sel.addEventListener('change', updateCommentRequired);
+        sel.addEventListener('change', applySuborderTrainingDefault);
+      }
       updateCommentRequired();
     });
     function updateDurationBadge() {
