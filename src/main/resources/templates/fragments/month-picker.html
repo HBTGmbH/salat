@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  Month picker: previous/next month plus a dropdown to pick month and year.
+
+  Drop-in replacement for the native <input type="month">, which cannot be localised by the
+  application at all - Chrome formats it from its own UI language (so an English UI showed
+  "März 2026", #823) and Firefox and desktop Safari do not support the type and fall back to a text
+  field showing the raw "2026-06". The month names here come from the message bundle, so the control
+  reads the same in every browser and follows the UI locale.
+
+  The contract is the one of the native input it replaces: the hidden input holds the selected month
+  as "yyyy-MM" and fires a change event whenever the selection changes. What that means - navigate,
+  submit, reload a table - is up to the caller. The year arrows inside the dropdown only switch which
+  year the twelve months refer to; nothing changes until a month is picked.
+
+  Parameters:
+    inputId   - id of the hidden input, e.g. 'matrix-month' (the caller listens for its change event)
+    inputName - request parameter name when the picker sits in a form, or null
+    yearMonth - the java.time.YearMonth to start from
+*/-->
+<th:block th:fragment="monthPicker(inputId, inputName, yearMonth)">
+<div class="btn-group btn-group-sm" data-month-picker
+     th:with="monthKeys=${ {'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'} }">
+
+  <input type="hidden" data-month-value th:id="${inputId}" th:name="${inputName}"
+         th:value="${yearMonth}"/>
+
+  <button type="button" class="btn btn-outline-secondary" data-month-step="-1"
+          th:title="#{main.general.month.previous}">
+    <i class="ti ti-chevron-left m-0"></i>
+  </button>
+
+  <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-month-label
+          data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+          th:title="#{main.general.month.select}"
+          th:with="monthKey=${'main.timereport.select.month.' + monthKeys[yearMonth.monthValue - 1] + '.text'}"
+          th:text="#{${monthKey}} + ' ' + ${yearMonth.year}">Juni 2026</button>
+
+  <div class="dropdown-menu p-2" style="min-width: 16rem">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+              data-year-step="-1" th:title="#{main.general.year.previous}">
+        <i class="ti ti-chevron-left m-0"></i>
+      </button>
+      <span class="fw-bold" data-year-label th:text="${yearMonth.year}">2026</span>
+      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+              data-year-step="1" th:title="#{main.general.year.next}">
+        <i class="ti ti-chevron-right m-0"></i>
+      </button>
+    </div>
+    <div class="row row-cols-3 g-1">
+      <div class="col" th:each="monthKey,it : ${monthKeys}">
+        <button type="button" class="btn btn-sm w-100 text-nowrap"
+                th:data-month-option="${it.index + 1}"
+                th:classappend="${it.index + 1 == yearMonth.monthValue} ? 'btn-primary' : 'btn-ghost-secondary'"
+                th:text="#{${'main.timereport.select.month.' + monthKey + '.text'}}">Januar</button>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn btn-outline-secondary" data-month-step="1"
+          th:title="#{main.general.month.next}">
+    <i class="ti ti-chevron-right m-0"></i>
+  </button>
+
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('[data-month-picker]').forEach(function (picker) {
+    if (picker.dataset.monthPickerReady) return;
+    picker.dataset.monthPickerReady = 'true';
+
+    const input = picker.querySelector('[data-month-value]');
+    const label = picker.querySelector('[data-month-label]');
+    const yearLabel = picker.querySelector('[data-year-label]');
+    const options = Array.from(picker.querySelectorAll('[data-month-option]'));
+    // the localised month names are already rendered, no need to repeat them in JavaScript
+    const monthNames = options.map(function (option) { return option.textContent.trim(); });
+
+    let selectedYear = Number.parseInt(input.value.substring(0, 4), 10);
+    let selectedMonth = Number.parseInt(input.value.substring(5, 7), 10);
+    let shownYear = selectedYear;
+
+    function render() {
+      label.textContent = monthNames[selectedMonth - 1] + ' ' + selectedYear;
+      yearLabel.textContent = String(shownYear);
+      options.forEach(function (option) {
+        const month = Number.parseInt(option.dataset.monthOption, 10);
+        const selected = shownYear === selectedYear && month === selectedMonth;
+        option.classList.toggle('btn-primary', selected);
+        option.classList.toggle('btn-ghost-secondary', !selected);
+      });
+    }
+
+    function select(year, month) {
+      selectedYear = year;
+      selectedMonth = month;
+      shownYear = year;
+      input.value = year + '-' + String(month).padStart(2, '0');
+      render();
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    picker.querySelectorAll('[data-month-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const month = selectedMonth + Number.parseInt(button.dataset.monthStep, 10);
+        if (month < 1) select(selectedYear - 1, 12);
+        else if (month > 12) select(selectedYear + 1, 1);
+        else select(selectedYear, month);
+      });
+    });
+
+    picker.querySelectorAll('[data-year-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        shownYear += Number.parseInt(button.dataset.yearStep, 10);
+        render();
+      });
+    });
+
+    options.forEach(function (option) {
+      option.addEventListener('click', function () {
+        select(shownYear, Number.parseInt(option.dataset.monthOption, 10));
+      });
+    });
+
+    // reopening the dropdown starts from the month that is actually selected again
+    picker.addEventListener('hidden.bs.dropdown', function () {
+      if (shownYear !== selectedYear) {
+        shownYear = selectedYear;
+        render();
+      }
+    });
+  });
+}());
+</script>
+</th:block>
+
+</body>
+</html>
