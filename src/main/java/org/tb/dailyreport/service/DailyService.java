@@ -51,15 +51,23 @@ public class DailyService {
         var contract = employeecontractService.getEmployeecontractById(employeeContractId);
         boolean hasTarget = !contract.getDailyWorkingTime().isZero();
 
+        // #857: the target of a single day is not simply the contract's daily working time -
+        // weekends, public holidays falling on a weekday and days outside the contract's validity
+        // carry no target at all. This is the same calculation the month sum in buildListView
+        // uses, called for a single day.
+        Duration dayTarget = overtimeService.calculateWorkingTimeTarget(employeeContractId, date, date);
+        boolean hasDayTarget = !dayTarget.isZero();
+
         List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
         Duration totalBooked = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
         Workingday workingday = workingdayService.getWorkingday(employeeContractId, date);
 
-        String quittingTime = workingdayService.calculateQuittingTime(employeeContractId, date);
-        String targetEndTime = hasTarget ? workingdayService.calculateWorkingDayEnds(employeeContractId, date) : null;
+        // without a target there is no point in time the day is done at
+        String quittingTime = hasDayTarget ? workingdayService.calculateQuittingTime(employeeContractId, date) : null;
+        String targetEndTime = hasDayTarget ? workingdayService.calculateWorkingDayEnds(employeeContractId, date) : null;
         boolean overMaxHours = workingdayService.checkLaborTimeMaximum(timereports);
 
-        long targetMinutes = hasTarget ? contract.getDailyWorkingTime().toMinutes() : 0;
+        long targetMinutes = dayTarget.toMinutes();
         int progressPercent = targetMinutes > 0 ? (int) Math.min(100, totalBooked.toMinutes() * 100 / targetMinutes) : 0;
 
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
@@ -70,8 +78,8 @@ public class DailyService {
         String breakTime = workingday != null
             ? String.format("%02d:%02d", workingday.getBreakhours(), workingday.getBreakminutes())
             : "00:00";
-        String dailyWorkingTimeFormatted = hasTarget
-            ? DurationUtils.format(contract.getDailyWorkingTime())
+        String dailyWorkingTimeFormatted = hasDayTarget
+            ? DurationUtils.format(dayTarget)
             : null;
 
         boolean isOwner = contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
@@ -87,7 +95,7 @@ public class DailyService {
         boolean canCreate = (!monthReleased && isOwner) || authorizedUser.isManager();
 
         return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
-            hasTarget, overMaxHours, progressPercent, weekStrip,
+            hasTarget, hasDayTarget, overMaxHours, progressPercent, weekStrip,
             notWorked, startTime, breakTime, dailyWorkingTimeFormatted,
             editableIds, workingdayEditable, canCreate);
     }
