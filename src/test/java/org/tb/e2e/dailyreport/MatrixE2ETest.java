@@ -141,6 +141,44 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
+   * "Current month" has to come from the application clock, not from the browser's - under
+   * {@link PlaywrightE2ETestBase#FIXED_NOW} those two differ.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void current_month_button_jumps_to_the_month_of_the_application_clock(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2027", page -> {
+      Locator picker = page.locator("div[data-month-picker]");
+      picker.locator("[data-month-label]").click();
+      picker.locator("[data-month-current]").click();
+      page.waitForLoadState();
+
+      assertThat(page.locator("#matrix-month")).hasValue("2026-06");
+      assertEquals("6", urlParameter(page.url(), "month"));
+      assertEquals("2026", urlParameter(page.url(), "year"));
+    });
+  }
+
+  /**
+   * Clearing empties the picker's value; what that means is up to the page, and the matrix always
+   * shows some month, so it falls back to its default view.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void clear_button_returns_the_matrix_to_its_default_month(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2027", page -> {
+      Locator picker = page.locator("div[data-month-picker]");
+      picker.locator("[data-month-label]").click();
+      picker.locator("[data-month-clear]").click();
+      page.waitForLoadState();
+
+      assertEquals(null, urlParameter(page.url(), "month"));
+      assertEquals(null, urlParameter(page.url(), "year"));
+      assertThat(picker.locator("[data-month-label]")).hasText("Juni 2026");
+    });
+  }
+
+  /**
    * The year arrows are client-side only: they switch which year the twelve months refer to. Only
    * picking a month navigates.
    */
