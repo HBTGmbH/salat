@@ -374,17 +374,16 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
 
 // the month picker only reports the selected month as "yyyy-MM" - navigating is up to this page
 document.getElementById('matrix-month')?.addEventListener('change', function () {
+  const url = new URL('/dailyreport/matrix', window.location.origin);
   const [yearRaw, monthRaw] = this.value.split('-');
   const year = Number.parseInt(yearRaw, 10);
   const month = Number.parseInt(monthRaw, 10);
 
-  if (!Number.isInteger(year) || !Number.isInteger(month)) {
-    return;
+  // the matrix always shows some month, so a cleared selection means "back to the default month"
+  if (Number.isInteger(year) && Number.isInteger(month)) {
+    url.searchParams.set('month', String(month));
+    url.searchParams.set('year', String(year));
   }
-
-  const url = new URL('/dailyreport/matrix', window.location.origin);
-  url.searchParams.set('month', String(month));
-  url.searchParams.set('year', String(year));
   location.href = url.toString();
 });
 </script>
