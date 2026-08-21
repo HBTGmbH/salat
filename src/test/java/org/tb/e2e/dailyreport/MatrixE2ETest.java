@@ -63,15 +63,22 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
           "/dailyreport/matrix?month=" + BOOKING_DATE.getMonthValue() + "&year=" + BOOKING_DATE.getYear(),
           E2ETestData.EMPLOYEE_MA_SIGN));
 
-      page.locator("#matrix tbody td:has(.matrix-cell-detail)").first().hover();
+      // address the cell this test booked itself: the E2E suite shares one database, so other
+      // test classes leave bookings of their own in the same month (see PlaywrightE2ETestBase)
+      page.locator("#matrix tbody td:has(.matrix-cell-detail)")
+          .filter(new Locator.FilterOptions().setHasText(LONG_COMMENT))
+          .first()
+          .hover();
 
       Locator popover = page.locator(".matrix-detail-popover");
       assertThat(popover).isVisible();
       assertThat(popover).containsText(LONG_COMMENT);
 
       // the description has to wrap inside the popover instead of overflowing it sideways
-      assertEquals(true, popover.locator(".popover-body > *").first()
-          .evaluate("el => el.scrollWidth <= el.clientWidth + 1"));
+      Locator longDetailLine = popover.locator(".popover-body > *")
+          .filter(new Locator.FilterOptions().setHasText(LONG_COMMENT))
+          .first();
+      assertEquals(true, longDetailLine.evaluate("el => el.scrollWidth <= el.clientWidth + 1"));
     });
   }
 
