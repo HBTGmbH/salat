@@ -52,17 +52,31 @@ public class ArchitectureTest {
 
   @ArchTest
   static final ArchRule customerShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
-      .resideInAPackage("org.tb.auth..")
+      .resideInAPackage("org.tb.customer..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("customer must only import common, auth", "org.tb.common.", "org.tb.auth.", "org.tb.customer."));
 
+  /**
+   * settings and notification are cross-cutting capabilities that a domain module may use directly,
+   * not layers below it:
+   * <ul>
+   *   <li>settings holds the generic per-user preference store. The typed facades on top of it live
+   *       in the domain modules on purpose ({@code EmployeePreferences}, {@code DailyPreferences}),
+   *       so that settings does not have to know any domain module. The dependency runs in the
+   *       intended direction.</li>
+   *   <li>notification is used directly by budget, dailyreport and employee alike, so employee is
+   *       not an exception here. Routing only this one call through an application event would make
+   *       it the odd one out without removing the dependency class. Making notifications
+   *       event-driven everywhere is a separate, deliberate decision.</li>
+   * </ul>
+   */
   @ArchTest
-  static final ArchRule employeeShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
-      .resideInAPackage("org.tb.auth..")
-      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("employee must only import common, auth", "org.tb.common.", "org.tb.auth.", "org.tb.employee."));
+  static final ArchRule employeeShouldAccessCommonAuthSettingsNotificationOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.employee..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("employee must only import common, auth, settings, notification", "org.tb.common.", "org.tb.auth.", "org.tb.settings.", "org.tb.notification.", "org.tb.employee."));
 
   @ArchTest
   static final ArchRule orderShouldAccessCommonAuthCustomerEmployeeOnly = priority(HIGH).noClasses().that()
-      .resideInAPackage("org.tb.auth..")
+      .resideInAPackage("org.tb.order..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate("order must only import common,auth,customer,employee", "org.tb.common.", "org.tb.auth.", "org.tb.employee.", "org.tb.customer.", "org.tb.order."));
 
   @ArchTest
