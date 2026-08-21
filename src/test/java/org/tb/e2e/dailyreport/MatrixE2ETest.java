@@ -122,6 +122,37 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * The year arrows are client-side only: they switch which year the twelve months refer to. Only
+   * picking a month navigates.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void year_arrows_switch_the_offered_year_without_leaving_the_page(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix", page -> {
+      Locator monthPicker = page.locator("button.dropdown-toggle[title='Monat wählen']");
+      monthPicker.click();
+
+      Locator picker = page.locator("div.btn-group:has(button[title='Monat wählen'])");
+      String urlBeforeYearStep = page.url();
+      picker.locator("[data-year-step='1']").click();
+
+      assertThat(picker.locator("[data-year-label]")).hasText("2027");
+      assertEquals(urlBeforeYearStep, page.url(), "stepping the year must not navigate");
+      // the shown month stays June 2026 - nothing has been selected yet
+      assertThat(monthPicker).hasText("Juni 2026");
+      // ... and no month of the offered year is marked as the selected one
+      assertThat(picker.locator(".dropdown-menu .btn-primary")).hasCount(0);
+
+      picker.locator("[data-month-value='9']").click();
+      page.waitForLoadState();
+
+      assertThat(monthPicker).hasText("September 2027");
+      assertEquals("9", urlParameter(page.url(), "month"));
+      assertEquals("2027", urlParameter(page.url(), "year"));
+    });
+  }
+
   private static String urlParameter(String url, String name) {
     return java.net.URI.create(url).getQuery() == null ? null
         : java.util.Arrays.stream(java.net.URI.create(url).getQuery().split("&"))

@@ -8,14 +8,23 @@
   Replaces the native <input type="month">, which cannot be localised by the application at all -
   Chrome formats it from its own UI language (so an English UI showed "März 2026", #823) and
   Firefox and desktop Safari do not support the type and fall back to a text field showing the raw
-  "2026-06". Everything here is plain links rendered from the message bundle, so it reads the same
-  in every browser and follows the UI locale.
+  "2026-06". The month names here come from the message bundle, so the control reads the same in
+  every browser and follows the UI locale.
+
+  Selecting a month navigates; the year arrows inside the picker only switch which year the twelve
+  months refer to and leave the page untouched. Without JavaScript the picker still works for the
+  year that is currently shown, because the month links are rendered with real hrefs.
 
   Parameters:
     basePath  - path the links point to, e.g. '/dailyreport/matrix'
     yearMonth - the java.time.YearMonth currently shown
 */-->
-<div class="btn-group btn-group-sm" th:fragment="monthNavigator(basePath, yearMonth)"
+<th:block th:fragment="monthNavigator(basePath, yearMonth)">
+<div class="btn-group btn-group-sm"
+     data-month-navigator
+     th:data-path="@{${basePath}}"
+     th:data-year="${yearMonth.year}"
+     th:data-month="${yearMonth.monthValue}"
      th:with="monthKeys=${ {'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'} },
               prev=${yearMonth.minusMonths(1)},
               next=${yearMonth.plusMonths(1)}">
@@ -27,28 +36,27 @@
   </a>
 
   <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-          data-bs-toggle="dropdown" aria-expanded="false"
+          data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
           th:title="#{main.general.month.select}"
           th:with="monthKey=${'main.timereport.select.month.' + monthKeys[yearMonth.monthValue - 1] + '.text'}"
           th:text="#{${monthKey}} + ' ' + ${yearMonth.year}">Juni 2026</button>
 
   <div class="dropdown-menu p-2" style="min-width: 16rem">
     <div class="d-flex align-items-center justify-content-between mb-2">
-      <a class="btn btn-sm btn-icon btn-ghost-secondary"
-         th:href="@{${basePath}(month=${yearMonth.monthValue},year=${yearMonth.year - 1})}"
-         th:title="#{main.general.year.previous}">
+      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+              data-year-step="-1" th:title="#{main.general.year.previous}">
         <i class="ti ti-chevron-left m-0"></i>
-      </a>
-      <span class="fw-bold" th:text="${yearMonth.year}">2026</span>
-      <a class="btn btn-sm btn-icon btn-ghost-secondary"
-         th:href="@{${basePath}(month=${yearMonth.monthValue},year=${yearMonth.year + 1})}"
-         th:title="#{main.general.year.next}">
+      </button>
+      <span class="fw-bold" data-year-label th:text="${yearMonth.year}">2026</span>
+      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+              data-year-step="1" th:title="#{main.general.year.next}">
         <i class="ti ti-chevron-right m-0"></i>
-      </a>
+      </button>
     </div>
     <div class="row row-cols-3 g-1">
       <div class="col" th:each="monthKey,it : ${monthKeys}">
         <a class="btn btn-sm w-100 text-nowrap"
+           th:data-month-value="${it.index + 1}"
            th:classappend="${it.index + 1 == yearMonth.monthValue} ? 'btn-primary' : 'btn-ghost-secondary'"
            th:href="@{${basePath}(month=${it.index + 1},year=${yearMonth.year})}"
            th:text="#{${'main.timereport.select.month.' + monthKey + '.text'}}">Januar</a>
@@ -63,6 +71,49 @@
   </a>
 
 </div>
+
+<script>
+(function () {
+  document.querySelectorAll('[data-month-navigator]').forEach(function (nav) {
+    if (nav.dataset.monthNavigatorReady) return;
+    nav.dataset.monthNavigatorReady = 'true';
+
+    const path = nav.dataset.path;
+    const selectedYear = Number.parseInt(nav.dataset.year, 10);
+    const selectedMonth = Number.parseInt(nav.dataset.month, 10);
+    const yearLabel = nav.querySelector('[data-year-label]');
+    const monthLinks = Array.from(nav.querySelectorAll('[data-month-value]'));
+    let shownYear = selectedYear;
+
+    function render() {
+      yearLabel.textContent = String(shownYear);
+      monthLinks.forEach(function (link) {
+        const month = Number.parseInt(link.dataset.monthValue, 10);
+        link.href = path + '?month=' + month + '&year=' + shownYear;
+        const selected = shownYear === selectedYear && month === selectedMonth;
+        link.classList.toggle('btn-primary', selected);
+        link.classList.toggle('btn-ghost-secondary', !selected);
+      });
+    }
+
+    nav.querySelectorAll('[data-year-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        shownYear += Number.parseInt(button.dataset.yearStep, 10);
+        render();
+      });
+    });
+
+    // reopening the picker starts from the month that is actually shown again
+    nav.addEventListener('hidden.bs.dropdown', function () {
+      if (shownYear !== selectedYear) {
+        shownYear = selectedYear;
+        render();
+      }
+    });
+  });
+}());
+</script>
+</th:block>
 
 </body>
 </html>
