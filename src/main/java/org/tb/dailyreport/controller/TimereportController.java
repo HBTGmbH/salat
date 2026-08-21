@@ -101,9 +101,9 @@ public class TimereportController {
         if (comment != null && !comment.isBlank()) {
             form.setComment(comment);
         }
-        if (training != null) {
-            form.setTraining(training);
-        }
+        // #836: a suborder can carry a default flag for project based training. The explicit request
+        // parameter comes from the share-with-colleagues deeplink and has to win over that default.
+        form.setTraining(training != null ? training : trainingDefaultOf(suborders, defaultSuborderId));
 
         populateModel(employeeContractId, model, form, suborders, ecId, effectiveDate, false, returnUrl);
         return "dailyreport/timereport-form";
@@ -515,9 +515,21 @@ public class TimereportController {
                         : s.completeOrderSign();
                     var subtext = order.getSign() + " · " + order.getShortdescription()
                         + " · " + order.getCustomer().getShortname();
-                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary());
+                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary(), s.trainingFlag());
                 }))
             .toList();
+    }
+
+    /** Default state of the training switch for a suborder; false when nothing is preselected. */
+    static boolean trainingDefaultOf(List<SuborderOption> suborders, Long suborderId) {
+        if (suborderId == null) {
+            return false;
+        }
+        return suborders.stream()
+            .filter(s -> suborderId.equals(s.id()))
+            .findFirst()
+            .map(SuborderOption::trainingFlag)
+            .orElse(false);
     }
 
     private long effectiveContractId(Long employeeContractId) {
