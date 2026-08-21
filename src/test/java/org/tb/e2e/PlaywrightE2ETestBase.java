@@ -43,6 +43,18 @@ import org.tb.order.persistence.SuborderRepository;
  * ({@code local} profile, see {@link org.tb.auth.configuration.LocalDevSecurityConfiguration}).
  * Master data (customers, orders, employees, ...) is seeded once per test run via
  * {@link E2ETestData}.
+ *
+ * <p><b>Shared database state:</b> all E2E test classes run against the same H2 database, and
+ * the bookings a test creates are never cleaned up — they stay visible to every test class that
+ * runs afterwards, and a {@code @ParameterizedTest} over {@link #browsers()} creates them once
+ * per browser. Tests must therefore assert on the data they created themselves instead of on
+ * "the first row/cell" of a view (#846). Two conventions keep that manageable:
+ * <ul>
+ *   <li>address elements by something unique to the test (its suborder, its comment text)
+ *       rather than by position,</li>
+ *   <li>prefer a dedicated day or month per test class, so month-spanning views such as the
+ *       matrix overview do not mix bookings of different classes in the first place.</li>
+ * </ul>
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "management.health.mail.enabled=false")
 @ActiveProfiles({"unittest", "local"})
