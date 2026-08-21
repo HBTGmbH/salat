@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  Month navigation: previous/next month plus a picker for month and year.
+
+  Replaces the native <input type="month">, which cannot be localised by the application at all -
+  Chrome formats it from its own UI language (so an English UI showed "März 2026", #823) and
+  Firefox and desktop Safari do not support the type and fall back to a text field showing the raw
+  "2026-06". Everything here is plain links rendered from the message bundle, so it reads the same
+  in every browser and follows the UI locale.
+
+  Parameters:
+    basePath  - path the links point to, e.g. '/dailyreport/matrix'
+    yearMonth - the java.time.YearMonth currently shown
+*/-->
+<div class="btn-group btn-group-sm" th:fragment="monthNavigator(basePath, yearMonth)"
+     th:with="monthKeys=${ {'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'} },
+              prev=${yearMonth.minusMonths(1)},
+              next=${yearMonth.plusMonths(1)}">
+
+  <a class="btn btn-outline-secondary"
+     th:href="@{${basePath}(month=${prev.monthValue},year=${prev.year})}"
+     th:title="#{main.general.month.previous}">
+    <i class="ti ti-chevron-left m-0"></i>
+  </a>
+
+  <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+          data-bs-toggle="dropdown" aria-expanded="false"
+          th:title="#{main.general.month.select}"
+          th:with="monthKey=${'main.timereport.select.month.' + monthKeys[yearMonth.monthValue - 1] + '.text'}"
+          th:text="#{${monthKey}} + ' ' + ${yearMonth.year}">Juni 2026</button>
+
+  <div class="dropdown-menu p-2" style="min-width: 16rem">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <a class="btn btn-sm btn-icon btn-ghost-secondary"
+         th:href="@{${basePath}(month=${yearMonth.monthValue},year=${yearMonth.year - 1})}"
+         th:title="#{main.general.year.previous}">
+        <i class="ti ti-chevron-left m-0"></i>
+      </a>
+      <span class="fw-bold" th:text="${yearMonth.year}">2026</span>
+      <a class="btn btn-sm btn-icon btn-ghost-secondary"
+         th:href="@{${basePath}(month=${yearMonth.monthValue},year=${yearMonth.year + 1})}"
+         th:title="#{main.general.year.next}">
+        <i class="ti ti-chevron-right m-0"></i>
+      </a>
+    </div>
+    <div class="row row-cols-3 g-1">
+      <div class="col" th:each="monthKey,it : ${monthKeys}">
+        <a class="btn btn-sm w-100 text-nowrap"
+           th:classappend="${it.index + 1 == yearMonth.monthValue} ? 'btn-primary' : 'btn-ghost-secondary'"
+           th:href="@{${basePath}(month=${it.index + 1},year=${yearMonth.year})}"
+           th:text="#{${'main.timereport.select.month.' + monthKey + '.text'}}">Januar</a>
+      </div>
+    </div>
+  </div>
+
+  <a class="btn btn-outline-secondary"
+     th:href="@{${basePath}(month=${next.monthValue},year=${next.year})}"
+     th:title="#{main.general.month.next}">
+    <i class="ti ti-chevron-right m-0"></i>
+  </a>
+
+</div>
+
+</body>
+</html>

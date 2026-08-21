@@ -55,9 +55,6 @@ public class MatrixController {
             .map(c -> !c.getFreelancer())
             .orElse(false);
 
-        YearMonth prev = yearMonth.minusMonths(1);
-        YearMonth next = yearMonth.plusMonths(1);
-
         String monthKey = "main.timereport.select.month." + formatMonth(yearMonth.atDay(1)).toLowerCase() + ".text";
 
         boolean monthReleased = selectedContract
@@ -73,10 +70,7 @@ public class MatrixController {
         model.addAttribute("showBeginBreakEnd", showBeginBreakEnd);
         model.addAttribute("yearMonth", yearMonth);
         model.addAttribute("monthShortForm", formatMonth(yearMonth.atDay(1)));
-        model.addAttribute("prevMonth", prev.getMonthValue());
-        model.addAttribute("prevYear", prev.getYear());
-        model.addAttribute("nextMonth", next.getMonthValue());
-        model.addAttribute("nextYear", next.getYear());
+        // month/year navigation is rendered from yearMonth by fragments/month-navigation
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "matrix");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.matrixmenu.text"));

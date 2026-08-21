@@ -83,18 +83,51 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
-   * Counterpart to {@code EnglishLocaleE2ETest}: the legend labels moved from hard-coded template
-   * text into the message bundle (#823), so a German browser has to keep seeing German.
+   * Counterpart to {@code EnglishLocaleE2ETest}: the legend labels and the month picker moved from
+   * hard-coded template text (and from the native month input) into the message bundle (#823), so a
+   * German browser has to keep seeing German.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void legend_is_german_for_a_german_browser(E2EBrowser browser) {
+  void legend_and_month_picker_are_german_for_a_german_browser(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix", page -> {
       Locator legend = page.locator("div.card:has(#matrix) .card-footer");
       assertThat(legend).containsText("Sa/So");
       assertThat(legend).containsText("Feiertag");
       assertThat(legend).containsText("Heute");
+
+      // FIXED_NOW is 2026-06-15, and the matrix opens on the current month
+      assertThat(page.locator("button.dropdown-toggle[title='Monat wählen']")).hasText("Juni 2026");
     });
+  }
+
+  /**
+   * The month picker is plain links, so selecting a month is a navigation - no JavaScript, and
+   * identical in every browser (the native month input it replaced was not even supported in
+   * Firefox, see the {@code fragments/month-navigation} template).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void month_picker_navigates_to_the_selected_month(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix", page -> {
+      Locator monthPicker = page.locator("button.dropdown-toggle[title='Monat wählen']");
+      monthPicker.click();
+      page.locator(".dropdown-menu.show a").filter(
+          new Locator.FilterOptions().setHasText("September")).first().click();
+      page.waitForLoadState();
+
+      assertThat(monthPicker).hasText("September 2026");
+      assertEquals("9", urlParameter(page.url(), "month"));
+      assertEquals("2026", urlParameter(page.url(), "year"));
+    });
+  }
+
+  private static String urlParameter(String url, String name) {
+    return java.net.URI.create(url).getQuery() == null ? null
+        : java.util.Arrays.stream(java.net.URI.create(url).getQuery().split("&"))
+            .filter(p -> p.startsWith(name + "="))
+            .map(p -> p.substring(name.length() + 1))
+            .findFirst().orElse(null);
   }
 
   @ParameterizedTest(name = "{0}")

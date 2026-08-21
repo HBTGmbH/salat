@@ -42,9 +42,20 @@ class EnglishLocaleE2ETest extends PlaywrightE2ETestBase {
         "/dailyreport/matrix?month=" + BOOKING_DATE.getMonthValue() + "&year=" + BOOKING_DATE.getYear(),
         ENGLISH, page -> {
 
-      Locator monthNavigation = page.locator("div.card:has(#matrix-month-input)");
+      // the month picker replaced the native <input type="month">, which Chrome rendered as
+      // "März 2026" no matter which language the application was running in
+      Locator monthPicker = page.locator("button.dropdown-toggle[title='Select month']");
+      assertThat(monthPicker).hasText("June 2026");
+
+      Locator monthNavigation = page.locator("div.card:has(button.dropdown-toggle)").first();
       assertThat(monthNavigation).containsText("Today");
       assertThat(monthNavigation).not().containsText("Heute");
+
+      // the picker itself lists the months in English, too
+      monthPicker.click();
+      Locator monthMenu = page.locator("div.btn-group:has(button[title='Select month']) .dropdown-menu");
+      assertThat(monthMenu).containsText("December");
+      assertThat(monthMenu).not().containsText("Dezember");
 
       Locator legend = page.locator("div.card:has(#matrix) .card-footer");
       assertThat(legend).containsText("Sa/Su");
