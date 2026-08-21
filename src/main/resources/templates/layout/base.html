@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -19,7 +19,7 @@
     <div class="container-fluid">
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
               data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false"
-              aria-label="Toggle navigation">
+              th:aria-label="#{main.general.nav.toggle.title}">
         <span class="navbar-toggler-icon"></span>
       </button>
       <h1 class="navbar-brand navbar-brand-autodark">
@@ -253,7 +253,7 @@
 
         <div class="card border-0">
           <div class="card-body p-4 text-center">
-            <p class="text-secondary">Angemeldet als</p>
+            <p class="text-secondary" th:text="#{main.general.loggedinas.text}">Angemeldet als</p>
             <a th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
                href="https://gravatar.com"
                target="_blank"
@@ -267,14 +267,15 @@
             <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
             <div class="text-secondary d-inline-flex align-items-center justify-content-center gap-1">
               <span th:text="${@authorizedUser.loginSign}">kr</span>
-              <span th:if="${@authorizedUser.impersonateLoginSign ne null}">acts as [[${@authorizedUser.impersonateLoginSign}]]</span>
+              <span th:if="${@authorizedUser.impersonateLoginSign ne null}"
+                    th:text="#{main.general.impersonation.actsas.text(${@authorizedUser.impersonateLoginSign})}">acts as mm</span>
               <button type="button"
                       class="btn btn-icon btn-ghost-secondary btn-sm p-0"
                       style="width: 1.25rem; height: 1.25rem;"
                       th:if="${@loginSwitchViewHelper.visible and @authorizedUser.impersonateLoginSign == null}"
                       data-bs-toggle="modal"
                       data-bs-target="#loginSwitchModal"
-                      title="Benutzer wechseln">
+                      th:title="#{main.general.loginswitch.title}">
                 <i class="ti ti-switch-2" style="font-size: 0.8rem;"></i>
               </button>
               <form th:if="${@authorizedUser.impersonateLoginSign != null}"
@@ -284,7 +285,7 @@
                 <button type="submit"
                         class="btn btn-icon btn-ghost-danger btn-sm p-0"
                         style="width: 1.25rem; height: 1.25rem;"
-                        title="Benutzer-Wechsel beenden">
+                        th:title="#{main.general.loginswitch.exit.title}">
                   <i class="ti ti-x" style="font-size: 0.8rem;"></i>
                 </button>
               </form>
@@ -296,7 +297,7 @@
           <div class="d-flex" th:if="${@salatProperties.auth.logout.enabled}">
             <a th:with="url=${@salatProperties.auth.logout.logoutUrl}" th:href="${url}" class="card-btn">
               <i class="ti ti-logout" style="margin-right: 0.5em"></i>
-              Logout
+              <span th:text="#{main.general.logout.text}">Abmelden</span>
             </a>
           </div>
         </div>
@@ -304,7 +305,7 @@
       </div>
     </div>
   </aside>
-  <button id="nav-toggle" type="button" onclick="toggleNav()" title="Navigation ein-/ausklappen">
+  <button id="nav-toggle" type="button" onclick="toggleNav()" th:title="#{main.general.nav.toggle.title}">
     <i class="ti ti-chevrons-left" id="nav-toggle-icon"></i>
   </button>
 
@@ -361,13 +362,15 @@
                        style="min-width: 340px; max-height: 480px; overflow-y: auto;">
                   </div>
                 </div>
-                <a th:href="@{/settings}" class="btn" aria-label="Settings" th:title="#{main.settings.title}">
+                <a th:href="@{/settings}" class="btn" th:aria-label="#{main.settings.title}" th:title="#{main.settings.title}">
                   <i class="ti ti-settings ti-size-3"></i>
                 </a>
-                <button class="btn hide-theme-dark" aria-label="Enable dark mode" onclick="toggleTheme('dark')">
+                <button class="btn hide-theme-dark" th:aria-label="#{main.general.theme.dark.title}"
+                        th:title="#{main.general.theme.dark.title}" onclick="toggleTheme('dark')">
                   <i class="ti ti-moon ti-size-3"></i>
                 </button>
-                <button class="btn hide-theme-light" aria-label="Enable light mode" onclick="toggleTheme('light')">
+                <button class="btn hide-theme-light" th:aria-label="#{main.general.theme.light.title}"
+                        th:title="#{main.general.theme.light.title}" onclick="toggleTheme('light')">
                   <i class="ti ti-sun-high ti-size-3"></i>
                 </button>
               </div>
@@ -385,7 +388,7 @@
           <div class="flex-fill">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <h4 class="alert-title mb-1">Success</h4>
+                <h4 class="alert-title mb-1" th:text="#{main.general.toast.success.title}">Erfolg</h4>
                 <div class="text-secondary">[[${toastSuccess}]]</div>
               </div>
               <a th:if="${not #strings.isEmpty(toastAction)}"
@@ -396,7 +399,7 @@
               </a>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" th:aria-label="#{main.button.close}"></button>
         </div>
       </div>
       <div class="container-fluid my-4" th:if="${not #strings.isEmpty(toastError)}">
@@ -407,12 +410,12 @@
           <div class="flex-fill">
             <div class="d-flex justify-content-between">
               <div>
-                <h4 class="alert-title mb-1">Error</h4>
+                <h4 class="alert-title mb-1" th:text="#{main.general.toast.error.title}">Fehler</h4>
                 <div class="text-secondary">[[${toastError}]]</div>
               </div>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" th:aria-label="#{main.button.close}"></button>
         </div>
       </div>
       <div class="container-fluid my-4" th:if="${toastErrors != null and not #lists.isEmpty(toastErrors)}">
@@ -423,7 +426,7 @@
           <div class="flex-fill">
             <div class="d-flex justify-content-between">
               <div class="w-100">
-                <h4 class="alert-title mb-1">Error</h4>
+                <h4 class="alert-title mb-1" th:text="#{main.general.toast.error.title}">Fehler</h4>
                 <div class="text-secondary" th:text="${toastErrors[0]}"></div>
                 <details th:if="${#lists.size(toastErrors) > 1}" class="mt-2">
                   <summary class="text-secondary small"
@@ -436,7 +439,7 @@
               </div>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" th:aria-label="#{main.button.close}"></button>
         </div>
       </div>
       <div class="container-fluid my-4" th:if="${errors != null && !errors.isEmpty()}">
@@ -447,12 +450,12 @@
           <div class="flex-fill">
             <div class="d-flex justify-content-between">
               <div>
-                <h4 class="alert-title mb-1">Error</h4>
+                <h4 class="alert-title mb-1" th:text="#{main.general.toast.error.title}">Fehler</h4>
                 <div class="text-secondary" th:each="error : ${errors}">[[${error.resolved}]]</div>
               </div>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" th:aria-label="#{main.button.close}"></button>
         </div>
       </div>
       <div class="container-fluid" layout:fragment="content">
@@ -518,9 +521,9 @@
       <div class="modal-header">
         <h5 class="modal-title">
           <i class="ti ti-switch-2 me-2 text-muted"></i>
-          Benutzer wechseln
+          <span th:text="#{main.general.loginswitch.title}">Benutzer wechseln</span>
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
       </div>
       <div class="modal-body p-0">
         <div class="list-group list-group-flush">

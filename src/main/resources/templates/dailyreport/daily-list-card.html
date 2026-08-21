@@ -16,14 +16,14 @@
         <div th:if="${singleTrEditable}" class="inline-edit-wrap mt-1">
           <div class="text-muted inline-edit-display"
                style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
-               data-placeholder="Kommentar..."
+               th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
                th:classappend="${#strings.isEmpty(singleTr.taskdescription)} ? 'is-empty'"
                th:text="${singleTr.taskdescription}"></div>
           <textarea class="form-control form-control-sm inline-edit-input d-none"
                     rows="2"
                     style="font-size:0.75rem; resize:none"
                     name="taskdescription"
-                    placeholder="Kommentar..."
+                    th:placeholder="#{main.daily.timereport.comment.placeholder}"
                     th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
                     hx-trigger="blur"
                     hx-swap="outerHTML"
@@ -63,7 +63,8 @@
         <span th:unless="${singleTrEditable}"
               class="badge bg-blue-lt"
               th:text="${@durationUtils.format(singleTr.duration)}"></span>
-        <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple">Fortbildung</span>
+        <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple"
+              th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
       </div>
     </div>
     <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">

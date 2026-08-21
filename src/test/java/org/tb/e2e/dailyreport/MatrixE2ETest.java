@@ -82,6 +82,21 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * Counterpart to {@code EnglishLocaleE2ETest}: the legend labels moved from hard-coded template
+   * text into the message bundle (#823), so a German browser has to keep seeing German.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void legend_is_german_for_a_german_browser(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix", page -> {
+      Locator legend = page.locator("div.card:has(#matrix) .card-footer");
+      assertThat(legend).containsText("Sa/So");
+      assertThat(legend).containsText("Feiertag");
+      assertThat(legend).containsText("Heute");
+    });
+  }
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void people_lead_can_open_the_matrix(E2EBrowser browser) {

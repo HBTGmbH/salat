@@ -116,7 +116,8 @@
           <i class="ti ti-chevron-right m-0"></i>
         </a>
       </div>
-      <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}">Heute</a>
+      <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}"
+         th:text="#{main.daily.nav.today.text}">Heute</a>
       <a th:if="${!monthReleased and selectedContractId > 0}"
          class="btn btn-sm btn-outline-secondary"
          th:href="@{/dailyreport/matrix/fill-not-worked(month=${yearMonth.monthValue},year=${yearMonth.year})}"
@@ -151,7 +152,8 @@
 
         <!-- Empty state -->
         <tr th:if="${#lists.isEmpty(matrixData.rows)}">
-          <td th:colspan="${#lists.size(matrixData.dayHeaders) + 2}" class="text-center py-3">
+          <td th:colspan="${#lists.size(matrixData.dayHeaders) + 2}" class="text-center py-3"
+              th:text="#{main.matrixoverview.table.empty.text}">
             Keine Buchungen in diesem Monat.
           </td>
         </tr>
@@ -254,9 +256,9 @@
       <strong th:text="${matrixData.prevDayDiffString}">+0:00</strong>
     </span>
     <span class="ms-auto small">
-      <span class="badge bg-azure-lt me-1">Sa/So</span>
-      <span class="badge bg-warning-lt me-1">Feiertag</span>
-      <span class="badge me-1 matrix-today">Heute</span>
+      <span class="badge bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
+      <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
+      <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
     </span>
   </div>
 </div>
