@@ -102,23 +102,41 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
-   * The month picker is plain links, so selecting a month is a navigation - no JavaScript, and
-   * identical in every browser (the native month input it replaced was not even supported in
-   * Firefox, see the {@code fragments/month-navigation} template).
+   * The picker itself only reports the selection through its hidden "yyyy-MM" input (like the native
+   * month input it replaced, see the {@code fragments/month-picker} template); the matrix page turns
+   * that change event into a navigation.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void month_picker_navigates_to_the_selected_month(E2EBrowser browser) {
+  void picking_a_month_reports_it_as_yyyy_mm_and_navigates(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix", page -> {
-      Locator monthPicker = page.locator("button.dropdown-toggle[title='Monat wählen']");
-      monthPicker.click();
-      page.locator(".dropdown-menu.show a").filter(
-          new Locator.FilterOptions().setHasText("September")).first().click();
+      assertThat(page.locator("#matrix-month")).hasValue("2026-06");
+
+      Locator picker = page.locator("div.btn-group:has(button[title='Monat wählen'])");
+      picker.locator("[data-month-label]").click();
+      picker.locator("[data-month-option='9']").click();
       page.waitForLoadState();
 
-      assertThat(monthPicker).hasText("September 2026");
+      assertThat(page.locator("#matrix-month")).hasValue("2026-09");
+      assertThat(picker.locator("[data-month-label]")).hasText("September 2026");
       assertEquals("9", urlParameter(page.url(), "month"));
       assertEquals("2026", urlParameter(page.url(), "year"));
+    });
+  }
+
+  /**
+   * The month arrows go through the same hidden input, including the roll-over into the next year.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void month_arrows_step_month_by_month(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2026", page -> {
+      page.locator("[data-month-step='1']").click();
+      page.waitForLoadState();
+
+      assertThat(page.locator("#matrix-month")).hasValue("2027-01");
+      assertEquals("1", urlParameter(page.url(), "month"));
+      assertEquals("2027", urlParameter(page.url(), "year"));
     });
   }
 
@@ -139,12 +157,12 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
 
       assertThat(picker.locator("[data-year-label]")).hasText("2027");
       assertEquals(urlBeforeYearStep, page.url(), "stepping the year must not navigate");
-      // the shown month stays June 2026 - nothing has been selected yet
+      // nothing is selected yet: label, hidden value and highlight all still say June 2026
       assertThat(monthPicker).hasText("Juni 2026");
-      // ... and no month of the offered year is marked as the selected one
+      assertThat(page.locator("#matrix-month")).hasValue("2026-06");
       assertThat(picker.locator(".dropdown-menu .btn-primary")).hasCount(0);
 
-      picker.locator("[data-month-value='9']").click();
+      picker.locator("[data-month-option='9']").click();
       page.waitForLoadState();
 
       assertThat(monthPicker).hasText("September 2027");
