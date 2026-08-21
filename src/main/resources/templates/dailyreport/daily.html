@@ -220,7 +220,7 @@
                 </span>
                 <!-- no longer bound to a stored working day: the quitting time is computed from the
                      effective start, so it is there before the first booking too (#831) -->
-                <span class="text-muted small" th:if="${dailyData.hasDayTarget}">
+                <span class="text-muted small">
                   <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
                   <strong th:text="${dailyData.quittingTime}"></strong>
                 </span>
