@@ -102,20 +102,7 @@
     <div class="d-flex gap-2 align-items-center flex-wrap">
 
       <!-- Month navigation -->
-      <div class="btn-group btn-group-sm">
-        <a class="btn btn-outline-secondary"
-           th:href="@{/dailyreport/matrix(month=${prevMonth},year=${prevYear})}">
-          <i class="ti ti-chevron-left m-0"></i>
-        </a>
-        <input type="month" id="matrix-month-input"
-               class="btn btn-outline-secondary"
-               th:value="${yearMonth}"
-               style="cursor:pointer">
-        <a class="btn btn-outline-secondary"
-           th:href="@{/dailyreport/matrix(month=${nextMonth},year=${nextYear})}">
-          <i class="ti ti-chevron-right m-0"></i>
-        </a>
-      </div>
+      <div th:replace="~{fragments/month-navigation :: monthNavigator('/dailyreport/matrix', ${yearMonth})}"></div>
       <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}"
          th:text="#{main.daily.nav.today.text}">Heute</a>
       <a th:if="${!monthReleased and selectedContractId > 0}"
@@ -385,19 +372,5 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
   });
 }());
 
-document.getElementById('matrix-month-input')?.addEventListener('change', function () {
-  const [yearRaw, monthRaw] = this.value.split('-');
-  const year = Number.parseInt(yearRaw, 10);
-  const month = Number.parseInt(monthRaw, 10);
-
-  if (!Number.isInteger(year) || !Number.isInteger(month)) {
-    return;
-  }
-
-  const url = new URL('/dailyreport/matrix', window.location.origin);
-  url.searchParams.set('month', String(month));
-  url.searchParams.set('year', String(year));
-  location.href = url.toString();
-});
 </script>
 </html>
