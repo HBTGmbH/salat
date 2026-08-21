@@ -13,7 +13,6 @@ import java.util.function.Predicate;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
@@ -26,7 +25,6 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.domain.CustomerDTO;
-import org.tb.customer.domain.Customer_;
 import org.tb.customer.event.CustomerDeleteEvent;
 import org.tb.customer.persistence.CustomerDAO;
 import org.tb.customer.persistence.CustomerRepository;
@@ -48,10 +46,10 @@ public class CustomerService {
   @Transactional(readOnly = true)
   public List<CustomerDTO> getAllCustomerDTOsByFilter(String filter, boolean showHidden) {
     boolean hasFilter = filter != null && !filter.isBlank();
-    var repo = showHidden
-        ? stream(customerRepository.findAll(Sort.by(Customer_.NAME)).spliterator(), false)
-        : customerRepository.findAllVisible().stream();
-    return repo
+    var customers = showHidden
+        ? customerRepository.findAllOrderByShortnameIgnoreCase()
+        : customerRepository.findAllVisibleOrderByShortnameIgnoreCase();
+    return customers.stream()
         .filter(c -> !hasFilter || filterMatchesInMemory(c, filter))
         .map(CustomerDTO::from)
         .toList();
