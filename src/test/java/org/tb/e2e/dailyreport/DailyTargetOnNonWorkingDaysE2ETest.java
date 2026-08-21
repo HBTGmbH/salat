@@ -14,8 +14,9 @@ import org.tb.e2e.PlaywrightE2ETestBase;
 
 /**
  * The daily view used to show the contract's daily working time as the target of every day, so a
- * Saturday claimed a target of 8 hours, a progress bar that can never fill and a quitting time
- * that does not exist (#857). On a day without a target only the booked value remains.
+ * Saturday claimed a target of 8 hours and a progress bar that can never fill (#857). On a day
+ * without a target the booked value and the quitting time remain - both follow from what has been
+ * booked rather than from a target.
  */
 @FixedClock(DailyTargetOnNonWorkingDaysE2ETest.NOW)
 class DailyTargetOnNonWorkingDaysE2ETest extends PlaywrightE2ETestBase {
@@ -31,7 +32,7 @@ class DailyTargetOnNonWorkingDaysE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void a_saturday_has_no_target_no_bar_and_no_quitting_time(E2EBrowser browser) {
+  void a_saturday_has_no_target_and_no_progress_bar(E2EBrowser browser) {
     runAsUser(browser, EMPLOYEE, dailyView(SATURDAY), page -> assertNoTargetShown(page));
   }
 
@@ -84,13 +85,13 @@ class DailyTargetOnNonWorkingDaysE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
-  /** The booked value stays - only the target, the bar and the quitting time are gone. */
+  /** The booked value and the quitting time stay - only the target and its bar are gone. */
   private void assertNoTargetShown(Page page) {
     var progress = progress(page);
     assertThat(progress).isVisible();
     assertThat(progress).containsText("Gebucht");
     assertThat(progress).not().containsText("von");
-    assertThat(progress).not().containsText("Feierabend");
+    assertThat(progress).containsText("Feierabend");
     assertThat(progress.locator(".progress-bar")).hasCount(0);
   }
 

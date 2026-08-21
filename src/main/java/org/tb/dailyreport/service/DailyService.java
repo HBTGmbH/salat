@@ -62,8 +62,9 @@ public class DailyService {
         Duration totalBooked = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
         Workingday workingday = workingdayService.getWorkingday(employeeContractId, date);
 
-        // without a target there is no point in time the day is done at
-        String quittingTime = hasDayTarget ? workingdayService.calculateQuittingTime(employeeContractId, date) : null;
+        // the quitting time follows from what has been booked, not from a target - it is useful on a
+        // day without one too, so it stays (#857)
+        String quittingTime = workingdayService.calculateQuittingTime(employeeContractId, date);
         String targetEndTime = hasDayTarget ? workingdayService.calculateWorkingDayEnds(employeeContractId, date) : null;
         boolean overMaxHours = workingdayService.checkLaborTimeMaximum(timereports);
 
