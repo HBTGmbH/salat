@@ -182,11 +182,11 @@
                        th:text="#{main.daily.workingday.break.label}">Pause</label>
                 <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                        th:disabled="${!dailyData.workingdayEditable}"
-                       style="width:auto" size="5" oninput="timeMask(event)"
-                       onblur="timeBlur(event); saveTime(event)"
-                       inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                       style="width:auto" size="5" oninput="durationMask(event)"
+                       onblur="durationBlur(event); saveTime(event)"
+                       inputmode="decimal" maxlength="8" placeholder="HH:MM"
                        th:attr="type=${betaTimeInput} ? 'text' : 'time',
-                                data-time-mode=${betaTimeInput} ? 'time' : null,
+                                data-time-mode=${betaTimeInput} ? 'duration' : null,
                                 data-time-step=${betaTimeInput} ? '15' : null,
                                 data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                 data-time-label-increase=#{main.timeinput.increase.tooltip}">
@@ -505,11 +505,11 @@
                      th:text="#{main.daily.workingday.break.label}">Pause</label>
               <input type="time" class="form-control form-control-sm" th:field="*{breakTime}"
                      th:disabled="${!dailyData.workingdayEditable}"
-                     style="width:auto" size="5" oninput="timeMask(event)"
-                     onblur="timeBlur(event); saveTime(event)"
-                     inputmode="numeric" maxlength="5" placeholder="HH:MM"
+                     style="width:auto" size="5" oninput="durationMask(event)"
+                     onblur="durationBlur(event); saveTime(event)"
+                     inputmode="decimal" maxlength="8" placeholder="HH:MM"
                      th:attr="type=${betaTimeInput} ? 'text' : 'time',
-                              data-time-mode=${betaTimeInput} ? 'time' : null,
+                              data-time-mode=${betaTimeInput} ? 'duration' : null,
                               data-time-step=${betaTimeInput} ? '15' : null,
                               data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                               data-time-label-increase=#{main.timeinput.increase.tooltip}">
