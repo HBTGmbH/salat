@@ -35,6 +35,17 @@ public class ErrorCodeViewHelper {
     return "errorcode." + m.getErrorCode().getCode().replace('-', '.').toLowerCase();
   }
 
-  public record ViewMessage(String key, Object[] args, String resolved) {}
+  public record ViewMessage(String key, Object[] args, String resolved) {
+
+    /**
+     * Controllers build the text of a toast notification via {@code map(Object::toString)}. What the
+     * user has to read there is the resolved message - the record's default rendering would leak
+     * the message key and an array identity into the UI (#825).
+     */
+    @Override
+    public String toString() {
+      return resolved;
+    }
+  }
 
 }
