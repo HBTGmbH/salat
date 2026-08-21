@@ -198,23 +198,36 @@
           <!-- Progress / quitting time -->
           <div th:if="${dailyData != null and dailyData.hasTarget}" id="daily-progress"
                th:classappend="${workingdayForm.notWorked} ? 'd-none' : ''" class="mt-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="text-muted small">
-                <span th:text="#{main.daily.booked.label}">Gebucht:</span>
-                <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
-                <span th:text="#{main.daily.of.label}">von</span>
-                <strong th:text="${dailyData.dailyWorkingTimeFormatted ?: '—'}"></strong>
-              </span>
-              <span class="text-muted small" th:if="${dailyData.workingday != null}">
-                <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
-                <strong th:text="${dailyData.quittingTime}"></strong>
-              </span>
-            </div>
-            <div class="progress" style="height: 8px" th:if="${dailyData.progressPercent > 0 or dailyData.hasTarget}">
-              <div class="progress-bar"
-                   th:classappend="${dailyData.overMaxHours} ? 'bg-danger' : 'bg-primary'"
-                   role="progressbar"
-                   th:style="'width:' + ${dailyData.progressPercent} + '%'">
+            <!-- The content is a fragment because the OOB refresh below renders the same block. It
+                 used to be copied, and a change in one place silently drifted from the other. -->
+            <div th:fragment="dailyProgressContent">
+              <!-- flex-wrap: the booked duration and the quitting time must not squeeze each other
+                   on a narrow window -->
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+                <span class="text-muted small">
+                  <span th:text="#{main.daily.booked.label}">Gebucht:</span>
+                  <!-- both values are durations; without the unit they read like a time of day,
+                       especially next to the quitting time in the same h:mm format (#831) -->
+                  <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
+                  <span th:text="#{main.daily.duration.unit}">h</span>
+                  <span th:text="#{main.daily.of.label}">von</span>
+                  <strong th:text="${dailyData.dailyWorkingTimeFormatted ?: '—'}"></strong>
+                  <span th:if="${dailyData.dailyWorkingTimeFormatted != null}"
+                        th:text="#{main.daily.duration.unit}">h</span>
+                </span>
+                <!-- no longer bound to a stored working day: the quitting time is computed from the
+                     effective start, so it is there before the first booking too (#831) -->
+                <span class="text-muted small">
+                  <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
+                  <strong th:text="${dailyData.quittingTime}"></strong>
+                </span>
+              </div>
+              <div class="progress" style="height: 8px" th:if="${dailyData.progressPercent > 0 or dailyData.hasTarget}">
+                <div class="progress-bar"
+                     th:classappend="${dailyData.overMaxHours} ? 'bg-danger' : 'bg-primary'"
+                     role="progressbar"
+                     th:style="'width:' + ${dailyData.progressPercent} + '%'">
+                </div>
               </div>
             </div>
           </div>
@@ -386,25 +399,8 @@
       <div th:if="${isHtmxRequest == true and isDailyMode == true and dailyData != null and dailyData.hasTarget}" id="daily-progress"
            th:classappend="${workingdayForm.notWorked} ? 'd-none' : ''"
            hx-swap-oob="outerHTML:#daily-progress" class="mt-3">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="text-muted small">
-            <span th:text="#{main.daily.booked.label}">Gebucht:</span>
-            <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
-            <span th:text="#{main.daily.of.label}">von</span>
-            <strong th:text="${dailyData.dailyWorkingTimeFormatted ?: '—'}"></strong>
-          </span>
-          <span class="text-muted small" th:if="${dailyData.workingday != null}">
-            <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
-            <strong th:text="${dailyData.quittingTime}"></strong>
-          </span>
-        </div>
-        <div class="progress" style="height: 8px" th:if="${dailyData.progressPercent > 0 or dailyData.hasTarget}">
-          <div class="progress-bar"
-               th:classappend="${dailyData.overMaxHours} ? 'bg-danger' : 'bg-primary'"
-               role="progressbar"
-               th:style="'width:' + ${dailyData.progressPercent} + '%'">
-          </div>
-        </div>
+        <!-- same content as the initial render, see dailyProgressContent -->
+        <div th:replace="~{:: dailyProgressContent}"></div>
       </div>
 
       <!-- OOB: week strip refresh -->

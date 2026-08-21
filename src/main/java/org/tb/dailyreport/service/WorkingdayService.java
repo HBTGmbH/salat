@@ -183,28 +183,35 @@ public class WorkingdayService {
     return LocalTime.MIDNIGHT.plus(elapsed);
   }
 
-  public String calculateQuittingTime(Workingday workingday) {
-    if (workingday == null) return "n/a";
+  /**
+   * When the day is done based on what has been booked so far.
+   *
+   * <p>Works without a stored working day: the start then comes from {@link #getEffectiveStart}, so
+   * the daily view shows a quitting time from the first visit on instead of only after the first
+   * booking (#831).
+   */
+  public String calculateQuittingTime(long employeecontractId, LocalDate date) {
     Duration laborTime = timereportDAO
-        .getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday())
+        .getTimereportsByDateAndEmployeeContractId(employeecontractId, date)
         .stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
-    LocalTime end = LocalTime.MIDNIGHT
-        .plusHours(workingday.getStarttimehour())
-        .plusMinutes(workingday.getStarttimeminute())
-        .plusHours(workingday.getBreakhours())
-        .plusMinutes(workingday.getBreakminutes())
-        .plus(laborTime);
-    return "%02d:%02d".formatted(end.getHour(), end.getMinute());
+    return endOfDay(getWorkingday(employeecontractId, date), employeecontractId, laborTime);
   }
 
-  public String calculateWorkingDayEnds(Workingday workingday) {
-    if (workingday == null) return "n/a";
+  /** When the day would be done if the full daily working time were booked. */
+  public String calculateWorkingDayEnds(long employeecontractId, LocalDate date) {
+    var dailyWorkingTime = employeecontractService.getEmployeecontractById(employeecontractId)
+        .getDailyWorkingTime();
+    return endOfDay(getWorkingday(employeecontractId, date), employeecontractId, dailyWorkingTime);
+  }
+
+  private String endOfDay(Workingday workingday, long employeecontractId, Duration worked) {
+    var start = getEffectiveStart(workingday, employeecontractId);
     LocalTime end = LocalTime.MIDNIGHT
-        .plusHours(workingday.getStarttimehour())
-        .plusMinutes(workingday.getStarttimeminute())
-        .plusHours(workingday.getBreakhours())
-        .plusMinutes(workingday.getBreakminutes())
-        .plus(workingday.getEmployeecontract().getDailyWorkingTime());
+        .plusHours(start.getHour())
+        .plusMinutes(start.getMinute())
+        .plusHours(workingday != null ? workingday.getBreakhours() : 0)
+        .plusMinutes(workingday != null ? workingday.getBreakminutes() : 0)
+        .plus(worked);
     return "%02d:%02d".formatted(end.getHour(), end.getMinute());
   }
 
