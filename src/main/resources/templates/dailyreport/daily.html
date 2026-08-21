@@ -210,19 +210,22 @@
                        especially next to the quitting time in the same h:mm format (#831) -->
                   <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
                   <span th:text="#{main.daily.duration.unit}">h</span>
-                  <span th:text="#{main.daily.of.label}">von</span>
-                  <strong th:text="${dailyData.dailyWorkingTimeFormatted ?: '—'}"></strong>
-                  <span th:if="${dailyData.dailyWorkingTimeFormatted != null}"
-                        th:text="#{main.daily.duration.unit}">h</span>
+                  <!-- the booked value stays visible on a day without a target - whoever works on a
+                       Saturday wants to see what they booked. Only the target itself goes (#857). -->
+                  <th:block th:if="${dailyData.hasDayTarget}">
+                    <span th:text="#{main.daily.of.label}">von</span>
+                    <strong th:text="${dailyData.dailyWorkingTimeFormatted}"></strong>
+                    <span th:text="#{main.daily.duration.unit}">h</span>
+                  </th:block>
                 </span>
                 <!-- no longer bound to a stored working day: the quitting time is computed from the
                      effective start, so it is there before the first booking too (#831) -->
-                <span class="text-muted small">
+                <span class="text-muted small" th:if="${dailyData.hasDayTarget}">
                   <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
                   <strong th:text="${dailyData.quittingTime}"></strong>
                 </span>
               </div>
-              <div class="progress" style="height: 8px" th:if="${dailyData.progressPercent > 0 or dailyData.hasTarget}">
+              <div class="progress" style="height: 8px" th:if="${dailyData.hasDayTarget}">
                 <div class="progress-bar"
                      th:classappend="${dailyData.overMaxHours} ? 'bg-danger' : 'bg-primary'"
                      role="progressbar"

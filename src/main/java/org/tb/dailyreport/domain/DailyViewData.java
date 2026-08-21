@@ -11,7 +11,11 @@ public record DailyViewData(
     Workingday workingday,
     String quittingTime,
     String targetEndTime,
+    // the contract does target accounting at all, i.e. it has a daily working time
     boolean hasTarget,
+    // this particular day has a target - false on weekends, public holidays and outside the
+    // validity of the contract (#857)
+    boolean hasDayTarget,
     boolean overMaxHours,
     int progressPercent,
     List<WeekStripDay> weekStrip,

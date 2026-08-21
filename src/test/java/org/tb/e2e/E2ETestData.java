@@ -10,6 +10,8 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.util.ClockProvider;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.persistence.CustomerRepository;
+import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Vacation;
@@ -26,7 +28,8 @@ import org.tb.order.persistence.SuborderRepository;
 
 /**
  * Seeds a fixed, realistic set of master/reference data for the dailyreport E2E suite:
- * Customer, Customerorder, Suborder, Employee, Employeecontract and Employeeorder.
+ * Customer, Customerorder, Suborder, Employee, Employeecontract, Employeeorder and a pair of
+ * public holidays.
  *
  * <p>The three "standard" suborders (Urlaub, Krankheit, Fortbildung) are deliberately left
  * without an Employeeorder here: they are marked {@code standard=true} so that logging in as
@@ -55,6 +58,14 @@ public class E2ETestData {
   public static final String SUBORDER_INITECH_SUPPORT_SIGN = "INITECH-SUPPORT";
   public static final String SUBORDER_INITECH_MIGRATION_SIGN = "INITECH-MIGRATION";
 
+  /**
+   * Public holidays for the daily view's target calculation (#857). Deliberately in October 2026,
+   * a month no other E2E class looks at - a holiday changes the working time target of its whole
+   * month, and the E2E database is shared.
+   */
+  public static final LocalDate HOLIDAY_ON_WEEKDAY = LocalDate.of(2026, 10, 5);
+  public static final LocalDate HOLIDAY_ON_WEEKEND = LocalDate.of(2026, 10, 10);
+
   private static final LocalDate PAST = LocalDate.of(2020, 1, 1);
 
   /**
@@ -73,12 +84,16 @@ public class E2ETestData {
       EmployeecontractRepository employeecontractRepository,
       EmployeeorderRepository employeeorderRepository,
       SalatUserRepository salatUserRepository,
-      VacationRepository vacationRepository) {
+      VacationRepository vacationRepository,
+      PublicholidayRepository publicholidayRepository) {
 
     if (customerRepository.findAllVisibleOrderByShortnameIgnoreCase().stream()
         .anyMatch(c -> CUSTOMER_HBT_SHORTNAME.equalsIgnoreCase(c.getShortname()))) {
       return;
     }
+
+    publicholidayRepository.save(new Publicholiday(HOLIDAY_ON_WEEKDAY, "E2E-Feiertag am Werktag"));
+    publicholidayRepository.save(new Publicholiday(HOLIDAY_ON_WEEKEND, "E2E-Feiertag am Wochenende"));
 
     Customer hbt = customer(customerRepository, "HBT GmbH", CUSTOMER_HBT_SHORTNAME);
 
