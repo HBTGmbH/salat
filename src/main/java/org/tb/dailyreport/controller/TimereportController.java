@@ -30,7 +30,9 @@ import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.dailyreport.preferences.TimereportPreferenceService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DateTimeUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -444,14 +446,27 @@ public class TimereportController {
         model.addAttribute("recentComments", loadRecentComments(employeeContractId, form));
         if (!isEdit && date != null && date.equals(today())) {
             var workingday = workingdayService.getWorkingday(ecId, date);
-            if (workingday != null && (workingday.getStarttimehour() > 0 || workingday.getStarttimeminute() > 0)) {
+            // A day marked as not worked has no starting point. The suppression hangs on the type,
+            // not on "start is 00:00" as before — that also treated a deliberately stored 00:00 as
+            // unset, and it would have swallowed the fallback below (#851).
+            boolean notWorked = workingday != null
+                && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
+            if (!notWorked) {
+                // same source as the daily view, which is showing this start time to the user
+                var effectiveStart = workingdayService.getEffectiveStart(workingday, ecId);
+                long breakMinutes = workingday != null
+                    ? workingday.getBreakhours() * 60L + workingday.getBreakminutes()
+                    : 0;
                 long bookedMinutes = todaysBookings.stream()
                     .mapToLong(tr -> tr.getDuration().toMinutes())
                     .sum();
-                long startMinutes = workingday.getStarttimehour() * 60L + workingday.getStarttimeminute()
-                    + workingday.getBreakhours() * 60L + workingday.getBreakminutes()
-                    + bookedMinutes;
-                model.addAttribute("liveBookingStartMinutes", startMinutes);
+                long startMinutes = effectiveStart.getHour() * 60L + effectiveStart.getMinute()
+                    + breakMinutes + bookedMinutes;
+                // Only offer the live booking once that starting point is in the past. Otherwise the
+                // form would open with an end time before its begin time, which cannot be saved.
+                if (startMinutes < nowInMinutes()) {
+                    model.addAttribute("liveBookingStartMinutes", startMinutes);
+                }
             }
         }
         if (ecId > 0) {
@@ -516,6 +531,11 @@ public class TimereportController {
     }
 
     /** Tolerant towards the input formats of the time widget (#830), see DailyController.parseTime. */
+    private static long nowInMinutes() {
+        var now = DateTimeUtils.now().toLocalTime();
+        return now.getHour() * 60L + now.getMinute();
+    }
+
     private static int[] parseTime(String hhmm) {
         return parseFlexibleTimeOfDay(hhmm)
             .map(time -> new int[]{time.getHour(), time.getMinute()})

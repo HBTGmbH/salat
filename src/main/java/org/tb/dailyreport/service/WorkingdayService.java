@@ -32,6 +32,7 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.persistence.WorkingdayRepository;
+import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
@@ -52,6 +53,26 @@ public class WorkingdayService {
   private final WorkingdayDAO workingdayDAO;
   private final AuthService authService;
   private final EmployeecontractService employeecontractService;
+  private final DailyPreferenceService dailyPreferenceService;
+
+  /**
+   * The time the working day started: the stored value when there is one, otherwise the configured
+   * work day start.
+   *
+   * <p>Callers must not derive this themselves. The display in the daily view and the prefill in the
+   * booking form each had their own version, and only one of them knew about the fallback — so the
+   * first booking of a day did not pick up the start time the same page was showing (#851).
+   *
+   * <p>Takes the already loaded working day (may be {@code null}) so that callers which have it do
+   * not query twice. A working day marked as not worked carries {@code 00:00} here; whether that is
+   * a sensible starting point is the caller's decision.
+   */
+  public LocalTime getEffectiveStart(Workingday workingday, long employeecontractId) {
+    if (workingday != null) {
+      return LocalTime.of(workingday.getStarttimehour(), workingday.getStarttimeminute());
+    }
+    return dailyPreferenceService.getForEmployeeContractId(employeecontractId).workDayStart();
+  }
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {
     return ec.getSupervisors().stream()

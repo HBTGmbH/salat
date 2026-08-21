@@ -32,7 +32,6 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.dailyreport.preferences.DailyPreferenceService;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +45,6 @@ public class DailyService {
     private final OvertimeService overtimeService;
     private final EmployeecontractService employeecontractService;
     private final AuthorizedUser authorizedUser;
-    private final DailyPreferenceService dailyPreferenceService;
 
     @Transactional(readOnly = true)
     public DailyViewData buildDailyView(LocalDate date, long employeeContractId) {
@@ -67,10 +65,8 @@ public class DailyService {
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
 
         boolean notWorked = workingday != null && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
-        var preferredStart = workingday == null ? dailyPreferenceService.getForEmployeeContractId(employeeContractId).workDayStart() : null;
-        String startTime = workingday != null
-            ? String.format("%02d:%02d", workingday.getStarttimehour(), workingday.getStarttimeminute())
-            : String.format("%02d:%02d", preferredStart.getHour(), preferredStart.getMinute());
+        var effectiveStart = workingdayService.getEffectiveStart(workingday, employeeContractId);
+        String startTime = String.format("%02d:%02d", effectiveStart.getHour(), effectiveStart.getMinute());
         String breakTime = workingday != null
             ? String.format("%02d:%02d", workingday.getBreakhours(), workingday.getBreakminutes())
             : "00:00";
