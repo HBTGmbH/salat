@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
 <head>
   <title th:text="${title}">Umsatz-/Kosten-Upload</title>
@@ -14,7 +14,7 @@
       <form th:action="@{/orders/revenue-upload/process}" method="post" enctype="multipart/form-data">
 
         <div class="mb-3">
-          <label class="form-label">.xlsx-Datei</label>
+          <label class="form-label" th:text="#{orderrevenue.upload.file.label}">.xlsx-Datei</label>
           <input class="form-control" type="file" name="file" accept=".xlsx" required>
           <div class="form-hint" th:text="#{orderrevenue.upload.hint.file}">Nur eine .xlsx-Datei pro Upload.</div>
         </div>

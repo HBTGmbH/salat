@@ -22,7 +22,7 @@
           <div class="col-md-6">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
             <select class="form-select tomselect" name="employeeId">
-              <option value="">Text</option>
+              <option value="" th:text="#{main.general.allemployees.text}">ALLE MITARBEITER</option>
               <option th:each="employee : ${employees}"
                       th:value="${employee.id}"
                       th:selected="${employeeId == employee.id}"

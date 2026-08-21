@@ -11,7 +11,7 @@
     <div class="mb-3">
       <div class="form-label" th:text="#{main.timereport.share.recipients.label}">Kollegen auswählen</div>
       <select class="form-select tomselect tomselect-multi" name="recipientUserIds" multiple required>
-        <option value="">-- Kollegen wählen --</option>
+        <option value="" th:text="#{main.timereport.share.recipients.select.please}">-- Kollegen wählen --</option>
         <option th:each="recipient : ${recipients}"
                 th:value="${recipient.employeeId()}"
                 th:text="${recipient.name()} + ' | ' + ${recipient.sign()}"></option>

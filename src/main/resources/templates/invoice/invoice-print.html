@@ -45,7 +45,7 @@
         </td>
       </tr>
     </table>
-    <span style="float: right" class="invoice_date">Stand: <span th:text="${#temporals.format(today, 'dd.MM.yyyy')}"></span></span>
+    <span style="float: right" class="invoice_date"><span th:text="#{main.invoice.asof.text}">Stand:</span> <span th:text="${#temporals.format(today, 'dd.MM.yyyy')}"></span></span>
     <br style="clear: both"/>
     <table width="100%" style="border-collapse: collapse">
       <th:block th:each="invoiceSuborder : ${invoiceData.suborders}">

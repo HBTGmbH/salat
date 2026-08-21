@@ -187,7 +187,7 @@
             </div>
 
           </div>
-          <p class="text-muted small mt-2 mb-0">
+          <p class="text-muted small mt-2 mb-0" th:text="#{main.invoice.columntitles.hint}">
             Spaltenüberschriften können direkt in der Tabellenkopfzeile bearbeitet werden.
           </p>
         </div>
@@ -196,10 +196,12 @@
       <!-- ─── 2B: Entry selection table ─── -->
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h3 class="card-title mb-0">Einträge</h3>
+          <h3 class="card-title mb-0" th:text="#{main.invoice.entries.text}">Einträge</h3>
           <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-outline-secondary" onclick="selectAll()">Alle</button>
-            <button type="button" class="btn btn-outline-secondary" onclick="deselectAll()">Keine</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="selectAll()"
+                    th:text="#{main.invoice.selection.all}">Alle</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="deselectAll()"
+                    th:text="#{main.invoice.selection.none}">Keine</button>
           </div>
         </div>
         <div class="card-body p-0">
@@ -298,7 +300,8 @@
                     th:classappend="${invoiceData.totalDurationVisible == invoiceData.totalDuration} ? 'd-none' : ''">
                   <td class="col-selection"></td>
                   <td class="col-suborder text-end text-secondary small">
-                    <span th:text="#{main.invoice.overall.text}"></span> (gesamt)
+                    <span th:text="#{main.invoice.overall.text}"></span>
+                    <span th:text="#{main.invoice.overall.unfiltered.text}">(gesamt)</span>
                   </td>
                   <td class="col-date"></td>
                   <td class="col-employee"></td>
@@ -320,11 +323,11 @@
       <!-- ─── 2C: Document & Export ─── -->
       <div class="card mb-3">
         <div class="card-header">
-          <h3 class="card-title mb-0">Dokument &amp; Export</h3>
+          <h3 class="card-title mb-0" th:text="#{main.invoice.document.export.text}">Dokument &amp; Export</h3>
         </div>
         <div class="card-body">
           <p class="text-muted small mb-3">
-            Geladener Zeitraum:
+            <span th:text="#{main.invoice.loadedperiod.text}">Geladener Zeitraum:</span>
             <strong th:text="${#temporals.format(invoiceData.billingPeriod.from, 'dd.MM.yyyy')}"></strong>
             –
             <strong th:text="${#temporals.format(invoiceData.billingPeriod.until, 'dd.MM.yyyy')}"></strong>
@@ -339,12 +342,12 @@
               <input type="text" class="form-control" th:field="*{customername}">
             </div>
             <div class="col-12 col-md-4">
-              <label class="form-label">Adresse</label>
+              <label class="form-label" th:text="#{main.invoice.customeraddress.text}">Adresse</label>
               <textarea class="form-control" th:field="*{customeraddress}" rows="4"></textarea>
             </div>
           </div>
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <label class="form-label mb-0">Format:</label>
+            <label class="form-label mb-0" th:text="#{main.invoice.settings.format.text}">Format:</label>
             <select id="invoice-settings-select" class="form-select w-auto">
               <option th:each="s : ${invoiceSettings}" th:value="${s.name}" th:text="${s.name}"></option>
             </select>

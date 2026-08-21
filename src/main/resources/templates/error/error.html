@@ -148,7 +148,7 @@
               </tr>
               <tr th:if="${not errorInfo.authenticated}">
                 <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="#{error.page.label.login}">Login</td>
-                <td class="py-2 text-secondary"><em>nicht angemeldet</em></td>
+                <td class="py-2 text-secondary"><em th:text="#{error.page.value.notloggedin}">nicht angemeldet</em></td>
               </tr>
               <tr th:each="entry : ${errorInfo.uiState}" th:if="${entry.value != null}">
                 <td class="text-muted ps-4 pe-2 py-2 text-nowrap" th:text="${entry.key}"></td>

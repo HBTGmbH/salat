@@ -141,10 +141,21 @@ public abstract class PlaywrightE2ETestBase {
    * over plain {@code http://localhost} is browser-dependent.
    */
   protected void runAsUser(E2EBrowser browser, String employeeSign, String startPath, Consumer<Page> testBody) {
+    // pin the locale so assertions on rendered (German) text are deterministic regardless of
+    // the browser's own default Accept-Language
+    runAsUser(browser, employeeSign, startPath, "de-DE", testBody);
+  }
+
+  /**
+   * Same as {@link #runAsUser(E2EBrowser, String, String, Consumer)}, but with an explicit browser
+   * locale. The locale reaches the application as {@code Accept-Language}, which
+   * {@code CookieLocaleResolver} falls back to as long as no locale cookie is set - so
+   * {@code "en-US"} renders the English UI.
+   */
+  protected void runAsUser(E2EBrowser browser, String employeeSign, String startPath, String locale,
+      Consumer<Page> testBody) {
     try (Browser b = browser.launch(playwright)) {
-      // pin the locale so assertions on rendered (German) text are deterministic regardless of
-      // the browser's own default Accept-Language
-      BrowserContext context = b.newContext(new Browser.NewContextOptions().setLocale("de-DE"));
+      BrowserContext context = b.newContext(new Browser.NewContextOptions().setLocale(locale));
       Page page = context.newPage();
       page.navigate(urlFor(startPath, employeeSign));
       testBody.accept(page);

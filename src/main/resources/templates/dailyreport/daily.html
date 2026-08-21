@@ -306,14 +306,14 @@
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap mt-1">
                     <div class="text-muted small inline-edit-display"
                          style="white-space:pre-wrap; min-height:1.4em"
-                         data-placeholder="Kommentar..."
+                         th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
                          th:classappend="${#strings.isEmpty(tr.taskdescription)} ? 'is-empty'"
                          th:text="${tr.taskdescription}"></div>
                     <textarea class="form-control form-control-sm inline-edit-input d-none"
                               rows="2"
                               style="font-size:0.8rem; resize:none"
                               name="taskdescription"
-                              placeholder="Kommentar..."
+                              th:placeholder="#{main.daily.timereport.comment.placeholder}"
                               th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
                               hx-trigger="blur"
                               hx-target="#daily-bookings-area"
@@ -355,7 +355,8 @@
                   <span th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
                         class="badge bg-blue-lt"
                         th:text="${@durationUtils.format(tr.duration)}"></span>
-                  <span th:if="${tr.training}" class="badge bg-purple-lt text-purple d-block mt-1">Fortbildung</span>
+                  <span th:if="${tr.training}" class="badge bg-purple-lt text-purple d-block mt-1"
+                        th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
@@ -764,9 +765,9 @@
         <strong th:text="${listData.prevDayDiffString}">+0:00</strong>
       </span>
       <span class="ms-auto small">
-        <span class="badge bg-azure-lt me-1">Sa/So</span>
-        <span class="badge bg-warning-lt me-1">Feiertag</span>
-        <span class="badge me-1 matrix-today">Heute</span>
+        <span class="badge bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
+        <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
+        <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
       </span>
     </div>
       </div><!-- end day list card -->
