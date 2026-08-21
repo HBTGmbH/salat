@@ -22,50 +22,59 @@
     yearMonth - the java.time.YearMonth to start from
 */-->
 <th:block th:fragment="monthPicker(inputId, inputName, yearMonth)">
-<div class="btn-group btn-group-sm" data-month-picker
+<div data-month-picker
      th:with="monthKeys=${ {'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'} }">
 
+  <!--/* the hidden input stays outside the button group: as a sibling of the buttons it would take
+         part in Bootstrap's :first-child rules and square off the group's left edge */-->
   <input type="hidden" data-month-value th:id="${inputId}" th:name="${inputName}"
          th:value="${yearMonth}"/>
 
-  <button type="button" class="btn btn-outline-secondary" data-month-step="-1"
-          th:title="#{main.general.month.previous}">
-    <i class="ti ti-chevron-left m-0"></i>
-  </button>
+  <div class="btn-group btn-group-sm">
 
-  <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-month-label
-          data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
-          th:title="#{main.general.month.select}"
-          th:with="monthKey=${'main.timereport.select.month.' + monthKeys[yearMonth.monthValue - 1] + '.text'}"
-          th:text="#{${monthKey}} + ' ' + ${yearMonth.year}">Juni 2026</button>
+    <button type="button" class="btn btn-outline-secondary" data-month-step="-1"
+            th:title="#{main.general.month.previous}">
+      <i class="ti ti-chevron-left m-0"></i>
+    </button>
 
-  <div class="dropdown-menu p-2" style="min-width: 16rem">
-    <div class="d-flex align-items-center justify-content-between mb-2">
-      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
-              data-year-step="-1" th:title="#{main.general.year.previous}">
-        <i class="ti ti-chevron-left m-0"></i>
-      </button>
-      <span class="fw-bold" data-year-label th:text="${yearMonth.year}">2026</span>
-      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
-              data-year-step="1" th:title="#{main.general.year.next}">
-        <i class="ti ti-chevron-right m-0"></i>
-      </button>
-    </div>
-    <div class="row row-cols-3 g-1">
-      <div class="col" th:each="monthKey,it : ${monthKeys}">
-        <button type="button" class="btn btn-sm w-100 text-nowrap"
-                th:data-month-option="${it.index + 1}"
-                th:classappend="${it.index + 1 == yearMonth.monthValue} ? 'btn-primary' : 'btn-ghost-secondary'"
-                th:text="#{${'main.timereport.select.month.' + monthKey + '.text'}}">Januar</button>
+    <!--/* nested button group for the dropdown: Bootstrap keeps a .dropdown-toggle rounded on its
+           right side, because it expects it to be the last element of the group */-->
+    <div class="btn-group btn-group-sm">
+      <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-month-label
+              data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+              th:title="#{main.general.month.select}"
+              th:with="monthKey=${'main.timereport.select.month.' + monthKeys[yearMonth.monthValue - 1] + '.text'}"
+              th:text="#{${monthKey}} + ' ' + ${yearMonth.year}">Juni 2026</button>
+
+      <div class="dropdown-menu p-2" style="min-width: 16rem">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+                  data-year-step="-1" th:title="#{main.general.year.previous}">
+            <i class="ti ti-chevron-left m-0"></i>
+          </button>
+          <span class="fw-bold" data-year-label th:text="${yearMonth.year}">2026</span>
+          <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+                  data-year-step="1" th:title="#{main.general.year.next}">
+            <i class="ti ti-chevron-right m-0"></i>
+          </button>
+        </div>
+        <div class="row row-cols-3 g-1">
+          <div class="col" th:each="monthKey,it : ${monthKeys}">
+            <button type="button" class="btn btn-sm w-100 text-nowrap"
+                    th:data-month-option="${it.index + 1}"
+                    th:classappend="${it.index + 1 == yearMonth.monthValue} ? 'btn-primary' : 'btn-ghost-secondary'"
+                    th:text="#{${'main.timereport.select.month.' + monthKey + '.text'}}">Januar</button>
+          </div>
+        </div>
       </div>
     </div>
+
+    <button type="button" class="btn btn-outline-secondary" data-month-step="1"
+            th:title="#{main.general.month.next}">
+      <i class="ti ti-chevron-right m-0"></i>
+    </button>
+
   </div>
-
-  <button type="button" class="btn btn-outline-secondary" data-month-step="1"
-          th:title="#{main.general.month.next}">
-    <i class="ti ti-chevron-right m-0"></i>
-  </button>
-
 </div>
 
 <script>
