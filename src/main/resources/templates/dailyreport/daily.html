@@ -971,10 +971,6 @@
     }
   });
 
-  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
-    new bootstrap.Tooltip(el);
-  });
-
   document.body.addEventListener('showError', function(evt) {
     var msg = evt.detail.value;
     var toastEl = document.createElement('div');
@@ -986,5 +982,14 @@
     document.body.appendChild(toastEl);
     setTimeout(function() { toastEl.remove(); }, 5000);
   });
+
+  // Tabler does not expose a global `bootstrap`, so this threw as soon as the day had a booking -
+  // and took every statement after it with it, the error toast above included (#825). The elements
+  // keep their `title`, so the browser still shows a native tooltip.
+  if (window.bootstrap) {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+      new bootstrap.Tooltip(el);
+    });
+  }
 </script>
 </html>

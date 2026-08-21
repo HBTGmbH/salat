@@ -13,6 +13,7 @@ import static org.tb.common.GlobalConstants.COMMENT_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_MONTH;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_YEAR;
+import static org.tb.common.GlobalConstants.MINUTES_PER_DAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
 import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
@@ -22,6 +23,7 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static org.tb.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
 import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static org.tb.common.exception.ErrorCode.TR_DURATION_EXCEEDS_ONE_DAY;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_HOURS_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
@@ -260,6 +262,11 @@ public class TimereportService {
     DataValidationUtils.lengthIsInRange(taskDescription, 0, COMMENT_MAX_LENGTH, TR_TASK_DESCRIPTION_INVALID_LENGTH);
     DataValidationUtils.isTrue(durationHours >= 0, TR_DURATION_HOURS_INVALID);
     DataValidationUtils.isTrue(durationMinutes >= 0, TR_DURATION_MINUTES_INVALID);
+    // a booking cannot be longer than the day it belongs to (#825). Enforced here so that every
+    // caller is covered - the booking form, the inline edit of the daily view and the REST API.
+    // A minutes part of 60 or more is carried over into the hours instead of being stored as is.
+    long totalDurationMinutes = durationHours * MINUTES_PER_HOUR + durationMinutes;
+    DataValidationUtils.isTrue(totalDurationMinutes <= MINUTES_PER_DAY, TR_DURATION_EXCEEDS_ONE_DAY);
 
     timereport.setEmployeecontract(employeecontract);
     timereport.setEmployeeorder(employeeorder);
@@ -267,8 +274,8 @@ public class TimereportService {
     timereport.setReferenceday(referenceday);
     timereport.setTaskdescription(taskDescription.trim());
     timereport.setTraining(trainingFlag);
-    timereport.setDurationhours((int) durationHours);
-    timereport.setDurationminutes((int) durationMinutes);
+    timereport.setDurationhours((int) (totalDurationMinutes / MINUTES_PER_HOUR));
+    timereport.setDurationminutes((int) (totalDurationMinutes % MINUTES_PER_HOUR));
   }
 
   /**

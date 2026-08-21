@@ -1,6 +1,7 @@
 package org.tb.dailyreport.controller;
 
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
+import static org.tb.common.exception.ErrorCode.TR_DURATION_INVALID_FORMAT;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.DailyService;
@@ -242,12 +244,15 @@ public class DailyController {
             ecId = tr.getEmployeecontractId();
             long hours = tr.getDurationhours();
             long minutes = tr.getDurationminutes();
-            // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — unparseable input keeps
-            // the stored value, as before
+            // tolerant input formats (#830): 1:30, 130, 90m, 2h30, 1,5 — an unparseable value is
+            // reported back instead of being discarded silently (#825). The duration parameter is
+            // absent when only the comment was edited; then the stored duration stays untouched.
             var parsedMinutes = parseFlexibleMinutes(duration);
             if (parsedMinutes.isPresent()) {
                 hours = parsedMinutes.getAsLong() / MINUTES_PER_HOUR;
                 minutes = parsedMinutes.getAsLong() % MINUTES_PER_HOUR;
+            } else if (duration != null) {
+                throw new InvalidDataException(TR_DURATION_INVALID_FORMAT);
             }
             String desc = taskdescription != null ? taskdescription : tr.getTaskdescription();
             timereportService.updateTimereport(id,
