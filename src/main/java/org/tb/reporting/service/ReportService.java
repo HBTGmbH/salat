@@ -164,6 +164,7 @@ public class ReportService {
           .columnHeaders(List.of())
           .error(true)
           .errorInfo(errorInfo)
+          .sql(resolvedSql) // the view offers "Show failing SQL", so the statement has to come along
           .build();
     }
   }
