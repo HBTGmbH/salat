@@ -149,6 +149,84 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
+   * The inline duration edit in the daily list uses the same widget. Two things make it delicate:
+   * the display and the field are found through the wrapper rather than as adjacent siblings, since
+   * an enhanced field sits inside an input-group; and the field saves on blur, so a stepper click
+   * must not commit and swap the row away mid-edit.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_inline_duration_edit_uses_the_new_input(E2EBrowser browser) {
+    var date = LocalDate.parse("2026-07-08");
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, false);
+      openNewBooking(page, date);
+      page.fill("#durationTime", "02:00");
+      book(page, date);
+
+      // classic: plain field, but the tolerant parsing still applies
+      var wrap = inlineDurationWrap(page);
+      assertThat(wrap.locator(".input-group > button")).hasCount(0);
+      wrap.locator(".inline-edit-display").click();
+      wrap.locator(".inline-edit-input").fill("2h30");
+      page.locator("h3").first().click();
+      page.waitForTimeout(1200);
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:30");
+
+      setBeta(page, true);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+
+      List<String> saves = new ArrayList<>();
+      page.onRequest(request -> {
+        if (request.url().contains("update-inline")) {
+          saves.add(request.url());
+        }
+      });
+
+      // the badge reveals field and stepper together, and hands over its value
+      wrap = inlineDurationWrap(page);
+      assertThat(wrap.locator(".inline-edit-field")).isHidden();
+      wrap.locator(".inline-edit-display").click();
+      assertThat(wrap.locator(".inline-edit-field")).isVisible();
+      assertThat(wrap.locator(".inline-edit-input")).hasValue("2:30");
+
+      // stepping snaps onto the grid, saves nothing yet and keeps the focus in the field
+      wrap.locator(".input-group > button").last().click();
+      assertThat(wrap.locator(".inline-edit-input")).hasValue("02:45");
+      page.waitForTimeout(1000);
+      assertEquals(0, saves.size(), "stepping must not commit the inline edit");
+      assertEquals(true, page.evaluate(
+          "() => document.activeElement.classList.contains('inline-edit-input')"));
+
+      // leaving the field saves once and the value survives a reload
+      page.locator("h3").first().click();
+      page.waitForTimeout(1200);
+      assertEquals(1, saves.size(), "leaving the field must save exactly once");
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:45");
+
+      // Escape still discards: display comes back and nothing is written
+      saves.clear();
+      wrap = inlineDurationWrap(page);
+      wrap.locator(".inline-edit-display").click();
+      wrap.locator(".input-group > button").last().click();
+      page.keyboard().press("Escape");
+      page.waitForTimeout(1200);
+      assertThat(wrap.locator(".inline-edit-display")).isVisible();
+      assertThat(wrap.locator(".inline-edit-field")).isHidden();
+      assertEquals(0, saves.size(), "Escape must not write anything");
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:45");
+    });
+  }
+
+  /** The first wrapper is the task description; the duration is the one holding the duration field. */
+  private Locator inlineDurationWrap(Page page) {
+    return page.locator("#daily-bookings-area .inline-edit-wrap:has(input[name='duration'])").first();
+  }
+
+  /**
    * The duration badge next to begin/end is computed on the client, so it has to be filled once
    * after the page has loaded — otherwise a form that comes back in begin/end mode shows the two
    * times without their duration. The computation lives in salat.js, which is loaded at the end of

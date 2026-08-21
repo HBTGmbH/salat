@@ -36,20 +36,29 @@
       </div>
       <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
         <!-- duration: editable or read-only -->
-        <div th:if="${singleTrEditable}" class="inline-edit-wrap">
+        <div th:if="${singleTrEditable}" class="inline-edit-wrap"
+             th:with="betaTimeInput=${@betaViewHelper.timeInput}">
           <span class="badge bg-blue-lt inline-edit-display"
                 style="user-select:none"
                 th:text="${@durationUtils.format(singleTr.duration)}"></span>
-          <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
-          <input type="text" class="form-control form-control-sm text-center inline-edit-input d-none"
-                 style="width:5rem; font-size:1rem"
-                 inputmode="decimal" maxlength="8"
-                 name="duration"
-                 th:value="${@durationUtils.format(singleTr.duration)}"
-                 th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
-                 hx-trigger="blur"
-                 hx-swap="outerHTML"
-                 oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
+          <!-- see daily.html: the wrapper carries the visibility for field plus stepper -->
+          <div class="inline-edit-field d-none">
+            <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
+            <input type="text" class="form-control form-control-sm text-center inline-edit-input"
+                   style="width:auto; font-size:1rem" size="6"
+                   inputmode="decimal" maxlength="8"
+                   name="duration"
+                   th:value="${@durationUtils.format(singleTr.duration)}"
+                   th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},
+                            hx-target=|#tr-card-${singleTr.id}|,
+                            data-time-mode=${betaTimeInput} ? 'duration' : null,
+                            data-time-step=${betaTimeInput} ? '15' : null,
+                            data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                            data-time-label-increase=#{main.timeinput.increase.tooltip}"
+                   hx-trigger="blur"
+                   hx-swap="outerHTML"
+                   oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
+          </div>
         </div>
         <span th:unless="${singleTrEditable}"
               class="badge bg-blue-lt"
