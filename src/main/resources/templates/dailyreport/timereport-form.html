@@ -215,11 +215,20 @@
 
           </div><!-- end card-body -->
 
-          <!-- Footer: Save + Cancel -->
-          <div class="card-footer d-flex gap-2">
+          <!-- Footer: Save + Cancel. flex-wrap so the buttons stack instead of overflowing once
+               "Speichern und neu" (#843) is in the row as well -->
+          <div class="card-footer d-flex flex-wrap gap-2">
             <button type="submit" class="btn btn-primary">
               <i class="ti ti-device-floppy me-1"></i>
               <span th:text="#{main.timereport.form.save}">Speichern</span>
+            </button>
+            <!-- #843: a named submit button, so the server can tell the two save actions apart
+                 without a hidden field. Enter still triggers plain "Speichern" (the first one). -->
+            <button type="submit" class="btn btn-outline-primary" th:unless="${isEdit}"
+                    name="saveAndNew" value="true"
+                    th:title="#{main.timereport.form.saveandnew.tooltip}">
+              <i class="ti ti-clock-plus me-1"></i>
+              <span th:text="#{main.timereport.form.saveandnew}">Speichern und neu</span>
             </button>
             <button type="button" class="btn btn-outline-secondary" onclick="toggleSaveAsFav()">
               <i class="ti ti-star me-1"></i>

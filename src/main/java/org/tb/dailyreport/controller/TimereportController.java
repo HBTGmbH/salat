@@ -154,9 +154,11 @@ public class TimereportController {
             @RequestParam(required = false) Boolean shareWithColleagues,
             @RequestParam(required = false) List<Long> recipientUserIds,
             @RequestParam(required = false) String returnUrl,
+            @RequestParam(required = false) Boolean saveAndNew,
             RedirectAttributes redirectAttributes,
             Model model) {
-        return saveTimereport(employeeContractId, form, false, shareWithColleagues, recipientUserIds, returnUrl, redirectAttributes, model);
+        return saveTimereport(employeeContractId, form, false, shareWithColleagues, recipientUserIds, returnUrl,
+                saveAndNew, redirectAttributes, model);
     }
 
     @PostMapping("/{id}")
@@ -171,7 +173,9 @@ public class TimereportController {
             RedirectAttributes redirectAttributes,
             Model model) {
         form.setId(id);
-        return saveTimereport(employeeContractId, form, true, shareWithColleagues, recipientUserIds, returnUrl, redirectAttributes, model);
+        // "Speichern und neu" is offered on the create form only (#843)
+        return saveTimereport(employeeContractId, form, true, shareWithColleagues, recipientUserIds, returnUrl,
+                null, redirectAttributes, model);
     }
 
     @PostMapping("/refresh-orders")
@@ -307,7 +311,7 @@ public class TimereportController {
 
     private String saveTimereport(Long employeeContractId, TimereportForm form, boolean isEdit,
             Boolean shareWithColleagues, List<Long> recipientUserIds, String returnUrl,
-            RedirectAttributes redirectAttributes, Model model) {
+            Boolean saveAndNew, RedirectAttributes redirectAttributes, Model model) {
 
         long ecId = effectiveContractId(employeeContractId);
         LocalDate date = form.getReferenceday();
@@ -425,6 +429,9 @@ public class TimereportController {
                 messages.getMessage(isEdit
                     ? "main.timereport.update.success.text"
                     : "main.timereport.create.success.text"));
+            if (!isEdit && Boolean.TRUE.equals(saveAndNew)) {
+                return "redirect:" + nextBookingUrl(date, employeeContractId, returnUrl);
+            }
             return "redirect:" + safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
 
         } catch (ErrorCodeException ex) {
@@ -567,9 +574,28 @@ public class TimereportController {
     }
 
     private static String safeReturnUrl(String returnUrl, String fallback) {
-        if (returnUrl != null && returnUrl.startsWith("/dailyreport/daily")) {
-            return returnUrl;
+        return isSafeReturnUrl(returnUrl) ? returnUrl : fallback;
+    }
+
+    /** Only the daily view is a legitimate return target; anything else could redirect off-site. */
+    private static boolean isSafeReturnUrl(String returnUrl) {
+        return returnUrl != null && returnUrl.startsWith("/dailyreport/daily");
+    }
+
+    /**
+     * "Speichern und neu" (#843): back to an empty booking form for the same day instead of the
+     * daily view, so several bookings can be entered in a row. Carries over only the context the
+     * next booking needs — the day, the contract being booked on, and where "Abbrechen" leads;
+     * suborder, duration and comment are deliberately left empty for the next entry.
+     */
+    static String nextBookingUrl(LocalDate date, Long employeeContractId, String returnUrl) {
+        var url = new StringBuilder("/dailyreport/timereports/new?date=").append(date);
+        if (employeeContractId != null && employeeContractId > 0) {
+            url.append("&employeeContractId=").append(employeeContractId);
         }
-        return fallback;
+        if (isSafeReturnUrl(returnUrl)) {
+            url.append("&returnUrl=").append(encode(returnUrl, UTF_8));
+        }
+        return url.toString();
     }
 }
