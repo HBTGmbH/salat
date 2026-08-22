@@ -26,6 +26,8 @@ public class EmployeeContractSelectorViewHelper {
     private final AuthorizedEmployee authorizedEmployee;
 
     private List<Employeecontract> cachedContracts;
+    private Long cachedCurrentContractId;
+    private boolean currentContractIdResolved;
 
     public List<Employeecontract> getViewableContracts() {
         if (cachedContracts == null) {
@@ -40,9 +42,17 @@ public class EmployeeContractSelectorViewHelper {
 
     public Long getSelectedContractId() {
         var id = uiState.getLongValue(EMPLOYEE_CONTRACT_ID);
-        return id != null ? id : employeecontractService.getCurrentContract(authorizedEmployee.getEmployeeId())
-                .map(AuditedEntity::getId)
-                .orElse(null);
+        if (id != null) return id;
+        // Nur der DB-Fallback wird gepuffert; UiState wird weiterhin bei jedem Aufruf gelesen,
+        // damit eine Änderung während des Requests weiterhin Vorrang behält. Das Template ruft
+        // diese Methode pro Render mehrfach auf.
+        if (!currentContractIdResolved) {
+            cachedCurrentContractId = employeecontractService.getCurrentContract(authorizedEmployee.getEmployeeId())
+                    .map(AuditedEntity::getId)
+                    .orElse(null);
+            currentContractIdResolved = true;
+        }
+        return cachedCurrentContractId;
     }
 
     public Employeecontract getSelectedContract() {

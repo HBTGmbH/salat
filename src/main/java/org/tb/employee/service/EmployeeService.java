@@ -11,7 +11,6 @@ import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -64,9 +63,7 @@ public class EmployeeService {
   }
 
   public List<Employee> getLoginEmployees() {
-    var employees = StreamSupport
-        .stream(employeeRepository.findAll().spliterator(), false).toList();
-    return employees.stream()
+    return employeeRepository.findAllWithSalatUser().stream()
         .filter(e -> employeeAuthorization.isAuthorized(e, LOGIN))
         .toList();
   }
