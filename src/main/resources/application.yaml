@@ -66,8 +66,17 @@ spring:
     username: salattest                # env: SPRING_DATASOURCE_USERNAME
     password: salattest                # env: SPRING_DATASOURCE_PASSWORD
     hikari:
-      connection-timeout: 1000
-      minimum-idle: 0
+      # Wartezeit auf eine freie Verbindung. Wird sie überschritten, wirft HikariCP eine
+      # Exception, statt weiter zu warten — der Benutzer bekommt dann HTTP 500 statt einer
+      # langsamen Seite. Tomcat läuft mit 200 Request-Threads gegen 20 Verbindungen, es können
+      # also viele Threads gleichzeitig warten. Der frühere Wert von 1s liess dafür zu wenig
+      # Reserve (gemessen: 708 ms Maximalwartezeit unter Last).
+      connection-timeout: 10000       # env: SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT
+      # minimum-idle wird bewusst nicht gesetzt: HikariCP setzt es dann auf maximum-pool-size
+      # und hält den Pool auf fester Grösse. Mit minimum-idle=0 schrumpfte der Pool nach
+      # idleTimeout auf null, und die ersten Requests nach einer Ruhephase bezahlten den
+      # Verbindungsaufbau. Produktions-MySQL erlaubt max_connections=171, dauerhaft gehaltene
+      # 20 Verbindungen sind dort unkritisch.
       maximum-pool-size: 20           # env: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
   jpa:
     generate-ddl: false
