@@ -1,0 +1,54 @@
+# Profil "local-qa" — lokale Umgebung mit produktionsnahen Performance-Einstellungen.
+#
+# Zweck: Antwortzeiten lokal so messen, dass die Zahlen auf Produktion übertragbar sind.
+#
+# Aktivierung:  -Dspring.profiles.active=local-qa
+#   Die Profilgruppe in application.yaml aktiviert zusätzlich "local", d. h. Dev-Login
+#   (LocalDevSecurityConfiguration) und lokale Datasource bleiben unverändert.
+#
+# Regel (ADR-0020): Alle Einträge unter server/spring/salat spiegeln exakt
+# application-production.yaml. Werte hier nicht isoliert tunen — ändert sich eine
+# performancerelevante Einstellung in Produktion, wird diese Datei mitgezogen.
+#
+# Bewusst NICHT gespiegelt: Azure-Easy-Auth/OAuth2 (lokal gibt es keinen Azure-Login)
+# und die Produktions-Mailabsenderadresse.
+
+server:
+  tomcat:
+    resource:
+      allow-caching: true
+      cache-ttl: 1d
+    # keine Performance-Einstellung, aber ohne sie schlagen Massenformulare
+    # (Matrix, Massenänderung) lokal mit HTTP 400 fehl und sind nicht messbar
+    max-parameter-count: 2000
+spring:
+  devtools:
+    # devtools setzt sonst spring.thymeleaf.cache=false und spring.web.resources.cache.period=0
+    # und verfälscht damit jede Messung. Greift aus dieser Datei, weil
+    # DevToolsPropertyDefaultsPostProcessor kein Ordered implementiert und daher
+    # nach dem Laden der Config-Dateien läuft.
+    add-properties: false
+  web:
+    resources:
+      cache:
+        period: 1d
+salat:
+  auth-service:
+    # Produktion: 1h. Mit dem Default von 1s wird der Regel-Cache in
+    # AuthService.ensureUpToDateCache() im Sekundentakt komplett neu aufgebaut.
+    cache-expiry: 1h
+
+# Bewusste Abweichung von Produktion: Messinstrument.
+# Produktion exponiert nur "health" — das ist eine Entscheidung über die Angriffsfläche,
+# keine Performance-Einstellung. Die Timer selbst laufen in Produktion ebenfalls mit.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99

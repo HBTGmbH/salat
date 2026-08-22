@@ -63,6 +63,23 @@ redirect(registry, "/old-path", "/new-path");
 - On macOS, prefix every `./mvnw` call with `jenv exec` so the correct JDK is on `PATH`: `jenv exec ./mvnw <goal>`.
   - If `jenv` is not installed and `java` is not found, prompt the user to install jenv (`brew install jenv`) and add the required JDK version before continuing.
 
+## Spring Profiles
+
+| Profile | Purpose |
+|---|---|
+| `local` | Daily local development: dev login via `?login-name=<sign>`, local datasource, devtools active |
+| `local-qa` | Local response-time measurement; pulls in `local` via profile group and overrides only performance-relevant settings with their production values (→ ADR-0020) |
+| `sqltrace` | Diagnostic overlay on top of `local-qa`: logs every SQL statement with its execution time |
+| `localeasyauth` | Local run against Azure Easy Auth |
+| `staging`, `production` | Deployed environments |
+| `unittest` | Test execution (set by the Surefire/Failsafe `argLine`) |
+
+**Parity rule for `local-qa`:** every entry in `application-local-qa.yaml` under `server`,
+`spring` and `salat` mirrors `application-production.yaml` exactly. When a PR changes a
+performance-relevant setting in `application-production.yaml`, it must change
+`application-local-qa.yaml` in the same PR. Deviations require a comment in the profile
+stating why (currently: actuator `metrics` exposure, Azure auth).
+
 ## GitHub Workflow
 - **Branch naming**: `feature/<issue-number>-<short-description>` (e.g. `feature/606-move-fromDBtimeToString-to-DurationUtils`)
 - **One issue per branch / PR**: do not bundle unrelated changes.

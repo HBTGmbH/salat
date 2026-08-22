@@ -50,6 +50,10 @@ server:
 spring:
   profiles:
     default: local
+    group:
+      # "local-qa" zieht "local" mit: Dev-Login und lokale Datasource bleiben unverändert,
+      # application-local-qa.yaml überschreibt nur performancerelevante Einstellungen (ADR-0020).
+      local-qa: local
   messages:
     basename: org/tb/web/MessageResources
     encoding: UTF-8
