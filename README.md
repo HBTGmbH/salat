@@ -40,6 +40,48 @@ To start only the local database, without the Salat application:
 ⚠️ Be sure to remove existing docker containers before by running `docker-compose down` if you had the application running before.
 
 
+### Measuring response times locally (`local-qa` profile)
+
+The `local` profile runs on the base configuration, which differs from production in exactly
+the settings that determine response time (asset caching, Thymeleaf template cache, the
+authorization rule cache expiry). Response times measured under `local` are therefore not
+transferable to production.
+
+Use the `local-qa` profile instead. It keeps the local dev login and the local datasource,
+and overrides only the performance-relevant settings with their production values
+(see [ADR-0020](docs/adr/0020-local-qa-profil-fuer-performancemessungen.md)):
+
+    ./mvnw spring-boot:run -Dspring-boot.run.profiles=local-qa \
+      -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=false"
+
+`spring.devtools.restart.enabled` has to be passed as a JVM argument — it is evaluated before
+the configuration files are read, so setting it in a profile has no effect. All other devtools
+property defaults are switched off by the profile itself.
+
+Per-endpoint timings are then available at
+
+    http://localhost:8080/actuator/metrics/http.server.requests?tag=uri:/dailyreport/dashboard&login-name=<sign>
+
+The endpoint sits behind the authenticated filter chain, so it needs a valid `login-name`
+(or the `salat_dev_login` cookie) just like any page. It reports `COUNT`, `TOTAL_TIME` and
+`MAX`; the mean is `TOTAL_TIME / COUNT`. Percentiles are configured as histogram buckets and
+become readable once a scraping registry (e.g. Prometheus) is added — the `/actuator/metrics`
+endpoint itself does not render them.
+
+Two things `local-qa` cannot fix, which matter a lot when you have imported a production
+data dump into your local MySQL:
+
+- **InnoDB buffer pool.** The `testdb` container runs `mysql:8` with defaults, i.e.
+  `innodb_buffer_pool_size=128M`. With a production-sized dataset this alone dominates every
+  measurement. Start the database with a realistic value:
+
+      docker-compose -f docker-compose-infra.yml up -d
+      # then, for measurement runs, restart the db container with:
+      #   command: --lower_case_table_names=1 --innodb-buffer-pool-size=2G
+
+- **JVM warm-up.** The first requests measure JIT compilation, not the application. Discard
+  them and repeat the request a dozen times before reading the percentiles.
+
 ### Troubleshooting
 
 #### Missing bean buildProperties

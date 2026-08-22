@@ -1,0 +1,23 @@
+# Profil "sqltrace" — Diagnose-Overlay: protokolliert jedes SQL-Statement mit Laufzeit
+# und je Hibernate-Session eine Kennzahlen-Zusammenfassung.
+#
+# Aktivierung (immer als Overlay, nie allein):
+#   -Dspring.profiles.active=local-qa,sqltrace
+#
+# ACHTUNG: p6spy hängt sich in jeden JDBC-Aufruf ein und verfälscht die absoluten
+# Antwortzeiten. Aussagekräftig sind hier die Anzahl der Statements und ihre
+# Verteilung — für Antwortzeiten das Profil local-qa ohne dieses Overlay verwenden.
+#
+# Die URL muss dupliziert werden, weil p6spy über ein URL-Präfix aktiviert wird.
+# Ist die Umgebungsvariable SPRING_DATASOURCE_URL gesetzt, gewinnt diese und p6spy
+# bleibt still wirkungslos — dann die Variable für den Messlauf entfernen.
+
+spring:
+  datasource:
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    url: jdbc:p6spy:mysql://localhost:3306/salat?useUnicode=true&useJDBCCompliantTimezoneShift=true&serverTimezone=Europe/Berlin&useLegacyDatetimeCode=false&autoReconnect=true
+  jpa:
+    properties:
+      hibernate:
+        # loggt je Session eine "Session Metrics"-Zeile (Statements, JDBC-Zeit, Cache-Zugriffe)
+        generate_statistics: true
