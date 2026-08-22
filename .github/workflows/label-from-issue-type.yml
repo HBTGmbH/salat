@@ -1,0 +1,144 @@
+name: Label PRs from Issue Type
+
+# Release notes are grouped by the labels of a pull request (see .github/release.yml), but pull
+# requests here are practically never labelled by hand - so almost everything ended up in "Other
+# Changes". The linked issue does carry a reliable classification: its issue type. This workflow
+# copies that type onto the pull request as the matching label, which is the signal release.yml
+# already knows how to read.
+#
+# The issue type is also the more accurate of the two: #855 was typed "Bug" while carrying the
+# label "enhancement".
+#
+# It runs after the merge rather than on the open pull request. The label only has to be in place
+# by the time a release is drafted, and a push to main is a trusted trigger with a writable token -
+# labelling the open pull request would need pull_request_target, which buys nothing here and is a
+# trigger this repository's zizmor audit rightly rejects.
+
+on:
+  push:
+    branches: [main]
+  # pull requests merged before this workflow existed carry no label at all, so they would still
+  # land in "Other Changes". Run it by hand with a number to fix those up one at a time.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to label (leave empty when triggered by a push)
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.pr || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  label:
+    name: Apply the label of the linked issue type
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write  # add labels to the merged pull request
+    steps:
+      - name: Copy the issue type onto the merged pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          PR_INPUT: ${{ inputs.pr }}
+        run: |
+          set -euo pipefail
+
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+
+          # both paths emit the same "<pr number> <comma separated issue types>" lines.
+          # closingIssuesReferences holds the issues a pull request closes, which is what the
+          # closing keywords and the "Development" sidebar both feed.
+          types_jq='[.closingIssuesReferences.nodes[].issueType | select(. != null) | .name]
+                    | unique | join(",")'
+
+          if [ -n "${PR_INPUT:-}" ]; then
+            echo "Labelling pull request #$PR_INPUT on request."
+            pr_data=$(gh api graphql \
+              -f query='
+                query($owner: String!, $name: String!, $pr: Int!) {
+                  repository(owner: $owner, name: $name) {
+                    pullRequest(number: $pr) {
+                      number
+                      closingIssuesReferences(first: 20) {
+                        nodes { number issueType { name } }
+                      }
+                    }
+                  }
+                }' \
+              -F owner="$owner" -F name="$name" -F pr="$PR_INPUT" \
+              --jq ".data.repository.pullRequest | \"\\(.number) \\($types_jq)\"")
+          else
+            # associatedPullRequests resolves the merge commit back to its pull request
+            pr_data=$(gh api graphql \
+              -f query='
+                query($owner: String!, $name: String!, $sha: GitObjectID!) {
+                  repository(owner: $owner, name: $name) {
+                    object(oid: $sha) {
+                      ... on Commit {
+                        associatedPullRequests(first: 5) {
+                          nodes {
+                            number
+                            closingIssuesReferences(first: 20) {
+                              nodes { number issueType { name } }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }' \
+              -F owner="$owner" -F name="$name" -F sha="$SHA" \
+              --jq ".data.repository.object.associatedPullRequests.nodes[]
+                    | \"\\(.number) \\($types_jq)\"")
+          fi
+
+          if [ -z "$pr_data" ]; then
+            echo "No pull request to label for ${PR_INPUT:-$SHA}."
+            exit 0
+          fi
+
+          # extend here when a new issue type should show up as its own release-notes category
+          label_for_type() {
+            case "$1" in
+              Bug)     echo bug ;;
+              Feature) echo enhancement ;;
+              *)       echo "" ;;
+            esac
+          }
+
+          while read -r pr types; do
+            [ -n "$pr" ] || continue
+
+            # dependabot and other pull requests without a linked issue land here
+            if [ -z "${types:-}" ]; then
+              echo "PR #$pr: no linked issue with an issue type - nothing to label."
+              continue
+            fi
+
+            labels=""
+            IFS=',' read -ra type_list <<< "$types"
+            for type in "${type_list[@]}"; do
+              [ -n "$type" ] || continue
+              label=$(label_for_type "$type")
+              if [ -z "$label" ]; then
+                echo "PR #$pr: issue type '$type' has no label mapped - skipping it."
+                continue
+              fi
+              echo "PR #$pr: issue type '$type' maps to label '$label'."
+              labels="${labels:+$labels,}$label"
+            done
+
+            if [ -z "$labels" ]; then
+              echo "PR #$pr: no linked issue type that maps to a label."
+              continue
+            fi
+
+            # only ever adds: a label somebody set by hand stays untouched
+            gh pr edit "$pr" --repo "$REPO" --add-label "$labels"
+          done <<< "$pr_data"
