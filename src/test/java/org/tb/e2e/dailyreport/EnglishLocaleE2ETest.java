@@ -58,7 +58,8 @@ class EnglishLocaleE2ETest extends PlaywrightE2ETestBase {
       assertThat(monthMenu).containsText("December");
       assertThat(monthMenu).not().containsText("Dezember");
 
-      Locator legend = page.locator("div.card:has(#matrix) .card-footer");
+      // the matrix card carries a second footer holding the "Rest nicht gearbeitet" action (#855)
+      Locator legend = page.locator("div.card:has(#matrix) .card-footer").first();
       assertThat(legend).containsText("Sa/Su");
       assertThat(legend).containsText("Public holiday");
       assertThat(legend).containsText("Today");

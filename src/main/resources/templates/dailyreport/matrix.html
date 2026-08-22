@@ -105,17 +105,6 @@
       <th:block th:replace="~{fragments/month-picker :: monthPicker('matrix-month', null, ${yearMonth})}"></th:block>
       <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}"
          th:text="#{main.general.month.current}">Aktueller Monat</a>
-      <!--/* the action touches every open workday of the month at once and can only be undone day by
-             day, so it asks before it fires and posts rather than following a link (#855) */-->
-      <form th:if="${!monthReleased and selectedContractId > 0}" method="post"
-            th:action="@{/dailyreport/matrix/fill-not-worked}"
-            th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
-        <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
-        <input type="hidden" name="year" th:value="${yearMonth.year}"/>
-        <button type="submit" class="btn btn-sm btn-outline-secondary"
-                th:title="#{main.general.button.fillopenworkdaysnotworked.alttext.text}"
-                th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
-      </form>
     </div>
   </div>
 </div>
@@ -254,6 +243,19 @@
       <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
       <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
     </span>
+  </div>
+  <!--/* same place as in the single overview: below the month, away from the navigation. The action
+         touches every open workday of the month at once and can only be undone day by day (#855) */-->
+  <div class="card-footer d-flex justify-content-end" id="matrix-fill-not-worked"
+       th:if="${!monthReleased and selectedContractId > 0}">
+    <form method="post" th:action="@{/dailyreport/matrix/fill-not-worked}"
+          th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
+      <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
+      <input type="hidden" name="year" th:value="${yearMonth.year}"/>
+      <button type="submit" class="btn btn-sm btn-outline-secondary"
+              th:title="#{main.general.button.fillopenworkdaysnotworked.alttext.text}"
+              th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
+    </form>
   </div>
 </div>
 

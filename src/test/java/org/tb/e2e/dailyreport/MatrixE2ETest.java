@@ -91,7 +91,8 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void legend_and_month_picker_are_german_for_a_german_browser(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix", page -> {
-      Locator legend = page.locator("div.card:has(#matrix) .card-footer");
+      // the matrix card carries a second footer holding the "Rest nicht gearbeitet" action (#855)
+      Locator legend = page.locator("div.card:has(#matrix) .card-footer").first();
       assertThat(legend).containsText("Sa/So");
       assertThat(legend).containsText("Feiertag");
       assertThat(legend).containsText("Heute");
