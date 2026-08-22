@@ -24,6 +24,13 @@ salat:
   cache:
     max-entries: 1000                # env: SALAT_CACHE_MAX_ENTRIES
     expiry-tti: 10                   # env: SALAT_CACHE_EXPIRY_TTI
+  etl:
+    history:
+      # env: SALAT_ETL_HISTORY_RETENTION_DAYS — days to keep ETL execution history before auto-delete.
+      # Jeder nächtliche Lauf schreibt eine Zeile pro Definition und Referenzperiode, jede davon
+      # mit dem vollständigen SQL-Text im message-Feld (~6 KB). Ohne Retention wächst die Tabelle
+      # unbegrenzt weiter, während die Nutzdaten das nicht tun.
+      retention-days: 14
   locale-cookie-name: SALAT_LOCALE    # env: SALAT_LOCALE_COOKIE_NAME — name of the browser cookie used to persist the user's language preference
   notifications:
     retention-days: 30               # env: SALAT_NOTIFICATIONS_RETENTION_DAYS — days to keep notifications before auto-delete
