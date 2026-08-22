@@ -3,6 +3,7 @@ package org.tb.dailyreport.controller;
 import java.time.LocalDate;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.tb.dailyreport.preferences.DurationInputMode;
 
 @Data
 public class TimereportForm {
@@ -16,18 +17,19 @@ public class TimereportForm {
     private Long suborderId;
 
     /**
-     * "duration" or "beginEnd" — controlled by the JS toggle buttons, see
-     * {@link org.tb.dailyreport.preferences.DurationInputMode}. Empty on a create form while the
-     * user has no preferred entry mode yet (#844); the form then decides on load.
+     * Key of a {@link DurationInputMode} — controlled by the JS toggle buttons. Stays a String
+     * because that is what the hidden form field submits; the enum keys are the wire format.
+     * Empty on a create form while the user has no preferred entry mode yet (#844); the form then
+     * decides on load.
      */
-    private String durationMode = "duration";
+    private String durationMode = DurationInputMode.DURATION.getKey();
 
-    /** HH:MM (e.g. "01:30") — only used when durationMode == "duration" */
+    /** HH:MM (e.g. "01:30") — only used in {@link DurationInputMode#DURATION} mode */
     private String durationTime = "";
 
-    /** HH:MM — only used when durationMode == "beginEnd" */
+    /** HH:MM — only used in {@link DurationInputMode#BEGIN_END} mode */
     private String beginTime;
-    /** HH:MM — only used when durationMode == "beginEnd" */
+    /** HH:MM — only used in {@link DurationInputMode#BEGIN_END} mode */
     private String endTime;
 
     private String comment = "";
