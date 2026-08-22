@@ -15,7 +15,11 @@ public class TimereportForm {
     private Long orderId;
     private Long suborderId;
 
-    /** "duration" (default) or "beginEnd" — controlled by JS toggle buttons */
+    /**
+     * "duration" or "beginEnd" — controlled by the JS toggle buttons, see
+     * {@link org.tb.dailyreport.preferences.DurationInputMode}. Empty on a create form while the
+     * user has no preferred entry mode yet (#844); the form then decides on load.
+     */
     private String durationMode = "duration";
 
     /** HH:MM (e.g. "01:30") — only used when durationMode == "duration" */

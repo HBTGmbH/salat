@@ -29,7 +29,26 @@ public class TimereportPreferenceService {
     Long newFavorite = suborderId != null && suborderId.equals(current.favoriteSuborderId())
         ? null
         : suborderId;
-    saveForCurrentUser(new TimereportPreferences(newFavorite));
+    saveForCurrentUser(new TimereportPreferences(
+        newFavorite, current.durationInputMode(), current.lastUsedDurationMode()));
+  }
+
+  /**
+   * Records the entry mode a booking was created with (#844). A no-op unless the user left the
+   * preference on {@link DurationInputMode#REMEMBER} — an explicitly chosen mode must not be
+   * overwritten by booking in the other one once.
+   */
+  public void rememberDurationMode(String formDurationMode) {
+    var current = getForCurrentUser();
+    if (current.durationInputMode() != DurationInputMode.REMEMBER) {
+      return;
+    }
+    var used = DurationInputMode.ofFormValue(formDurationMode);
+    if (used == current.lastUsedDurationMode()) {
+      return;
+    }
+    saveForCurrentUser(new TimereportPreferences(
+        current.favoriteSuborderId(), current.durationInputMode(), used));
   }
 
 }

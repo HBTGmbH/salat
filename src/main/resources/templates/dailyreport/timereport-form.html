@@ -53,7 +53,10 @@
                        hx-on="htmx:afterSettle: refreshShareRecipientsOnFieldChange()"/>
               </div>
 
-              <div class="col-auto" th:with="betaTimeInput=${@betaViewHelper.timeInput}">
+              <!-- beginEnd: the entry mode the user prefers (#844), rendered server-side so the
+                   form does not visibly flip modes after the first paint -->
+              <div class="col-auto" th:with="betaTimeInput=${@betaViewHelper.timeInput},
+                                             beginEnd=${timereportForm.durationMode == 'beginEnd'}">
                 <label class="form-label required" for="durationTime">
                   <span th:text="#{main.timereport.form.duration.label}">Dauer</span>
                   <!-- part of the label so it cannot widen the col-auto column on its own (#830) -->
@@ -65,12 +68,14 @@
 
                   <!-- Toggle buttons -->
                   <div class="btn-group flex-shrink-0" role="group">
-                    <button type="button" class="btn btn-outline-secondary active" id="btnDuration"
+                    <button type="button" class="btn btn-outline-secondary" id="btnDuration"
+                            th:classappend="${beginEnd} ? '' : 'active'"
                             onclick="showDuration()"
                             th:title="#{main.timereport.form.duration.mode.duration.tooltip}">
                       <i class="icon ti ti-hourglass m-0"></i>
                     </button>
                     <button type="button" class="btn btn-outline-secondary" id="btnBeginEnd"
+                            th:classappend="${beginEnd} ? 'active' : ''"
                             onclick="showBeginEnd()"
                             th:title="#{main.timereport.form.duration.mode.beginend.tooltip}">
                       <i class="icon ti ti-clock-2 m-0"></i>
@@ -78,7 +83,7 @@
                   </div>
 
                   <!-- Duration entry -->
-                  <div id="durationSection">
+                  <div id="durationSection" th:classappend="${beginEnd} ? 'd-none' : ''">
                     <input type="text" class="form-control" th:field="*{durationTime}"
                            placeholder="HH:MM" maxlength="8" inputmode="decimal"
                            style="width:auto" size="6"
@@ -93,7 +98,7 @@
                   </div>
 
                   <!-- Begin/End entry -->
-                  <div id="beginEndSection" class="d-none">
+                  <div id="beginEndSection" th:classappend="${beginEnd} ? '' : 'd-none'">
                     <!-- flex-wrap: the two fields plus their steppers do not fit next to each other
                          on a phone, so they stack there and stay inline from md upwards -->
                     <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -126,7 +131,8 @@
                 </div>
                 <!-- Quick-add chips are rendered here (see data-time-chips-target) so that they get
                      the full width of the column instead of the width of the input itself -->
-                <div id="durationChips" class="mt-2" th:if="${betaTimeInput}"></div>
+                <div id="durationChips" class="mt-2" th:if="${betaTimeInput}"
+                     th:classappend="${beginEnd} ? 'd-none' : ''"></div>
               </div>
             </div>
 
@@ -442,21 +448,37 @@
     // the end of the body, i.e. after this block, so nothing here may call into it at parse time —
     // hence DOMContentLoaded rather than an IIFE.
     document.addEventListener('DOMContentLoaded', function () {
-      // restore the durationMode toggle state (e.g. after a validation re-render)
-      if (document.getElementById('durationModeField').value === 'beginEnd') {
+      // An empty durationMode means nobody has decided yet (#844): the user has no stored entry
+      // mode, and this is not a validation re-render of a submitted one. Only then may the live
+      // booking pick the mode; a stored preference always wins over it.
+      var mode = document.getElementById('durationModeField').value;
+      var liveBooking = typeof liveBookingStartMinutes !== 'undefined'
+        && liveBookingStartMinutes !== null;
+
+      // prefill begin/end from the start of the working day, but never overwrite what is already
+      // there — the server renders the submitted values on a validation re-render
+      if (liveBooking) {
+        var beginInput = document.getElementById('beginTimeInput');
+        var endInput = document.getElementById('endTimeInput');
+        if (!beginInput.value && !endInput.value) {
+          var startH = Math.floor(liveBookingStartMinutes / 60);
+          var startM = liveBookingStartMinutes % 60;
+          beginInput.value =
+            String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
+          var now = new Date();
+          var nowMins = now.getHours() * 60 + now.getMinutes();
+          var endMins = nowMins === 0 ? 0 : Math.ceil(nowMins / 15) * 15;
+          endInput.value =
+            String(Math.floor(endMins / 60) % 24).padStart(2, '0') + ':' + String(endMins % 60).padStart(2, '0');
+        }
+      }
+
+      // the server already rendered the mode; re-applying it keeps the chips and the hidden field
+      // in sync and resolves the empty case into a concrete mode before the first submit
+      if (mode === 'beginEnd' || (mode === '' && liveBooking)) {
         showBeginEnd();
-      } else if (typeof liveBookingStartMinutes !== 'undefined' && liveBookingStartMinutes !== null) {
-        // auto-switch to begin/end mode for live bookings (today with a saved start time)
-        var startH = Math.floor(liveBookingStartMinutes / 60);
-        var startM = liveBookingStartMinutes % 60;
-        document.getElementById('beginTimeInput').value =
-          String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
-        var now = new Date();
-        var nowMins = now.getHours() * 60 + now.getMinutes();
-        var endMins = nowMins === 0 ? 0 : Math.ceil(nowMins / 15) * 15;
-        document.getElementById('endTimeInput').value =
-          String(Math.floor(endMins / 60) % 24).padStart(2, '0') + ':' + String(endMins % 60).padStart(2, '0');
-        showBeginEnd();
+      } else {
+        showDuration();
       }
       // the badge is computed on the client only, so it has to be filled once for whatever
       // begin/end values the server rendered

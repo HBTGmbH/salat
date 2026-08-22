@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.tb.auth.domain.Authorized;
 import org.tb.dailyreport.preferences.DailyPreferenceService;
+import org.tb.dailyreport.preferences.DurationInputMode;
 import org.tb.dailyreport.preferences.TimereportPreferenceService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
@@ -85,7 +86,8 @@ public class TimereportController {
         long ecId = effectiveContractId(employeeContractId);
 
         var suborders = suborderOptions(ecId, effectiveDate);
-        Long favoriteId = timereportPreferenceService.getForCurrentUser().favoriteSuborderId();
+        var preferences = timereportPreferenceService.getForCurrentUser();
+        Long favoriteId = preferences.favoriteSuborderId();
         Long defaultSuborderId = suborderId != null ? suborderId : suborders.stream()
                 .map(SuborderOption::id)
                 .filter(id -> id.equals(favoriteId))
@@ -95,8 +97,13 @@ public class TimereportController {
         var form = new TimereportForm();
         form.setReferenceday(effectiveDate);
         form.setSuborderId(defaultSuborderId);
+        // #844: preset the entry mode the user prefers. Stays empty while they have no preference
+        // yet, which lets the form fall back to its live-booking heuristic (#851).
+        form.setDurationMode(preferences.effectiveDurationMode());
         if (duration != null && !duration.isBlank()) {
             form.setDurationTime(duration);
+            // a share-with-colleagues deeplink carries a duration, so show the field holding it
+            form.setDurationMode(DurationInputMode.DURATION.getKey());
         }
         if (comment != null && !comment.isBlank()) {
             form.setComment(comment);
@@ -370,6 +377,9 @@ public class TimereportController {
                 timereportService.createTimereports(ecId, employeeOrderId, date,
                         form.getComment(), form.isTraining(), durationHours, durationMinutes,
                         form.getNumberOfSerialDays());
+                // #844: only creating a booking teaches the preference — an edit always opens in
+                // duration mode because begin/end are not stored per booking
+                timereportPreferenceService.rememberDurationMode(form.getDurationMode());
             }
 
             if (form.isSaveAsFavorite()) {
