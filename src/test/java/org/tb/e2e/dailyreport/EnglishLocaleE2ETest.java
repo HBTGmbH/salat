@@ -48,8 +48,9 @@ class EnglishLocaleE2ETest extends PlaywrightE2ETestBase {
       assertThat(monthPicker).hasText("June 2026");
 
       Locator monthNavigation = page.locator("div.card:has(button.dropdown-toggle)").first();
-      assertThat(monthNavigation).containsText("Today");
-      assertThat(monthNavigation).not().containsText("Heute");
+      // the button jumps to the current month, not to today - it is labelled accordingly (#855)
+      assertThat(monthNavigation).containsText("Current month");
+      assertThat(monthNavigation).not().containsText("Aktueller Monat");
 
       // the picker itself lists the months in English, too
       monthPicker.click();
