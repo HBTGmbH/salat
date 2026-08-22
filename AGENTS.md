@@ -145,6 +145,11 @@ A feature or fix is considered done when **all** of the following are true:
 ## Documentation
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
+- [`docs/performance-tips.md`](docs/performance-tips.md) collects measured performance rules —
+  consult it when adding JPA mappings, `AttributeConverter`s, repository queries or view helpers.
+  Most notably: **a class mapped via `AttributeConverter` must implement `equals`/`hashCode`**,
+  otherwise Hibernate treats the entity as dirty on every flush and emits UPDATEs on read-only
+  requests.
 
 ## Architecture Decision Records
 - ADRs live in [`docs/adr/`](docs/adr/README.md) (format: MADR).
