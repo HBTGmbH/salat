@@ -18,6 +18,7 @@ public class SalatProperties {
   private AuthService authService;
   private UiState uiState = new UiState();
   private Notifications notifications = new Notifications();
+  private Etl etl = new Etl();
 
   @Data
   public static class Auth {
@@ -59,6 +60,16 @@ public class SalatProperties {
   public static class Notifications {
     private int retentionDays = 30;
     private int bellLimit = 10;
+  }
+
+  @Data
+  public static class Etl {
+    private History history = new History();
+
+    @Data
+    public static class History {
+      private int retentionDays = 14;
+    }
   }
 
 }
