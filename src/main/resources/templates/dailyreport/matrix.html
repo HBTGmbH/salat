@@ -246,15 +246,24 @@
   </div>
   <!--/* same place as in the single overview: below the month, away from the navigation. The action
          touches every open workday of the month at once and can only be undone day by day (#855) */-->
-  <div class="card-footer d-flex justify-content-end" id="matrix-fill-not-worked"
+  <div class="card-footer d-flex justify-content-between align-items-center gap-3 flex-wrap"
+       id="matrix-fill-not-worked"
        th:if="${!monthReleased and selectedContractId > 0}">
+    <!--/* the explanation used to be a title attribute, which never shows up on touch and does
+           nothing to make the action findable in the first place */-->
+    <span class="text-secondary small"
+          th:text="#{main.general.button.fillopenworkdaysnotworked.alttext.text}">
+      Alle Arbeitstage, an denen nichts gebucht wurde, werden auf 'nicht gearbeitet' gesetzt.
+    </span>
     <form method="post" th:action="@{/dailyreport/matrix/fill-not-worked}"
           th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
       <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
       <input type="hidden" name="year" th:value="${yearMonth.year}"/>
-      <button type="submit" class="btn btn-sm btn-outline-secondary"
-              th:title="#{main.general.button.fillopenworkdaysnotworked.alttext.text}"
-              th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
+      <!--/* warning, like the "Nicht gearbeitet" badge this action produces */-->
+      <button type="submit" class="btn btn-outline-warning text-nowrap">
+        <i class="ti ti-calendar-off me-1"></i>
+        <span th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</span>
+      </button>
     </form>
   </div>
 </div>
