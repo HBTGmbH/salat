@@ -6,6 +6,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
 import static org.tb.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
+import static org.tb.dailyreport.preferences.DurationInputMode.BEGIN_END;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -311,10 +312,11 @@ public class TimereportController {
         long ecId = effectiveContractId(employeeContractId);
         LocalDate date = form.getReferenceday();
 
+        boolean beginEndMode = DurationInputMode.ofFormValue(form.getDurationMode()) == BEGIN_END;
+
         long durationHours;
         long durationMinutes;
-        if ("beginEnd".equals(form.getDurationMode())
-                && form.getBeginTime() != null && form.getEndTime() != null) {
+        if (beginEndMode && form.getBeginTime() != null && form.getEndTime() != null) {
             int[] begin = parseTime(form.getBeginTime());
             int[] end = parseTime(form.getEndTime());
             long totalMinutes = (end[0] * 60L + end[1]) - (begin[0] * 60L + begin[1]);
@@ -349,7 +351,7 @@ public class TimereportController {
         try {
             // seed workingday start time for all serial days when not yet set
             if (!isEdit) {
-                boolean useBegin = "beginEnd".equals(form.getDurationMode()) && form.getBeginTime() != null;
+                boolean useBegin = beginEndMode && form.getBeginTime() != null;
                 LocalTime beginTime;
                 if (useBegin) {
                     int[] begin = parseTime(form.getBeginTime());
