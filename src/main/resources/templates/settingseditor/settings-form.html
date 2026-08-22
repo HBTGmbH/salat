@@ -35,6 +35,13 @@
                 th:attr="data-subtext=${s.subtext}"></option>
       </salat:select>
 
+      <salat:select th:field="*{durationInputMode}"
+                    th:label="#{main.settings.timereport.durationinputmode.label}">
+        <option value="remember" th:text="#{main.settings.timereport.durationinputmode.remember}">— Letzte Eingabe merken —</option>
+        <option value="duration" th:text="#{main.settings.timereport.durationinputmode.duration}">Immer Dauer</option>
+        <option value="beginEnd" th:text="#{main.settings.timereport.durationinputmode.beginend}">Immer Beginn / Ende</option>
+      </salat:select>
+
       <salat:textInput th:field="*{notificationEmail}"
                        th:label="#{main.settings.notification.email.label}"
                        th:helpText="#{main.settings.notification.email.help}"

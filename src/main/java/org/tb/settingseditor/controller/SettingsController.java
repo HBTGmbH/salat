@@ -26,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.dailyreport.preferences.DailyPreferences;
+import org.tb.dailyreport.preferences.DurationInputMode;
 import org.tb.dailyreport.preferences.TimereportPreferenceService;
 import org.tb.dailyreport.preferences.TimereportPreferences;
 import org.tb.employee.preferences.EmployeePreferenceService;
@@ -68,6 +69,7 @@ public class SettingsController {
     form.setWorkDayStart(daily.workDayStart());
     form.setFavoriteSuborderId(timereport.favoriteSuborderId() != null
         ? timereport.favoriteSuborderId().toString() : "");
+    form.setDurationInputMode(timereport.durationInputMode().getKey());
     form.setLocale(uiPreferenceService.getLocaleForCurrentUser());
     form.setNotificationEmail(employee.notificationEmail() != null ? employee.notificationEmail() : "");
     form.setGravatarEmail(employee.gravatarEmail() != null ? employee.gravatarEmail() : "");
@@ -101,7 +103,15 @@ public class SettingsController {
       } catch (NumberFormatException ignored) {
       }
     }
-    timereportPreferenceService.saveForCurrentUser(new TimereportPreferences(favSuborderId));
+    var durationInputMode = DurationInputMode.ofKey(form.getDurationInputMode())
+        .orElse(DurationInputMode.REMEMBER);
+    // an explicit choice also becomes the remembered one, so switching back to "remember last"
+    // later starts from what the user picked here rather than from a stale value (#844)
+    var lastUsedDurationMode = durationInputMode == DurationInputMode.REMEMBER
+        ? timereportPreferenceService.getForCurrentUser().lastUsedDurationMode()
+        : durationInputMode;
+    timereportPreferenceService.saveForCurrentUser(
+        new TimereportPreferences(favSuborderId, durationInputMode, lastUsedDurationMode));
     employeePreferenceService.saveForCurrentUser(
         new EmployeePreferences(form.getNotificationEmail(), form.getGravatarEmail()));
     // null when every beta switch is off — Spring resets the list via the "_betaFeatures" marker
@@ -159,6 +169,9 @@ public class SettingsController {
     private LocalTime workDayStart = LocalTime.of(DEFAULT_WORK_DAY_START, 0);
 
     private String favoriteSuborderId = "";
+
+    /** Key of a {@link DurationInputMode}, see the booking form's entry mode toggle (#844). */
+    private String durationInputMode = DurationInputMode.REMEMBER.getKey();
 
     private String locale = "-browser-";
 
