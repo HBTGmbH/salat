@@ -56,26 +56,39 @@ class FillNotWorkedGuardE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_mass_change_sits_below_the_day_list_and_asks_first(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, listView(), page -> {
-      Locator button = page.locator("div.card:has(#daily-list) .card-footer")
-          .getByText(FILL_NOT_WORKED);
-      assertThat(button).isVisible();
+    runAsUser(browser, EMPLOYEE, listView(),
+        page -> assertAsksBeforeFiring(page, "#daily-fill-not-worked"));
+  }
 
-      List<String> prompts = new ArrayList<>();
-      // no handler registered means Playwright dismisses the dialog, which cancels the submit
-      page.onDialog(dialog -> {
-        prompts.add(dialog.message());
-        dialog.dismiss();
-      });
+  /** Same action, same place, same question - the matrix must not behave differently. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_matrix_keeps_the_mass_change_out_of_its_filter_bar(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/matrix?month=6&year=2026", page -> {
+      Locator filterBar = page.locator("div.card:has([data-month-picker])").first();
+      assertThat(filterBar).not().containsText(FILL_NOT_WORKED);
 
-      button.click();
-      page.waitForTimeout(500);
-
-      Assertions.assertEquals(1, prompts.size(), "expected exactly one confirmation");
-      Assertions.assertTrue(prompts.getFirst().contains("nur Tag für Tag"), prompts.getFirst());
-      // dismissed - so the month is untouched and no success toast appeared
-      assertThat(page.locator(".alert-success")).hasCount(0);
+      assertAsksBeforeFiring(page, "#matrix-fill-not-worked");
     });
+  }
+
+  private void assertAsksBeforeFiring(Page page, String footerSelector) {
+    Locator button = page.locator(footerSelector).getByText(FILL_NOT_WORKED);
+    assertThat(button).isVisible();
+
+    List<String> prompts = new ArrayList<>();
+    page.onDialog(dialog -> {
+      prompts.add(dialog.message());
+      dialog.dismiss();
+    });
+
+    button.click();
+    page.waitForTimeout(500);
+
+    Assertions.assertEquals(1, prompts.size(), "expected exactly one confirmation");
+    Assertions.assertTrue(prompts.getFirst().contains("nur Tag für Tag"), prompts.getFirst());
+    // dismissed - so the month is untouched and no success toast appeared
+    assertThat(page.locator(".alert-success")).hasCount(0);
   }
 
   @ParameterizedTest(name = "{0}")

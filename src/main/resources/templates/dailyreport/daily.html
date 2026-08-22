@@ -785,7 +785,7 @@
     </div>
     <!--/* deliberately at the very end of the month, far away from the navigation: the action
            touches every open workday of the month at once and can only be undone day by day (#855) */-->
-    <div class="card-footer d-flex justify-content-end"
+    <div class="card-footer d-flex justify-content-end" id="daily-fill-not-worked"
          th:if="${listData != null and !listData.monthReleased and selectedContractId > 0}">
       <form method="post" th:action="@{/dailyreport/daily/fill-not-worked}"
             th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
