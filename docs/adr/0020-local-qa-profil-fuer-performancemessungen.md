@@ -70,8 +70,10 @@ Zwei bewusste Ausnahmen, beide im Profil kommentiert:
   `false` — bewusst nicht in `local-qa` eingeschaltet, sonst wäre lokal schneller als Produktion.
 * **JVM-Warmlauf**: die ersten Requests messen JIT, nicht die Anwendung.
 * **MySQL**: der lokale Container (`testdb`, `mysql:8`) läuft mit Defaults, u. a.
-  `innodb_buffer_pool_size=128M`. Mit einem Produktionsdatenabzug ist das der dominierende
-  lokale Verfälschungsfaktor. Siehe README.
+  `innodb_buffer_pool_size=128M`; Produktion läuft mit `536870912` (512 MB). Mit einem
+  Produktionsdatenabzug ist das der dominierende lokale Verfälschungsfaktor. Die Parity-Regel
+  gilt hier sinngemäß: für Messläufe den Produktionswert setzen, nicht mehr — sonst ist lokal
+  schneller als Produktion. Siehe README.
 * **devtools-Restart-Classloader**: `spring.devtools.restart.enabled` wird ausgewertet, bevor
   Config-Dateien geladen sind, und muss als JVM-Argument gesetzt werden. Siehe README.
 

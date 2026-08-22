@@ -72,12 +72,13 @@ Two things `local-qa` cannot fix, which matter a lot when you have imported a pr
 data dump into your local MySQL:
 
 - **InnoDB buffer pool.** The `testdb` container runs `mysql:8` with defaults, i.e.
-  `innodb_buffer_pool_size=128M`. With a production-sized dataset this alone dominates every
-  measurement. Start the database with a realistic value:
+  `innodb_buffer_pool_size=128M`, while production runs `536870912` (512 MB). With a
+  production-sized dataset the local default alone dominates every measurement. For
+  measurement runs, start the db container with the production value — **not more**, or local
+  becomes faster than production and the parity rule is broken:
 
-      docker-compose -f docker-compose-infra.yml up -d
-      # then, for measurement runs, restart the db container with:
-      #   command: --lower_case_table_names=1 --innodb-buffer-pool-size=2G
+      # docker-compose-infra.yml, service db:
+      #   command: --lower_case_table_names=1 --innodb-buffer-pool-size=512M
 
 - **JVM warm-up.** The first requests measure JIT compilation, not the application. Discard
   them and repeat the request a dozen times before reading the percentiles.
