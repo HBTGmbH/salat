@@ -93,7 +93,7 @@
     <div class="col-lg-8">
 
       <!-- Date navigation -->
-      <div class="card mb-3">
+      <div class="card mb-3" id="daily-mode-nav">
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <a class="btn btn-sm btn-outline-secondary"
@@ -671,7 +671,7 @@
   <div class="row align-items-start">
 
       <!-- Month navigation card -->
-      <div class="card mb-3">
+      <div class="card mb-3" id="daily-mode-nav">
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <a class="btn btn-sm btn-outline-secondary"
@@ -685,14 +685,20 @@
               <span th:text="#{main.daily.nav.nextmonth.text}">Nächster Monat</span><i class="ti ti-chevron-right ms-1"></i>
             </a>
           </div>
-          <a class="btn btn-sm btn-outline-primary"
-             th:href="@{/dailyreport/daily(mode='list')}">
-            <span th:text="#{main.daily.nav.today.text}">Heute</span>
-          </a>
-          <a th:if="${!listData.monthReleased and selectedContractId > 0 and listData != null}" class="btn btn-sm btn-outline-secondary"
-             th:href="@{/dailyreport/daily/fill-not-worked(month=${yearMonth.monthValue},year=${yearMonth.year})}">
-            <span th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</span>
-          </a>
+          <!--/* mirrors the mode toggle of the daily view, so the button that switches the mode sits
+                 at the same spot in both modes. Anything else here would be hit by the click that
+                 got the user into this view in the first place (#855) */-->
+          <div class="d-flex justify-content-center gap-2">
+            <a class="btn btn-sm btn-outline-primary"
+               th:href="@{/dailyreport/daily(mode='list')}">
+              <span th:text="#{main.general.month.current}">Aktueller Monat</span>
+            </a>
+            <a class="btn btn-sm btn-outline-secondary"
+               th:href="@{/dailyreport/daily(mode='daily',date=${dailyDate})}">
+              <i class="ti ti-calendar-event me-1"></i>
+              <span th:text="#{main.daily.mode.daily.text}">Tagesansicht</span>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -776,6 +782,19 @@
         <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
         <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
       </span>
+    </div>
+    <!--/* deliberately at the very end of the month, far away from the navigation: the action
+           touches every open workday of the month at once and can only be undone day by day (#855) */-->
+    <div class="card-footer d-flex justify-content-end"
+         th:if="${listData != null and !listData.monthReleased and selectedContractId > 0}">
+      <form method="post" th:action="@{/dailyreport/daily/fill-not-worked}"
+            th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
+        <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
+        <input type="hidden" name="year" th:value="${yearMonth.year}"/>
+        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                th:title="#{main.general.button.fillopenworkdaysnotworked.alttext.text}"
+                th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</button>
+      </form>
     </div>
       </div><!-- end day list card -->
 

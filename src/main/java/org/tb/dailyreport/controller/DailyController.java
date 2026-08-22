@@ -103,6 +103,10 @@ public class DailyController {
                 model.addAttribute("listData", dailyService.buildListView(yearMonth, ecId));
             }
             model.addAttribute("yearMonth", yearMonth);
+            // the day the "back to daily view" button jumps to: today while the current month is
+            // shown, its first day otherwise - a month the user browsed to has no "current" day
+            model.addAttribute("dailyDate",
+                yearMonth.equals(YearMonth.from(today)) ? today : yearMonth.atDay(1));
             model.addAttribute("prevMonth", prev.getMonthValue());
             model.addAttribute("prevYear", prev.getYear());
             model.addAttribute("nextMonth", next.getMonthValue());
@@ -432,7 +436,7 @@ public class DailyController {
         return "redirect:/dailyreport/daily?mode=daily&date=" + date;
     }
 
-    @GetMapping("/fill-not-worked")
+    @PostMapping("/fill-not-worked")
     public String fillNotWorked(
             @RequestParam(required = false) Long employeeContractId,
             @RequestParam Integer month,
