@@ -2,6 +2,8 @@ package org.tb.auth.service;
 
 import static java.time.LocalDate.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 import static org.tb.auth.domain.AccessLevel.READ;
@@ -128,6 +130,37 @@ class AuthServiceTest {
 
         // Assert
         assertEquals(true, authorized); // Assuming no matches in this case
+    }
+
+    @Test
+    void clearCacheForcesReloadOnNextAccess() {
+        // Arrange
+        when(authorizationRuleRepository.findAll()).thenReturn(List.of(newRule()));
+
+        // Act
+        authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ);
+        authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ);
+
+        // Assert - the second access is served from the cache, which has not expired yet
+        verify(authorizationRuleRepository, times(1)).findAll();
+
+        // Act - clearing the cache makes the next access reload, without waiting for the expiry
+        authService.clearCache();
+        authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ);
+
+        // Assert
+        verify(authorizationRuleRepository, times(2)).findAll();
+    }
+
+    private AuthorizationRule newRule() {
+        var rule = new AuthorizationRule();
+        rule.setObjectId(new HashSet<>());
+        rule.setValidFrom(of(2011, 1, 1));
+        rule.setGrantorId("test-grantor");
+        rule.setGranteeId(Set.of("auth-sign"));
+        rule.setCategory("TIMEREPORT");
+        rule.setAccessLevels(Set.of(READ));
+        return rule;
     }
 
 }
