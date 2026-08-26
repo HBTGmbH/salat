@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
@@ -37,6 +38,7 @@ import org.tb.common.SalatProperties;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.web.UiState;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -51,8 +53,10 @@ public class AuthService {
   private final UiState uiState;
 
   private long cacheExpiryMillis;
-  private Map<String, Set<Rule>> cacheEntries = new HashMap<>();
-  private long lastCacheUpdate;
+  // written by request threads on refresh and by clearCache() — the map is always replaced as a whole,
+  // so volatile is enough to make the change visible to other threads; no locking needed.
+  private volatile Map<String, Set<Rule>> cacheEntries = new HashMap<>();
+  private volatile long lastCacheUpdate;
 
   @PostConstruct
   public void init() {
@@ -76,6 +80,16 @@ public class AuthService {
       uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_STATUS, getStatusByLoginname(loginname));
     }
     applicationEventPublisher.publishEvent(new AuthorizedUserChangedEvent(this));
+  }
+
+  /**
+   * Invalidates the authorization rule cache. The rules are reloaded lazily by the next authorization check,
+   * so a rule maintained directly in the database takes effect without waiting for the cache to expire.
+   */
+  @Authorized(requiresManager = true)
+  public void clearCache() {
+    lastCacheUpdate = 0;
+    log.info("Authorization rule cache cleared by {}", authorizedUser.getLoginSign());
   }
 
   public String getStatusByLoginname(String loginname) {
