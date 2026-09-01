@@ -159,12 +159,17 @@ public class OrderPricingController {
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {
         model.addAttribute("pricingForm", form);
         model.addAttribute("isEdit", isEdit);
-        model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
+        model.addAttribute("customerorders",
+            customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
         model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
         model.addAttribute("employees", employeeService.getAllEmployees());
     }
 
-    /** The suborders of the selected customer order — empty while none is selected. */
+    /**
+     * The suborders of the selected customer order — empty while none is selected. Hidden ones are
+     * left out without exception: this list only prefills the pattern, which is kept in a text field
+     * of its own and therefore cannot be lost.
+     */
     private List<Suborder> subordersOf(String customerorderSign) {
         if (trimToNull(customerorderSign) == null) {
             return List.of();

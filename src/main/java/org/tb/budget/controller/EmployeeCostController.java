@@ -41,7 +41,8 @@ public class EmployeeCostController {
         model.addAttribute("assignments", employeeCostService.getAllAssignments());
         model.addAttribute("assignmentForm", new EmployeeCostAssignmentForm());
         model.addAttribute("employees", employeeService.getAllEmployees());
-        model.addAttribute("suborders", suborderService.getAllSuborders());
+        // Assignments can only be created and deleted, never edited, so no stored value has to be kept.
+        model.addAttribute("suborders", suborderService.getAllVisibleSuborders());
         return "budget/employee-cost-list";
     }
 

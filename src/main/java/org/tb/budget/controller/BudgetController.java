@@ -257,19 +257,25 @@ public class BudgetController {
     private void addFormModel(Model model, OrderBudgetForm form, boolean isEdit) {
         model.addAttribute("budgetForm", form);
         model.addAttribute("isEdit", isEdit);
-        model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
-        model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
+        model.addAttribute("customerorders",
+            customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
+        model.addAttribute("suborders",
+            subordersOf(form.getCustomerorderSign(), form.getSuborderSign()));
         model.addAttribute("progressModes", ProgressMode.values());
     }
 
-    /** The suborders of the selected customer order — empty while none is selected. */
-    private List<Suborder> subordersOf(String customerorderSign) {
+    /**
+     * The suborders of the selected customer order — empty while none is selected. The suborder the
+     * budget already references stays in the list even once it is hidden, so that editing does not
+     * drop it.
+     */
+    private List<Suborder> subordersOf(String customerorderSign, String keepSuborderSign) {
         if (trimToNull(customerorderSign) == null) {
             return List.of();
         }
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         return customerorder == null ? List.of()
-            : suborderService.getSubordersByCustomerorderId(customerorder.getId());
+            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
     }
 
 }

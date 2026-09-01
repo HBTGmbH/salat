@@ -97,6 +97,54 @@ public class SuborderServiceTest {
     assertThat(suborderService.existsSuborderMatching("co", "")).isTrue();
   }
 
+  /**
+   * Hidden suborders must not be offered, but the one a record already references has to stay in
+   * the list — otherwise editing that record silently drops the reference (#895).
+   */
+  @Test
+  public void should_leave_out_hidden_suborders() {
+    givenOrderWithHiddenChild();
+
+    assertThat(selectableSigns(null)).containsExactly("co/01");
+  }
+
+  @Test
+  public void should_keep_a_hidden_suborder_that_the_record_still_references() {
+    givenOrderWithHiddenChild();
+
+    assertThat(selectableSigns("co/01/02")).containsExactly("co/01", "co/01/02");
+  }
+
+  @Test
+  public void should_not_keep_a_hidden_suborder_that_is_not_the_referenced_one() {
+    givenOrderWithHiddenChild();
+
+    assertThat(selectableSigns("co/01")).containsExactly("co/01");
+  }
+
+  private List<String> selectableSigns(String keep) {
+    return suborderService.getSelectableSubordersByCustomerorderId(1L, keep).stream()
+        .map(Suborder::getCompleteOrderSign)
+        .toList();
+  }
+
+  private void givenOrderWithHiddenChild() {
+    var customerorder = mock(Customerorder.class);
+    when(customerorder.getSign()).thenReturn("co");
+
+    var parent = new Suborder();
+    parent.setCustomerorder(customerorder);
+    parent.setSign("01");
+    var child = new Suborder();
+    child.setCustomerorder(customerorder);
+    child.setParentorder(parent);
+    child.setSign("02");
+    child.setHide(true);
+
+    when(suborderDAO.getSubordersByCustomerorderId(anyLong(), anyBoolean()))
+        .thenReturn(List.of(parent, child));
+  }
+
   private void givenOrderWithNestedSuborder() {
     // Customerorder has no id setter, and getCompleteOrderSign() only needs the sign.
     var customerorder = mock(Customerorder.class);

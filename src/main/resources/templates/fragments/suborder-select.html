@@ -15,10 +15,13 @@
   <select class="form-select tomselect" id="suborderSign" name="suborderSign"
           th:disabled="${#lists.isEmpty(suborders)}">
     <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
+    <!-- A hidden suborder only appears when the record already references it; say so. -->
     <option th:each="so : ${suborders}"
             th:value="${so.completeOrderSign}"
             th:selected="${selected != null and selected == so.completeOrderSign}"
-            th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
+            th:text="${so.hide}
+                       ? |${so.completeOrderSign} - ${so.shortdescription} (#{main.general.hidden.suffix})|
+                       : |${so.completeOrderSign} - ${so.shortdescription}|"></option>
   </select>
 </div>
 
