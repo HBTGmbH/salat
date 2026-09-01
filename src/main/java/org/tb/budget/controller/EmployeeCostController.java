@@ -1,5 +1,7 @@
 package org.tb.budget.controller;
 
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -146,7 +148,7 @@ public class EmployeeCostController {
         var data = new EmployeeCostAssignmentData(
             form.getEmployeeCostName(),
             form.getEmployeeSign(),
-            blankToNull(form.getSuborderSign()),
+            trimToNull(form.getSuborderSign()),
             form.getValidFrom(),
             form.getValidUntil()
         );
@@ -178,10 +180,6 @@ public class EmployeeCostController {
     private void addCostFormModel(Model model, EmployeeCostForm form, boolean isEdit) {
         model.addAttribute("costForm", form);
         model.addAttribute("isEdit", isEdit);
-    }
-
-    private static String blankToNull(String s) {
-        return (s == null || s.isBlank()) ? null : s;
     }
 
 }

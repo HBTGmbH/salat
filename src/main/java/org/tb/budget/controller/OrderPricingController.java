@@ -1,5 +1,7 @@
 package org.tb.budget.controller;
 
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -98,9 +100,9 @@ public class OrderPricingController {
 
         var data = new OrderPricingData(
             form.getCustomerorderSign(),
-            blankToNull(form.getSuborderSign()),
-            blankToNull(form.getEmployeeSign()),
-            blankToNull(form.getDescription()),
+            trimToNull(form.getSuborderSign()),
+            trimToNull(form.getEmployeeSign()),
+            trimToNull(form.getDescription()),
             form.getPriceEuro().movePointRight(2).intValue(),
             form.getValidFrom(),
             form.getValidUntil()
@@ -143,10 +145,6 @@ public class OrderPricingController {
         model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
         model.addAttribute("suborders", suborderService.getAllSuborders());
         model.addAttribute("employees", employeeService.getAllEmployees());
-    }
-
-    private static String blankToNull(String s) {
-        return (s == null || s.isBlank()) ? null : s;
     }
 
 }

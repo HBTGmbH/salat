@@ -23,6 +23,11 @@ public class EmployeeCostAssignment extends AuditedEntity {
     @Column(name = "employee_sign", nullable = false)
     private String employeeSign;
 
+    /**
+     * The complete order sign of the suborder ({@code Suborder#getCompleteOrderSign()},
+     * e.g. {@code ORDER/01/02}) — not the bare {@code Suborder#getSign()}. {@code null} means the
+     * assignment applies regardless of suborder.
+     */
     @Column(name = "suborder_sign")
     private String suborderSign;
 

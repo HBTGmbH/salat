@@ -88,7 +88,7 @@
           <select class="form-select tomselect" th:field="*{suborderSign}">
             <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
             <option th:each="so : ${suborders}"
-                    th:value="${so.sign}"
+                    th:value="${so.completeOrderSign}"
                     th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
           </select>
         </div>

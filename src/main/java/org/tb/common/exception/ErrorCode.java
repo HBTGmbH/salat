@@ -109,6 +109,7 @@ public enum ErrorCode {
   BU_EMPLOYEE_COST_ASSIGNMENT_OVERLAP("BU-0008", "overlapping employee cost assignment exists for same scope"),
   BU_EMPLOYEE_COST_NOT_FOUND("BU-0004", "employee cost not found"),
   BU_EMPLOYEE_COST_ASSIGNMENT_NOT_FOUND("BU-0005", "employee cost assignment not found"),
+  BU_SUBORDER_NOT_IN_ORDER("BU-0009", "suborder sign does not belong to the given customer order"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

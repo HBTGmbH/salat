@@ -1,0 +1,91 @@
+package org.tb.order.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+import org.tb.common.command.CommandPublisher;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Suborder;
+import org.tb.order.persistence.SuborderDAO;
+import org.tb.order.persistence.SuborderRepository;
+
+/**
+ * Budget, pricing and cost records reference their suborder by complete order sign (#889). These
+ * tests pin the check that rejects a sign that does not belong to the chosen customer order.
+ */
+@DisplayNameGeneration(ReplaceUnderscores.class)
+public class SuborderServiceTest {
+
+  private SuborderDAO suborderDAO;
+  private CustomerorderService customerorderService;
+  private SuborderService suborderService;
+
+  @BeforeEach
+  public void setUp() {
+    suborderDAO = mock(SuborderDAO.class);
+    customerorderService = mock(CustomerorderService.class);
+    suborderService = new SuborderService(
+        mock(ApplicationEventPublisher.class),
+        mock(CommandPublisher.class),
+        suborderDAO,
+        mock(SuborderRepository.class),
+        customerorderService);
+  }
+
+  @Test
+  public void should_accept_the_complete_order_sign_of_a_nested_suborder() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.existsByCompleteOrderSign("co", "co/01/02")).isTrue();
+  }
+
+  @Test
+  public void should_reject_the_bare_suborder_sign() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.existsByCompleteOrderSign("co", "02")).isFalse();
+  }
+
+  @Test
+  public void should_reject_a_sign_that_belongs_to_another_customer_order() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.existsByCompleteOrderSign("co", "other/01/02")).isFalse();
+  }
+
+  @Test
+  public void should_reject_when_the_customer_order_does_not_exist() {
+    when(customerorderService.getCustomerorderBySign("co")).thenReturn(null);
+
+    assertThat(suborderService.existsByCompleteOrderSign("co", "co/01/02")).isFalse();
+  }
+
+  private void givenOrderWithNestedSuborder() {
+    // Customerorder has no id setter, and getCompleteOrderSign() only needs the sign.
+    var customerorder = mock(Customerorder.class);
+    when(customerorder.getId()).thenReturn(1L);
+    when(customerorder.getSign()).thenReturn("co");
+
+    var parent = new Suborder();
+    parent.setCustomerorder(customerorder);
+    parent.setSign("01");
+    var child = new Suborder();
+    child.setCustomerorder(customerorder);
+    child.setParentorder(parent);
+    child.setSign("02");
+
+    when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
+    when(suborderDAO.getSubordersByCustomerorderId(anyLong(), anyBoolean()))
+        .thenReturn(List.of(parent, child));
+  }
+
+}

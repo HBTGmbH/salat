@@ -20,6 +20,11 @@ public class OrderPricing extends AuditedEntity {
     @Column(name = "customerorder_sign", nullable = false)
     private String customerorderSign;
 
+    /**
+     * The complete order sign of the suborder ({@code Suborder#getCompleteOrderSign()},
+     * e.g. {@code ORDER/01/02}) — not the bare {@code Suborder#getSign()}. {@code null} means the
+     * price applies to the whole customer order.
+     */
     @Column(name = "suborder_sign")
     private String suborderSign;
 
