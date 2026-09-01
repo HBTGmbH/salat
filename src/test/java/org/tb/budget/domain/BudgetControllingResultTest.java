@@ -53,6 +53,31 @@ public class BudgetControllingResultTest {
     assertThat(result.hasPlannedData()).isFalse();
   }
 
+  /** Booked time, budget or planned hours — any one of them makes the row worth showing. */
+  @Test
+  public void should_treat_a_row_as_empty_only_without_time_budget_and_planned_hours() {
+    assertThat(empty(Duration.ZERO, Duration.ZERO, BigDecimal.ZERO).hasContent()).isFalse();
+
+    assertThat(empty(Duration.ofHours(3), Duration.ZERO, BigDecimal.ZERO).hasContent()).isTrue();
+    assertThat(empty(Duration.ZERO, Duration.ofHours(40), BigDecimal.ZERO).hasContent()).isTrue();
+    assertThat(empty(Duration.ZERO, Duration.ZERO, new BigDecimal("100")).hasContent()).isTrue();
+  }
+
+  private static BudgetControllingRow empty(Duration booked, Duration planned, BigDecimal budget) {
+    return new BudgetControllingRow("co/01", "label", true, planned, booked,
+        budget, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null, null, null, null, null);
+  }
+
+  /** Revenue and cost are derived from booked time, so they cannot make an otherwise empty row real. */
+  @Test
+  public void should_still_be_empty_when_only_derived_figures_are_zero() {
+    var derivedOnly = new BudgetControllingRow("co/01", "label", true, Duration.ZERO, Duration.ZERO,
+        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        Duration.ZERO, BigDecimal.ZERO, null, null, null, null);
+
+    assertThat(derivedOnly.hasContent()).isFalse();
+  }
+
   private static BudgetControllingResult result(BudgetControllingRow... suborderRows) {
     return new BudgetControllingResult(row(Duration.ZERO), List.of(suborderRows), false);
   }

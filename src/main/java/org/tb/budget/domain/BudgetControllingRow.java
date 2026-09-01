@@ -103,6 +103,15 @@ public record BudgetControllingRow(
             .multiply(BigDecimal.valueOf(100)).doubleValue();
     }
 
+    /**
+     * Whether the row says anything at all. Without booked time, budget and planned hours there is
+     * nothing left to report — revenue, cost and forecast are all derived from those — so the row
+     * would only be a line of dashes.
+     */
+    public boolean hasContent() {
+        return hasBooked() || hasBudget() || hasPlanned();
+    }
+
     public boolean hasProgress() { return progressPercent != null; }
 
     public String progressFormatted() {

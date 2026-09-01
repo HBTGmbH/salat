@@ -55,9 +55,12 @@ public class BudgetControllingServiceTest {
 
     var billed = suborder(customerorder, "01", 'Y', 10L);
     var unbilled = suborder(customerorder, "02", 'N', 20L);
+    // No time reports, no budget, no planned hours — nothing to report about it.
+    var untouched = suborder(customerorder, "03", 'Y', 30L);
 
     when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
-    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(billed, unbilled));
+    when(suborderService.getSubordersByCustomerorderId(anyLong()))
+        .thenReturn(List.of(billed, unbilled, untouched));
     when(publicholidayService.getPublicHolidaysBetween(any(), any())).thenReturn(List.of());
     when(orderBudgetRepository.findByCustomerorderSign("co")).thenReturn(List.of());
     when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
@@ -106,6 +109,24 @@ public class BudgetControllingServiceTest {
   @FixedClock("2026-06-15T10:00:00")
   public void should_count_only_the_invoiceable_suborder_in_the_order_total() {
     assertThat(compute().total().revenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /** A suborder with no booked time, no budget and no planned hours is only a row of dashes (#901). */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_leave_out_suborders_without_time_budget_and_planned_hours() {
+    var signs = compute().suborderRows().stream().map(BudgetControllingRow::sign).toList();
+
+    assertThat(signs).containsExactly("co/01", "co/02");
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_keep_the_order_total_unchanged_by_the_omitted_rows() {
+    var total = compute().total();
+
+    assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(16));
+    assertThat(total.revenueEuro()).isEqualByComparingTo("800.00");
   }
 
   private BudgetControllingRow row(String completeOrderSign) {
