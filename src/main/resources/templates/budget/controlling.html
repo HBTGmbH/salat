@@ -50,7 +50,8 @@
         <tr>
           <th th:text="#{main.controlling.col.order}">Auftrag</th>
           <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
-          <th class="text-end" th:text="#{main.controlling.col.percent}">Verbrauch</th>
+          <th class="text-end" th:if="${result.hasPlannedData()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
+          <th class="text-end" th:if="${result.hasPlannedData()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
           <th class="text-end" th:text="#{main.controlling.col.budget}">Budget (€)</th>
           <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
           <th class="text-end" th:if="${result.total().hasUncoveredRevenue()}" th:text="#{main.controlling.col.uncovered}">Ungedeckt (€)</th>
@@ -64,8 +65,8 @@
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(result.suborderRows())}">
-          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, mgr=${isManager} ? 3 : 0, prg=${result.hasProgressData()} ? 2 : 0"
-              th:colspan="${6 + unc + mgr + prg}"
+          <td th:with="unc=${result.total().hasUncoveredRevenue()} ? 1 : 0, mgr=${isManager} ? 3 : 0, prg=${result.hasProgressData()} ? 2 : 0, pln=${result.hasPlannedData()} ? 2 : 0"
+              th:colspan="${5 + pln + unc + mgr + prg}"
               class="text-center text-muted py-3"
               th:text="#{main.controlling.no.suborders}">Keine Subaufträge</td>
         </tr>
@@ -77,7 +78,8 @@
             <span class="ms-1 small" th:text="${row.label()}"></span>
           </td>
           <td class="text-end small" th:text="${row.bookedHoursFormatted()}"></td>
-          <td class="text-end small"
+          <td class="text-end small" th:if="${result.hasPlannedData()}" th:text="${row.plannedHoursFormatted()}"></td>
+          <td class="text-end small" th:if="${result.hasPlannedData()}"
               th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
@@ -110,7 +112,8 @@
             <span class="text-muted fw-normal small ms-1" th:text="${row.label()}"></span>
           </td>
           <td class="text-end" th:text="${row.bookedHoursFormatted()}"></td>
-          <td class="text-end"
+          <td class="text-end" th:if="${result.hasPlannedData()}" th:text="${row.plannedHoursFormatted()}"></td>
+          <td class="text-end" th:if="${result.hasPlannedData()}"
               th:classappend="${row.bookedPercent() > 100} ? 'text-danger' : (${row.bookedPercent() > 80} ? 'text-warning' : '')"
               th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
           <td class="text-end" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
