@@ -54,14 +54,16 @@
                      th:style="'width: ' + ${#numbers.formatDecimal(row.progressBarPercent(), 1, 0)} + '%'">
                 </div>
               </div>
-              <small class="text-muted" th:classappend="${row.isOverBudget()} ? 'text-danger' : ''"
+              <!-- th:class, not classappend: text-muted would otherwise override text-danger. -->
+              <small th:class="${row.isOverBudget()} ? 'text-danger fw-bold' : 'text-muted'"
                      th:text="${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)} + ' %'"></small>
             </div>
             <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
           </td>
           <td class="text-end small" th:text="${row.hasAlertThreshold()} ? (${row.alertThresholdPercent()} + ' %') : '—'"></td>
           <td class="text-center">
-            <span th:if="${row.isOverBudget()}" class="badge bg-danger" th:text="#{main.budget.dashboard.status.overbudget}">Überbucht</span>
+            <!-- text-white is needed: on the solid red the inherited text colour is unreadable. -->
+            <span th:if="${row.isOverBudget()}" class="badge bg-danger text-white" th:text="#{main.budget.dashboard.status.overbudget}">Überbucht</span>
             <span th:if="${!row.isOverBudget() and row.isAboveThreshold()}" class="badge bg-warning-lt" th:text="#{main.budget.dashboard.status.alert}">Alert</span>
             <span th:if="${row.hasBudget() and !row.isOverBudget() and !row.isAboveThreshold() and row.hasAlertThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
             <span th:if="${!row.hasBudget() or (!row.hasAlertThreshold() and !row.isOverBudget())}" class="text-muted">—</span>
