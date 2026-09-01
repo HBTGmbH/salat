@@ -36,6 +36,11 @@ public class OrderBudgetService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrderBudget> getAllActive() {
+        return orderBudgetRepository.findAllActiveWithAdjustments();
+    }
+
+    @Transactional(readOnly = true)
     public List<OrderBudget> getByCustomerorderSign(String customerorderSign) {
         return orderBudgetRepository.findByCustomerorderSign(customerorderSign);
     }

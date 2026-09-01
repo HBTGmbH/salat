@@ -1,5 +1,7 @@
 package org.tb.budget.service;
 
+import static java.util.Comparator.naturalOrder;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
@@ -7,9 +9,10 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -19,10 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
+import org.tb.budget.domain.EmployeeCostLookup;
 import org.tb.budget.domain.ForecastStatus;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetScopeEntry;
+import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.domain.ProgressStatus;
 import org.tb.budget.persistence.OrderBudgetRepository;
@@ -30,6 +35,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -60,6 +66,11 @@ public class BudgetControllingService {
         var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
         var budgets = orderBudgetRepository.findByCustomerorderSign(customerorderSign);
 
+        // Rates and costs are resolved once per time report. Loading both tables up front keeps
+        // that in memory instead of issuing up to five statements per report.
+        var pricingLookup = orderPricingService.lookupFor(List.of(customerorderSign));
+        var costLookup = includeCosts ? employeeCostService.lookup() : null;
+
         Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
             .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
 
@@ -83,8 +94,8 @@ public class BudgetControllingService {
         for (var suborder : suborders) {
             var reports = bySuborder.getOrDefault(suborder.getId(), List.of());
             var booked = sumDuration(reports);
-            var revenue = computeRevenue(reports, customerorderSign, suborder.getSign());
-            var cost = includeCosts ? computeCost(reports, suborder.getSign()) : null;
+            var revenue = computeRevenue(reports, customerorderSign, suborder.getSign(), pricingLookup);
+            var cost = includeCosts ? computeCost(reports, suborder.getSign(), costLookup) : null;
             var suborderBudgets = budgets.stream()
                 .filter(b -> suborder.getSign().equals(b.getSuborderSign()))
                 .toList();
@@ -92,18 +103,15 @@ public class BudgetControllingService {
             var effectiveBudgets = hasOwnBudget ? suborderBudgets : orderLevelBudgets;
             var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
             var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
-                (start, end) -> computeRevenue(
-                    reports.stream()
-                        .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
-                        .toList(),
-                    customerorderSign, suborder.getSign()),
+                (start, end) -> computeRevenue(inRange(reports, start, end),
+                    customerorderSign, suborder.getSign(), pricingLookup),
                 from, until);
 
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
             BigDecimal forecastUncoveredRevenue = null;
             if (forecastAvailable) {
-                var fc = forecast(booked, coveredRevenue, customerorderSign, suborder.getSign(), from, until, today, holidays, effectiveBudgets);
+                var fc = forecast(booked, coveredRevenue, customerorderSign, suborder.getSign(), from, until, today, holidays, effectiveBudgets, pricingLookup);
                 forecastHours = fc.hours();
                 forecastRevenue = fc.coveredRevenue();
                 forecastUncoveredRevenue = fc.uncoveredRevenue();
@@ -177,7 +185,60 @@ public class BudgetControllingService {
         }
     }
 
+    /** Utilization of a budget plus the short description of its customer order. */
+    public record BudgetUtilization(UtilizationInfo info, String customerorderDescription) {}
+
     public UtilizationInfo computeUtilizationInfo(OrderBudget budget) {
+        return computeUtilizationInfo(budget,
+            loadOrderData(budget.getCustomerorderSign(), List.of(budget)),
+            orderPricingService.lookupFor(List.of(budget.getCustomerorderSign())));
+    }
+
+    /**
+     * Utilization for several budgets at once. Budgets on the same customer order share one set of
+     * customer order, suborder and time report queries, and all of them share one pricing lookup —
+     * resolving each budget on its own multiplied every one of those by the number of budgets.
+     */
+    public Map<Long, BudgetUtilization> computeUtilizationInfos(List<OrderBudget> budgets) {
+        var pricingLookup = orderPricingService.lookupFor(
+            budgets.stream().map(OrderBudget::getCustomerorderSign).distinct().toList());
+        Map<String, OrderData> orderDataBySign = new HashMap<>();
+        Map<Long, BudgetUtilization> result = new LinkedHashMap<>();
+        for (var budget : budgets) {
+            var orderData = orderDataBySign.computeIfAbsent(budget.getCustomerorderSign(),
+                sign -> loadOrderData(sign, budgets));
+            result.put(budget.getId(), new BudgetUtilization(
+                computeUtilizationInfo(budget, orderData, pricingLookup),
+                orderData.customerorder().getShortdescription()));
+        }
+        return result;
+    }
+
+    /** Customer order, its visible suborders and its time reports grouped by suborder. */
+    private record OrderData(Customerorder customerorder, List<Suborder> suborders,
+                             Map<Long, List<TimereportDTO>> reportsBySuborder) {}
+
+    /**
+     * Loads the data of one customer order over the union of the validity ranges of all its budgets.
+     * Every budget filters the reports down to its own range again, so the wider range does not
+     * change any result.
+     */
+    private OrderData loadOrderData(String customerorderSign, List<OrderBudget> budgets) {
+        var ownBudgets = budgets.stream()
+            .filter(b -> customerorderSign.equals(b.getCustomerorderSign()))
+            .toList();
+        var from = ownBudgets.stream().map(OrderBudget::getValidFrom).min(naturalOrder()).orElseThrow();
+        var until = ownBudgets.stream().map(OrderBudget::getValidUntil).max(naturalOrder()).orElseThrow();
+
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
+        var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
+        return new OrderData(customerorder, suborders,
+            timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)));
+    }
+
+    private UtilizationInfo computeUtilizationInfo(OrderBudget budget, OrderData orderData,
+                                                   OrderPricingLookup pricingLookup) {
         var from = budget.getValidFrom();
         var until = budget.getValidUntil();
         var coSign = budget.getCustomerorderSign();
@@ -185,38 +246,24 @@ public class BudgetControllingService {
 
         var effectiveBudget = computeEffectiveBudget(List.of(budget), from, until);
 
-        var customerorder = customerorderService.getCustomerorderBySign(coSign);
-        var allTimereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
-        var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
-
         BigDecimal coveredRevenue;
         if (soSign == null || soSign.isBlank()) {
-            Map<Long, List<TimereportDTO>> bySuborder = allTimereports.stream()
-                .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
             coveredRevenue = BigDecimal.ZERO;
-            for (var so : suborders) {
-                var reports = bySuborder.getOrDefault(so.getId(), List.of());
+            for (var so : orderData.suborders()) {
+                var reports = orderData.reportsBySuborder().getOrDefault(so.getId(), List.of());
                 coveredRevenue = coveredRevenue.add(computeCoveredRevenue(List.of(budget),
-                    (start, end) -> computeRevenue(
-                        reports.stream()
-                            .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
-                            .toList(),
-                        coSign, so.getSign()),
+                    (start, end) -> computeRevenue(inRange(reports, start, end), coSign, so.getSign(), pricingLookup),
                     from, until));
             }
         } else {
-            var soId = suborders.stream()
+            var soId = orderData.suborders().stream()
                 .filter(s -> soSign.equals(s.getSign()))
-                .map(s -> s.getId())
+                .map(Suborder::getId)
                 .findFirst().orElse(null);
-            var reports = soId == null ? List.<TimereportDTO>of() :
-                allTimereports.stream().filter(r -> Objects.equals(r.getSuborderId(), soId)).toList();
+            var reports = soId == null ? List.<TimereportDTO>of()
+                : orderData.reportsBySuborder().getOrDefault(soId, List.of());
             coveredRevenue = computeCoveredRevenue(List.of(budget),
-                (start, end) -> computeRevenue(
-                    reports.stream()
-                        .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
-                        .toList(),
-                    coSign, soSign),
+                (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soSign, pricingLookup),
                 from, until);
         }
 
@@ -228,7 +275,8 @@ public class BudgetControllingService {
     private ForecastData forecast(Duration booked, BigDecimal coveredRevenue,
                                   String coSign, String soSign,
                                   LocalDate from, LocalDate until, LocalDate today,
-                                  Set<LocalDate> holidays, List<OrderBudget> effectiveBudgets) {
+                                  Set<LocalDate> holidays, List<OrderBudget> effectiveBudgets,
+                                  OrderPricingLookup pricingLookup) {
         var elapsedEnd = today.isBefore(until) ? today : until;
         var elapsed = workingDays(from, elapsedEnd, holidays);
         if (elapsed <= 0) return new ForecastData(Duration.ZERO, coveredRevenue, BigDecimal.ZERO);
@@ -250,7 +298,7 @@ public class BudgetControllingService {
         var forecastMinutes = (long) (burnMinutesPerDay * (remainingCovered + remainingUncovered));
         var forecastHours = Duration.ofMinutes(forecastMinutes);
 
-        var effectiveRate = orderPricingService.findEffectiveRate(coSign, soSign, null, today);
+        var effectiveRate = pricingLookup.findEffectiveRate(coSign, soSign, null, today);
         if (effectiveRate.isEmpty()) return new ForecastData(forecastHours, null, null);
 
         var revenuePerDay = minutesToHours((long) burnMinutesPerDay)
@@ -321,11 +369,18 @@ public class BudgetControllingService {
             .reduce(Duration.ZERO, Duration::plus);
     }
 
-    private BigDecimal computeRevenue(List<TimereportDTO> reports, String coSign, String soSign) {
+    private static List<TimereportDTO> inRange(List<TimereportDTO> reports, LocalDate start, LocalDate end) {
+        return reports.stream()
+            .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
+            .toList();
+    }
+
+    private BigDecimal computeRevenue(List<TimereportDTO> reports, String coSign, String soSign,
+                                      OrderPricingLookup pricingLookup) {
         return reports.stream()
             .map(r -> {
                 var hours = minutesToHours(r.getDuration().toMinutes());
-                return orderPricingService
+                return pricingLookup
                     .findEffectiveRate(coSign, soSign, r.getEmployeeSign(), r.getReferenceday())
                     .map(p -> hours.multiply(new BigDecimal(p.getPriceCentsPerHour())).movePointLeft(2))
                     .orElse(BigDecimal.ZERO);
@@ -334,11 +389,11 @@ public class BudgetControllingService {
     }
 
     @Authorized(requiresManager = true)
-    BigDecimal computeCost(List<TimereportDTO> reports, String soSign) {
+    BigDecimal computeCost(List<TimereportDTO> reports, String soSign, EmployeeCostLookup costLookup) {
         return reports.stream()
             .map(r -> {
                 var hours = minutesToHours(r.getDuration().toMinutes());
-                return employeeCostService
+                return costLookup
                     .findEffectiveCost(r.getEmployeeSign(), soSign, r.getReferenceday())
                     .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
                     .orElse(BigDecimal.ZERO);

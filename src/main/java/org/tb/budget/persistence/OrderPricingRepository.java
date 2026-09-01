@@ -1,6 +1,7 @@
 package org.tb.budget.persistence;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -16,6 +17,8 @@ public interface OrderPricingRepository
     List<OrderPricing> findAllByOrderByCustomerorderSignAscValidFromAsc();
 
     List<OrderPricing> findByCustomerorderSign(String customerorderSign);
+
+    List<OrderPricing> findByCustomerorderSignInOrderByIdAsc(Collection<String> customerorderSigns);
 
     @Query("""
         SELECT p FROM OrderPricing p

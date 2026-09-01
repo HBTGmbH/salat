@@ -79,7 +79,40 @@ pufferte bereits — der Puffer fehlte nur an einer Stelle.
 Feld gepuffert. Dabei nur den teuren Zugriff puffern, nicht die gesamte Methode, damit
 Vorrangregeln (z. B. `UiState` vor DB-Fallback) erhalten bleiben.
 
-## 5. Was Datenbank-Wartung nicht behebt
+## 5. Stammdaten-Lookups gehören vor die Schleife, nicht in sie
+
+**Regel:** Wird für jede Zeile einer Ergebnismenge ein Stammdatensatz nachgeschlagen, muss die
+Nachschlagetabelle einmal geladen und im Speicher aufgelöst werden — nicht per Query pro Zeile.
+
+Betroffen ist jede Methode nach dem Muster `findEffective…(key, date)`: ein Aufruf pro Zeitbuchung,
+und wegen der Fallback-Hierarchie bis zu drei Statements pro Aufruf. Auf `order_pricing` mit 283
+Zeilen ist die Tabelle klein — die Zeilenzahl, die dagegen aufgelöst wird, ist es nicht.
+
+Gemessener Fall: `/budget/dashboard` löste über 30 aktive Budgetpläne 13.318 Zeitbuchungen auf und
+erzeugte damit **37.359 `select … from order_pricing`** von insgesamt 38.871 Statements. Ersetzt
+durch `OrderPricingLookup`/`EmployeeCostLookup` (einmal laden, `Map` nach Schlüssel, Datumsfilter im
+Speicher): 1 Statement.
+
+Die Fallback-Hierarchie und der Datumsfilter wandern damit aus JPQL nach Java — beides gehört
+getestet, sonst verschiebt der Umbau stillschweigend die Semantik. Voraussetzung ist, dass sich
+Gültigkeitszeiträume nicht überlappen; das erzwingen die `checkNoOverlap`-Prüfungen beim Speichern.
+
+## 6. Pro-Zeile-Services in einen Batch-Aufruf zusammenfassen
+
+Ein Service, der eine einzelne Entity auswertet, lädt seine Nachbardaten selbst. Über eine Liste
+aufgerufen, multipliziert das jede dieser Ladungen mit der Listenlänge.
+
+Gemessener Fall: `computeUtilizationInfo(budget)` lud Kundenauftrag, Unteraufträge und
+Zeitbuchungen. Das Dashboard rief es je aktivem Budgetplan auf — bei mehreren Plänen auf demselben
+Auftrag dieselben Daten mehrfach. `computeUtilizationInfos(List)` teilt sie jetzt pro Auftragsschlüssel
+und lädt den Pricing-Lookup einmal für alle.
+
+**Regel:** Neben die Einzelmethode eine Batch-Variante stellen, die die gemeinsamen Ladevorgänge
+außerhalb der Schleife erledigt, und Listen-Aufrufer darauf umstellen. Die Einzelmethode bleibt für
+Einzelfälle (z. B. `BudgetAlertService`) bestehen und delegiert auf denselben Rechenkern, damit
+Einzel- und Batch-Pfad nicht auseinanderlaufen.
+
+## 7. Was Datenbank-Wartung nicht behebt
 
 `ANALYZE TABLE` und `OPTIMIZE TABLE` wurden auf dem Produktionsdatenabzug gemessen:
 
@@ -97,7 +130,17 @@ Kleine Stichproben täuschen: Bei einer Streuung von sd ≈ 0,4 s sind 12 Messun
 eine Verbesserung von 6 % von Rauschen zu unterscheiden. Mindestens 30 Messungen nach Warmlauf,
 und Mittelwert immer mit Standardfehler angeben.
 
-## 6. Lokale Verfälschungsfaktoren
+`/budget/dashboard` nach den Fixes 5–6, gleiche Methodik:
+
+| | Statements | Antwortzeit |
+|---|---|---|
+| Ausgangslage | 38.871 | 30,086 s ± 0,643 (n=10) |
+| nach den Code-Fixes 5–6 | 1.245 | **1,057 s ± 0,005** (n=30) |
+
+Hier reichten 10 Messungen für die Ausgangslage: bei sd ≈ 2 s ist ein Faktor 28 kein Rauschen.
+Das ist die Ausnahme, nicht die Regel — je kleiner der erwartete Effekt, desto näher an n=30.
+
+## 8. Lokale Verfälschungsfaktoren
 
 * Der `testdb`-Container läuft mit `innodb_buffer_pool_size=128M` — bei ~485 MB
   Produktionsdaten der größte lokale Störfaktor.

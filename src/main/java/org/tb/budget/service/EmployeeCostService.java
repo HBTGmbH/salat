@@ -11,6 +11,7 @@ import org.tb.budget.domain.EmployeeCost;
 import org.tb.budget.domain.EmployeeCostAssignment;
 import org.tb.budget.domain.EmployeeCostAssignmentData;
 import org.tb.budget.domain.EmployeeCostData;
+import org.tb.budget.domain.EmployeeCostLookup;
 import org.tb.budget.persistence.EmployeeCostAssignmentRepository;
 import org.tb.budget.persistence.EmployeeCostRepository;
 import org.tb.common.exception.BusinessRuleException;
@@ -45,6 +46,18 @@ public class EmployeeCostService {
     @Transactional(readOnly = true)
     public List<EmployeeCostAssignment> getAssignmentsByName(String employeeCostName) {
         return assignmentRepository.findByEmployeeCostName(employeeCostName);
+    }
+
+    /**
+     * Loads all assignments and costs into an in-memory lookup. Use this instead of
+     * {@link #findEffectiveCost} whenever costs are resolved for more than a handful of reports —
+     * per-report resolution costs two statements per report.
+     */
+    @Transactional(readOnly = true)
+    public EmployeeCostLookup lookup() {
+        return EmployeeCostLookup.of(
+            assignmentRepository.findAllByOrderByEmployeeCostNameAscEmployeeSignAsc(),
+            employeeCostRepository.findAllByOrderByNameAscValidFromAsc());
     }
 
     /**
