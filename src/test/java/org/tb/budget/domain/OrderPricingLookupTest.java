@@ -103,9 +103,9 @@ public class OrderPricingLookupTest {
   }
 
   /**
-   * The suborder key is the complete order sign, not the bare {@code Suborder.sign} (#889). The
-   * lookup treats the key as opaque, so a mismatch does not fail — it silently degrades to the
-   * order-wide rate. These two tests pin the format that both sides have to agree on.
+   * The suborder side is the complete order sign, not the bare {@code Suborder.sign} (#889). A
+   * mismatch does not fail — it silently degrades to the order-wide rate — so these two tests pin
+   * the format that both sides have to agree on.
    */
   @Test
   public void should_resolve_a_rate_keyed_by_the_complete_order_sign_of_a_nested_suborder() {
@@ -125,6 +125,98 @@ public class OrderPricingLookupTest {
         pricing("co", "02", null, 200)));
 
     assertThat(rate(lookup, "co", suborder.getCompleteOrderSign(), null)).isEqualTo(100);
+  }
+
+  /**
+   * {@code suborderSign} is an SQL {@code LIKE} pattern matched against the complete order sign with
+   * a trailing slash, the way the reporting SQL does it (#891). These tests pin that rule, the
+   * specificity ranking it makes necessary, and the employee side that deliberately stays exact.
+   */
+  @Test
+  public void should_match_a_subtree_pattern_against_the_suborder_itself_and_its_descendants() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 100),
+        pricing("co", "co/01/", null, 200)));
+
+    assertThat(rate(lookup, "co", "co/01", null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02", null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02/03", null)).isEqualTo(200);
+  }
+
+  @Test
+  public void should_not_let_a_subtree_pattern_spill_over_into_a_sibling_with_a_longer_sign() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 100),
+        pricing("co", "co/01/", null, 200)));
+
+    // Without the trailing slash "co/01" would also prefix-match "co/010".
+    assertThat(rate(lookup, "co", "co/010", null)).isEqualTo(100);
+  }
+
+  @Test
+  public void should_treat_percent_as_a_wildcard_and_underscore_as_a_single_character() {
+    var percent = OrderPricingLookup.of(List.of(pricing("co", "co/%/02/", null, 200)));
+    assertThat(rate(percent, "co", "co/01/02", null)).isEqualTo(200);
+    assertThat(rate(percent, "co", "co/99/02", null)).isEqualTo(200);
+    assertThat(rate(percent, "co", "co/01/03", null)).isNull();
+
+    var underscore = OrderPricingLookup.of(List.of(pricing("co", "co/0_/", null, 200)));
+    assertThat(rate(underscore, "co", "co/01", null)).isEqualTo(200);
+    assertThat(rate(underscore, "co", "co/012", null)).isNull();
+  }
+
+  @Test
+  public void should_treat_regex_metacharacters_in_the_pattern_as_literal_text() {
+    var lookup = OrderPricingLookup.of(List.of(pricing("co", "co/a.c+(x)/", null, 200)));
+
+    assertThat(rate(lookup, "co", "co/a.c+(x)", null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/abcx", null)).isNull();
+  }
+
+  @Test
+  public void should_prefer_the_longest_matching_pattern() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", "co/", null, 100),
+        pricing("co", "co/01/", null, 200),
+        pricing("co", "co/01/02/", null, 300)));
+
+    assertThat(rate(lookup, "co", "co/01/02", null)).isEqualTo(300);
+    assertThat(rate(lookup, "co", "co/01/09", null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/07", null)).isEqualTo(100);
+  }
+
+  @Test
+  public void should_prefer_an_employee_specific_rate_over_a_more_specific_suborder_pattern() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", "co/01/02/", null, 300),
+        pricing("co", "co/", "emp", 200)));
+
+    assertThat(rate(lookup, "co", "co/01/02", "emp")).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02", "other")).isEqualTo(300);
+  }
+
+  /**
+   * The chain used to try (order, suborder, employee), (order, suborder) and (order) only, so an
+   * employee-specific rate without a suborder was never found — that was the majority of the rows.
+   */
+  @Test
+  public void should_resolve_an_employee_specific_rate_that_applies_to_the_whole_order() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 100),
+        pricing("co", null, "emp", 200)));
+
+    assertThat(rate(lookup, "co", "co/01/02", "emp")).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02", "other")).isEqualTo(100);
+  }
+
+  @Test
+  public void should_match_the_employee_sign_exactly_rather_than_by_prefix() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 100),
+        pricing("co", null, "AB", 200)));
+
+    assertThat(rate(lookup, "co", "co/01", "AB")).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01", "ABC")).isEqualTo(100);
   }
 
   /** Returns the child of {@code customerorderSign/parentSign/childSign}. */

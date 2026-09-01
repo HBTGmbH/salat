@@ -2,6 +2,7 @@ package org.tb.budget.controller;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.tb.budget.service.OrderPricingService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.employee.service.EmployeeService;
+import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
@@ -139,12 +141,37 @@ public class OrderPricingController {
         return "redirect:/budget/pricing";
     }
 
+    /**
+     * Refills the suborder picker when the customer order changes. The picker only prefills the
+     * pattern, but offering the suborders of every order would make it useless — and it is a list of
+     * several thousand entries.
+     */
+    @Authorized(requiresManager = true)
+    @PostMapping("/suborders")
+    public String suborders(@ModelAttribute("pricingForm") OrderPricingForm form, Model model,
+                            HttpServletRequest request) {
+        addFormModel(model, form, !form.isNew());
+        model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
+        model.addAttribute("subordersChanged", true);
+        return "budget/pricing-form";
+    }
+
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {
         model.addAttribute("pricingForm", form);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
-        model.addAttribute("suborders", suborderService.getAllSuborders());
+        model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
         model.addAttribute("employees", employeeService.getAllEmployees());
+    }
+
+    /** The suborders of the selected customer order — empty while none is selected. */
+    private List<Suborder> subordersOf(String customerorderSign) {
+        if (trimToNull(customerorderSign) == null) {
+            return List.of();
+        }
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        return customerorder == null ? List.of()
+            : suborderService.getSubordersByCustomerorderId(customerorder.getId());
     }
 
 }

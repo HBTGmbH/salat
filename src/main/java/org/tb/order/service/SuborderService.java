@@ -24,6 +24,7 @@ import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
+import org.tb.common.util.SqlLikePattern;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.SuborderDTO;
 import org.tb.order.domain.Suborder;
@@ -273,16 +274,29 @@ public class SuborderService {
 
   /**
    * Whether a suborder with the given complete order sign exists below the customer order with the
-   * given sign. Budget, pricing and cost records reference their suborder by that sign instead of
-   * by id, so they need this to reject a sign that does not belong to the chosen customer order.
+   * given sign. Budget and cost records reference their suborder by that sign instead of by id, so
+   * they need this to reject a sign that does not belong to the chosen customer order.
    */
   public boolean existsByCompleteOrderSign(String customerorderSign, String completeOrderSign) {
-    var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
-    if (customerorder == null) {
-      return false;
-    }
-    return getSubordersByCustomerorderId(customerorder.getId()).stream()
+    return subordersOf(customerorderSign).stream()
         .anyMatch(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()));
+  }
+
+  /**
+   * Whether the given {@code LIKE} pattern covers at least one suborder below the customer order
+   * with the given sign. Pricing records select their suborders by such a pattern rather than by an
+   * exact sign, so this applies the same rule as {@code OrderPricingLookup} — including the trailing
+   * slash the pattern binds against.
+   */
+  public boolean existsSuborderMatching(String customerorderSign, String pattern) {
+    var likePattern = SqlLikePattern.startingWith(pattern);
+    return subordersOf(customerorderSign).stream()
+        .anyMatch(suborder -> likePattern.matches(suborder.getCompleteOrderSign() + "/"));
+  }
+
+  private List<Suborder> subordersOf(String customerorderSign) {
+    var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+    return customerorder == null ? List.of() : getSubordersByCustomerorderId(customerorder.getId());
   }
 
   @Authorized(requiresManager = true)
