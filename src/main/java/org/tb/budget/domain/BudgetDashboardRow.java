@@ -17,6 +17,17 @@ public record BudgetDashboardRow(
 ) {
     public boolean hasBudget() { return budgetEuro != null && budgetEuro.signum() != 0; }
     public boolean hasAlertThreshold() { return alertThresholdPercent != null; }
+    /**
+     * The plan has reached its configured alert threshold. Purely a warning, and only meaningful
+     * when a threshold is configured at all — the field is optional.
+     */
     public boolean isAboveThreshold() { return hasAlertThreshold() && utilizationPercent >= alertThresholdPercent; }
+
+    /**
+     * The budget is used up: the revenue it has to cover exceeds it. Independent of the alert
+     * threshold, so a plan without one is still flagged once it goes over.
+     */
+    public boolean isOverBudget() { return hasBudget() && utilizationPercent > 100.0; }
+
     public double progressBarPercent() { return Math.min(utilizationPercent, 100.0); }
 }
