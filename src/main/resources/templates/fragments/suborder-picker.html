@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Picker that only prefills a suborder pattern into a text field; the pattern stays editable.
+  Rendered twice: inline in the form, and again as an htmx out-of-band swap when the customer order
+  changes, which is what the oob parameter is for.
+-->
+<div th:fragment="suborderPicker(suborders, oob)" class="mb-3" id="suborderPickerInput"
+     th:attr="hx-swap-oob=${oob}">
+  <label class="form-label" for="suborderPicker"
+         th:text="#{main.pricing.field.suborderSign.picker}">Muster aus Unterauftrag übernehmen</label>
+  <select class="form-select tomselect" id="suborderPicker" data-suborder-picker
+          th:disabled="${#lists.isEmpty(suborders)}">
+    <option value="" th:text="#{main.pricing.field.suborderSign.picker.none}">--- Unterauftrag wählen ---</option>
+    <option th:each="so : ${suborders}"
+            th:value="|${so.completeOrderSign}/|"
+            th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
+  </select>
+</div>
+
+</body>
+</html>

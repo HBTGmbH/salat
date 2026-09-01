@@ -43,9 +43,9 @@ public class OrderPricingService {
     }
 
     /**
-     * Loads the pricings of the given customer orders into an in-memory lookup. Use this instead of
-     * {@link #findEffectiveRate} whenever rates are resolved for more than a handful of dates or
-     * employees — per-report resolution costs up to three statements per report.
+     * Loads the pricings of the given customer orders into an in-memory lookup, which resolves the
+     * whole matching hierarchy. Rates are resolved once per time report, so they must not be
+     * resolved by query.
      */
     @Transactional(readOnly = true)
     public OrderPricingLookup lookupFor(Collection<String> customerorderSigns) {
@@ -55,28 +55,10 @@ public class OrderPricingService {
         return OrderPricingLookup.of(orderPricingRepository.findByCustomerorderSignInOrderByIdAsc(customerorderSigns));
     }
 
-    /**
-     * Fallback hierarchy: employee-specific → suborder-wide → order-wide.
-     */
-    @Transactional(readOnly = true)
-    public Optional<OrderPricing> findEffectiveRate(String customerorderSign, String suborderSign, String employeeSign, LocalDate date) {
-        if (suborderSign != null && employeeSign != null) {
-            var rates = orderPricingRepository.findEffectiveEmployeeSpecific(customerorderSign, suborderSign, employeeSign, date);
-            if (!rates.isEmpty()) return Optional.of(rates.get(0));
-        }
-        if (suborderSign != null) {
-            var rates = orderPricingRepository.findEffectiveSuborderWide(customerorderSign, suborderSign, date);
-            if (!rates.isEmpty()) return Optional.of(rates.get(0));
-        }
-        var rates = orderPricingRepository.findEffectiveOrderWide(customerorderSign, date);
-        if (!rates.isEmpty()) return Optional.of(rates.get(0));
-        return Optional.empty();
-    }
-
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
-        checkSuborderBelongsToOrder(data.customerorderSign(), data.suborderSign());
+        checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
             data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
@@ -87,7 +69,7 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
-        checkSuborderBelongsToOrder(data.customerorderSign(), data.suborderSign());
+        checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
             data.validFrom(), validUntil, id);
         var pricing = getById(id);
@@ -101,12 +83,12 @@ public class OrderPricingService {
     }
 
     /**
-     * The suborder dropdown lists the suborders of all customer orders, so a sign can be submitted
-     * that does not exist below the chosen order. Such a row would never match during controlling
-     * and the rate would silently fall back to the order-wide one, so reject it here.
+     * The suborder pattern is entered by hand, so it can be a typo or refer to another customer
+     * order. It would then never match during controlling and the rate would silently fall back to
+     * the order-wide one, so require that it covers at least one suborder of the chosen order.
      */
-    private void checkSuborderBelongsToOrder(String customerorderSign, String suborderSign) {
-        if (suborderSign != null && !suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
+    private void checkSuborderPatternMatches(String customerorderSign, String suborderSign) {
+        if (suborderSign != null && !suborderService.existsSuborderMatching(customerorderSign, suborderSign)) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
     }

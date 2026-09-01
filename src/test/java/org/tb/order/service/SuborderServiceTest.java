@@ -69,6 +69,34 @@ public class SuborderServiceTest {
     assertThat(suborderService.existsByCompleteOrderSign("co", "co/01/02")).isFalse();
   }
 
+  /**
+   * Pricing patterns are matched, not compared (#891), so the check that a value refers to a real
+   * suborder has to apply the same rule — including the trailing slash it binds against.
+   */
+  @Test
+  public void should_accept_a_subtree_pattern_covering_at_least_one_suborder() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.existsSuborderMatching("co", "co/01/")).isTrue();
+    assertThat(suborderService.existsSuborderMatching("co", "co/%/02/")).isTrue();
+  }
+
+  @Test
+  public void should_reject_a_pattern_covering_no_suborder() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.existsSuborderMatching("co", "co/07/")).isFalse();
+    assertThat(suborderService.existsSuborderMatching("co", "02")).isFalse();
+  }
+
+  @Test
+  public void should_accept_an_empty_pattern_as_covering_the_whole_order() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.existsSuborderMatching("co", null)).isTrue();
+    assertThat(suborderService.existsSuborderMatching("co", "")).isTrue();
+  }
+
   private void givenOrderWithNestedSuborder() {
     // Customerorder has no id setter, and getCompleteOrderSign() only needs the sign.
     var customerorder = mock(Customerorder.class);

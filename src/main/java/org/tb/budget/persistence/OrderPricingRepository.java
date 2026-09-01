@@ -20,11 +20,17 @@ public interface OrderPricingRepository
 
     List<OrderPricing> findByCustomerorderSignInOrderByIdAsc(Collection<String> customerorderSigns);
 
+    /**
+     * Pricings competing with the given one. Two rows only conflict when they carry the <em>same</em>
+     * suborder pattern — layering a specific pattern over a general one is the point of the
+     * hierarchy and must stay allowed. {@code NULL} and the empty string mean the same thing to the
+     * matching, so they are folded together here as well; legacy rows hold both.
+     */
     @Query("""
         SELECT p FROM OrderPricing p
         WHERE p.customerorderSign = :co
-          AND ((:so IS NULL AND p.suborderSign IS NULL) OR p.suborderSign = :so)
-          AND ((:emp IS NULL AND p.employeeSign IS NULL) OR p.employeeSign = :emp)
+          AND COALESCE(p.suborderSign, '') = COALESCE(:so, '')
+          AND COALESCE(p.employeeSign, '') = COALESCE(:emp, '')
           AND p.validFrom <= :until AND p.validUntil >= :from
           AND (:excludeId IS NULL OR p.id != :excludeId)
         """)
@@ -35,29 +41,5 @@ public interface OrderPricingRepository
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
         @Param("excludeId") Long excludeId);
-
-    @Query("SELECT p FROM OrderPricing p WHERE p.customerorderSign = :co"
-        + " AND p.suborderSign = :so AND p.employeeSign = :emp"
-        + " AND p.validFrom <= :date AND p.validUntil >= :date")
-    List<OrderPricing> findEffectiveEmployeeSpecific(
-        @Param("co") String customerorderSign,
-        @Param("so") String suborderSign,
-        @Param("emp") String employeeSign,
-        @Param("date") LocalDate date);
-
-    @Query("SELECT p FROM OrderPricing p WHERE p.customerorderSign = :co"
-        + " AND p.suborderSign = :so AND p.employeeSign IS NULL"
-        + " AND p.validFrom <= :date AND p.validUntil >= :date")
-    List<OrderPricing> findEffectiveSuborderWide(
-        @Param("co") String customerorderSign,
-        @Param("so") String suborderSign,
-        @Param("date") LocalDate date);
-
-    @Query("SELECT p FROM OrderPricing p WHERE p.customerorderSign = :co"
-        + " AND p.suborderSign IS NULL AND p.employeeSign IS NULL"
-        + " AND p.validFrom <= :date AND p.validUntil >= :date")
-    List<OrderPricing> findEffectiveOrderWide(
-        @Param("co") String customerorderSign,
-        @Param("date") LocalDate date);
 
 }
