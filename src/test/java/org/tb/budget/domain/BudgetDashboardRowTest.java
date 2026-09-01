@@ -51,10 +51,25 @@ public class BudgetDashboardRowTest {
 
   @Test
   public void should_not_be_over_budget_without_a_budget() {
-    var noBudget = new BudgetDashboardRow(1L, "plan", "co", "order", LocalDate.of(2026, 1, 1),
-        LocalDate.of(2026, 12, 31), BigDecimal.ZERO, BigDecimal.TEN, null, 150.0);
+    assertThat(noBudget(null, 150.0).isOverBudget()).isFalse();
+  }
+
+  /**
+   * Exactly one of "Überbucht", "Alert", "OK" and "—" must apply. Without a budget amount the row
+   * shows "—", so neither of the two states that would also render must be true.
+   */
+  @Test
+  public void should_be_neither_over_budget_nor_above_threshold_without_a_budget() {
+    var noBudget = noBudget(0, 0.0);
 
     assertThat(noBudget.isOverBudget()).isFalse();
+    assertThat(noBudget.isAboveThreshold()).isFalse();
+  }
+
+  private static BudgetDashboardRow noBudget(Integer alertThresholdPercent, double utilizationPercent) {
+    return new BudgetDashboardRow(1L, "plan", "co", "order", LocalDate.of(2026, 1, 1),
+        LocalDate.of(2026, 12, 31), BigDecimal.ZERO, BigDecimal.TEN,
+        alertThresholdPercent, utilizationPercent);
   }
 
   @Test

@@ -65,8 +65,10 @@
             <!-- text-white is needed: on the solid red the inherited text colour is unreadable. -->
             <span th:if="${row.isOverBudget()}" class="badge bg-danger text-white" th:text="#{main.budget.dashboard.status.overbudget}">Überbucht</span>
             <span th:if="${!row.isOverBudget() and row.isAboveThreshold()}" class="badge bg-warning-lt" th:text="#{main.budget.dashboard.status.alert}">Alert</span>
-            <span th:if="${row.hasBudget() and !row.isOverBudget() and !row.isAboveThreshold() and row.hasAlertThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
-            <span th:if="${!row.hasBudget() or (!row.hasAlertThreshold() and !row.isOverBudget())}" class="text-muted">—</span>
+            <!-- OK does not require a configured threshold: every plan with a budget amount is
+                 judged against 100 %, the threshold only adds the amber step in between. -->
+            <span th:if="${row.hasBudget() and !row.isOverBudget() and !row.isAboveThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
+            <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
           </td>
           <td>
             <a class="btn btn-sm btn-outline-secondary"
