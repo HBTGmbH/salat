@@ -1,6 +1,7 @@
 package org.tb.order.domain;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.tb.common.GlobalConstants.YESNO_YES;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -261,6 +262,11 @@ public class Suborder extends AuditedEntity implements Serializable {
 
     public Character getInvoiceChar() {
         return invoice;
+    }
+
+    /** Whether work booked on this suborder is billed to the customer and therefore earns revenue. */
+    public boolean isInvoiceable() {
+        return invoice == YESNO_YES;
     }
 
     /**

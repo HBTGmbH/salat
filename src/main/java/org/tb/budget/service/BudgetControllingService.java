@@ -95,9 +95,11 @@ public class BudgetControllingService {
             // Budgets, prices and costs are keyed by the complete order sign. Resolving it walks the
             // lazily fetched parent chain, so do that once per suborder instead of per budget below.
             var soSign = suborder.getCompleteOrderSign();
+            var invoiceable = suborder.isInvoiceable();
             var reports = bySuborder.getOrDefault(suborder.getId(), List.of());
             var booked = sumDuration(reports);
-            var revenue = computeRevenue(reports, customerorderSign, soSign, pricingLookup);
+            var revenue = computeRevenue(reports, customerorderSign, soSign, invoiceable, pricingLookup);
+            // Costs accrue whether or not the work is billed, so they are not gated on invoiceable.
             var cost = includeCosts ? computeCost(reports, soSign, costLookup) : null;
             var suborderBudgets = budgets.stream()
                 .filter(b -> soSign.equals(b.getSuborderSign()))
@@ -107,14 +109,14 @@ public class BudgetControllingService {
             var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
             var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
                 (start, end) -> computeRevenue(inRange(reports, start, end),
-                    customerorderSign, soSign, pricingLookup),
+                    customerorderSign, soSign, invoiceable, pricingLookup),
                 from, until);
 
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
             BigDecimal forecastUncoveredRevenue = null;
             if (forecastAvailable) {
-                var fc = forecast(booked, coveredRevenue, customerorderSign, soSign, from, until, today, holidays, effectiveBudgets, pricingLookup);
+                var fc = forecast(booked, coveredRevenue, customerorderSign, soSign, invoiceable, from, until, today, holidays, effectiveBudgets, pricingLookup);
                 forecastHours = fc.hours();
                 forecastRevenue = fc.coveredRevenue();
                 forecastUncoveredRevenue = fc.uncoveredRevenue();
@@ -261,19 +263,23 @@ public class BudgetControllingService {
             for (var so : orderData.suborders()) {
                 var reports = orderData.reportsBySuborder().getOrDefault(so.getId(), List.of());
                 var soCompleteSign = orderData.completeSignBySuborderId().get(so.getId());
+                var invoiceable = so.isInvoiceable();
                 coveredRevenue = coveredRevenue.add(computeCoveredRevenue(List.of(budget),
-                    (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soCompleteSign, pricingLookup),
+                    (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soCompleteSign,
+                        invoiceable, pricingLookup),
                     from, until));
             }
         } else {
-            var soId = orderData.completeSignBySuborderId().entrySet().stream()
-                .filter(e -> soSign.equals(e.getValue()))
-                .map(Map.Entry::getKey)
+            var suborder = orderData.suborders().stream()
+                .filter(so -> soSign.equals(orderData.completeSignBySuborderId().get(so.getId())))
                 .findFirst().orElse(null);
-            var reports = soId == null ? List.<TimereportDTO>of()
-                : orderData.reportsBySuborder().getOrDefault(soId, List.of());
+            var reports = suborder == null ? List.<TimereportDTO>of()
+                : orderData.reportsBySuborder().getOrDefault(suborder.getId(), List.of());
+            // An unresolvable sign earns nothing anyway, so treating it as not invoiceable is right.
+            var invoiceable = suborder != null && suborder.isInvoiceable();
             coveredRevenue = computeCoveredRevenue(List.of(budget),
-                (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soSign, pricingLookup),
+                (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soSign,
+                    invoiceable, pricingLookup),
                 from, until);
         }
 
@@ -283,7 +289,7 @@ public class BudgetControllingService {
     private record ForecastData(Duration hours, BigDecimal coveredRevenue, BigDecimal uncoveredRevenue) {}
 
     private ForecastData forecast(Duration booked, BigDecimal coveredRevenue,
-                                  String coSign, String soSign,
+                                  String coSign, String soSign, boolean invoiceable,
                                   LocalDate from, LocalDate until, LocalDate today,
                                   Set<LocalDate> holidays, List<OrderBudget> effectiveBudgets,
                                   OrderPricingLookup pricingLookup) {
@@ -307,6 +313,11 @@ public class BudgetControllingService {
         double burnMinutesPerDay = (double) booked.toMinutes() / elapsed;
         var forecastMinutes = (long) (burnMinutesPerDay * (remainingCovered + remainingUncovered));
         var forecastHours = Duration.ofMinutes(forecastMinutes);
+
+        // Hours keep being projected, but they will never be billed — a definite zero, not "unknown".
+        if (!invoiceable) {
+            return new ForecastData(forecastHours, BigDecimal.ZERO, null);
+        }
 
         var effectiveRate = pricingLookup.findEffectiveRate(coSign, soSign, null, today);
         if (effectiveRate.isEmpty()) return new ForecastData(forecastHours, null, null);
@@ -385,8 +396,16 @@ public class BudgetControllingService {
             .toList();
     }
 
+    /**
+     * Revenue of the given time reports. Work on a suborder that is not invoiceable is not billed to
+     * the customer, so it earns nothing no matter which rate would match — hence the flag is a
+     * parameter rather than a check at the call sites, so that no revenue path can forget it.
+     */
     private BigDecimal computeRevenue(List<TimereportDTO> reports, String coSign, String soSign,
-                                      OrderPricingLookup pricingLookup) {
+                                      boolean invoiceable, OrderPricingLookup pricingLookup) {
+        if (!invoiceable) {
+            return BigDecimal.ZERO;
+        }
         return reports.stream()
             .map(r -> {
                 var hours = minutesToHours(r.getDuration().toMinutes());
