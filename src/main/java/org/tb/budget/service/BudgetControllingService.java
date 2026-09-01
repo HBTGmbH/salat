@@ -134,13 +134,18 @@ public class BudgetControllingService {
                 ? coveredRevenue.divide(budget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
                 : null;
             var progressStatus = computeProgressStatus(progressPercent, budgetUsedPct);
-            suborderRows.add(new BudgetControllingRow(
+            var row = new BudgetControllingRow(
                 soSign,
                 suborder.getShortdescription(),
                 true, planned, booked, budget, revenue, coveredRevenue, cost,
                 forecastHours, forecastRevenue, forecastUncoveredRevenue,
                 forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue), forecastUncoveredRevenue),
-                progressPercent, progressStatus));
+                progressPercent, progressStatus);
+            // A suborder without booked time, budget and planned hours contributes nothing but a row
+            // of dashes. It is still added to the totals below, where it counts as zero anyway.
+            if (row.hasContent()) {
+                suborderRows.add(row);
+            }
 
             totalBooked = totalBooked.plus(booked);
             totalPlanned = totalPlanned.plus(planned);
