@@ -31,7 +31,9 @@
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="co : ${customerorders}"
                       th:value="${co.sign}"
-                      th:text="|${co.sign} - ${co.shortdescription}|"></option>
+                      th:text="${co.hide}
+                            ? |${co.sign} - ${co.shortdescription} (#{main.general.hidden.suffix})|
+                            : |${co.sign} - ${co.shortdescription}|"></option>
             </select>
           </div>
         </div>

@@ -272,6 +272,25 @@ public class SuborderService {
     return suborderDAO.getSuborders(false);
   }
 
+  /** All suborders that are not hidden. */
+  public List<Suborder> getAllVisibleSuborders() {
+    return suborderDAO.getSuborders(false).stream()
+        .filter(not(Suborder::isHide))
+        .toList();
+  }
+
+  /**
+   * Suborders of the customer order offered in a select box: everything not hidden, plus the one
+   * whose complete order sign is {@code keepCompleteSign} even if it is hidden. Without that
+   * exception a stored suborder would silently drop off the record the next time it is edited.
+   */
+  public List<Suborder> getSelectableSubordersByCustomerorderId(long customerorderId, String keepCompleteSign) {
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
+        .filter(suborder -> !suborder.isHide()
+            || Objects.equals(suborder.getCompleteOrderSign(), keepCompleteSign))
+        .toList();
+  }
+
   /**
    * Whether a suborder with the given complete order sign exists below the customer order with the
    * given sign. Budget and cost records reference their suborder by that sign instead of by id, so

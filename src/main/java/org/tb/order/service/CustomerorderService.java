@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -134,6 +135,18 @@ public class CustomerorderService {
 
   public List<Customerorder> getAllCustomerorders() {
     return customerorderDAO.getCustomerorders();
+  }
+
+  /**
+   * Customer orders offered in a select box: everything not hidden, plus the one carrying
+   * {@code keepSign} even if it is hidden. Orders are routinely hidden once they are finished, and a
+   * record already referencing such an order has to stay editable.
+   */
+  public List<Customerorder> getSelectableCustomerorders(String keepSign) {
+    return getAllCustomerorders().stream()
+        .filter(customerorder -> !customerorder.getHide()
+            || Objects.equals(customerorder.getSign(), keepSign))
+        .toList();
   }
 
   public List<Customerorder> getInvoiceableCustomerorders() {
