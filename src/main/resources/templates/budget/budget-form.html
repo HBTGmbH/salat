@@ -19,20 +19,24 @@
       <salat:textInput th:field="*{name}" th:label="#{main.budget.field.name}" required="true" maxlength="255" />
       <div class="row">
         <div class="col-md-6">
-          <salat:select th:field="*{customerorderSign}" th:label="#{main.budget.field.customerorderSign}">
-            <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
-            <option th:each="co : ${customerorders}"
-                    th:value="${co.sign}"
-                    th:text="|${co.sign} - ${co.shortdescription}|"></option>
-          </salat:select>
+          <!-- Plain select rather than salat:select, which does not forward the hx-* attributes. -->
+          <div class="mb-3">
+            <label class="form-label" for="customerorderSign"
+                   th:text="#{main.budget.field.customerorderSign}">Auftrag</label>
+            <select class="form-select tomselect" th:field="*{customerorderSign}"
+                    th:hx-post="@{/budget/suborders}"
+                    hx-swap="none"
+                    hx-include="closest form"
+                    hx-trigger="change">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="co : ${customerorders}"
+                      th:value="${co.sign}"
+                      th:text="|${co.sign} - ${co.shortdescription}|"></option>
+            </select>
+          </div>
         </div>
         <div class="col-md-6">
-          <salat:select th:field="*{suborderSign}" th:label="#{main.budget.field.suborderSign}">
-            <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
-            <option th:each="so : ${suborders}"
-                    th:value="${so.completeOrderSign}"
-                    th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
-          </salat:select>
+          <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, *{suborderSign}, null)}"></div>
         </div>
       </div>
       <div class="row">
@@ -56,6 +60,11 @@
       <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}" th:cancelHref="@{/budget}" />
     </salat:buttons>
   </salat:form>
+
+  <!-- HTMX OOB updates -->
+  <div th:if="${htmxRequest}">
+    <div th:replace="~{fragments/suborder-select :: suborderSelect(${suborders}, ${budgetForm.suborderSign}, ${subordersChanged})}"></div>
+  </div>
 
 </main>
 </html>

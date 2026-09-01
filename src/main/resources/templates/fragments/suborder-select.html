@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Suborder select bound to the field "suborderSign", holding the complete order sign.
+  Rendered twice: inline in the form, and again as an htmx out-of-band swap when the customer order
+  changes, which is what the oob parameter is for. It uses name/th:selected rather than th:field
+  because the out-of-band copy sits outside the form and has no th:object to bind against.
+-->
+<div th:fragment="suborderSelect(suborders, selected, oob)" class="mb-3" id="suborderSignInput"
+     th:attr="hx-swap-oob=${oob}">
+  <label class="form-label" for="suborderSign"
+         th:text="#{main.budget.field.suborderSign}">Unterauftrag</label>
+  <select class="form-select tomselect" id="suborderSign" name="suborderSign"
+          th:disabled="${#lists.isEmpty(suborders)}">
+    <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
+    <option th:each="so : ${suborders}"
+            th:value="${so.completeOrderSign}"
+            th:selected="${selected != null and selected == so.completeOrderSign}"
+            th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
+  </select>
+</div>
+
+</body>
+</html>
