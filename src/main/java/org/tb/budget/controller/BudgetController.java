@@ -2,6 +2,7 @@ package org.tb.budget.controller;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -24,6 +25,7 @@ import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.service.OrderBudgetService;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
@@ -236,12 +238,38 @@ public class BudgetController {
         return "redirect:/budget/" + id;
     }
 
+    /**
+     * Refills the suborder list when the customer order changes. Offering the suborders of every
+     * order let a budget be pointed at a suborder outside the chosen order — rejected on save since
+     * #890, but only after the user had already picked it.
+     */
+    @Authorized(requiresManager = true)
+    @PostMapping("/suborders")
+    public String suborders(@ModelAttribute("budgetForm") OrderBudgetForm form, Model model,
+                            HttpServletRequest request) {
+        form.setSuborderSign(null); // the previous pick belongs to the order that was just replaced
+        addFormModel(model, form, !form.isNew());
+        model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
+        model.addAttribute("subordersChanged", true);
+        return "budget/budget-form";
+    }
+
     private void addFormModel(Model model, OrderBudgetForm form, boolean isEdit) {
         model.addAttribute("budgetForm", form);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
-        model.addAttribute("suborders", suborderService.getAllSuborders());
+        model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
         model.addAttribute("progressModes", ProgressMode.values());
+    }
+
+    /** The suborders of the selected customer order — empty while none is selected. */
+    private List<Suborder> subordersOf(String customerorderSign) {
+        if (trimToNull(customerorderSign) == null) {
+            return List.of();
+        }
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        return customerorder == null ? List.of()
+            : suborderService.getSubordersByCustomerorderId(customerorder.getId());
     }
 
 }
