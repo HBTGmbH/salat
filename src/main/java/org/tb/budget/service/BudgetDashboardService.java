@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.domain.BudgetDashboardRow;
-import org.tb.order.service.CustomerorderService;
 
 @Service
 @Transactional(readOnly = true)
@@ -16,19 +15,19 @@ public class BudgetDashboardService {
 
     private final OrderBudgetService orderBudgetService;
     private final BudgetControllingService budgetControllingService;
-    private final CustomerorderService customerorderService;
 
     public List<BudgetDashboardRow> computeDashboard() {
-        return orderBudgetService.getAll().stream()
-            .filter(b -> Boolean.TRUE.equals(b.getActive()))
+        var budgets = orderBudgetService.getAllActive();
+        var utilizations = budgetControllingService.computeUtilizationInfos(budgets);
+        return budgets.stream()
             .map(b -> {
-                var info = budgetControllingService.computeUtilizationInfo(b);
-                var co = customerorderService.getCustomerorderBySign(b.getCustomerorderSign());
+                var utilization = utilizations.get(b.getId());
+                var info = utilization.info();
                 return new BudgetDashboardRow(
                     b.getId(),
                     b.getName(),
                     b.getCustomerorderSign(),
-                    co.getShortdescription(),
+                    utilization.customerorderDescription(),
                     b.getValidFrom(),
                     b.getValidUntil(),
                     info.budgetEuro(),

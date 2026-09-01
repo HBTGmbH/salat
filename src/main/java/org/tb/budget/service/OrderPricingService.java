@@ -1,6 +1,7 @@
 package org.tb.budget.service;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
+import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
@@ -36,6 +38,19 @@ public class OrderPricingService {
     @Transactional(readOnly = true)
     public List<OrderPricing> getByCustomerorderSign(String customerorderSign) {
         return orderPricingRepository.findByCustomerorderSign(customerorderSign);
+    }
+
+    /**
+     * Loads the pricings of the given customer orders into an in-memory lookup. Use this instead of
+     * {@link #findEffectiveRate} whenever rates are resolved for more than a handful of dates or
+     * employees — per-report resolution costs up to three statements per report.
+     */
+    @Transactional(readOnly = true)
+    public OrderPricingLookup lookupFor(Collection<String> customerorderSigns) {
+        if (customerorderSigns.isEmpty()) {
+            return OrderPricingLookup.of(List.of());
+        }
+        return OrderPricingLookup.of(orderPricingRepository.findByCustomerorderSignInOrderByIdAsc(customerorderSigns));
     }
 
     /**
