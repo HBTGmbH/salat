@@ -271,6 +271,20 @@ public class SuborderService {
     return suborderDAO.getSuborders(false);
   }
 
+  /**
+   * Whether a suborder with the given complete order sign exists below the customer order with the
+   * given sign. Budget, pricing and cost records reference their suborder by that sign instead of
+   * by id, so they need this to reject a sign that does not belong to the chosen customer order.
+   */
+  public boolean existsByCompleteOrderSign(String customerorderSign, String completeOrderSign) {
+    var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+    if (customerorder == null) {
+      return false;
+    }
+    return getSubordersByCustomerorderId(customerorder.getId()).stream()
+        .anyMatch(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()));
+  }
+
   @Authorized(requiresManager = true)
   public void deleteSuborderById(long suborderId) {
     var event = new SuborderDeleteEvent(suborderId);

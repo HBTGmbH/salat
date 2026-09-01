@@ -13,8 +13,10 @@ import org.tb.budget.domain.OrderBudgetData;
 import org.tb.budget.domain.OrderBudgetScopeEntry;
 import org.tb.budget.domain.OrderBudgetScopeEntryData;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.order.service.SuborderService;
 
 @Service
 @Transactional
@@ -23,6 +25,7 @@ import org.tb.common.exception.InvalidDataException;
 public class OrderBudgetService {
 
     private final OrderBudgetRepository orderBudgetRepository;
+    private final SuborderService suborderService;
 
     @Transactional(readOnly = true)
     public OrderBudget getById(long id) {
@@ -117,6 +120,7 @@ public class OrderBudgetService {
     }
 
     private void apply(OrderBudget budget, OrderBudgetData data) {
+        checkSuborderBelongsToOrder(data.customerorderSign(), data.suborderSign());
         budget.setName(data.name());
         budget.setCustomerorderSign(data.customerorderSign());
         budget.setSuborderSign(data.suborderSign());
@@ -125,6 +129,17 @@ public class OrderBudgetService {
         budget.setActive(Boolean.TRUE.equals(data.active()));
         budget.setAlertThresholdPercent(data.alertThresholdPercent());
         budget.setProgressMode(data.progressMode());
+    }
+
+    /**
+     * The suborder dropdown lists the suborders of all customer orders, so a sign can be submitted
+     * that does not exist below the chosen order. Such a budget would never match a suborder during
+     * controlling and would silently behave as if it did not exist, so reject it here.
+     */
+    private void checkSuborderBelongsToOrder(String customerorderSign, String suborderSign) {
+        if (suborderSign != null && !suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
+            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
+        }
     }
 
 }

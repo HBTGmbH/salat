@@ -15,6 +15,7 @@ import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.order.service.SuborderService;
 
 @Service
 @Transactional
@@ -23,6 +24,7 @@ import org.tb.common.exception.InvalidDataException;
 public class OrderPricingService {
 
     private final OrderPricingRepository orderPricingRepository;
+    private final SuborderService suborderService;
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
@@ -74,6 +76,7 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkSuborderBelongsToOrder(data.customerorderSign(), data.suborderSign());
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
             data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
@@ -84,6 +87,7 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkSuborderBelongsToOrder(data.customerorderSign(), data.suborderSign());
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
             data.validFrom(), validUntil, id);
         var pricing = getById(id);
@@ -94,6 +98,17 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void delete(long id) {
         orderPricingRepository.deleteById(id);
+    }
+
+    /**
+     * The suborder dropdown lists the suborders of all customer orders, so a sign can be submitted
+     * that does not exist below the chosen order. Such a row would never match during controlling
+     * and the rate would silently fall back to the order-wide one, so reject it here.
+     */
+    private void checkSuborderBelongsToOrder(String customerorderSign, String suborderSign) {
+        if (suborderSign != null && !suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
+            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
+        }
     }
 
     private void checkNoOverlap(String co, String so, String emp, LocalDate from, LocalDate until, Long excludeId) {

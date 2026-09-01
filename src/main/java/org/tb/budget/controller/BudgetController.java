@@ -1,5 +1,7 @@
 package org.tb.budget.controller;
 
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -116,7 +118,7 @@ public class BudgetController {
         var data = new OrderBudgetData(
             form.getName(),
             form.getCustomerorderSign(),
-            form.getSuborderSign(),
+            trimToNull(form.getSuborderSign()),
             form.getValidFrom(),
             form.getValidUntil(),
             Boolean.TRUE.equals(form.getActive()),

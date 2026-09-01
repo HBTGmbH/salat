@@ -92,26 +92,29 @@ public class BudgetControllingService {
         var totalForecastKnown = true;
 
         for (var suborder : suborders) {
+            // Budgets, prices and costs are keyed by the complete order sign. Resolving it walks the
+            // lazily fetched parent chain, so do that once per suborder instead of per budget below.
+            var soSign = suborder.getCompleteOrderSign();
             var reports = bySuborder.getOrDefault(suborder.getId(), List.of());
             var booked = sumDuration(reports);
-            var revenue = computeRevenue(reports, customerorderSign, suborder.getSign(), pricingLookup);
-            var cost = includeCosts ? computeCost(reports, suborder.getSign(), costLookup) : null;
+            var revenue = computeRevenue(reports, customerorderSign, soSign, pricingLookup);
+            var cost = includeCosts ? computeCost(reports, soSign, costLookup) : null;
             var suborderBudgets = budgets.stream()
-                .filter(b -> suborder.getSign().equals(b.getSuborderSign()))
+                .filter(b -> soSign.equals(b.getSuborderSign()))
                 .toList();
             var hasOwnBudget = suborderBudgets.stream().anyMatch(b -> Boolean.TRUE.equals(b.getActive()));
             var effectiveBudgets = hasOwnBudget ? suborderBudgets : orderLevelBudgets;
             var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
             var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
                 (start, end) -> computeRevenue(inRange(reports, start, end),
-                    customerorderSign, suborder.getSign(), pricingLookup),
+                    customerorderSign, soSign, pricingLookup),
                 from, until);
 
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
             BigDecimal forecastUncoveredRevenue = null;
             if (forecastAvailable) {
-                var fc = forecast(booked, coveredRevenue, customerorderSign, suborder.getSign(), from, until, today, holidays, effectiveBudgets, pricingLookup);
+                var fc = forecast(booked, coveredRevenue, customerorderSign, soSign, from, until, today, holidays, effectiveBudgets, pricingLookup);
                 forecastHours = fc.hours();
                 forecastRevenue = fc.coveredRevenue();
                 forecastUncoveredRevenue = fc.uncoveredRevenue();
@@ -130,7 +133,7 @@ public class BudgetControllingService {
                 : null;
             var progressStatus = computeProgressStatus(progressPercent, budgetUsedPct);
             suborderRows.add(new BudgetControllingRow(
-                suborder.getCompleteOrderSign(),
+                soSign,
                 suborder.getShortdescription(),
                 true, planned, booked, budget, revenue, coveredRevenue, cost,
                 forecastHours, forecastRevenue, forecastUncoveredRevenue,
@@ -214,8 +217,13 @@ public class BudgetControllingService {
         return result;
     }
 
-    /** Customer order, its visible suborders and its time reports grouped by suborder. */
+    /**
+     * Customer order, its visible suborders and its time reports grouped by suborder. The complete
+     * order signs are resolved once here because every one of them walks the lazily fetched parent
+     * chain, and the same order data is reused for all budgets of that customer order.
+     */
     private record OrderData(Customerorder customerorder, List<Suborder> suborders,
+                             Map<Long, String> completeSignBySuborderId,
                              Map<Long, List<TimereportDTO>> reportsBySuborder) {}
 
     /**
@@ -234,6 +242,7 @@ public class BudgetControllingService {
         var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
         var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
         return new OrderData(customerorder, suborders,
+            suborders.stream().collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign)),
             timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)));
     }
 
@@ -251,14 +260,15 @@ public class BudgetControllingService {
             coveredRevenue = BigDecimal.ZERO;
             for (var so : orderData.suborders()) {
                 var reports = orderData.reportsBySuborder().getOrDefault(so.getId(), List.of());
+                var soCompleteSign = orderData.completeSignBySuborderId().get(so.getId());
                 coveredRevenue = coveredRevenue.add(computeCoveredRevenue(List.of(budget),
-                    (start, end) -> computeRevenue(inRange(reports, start, end), coSign, so.getSign(), pricingLookup),
+                    (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soCompleteSign, pricingLookup),
                     from, until));
             }
         } else {
-            var soId = orderData.suborders().stream()
-                .filter(s -> soSign.equals(s.getSign()))
-                .map(Suborder::getId)
+            var soId = orderData.completeSignBySuborderId().entrySet().stream()
+                .filter(e -> soSign.equals(e.getValue()))
+                .map(Map.Entry::getKey)
                 .findFirst().orElse(null);
             var reports = soId == null ? List.<TimereportDTO>of()
                 : orderData.reportsBySuborder().getOrDefault(soId, List.of());
