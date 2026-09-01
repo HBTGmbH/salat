@@ -46,22 +46,25 @@
           <td style="min-width: 160px;">
             <div th:if="${row.hasBudget()}">
               <div class="progress" style="height: 8px;">
+                <!-- Red once the budget is exceeded; the warning level is the plan's own
+                     alertThresholdPercent, and without one there is simply no warning. -->
                 <div class="progress-bar"
-                     th:classappend="${row.isAboveThreshold()} ? 'bg-danger' : (${row.utilizationPercent() > 80} ? 'bg-warning' : 'bg-success')"
+                     th:classappend="${row.isOverBudget()} ? 'bg-danger' : (${row.isAboveThreshold()} ? 'bg-warning' : 'bg-success')"
                      role="progressbar"
                      th:style="'width: ' + ${#numbers.formatDecimal(row.progressBarPercent(), 1, 0)} + '%'">
                 </div>
               </div>
-              <small class="text-muted" th:classappend="${row.isAboveThreshold()} ? 'text-danger' : ''"
+              <small class="text-muted" th:classappend="${row.isOverBudget()} ? 'text-danger' : ''"
                      th:text="${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)} + ' %'"></small>
             </div>
             <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
           </td>
           <td class="text-end small" th:text="${row.hasAlertThreshold()} ? (${row.alertThresholdPercent()} + ' %') : '—'"></td>
           <td class="text-center">
-            <span th:if="${row.isAboveThreshold()}" class="badge bg-danger-lt" th:text="#{main.budget.dashboard.status.alert}">Alert</span>
-            <span th:if="${row.hasBudget() and !row.isAboveThreshold() and row.hasAlertThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
-            <span th:if="${!row.hasBudget() or !row.hasAlertThreshold()}" class="text-muted">—</span>
+            <span th:if="${row.isOverBudget()}" class="badge bg-danger" th:text="#{main.budget.dashboard.status.overbudget}">Überbucht</span>
+            <span th:if="${!row.isOverBudget() and row.isAboveThreshold()}" class="badge bg-warning-lt" th:text="#{main.budget.dashboard.status.alert}">Alert</span>
+            <span th:if="${row.hasBudget() and !row.isOverBudget() and !row.isAboveThreshold() and row.hasAlertThreshold()}" class="badge bg-success-lt" th:text="#{main.budget.dashboard.status.ok}">OK</span>
+            <span th:if="${!row.hasBudget() or (!row.hasAlertThreshold() and !row.isOverBudget())}" class="text-muted">—</span>
           </td>
           <td>
             <a class="btn btn-sm btn-outline-secondary"
