@@ -1,21 +1,20 @@
 package org.tb.budget.domain;
 
 import java.util.List;
+import org.tb.common.LocalDateRange;
 
+/**
+ * The controlling view of one customer order: one section per budget period, plus one for the time
+ * no plan covers. Sections without anything to report are left out, so an empty list means there is
+ * nothing to show at all.
+ */
 public record BudgetControllingResult(
-    BudgetControllingRow total,
-    List<BudgetControllingRow> suborderRows,
-    boolean forecastAvailable
+    String customerorderSign,
+    String customerorderDescription,
+    LocalDateRange filter,
+    List<BudgetControllingSection> sections
 ) {
-    public boolean hasProgressData() {
-        return total.hasProgress() || suborderRows.stream().anyMatch(BudgetControllingRow::hasProgress);
-    }
-
-    /**
-     * Whether any suborder carries planned hours. Without them the planned-hours column and the
-     * consumption derived from it would be nothing but dashes, so both are left out entirely.
-     */
-    public boolean hasPlannedData() {
-        return suborderRows.stream().anyMatch(BudgetControllingRow::hasPlanned);
+    public boolean isEmpty() {
+        return sections.isEmpty();
     }
 }

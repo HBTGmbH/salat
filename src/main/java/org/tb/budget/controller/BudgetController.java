@@ -275,7 +275,7 @@ public class BudgetController {
         }
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         return customerorder == null ? List.of()
-            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
+            : suborderService.getSelectableFirstLevelSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
     }
 
 }

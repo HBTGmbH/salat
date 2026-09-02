@@ -55,6 +55,9 @@ public class OrderBudgetService {
 
     @Authorized(requiresManager = true)
     public OrderBudget create(OrderBudgetData data) {
+        // Checked before apply, which does not know the id that has to be excluded from the search.
+        checkNoConflict(data.customerorderSign(), data.suborderSign(),
+            data.validFrom(), data.validUntil(), data.active(), null);
         var budget = new OrderBudget();
         apply(budget, data);
         return orderBudgetRepository.save(budget);
@@ -62,6 +65,8 @@ public class OrderBudgetService {
 
     @Authorized(requiresManager = true)
     public void update(long id, OrderBudgetData data) {
+        checkNoConflict(data.customerorderSign(), data.suborderSign(),
+            data.validFrom(), data.validUntil(), data.active(), id);
         var budget = getById(id);
         apply(budget, data);
         orderBudgetRepository.save(budget);
@@ -70,6 +75,11 @@ public class OrderBudgetService {
     @Authorized(requiresManager = true)
     public void setActive(long id, boolean active) {
         var budget = getById(id);
+        // Only active plans conflict, so activating one can create a conflict that saving it did not.
+        if (active) {
+            checkNoConflict(budget.getCustomerorderSign(), budget.getSuborderSign(),
+                budget.getValidFrom(), budget.getValidUntil(), true, id);
+        }
         budget.setActive(active);
         orderBudgetRepository.save(budget);
     }
@@ -134,12 +144,52 @@ public class OrderBudgetService {
     /**
      * The suborder dropdown lists the suborders of all customer orders, so a sign can be submitted
      * that does not exist below the chosen order. Such a budget would never match a suborder during
-     * controlling and would silently behave as if it did not exist, so reject it here.
+     * controlling and would silently behave as if it did not exist, so reject it here. Budgets are
+     * furthermore only kept on first level suborders (#905).
      */
     private void checkSuborderBelongsToOrder(String customerorderSign, String suborderSign) {
-        if (suborderSign != null && !suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
+        if (suborderSign == null) {
+            return;
+        }
+        if (!suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
+        if (!suborderService.isFirstLevelSuborder(customerorderSign, suborderSign)) {
+            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_FIRST_LEVEL);
+        }
+    }
+
+    /**
+     * At any point in time a customer order is budgeted either as a whole — by exactly one plan — or
+     * per first level suborder, by at most one plan each, never both (#905). That reduces to a single
+     * pairwise rule: two active plans of the same order whose periods overlap have to be on suborder
+     * level and on <em>different</em> suborders.
+     *
+     * <p>Only active plans conflict; an inactive one takes part in no calculation and may stay on as
+     * an archive.
+     */
+    private void checkNoConflict(String customerorderSign, String suborderSign,
+                                 LocalDate validFrom, LocalDate validUntil,
+                                 boolean active, Long excludeId) {
+        if (!active || validFrom == null || validUntil == null) {
+            return;
+        }
+        for (var other : orderBudgetRepository.findActiveOverlapping(
+                customerorderSign, validFrom, validUntil, excludeId)) {
+            var orderWide = isOrderWide(suborderSign);
+            var otherOrderWide = isOrderWide(other.getSuborderSign());
+            if (orderWide != otherOrderWide) {
+                throw new BusinessRuleException(ErrorCode.BU_BUDGET_LEVEL_MIXED);
+            }
+            if (orderWide || suborderSign.equals(other.getSuborderSign())) {
+                throw new BusinessRuleException(ErrorCode.BU_BUDGET_OVERLAP);
+            }
+        }
+    }
+
+    /** {@code null} and blank both mean "the whole customer order", as everywhere else. */
+    private static boolean isOrderWide(String suborderSign) {
+        return suborderSign == null || suborderSign.isBlank();
     }
 
 }
