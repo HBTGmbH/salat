@@ -15,9 +15,11 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.budget.domain.BudgetControllingRow;
+import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -37,14 +39,17 @@ public class BudgetControllingServiceTest {
   private static final LocalDate FROM = LocalDate.of(2026, 6, 1);
   private static final LocalDate UNTIL = LocalDate.of(2026, 6, 30);
 
+  private static long nextId = 1L;
+
   private BudgetControllingService service;
+  private OrderBudgetRepository orderBudgetRepository;
 
   @BeforeEach
   public void setUp() {
     var customerorderService = mock(CustomerorderService.class);
     var suborderService = mock(SuborderService.class);
     var timereportService = mock(TimereportService.class);
-    var orderBudgetRepository = mock(OrderBudgetRepository.class);
+    orderBudgetRepository = mock(OrderBudgetRepository.class);
     var orderPricingService = mock(OrderPricingService.class);
     var employeeCostService = mock(EmployeeCostService.class);
     var publicholidayService = mock(PublicholidayService.class);
@@ -129,6 +134,71 @@ public class BudgetControllingServiceTest {
     assertThat(total.revenueEuro()).isEqualByComparingTo("800.00");
   }
 
+  /**
+   * Two active order-level plans whose validity overlaps must not make the same booking count
+   * twice — that inflated an order's utilization to 145.9 % where it was really 85.6 % (#903).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_booking_once_even_when_two_plans_cover_it() {
+    givenBudgets(orderLevelPlan(FROM, LocalDate.of(2999, 12, 31)), orderLevelPlan(FROM, UNTIL));
+
+    assertThat(row("co/01").coveredRevenueEuro()).isEqualByComparingTo("800.00");
+    assertThat(compute().total().coveredRevenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /**
+   * A suborder plan takes the suborder out of the order-level coverage only for the periods it
+   * actually covers. Otherwise its revenue is covered by nothing and disappears from every row.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_let_the_order_level_plan_cover_what_an_own_plan_does_not() {
+    var ownPlanElsewhere = suborderPlan("co/01", LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31));
+    givenBudgets(orderLevelPlan(FROM, UNTIL), ownPlanElsewhere);
+
+    assertThat(row("co/01").coveredRevenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_booking_once_when_its_own_plan_and_the_order_level_plan_both_cover_it() {
+    givenBudgets(orderLevelPlan(FROM, UNTIL), suborderPlan("co/01", FROM, UNTIL));
+
+    assertThat(row("co/01").coveredRevenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /**
+   * Dashboard side. Revenue of a period that a suborder's own plan covers belongs to that plan's
+   * row, so the order-level row must not report it as well.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_report_revenue_on_the_order_level_plan_that_an_own_plan_already_covers() {
+    var orderLevel = orderLevelPlan(FROM, UNTIL);
+    var ownPlan = suborderPlan("co/01", FROM, UNTIL);
+    when(orderBudgetRepository.findAllActiveWithAdjustments()).thenReturn(List.of(orderLevel, ownPlan));
+
+    var utilizations = service.computeUtilizationInfos(List.of(orderLevel, ownPlan));
+
+    assertThat(utilizations.get(orderLevel.getId()).info().coveredRevenueEuro())
+        .isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(utilizations.get(ownPlan.getId()).info().coveredRevenueEuro())
+        .isEqualByComparingTo("800.00");
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_revenue_on_the_order_level_plan_outside_an_own_plans_period() {
+    var orderLevel = orderLevelPlan(FROM, UNTIL);
+    var ownPlanElsewhere = suborderPlan("co/01", LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31));
+
+    var utilizations = service.computeUtilizationInfos(List.of(orderLevel, ownPlanElsewhere));
+
+    assertThat(utilizations.get(orderLevel.getId()).info().coveredRevenueEuro())
+        .isEqualByComparingTo("800.00");
+  }
+
   private BudgetControllingRow row(String completeOrderSign) {
     return compute().suborderRows().stream()
         .filter(r -> completeOrderSign.equals(r.sign()))
@@ -156,6 +226,42 @@ public class BudgetControllingServiceTest {
         .referenceday(LocalDate.of(2026, 6, 10))
         .duration(Duration.ofHours(8))
         .build();
+  }
+
+  private void givenBudgets(OrderBudget... budgets) {
+    when(orderBudgetRepository.findByCustomerorderSign("co")).thenReturn(List.of(budgets));
+  }
+
+  private static OrderBudget orderLevelPlan(LocalDate validFrom, LocalDate validUntil) {
+    return plan(null, validFrom, validUntil);
+  }
+
+  private static OrderBudget suborderPlan(String suborderSign, LocalDate validFrom, LocalDate validUntil) {
+    return plan(suborderSign, validFrom, validUntil);
+  }
+
+  /** A plan without adjustments: it carries no budget amount but still defines a coverage window. */
+  private static OrderBudget plan(String suborderSign, LocalDate validFrom, LocalDate validUntil) {
+    var budget = new OrderBudget();
+    budget.setCustomerorderSign("co");
+    budget.setSuborderSign(suborderSign);
+    budget.setActive(true);
+    budget.setValidFrom(validFrom);
+    budget.setValidUntil(validUntil);
+    // computeUtilizationInfos keys its result by id, so the plans need distinct ones. The entity has
+    // no setter because the id is generated; a saved plan always has one.
+    setId(budget, nextId++);
+    return budget;
+  }
+
+  private static void setId(OrderBudget budget, long id) {
+    try {
+      var field = AuditedEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(budget, id);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("cannot assign an id to the test plan", e);
+    }
   }
 
   private static OrderPricing orderWideRate() {

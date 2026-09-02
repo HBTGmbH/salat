@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.domain.ProgressStatus;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.common.util.DateUtils;
+import org.tb.common.LocalDateRange;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
@@ -105,7 +107,11 @@ public class BudgetControllingService {
                 .filter(b -> soSign.equals(b.getSuborderSign()))
                 .toList();
             var hasOwnBudget = suborderBudgets.stream().anyMatch(b -> Boolean.TRUE.equals(b.getActive()));
-            var effectiveBudgets = hasOwnBudget ? suborderBudgets : orderLevelBudgets;
+            // An own plan only takes the suborder out of the order-level coverage for the periods it
+            // actually covers; the order level still covers the gaps. Both lists together express
+            // that, because the coverage periods are merged rather than summed. Own plans come
+            // first so that the progress below keeps picking the suborder's own plan.
+            var effectiveBudgets = Stream.concat(suborderBudgets.stream(), orderLevelBudgets.stream()).toList();
             var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
             var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
                 (start, end) -> computeRevenue(inRange(reports, start, end),
@@ -231,7 +237,8 @@ public class BudgetControllingService {
      */
     private record OrderData(Customerorder customerorder, List<Suborder> suborders,
                              Map<Long, String> completeSignBySuborderId,
-                             Map<Long, List<TimereportDTO>> reportsBySuborder) {}
+                             Map<Long, List<TimereportDTO>> reportsBySuborder,
+                             List<OrderBudget> budgets) {}
 
     /**
      * Loads the data of one customer order over the union of the validity ranges of all its budgets.
@@ -250,7 +257,8 @@ public class BudgetControllingService {
         var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
         return new OrderData(customerorder, suborders,
             suborders.stream().collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign)),
-            timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)));
+            timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)),
+            ownBudgets);
     }
 
     private UtilizationInfo computeUtilizationInfo(OrderBudget budget, OrderData orderData,
@@ -264,15 +272,20 @@ public class BudgetControllingService {
 
         BigDecimal coveredRevenue;
         if (soSign == null || soSign.isBlank()) {
+            var planPeriods = coveredPeriods(List.of(budget), from, until);
             coveredRevenue = BigDecimal.ZERO;
             for (var so : orderData.suborders()) {
                 var reports = orderData.reportsBySuborder().getOrDefault(so.getId(), List.of());
                 var soCompleteSign = orderData.completeSignBySuborderId().get(so.getId());
                 var invoiceable = so.isInvoiceable();
-                coveredRevenue = coveredRevenue.add(computeCoveredRevenue(List.of(budget),
+                // Where the suborder has a plan of its own, the revenue belongs to that plan's row,
+                // not to this one — otherwise the same euros appear in two rows of the dashboard.
+                var ownPeriods = coveredPeriods(orderData.budgets().stream()
+                    .filter(b -> soCompleteSign.equals(b.getSuborderSign()))
+                    .toList(), from, until);
+                coveredRevenue = coveredRevenue.add(sumOver(without(planPeriods, ownPeriods),
                     (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soCompleteSign,
-                        invoiceable, pricingLookup),
-                    from, until));
+                        invoiceable, pricingLookup)));
             }
         } else {
             var suborder = orderData.suborders().stream()
@@ -451,18 +464,59 @@ public class BudgetControllingService {
         return total;
     }
 
+    /**
+     * Revenue covered by any of the given plans. The plans' validity periods are merged first: a
+     * booking covered by two overlapping plans belongs to the covered revenue once, not twice.
+     * Summing per plan inflated an order's utilization to 145.9 % where it was really 85.6 % (#903).
+     */
     private BigDecimal computeCoveredRevenue(List<OrderBudget> budgets,
                                               BiFunction<LocalDate, LocalDate, BigDecimal> revenueInRange,
                                               LocalDate from, LocalDate until) {
-        return budgets.stream()
+        return sumOver(coveredPeriods(budgets, from, until), revenueInRange);
+    }
+
+    /** The periods the given plans cover within {@code [from, until]}, overlaps merged away. */
+    private static List<LocalDateRange> coveredPeriods(List<OrderBudget> budgets, LocalDate from, LocalDate until) {
+        return merge(budgets.stream()
             .filter(b -> Boolean.TRUE.equals(b.getActive()))
             .filter(b -> !b.getValidUntil().isBefore(from) && !b.getValidFrom().isAfter(until))
-            .map(b -> {
-                var coverStart = b.getValidFrom().isAfter(from) ? b.getValidFrom() : from;
-                var coverEnd = b.getValidUntil().isBefore(until) ? b.getValidUntil() : until;
-                return revenueInRange.apply(coverStart, coverEnd);
-            })
+            .map(b -> new LocalDateRange(
+                b.getValidFrom().isAfter(from) ? b.getValidFrom() : from,
+                b.getValidUntil().isBefore(until) ? b.getValidUntil() : until))
+            .toList());
+    }
+
+    private static BigDecimal sumOver(List<LocalDateRange> periods,
+                                      BiFunction<LocalDate, LocalDate, BigDecimal> revenueInRange) {
+        return periods.stream()
+            .map(p -> revenueInRange.apply(p.getFrom(), p.getUntil()))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** The parts of {@code periods} not covered by any of {@code holes}. */
+    private static List<LocalDateRange> without(List<LocalDateRange> periods, List<LocalDateRange> holes) {
+        var remaining = periods;
+        for (var hole : holes) {
+            remaining = remaining.stream().flatMap(p -> p.minus(hole).stream()).toList();
+        }
+        return remaining;
+    }
+
+    /**
+     * Merges overlapping and directly adjacent periods into single periods, so that revenue summed
+     * per period counts every booking exactly once.
+     */
+    private static List<LocalDateRange> merge(List<LocalDateRange> periods) {
+        var merged = new ArrayList<LocalDateRange>();
+        periods.stream().sorted().forEach(period -> {
+            var last = merged.isEmpty() ? null : merged.get(merged.size() - 1);
+            if (last != null && last.isConnected(period)) {
+                merged.set(merged.size() - 1, last.plus(period));
+            } else {
+                merged.add(period);
+            }
+        });
+        return merged;
     }
 
     private BigDecimal sumBudget(List<OrderBudgetAdjustment> adjustments) {
