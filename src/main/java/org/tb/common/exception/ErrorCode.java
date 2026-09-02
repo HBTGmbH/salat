@@ -110,6 +110,9 @@ public enum ErrorCode {
   BU_EMPLOYEE_COST_NOT_FOUND("BU-0004", "employee cost not found"),
   BU_EMPLOYEE_COST_ASSIGNMENT_NOT_FOUND("BU-0005", "employee cost assignment not found"),
   BU_SUBORDER_NOT_IN_ORDER("BU-0009", "suborder sign does not belong to the given customer order"),
+  BU_BUDGET_OVERLAP("BU-0010", "an active order budget already covers part of this period for the same scope"),
+  BU_BUDGET_LEVEL_MIXED("BU-0011", "a customer order is budgeted either as a whole or per suborder, not both at a time"),
+  BU_SUBORDER_NOT_FIRST_LEVEL("BU-0012", "order budgets are only allowed on first level suborders"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

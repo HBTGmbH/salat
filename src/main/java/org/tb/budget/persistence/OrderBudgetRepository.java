@@ -1,9 +1,11 @@
 package org.tb.budget.persistence;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.tb.budget.domain.OrderBudget;
 
@@ -29,5 +31,23 @@ public interface OrderBudgetRepository
     List<OrderBudget> findAllActiveWithAdjustments();
 
     List<OrderBudget> findByActiveAndAlertThresholdPercentIsNotNull(Boolean active);
+
+    /**
+     * Active budgets of the customer order whose validity overlaps the given period, excluding the
+     * one being edited. Whether such a budget is an actual conflict depends on its scope, which the
+     * service decides — two plans on <em>different</em> suborders may share a period.
+     */
+    @Query("""
+        SELECT b FROM OrderBudget b
+        WHERE b.customerorderSign = :co
+          AND b.active = true
+          AND b.validFrom <= :until AND b.validUntil >= :from
+          AND (:excludeId IS NULL OR b.id != :excludeId)
+        """)
+    List<OrderBudget> findActiveOverlapping(
+        @Param("co") String customerorderSign,
+        @Param("from") LocalDate validFrom,
+        @Param("until") LocalDate validUntil,
+        @Param("excludeId") Long excludeId);
 
 }

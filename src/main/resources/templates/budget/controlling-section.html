@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  One evaluation of the controlling view. Column visibility is decided per section, because a
+  section covers exactly one budget period: only an unplanned one needs a period column, and only a
+  planned one has a budget to compare against.
+-->
+<table th:fragment="table(section, isManager)" class="table table-vcenter card-table">
+  <thead>
+    <tr>
+      <th th:text="#{main.controlling.col.order}">Auftrag / Subauftrag</th>
+      <th th:if="${section.hasPeriodColumn()}" th:text="#{main.controlling.col.period}">Zeitraum</th>
+      <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
+      <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
+      <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
+      <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
+      <th class="text-end" th:if="${section.hasBudgetColumn()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
+      <th class="text-end" th:if="${section.hasBudgetColumn()}" th:text="#{main.controlling.col.budgetused}">Budget genutzt</th>
+      <th class="text-end" th:if="${section.hasBudgetColumn()}" th:text="#{main.controlling.col.overrun}">Über Budget (€)</th>
+      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
+      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">Bruttogewinn (€)</th>
+      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.margin}">Umsatzmarge (%)</th>
+      <th class="text-end" th:if="${section.hasProgressData()}" th:text="#{main.controlling.col.progress}">Fortschritt</th>
+      <th class="text-center" th:if="${section.hasProgressData()}" th:text="#{main.controlling.col.progress.status}">Plan-Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- th:each and th:if sit on an outer block: th:replace has higher precedence and would be
+         evaluated before either of them, leaving the fragment without its row. -->
+    <th:block th:each="group : ${section.groups()}">
+      <th:block th:each="row : ${group.rows()}">
+        <tr th:replace="~{budget/controlling-section :: row(${section}, ${row}, ${isManager}, 'small', '')}"></tr>
+      </th:block>
+      <th:block th:if="${group.hasSubtotal()}">
+        <tr th:replace="~{budget/controlling-section :: row(${section}, ${group.subtotal()}, ${isManager}, 'small fw-bold', 'table-active')}"></tr>
+      </th:block>
+    </th:block>
+    <tr th:replace="~{budget/controlling-section :: row(${section}, ${section.total()}, ${isManager}, 'fw-bold', 'table-active fw-bold')}"></tr>
+  </tbody>
+</table>
+
+<!--
+  Detail, subtotal and total line are identical apart from their emphasis; one fragment keeps them
+  from drifting apart.
+-->
+<tr th:fragment="row(section, row, isManager, cellClass, rowClass)" th:class="${rowClass}">
+  <td>
+    <span class="text-muted small" th:text="${row.sign()} ?: #{main.controlling.row.total}">Summe</span>
+    <span class="ms-1 small" th:text="${row.label()}"></span>
+  </td>
+  <td th:if="${section.hasPeriodColumn()}" th:class="${cellClass}" th:text="${row.periodsFormatted()}"></td>
+  <td class="text-end" th:classappend="${cellClass}" th:text="${row.bookedHoursFormatted()}"></td>
+  <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
+      th:text="${row.plannedHoursFormatted()}"></td>
+  <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
+      th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
+  <td class="text-end" th:classappend="${cellClass}"
+      th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${section.hasBudgetColumn()}" th:classappend="${cellClass}"
+      th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${section.hasBudgetColumn()}"
+      th:classappend="${cellClass} + (${row.hasBudgetPercent() and row.budgetUsedPercent() > 100} ? ' text-danger' : '')"
+      th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
+  <td class="text-end" th:if="${section.hasBudgetColumn()}"
+      th:classappend="${cellClass} + (${row.hasOverrun()} ? ' text-danger' : '')"
+      th:text="${row.hasOverrun()} ? #{main.budget.format.amount(${row.overrunEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${isManager}" th:classappend="${cellClass}"
+      th:text="${row.hasCost()} ? #{main.budget.format.amount(${row.costEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${isManager}"
+      th:classappend="${cellClass} + (${row.hasGrossProfit() and row.grossProfitEuro().signum() < 0} ? ' text-danger' : '')"
+      th:text="${row.hasGrossProfit()} ? #{main.budget.format.amount(${row.grossProfitEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${isManager}"
+      th:classappend="${cellClass} + (${row.hasGrossProfitMargin() and row.grossProfitMarginPercent() < 0} ? ' text-danger' : '')"
+      th:text="${row.hasGrossProfitMargin()} ? (${#numbers.formatDecimal(row.grossProfitMarginPercent(), 1, 1)} + ' %') : '—'"></td>
+  <td class="text-end" th:if="${section.hasProgressData()}" th:classappend="${cellClass}"
+      th:text="${row.progressFormatted()}"></td>
+  <td class="text-center" th:if="${section.hasProgressData()}" th:classappend="${cellClass}">
+    <span th:if="${row.hasProgress() and row.progressStatus().name() == 'ON_TRACK'}" class="badge bg-success-lt" th:text="#{main.controlling.progress.status.ON_TRACK}">Im Plan</span>
+    <span th:if="${row.hasProgress() and row.progressStatus().name() == 'AHEAD'}" class="badge bg-info-lt" th:text="#{main.controlling.progress.status.AHEAD}">Voraus</span>
+    <span th:if="${row.hasProgress() and row.progressStatus().name() == 'BEHIND'}" class="badge bg-danger-lt" th:text="#{main.controlling.progress.status.BEHIND}">Hinter Plan</span>
+    <span th:if="${!row.hasProgress()}" class="text-muted">—</span>
+  </td>
+</tr>
+
+</body>
+</html>

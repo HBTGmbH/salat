@@ -122,6 +122,21 @@ public class SuborderServiceTest {
     assertThat(selectableSigns("co/01")).containsExactly("co/01");
   }
 
+  /** Budget plans only live on direct children of the customer order (#905). */
+  @Test
+  public void should_recognise_a_direct_child_of_the_customer_order() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.isFirstLevelSuborder("co", "co/01")).isTrue();
+  }
+
+  @Test
+  public void should_not_treat_a_nested_suborder_as_first_level() {
+    givenOrderWithNestedSuborder();
+
+    assertThat(suborderService.isFirstLevelSuborder("co", "co/01/02")).isFalse();
+  }
+
   private List<String> selectableSigns(String keep) {
     return suborderService.getSelectableSubordersByCustomerorderId(1L, keep).stream()
         .map(Suborder::getCompleteOrderSign)

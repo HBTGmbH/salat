@@ -292,6 +292,18 @@ public class SuborderService {
   }
 
   /**
+   * Same, but restricted to direct children of the customer order — budget plans only live on that
+   * first level (#905). The stored one stays in the list either way, so an older plan on a deeper
+   * suborder remains editable.
+   */
+  public List<Suborder> getSelectableFirstLevelSubordersByCustomerorderId(long customerorderId, String keepCompleteSign) {
+    return getSelectableSubordersByCustomerorderId(customerorderId, keepCompleteSign).stream()
+        .filter(suborder -> suborder.getParentorder() == null
+            || Objects.equals(suborder.getCompleteOrderSign(), keepCompleteSign))
+        .toList();
+  }
+
+  /**
    * Whether a suborder with the given complete order sign exists below the customer order with the
    * given sign. Budget and cost records reference their suborder by that sign instead of by id, so
    * they need this to reject a sign that does not belong to the chosen customer order.
@@ -299,6 +311,17 @@ public class SuborderService {
   public boolean existsByCompleteOrderSign(String customerorderSign, String completeOrderSign) {
     return subordersOf(customerorderSign).stream()
         .anyMatch(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()));
+  }
+
+  /**
+   * Whether the suborder with the given complete order sign is a direct child of the customer order.
+   * Budget plans are only kept on that first level, so that an order is budgeted along one flat set
+   * of suborders rather than along a tree.
+   */
+  public boolean isFirstLevelSuborder(String customerorderSign, String completeOrderSign) {
+    return subordersOf(customerorderSign).stream()
+        .filter(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()))
+        .anyMatch(suborder -> suborder.getParentorder() == null);
   }
 
   /**

@@ -7,6 +7,7 @@ import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,23 +15,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.domain.BudgetControllingGroup;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
+import org.tb.budget.domain.BudgetControllingSection;
 import org.tb.budget.domain.EmployeeCostLookup;
-import org.tb.budget.domain.ForecastStatus;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetScopeEntry;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.domain.ProgressStatus;
+import org.tb.budget.domain.SectionKind;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -56,7 +59,7 @@ public class BudgetControllingService {
 
     public BudgetControllingResult compute(String customerorderSign, LocalDate from, LocalDate until, boolean includeCosts) {
         var today = DateUtils.today();
-        var forecastAvailable = until.getYear() < 2100;
+        var filter = new LocalDateRange(from, until);
 
         Set<LocalDate> holidays = publicholidayService.getPublicHolidaysBetween(from, until).stream()
             .map(h -> h.getRefdate()).collect(Collectors.toSet());
@@ -71,120 +74,248 @@ public class BudgetControllingService {
         var pricingLookup = orderPricingService.lookupFor(List.of(customerorderSign));
         var costLookup = includeCosts ? employeeCostService.lookup() : null;
 
-        Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
-            .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
+        // Every report is priced exactly once here. Sections then only filter and add, which matters
+        // because the same report is looked at by every section it could fall into.
+        var scored = scoreReports(suborders, timereports, customerorderSign, pricingLookup, costLookup);
 
-        var orderLevelBudgets = budgets.stream()
-            .filter(b -> b.getSuborderSign() == null || b.getSuborderSign().isBlank())
-            .toList();
-        var orderLevelBudget = computeEffectiveBudget(orderLevelBudgets, from, until);
+        var coverage = assignCoverage(budgets, suborders, filter);
 
-        var suborderRows = new ArrayList<BudgetControllingRow>();
-        var totalBooked = Duration.ZERO;
-        var totalPlanned = Duration.ZERO;
-        var totalRevenue = BigDecimal.ZERO;
-        var totalCoveredRevenue = BigDecimal.ZERO;
-        var totalCost = BigDecimal.ZERO;
-        var totalBudget = orderLevelBudget;
-        var totalForecastRevenue = BigDecimal.ZERO;
-        var totalForecastUncoveredRevenue = BigDecimal.ZERO;
-        var totalForecastHours = Duration.ZERO;
-        var totalForecastKnown = true;
-
-        for (var suborder : suborders) {
-            // Budgets, prices and costs are keyed by the complete order sign. Resolving it walks the
-            // lazily fetched parent chain, so do that once per suborder instead of per budget below.
-            var soSign = suborder.getCompleteOrderSign();
-            var invoiceable = suborder.isInvoiceable();
-            var reports = bySuborder.getOrDefault(suborder.getId(), List.of());
-            var booked = sumDuration(reports);
-            var revenue = computeRevenue(reports, customerorderSign, soSign, invoiceable, pricingLookup);
-            // Costs accrue whether or not the work is billed, so they are not gated on invoiceable.
-            var cost = includeCosts ? computeCost(reports, soSign, costLookup) : null;
-            var suborderBudgets = budgets.stream()
-                .filter(b -> soSign.equals(b.getSuborderSign()))
-                .toList();
-            var hasOwnBudget = suborderBudgets.stream().anyMatch(b -> Boolean.TRUE.equals(b.getActive()));
-            var effectiveBudgets = hasOwnBudget ? suborderBudgets : orderLevelBudgets;
-            var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
-            var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
-                (start, end) -> computeRevenue(inRange(reports, start, end),
-                    customerorderSign, soSign, invoiceable, pricingLookup),
-                from, until);
-
-            Duration forecastHours = null;
-            BigDecimal forecastRevenue = null;
-            BigDecimal forecastUncoveredRevenue = null;
-            if (forecastAvailable) {
-                var fc = forecast(booked, coveredRevenue, customerorderSign, soSign, invoiceable, from, until, today, holidays, effectiveBudgets, pricingLookup);
-                forecastHours = fc.hours();
-                forecastRevenue = fc.coveredRevenue();
-                forecastUncoveredRevenue = fc.uncoveredRevenue();
-                if (forecastRevenue == null) totalForecastKnown = false;
-                else totalForecastRevenue = totalForecastRevenue.add(forecastRevenue);
-                if (forecastUncoveredRevenue != null) totalForecastUncoveredRevenue = totalForecastUncoveredRevenue.add(forecastUncoveredRevenue);
-                if (forecastHours != null) totalForecastHours = totalForecastHours.plus(forecastHours);
-            }
-
-            var planned = suborder.getDebithours() != null ? suborder.getDebithours() : Duration.ZERO;
-            var activeSuborderBudget = effectiveBudgets.stream()
-                .filter(b -> Boolean.TRUE.equals(b.getActive())).findFirst().orElse(null);
-            var progressPercent = computeProgress(activeSuborderBudget, from, until, today, holidays);
-            var budgetUsedPct = (coveredRevenue != null && budget != null && budget.signum() != 0)
-                ? coveredRevenue.divide(budget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
-                : null;
-            var progressStatus = computeProgressStatus(progressPercent, budgetUsedPct);
-            var row = new BudgetControllingRow(
-                soSign,
-                suborder.getShortdescription(),
-                true, planned, booked, budget, revenue, coveredRevenue, cost,
-                forecastHours, forecastRevenue, forecastUncoveredRevenue,
-                forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue), forecastUncoveredRevenue),
-                progressPercent, progressStatus);
-            // A suborder without booked time, budget and planned hours contributes nothing but a row
-            // of dashes. It is still added to the totals below, where it counts as zero anyway.
-            if (row.hasContent()) {
-                suborderRows.add(row);
-            }
-
-            totalBooked = totalBooked.plus(booked);
-            totalPlanned = totalPlanned.plus(planned);
-            totalRevenue = totalRevenue.add(revenue);
-            totalCoveredRevenue = totalCoveredRevenue.add(coveredRevenue);
-            if (includeCosts) totalCost = totalCost.add(cost);
-            if (hasOwnBudget) totalBudget = totalBudget.add(budget);
+        var sections = new ArrayList<BudgetControllingSection>();
+        for (var planned : coverage.plannedSections()) {
+            sections.add(plannedSection(planned, suborders, scored, today, holidays, includeCosts));
+        }
+        var unplanned = unplannedSection(coverage.unplannedBySuborderId(), suborders, scored, includeCosts);
+        if (unplanned != null) {
+            sections.add(unplanned);
         }
 
-        var coPlanned = customerorder.getDebithours() != null ? customerorder.getDebithours() : Duration.ZERO;
-        var totalForecastRevenueFinal = forecastAvailable && totalForecastKnown ? totalForecastRevenue : null;
-        var totalForecastUncoveredFinal = forecastAvailable && totalForecastUncoveredRevenue.signum() > 0 ? totalForecastUncoveredRevenue : null;
-        var totalForecastHoursFinal = forecastAvailable ? totalForecastHours : null;
+        return new BudgetControllingResult(customerorderSign, customerorder.getShortdescription(), filter,
+            sections.stream().filter(BudgetControllingSection::hasContent).toList());
+    }
 
-        var activeOrderBudget = orderLevelBudgets.stream()
-            .filter(b -> Boolean.TRUE.equals(b.getActive())).findFirst().orElse(null);
-        var totalProgressPercent = computeProgress(activeOrderBudget, from, until, today, holidays);
-        var totalBudgetUsedPct = (totalBudget != null && totalBudget.signum() != 0)
-            ? totalCoveredRevenue.divide(totalBudget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
+    /** A time report with its revenue and cost already resolved. */
+    private record ScoredReport(LocalDate day, Duration duration, BigDecimal revenue, BigDecimal cost) {}
+
+    private Map<Long, List<ScoredReport>> scoreReports(List<Suborder> suborders, List<TimereportDTO> timereports,
+                                                       String customerorderSign, OrderPricingLookup pricingLookup,
+                                                       EmployeeCostLookup costLookup) {
+        Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
+            .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
+        Map<Long, List<ScoredReport>> scored = new HashMap<>();
+        for (var suborder : suborders) {
+            // Resolving the complete order sign walks the lazily fetched parent chain, so do it once.
+            var soSign = suborder.getCompleteOrderSign();
+            var invoiceable = suborder.isInvoiceable();
+            scored.put(suborder.getId(), bySuborder.getOrDefault(suborder.getId(), List.<TimereportDTO>of()).stream()
+                .map(r -> new ScoredReport(r.getReferenceday(), r.getDuration(),
+                    // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
+                    invoiceable ? rateOf(r, customerorderSign, soSign, pricingLookup) : BigDecimal.ZERO,
+                    // Costs accrue whether or not the work is billed.
+                    costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, costLookup)))
+                .toList());
+        }
+        return scored;
+    }
+
+    private static BigDecimal rateOf(TimereportDTO report, String coSign, String soSign, OrderPricingLookup lookup) {
+        var hours = minutesToHours(report.getDuration().toMinutes());
+        return lookup.findEffectiveRate(coSign, soSign, report.getEmployeeSign(), report.getReferenceday())
+            .map(p -> hours.multiply(new BigDecimal(p.getPriceCentsPerHour())).movePointLeft(2))
+            .orElse(BigDecimal.ZERO);
+    }
+
+    private static BigDecimal costOf(TimereportDTO report, String soSign, EmployeeCostLookup lookup) {
+        var hours = minutesToHours(report.getDuration().toMinutes());
+        return lookup.findEffectiveCost(report.getEmployeeSign(), soSign, report.getReferenceday())
+            .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
+            .orElse(BigDecimal.ZERO);
+    }
+
+    /** One plan with the periods it covers per suborder. */
+    private record PlanCoverage(OrderBudget plan, LocalDateRange period, boolean orderWide,
+                                Map<Long, List<LocalDateRange>> periodsBySuborderId) {}
+
+    /** Plans grouped into sections, plus what no plan covers. */
+    private record Coverage(List<List<PlanCoverage>> plannedSections,
+                            Map<Long, List<LocalDateRange>> unplannedBySuborderId) {}
+
+    /**
+     * Works out which plan covers which suborder when. Every {@code (suborder, day)} is claimed by at
+     * most one plan: the rules forbid overlaps (#905), but legacy data may still contain them and a
+     * booking must never be counted twice. Suborder plans win over order-wide ones, then the earlier
+     * one, then the lower id — a fixed order so the result does not depend on query order.
+     */
+    private Coverage assignCoverage(List<OrderBudget> budgets, List<Suborder> suborders, LocalDateRange filter) {
+        var firstLevelSignBySuborderId = suborders.stream()
+            .collect(Collectors.toMap(Suborder::getId, BudgetControllingService::firstLevelSignOf));
+
+        var candidates = budgets.stream()
+            .filter(b -> Boolean.TRUE.equals(b.getActive()))
+            .map(b -> new AbstractMap.SimpleEntry<>(b,
+                new LocalDateRange(b.getValidFrom(), b.getValidUntil()).intersection(filter)))
+            .filter(e -> e.getValue() != null && e.getValue().isValid())
+            .sorted(Comparator
+                .comparing((AbstractMap.SimpleEntry<OrderBudget, LocalDateRange> e) -> isOrderWide(e.getKey().getSuborderSign()))
+                .thenComparing(e -> e.getKey().getValidFrom())
+                .thenComparing(e -> e.getKey().getId(), Comparator.nullsLast(Comparator.naturalOrder())))
+            .toList();
+
+        Map<Long, List<LocalDateRange>> claimed = new HashMap<>();
+        var covered = new ArrayList<PlanCoverage>();
+        for (var candidate : candidates) {
+            var plan = candidate.getKey();
+            var period = candidate.getValue();
+            var orderWide = isOrderWide(plan.getSuborderSign());
+            Map<Long, List<LocalDateRange>> bySuborder = new LinkedHashMap<>();
+            for (var suborder : suborders) {
+                // A plan on a first level suborder also covers everything below it — plans only live
+                // on that level, but bookings happen further down.
+                if (!orderWide && !plan.getSuborderSign().equals(firstLevelSignBySuborderId.get(suborder.getId()))) {
+                    continue;
+                }
+                var free = minusAll(List.of(period), claimed.getOrDefault(suborder.getId(), List.of()));
+                if (!free.isEmpty()) {
+                    bySuborder.put(suborder.getId(), free);
+                    claimed.computeIfAbsent(suborder.getId(), k -> new ArrayList<>()).addAll(free);
+                }
+            }
+            covered.add(new PlanCoverage(plan, period, orderWide, bySuborder));
+        }
+
+        // Plans of the same level and the same period share one section.
+        Map<String, List<PlanCoverage>> grouped = new LinkedHashMap<>();
+        for (var planCoverage : covered) {
+            grouped.computeIfAbsent(planCoverage.orderWide() + "|" + planCoverage.period(), k -> new ArrayList<>())
+                .add(planCoverage);
+        }
+        var sections = grouped.values().stream()
+            .sorted(Comparator
+                .comparing((List<PlanCoverage> s) -> s.get(0).period().getFrom())
+                .thenComparing(s -> s.get(0).period().getUntil())
+                .thenComparing(s -> !s.get(0).orderWide()))
+            .toList();
+
+        Map<Long, List<LocalDateRange>> unplanned = new LinkedHashMap<>();
+        for (var suborder : suborders) {
+            var gaps = minusAll(List.of(filter), claimed.getOrDefault(suborder.getId(), List.of()));
+            if (!gaps.isEmpty()) {
+                unplanned.put(suborder.getId(), gaps);
+            }
+        }
+        return new Coverage(sections, unplanned);
+    }
+
+    /** The complete order sign of the suborder's first level ancestor, or its own if it is one. */
+    private static String firstLevelSignOf(Suborder suborder) {
+        return suborder.withParents().get(0).getCompleteOrderSign();
+    }
+
+    private static boolean isOrderWide(String suborderSign) {
+        return suborderSign == null || suborderSign.isBlank();
+    }
+
+    private BudgetControllingSection plannedSection(List<PlanCoverage> plans, List<Suborder> suborders,
+                                                    Map<Long, List<ScoredReport>> scored, LocalDate today,
+                                                    Set<LocalDate> holidays, boolean includeCosts) {
+        var orderWide = plans.get(0).orderWide();
+        var period = plans.get(0).period();
+        var groups = new ArrayList<BudgetControllingGroup>();
+
+        for (var planCoverage : plans) {
+            var plan = planCoverage.plan();
+            var rows = suborders.stream()
+                .filter(s -> planCoverage.periodsBySuborderId().containsKey(s.getId()))
+                .map(s -> row(s, planCoverage.periodsBySuborderId().get(s.getId()), scored, includeCosts, null))
+                .filter(BudgetControllingRow::hasContent)
+                .toList();
+            var budget = budgetOf(plan, period);
+            var progress = computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
+            // An order-wide plan is the whole section, so its figures belong on the section total.
+            var subtotal = orderWide ? null
+                : aggregate(plan.getSuborderSign(), plan.getName(), rows, budget, progress, includeCosts);
+            groups.add(new BudgetControllingGroup(plan.getSuborderSign(), plan.getName(), rows, subtotal));
+        }
+
+        var allRows = groups.stream().flatMap(g -> g.rows().stream()).toList();
+        var totalBudget = plans.stream().map(p -> budgetOf(p.plan(), period))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var totalProgress = orderWide
+            ? computeProgress(plans.get(0).plan(), period.getFrom(), period.getUntil(), today, holidays)
             : null;
-        var totalProgressStatus = computeProgressStatus(totalProgressPercent, totalBudgetUsedPct);
+        var total = aggregate(null, null, allRows, totalBudget, totalProgress, includeCosts);
 
-        var totalRow = new BudgetControllingRow(
-            customerorderSign,
-            customerorder.getShortdescription(),
-            false,
-            coPlanned,
-            totalBooked,
-            totalBudget,
-            totalRevenue,
-            totalCoveredRevenue,
-            includeCosts ? totalCost : null,
-            totalForecastHoursFinal,
-            totalForecastRevenueFinal,
-            totalForecastUncoveredFinal,
-            forecastStatus(totalForecastRevenueFinal, totalBudget, totalRevenue.subtract(totalCoveredRevenue), totalForecastUncoveredFinal),
-            totalProgressPercent, totalProgressStatus);
+        return new BudgetControllingSection(
+            orderWide ? SectionKind.ORDER_LEVEL : SectionKind.SUBORDER_LEVEL,
+            period,
+            plans.stream().map(p -> p.plan().getName()).toList(),
+            groups, total);
+    }
 
-        return new BudgetControllingResult(totalRow, suborderRows, forecastAvailable);
+    private BudgetControllingSection unplannedSection(Map<Long, List<LocalDateRange>> gapsBySuborderId,
+                                                      List<Suborder> suborders,
+                                                      Map<Long, List<ScoredReport>> scored, boolean includeCosts) {
+        var rows = suborders.stream()
+            .filter(s -> gapsBySuborderId.containsKey(s.getId()))
+            .map(s -> row(s, gapsBySuborderId.get(s.getId()), scored, includeCosts, gapsBySuborderId.get(s.getId())))
+            .filter(BudgetControllingRow::hasContent)
+            .toList();
+        if (rows.isEmpty()) {
+            return null;
+        }
+        var total = aggregate(null, null, rows, null, null, includeCosts);
+        return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(),
+            List.of(new BudgetControllingGroup(null, null, rows, null)), total);
+    }
+
+    private BudgetControllingRow row(Suborder suborder, List<LocalDateRange> periods,
+                                     Map<Long, List<ScoredReport>> scored, boolean includeCosts,
+                                     List<LocalDateRange> shownPeriods) {
+        var reports = scored.getOrDefault(suborder.getId(), List.of()).stream()
+            .filter(r -> periods.stream().anyMatch(p -> p.contains(r.day())))
+            .toList();
+        return BudgetControllingRow.builder()
+            .sign(suborder.getCompleteOrderSign())
+            .label(suborder.getShortdescription())
+            .periods(shownPeriods)
+            .plannedHours(suborder.getDebithours() != null ? suborder.getDebithours() : Duration.ZERO)
+            .bookedHours(reports.stream().map(ScoredReport::duration).reduce(Duration.ZERO, Duration::plus))
+            .revenueEuro(reports.stream().map(ScoredReport::revenue).reduce(BigDecimal.ZERO, BigDecimal::add))
+            .costEuro(includeCosts
+                ? reports.stream().map(ScoredReport::cost).reduce(BigDecimal.ZERO, BigDecimal::add) : null)
+            .build();
+    }
+
+    private BudgetControllingRow aggregate(String sign, String label, List<BudgetControllingRow> rows,
+                                           BigDecimal budget, Double progressPercent, boolean includeCosts) {
+        var revenue = rows.stream().map(BudgetControllingRow::revenueEuro).reduce(BigDecimal.ZERO, BigDecimal::add);
+        var row = BudgetControllingRow.builder()
+            .sign(sign)
+            .label(label)
+            .plannedHours(rows.stream().map(BudgetControllingRow::plannedHours).reduce(Duration.ZERO, Duration::plus))
+            .bookedHours(rows.stream().map(BudgetControllingRow::bookedHours).reduce(Duration.ZERO, Duration::plus))
+            .budgetEuro(budget)
+            .revenueEuro(revenue)
+            .costEuro(includeCosts
+                ? rows.stream().map(BudgetControllingRow::costEuro).reduce(BigDecimal.ZERO, BigDecimal::add) : null)
+            .progressPercent(progressPercent)
+            .build();
+        return BudgetControllingRow.builder()
+            .sign(row.sign()).label(row.label())
+            .plannedHours(row.plannedHours()).bookedHours(row.bookedHours())
+            .budgetEuro(row.budgetEuro()).revenueEuro(row.revenueEuro()).costEuro(row.costEuro())
+            .progressPercent(progressPercent)
+            .progressStatus(computeProgressStatus(progressPercent,
+                row.hasBudgetPercent() ? row.budgetUsedPercent() : null))
+            .build();
+    }
+
+    /** The parts of {@code periods} that none of {@code holes} covers. */
+    private static List<LocalDateRange> minusAll(List<LocalDateRange> periods, List<LocalDateRange> holes) {
+        var remaining = periods;
+        for (var hole : holes) {
+            remaining = remaining.stream().flatMap(p -> p.minus(hole).stream()).toList();
+        }
+        return remaining;
     }
 
     public record UtilizationInfo(BigDecimal budgetEuro, BigDecimal coveredRevenueEuro) {
@@ -253,85 +384,34 @@ public class BudgetControllingService {
             timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)));
     }
 
+    /**
+     * Utilization of one plan over its own validity. The scope has to be resolved exactly as the
+     * controlling does it — a plan on a first level suborder covers everything below it, because
+     * plans only live on the customer order or on that first level while bookings happen deeper.
+     * Matching the sign exactly here would report nothing for orders that book on the second level.
+     */
     private UtilizationInfo computeUtilizationInfo(OrderBudget budget, OrderData orderData,
                                                    OrderPricingLookup pricingLookup) {
-        var from = budget.getValidFrom();
-        var until = budget.getValidUntil();
+        var period = new LocalDateRange(budget.getValidFrom(), budget.getValidUntil());
         var coSign = budget.getCustomerorderSign();
         var soSign = budget.getSuborderSign();
 
-        var effectiveBudget = computeEffectiveBudget(List.of(budget), from, until);
-
-        BigDecimal coveredRevenue;
-        if (soSign == null || soSign.isBlank()) {
-            coveredRevenue = BigDecimal.ZERO;
-            for (var so : orderData.suborders()) {
-                var reports = orderData.reportsBySuborder().getOrDefault(so.getId(), List.of());
-                var soCompleteSign = orderData.completeSignBySuborderId().get(so.getId());
-                var invoiceable = so.isInvoiceable();
-                coveredRevenue = coveredRevenue.add(computeCoveredRevenue(List.of(budget),
-                    (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soCompleteSign,
-                        invoiceable, pricingLookup),
-                    from, until));
+        var revenue = BigDecimal.ZERO;
+        for (var suborder : orderData.suborders()) {
+            if (!isOrderWide(soSign) && !soSign.equals(firstLevelSignOf(suborder))) {
+                continue;
             }
-        } else {
-            var suborder = orderData.suborders().stream()
-                .filter(so -> soSign.equals(orderData.completeSignBySuborderId().get(so.getId())))
-                .findFirst().orElse(null);
-            var reports = suborder == null ? List.<TimereportDTO>of()
-                : orderData.reportsBySuborder().getOrDefault(suborder.getId(), List.of());
-            // An unresolvable sign earns nothing anyway, so treating it as not invoiceable is right.
-            var invoiceable = suborder != null && suborder.isInvoiceable();
-            coveredRevenue = computeCoveredRevenue(List.of(budget),
-                (start, end) -> computeRevenue(inRange(reports, start, end), coSign, soSign,
-                    invoiceable, pricingLookup),
-                from, until);
-        }
-
-        return new UtilizationInfo(effectiveBudget, coveredRevenue);
-    }
-
-    private record ForecastData(Duration hours, BigDecimal coveredRevenue, BigDecimal uncoveredRevenue) {}
-
-    private ForecastData forecast(Duration booked, BigDecimal coveredRevenue,
-                                  String coSign, String soSign, boolean invoiceable,
-                                  LocalDate from, LocalDate until, LocalDate today,
-                                  Set<LocalDate> holidays, List<OrderBudget> effectiveBudgets,
-                                  OrderPricingLookup pricingLookup) {
-        var elapsedEnd = today.isBefore(until) ? today : until;
-        var elapsed = workingDays(from, elapsedEnd, holidays);
-        if (elapsed <= 0) return new ForecastData(Duration.ZERO, coveredRevenue, BigDecimal.ZERO);
-
-        long remainingCovered = 0, remainingUncovered = 0;
-        if (today.isBefore(until)) {
-            for (var d = today; d.isBefore(until); d = d.plusDays(1)) {
-                var dow = d.getDayOfWeek();
-                if (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY || holidays.contains(d)) continue;
-                final var day = d;
-                if (effectiveBudgets.stream().anyMatch(b -> Boolean.TRUE.equals(b.getActive())
-                        && !day.isBefore(b.getValidFrom()) && !day.isAfter(b.getValidUntil()))) remainingCovered++;
-                else remainingUncovered++;
+            if (!suborder.isInvoiceable()) {
+                continue;
+            }
+            var soCompleteSign = orderData.completeSignBySuborderId().get(suborder.getId());
+            for (var report : orderData.reportsBySuborder().getOrDefault(suborder.getId(), List.<TimereportDTO>of())) {
+                if (period.contains(report.getReferenceday())) {
+                    revenue = revenue.add(rateOf(report, coSign, soCompleteSign, pricingLookup));
+                }
             }
         }
-        if (remainingCovered + remainingUncovered == 0) return new ForecastData(Duration.ZERO, coveredRevenue, BigDecimal.ZERO);
-
-        double burnMinutesPerDay = (double) booked.toMinutes() / elapsed;
-        var forecastMinutes = (long) (burnMinutesPerDay * (remainingCovered + remainingUncovered));
-        var forecastHours = Duration.ofMinutes(forecastMinutes);
-
-        // Hours keep being projected, but they will never be billed — a definite zero, not "unknown".
-        if (!invoiceable) {
-            return new ForecastData(forecastHours, BigDecimal.ZERO, null);
-        }
-
-        var effectiveRate = pricingLookup.findEffectiveRate(coSign, soSign, null, today);
-        if (effectiveRate.isEmpty()) return new ForecastData(forecastHours, null, null);
-
-        var revenuePerDay = minutesToHours((long) burnMinutesPerDay)
-            .multiply(new BigDecimal(effectiveRate.get().getPriceCentsPerHour()).movePointLeft(2));
-        var forecastCovered = coveredRevenue.add(revenuePerDay.multiply(BigDecimal.valueOf(remainingCovered)));
-        var forecastUncovered = revenuePerDay.multiply(BigDecimal.valueOf(remainingUncovered));
-        return new ForecastData(forecastHours, forecastCovered, forecastUncovered.signum() > 0 ? forecastUncovered : null);
+        return new UtilizationInfo(budgetOf(budget, period), revenue);
     }
 
     private Double computeProgress(OrderBudget budget, LocalDate from, LocalDate until,
@@ -378,95 +458,10 @@ public class BudgetControllingService {
         return count;
     }
 
-    private ForecastStatus forecastStatus(BigDecimal forecastRevenue, BigDecimal budget,
-                                           BigDecimal uncoveredRevenue, BigDecimal forecastUncoveredRevenue) {
-        if ((uncoveredRevenue != null && uncoveredRevenue.signum() > 0)
-                || (forecastUncoveredRevenue != null && forecastUncoveredRevenue.signum() > 0)) return ForecastStatus.RED;
-        if (forecastRevenue == null || budget == null || budget.signum() == 0) return ForecastStatus.UNKNOWN;
-        var pct = forecastRevenue.divide(budget, 4, RoundingMode.HALF_UP).doubleValue();
-        if (pct <= 0.80) return ForecastStatus.GREEN;
-        if (pct <= 1.00) return ForecastStatus.YELLOW;
-        return ForecastStatus.RED;
-    }
-
-    private Duration sumDuration(List<TimereportDTO> reports) {
-        return reports.stream()
-            .map(TimereportDTO::getDuration)
-            .reduce(Duration.ZERO, Duration::plus);
-    }
-
-    private static List<TimereportDTO> inRange(List<TimereportDTO> reports, LocalDate start, LocalDate end) {
-        return reports.stream()
-            .filter(r -> !r.getReferenceday().isBefore(start) && !r.getReferenceday().isAfter(end))
-            .toList();
-    }
-
-    /**
-     * Revenue of the given time reports. Work on a suborder that is not invoiceable is not billed to
-     * the customer, so it earns nothing no matter which rate would match — hence the flag is a
-     * parameter rather than a check at the call sites, so that no revenue path can forget it.
-     */
-    private BigDecimal computeRevenue(List<TimereportDTO> reports, String coSign, String soSign,
-                                      boolean invoiceable, OrderPricingLookup pricingLookup) {
-        if (!invoiceable) {
-            return BigDecimal.ZERO;
-        }
-        return reports.stream()
-            .map(r -> {
-                var hours = minutesToHours(r.getDuration().toMinutes());
-                return pricingLookup
-                    .findEffectiveRate(coSign, soSign, r.getEmployeeSign(), r.getReferenceday())
-                    .map(p -> hours.multiply(new BigDecimal(p.getPriceCentsPerHour())).movePointLeft(2))
-                    .orElse(BigDecimal.ZERO);
-            })
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    @Authorized(requiresManager = true)
-    BigDecimal computeCost(List<TimereportDTO> reports, String soSign, EmployeeCostLookup costLookup) {
-        return reports.stream()
-            .map(r -> {
-                var hours = minutesToHours(r.getDuration().toMinutes());
-                return costLookup
-                    .findEffectiveCost(r.getEmployeeSign(), soSign, r.getReferenceday())
-                    .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
-                    .orElse(BigDecimal.ZERO);
-            })
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal computeEffectiveBudget(List<OrderBudget> budgets, LocalDate from, LocalDate until) {
-        var total = BigDecimal.ZERO;
-        for (var budget : budgets) {
-            if (!Boolean.TRUE.equals(budget.getActive())) continue;
-            if (budget.getValidUntil().isBefore(from)) continue;
-            if (budget.getValidFrom().isAfter(until)) continue;
-
-            var adjFrom = budget.getValidFrom().isAfter(from) ? budget.getValidFrom() : from;
-            var adjUntil = budget.getValidUntil().isBefore(until) ? budget.getValidUntil() : until;
-            total = total.add(sumBudget(budget.getAdjustments().stream()
-                .filter(a -> !a.getEffective().isBefore(adjFrom) && !a.getEffective().isAfter(adjUntil))
-                .toList()));
-        }
-        return total;
-    }
-
-    private BigDecimal computeCoveredRevenue(List<OrderBudget> budgets,
-                                              BiFunction<LocalDate, LocalDate, BigDecimal> revenueInRange,
-                                              LocalDate from, LocalDate until) {
-        return budgets.stream()
-            .filter(b -> Boolean.TRUE.equals(b.getActive()))
-            .filter(b -> !b.getValidUntil().isBefore(from) && !b.getValidFrom().isAfter(until))
-            .map(b -> {
-                var coverStart = b.getValidFrom().isAfter(from) ? b.getValidFrom() : from;
-                var coverEnd = b.getValidUntil().isBefore(until) ? b.getValidUntil() : until;
-                return revenueInRange.apply(coverStart, coverEnd);
-            })
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal sumBudget(List<OrderBudgetAdjustment> adjustments) {
-        return adjustments.stream()
+    /** The plan's budget within the given period: the adjustments that take effect inside it. */
+    private static BigDecimal budgetOf(OrderBudget budget, LocalDateRange period) {
+        return budget.getAdjustments().stream()
+            .filter(a -> period.contains(a.getEffective()))
             .map(OrderBudgetAdjustment::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
