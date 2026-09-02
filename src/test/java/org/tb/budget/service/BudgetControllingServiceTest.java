@@ -16,6 +16,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.OrderBudget;
+import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.persistence.OrderBudgetRepository;
@@ -197,6 +198,42 @@ public class BudgetControllingServiceTest {
 
     assertThat(utilizations.get(orderLevel.getId()).info().coveredRevenueEuro())
         .isEqualByComparingTo("800.00");
+  }
+
+  /**
+   * Revenue that only the order-level plan covers belongs in the suborder's revenue, but must not
+   * be charged against the suborder's own budget — the two columns have different scopes.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_charge_only_what_its_own_plan_covers_against_the_suborders_budget() {
+    // The own plan covers 20.-30.06; the only booking is on 10.06 and thus order-level only.
+    givenBudgets(withAmount(orderLevelPlan(FROM, UNTIL), "1000"),
+        withAmount(suborderPlan("co/01", LocalDate.of(2026, 6, 20), UNTIL), "500"));
+
+    var row = row("co/01");
+
+    assertThat(row.coveredRevenueEuro()).isEqualByComparingTo("800.00");
+    assertThat(row.budgetEuro()).isEqualByComparingTo("500");
+    assertThat(row.budgetUsedPercent()).isZero();
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_charge_revenue_against_the_suborders_budget_where_its_own_plan_covers_it() {
+    givenBudgets(withAmount(orderLevelPlan(FROM, UNTIL), "1000"),
+        withAmount(suborderPlan("co/01", FROM, UNTIL), "1600"));
+
+    assertThat(row("co/01").budgetUsedPercent()).isEqualTo(50.0);
+  }
+
+  private static OrderBudget withAmount(OrderBudget budget, String amount) {
+    var adjustment = new OrderBudgetAdjustment();
+    adjustment.setOrderBudget(budget);
+    adjustment.setAmount(new BigDecimal(amount));
+    adjustment.setEffective(budget.getValidFrom());
+    budget.getAdjustments().add(adjustment);
+    return budget;
   }
 
   private BudgetControllingRow row(String completeOrderSign) {

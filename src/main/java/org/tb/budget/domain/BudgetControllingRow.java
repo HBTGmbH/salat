@@ -13,6 +13,12 @@ public record BudgetControllingRow(
     BigDecimal budgetEuro,
     BigDecimal revenueEuro,
     BigDecimal coveredRevenueEuro,
+    /**
+     * The part of {@code coveredRevenueEuro} that {@code budgetEuro} actually covers. The two differ
+     * for a suborder whose own plan covers only part of the period: the rest is covered by the
+     * order-level plan, belongs in the revenue but must not be charged against the own budget.
+     */
+    BigDecimal budgetCoveredRevenueEuro,
     BigDecimal costEuro,
     Duration forecastHours,
     BigDecimal forecastRevenueEuro,
@@ -51,12 +57,12 @@ public record BudgetControllingRow(
     }
 
     public boolean hasBudgetPercent() {
-        return budgetEuro != null && budgetEuro.signum() != 0 && coveredRevenueEuro != null;
+        return budgetEuro != null && budgetEuro.signum() != 0 && budgetCoveredRevenueEuro != null;
     }
 
     public double budgetUsedPercent() {
         if (!hasBudgetPercent()) return 0.0;
-        return coveredRevenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
+        return budgetCoveredRevenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
             .multiply(BigDecimal.valueOf(100)).doubleValue();
     }
 

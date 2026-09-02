@@ -113,10 +113,15 @@ public class BudgetControllingService {
             // first so that the progress below keeps picking the suborder's own plan.
             var effectiveBudgets = Stream.concat(suborderBudgets.stream(), orderLevelBudgets.stream()).toList();
             var budget = hasOwnBudget ? computeEffectiveBudget(suborderBudgets, from, until) : null;
-            var coveredRevenue = computeCoveredRevenue(effectiveBudgets,
+            BiFunction<LocalDate, LocalDate, BigDecimal> revenueInRange =
                 (start, end) -> computeRevenue(inRange(reports, start, end),
-                    customerorderSign, soSign, invoiceable, pricingLookup),
-                from, until);
+                    customerorderSign, soSign, invoiceable, pricingLookup);
+            var coveredRevenue = computeCoveredRevenue(effectiveBudgets, revenueInRange, from, until);
+            // What the row's own budget covers. The rest of coveredRevenue falls into the gaps that
+            // the order-level plan closes, and must not be charged against the suborder's budget.
+            var budgetCoveredRevenue = hasOwnBudget
+                ? computeCoveredRevenue(suborderBudgets, revenueInRange, from, until)
+                : coveredRevenue;
 
             Duration forecastHours = null;
             BigDecimal forecastRevenue = null;
@@ -136,14 +141,14 @@ public class BudgetControllingService {
             var activeSuborderBudget = effectiveBudgets.stream()
                 .filter(b -> Boolean.TRUE.equals(b.getActive())).findFirst().orElse(null);
             var progressPercent = computeProgress(activeSuborderBudget, from, until, today, holidays);
-            var budgetUsedPct = (coveredRevenue != null && budget != null && budget.signum() != 0)
-                ? coveredRevenue.divide(budget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
+            var budgetUsedPct = (budgetCoveredRevenue != null && budget != null && budget.signum() != 0)
+                ? budgetCoveredRevenue.divide(budget, 6, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
                 : null;
             var progressStatus = computeProgressStatus(progressPercent, budgetUsedPct);
             var row = new BudgetControllingRow(
                 soSign,
                 suborder.getShortdescription(),
-                true, planned, booked, budget, revenue, coveredRevenue, cost,
+                true, planned, booked, budget, revenue, coveredRevenue, budgetCoveredRevenue, cost,
                 forecastHours, forecastRevenue, forecastUncoveredRevenue,
                 forecastStatus(forecastRevenue, budget, revenue.subtract(coveredRevenue), forecastUncoveredRevenue),
                 progressPercent, progressStatus);
@@ -182,6 +187,8 @@ public class BudgetControllingService {
             totalBooked,
             totalBudget,
             totalRevenue,
+            totalCoveredRevenue,
+            // The total budget is the sum of all plans, so all covered revenue counts against it.
             totalCoveredRevenue,
             includeCosts ? totalCost : null,
             totalForecastHoursFinal,

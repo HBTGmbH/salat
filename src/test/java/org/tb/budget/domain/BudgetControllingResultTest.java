@@ -65,14 +65,14 @@ public class BudgetControllingResultTest {
 
   private static BudgetControllingRow empty(Duration booked, Duration planned, BigDecimal budget) {
     return new BudgetControllingRow("co/01", "label", true, planned, booked,
-        budget, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null, null, null, null, null);
+        budget, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null, null, null, null, null);
   }
 
   /** Revenue and cost are derived from booked time, so they cannot make an otherwise empty row real. */
   @Test
   public void should_still_be_empty_when_only_derived_figures_are_zero() {
     var derivedOnly = new BudgetControllingRow("co/01", "label", true, Duration.ZERO, Duration.ZERO,
-        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
         Duration.ZERO, BigDecimal.ZERO, null, null, null, null);
 
     assertThat(derivedOnly.hasContent()).isFalse();
@@ -84,7 +84,7 @@ public class BudgetControllingResultTest {
 
   private static BudgetControllingRow row(Duration plannedHours) {
     return new BudgetControllingRow("co/01", "label", true, plannedHours, Duration.ofHours(8),
-        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null,
+        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null,
         null, null, null, null, null, null);
   }
 
