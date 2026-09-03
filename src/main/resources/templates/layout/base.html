@@ -162,7 +162,8 @@
                      th:text="#{main.budget.list.title}">
                     Budgetpläne
                   </a>
-                  <a class="dropdown-item" th:href="@{/budget/pricing}"
+                  <a class="dropdown-item" th:if="${@authorizedUser.isBackoffice()}"
+                     th:href="@{/budget/pricing}"
                      th:classappend="${subSection == 'pricing'} ? 'active' : ''"
                      th:text="#{main.pricing.list.title}">
                     Kundenstundensätze
