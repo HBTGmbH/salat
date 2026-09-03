@@ -3,6 +3,7 @@ package org.tb.budget.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.BudgetControllingSection;
@@ -82,8 +84,13 @@ public class BudgetControllingServiceTest {
     // One order-wide rate of 100 EUR/h — 8 h are worth 800 EUR wherever they are booked.
     when(orderPricingService.lookupFor(any())).thenReturn(OrderPricingLookup.of(List.of(orderWideRate())));
 
+    // These tests are about the evaluation, so authorization lets every order through.
+    var budgetAuthorization = mock(BudgetAuthorization.class);
+    when(budgetAuthorization.isAuthorizedForCustomerorder(anyString())).thenReturn(true);
+
     service = new BudgetControllingService(customerorderService, suborderService, timereportService,
-        orderBudgetRepository, orderPricingService, employeeCostService, publicholidayService);
+        orderBudgetRepository, orderPricingService, employeeCostService, publicholidayService,
+        budgetAuthorization);
   }
 
   /**

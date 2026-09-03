@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
 import org.tb.budget.domain.OrderBudgetData;
@@ -32,13 +33,14 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/budget")
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requireUnrestricted = true)
 public class BudgetController {
 
     private final OrderBudgetService orderBudgetService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
+    private final BudgetAuthorization budgetAuthorization;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final MessageSourceAccessor messages;
 
@@ -48,11 +50,10 @@ public class BudgetController {
                        Model model) {
         List<OrderBudget> budgets;
         if (coSign != null && !coSign.isBlank()) {
-            budgets = Boolean.TRUE.equals(showInactive)
-                ? orderBudgetService.getByCustomerorderSign(coSign)
-                : orderBudgetService.getActiveByCustomerorderSign(coSign);
+            budgets = orderBudgetService.getVisibleByCustomerorderSign(
+                coSign, Boolean.TRUE.equals(showInactive));
         } else {
-            budgets = orderBudgetService.getAll();
+            budgets = orderBudgetService.getAllVisible();
             if (!Boolean.TRUE.equals(showInactive)) {
                 budgets = budgets.stream().filter(b -> Boolean.TRUE.equals(b.getActive())).toList();
             }
@@ -61,7 +62,7 @@ public class BudgetController {
         model.addAttribute("coSign", coSign);
         model.addAttribute("showInactive", Boolean.TRUE.equals(showInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
-        model.addAttribute("customerorders", customerorderService.getAllCustomerorders());
+        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
         return "budget/budget-list";
     }
 
