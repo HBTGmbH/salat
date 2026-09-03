@@ -29,7 +29,9 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/budget/pricing")
 @RequiredArgsConstructor
-@Authorized(requireUnrestricted = true)
+// Customer rates are commercial conditions, not controlling figures: backoffice and managers read
+// them, order responsibles do not (#919).
+@Authorized(requiresBackoffice = true)
 public class OrderPricingController {
 
     private final OrderPricingService orderPricingService;
@@ -42,7 +44,7 @@ public class OrderPricingController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("pricings", orderPricingService.getAllVisible());
+        model.addAttribute("pricings", orderPricingService.getAll());
         model.addAttribute("isManager", authorizedUser.isManager());
         return "budget/pricing-list";
     }
