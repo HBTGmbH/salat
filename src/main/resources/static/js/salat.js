@@ -29,7 +29,9 @@ function toggleTheme(theme) {
 }
 
 function selectContract(id) {
-  window.location.href = "/dailyreport/dashboard?employeeContractId=" + id;
+  const url = new URL(window.location.href);
+  url.searchParams.set('employeeContractId', String(id));
+  location.href = url.toString();
 }
 
 const tomSelectConfig = (el) => {
