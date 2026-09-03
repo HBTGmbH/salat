@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -152,6 +153,33 @@ public class BudgetAuthorizationTest {
     verify(customerorderService).getCustomerOrdersByResponsibleEmployeeId(EMPLOYEE_ID);
   }
 
+  /**
+   * A responsibility on a hidden order grants nothing — {@code hide} is the explicit decision that
+   * the order is out of use. The validity range stays irrelevant, because controlling looks
+   * backwards.
+   */
+  @Test
+  public void a_responsibility_on_a_hidden_order_grants_nothing() {
+    when(authorizedEmployee.getEmployeeId()).thenReturn(EMPLOYEE_ID);
+    when(customerorderService.getCustomerOrdersByResponsibleEmployeeId(EMPLOYEE_ID))
+        .thenReturn(List.of(hiddenOrderWithSign(OWN)));
+
+    assertThat(authorization.isAuthorizedForCustomerorder(OWN)).isFalse();
+    assertThat(authorization.isAuthorizedForAnyBudget()).isFalse();
+    assertThat(authorization.authorizedCustomerorders()).isEmpty();
+  }
+
+  @Test
+  public void an_expired_order_stays_visible_to_its_responsible() {
+    when(authorizedEmployee.getEmployeeId()).thenReturn(EMPLOYEE_ID);
+    var expired = orderWithSign(OWN);
+    expired.setUntilDate(LocalDate.of(2020, 12, 31));
+    when(customerorderService.getCustomerOrdersByResponsibleEmployeeId(EMPLOYEE_ID))
+        .thenReturn(List.of(expired));
+
+    assertThat(authorization.isAuthorizedForCustomerorder(OWN)).isTrue();
+  }
+
   private void givenResponsibleFor(String... signs) {
     when(authorizedEmployee.getEmployeeId()).thenReturn(EMPLOYEE_ID);
     when(customerorderService.getCustomerOrdersByResponsibleEmployeeId(EMPLOYEE_ID))
@@ -161,6 +189,12 @@ public class BudgetAuthorizationTest {
   private static Customerorder orderWithSign(String sign) {
     var customerorder = new Customerorder();
     customerorder.setSign(sign);
+    return customerorder;
+  }
+
+  private static Customerorder hiddenOrderWithSign(String sign) {
+    var customerorder = orderWithSign(sign);
+    customerorder.setHide(true);
     return customerorder;
   }
 

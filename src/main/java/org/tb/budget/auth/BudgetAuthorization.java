@@ -21,10 +21,10 @@ import org.tb.order.service.CustomerorderService;
  * Who may see which budget data.
  *
  * <p>Managers see every customer order. Everyone else sees exactly the orders they are responsible
- * for ({@code Customerorder#getResponsibleHbt()}) — that covers the order responsibles the budget
- * module is built for, without giving them a role. Backoffice has no budget access of its own; a
- * backoffice employee who is responsible for an order reaches it through that responsibility like
- * anyone else. Restricted users (external staff, interns) see nothing at all.
+ * for ({@code Customerorder#getResponsibleHbt()}) and that are not hidden — that covers the order
+ * responsibles the budget module is built for, without giving them a role. Backoffice has no budget
+ * access of its own; a backoffice employee who is responsible for an order reaches it through that
+ * responsibility like anyone else. Restricted users (external staff, interns) see nothing at all.
  *
  * <p>Maintaining budgets, customer rates and employee costs stays with managers; this class only
  * governs read access. The write paths carry {@code @Authorized(requiresManager = true)}.
@@ -96,11 +96,19 @@ public class BudgetAuthorization {
         return responsibleSigns;
     }
 
+    /**
+     * Hidden orders grant nothing. {@code hide} is the explicit decision that an order is out of
+     * use, so a responsibility on it has expired with it. The validity range is deliberately not
+     * checked: controlling looks backwards, and whoever finished an order still has to be able to
+     * review its figures.
+     */
     private List<Customerorder> responsibleCustomerorders() {
         var employeeId = authorizedEmployee.getEmployeeId();
         // Admins are not employees, so they have no responsibilities — their access comes from the role.
         if (employeeId == null) return List.of();
-        return customerorderService.getCustomerOrdersByResponsibleEmployeeId(employeeId);
+        return customerorderService.getCustomerOrdersByResponsibleEmployeeId(employeeId).stream()
+            .filter(customerorder -> !Boolean.TRUE.equals(customerorder.getHide()))
+            .toList();
     }
 
 }
