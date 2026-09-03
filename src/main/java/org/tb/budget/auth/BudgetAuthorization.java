@@ -20,10 +20,11 @@ import org.tb.order.service.CustomerorderService;
 /**
  * Who may see which budget data.
  *
- * <p>Managers and backoffice see every customer order. Everyone else sees exactly the orders they
- * are responsible for ({@code Customerorder#getResponsibleHbt()}) — that covers the order
- * responsibles the budget module is built for, without giving them a role. Restricted users
- * (external staff, interns) see nothing at all.
+ * <p>Managers see every customer order. Everyone else sees exactly the orders they are responsible
+ * for ({@code Customerorder#getResponsibleHbt()}) — that covers the order responsibles the budget
+ * module is built for, without giving them a role. Backoffice has no budget access of its own; a
+ * backoffice employee who is responsible for an order reaches it through that responsibility like
+ * anyone else. Restricted users (external staff, interns) see nothing at all.
  *
  * <p>Maintaining budgets, customer rates and employee costs stays with managers; this class only
  * governs read access. The write paths carry {@code @Authorized(requiresManager = true)}.
@@ -46,7 +47,7 @@ public class BudgetAuthorization {
     /** Whether the user may see budget data of every customer order. */
     public boolean seesAllCustomerorders() {
         if (authorizedUser.isRestricted()) return false;
-        return authorizedUser.isManager() || authorizedUser.isBackoffice();
+        return authorizedUser.isManager();
     }
 
     public boolean isAuthorizedForCustomerorder(String customerorderSign) {

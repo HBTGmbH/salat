@@ -22,8 +22,8 @@ import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 
 /**
- * Managers and backoffice see every customer order; everyone else sees exactly the orders they are
- * responsible for. Restricted users see nothing (#919).
+ * Managers see every customer order; everyone else sees exactly the orders they are responsible
+ * for. Backoffice grants no budget access of its own, restricted users see nothing (#919).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BudgetAuthorizationTest {
@@ -54,12 +54,27 @@ public class BudgetAuthorizationTest {
     assertThat(authorization.isAuthorizedForAnyBudget()).isTrue();
   }
 
+  /**
+   * Backoffice carries no budget access of its own. A backoffice employee who is responsible for an
+   * order reaches it through that responsibility, like anyone else.
+   */
   @Test
-  public void backoffice_sees_every_customer_order() {
+  public void backoffice_alone_grants_no_budget_access() {
     when(authorizedUser.isBackoffice()).thenReturn(true);
+    givenResponsibleFor();
 
-    assertThat(authorization.seesAllCustomerorders()).isTrue();
-    assertThat(authorization.isAuthorizedForCustomerorder(FOREIGN)).isTrue();
+    assertThat(authorization.seesAllCustomerorders()).isFalse();
+    assertThat(authorization.isAuthorizedForCustomerorder(FOREIGN)).isFalse();
+    assertThat(authorization.isAuthorizedForAnyBudget()).isFalse();
+  }
+
+  @Test
+  public void backoffice_reaches_an_order_it_is_responsible_for() {
+    when(authorizedUser.isBackoffice()).thenReturn(true);
+    givenResponsibleFor(OWN);
+
+    assertThat(authorization.isAuthorizedForCustomerorder(OWN)).isTrue();
+    assertThat(authorization.isAuthorizedForCustomerorder(FOREIGN)).isFalse();
   }
 
   @Test

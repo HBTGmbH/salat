@@ -140,7 +140,7 @@
             </div>
           </li>
 
-          <!-- Budget: managers, backoffice and employees responsible for at least one order (#919) -->
+          <!-- Budget: managers and employees responsible for at least one order (#919) -->
           <li class="nav-item dropdown"
               th:if="${@budgetMenuViewHelper.isBudgetMenuAvailable()}"
               th:classappend="${section == 'budget'} ? 'active' : ''">
@@ -162,7 +162,7 @@
                      th:text="#{main.budget.list.title}">
                     Budgetpläne
                   </a>
-                  <a class="dropdown-item" th:if="${@authorizedUser.isBackoffice()}"
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/pricing}"
                      th:classappend="${subSection == 'pricing'} ? 'active' : ''"
                      th:text="#{main.pricing.list.title}">
