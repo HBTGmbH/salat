@@ -29,9 +29,8 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/budget/pricing")
 @RequiredArgsConstructor
-// Customer rates are commercial conditions, not controlling figures: backoffice and managers read
-// them, order responsibles do not (#919).
-@Authorized(requiresBackoffice = true)
+// Customer rates are commercial conditions, not controlling figures — managers only (#919).
+@Authorized(requiresManager = true)
 public class OrderPricingController {
 
     private final OrderPricingService orderPricingService;
