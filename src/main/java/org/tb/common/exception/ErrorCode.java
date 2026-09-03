@@ -113,6 +113,7 @@ public enum ErrorCode {
   BU_BUDGET_OVERLAP("BU-0010", "an active order budget already covers part of this period for the same scope"),
   BU_BUDGET_LEVEL_MIXED("BU-0011", "a customer order is budgeted either as a whole or per suborder, not both at a time"),
   BU_SUBORDER_NOT_FIRST_LEVEL("BU-0012", "order budgets are only allowed on first level suborders"),
+  BU_ORDER_NOT_AUTHORIZED("BU-0013", "not authorized to see budget data of this customer order"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

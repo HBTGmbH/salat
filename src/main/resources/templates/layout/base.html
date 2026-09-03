@@ -140,7 +140,7 @@
             </div>
           </li>
 
-          <!-- Budget: managers and employees responsible for at least one visible order -->
+          <!-- Budget: managers, backoffice and employees responsible for at least one order (#919) -->
           <li class="nav-item dropdown"
               th:if="${@budgetMenuViewHelper.isBudgetMenuAvailable()}"
               th:classappend="${section == 'budget'} ? 'active' : ''">

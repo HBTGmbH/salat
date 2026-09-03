@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
@@ -26,11 +27,18 @@ public class OrderBudgetService {
 
     private final OrderBudgetRepository orderBudgetRepository;
     private final SuborderService suborderService;
+    private final BudgetAuthorization budgetAuthorization;
 
+    /**
+     * Every caller goes through here, so this is where the customer order of the plan is checked —
+     * the detail view as well as every write path. Managers pass unconditionally.
+     */
     @Transactional(readOnly = true)
     public OrderBudget getById(long id) {
-        return orderBudgetRepository.findById(id)
+        var budget = orderBudgetRepository.findById(id)
             .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, id));
+        budgetAuthorization.checkAuthorized(budget);
+        return budget;
     }
 
     @Transactional(readOnly = true)
@@ -41,6 +49,34 @@ public class OrderBudgetService {
     @Transactional(readOnly = true)
     public List<OrderBudget> getAllActive() {
         return orderBudgetRepository.findAllActiveWithAdjustments();
+    }
+
+    /** All plans the current user may see, ordered like {@link #getAll()}. */
+    @Transactional(readOnly = true)
+    public List<OrderBudget> getAllVisible() {
+        return filterAuthorized(getAll());
+    }
+
+    /** The visible plans of one customer order, optionally including the inactive ones. */
+    @Transactional(readOnly = true)
+    public List<OrderBudget> getVisibleByCustomerorderSign(String customerorderSign, boolean includeInactive) {
+        budgetAuthorization.checkAuthorizedForCustomerorder(customerorderSign);
+        return includeInactive
+            ? getByCustomerorderSign(customerorderSign)
+            : getActiveByCustomerorderSign(customerorderSign);
+    }
+
+    /** The active plans the current user may see — the basis of the dashboard. */
+    @Transactional(readOnly = true)
+    public List<OrderBudget> getAllActiveVisible() {
+        return filterAuthorized(getAllActive());
+    }
+
+    private List<OrderBudget> filterAuthorized(List<OrderBudget> budgets) {
+        if (budgetAuthorization.seesAllCustomerorders()) {
+            return budgets;
+        }
+        return budgets.stream().filter(budgetAuthorization::isAuthorized).toList();
     }
 
     @Transactional(readOnly = true)

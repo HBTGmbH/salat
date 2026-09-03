@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -16,9 +17,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetData;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.ErrorCode;
@@ -38,6 +41,7 @@ public class OrderBudgetServiceTest {
 
   private OrderBudgetRepository orderBudgetRepository;
   private OrderBudgetService service;
+  private BudgetAuthorization budgetAuthorization;
 
   @BeforeEach
   public void setUp() {
@@ -45,7 +49,17 @@ public class OrderBudgetServiceTest {
     var suborderService = mock(SuborderService.class);
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
     when(suborderService.isFirstLevelSuborder(anyString(), anyString())).thenReturn(true);
-    service = new OrderBudgetService(orderBudgetRepository, suborderService);
+    budgetAuthorization = permissiveAuthorization();
+    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization);
+  }
+
+  /** These tests are about the budget rules, so authorization lets everything through. */
+  private static BudgetAuthorization permissiveAuthorization() {
+    var authorization = mock(BudgetAuthorization.class);
+    when(authorization.seesAllCustomerorders()).thenReturn(true);
+    when(authorization.isAuthorized(any(OrderBudget.class))).thenReturn(true);
+    when(authorization.isAuthorizedForCustomerorder(anyString())).thenReturn(true);
+    return authorization;
   }
 
   @Test
@@ -142,12 +156,43 @@ public class OrderBudgetServiceTest {
     var suborderService = mock(SuborderService.class);
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
     when(suborderService.isFirstLevelSuborder("co", "co/01/02")).thenReturn(false);
-    service = new OrderBudgetService(orderBudgetRepository, suborderService);
+    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization);
     givenExisting();
 
     assertThatThrownBy(() -> service.create(data("co/01/02", JAN, DEC, true)))
         .isInstanceOf(BusinessRuleException.class)
         .hasMessageContaining(ErrorCode.BU_SUBORDER_NOT_FIRST_LEVEL.getCode());
+  }
+
+  /**
+   * Only managers and backoffice see every order; an order responsible sees the plans of their own
+   * orders (#919). The service is the layer that enforces it, so that the guard also holds for the
+   * write paths that all load their plan through {@code getById}.
+   */
+  @Test
+  public void should_reject_reading_a_plan_of_an_unauthorized_order() {
+    var plan = plan(null, JAN, DEC, 7L);
+    when(orderBudgetRepository.findById(7L)).thenReturn(Optional.of(plan));
+    when(budgetAuthorization.isAuthorized(plan)).thenReturn(false);
+    doThrow(new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED, "co"))
+        .when(budgetAuthorization).checkAuthorized(plan);
+
+    assertThatThrownBy(() -> service.getById(7L))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(ErrorCode.BU_ORDER_NOT_AUTHORIZED.getCode());
+  }
+
+  @Test
+  public void should_list_only_the_plans_of_authorized_orders() {
+    var own = plan(null, JAN, DEC, 1L);
+    var foreign = plan(null, JAN, DEC, 2L);
+    foreign.setCustomerorderSign("other-co");
+    when(orderBudgetRepository.findAllActiveWithAdjustments()).thenReturn(List.of(own, foreign));
+    when(budgetAuthorization.seesAllCustomerorders()).thenReturn(false);
+    when(budgetAuthorization.isAuthorized(own)).thenReturn(true);
+    when(budgetAuthorization.isAuthorized(foreign)).thenReturn(false);
+
+    assertThat(service.getAllActiveVisible()).containsExactly(own);
   }
 
   /**

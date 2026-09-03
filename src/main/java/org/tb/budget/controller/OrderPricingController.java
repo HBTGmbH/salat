@@ -29,7 +29,7 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/budget/pricing")
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requireUnrestricted = true)
 public class OrderPricingController {
 
     private final OrderPricingService orderPricingService;
@@ -42,7 +42,7 @@ public class OrderPricingController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("pricings", orderPricingService.getAll());
+        model.addAttribute("pricings", orderPricingService.getAllVisible());
         model.addAttribute("isManager", authorizedUser.isManager());
         return "budget/pricing-list";
     }

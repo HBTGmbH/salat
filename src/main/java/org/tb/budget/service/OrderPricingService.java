@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.domain.OrderPricingLookup;
@@ -25,10 +26,25 @@ public class OrderPricingService {
 
     private final OrderPricingRepository orderPricingRepository;
     private final SuborderService suborderService;
+    private final BudgetAuthorization budgetAuthorization;
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
         return orderPricingRepository.findAllByOrderByCustomerorderSignAscValidFromAsc();
+    }
+
+    /**
+     * The rates the current user may see. Order responsibles read the rates of their own orders as
+     * part of controlling; maintaining them stays with managers.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderPricing> getAllVisible() {
+        if (budgetAuthorization.seesAllCustomerorders()) {
+            return getAll();
+        }
+        return getAll().stream()
+            .filter(p -> budgetAuthorization.isAuthorizedForCustomerorder(p.getCustomerorderSign()))
+            .toList();
     }
 
     @Transactional(readOnly = true)

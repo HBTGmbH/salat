@@ -17,7 +17,9 @@ public class BudgetDashboardService {
     private final BudgetControllingService budgetControllingService;
 
     public List<BudgetDashboardRow> computeDashboard() {
-        var budgets = orderBudgetService.getAllActive();
+        // Filtered before the utilizations are computed — otherwise the dashboard would price
+        // orders the user is not allowed to see, only to drop the rows afterwards.
+        var budgets = orderBudgetService.getAllActiveVisible();
         var utilizations = budgetControllingService.computeUtilizationInfos(budgets);
         return budgets.stream()
             .map(b -> {

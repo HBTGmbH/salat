@@ -11,7 +11,7 @@ import org.tb.budget.service.BudgetDashboardService;
 @Controller
 @RequestMapping("/budget/dashboard")
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requireUnrestricted = true)
 public class BudgetDashboardController {
 
     private final BudgetDashboardService budgetDashboardService;

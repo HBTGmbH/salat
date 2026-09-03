@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.BudgetControllingGroup;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
@@ -56,8 +57,10 @@ public class BudgetControllingService {
     private final OrderPricingService orderPricingService;
     private final EmployeeCostService employeeCostService;
     private final PublicholidayService publicholidayService;
+    private final BudgetAuthorization budgetAuthorization;
 
     public BudgetControllingResult compute(String customerorderSign, LocalDate from, LocalDate until, boolean includeCosts) {
+        budgetAuthorization.checkAuthorizedForCustomerorder(customerorderSign);
         var today = DateUtils.today();
         var filter = new LocalDateRange(from, until);
 
