@@ -9,6 +9,39 @@
 ">
 <main layout:fragment="content">
 
+  <!-- Filter form. Both selects always submit their parameter; the empty option clears the
+       remembered choice instead of leaving the previous one in place. -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="get" th:action="@{/budget/dashboard}" th:object="${filter}" class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label" th:text="#{main.budget.dashboard.filter.segment}">Kundensegment</label>
+          <select class="form-select tomselect" th:field="*{budgetSegmentId}">
+            <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
+            <option th:each="segment : ${segments}"
+                    th:value="${segment.id}"
+                    th:text="${segment.name}"></option>
+          </select>
+        </div>
+        <div class="col-md-4" th:if="${showResponsibleFilter}">
+          <label class="form-label" th:text="#{main.budget.dashboard.filter.responsible}">Auftragsverantwortlicher</label>
+          <select class="form-select tomselect" th:field="*{budgetResponsibleId}">
+            <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
+            <option th:each="employee : ${responsibles}"
+                    th:value="${employee.id}"
+                    th:text="|${employee.sign} - ${employee.name}|"></option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-filter"></i>
+            <span th:text="#{main.budget.dashboard.button.filter}">Filtern</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
       <thead>

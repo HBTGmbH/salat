@@ -1,6 +1,7 @@
 package org.tb.budget.persistence;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -29,6 +30,20 @@ public interface OrderBudgetRepository
         ORDER BY b.customerorderSign ASC, b.validFrom ASC
         """)
     List<OrderBudget> findAllActiveWithAdjustments();
+
+    /**
+     * Like {@link #findAllActiveWithAdjustments()}, restricted to the given customer order signs.
+     * The dashboard filters this way instead of dropping rows afterwards, so the utilizations are
+     * only computed for budgets that end up on the page. Callers must not pass an empty collection —
+     * {@code IN ()} is not valid SQL; an empty restriction means "nothing matches" and is answered
+     * without a query.
+     */
+    @Query("""
+        SELECT DISTINCT b FROM OrderBudget b LEFT JOIN FETCH b.adjustments
+        WHERE b.active = true AND b.customerorderSign IN :signs
+        ORDER BY b.customerorderSign ASC, b.validFrom ASC
+        """)
+    List<OrderBudget> findAllActiveWithAdjustmentsBySigns(@Param("signs") Collection<String> signs);
 
     List<OrderBudget> findByActiveAndAlertThresholdPercentIsNotNull(Boolean active);
 
