@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -220,6 +222,35 @@ public class OrderBudgetServiceTest {
 
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until) {
     return plan(suborderSign, from, until, null);
+  }
+
+  /**
+   * The dashboard hands its filter result down as a restriction. An empty one means "no order
+   * matched" and must not reach the repository: {@code IN ()} is not valid SQL, and asking without
+   * the restriction would list everything instead of nothing (#920).
+   */
+  @Test
+  public void an_empty_restriction_yields_no_plans_and_no_query() {
+    assertThat(service.getAllActiveVisible(List.of())).isEmpty();
+
+    verify(orderBudgetRepository, never()).findAllActiveWithAdjustmentsBySigns(any());
+    verify(orderBudgetRepository, never()).findAllActiveWithAdjustments();
+  }
+
+  @Test
+  public void a_missing_restriction_asks_for_every_active_plan() {
+    service.getAllActiveVisible(null);
+
+    verify(orderBudgetRepository).findAllActiveWithAdjustments();
+    verify(orderBudgetRepository, never()).findAllActiveWithAdjustmentsBySigns(any());
+  }
+
+  @Test
+  public void a_restriction_is_passed_on_to_the_query() {
+    service.getAllActiveVisible(List.of("co", "other"));
+
+    verify(orderBudgetRepository).findAllActiveWithAdjustmentsBySigns(List.of("co", "other"));
+    verify(orderBudgetRepository, never()).findAllActiveWithAdjustments();
   }
 
   private static OrderBudget plan(String suborderSign, LocalDate from, LocalDate until, Long id) {

@@ -169,6 +169,24 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
   }
 
+  /**
+   * The signs of every customer order belonging to a customer of this segment. Returns signs rather
+   * than orders because the callers use them to restrict a query, not to display the orders.
+   */
+  public List<String> getSignsByCustomerSegmentId(long segmentId) {
+    return customerorderRepository.findSignsByCustomerSegmentId(segmentId);
+  }
+
+  /** The signs of every customer order this employee is responsible for. */
+  public List<String> getSignsByResponsibleEmployeeId(long responsibleEmployeeId) {
+    return customerorderRepository.findSignsByResponsibleHbt(responsibleEmployeeId);
+  }
+
+  /** Every employee who is responsible for at least one customer order, ordered by sign. */
+  public List<Employee> getResponsibleEmployees() {
+    return customerorderRepository.findDistinctResponsibleHbt();
+  }
+
   public List<Customerorder> getVisibleCustomerorders() {
     return customerorderDAO.getVisibleCustomerorders();
   }
