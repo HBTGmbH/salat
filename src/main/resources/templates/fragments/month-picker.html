@@ -13,10 +13,12 @@
 
   The contract is the one of the native input it replaces: the hidden input holds the selected month
   as "yyyy-MM" and fires a change event whenever the selection changes. What that means - navigate,
-  submit, reload a table - is up to the caller. "Clear" empties the value, so callers have to decide
-  what no month means for them (the matrix falls back to its default view, a form can just submit an
-  empty parameter). The year arrows inside the dropdown only switch which year the twelve months
-  refer to; nothing changes until a month is picked.
+  submit, reload a table - is up to the caller. Every selection names a month and a year explicitly;
+  the picker offers no way to empty it. It used to, and the matrix read the empty value as "back to
+  the default month" - but since the matrix remembers month and year as UiState, a missing request
+  parameter is refilled from that state and the emptying had no visible effect (#923). The year
+  arrows inside the dropdown only switch which year the twelve months refer to; nothing changes
+  until a month is picked.
 
   "Current month" comes from the application clock via @dateUtils, not from the browser clock, so it
   matches the month the server considers current.
@@ -80,8 +82,6 @@
         <div class="d-flex justify-content-between gap-2 mt-2 pt-2 border-top">
           <button type="button" class="btn btn-sm btn-ghost-primary" data-month-current
                   th:text="#{main.general.month.current}">Aktueller Monat</button>
-          <button type="button" class="btn btn-sm btn-ghost-secondary" data-month-clear
-                  th:text="#{main.general.month.clear}">Löschen</button>
         </div>
       </div>
     </div>
@@ -150,10 +150,6 @@
 
     picker.querySelector('[data-month-current]').addEventListener('click', function () {
       select(currentYear, currentMonth);
-    });
-
-    picker.querySelector('[data-month-clear]').addEventListener('click', function () {
-      select(null, null);
     });
 
     picker.querySelectorAll('[data-year-step]').forEach(function (button) {
