@@ -161,21 +161,19 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
-   * Clearing empties the picker's value; what that means is up to the page, and the matrix always
-   * shows some month, so it falls back to its default view.
+   * The picker offers no way to empty the selection. It used to, and the matrix read that as "back
+   * to the default month" — but the matrix remembers month and year as UiState, so a missing
+   * request parameter is refilled from that state and emptying had no visible effect (#923).
+   * "Current month" above covers the same need and names month and year explicitly.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void clear_button_returns_the_matrix_to_its_default_month(E2EBrowser browser) {
+  void the_picker_offers_no_way_to_empty_the_selection(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2027", page -> {
       Locator picker = page.locator("div[data-month-picker]");
       picker.locator("[data-month-label]").click();
-      picker.locator("[data-month-clear]").click();
-      page.waitForLoadState();
 
-      assertEquals(null, urlParameter(page.url(), "month"));
-      assertEquals(null, urlParameter(page.url(), "year"));
-      assertThat(picker.locator("[data-month-label]")).hasText("Juni 2026");
+      assertThat(picker.locator("[data-month-clear]")).hasCount(0);
     });
   }
 
