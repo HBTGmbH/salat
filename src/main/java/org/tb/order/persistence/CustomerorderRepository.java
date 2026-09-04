@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
+import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
 
 @Repository
@@ -16,6 +17,19 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
 
   @Query("select c from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
   List<Customerorder> findAllByResponsibleHbt(long responsibleHbtId);
+
+  @Query("select c.sign from Customerorder c where c.customer.segment.id = :segmentId")
+  List<String> findSignsByCustomerSegmentId(long segmentId);
+
+  @Query("select c.sign from Customerorder c join c.responsibleHbt e where e.id = :responsibleHbtId")
+  List<String> findSignsByResponsibleHbt(long responsibleHbtId);
+
+  /**
+   * Every employee who is responsible for at least one customer order — the choices of the
+   * "responsible" filter. An order may have several responsibles, hence the distinct.
+   */
+  @Query("select distinct e from Customerorder c join c.responsibleHbt e order by e.sign")
+  List<Employee> findDistinctResponsibleHbt();
 
   List<Customerorder> findAllByCustomerId(long customerId);
 

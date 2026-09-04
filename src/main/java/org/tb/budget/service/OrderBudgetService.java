@@ -1,6 +1,7 @@
 package org.tb.budget.service;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -70,6 +71,24 @@ public class OrderBudgetService {
     @Transactional(readOnly = true)
     public List<OrderBudget> getAllActiveVisible() {
         return filterAuthorized(getAllActive());
+    }
+
+    /**
+     * The active plans the current user may see, restricted to the given customer order signs.
+     * {@code null} means no restriction at all; an empty collection means nothing matches and is
+     * answered without a query. The authorization filter still runs on top — a restriction narrows
+     * the result, it never widens it.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderBudget> getAllActiveVisible(Collection<String> restrictToCustomerorderSigns) {
+        if (restrictToCustomerorderSigns == null) {
+            return getAllActiveVisible();
+        }
+        if (restrictToCustomerorderSigns.isEmpty()) {
+            return List.of();
+        }
+        return filterAuthorized(
+            orderBudgetRepository.findAllActiveWithAdjustmentsBySigns(restrictToCustomerorderSigns));
     }
 
     private List<OrderBudget> filterAuthorized(List<OrderBudget> budgets) {
