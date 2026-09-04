@@ -99,6 +99,10 @@ stating why (currently: actuator `metrics` exposure, Azure auth).
   ```
 - **PR compliance note**: every PR description must include: _"Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines."_
 - **Refactoring issues**: promote one refactoring at a time — open a new issue for the next step rather than bundling multiple cleanups in one PR.
+- **Issue structure**: every issue states the current behaviour (*Ist-Zustand*, with references into
+  the code), the desired behaviour (*Wunsch*), and **acceptance criteria** as a checklist. An
+  implementation proposal and notes on pitfalls are optional but usual. Acceptance criteria are
+  mandatory — they are what "done" is measured against.
 - **Issue type**: every issue must have its type set via the GitHub GraphQL API after creation. Use `Bug` for defects and `Feature` for new capabilities. Available type IDs:
   - `Task`:    `IT_kwDOAYn5ks4AV-6C`
   - `Bug`:     `IT_kwDOAYn5ks4AV-6D`
@@ -112,6 +116,8 @@ stating why (currently: actuator `metrics` exposure, Azure auth).
 
 Before writing any code:
 
+- [ ] An issue exists and its type is set (`Bug`, `Feature`, `Task`) — the type belongs to the issue, not to the pull request, and is set before the branch is created
+- [ ] The issue describes the current behaviour (with references into the code), the desired behaviour, and acceptance criteria as a checklist
 - [ ] `main` is checked out and up-to-date: `git checkout main && git pull`
 - [ ] A dedicated branch has been created: name must start with `feature/` (new capability) or `bug/` (defect fix), e.g. `feature/683-multiple-supervisors`
 
@@ -159,6 +165,14 @@ A feature or fix is considered done when **all** of the following are true:
 
 ---
 
+## Onboarding
+- New developers are onboarded in a dialogue with the agent, not by reading: the skill
+  `.claude/skills/onboarding/SKILL.md` (`/onboarding`) drives it.
+- [`docs/onboarding.md`](docs/onboarding.md) describes the process, names the lead developer to
+  escalate to, and maps every core concept to the document that owns it.
+- This file stays the contract for both humans and agents — the onboarding points here rather than
+  restating rules, so keep the rules here, not there.
+
 ## Documentation
 - Keep this document updated when architectural rules evolve.
 - Align feature work and code reviews with the rules above.
@@ -186,6 +200,22 @@ A feature or fix is considered done when **all** of the following are true:
   - Favor standard Spring Security (@PreAuthorize/roles) over custom aspects, unless explicitly required.
   - Keep controllers thin; push logic to services within the same module.
 - Pull Request note: Include a short statement like “Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines.”
+
+### Human review of agent proposals — where to spend the attention
+An agent produces proposals; the responsibility stays with the person who merges them. That person
+reads the diff, not just the running application. Review depth is deliberately **not** uniform:
+
+- **Critical — everything from the service layer inwards**: `service`, `persistence`, `domain`,
+  authorization (`@Authorized`, `@PreAuthorize`, runtime guards), `event`/`listener`, and Liquibase
+  changesets. Mistakes here produce wrong results, wrong numbers, data loss or unauthorized access,
+  and they are typically invisible in the UI. Read these diffs line by line and demand evidence:
+  which test covers it, which test run was green, what the numbers were before and after.
+- **Not critical in that sense — UI code**: Thymeleaf templates, layout, styling, `viewhelper`
+  formatting. Mistakes here affect UX — comfort and acceptance — and they surface immediately when
+  clicking through the change. Review it, but with a different question: does it look and behave
+  the way it should? It rarely produces a wrong result.
+
+The rule of thumb: spend the review time where wrong results come from, not where wrong pixels do.
 
 ---
 
@@ -298,6 +328,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 | Package | Responsibility |
 |---|---|
 | `auth` | Authentication, authorization beans and annotations |
+| `budget` | Budget planning and cost controlling |
 | `common` | Shared base classes, exceptions, events, utilities |
 | `error` | Custom error page (cross-cutting; may depend on auth, employee, common) |
 | `customer` | Customer management |
@@ -307,7 +338,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 | `favorites` | User favorites for quick access |
 | `invoice` | Invoice generation and settings |
 | `jira` | Jira integration and replication |
-| `management` | Admin and account management screens |
+| `notification` | Notifications |
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |
 | `settings` | User preference store: entity, converter, repository, service — generic map-based API, no UI |
@@ -323,6 +354,8 @@ Each module uses a consistent sub-package structure:
 | `persistence` | Spring Data repositories and DAO components |
 | `service` | Business logic, transactions, authorization checks |
 | `controller` | Spring MVC controllers (HTTP boundary) |
+| `auth` | Module-internal authorization logic (who may see which records), used by the module's services |
+| `command` | Command event classes the module publishes to read data owned by another module |
 | `event` | Domain event classes |
 | `listener` | `@EventListener` subscribers |
 | `rest` | REST endpoints |
@@ -392,7 +425,13 @@ Entities are divided into two categories (→ ADR-0011):
 - Before destructive DB operations, publish a domain event via `ApplicationEventPublisher`; catch `VetoedException` and re-throw with added context (see Event / Veto Pattern)
 
 ### Controller Pattern
-- Class annotations: `@Controller @RequestMapping(“/path”) @RequiredArgsConstructor @PreAuthorize(“not hasRole('RESTRICTED')”)`
+- Class annotations: `@Controller @RequestMapping(“/path”) @RequiredArgsConstructor @Authorized(requireUnrestricted = true)`
+  - **`@Authorized` without arguments only means *authenticated*** — it does **not** exclude
+    `RESTRICTED`. Leaving out `requireUnrestricted = true` opens the exact hole that #919 had to
+    close: every authenticated user, including externals and interns, could reach the views by
+    knowing the URL. Spell the requirement out on every controller.
+  - The available switches are `requiresAuthentication` (default `true`), `requireUnrestricted`,
+    `requiresBackoffice`, `requiresPeopleLead`, `requiresManager`, `requiresAdmin`, `permitAll`.
 - Write operations get `@PreAuthorize(“hasRole('MANAGER')”)` on the method
 - Session filter persistence: check `request.getParameterMap().containsKey(“filter”)` — store to session on explicit submit, read from session otherwise
 - Redirect-After-Post: successful writes return `”redirect:/...”` with `redirectAttributes.addFlashAttribute(“toastSuccess”, ...)`
@@ -455,12 +494,30 @@ if (!TRUE.equals(showHidden))  predicates.add(notHidden().toPredicate(root, quer
 - Modern modules use Java `record` for simple, immutable DTOs
 - When writing a `Boolean` from DTO to entity, guard against null: `Boolean.TRUE.equals(value)`
 
-### Event / Veto Pattern
+### Event / Veto / Command Pattern
 - Event hierarchy: `VetoableEvent` → `DomainObjectDeleteEvent` / `DomainObjectUpdateEvent` (in `common/event/`)
 - Module-specific events (e.g. `CustomerDeleteEvent`) extend the appropriate base, passing the entity ID to the constructor
 - Service publishes the event before the destructive DB call, wrapped in `try/catch(VetoedException)`; on veto it prepends its own context message and re-throws
 - Listeners are annotated with `@EventListener` and throw `VetoedException` to block the operation
 - Cross-module side-effects and integrity checks must flow through events — never direct service-to-service calls across module boundaries
+
+**Command events — reading data across a forbidden boundary (last resort)**
+
+A plain event carries no answer back. When a module needs *data* owned by another module and the
+import direction is forbidden, a `CommandEvent<T>` (`common/command/`) carries the result:
+
+```java
+var command = GetTimereportMinutesCommandEvent.builder().orderType(SUB).orderIds(suborderIds).build();
+commandPublisher.publish(command);
+return command.getResult().values().stream().reduce(Duration::plus).orElse(Duration.ZERO);
+```
+
+- The event class belongs to the **asking** module, in its `command` sub-package; the owning module
+  answers it in an `@EventListener` that calls `setResult(...)`.
+- **Use this only as a last resort.** First check whether the dependency may simply run in the
+  allowed direction (`dailyreport` imports `order` freely — only the reverse is forbidden), or
+  whether the logic belongs in the other module altogether. A command event is a synchronous call
+  in disguise; it removes the import, not the coupling.
 
 ### Exception Hierarchy
 ```

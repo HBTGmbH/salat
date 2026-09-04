@@ -1,3 +1,10 @@
+## New here?
+
+Onboarding runs as a dialogue with the AI agent, not as a reading assignment: run `/onboarding`
+and it walks you through domain, roles, architecture, process and a first ticket, skipping what
+you already know. The process itself — and a lookup map of the core concepts — is described in
+[docs/onboarding.md](docs/onboarding.md).
+
 ## Run locally
 
 Requirements:
