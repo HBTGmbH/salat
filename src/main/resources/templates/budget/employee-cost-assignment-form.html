@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='employee-cost',
+        title=#{main.employeecost.assignment.form.title.edit},
+        pageTitle=#{main.employeecost.assignment.form.title.edit},
+        sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/budget/employee-cost/assignments/{id}/store(id=${assignmentForm.id})}"
+              th:object="${assignmentForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <salat:select th:field="*{employeeCostName}" th:label="#{main.employeecost.field.name}" required="true">
+        <option value="" th:text="#{main.employeecost.assignment.select.category}">--- Kostenkategorie ---</option>
+        <option th:each="name : ${costNames}" th:value="${name}" th:text="${name}"></option>
+      </salat:select>
+      <salat:select th:field="*{employeeSign}" th:label="#{main.employeecost.assignment.field.employeeSign}" required="true">
+        <option value="" th:text="#{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
+        <option th:each="emp : ${employees}"
+                th:value="${emp.sign}"
+                th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}|"></option>
+      </salat:select>
+      <!-- A hidden suborder only appears when the assignment already references it; say so. -->
+      <salat:select th:field="*{suborderSign}" th:label="#{main.employeecost.assignment.field.suborderSign}">
+        <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
+        <option th:each="so : ${suborders}"
+                th:value="${so.completeOrderSign}"
+                th:text="${so.hide}
+                           ? |${so.completeOrderSign} - ${so.shortdescription} (#{main.general.hidden.suffix})|
+                           : |${so.completeOrderSign} - ${so.shortdescription}|"></option>
+      </salat:select>
+      <div class="row">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.employeecost.field.validFrom}" required="true" />
+        </div>
+        <div class="col-md-6">
+          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.employeecost.field.validUntil}" />
+        </div>
+      </div>
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="#{main.button.label.edit.text}" th:cancelHref="@{/budget/employee-cost}" />
+    </salat:buttons>
+  </salat:form>
+
+</main>
+</html>

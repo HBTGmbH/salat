@@ -3,6 +3,7 @@ package org.tb.budget.controller;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -40,18 +41,20 @@ public class EmployeeCostController {
         model.addAttribute("costs", employeeCostService.getAll());
         model.addAttribute("assignments", employeeCostService.getAllAssignments());
         model.addAttribute("assignmentForm", new EmployeeCostAssignmentForm());
+        model.addAttribute("costNames", employeeCostService.getSelectableCostNames(null));
         model.addAttribute("employees", employeeService.getAllEmployees());
-        // Assignments can only be created and deleted, never edited, so no stored value has to be kept.
         model.addAttribute("suborders", suborderService.getAllVisibleSuborders());
         return "budget/employee-cost-list";
     }
 
+    @Authorized(requiresManager = true)
     @GetMapping("/create")
     public String createForm(Model model) {
         addCostFormModel(model, new EmployeeCostForm(), false);
         return "budget/employee-cost-form";
     }
 
+    @Authorized(requiresManager = true)
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable long id, Model model) {
         var cost = employeeCostService.getById(id);
@@ -68,6 +71,7 @@ public class EmployeeCostController {
         return "budget/employee-cost-form";
     }
 
+    @Authorized(requiresManager = true)
     @PostMapping("/store")
     public String store(@ModelAttribute("costForm") EmployeeCostForm form,
                         Model model,
@@ -117,6 +121,7 @@ public class EmployeeCostController {
         return "redirect:/budget/employee-cost";
     }
 
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable long id, RedirectAttributes redirectAttributes) {
         try {
@@ -130,32 +135,22 @@ public class EmployeeCostController {
         return "redirect:/budget/employee-cost";
     }
 
+    /**
+     * The create form sits on the list page, so its errors go back as a toast rather than into a
+     * re-rendered form.
+     */
+    @Authorized(requiresManager = true)
     @PostMapping("/assignments/store")
     public String storeAssignment(@ModelAttribute("assignmentForm") EmployeeCostAssignmentForm form,
                                   RedirectAttributes redirectAttributes) {
-        if (form.getEmployeeCostName() == null || form.getEmployeeCostName().isBlank()) {
-            redirectAttributes.addFlashAttribute("toastError", messages.getMessage("main.employeecost.assignment.error.category.required"));
+        var errors = validateAssignment(form);
+        if (!errors.isEmpty()) {
+            redirectAttributes.addFlashAttribute("toastError", errors.get(0));
             return "redirect:/budget/employee-cost";
         }
-        if (form.getEmployeeSign() == null || form.getEmployeeSign().isBlank()) {
-            redirectAttributes.addFlashAttribute("toastError", messages.getMessage("main.employeecost.assignment.error.employee.required"));
-            return "redirect:/budget/employee-cost";
-        }
-        if (form.getValidFrom() == null) {
-            redirectAttributes.addFlashAttribute("toastError", messages.getMessage("main.employeecost.error.validfrom.required"));
-            return "redirect:/budget/employee-cost";
-        }
-
-        var data = new EmployeeCostAssignmentData(
-            form.getEmployeeCostName(),
-            form.getEmployeeSign(),
-            trimToNull(form.getSuborderSign()),
-            form.getValidFrom(),
-            form.getValidUntil()
-        );
 
         try {
-            employeeCostService.createAssignment(data);
+            employeeCostService.createAssignment(toAssignmentData(form));
             redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.employeecost.assignment.message.created"));
         } catch (ErrorCodeException ex) {
             redirectAttributes.addFlashAttribute("toastError",
@@ -165,6 +160,51 @@ public class EmployeeCostController {
         return "redirect:/budget/employee-cost";
     }
 
+    @Authorized(requiresManager = true)
+    @GetMapping("/assignments/{id}/edit")
+    public String editAssignmentForm(@PathVariable long id, Model model) {
+        var assignment = employeeCostService.getAssignmentById(id);
+        var form = new EmployeeCostAssignmentForm();
+        form.setId(assignment.getId());
+        form.setEmployeeCostName(assignment.getEmployeeCostName());
+        form.setEmployeeSign(assignment.getEmployeeSign());
+        form.setSuborderSign(assignment.getSuborderSign());
+        form.setValidFrom(assignment.getValidFrom());
+        var until = assignment.getValidUntil();
+        if (until != null && until.getYear() != 2999) {
+            form.setValidUntil(until);
+        }
+        addAssignmentFormModel(model, form);
+        return "budget/employee-cost-assignment-form";
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/assignments/{id}/store")
+    public String storeAssignmentEdit(@PathVariable long id,
+                                      @ModelAttribute("assignmentForm") EmployeeCostAssignmentForm form,
+                                      Model model,
+                                      RedirectAttributes redirectAttributes) {
+        form.setId(id);
+        var errors = validateAssignment(form);
+        if (!errors.isEmpty()) {
+            model.addAttribute("formErrors", errors);
+            addAssignmentFormModel(model, form);
+            return "budget/employee-cost-assignment-form";
+        }
+
+        try {
+            employeeCostService.updateAssignment(id, toAssignmentData(form));
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.employeecost.assignment.message.updated"));
+        } catch (ErrorCodeException ex) {
+            model.addAttribute("formErrors",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).toList());
+            addAssignmentFormModel(model, form);
+            return "budget/employee-cost-assignment-form";
+        }
+        return "redirect:/budget/employee-cost";
+    }
+
+    @Authorized(requiresManager = true)
     @PostMapping("/assignments/{id}/delete")
     public String deleteAssignment(@PathVariable long id, RedirectAttributes redirectAttributes) {
         try {
@@ -181,6 +221,44 @@ public class EmployeeCostController {
     private void addCostFormModel(Model model, EmployeeCostForm form, boolean isEdit) {
         model.addAttribute("costForm", form);
         model.addAttribute("isEdit", isEdit);
+    }
+
+    /**
+     * The stored category and suborder stay in their select even when no cost record carries the name
+     * any more, or the suborder has meanwhile been hidden — otherwise editing an assignment would
+     * silently drop the reference (#895).
+     */
+    private void addAssignmentFormModel(Model model, EmployeeCostAssignmentForm form) {
+        model.addAttribute("assignmentForm", form);
+        model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
+        model.addAttribute("employees", employeeService.getAllEmployees());
+        model.addAttribute("suborders", suborderService.getAllSelectableSuborders(form.getSuborderSign()));
+    }
+
+    private List<String> validateAssignment(EmployeeCostAssignmentForm form) {
+        var errors = new ArrayList<String>();
+        if (form.getEmployeeCostName() == null || form.getEmployeeCostName().isBlank()) {
+            errors.add(messages.getMessage("main.employeecost.assignment.error.category.required"));
+        }
+        if (form.getEmployeeSign() == null || form.getEmployeeSign().isBlank()) {
+            errors.add(messages.getMessage("main.employeecost.assignment.error.employee.required"));
+        }
+        if (form.getValidFrom() == null) {
+            errors.add(messages.getMessage("main.employeecost.error.validfrom.required"));
+        } else if (form.getValidUntil() != null && form.getValidFrom().isAfter(form.getValidUntil())) {
+            errors.add(messages.getMessage("main.employeecost.error.dates.invalid"));
+        }
+        return errors;
+    }
+
+    private static EmployeeCostAssignmentData toAssignmentData(EmployeeCostAssignmentForm form) {
+        return new EmployeeCostAssignmentData(
+            trimToNull(form.getEmployeeCostName()),
+            trimToNull(form.getEmployeeSign()),
+            trimToNull(form.getSuborderSign()),
+            form.getValidFrom(),
+            form.getValidUntil()
+        );
     }
 
 }

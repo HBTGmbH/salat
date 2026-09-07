@@ -280,6 +280,18 @@ public class SuborderService {
   }
 
   /**
+   * All suborders offered in a select box that is not scoped to one customer order: everything not
+   * hidden, plus the one whose complete order sign is {@code keepCompleteSign} even if it is hidden
+   * (#895).
+   */
+  public List<Suborder> getAllSelectableSuborders(String keepCompleteSign) {
+    return suborderDAO.getSuborders(false).stream()
+        .filter(suborder -> !suborder.isHide()
+            || Objects.equals(suborder.getCompleteOrderSign(), keepCompleteSign))
+        .toList();
+  }
+
+  /**
    * Suborders of the customer order offered in a select box: everything not hidden, plus the one
    * whose complete order sign is {@code keepCompleteSign} even if it is hidden. Without that
    * exception a stored suborder would silently drop off the record the next time it is edited.

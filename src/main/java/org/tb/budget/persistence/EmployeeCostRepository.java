@@ -16,6 +16,15 @@ public interface EmployeeCostRepository
 
     List<EmployeeCost> findAllByOrderByNameAscValidFromAsc();
 
+    /**
+     * All cost records carrying the given name. Several records share one name to model a rate that
+     * changed over time — the name is the category, not the key of a single record.
+     */
+    List<EmployeeCost> findByNameOrderByValidFromAsc(String name);
+
+    @Query("SELECT DISTINCT c.name FROM EmployeeCost c ORDER BY c.name")
+    List<String> findDistinctNames();
+
     @Query("""
         SELECT c FROM EmployeeCost c
         WHERE c.name = :name
