@@ -71,7 +71,8 @@
           <label class="form-label" th:text="#{main.employeecost.field.name}">Kategorie</label>
           <select class="form-select tomselect" th:field="*{employeeCostName}">
             <option value="" th:text="#{main.employeecost.assignment.select.category}">--- Kategorie ---</option>
-            <option th:each="c : ${costs}" th:value="${c.name}" th:text="${c.name}"></option>
+            <!-- The names, not the cost records: a category made of several rate periods is one entry. -->
+            <option th:each="name : ${costNames}" th:value="${name}" th:text="${name}"></option>
           </select>
         </div>
         <div class="col-md-2">
@@ -119,11 +120,12 @@
             <th class="d-none d-md-table-cell" th:text="#{main.employeecost.field.validFrom}">Gültig ab</th>
             <th class="d-none d-md-table-cell" th:text="#{main.employeecost.field.validUntil}">Gültig bis</th>
             <th class="w-1"></th>
+            <th class="w-1"></th>
           </tr>
         </thead>
         <tbody>
           <tr th:if="${#lists.isEmpty(assignments)}">
-            <td colspan="6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+            <td colspan="7" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
           </tr>
           <tr th:each="a : ${assignments}">
             <td th:text="${a.employeeCostName}"></td>
@@ -131,6 +133,12 @@
             <td th:text="${a.suborderSign} ?: '-'"></td>
             <td class="d-none d-md-table-cell" th:text="${a.validFrom}"></td>
             <td class="d-none d-md-table-cell" th:text="${a.validUntil.year != 2999} ? ${a.validUntil} : '-'"></td>
+            <td>
+              <a class="btn btn-outline-primary btn-sm"
+                 th:href="@{/budget/employee-cost/assignments/{id}/edit(id=${a.id})}">
+                <i class="icon ti ti-pencil m-0"></i>
+              </a>
+            </td>
             <td>
               <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
                     th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">

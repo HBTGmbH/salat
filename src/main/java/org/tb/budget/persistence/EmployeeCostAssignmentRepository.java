@@ -17,6 +17,8 @@ public interface EmployeeCostAssignmentRepository
 
     List<EmployeeCostAssignment> findByEmployeeCostName(String employeeCostName);
 
+    long countByEmployeeCostName(String employeeCostName);
+
     @Query("""
         SELECT a FROM EmployeeCostAssignment a
         WHERE a.employeeSign = :emp
