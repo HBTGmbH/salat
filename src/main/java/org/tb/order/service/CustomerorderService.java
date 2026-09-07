@@ -27,7 +27,6 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.CustomerorderDTO;
-import org.tb.order.domain.OrderType;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -182,9 +181,13 @@ public class CustomerorderService {
     return customerorderRepository.findSignsByResponsibleHbt(responsibleEmployeeId);
   }
 
-  /** Every employee who is responsible for at least one customer order, ordered by sign. */
-  public List<Employee> getResponsibleEmployees() {
-    return customerorderRepository.findDistinctResponsibleHbt();
+  /**
+   * Every employee who is responsible for at least one customer order, ordered by sign — offered in
+   * select boxes, so hidden orders and hidden employees are left out. A responsibility on a hidden
+   * order has expired with it, which is also how budget access is decided.
+   */
+  public List<Employee> getVisibleResponsibleEmployees() {
+    return customerorderRepository.findAllVisibleResponsibleHbt();
   }
 
   public List<Customerorder> getVisibleCustomerorders() {

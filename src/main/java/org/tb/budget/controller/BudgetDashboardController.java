@@ -34,7 +34,7 @@ public class BudgetDashboardController {
         var showResponsibleFilter = budgetAuthorization.seesAllCustomerorders();
         model.addAttribute("showResponsibleFilter", showResponsibleFilter);
         if (showResponsibleFilter) {
-            model.addAttribute("responsibles", customerorderService.getResponsibleEmployees());
+            model.addAttribute("responsibles", customerorderService.getVisibleResponsibleEmployees());
         }
         var responsibleId = showResponsibleFilter ? filter.getBudgetResponsibleId() : null;
 

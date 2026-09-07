@@ -27,9 +27,10 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   /**
    * Every employee who is responsible for at least one customer order — the choices of the
    * "responsible" filter. An order may have several responsibles, hence the distinct.
+   * Responsible employees for hidden customer orders and hidden employees are left aside.
    */
-  @Query("select distinct e from Customerorder c join c.responsibleHbt e order by e.sign")
-  List<Employee> findDistinctResponsibleHbt();
+  @Query("select distinct e from Customerorder c join c.responsibleHbt e where c.hide != true and e.hide != true order by e.sign")
+  List<Employee> findAllVisibleResponsibleHbt();
 
   List<Customerorder> findAllByCustomerId(long customerId);
 
