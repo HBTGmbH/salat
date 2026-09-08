@@ -2,7 +2,10 @@ package org.tb.budget.service;
 
 import static java.lang.Boolean.TRUE;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
+import org.tb.order.service.CustomerorderService;
 
 /**
  * The explicit assignment of time reports to budget plans. Only the stored assignment counts — a
@@ -36,6 +40,7 @@ public class TimereportBudgetAssignmentService {
     private final OrderBudgetService orderBudgetService;
     private final TimereportService timereportService;
     private final BudgetResolver budgetResolver;
+    private final CustomerorderService customerorderService;
     private final AuthorizedUser authorizedUser;
 
     /**
@@ -126,6 +131,69 @@ public class TimereportBudgetAssignmentService {
     public List<Long> getAssignedTimereportIds(long orderBudgetId) {
         orderBudgetService.getById(orderBudgetId);
         return assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId);
+    }
+
+    /**
+     * The bookings assigned to the plan within the period (#912). Reading them requires access to
+     * the plan itself.
+     *
+     * <p>Read as "the bookings of the plan's order in the period, minus those not assigned here"
+     * rather than one lookup per assigned id — a plan holds hundreds of bookings, and this is two
+     * statements instead of hundreds.
+     */
+    @Transactional(readOnly = true)
+    public List<TimereportDTO> getAssignedTimereports(long orderBudgetId, LocalDate from, LocalDate until) {
+        var plan = orderBudgetService.getById(orderBudgetId);
+        var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId));
+        if (assignedIds.isEmpty()) {
+            return List.of();
+        }
+        var customerorder = customerorderService.getCustomerorderBySign(plan.getCustomerorderSign());
+        if (customerorder == null) {
+            log.warn("Budget plan {} references the unknown customer order {}",
+                orderBudgetId, plan.getCustomerorderSign());
+            return List.of();
+        }
+        return timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId())
+            .stream()
+            .filter(report -> assignedIds.contains(report.getId()))
+            .toList();
+    }
+
+    /**
+     * Moves the bookings to another plan, or dissolves their assignment when {@code targetBudgetId}
+     * is {@code null} — a booking that belongs to no budget is a legitimate state (#908), so
+     * dissolving needs no target and no scope check.
+     *
+     * <p>All or nothing: every booking is checked against the target <em>before</em> anything is
+     * written. A selection that contains one booking outside the target's scope or validity is
+     * rejected whole, with the error naming that booking — half a moved selection would leave the
+     * person who triggered it with no idea what actually happened.
+     */
+    @Authorized(requiresManager = true)
+    public void move(Collection<Long> timereportIds, Long targetBudgetId) {
+        checkManager();
+        if (timereportIds.isEmpty()) {
+            return;
+        }
+        if (targetBudgetId == null) {
+            assignmentRepository.deleteByTimereportIdIn(timereportIds);
+            return;
+        }
+        // Also runs the authorization check on the plan's customer order.
+        var target = orderBudgetService.getById(targetBudgetId);
+        var reports = timereportIds.stream().map(this::getReport).toList();
+        reports.forEach(report -> checkAssignable(target, report));
+
+        var assignments = new ArrayList<TimereportBudgetAssignment>(reports.size());
+        for (var report : reports) {
+            // Retargeted rather than replaced, so the audit fields keep saying who moved it.
+            var assignment = assignmentRepository.findByTimereportId(report.getId())
+                .orElseGet(() -> newAssignment(report.getId()));
+            assignment.setOrderBudget(target);
+            assignments.add(assignment);
+        }
+        assignmentRepository.saveAll(assignments);
     }
 
     /** How many bookings the plan holds. Reading it requires access to the plan itself. */
