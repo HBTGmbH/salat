@@ -37,6 +37,12 @@ public class Overtime extends AuditedEntity implements Serializable {
     @Column(nullable = false)
     private Duration timeMinutes;
 
+    /**
+     * The date the adjustment takes effect. Mandatory: the overtime calculation compares against it
+     * without a null check, so an adjustment without one would break every evaluation of the
+     * contract (#933).
+     */
+    @Column(nullable = false)
     private LocalDate effective;
 
     public String getCreatedString() {

@@ -150,6 +150,59 @@ public class EmployeecontractServiceTest {
 		)).isInstanceOf(BusinessRuleException.class);
 	}
 
+	/**
+	 * The initial overtime is the balance the employee brings into the contract, so it takes effect
+	 * at the contract begin. Without an effective date the overtime calculation compares against
+	 * null and fails for every evaluation of that contract (#933).
+	 */
+	@Test
+	public void initial_overtime_takes_effect_at_the_contract_begin() {
+		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		this.employeeService.createOrUpdate(employee);
+		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
+		supervisor.setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
+		this.employeeService.createOrUpdate(supervisor);
+
+		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
+		var info = createContractWithInitialOvertime(ec, supervisor, Duration.ofHours(10));
+
+		var adjustments = employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(info.getId());
+		assertThat(adjustments).hasSize(1);
+		assertThat(adjustments.getFirst().getEffective()).isEqualTo(ec.getValidFrom());
+		assertThat(adjustments.getFirst().getTimeMinutes()).isEqualTo(Duration.ofHours(10));
+	}
+
+	@Test
+	public void a_contract_without_initial_overtime_gets_no_adjustment() {
+		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		this.employeeService.createOrUpdate(employee);
+		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
+		supervisor.setStatus(GlobalConstants.EMPLOYEE_STATUS_PV);
+		this.employeeService.createOrUpdate(supervisor);
+
+		Employeecontract ec = EmployeecontractTestUtils.createEmployeecontract(employee, supervisor);
+		var info = createContractWithInitialOvertime(ec, supervisor, Duration.ZERO);
+
+		assertThat(employeecontractService.getOvertimeAdjustmentsByEmployeeContractId(info.getId())).isEmpty();
+	}
+
+	private EmployeecontractService.ContractStoredInfo createContractWithInitialOvertime(
+			Employeecontract ec, Employee supervisor, Duration initialOvertime) {
+		return employeecontractService.createEmployeecontract(
+				ec.getEmployee().getId(),
+				ec.getValidFrom(),
+				ec.getValidUntil(),
+				List.of(supervisor.getId()),
+				ec.getTaskDescription(),
+				ec.getFreelancer(),
+				TRUE == ec.getHide(),
+				ec.getDailyWorkingTime(),
+				ec.getVacationEntitlement(),
+				initialOvertime,
+				false
+		);
+	}
+
 	@Test
 	public void employee_contract_rejects_self_as_supervisor() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
