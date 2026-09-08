@@ -93,9 +93,13 @@ public class BudgetControllingService {
         var plans = evaluatedPlans(budgets, filter);
         var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
+        // One extra read for the whole order, not one per plan (#916).
+        var consumedBefore = consumedBeforeWindow(plans, suborders, customerorder, from, planOfBooking, pricingLookup);
+
         var sections = new ArrayList<BudgetControllingSection>();
         for (var group : sectionGroups(plans)) {
-            sections.add(plannedSection(group, suborders, scored, planOfBooking, today, holidays, includeCosts));
+            sections.add(plannedSection(group, suborders, scored, planOfBooking, filter, consumedBefore,
+                today, holidays, includeCosts));
         }
         var withoutBudget = withoutBudgetSection(suborders, scored, planOfBooking, evaluatedPlanIds, includeCosts);
         if (withoutBudget != null) {
@@ -169,6 +173,9 @@ public class BudgetControllingService {
     private List<PlanPeriod> evaluatedPlans(List<OrderBudget> budgets, LocalDateRange filter) {
         return budgets.stream()
             .filter(b -> Boolean.TRUE.equals(b.getActive()))
+            // A plan takes part when its validity touches the window, whether or not it began inside
+            // it (#916). The clipped period below is only what the section header shows.
+            .filter(b -> new LocalDateRange(b.getValidFrom(), b.getValidUntil()).overlaps(filter))
             .map(b -> new PlanPeriod(b,
                 new LocalDateRange(b.getValidFrom(), b.getValidUntil()).intersection(filter)))
             .filter(p -> p.period() != null && p.period().isValid())
@@ -214,7 +221,8 @@ public class BudgetControllingService {
 
     private BudgetControllingSection plannedSection(List<PlanPeriod> plans, List<Suborder> suborders,
                                                     Map<Long, List<ScoredReport>> scored,
-                                                    Map<Long, Long> planOfBooking, LocalDate today,
+                                                    Map<Long, Long> planOfBooking, LocalDateRange window,
+                                                    Map<Long, BigDecimal> consumedBefore, LocalDate today,
                                                     Set<LocalDate> holidays, boolean includeCosts) {
         var orderWide = plans.get(0).orderWide();
         var period = plans.get(0).period();
@@ -231,7 +239,7 @@ public class BudgetControllingService {
                     includeCosts))
                 .filter(BudgetControllingRow::hasContent)
                 .toList();
-            var budget = budgetOf(plan, period);
+            var budget = availableBudgetOf(plan, window.getUntil(), consumedBefore);
             var progress = computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
             // An order-wide plan is the whole section, so its figures belong on the section total.
             var subtotal = orderWide ? null
@@ -240,7 +248,8 @@ public class BudgetControllingService {
         }
 
         var allRows = groups.stream().flatMap(g -> g.rows().stream()).toList();
-        var totalBudget = plans.stream().map(p -> budgetOf(p.plan(), period))
+        var totalBudget = plans.stream()
+            .map(p -> availableBudgetOf(p.plan(), window.getUntil(), consumedBefore))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         var totalProgress = orderWide
             ? computeProgress(plans.get(0).plan(), period.getFrom(), period.getUntil(), today, holidays)
@@ -415,7 +424,9 @@ public class BudgetControllingService {
                 }
             }
         }
-        return new UtilizationInfo(budgetOf(budget, period), revenue);
+        // The window here is the plan's own validity, so nothing can have been consumed before it —
+        // an assignment always sits inside the plan's period.
+        return new UtilizationInfo(cumulativeBudgetOf(budget, period.getUntil()), revenue);
     }
 
     private Double computeProgress(OrderBudget budget, LocalDate from, LocalDate until,
@@ -463,11 +474,60 @@ public class BudgetControllingService {
     }
 
     /** The plan's budget within the given period: the adjustments that take effect inside it. */
-    private static BigDecimal budgetOf(OrderBudget budget, LocalDateRange period) {
+    /**
+     * Everything the plan was granted up to the end of the window: every adjustment that has taken
+     * effect by then, including the ones from before the window (#916). Cutting them off at the
+     * window start reported 0 EUR for a plan that had been running for months — while the bookings
+     * inside the window counted against it.
+     */
+    private static BigDecimal cumulativeBudgetOf(OrderBudget budget, LocalDate windowEnd) {
         return budget.getAdjustments().stream()
-            .filter(a -> period.contains(a.getEffective()))
+            .filter(a -> !a.getEffective().isAfter(windowEnd))
             .map(OrderBudgetAdjustment::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * What the plan still has to spend when the window opens: everything granted by the end of the
+     * window minus what was already used up before it started.
+     *
+     * <p>Deliberately not floored at zero — a plan that was already overbooked when the window
+     * opened has a negative amount left, and saying so is the whole point. The utilization and the
+     * traffic light read this figure, so they follow along.
+     */
+    private static BigDecimal availableBudgetOf(OrderBudget budget, LocalDate windowEnd,
+                                                Map<Long, BigDecimal> consumedBefore) {
+        return cumulativeBudgetOf(budget, windowEnd)
+            .subtract(consumedBefore.getOrDefault(budget.getId(), BigDecimal.ZERO));
+    }
+
+    /**
+     * What each plan had already consumed before the window opened, in one query for the whole
+     * customer order — resolving it per plan would multiply the booking read by the number of plans.
+     *
+     * <p>Valued exactly as the bookings inside the window are: through {@link #scoreReports}, so the
+     * same rates apply and work on a suborder that is never billed contributes nothing (#897).
+     */
+    private Map<Long, BigDecimal> consumedBeforeWindow(List<PlanPeriod> plans, List<Suborder> suborders,
+                                                       Customerorder customerorder, LocalDate windowStart,
+                                                       Map<Long, Long> planOfBooking,
+                                                       OrderPricingLookup pricingLookup) {
+        var earliestStart = plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder());
+        if (earliestStart.isEmpty() || !earliestStart.get().isBefore(windowStart)) {
+            return Map.of();
+        }
+        var reports = timereportService.getTimereportsByDatesAndCustomerOrderId(
+            earliestStart.get(), windowStart.minusDays(1), customerorder.getId());
+        Map<Long, BigDecimal> consumed = new HashMap<>();
+        scoreReports(suborders, reports, customerorder.getSign(), pricingLookup, null)
+            .values().stream().flatMap(List::stream)
+            .forEach(report -> {
+                var planId = planOfBooking.get(report.timereportId());
+                if (planId != null) {
+                    consumed.merge(planId, report.revenue(), BigDecimal::add);
+                }
+            });
+        return consumed;
     }
 
     private static BigDecimal minutesToHours(long minutes) {

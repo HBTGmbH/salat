@@ -1,10 +1,13 @@
 package org.tb.budget.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -56,6 +59,8 @@ public class BudgetControllingServiceTest {
   private static final LocalDate JUL = LocalDate.of(2026, 7, 1);
   private static final LocalDate UNTIL = LocalDate.of(2026, 12, 31);
 
+  private static final LocalDate APR = LocalDate.of(2026, 4, 1);
+
   private static final LocalDate IN_H1 = LocalDate.of(2026, 3, 10);
   private static final LocalDate IN_H2 = LocalDate.of(2026, 9, 10);
 
@@ -101,8 +106,16 @@ public class BudgetControllingServiceTest {
     when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(i ->
         plans.stream().filter(p -> p.getActive().equals(i.getArgument(1))).toList());
     when(assignmentRepository.findLinksByCustomerorderSign("co")).thenAnswer(i -> List.copyOf(links));
+    // Narrowed by the requested period, as the real query does — #916 reads before the window.
     when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
-        .thenAnswer(i -> List.copyOf(reports));
+        .thenAnswer(i -> {
+          LocalDate periodFrom = i.getArgument(0);
+          LocalDate periodUntil = i.getArgument(1);
+          return reports.stream()
+              .filter(r -> !r.getReferenceday().isBefore(periodFrom)
+                  && !r.getReferenceday().isAfter(periodUntil))
+              .toList();
+        });
     when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> List.copyOf(suborders));
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
         suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
@@ -352,6 +365,110 @@ public class BudgetControllingServiceTest {
     assertThat(section.total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
+  // --- budgets that began before the window (#916) ---------------------------------------------
+
+  /**
+   * A window of one month with a plan that started a quarter earlier. Clipping the adjustments at
+   * the window start reported 0 EUR for such a plan, while the bookings inside the window counted
+   * against it — so the plan looked instantly overbooked.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_the_budget_left_when_the_window_opens() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    // The fixture books 8 h at 100 EUR in March, before the April window.
+    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1200.00");
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_an_adjustment_from_before_the_window_and_one_inside_it() {
+    var year = plan("year", null, FROM, UNTIL, "1000");
+    addAdjustment(year, "500", LocalDate.of(2026, 5, 1));
+    givenBudgets(year);
+
+    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
+
+    // 1000 granted in January + 500 in May, minus 800 used up in March.
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("700.00");
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_count_an_adjustment_that_takes_effect_after_the_window() {
+    var year = plan("year", null, FROM, UNTIL, "1000");
+    addAdjustment(year, "500", LocalDate.of(2026, 9, 1));
+    givenBudgets(year);
+
+    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("200.00");
+  }
+
+  /** Overbooked before the window even opened: reported as it is, not flattered to zero. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_a_negative_remainder_for_a_plan_already_overbooked() {
+    givenBudgets(plan("small", null, FROM, UNTIL, "500"));
+
+    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("-300.00");
+  }
+
+  /** The remainder is what the utilization and the traffic light are measured against. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_measure_the_utilization_against_the_remainder() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+    // 8 h at 100 EUR in September, inside a window that starts in July; 800 used up before it.
+    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1200.00");
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo("800.00");
+    // 800 of the 1200 remaining is two thirds — measured against the full 2000 it would be 40 %.
+    assertThat(section.total().budgetUsedPercent()).isCloseTo(66.67, within(0.01));
+  }
+
+  /** Only bookings from inside the window are listed, however far back the plan reaches. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_still_report_only_the_bookings_inside_the_window() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().bookedHours()).isEqualTo(Duration.ofHours(8));
+  }
+
+  /** The pre-window consumption costs one read for the order, not one per plan. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_read_the_bookings_before_the_window_only_once() {
+    givenBudgets(plan("a", "co/01", FROM, UNTIL, "1000"), plan("b", "co/02", FROM, UNTIL, "1000"));
+
+    compute(APR, JUN);
+
+    // One read for the window itself, one for everything before it.
+    verify(timereportService, times(2))
+        .getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong());
+  }
+
+  /** A window that starts with the plan has nothing before it, so no read is issued at all. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_look_before_a_window_that_starts_with_the_plan() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    compute(FROM, UNTIL);
+
+    verify(timereportService, times(1))
+        .getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong());
+  }
+
   // --- utilization: dashboard (#778) and alerts -----------------------------------------------
 
   /**
@@ -397,7 +514,24 @@ public class BudgetControllingServiceTest {
   // --- helpers ---------------------------------------------------------------------------------
 
   private BudgetControllingResult compute() {
-    return service.compute("co", FROM, UNTIL, false);
+    return compute(FROM, UNTIL);
+  }
+
+  private BudgetControllingResult compute(LocalDate from, LocalDate until) {
+    return service.compute("co", from, until, false);
+  }
+
+  private static BudgetControllingSection sectionOf(BudgetControllingResult result, SectionKind kind) {
+    return result.sections().stream().filter(s -> s.kind() == kind).findFirst().orElseThrow();
+  }
+
+  /** A further grant on an existing plan, taking effect on the given day. */
+  private static void addAdjustment(OrderBudget budget, String amount, LocalDate effective) {
+    var adjustment = new OrderBudgetAdjustment();
+    adjustment.setOrderBudget(budget);
+    adjustment.setAmount(new BigDecimal(amount));
+    adjustment.setEffective(effective);
+    budget.getAdjustments().add(adjustment);
   }
 
   private BudgetControllingSection sectionOf(SectionKind kind) {

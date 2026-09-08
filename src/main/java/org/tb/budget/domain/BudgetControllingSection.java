@@ -4,10 +4,12 @@ import java.util.List;
 import org.tb.common.LocalDateRange;
 
 /**
- * One evaluation of the controlling view. Each section covers exactly one budget period — or, for
- * {@link SectionKind#UNPLANNED}, the time no plan covers — so within a section the period <em>is</em>
- * the coverage. That is what makes a separate "covered revenue" unnecessary: everything a section
- * reports happened inside it.
+ * One evaluation of the controlling view: the plans of one period and mode, or — for
+ * {@link SectionKind#UNPLANNED} — the bookings that belong to no plan at all (#913).
+ *
+ * <p>What a section reports about bookings happened inside the evaluated window. Its budget figure
+ * does not: it is what the plans had left when the window opened, so a plan that has been running
+ * for months shows the remainder rather than nothing (#916).
  */
 public record BudgetControllingSection(
     SectionKind kind,
