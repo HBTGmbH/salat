@@ -3,8 +3,8 @@ package org.tb.jira.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,12 +12,17 @@ import static org.mockito.Mockito.when;
 import static org.springframework.util.ReflectionUtils.findField;
 import static org.springframework.util.ReflectionUtils.makeAccessible;
 import static org.springframework.util.ReflectionUtils.setField;
+import static org.tb.jira.domain.JiraApiFlavor.CLOUD;
+import static org.tb.jira.domain.JiraApiFlavor.SERVER;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,15 +36,16 @@ import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraTicket;
 import org.tb.jira.persistence.JiraReplicationConfigRepository;
 import org.tb.jira.persistence.JiraTicketRepository;
-import org.tb.jira.service.JiraClient.JiraIssue;
-import org.tb.jira.service.JiraClient.JiraSearchResult;
 
 @FixedClock
 @SpringBootTest
 class JiraReplicationServiceTest {
 
   @MockitoBean
-  private JiraClient jiraClient;
+  private JiraSearchClients searchClients;
+
+  /** Not a bean override: the context holds one client per flavour, the registry hands ours out. */
+  private final JiraSearchClient searchClient = mock(JiraSearchClient.class);
 
   @MockitoBean
   private JiraReplicationConfigRepository configRepo;
@@ -50,12 +56,16 @@ class JiraReplicationServiceTest {
   @Autowired
   private JiraReplicationService jiraReplicationService;
 
+  @BeforeEach
+  void setUp() {
+    when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
+  }
+
   @Test
   void testRunReplicationWithValidConfig() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
-        .thenReturn(createMockJiraSearchResult());
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -69,8 +79,7 @@ class JiraReplicationServiceTest {
   void testRunReplicationWithNoIssues() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
-        .thenReturn(emptyResult());
+    when(searchClient.search(any())).thenReturn(issues());
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -83,8 +92,7 @@ class JiraReplicationServiceTest {
     LocalDateTime mockUpdated = LocalDateTime.of(2026, 6, 25, 11, 20, 25);
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
-        .thenReturn(createMockJiraSearchResult(mockUpdated));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(mockUpdated)));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -98,10 +106,9 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     config.setLastMaxUpdated(watermark);
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    // first page succeeds and stores a ticket with a far newer timestamp, second page fails
-    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
-        .thenReturn(pagedResult(mockIssue(LocalDateTime.of(2026, 8, 19, 10, 0, 0)), 2))
-        .thenThrow(new RestClientException("connection reset"));
+    // the first issue is stored with a far newer timestamp, fetching the next page then fails
+    when(searchClient.search(any()))
+        .thenReturn(failingAfter(mockIssue(LocalDateTime.of(2026, 8, 19, 10, 0, 0))));
 
     assertThrows(RestClientException.class, () -> jiraReplicationService.runReplication(config.getId()));
 
@@ -115,12 +122,11 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
-        .thenReturn(emptyResult());
+    when(searchClient.search(any())).thenReturn(issues());
 
     jiraReplicationService.runReplication(config.getId());
 
-    assertEquals("(project = MOCK) AND updated >= '2026-06-01'", capturedJql());
+    assertEquals("(project = MOCK) AND updated >= '2026-06-01'", capturedRequest().jql());
   }
 
   @Test
@@ -128,18 +134,32 @@ class JiraReplicationServiceTest {
     JiraReplicationConfig config = createMockReplicationConfig();
     config.setLastMaxUpdated(null);
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
-    when(jiraClient.searchIssues(any(), any(), any(), any(), anyInt(), anyInt(), any()))
-        .thenReturn(emptyResult());
+    when(searchClient.search(any())).thenReturn(issues());
 
     jiraReplicationService.runReplication(config.getId());
 
-    assertEquals("project = MOCK", capturedJql());
+    assertEquals("project = MOCK", capturedRequest().jql());
   }
 
-  private String capturedJql() {
-    var jql = ArgumentCaptor.forClass(String.class);
-    verify(jiraClient).searchIssues(any(), any(), any(), jql.capture(), anyInt(), anyInt(), any());
-    return jql.getValue();
+  @Test
+  void testCloudConfigUsesTheCloudClient() {
+    JiraSearchClient cloudClient = mock(JiraSearchClient.class);
+    when(searchClients.forFlavor(CLOUD)).thenReturn(cloudClient);
+    when(cloudClient.search(any())).thenReturn(issues(mockIssue()));
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setApiFlavor(CLOUD);
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    verify(searchClient, never()).search(any());
+    verify(ticketRepo, times(1)).save(any(JiraTicket.class));
+  }
+
+  private JiraSearchRequest capturedRequest() {
+    var request = ArgumentCaptor.forClass(JiraSearchRequest.class);
+    verify(searchClient).search(request.capture());
+    return request.getValue();
   }
 
   private JiraReplicationConfig createMockReplicationConfig() {
@@ -156,12 +176,8 @@ class JiraReplicationServiceTest {
     return config;
   }
 
-  private JiraSearchResult createMockJiraSearchResult() {
-    return createMockJiraSearchResult(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
-  }
-
-  private JiraSearchResult createMockJiraSearchResult(LocalDateTime updated) {
-    return result(mockIssue(updated));
+  private static JiraIssue mockIssue() {
+    return mockIssue(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
   }
 
   private static JiraIssue mockIssue(LocalDateTime updated) {
@@ -177,25 +193,32 @@ class JiraReplicationServiceTest {
     return issue;
   }
 
-  private static JiraSearchResult result(JiraIssue issue) {
-    var result = new JiraSearchResult();
-    result.setIssues(List.of(issue));
-    result.setMaxResults(1);
-    result.setTotal(1);
-    return result;
+  private static Iterator<JiraIssue> issues(JiraIssue... issues) {
+    return List.of(issues).iterator();
   }
 
-  /** One issue, but {@code total} claims more — forces the service to request a further page. */
-  private static JiraSearchResult pagedResult(JiraIssue issue, int total) {
-    var result = result(issue);
-    result.setTotal(total);
-    return result;
-  }
+  /**
+   * Serves one issue and then fails, the way the lazy client does when fetching a further page
+   * breaks down mid-run.
+   */
+  private static Iterator<JiraIssue> failingAfter(JiraIssue issue) {
+    return new Iterator<>() {
 
-  private static JiraSearchResult emptyResult() {
-    var result = new JiraSearchResult();
-    result.setIssues(List.of());
-    return result;
+      private boolean served;
+
+      @Override
+      public boolean hasNext() {
+        if (!served) return true;
+        throw new RestClientException("connection reset");
+      }
+
+      @Override
+      public JiraIssue next() {
+        if (!hasNext()) throw new NoSuchElementException();
+        served = true;
+        return issue;
+      }
+    };
   }
 
 }
