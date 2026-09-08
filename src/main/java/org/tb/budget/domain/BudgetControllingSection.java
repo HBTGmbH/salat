@@ -39,11 +39,6 @@ public record BudgetControllingSection(
         return kind != SectionKind.UNPLANNED;
     }
 
-    /** Unplanned rows each cover their own gaps, so there the period belongs in a column. */
-    public boolean hasPeriodColumn() {
-        return kind == SectionKind.UNPLANNED;
-    }
-
     public boolean hasSubtotals() {
         return groups.stream().anyMatch(BudgetControllingGroup::hasSubtotal);
     }

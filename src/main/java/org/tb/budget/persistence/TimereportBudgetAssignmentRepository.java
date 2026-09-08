@@ -10,6 +10,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.tb.budget.domain.TimereportBudgetAssignment;
+import org.tb.budget.domain.TimereportBudgetLink;
 
 @Repository
 public interface TimereportBudgetAssignmentRepository
@@ -38,6 +39,19 @@ public interface TimereportBudgetAssignmentRepository
         WHERE a.orderBudget.customerorderSign = :customerorderSign
         """)
     List<Long> findTimereportIdsByCustomerorderSign(@Param("customerorderSign") String customerorderSign);
+
+    /**
+     * The complete booking-to-plan mapping of a customer order (#913). The controlling asks for it
+     * once per evaluation and decides from it which plan a booking counts against — that mapping
+     * replaced the derived coverage, so it has to be cheap: a flat pair per row instead of entities
+     * that pull their plan association along.
+     */
+    @Query("""
+        SELECT new org.tb.budget.domain.TimereportBudgetLink(a.timereportId, a.orderBudget.id)
+        FROM TimereportBudgetAssignment a
+        WHERE a.orderBudget.customerorderSign = :customerorderSign
+        """)
+    List<TimereportBudgetLink> findLinksByCustomerorderSign(@Param("customerorderSign") String customerorderSign);
 
     /**
      * The assignments of the given bookings, so the bulk assignment (#911) learns in one statement

@@ -9,6 +9,10 @@ public enum SectionKind {
     ORDER_LEVEL,
     /** One plan per first level suborder, all sharing the same period. */
     SUBORDER_LEVEL,
-    /** Time no plan covers. Every row carries its own periods. */
+    /**
+     * Bookings that belong to no plan (#913): no assignment at all, or one pointing at a plan the
+     * evaluation excludes. Since only the stored assignment counts, this is where hours would
+     * otherwise stop appearing in any number — it is not a period, it is a residue.
+     */
     UNPLANNED
 }

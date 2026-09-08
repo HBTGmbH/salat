@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -24,7 +25,9 @@ import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.SectionKind;
+import org.tb.budget.domain.TimereportBudgetLink;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.budget.persistence.TimereportBudgetAssignmentRepository;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -36,9 +39,14 @@ import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
 /**
- * The controlling reports one section per budget period plus one for the time no plan covers, so
- * within a section the period is the coverage (#905). Bookings happen on suborders of any depth
- * while plans only live on the customer order or on the first suborder level.
+ * The controlling counts a booking against the plan it is <em>assigned</em> to (#913) — nothing is
+ * derived from (suborder, date) any more. Bookings without an assignment land in their own section
+ * instead of quietly disappearing from every number.
+ *
+ * <p>Most tests here assign the bookings through the real {@link BudgetResolver}, i.e. exactly as
+ * the automatic assignment (#909) and the backfill (#910) do. That is what makes them the
+ * equivalence proof the switch needed: for an order without overlapping plans they assert the same
+ * hours, revenue and costs as before the switch.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BudgetControllingServiceTest {
@@ -51,7 +59,13 @@ public class BudgetControllingServiceTest {
   private static final LocalDate IN_H1 = LocalDate.of(2026, 3, 10);
   private static final LocalDate IN_H2 = LocalDate.of(2026, 9, 10);
 
+  private final List<OrderBudget> plans = new ArrayList<>();
+  private final List<TimereportDTO> reports = new ArrayList<>();
+  private final List<TimereportBudgetLink> links = new ArrayList<>();
+  private final List<Suborder> suborders = new ArrayList<>();
+
   private OrderBudgetRepository orderBudgetRepository;
+  private TimereportBudgetAssignmentRepository assignmentRepository;
   private TimereportService timereportService;
   private SuborderService suborderService;
   private BudgetControllingService service;
@@ -63,6 +77,7 @@ public class BudgetControllingServiceTest {
     suborderService = mock(SuborderService.class);
     timereportService = mock(TimereportService.class);
     orderBudgetRepository = mock(OrderBudgetRepository.class);
+    assignmentRepository = mock(TimereportBudgetAssignmentRepository.class);
     var orderPricingService = mock(OrderPricingService.class);
     var employeeCostService = mock(EmployeeCostService.class);
     var publicholidayService = mock(PublicholidayService.class);
@@ -78,9 +93,21 @@ public class BudgetControllingServiceTest {
     var second = suborder("02", 'Y', 20L, null);
 
     when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
-    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(first, deep, second));
     when(publicholidayService.getPublicHolidaysBetween(any(), any())).thenReturn(List.of());
-    when(orderBudgetRepository.findByCustomerorderSign("co")).thenReturn(List.of());
+
+    // Plans, bookings and assignments all come out of the mutable fixture lists, so a test can set
+    // them up in any order and the last word wins.
+    when(orderBudgetRepository.findByCustomerorderSign("co")).thenAnswer(i -> List.copyOf(plans));
+    when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(i ->
+        plans.stream().filter(p -> p.getActive().equals(i.getArgument(1))).toList());
+    when(assignmentRepository.findLinksByCustomerorderSign("co")).thenAnswer(i -> List.copyOf(links));
+    when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
+        .thenAnswer(i -> List.copyOf(reports));
+    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> List.copyOf(suborders));
+    when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
+        suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
+
+    givenSuborders(first, deep, second);
     givenReports(eightHoursOn(11L, IN_H1), eightHoursOn(20L, IN_H2));
     // One order-wide rate of 100 EUR/h — 8 h are worth 800 EUR wherever they are booked.
     when(orderPricingService.lookupFor(any())).thenReturn(OrderPricingLookup.of(List.of(orderWideRate())));
@@ -90,8 +117,8 @@ public class BudgetControllingServiceTest {
     when(budgetAuthorization.isAuthorizedForCustomerorder(anyString())).thenReturn(true);
 
     service = new BudgetControllingService(customerorderService, suborderService, timereportService,
-        orderBudgetRepository, orderPricingService, employeeCostService, publicholidayService,
-        budgetAuthorization);
+        orderBudgetRepository, assignmentRepository, orderPricingService, employeeCostService,
+        publicholidayService, budgetAuthorization);
   }
 
   /**
@@ -137,7 +164,7 @@ public class BudgetControllingServiceTest {
     var first = suborder("01", 'Y', 10L, null);
     var second = suborder("D", 'Y', 11L, first);
     var third = suborder("E", 'Y', 12L, second);
-    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(first, second, third));
+    givenSuborders(first, second, third);
     givenReports(eightHoursOn(12L, IN_H1));
     givenBudgets(plan("co/01", "co/01", FROM, UNTIL, "1000"));
 
@@ -197,7 +224,7 @@ public class BudgetControllingServiceTest {
 
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_the_time_a_plan_does_not_cover_separately() {
+  public void should_report_the_bookings_no_plan_covers_separately() {
     givenBudgets(plan("H1", null, FROM, JUN, "1000"));
 
     var unplanned = sectionOf(SectionKind.UNPLANNED);
@@ -205,17 +232,6 @@ public class BudgetControllingServiceTest {
     // The H2 booking on co/02 is the only work outside the plan.
     assertThat(unplanned.rows()).extracting(BudgetControllingRow::sign).containsExactly("co/02");
     assertThat(unplanned.total().revenueEuro()).isEqualByComparingTo("800.00");
-  }
-
-  @Test
-  @FixedClock("2026-06-15T10:00:00")
-  public void should_list_every_gap_of_a_suborder_in_one_row() {
-    givenBudgets(plan("mid year", null, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 8, 31), "1000"));
-
-    var row = sectionOf(SectionKind.UNPLANNED).rows().stream()
-        .filter(r -> "co/02".equals(r.sign())).findFirst().orElseThrow();
-
-    assertThat(row.periodsFormatted()).isEqualTo("01.01.2026 – 28.02.2026, 01.09.2026 – 31.12.2026");
   }
 
   @Test
@@ -248,13 +264,71 @@ public class BudgetControllingServiceTest {
         .containsExactly(SectionKind.UNPLANNED);
   }
 
-  /** Legacy data may still overlap; a booking must land in exactly one section regardless. */
+  /**
+   * Overlapping plans no longer need to be cut against each other: a booking counts against the one
+   * plan it is assigned to. Unresolvable on its own, it stays unassigned rather than being guessed
+   * into one of them — and is still reported exactly once.
+   */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_not_count_twice_when_legacy_plans_overlap() {
+  public void should_count_every_booking_once_when_plans_overlap() {
     givenBudgets(plan("A", null, FROM, UNTIL, "1000"), plan("B", null, FROM, UNTIL, "500"));
 
     assertThat(revenueOverAllSections()).isEqualByComparingTo("1600.00");
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().revenueEuro()).isEqualByComparingTo("1600.00");
+  }
+
+  /** With the plan chosen by hand, an overlap is no obstacle at all — the point of #911 and #914. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_follow_a_manual_assignment_when_plans_overlap() {
+    var a = plan("A", null, FROM, UNTIL, "1000");
+    var b = plan("B", null, FROM, UNTIL, "500");
+    givenBudgets(a, b);
+    givenAssignment(reports.get(0), a);
+    givenAssignment(reports.get(1), b);
+
+    var sections = compute().sections();
+
+    assertThat(sections).noneMatch(section -> section.kind() == SectionKind.UNPLANNED);
+    assertThat(revenueOverAllSections()).isEqualByComparingTo("1600.00");
+  }
+
+  /**
+   * The semantic change of #913: being inside the period and scope of a plan is no longer enough.
+   * An unassigned booking counts against no budget and has to show up as such — that is what the
+   * automatic assignment (#909) and the backfill (#910) exist to prevent.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_count_an_unassigned_booking_against_a_plan_that_would_cover_it() {
+    givenBudgets(plan("whole year", null, FROM, UNTIL, "2000"));
+    links.clear();
+
+    assertThat(compute().sections()).extracting(BudgetControllingSection::kind)
+        .contains(SectionKind.UNPLANNED);
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().revenueEuro()).isEqualByComparingTo("1600.00");
+  }
+
+  /**
+   * A plan can be deactivated after its bookings were assigned. Its hours must not vanish from every
+   * number — they belong under "without budget", where the bulk assignment can pick them up.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_bookings_of_a_deactivated_plan_as_without_budget() {
+    var archived = plan("archived", null, FROM, UNTIL, "1000");
+    givenBudgets(archived);
+    // Assigned while the plan was still active, then archived.
+    givenAssignment(reports.get(0), archived);
+    givenAssignment(reports.get(1), archived);
+    archived.setActive(false);
+
+    var sections = compute().sections();
+
+    assertThat(sections).extracting(BudgetControllingSection::kind).containsExactly(SectionKind.UNPLANNED);
+    assertThat(sections.get(0).total().revenueEuro()).isEqualByComparingTo("1600.00");
   }
 
   @Test
@@ -269,13 +343,55 @@ public class BudgetControllingServiceTest {
   @FixedClock("2026-06-15T10:00:00")
   public void should_earn_no_revenue_on_a_suborder_that_is_not_invoiceable() {
     var unbilled = suborder("03", 'N', 30L, null);
-    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(unbilled));
+    givenSuborders(unbilled);
     givenReports(eightHoursOn(30L, IN_H1));
 
     var section = sectionOf(SectionKind.UNPLANNED);
 
     assertThat(section.total().bookedHours()).isEqualTo(Duration.ofHours(8));
     assertThat(section.total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  // --- utilization: dashboard (#778) and alerts -----------------------------------------------
+
+  /**
+   * Dashboard and alerts read the same assignment as the sections do, so their number cannot drift
+   * away from the evaluation — which it could while both derived the scope on their own.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_base_the_utilization_on_the_assignment() {
+    var whole = plan("whole year", null, FROM, UNTIL, "2000");
+    givenBudgets(whole);
+
+    var info = service.computeUtilizationInfo(whole);
+
+    assertThat(info.budgetEuro()).isEqualByComparingTo("2000");
+    assertThat(info.coveredRevenueEuro()).isEqualByComparingTo("1600.00");
+    assertThat(info.percent()).isEqualTo(80.0);
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_leave_unassigned_bookings_out_of_the_utilization() {
+    var whole = plan("whole year", null, FROM, UNTIL, "2000");
+    givenBudgets(whole);
+    links.clear();
+
+    assertThat(service.computeUtilizationInfo(whole).coveredRevenueEuro())
+        .isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  /** A plan on a first level suborder counts what is booked below it, because the assignment says so. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_deep_bookings_in_the_utilization_of_a_first_level_plan() {
+    var firstLevel = plan("co/01", "co/01", FROM, UNTIL, "1000");
+    givenBudgets(firstLevel);
+
+    // The fixture books 8 h on co/01/D, below the plan, and 8 h on co/02, outside it.
+    assertThat(service.computeUtilizationInfo(firstLevel).coveredRevenueEuro())
+        .isEqualByComparingTo("800.00");
   }
 
   // --- helpers ---------------------------------------------------------------------------------
@@ -298,13 +414,42 @@ public class BudgetControllingServiceTest {
         .reduce(Duration.ZERO, Duration::plus);
   }
 
+  /** Sets the plans and assigns every booking the way #909 and #910 would. */
   private void givenBudgets(OrderBudget... budgets) {
-    when(orderBudgetRepository.findByCustomerorderSign("co")).thenReturn(List.of(budgets));
+    plans.clear();
+    plans.addAll(List.of(budgets));
+    assignAsResolved();
   }
 
-  private void givenReports(TimereportDTO... reports) {
-    when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
-        .thenReturn(List.of(reports));
+  private void givenReports(TimereportDTO... timereports) {
+    reports.clear();
+    reports.addAll(List.of(timereports));
+    assignAsResolved();
+  }
+
+  private void givenSuborders(Suborder... subordersOfOrder) {
+    suborders.clear();
+    suborders.addAll(List.of(subordersOfOrder));
+  }
+
+  /**
+   * The assignment as the automatic path produces it: every booking that exactly one active plan
+   * covers is assigned to it, the rest stays unassigned. Uses the production resolver, so these
+   * tests cannot drift away from what the application actually stores.
+   */
+  private void assignAsResolved() {
+    var resolver = new BudgetResolver(orderBudgetRepository, suborderService);
+    links.clear();
+    for (var report : reports) {
+      resolver.resolve(report).unique().ifPresent(plan ->
+          links.add(new TimereportBudgetLink(report.getId(), plan.getId())));
+    }
+  }
+
+  /** An assignment somebody made by hand, overriding what the resolver would have produced. */
+  private void givenAssignment(TimereportDTO report, OrderBudget plan) {
+    links.removeIf(link -> link.timereportId() == report.getId());
+    links.add(new TimereportBudgetLink(report.getId(), plan.getId()));
   }
 
   /**
@@ -324,19 +469,26 @@ public class BudgetControllingServiceTest {
     return suborder;
   }
 
-  /** The id is generated, so there is no setter; a stored suborder always has one. */
-  private static void setId(Suborder suborder, long id) {
+  /** The id is generated, so there is no setter; a stored record always has one. */
+  private static void setId(AuditedEntity entity, long id) {
     try {
       var field = AuditedEntity.class.getDeclaredField("id");
       field.setAccessible(true);
-      field.set(suborder, id);
+      field.set(entity, id);
     } catch (ReflectiveOperationException e) {
-      throw new IllegalStateException("cannot assign an id to the test suborder", e);
+      throw new IllegalStateException("cannot assign an id to the test record", e);
     }
   }
 
-  private static TimereportDTO eightHoursOn(long suborderId, LocalDate day) {
+  /** Bookings and plans carry ids now: the assignment is keyed by them. */
+  private static long nextId = 1;
+
+  private TimereportDTO eightHoursOn(long suborderId, LocalDate day) {
+    var suborder = suborders.stream().filter(so -> so.getId() == suborderId).findFirst();
     return TimereportDTO.builder()
+        .id(nextId++)
+        .customerorderSign("co")
+        .completeOrderSign(suborder.map(Suborder::getCompleteOrderSign).orElse("co/?"))
         .suborderId(suborderId)
         .employeeSign("emp")
         .referenceday(day)
@@ -346,6 +498,7 @@ public class BudgetControllingServiceTest {
 
   private static OrderBudget plan(String name, String suborderSign, LocalDate from, LocalDate until, String amount) {
     var budget = new OrderBudget();
+    setId(budget, nextId++);
     budget.setName(name);
     budget.setCustomerorderSign("co");
     budget.setSuborderSign(suborderSign);

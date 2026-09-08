@@ -49,14 +49,26 @@
   </div>
 
   <div class="card mb-3" th:each="section : ${result?.sections()}">
-    <div class="card-header d-block">
-      <h3 class="card-title mb-0" th:text="#{${'main.controlling.section.' + section.kind().name()}}">Auswertung</h3>
-      <div class="text-muted small">
-        <span th:if="${section.period() != null}"
-              th:text="|${#temporals.format(section.period().getFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.period().getUntil(), 'dd.MM.yyyy')}|"></span>
-        <span th:if="${not #lists.isEmpty(section.budgetNames())}"
-              th:text="' · ' + ${#strings.listJoin(section.budgetNames(), ', ')}"></span>
+    <div class="card-header d-flex align-items-start">
+      <div class="me-auto">
+        <h3 class="card-title mb-0" th:text="#{${'main.controlling.section.' + section.kind().name()}}">Auswertung</h3>
+        <div class="text-muted small">
+          <span th:if="${section.period() != null}"
+                th:text="|${#temporals.format(section.period().getFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.period().getUntil(), 'dd.MM.yyyy')}|"></span>
+          <span th:if="${not #lists.isEmpty(section.budgetNames())}"
+                th:text="' · ' + ${#strings.listJoin(section.budgetNames(), ', ')}"></span>
+          <span th:if="${section.kind().name() == 'UNPLANNED'}"
+                th:text="#{main.controlling.section.UNPLANNED.hint}">Diese Buchungen zählen gegen kein Budget.</span>
+        </div>
       </div>
+      <!-- Straight into the bulk assignment, order and period already filled in (#913) -->
+      <a class="btn btn-outline-primary btn-sm ms-2"
+         th:if="${section.kind().name() == 'UNPLANNED' and isManager}"
+         th:href="@{/budget/bulk-assignment(customerorderSign=${result.customerorderSign()},
+                    from=${result.filter().getFrom()},until=${result.filter().getUntil()})}">
+        <i class="icon ti ti-arrow-right"></i>
+        <span th:text="#{main.controlling.section.UNPLANNED.assign}">Zuordnen</span>
+      </a>
     </div>
     <div class="table-responsive"
          th:replace="~{budget/controlling-section :: table(${section}, ${isManager})}"></div>

@@ -28,13 +28,6 @@ public class BudgetControllingSectionTest {
     assertThat(section(SectionKind.UNPLANNED, row().build()).hasBudgetColumn()).isFalse();
   }
 
-  /** Only unplanned rows differ in period, so only there does the period belong in a column. */
-  @Test
-  public void should_offer_a_period_column_only_for_unplanned_time() {
-    assertThat(section(SectionKind.UNPLANNED, row().build()).hasPeriodColumn()).isTrue();
-    assertThat(section(SectionKind.ORDER_LEVEL, row().build()).hasPeriodColumn()).isFalse();
-  }
-
   @Test
   public void should_report_planned_data_when_a_row_has_planned_hours() {
     assertThat(section(SectionKind.ORDER_LEVEL,
