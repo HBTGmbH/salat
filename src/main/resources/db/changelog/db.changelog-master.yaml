@@ -2497,5 +2497,58 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 68
+      author: kr
+      comment: Create timereport_order_budget table for the explicit budget assignment of time reports
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: timereport_order_budget
+      changes:
+        - createTable:
+            tableName: timereport_order_budget
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: timereport_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_timereport_order_budget_timereport
+                    foreignKeyName: fk_timereport_order_budget_timereport
+                    references: timereport(id)
+                    deleteCascade: true
+              - column:
+                  name: order_budget_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_timereport_order_budget_order_budget
+                    references: order_budget(id)
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

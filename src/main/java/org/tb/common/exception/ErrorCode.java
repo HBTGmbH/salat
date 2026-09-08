@@ -115,6 +115,9 @@ public enum ErrorCode {
   BU_SUBORDER_NOT_FIRST_LEVEL("BU-0012", "order budgets are only allowed on first level suborders"),
   BU_ORDER_NOT_AUTHORIZED("BU-0013", "not authorized to see budget data of this customer order"),
   BU_EMPLOYEE_COST_HAS_ASSIGNMENTS("BU-0014", "employee cost cannot be deleted while assignments reference its name"),
+  BU_BUDGET_INACTIVE("BU-0015", "time reports cannot be assigned to an inactive order budget"),
+  BU_TIMEREPORT_OUTSIDE_BUDGET_PERIOD("BU-0016", "the time report date lies outside the validity of the order budget"),
+  BU_TIMEREPORT_NOT_IN_BUDGET_SCOPE("BU-0017", "the time report does not lie within the scope of the order budget"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
