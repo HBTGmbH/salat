@@ -28,6 +28,7 @@ import org.tb.invoice.domain.InvoiceSuborder;
 import org.tb.invoice.service.ExcelExportService;
 import org.tb.invoice.service.InvoiceService;
 import org.tb.invoice.service.InvoiceService.InvoiceOptions;
+import org.tb.budget.service.BudgetQueryService;
 import org.tb.invoice.service.InvoiceSettingsService;
 import org.tb.order.domain.comparator.SubOrderComparator;
 import org.tb.order.service.CustomerorderService;
@@ -43,6 +44,7 @@ public class InvoiceController {
     private final SuborderService suborderService;
     private final InvoiceSettingsService invoiceSettingsService;
     private final InvoiceService invoiceService;
+    private final BudgetQueryService budgetQueryService;
     private final ExcelExportService excelExportService;
     private final MessageSourceAccessor messages;
 
@@ -56,6 +58,9 @@ public class InvoiceController {
 
     @PostMapping
     public String updateOptions(@ModelAttribute("invoiceForm") InvoiceForm form, Model model) {
+        prefillPeriodFromBudget(form);
+        form.setPreviousOrderBudgetId(form.getOrderBudgetId());
+        rejectAmbiguousScope(form, model);
         addCommonModel(model, form);
         return "invoice/invoice-form";
     }
@@ -64,6 +69,13 @@ public class InvoiceController {
     public String generate(@ModelAttribute("invoiceForm") InvoiceForm form, Model model) {
         if (form.getTitlesubordertext() == null || form.getTitlesubordertext().isBlank()) {
             initColumnHeaders(form);
+        }
+        prefillPeriodFromBudget(form);
+        form.setPreviousOrderBudgetId(form.getOrderBudgetId());
+        if (rejectAmbiguousScope(form, model)) {
+            model.addAttribute("invoiceForm", form);
+            addCommonModel(model, form);
+            return "invoice/invoice-form";
         }
         if (form.getOrderId() != null) {
             var invoiceData = buildInvoiceData(form);
@@ -94,6 +106,11 @@ public class InvoiceController {
     public String print(@ModelAttribute("invoiceForm") InvoiceForm form,
                         @RequestParam(name = "invoice-settings", required = false, defaultValue = "HBT") String invoiceSettingsName,
                         Model model) {
+        if (rejectAmbiguousScope(form, model)) {
+            model.addAttribute("invoiceForm", form);
+            addCommonModel(model, form);
+            return "invoice/invoice-form";
+        }
         var invoiceData = buildInvoiceData(form);
         updateVisibleFlags(form, invoiceData);
         model.addAttribute("invoiceData", invoiceData);
@@ -116,6 +133,11 @@ public class InvoiceController {
     @PostMapping("/export")
     public void export(@ModelAttribute("invoiceForm") InvoiceForm form,
                        HttpServletResponse response) throws Exception {
+        if (form.isScopeAmbiguous()) {
+            // Not reachable through the form, which clears one when the other is picked.
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
         var invoiceData = buildInvoiceData(form);
         updateVisibleFlags(form, invoiceData);
         var displayOptions = InvoiceOptions.builder()
@@ -165,6 +187,13 @@ public class InvoiceController {
             .map(orderId -> suborderService.getSubordersByCustomerorderId(orderId, form.isShowOnlyValid()).stream()
                 .sorted(SubOrderComparator.INSTANCE)
                 .toList())
+            .orElse(List.of()));
+        // The plans of the selected order, refreshed by the same full-form submit that refreshes the
+        // suborders. Empty when the user may see no budget data of this order — then only the
+        // suborder narrowing is available (#915).
+        model.addAttribute("orderBudgets", ofNullable(form.getOrderId())
+            .map(orderId -> customerorderService.getCustomerorderById(orderId))
+            .map(order -> budgetQueryService.getActivePlans(order.getSign()))
             .orElse(List.of()));
         model.addAttribute("invoiceSettings", invoiceSettingsService.getAllSettings());
         model.addAttribute("dynamicColumnCount", computeDynamicColumnCount(form));
@@ -216,8 +245,36 @@ public class InvoiceController {
         return invoiceService.generateInvoiceData(
             form.getOrderId(),
             ofNullable(form.getSuborderId()),
+            ofNullable(form.getOrderBudgetId()),
             new LocalDateRange(dateFirst, dateLast),
             options);
+    }
+
+    /**
+     * Prefills the billing period from the chosen plan, but only when the choice actually changed —
+     * otherwise a re-render would keep overwriting dates the user adjusted afterwards. The period
+     * stays editable; the plan only proposes it.
+     */
+    private void prefillPeriodFromBudget(InvoiceForm form) {
+        var chosen = form.getOrderBudgetId();
+        if (chosen == null || chosen.equals(form.getPreviousOrderBudgetId())) {
+            return;
+        }
+        budgetQueryService.getPlan(chosen).ifPresent(plan -> {
+            form.setInvoiceview(GlobalConstants.VIEW_CUSTOM);
+            form.setFromDate(plan.validFrom());
+            form.setUntilDate(plan.validUntil());
+        });
+    }
+
+    /** Both narrowings at once has no defined meaning — refused rather than silently resolved. */
+    private boolean rejectAmbiguousScope(InvoiceForm form, Model model) {
+        if (!form.isScopeAmbiguous()) {
+            return false;
+        }
+        model.addAttribute("invoiceError",
+            messages.getMessage("main.invoice.error.scope.ambiguous"));
+        return true;
     }
 
     private static void updateVisibleFlags(InvoiceForm form, InvoiceData invoiceData) {

@@ -21,6 +21,12 @@ public class InvoiceSuborder implements Serializable {
   private final String orderDescription;
   private final List<InvoiceTimereport> timereports;
   private final Duration totalDuration;
+  /**
+   * The suborder's <em>target hours</em> ({@code Suborder#getDebithours()}) — not a budget plan.
+   * The name predates the budget module; since #915 an invoice can be narrowed to an
+   * {@code OrderBudget}, so keep the two apart when reading this class, {@code InvoiceOptions
+   * #showBudget} and the {@code getBudgetHeader()} column title, which all mean target hours.
+   */
   private final Duration budget;
   private boolean visible;
 
