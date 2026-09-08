@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import org.tb.budget.domain.BudgetBackfillCounts;
+import org.tb.budget.domain.BudgetBookingCounts;
 import org.tb.budget.domain.BudgetBackfillOrderResult;
 import org.tb.budget.domain.BudgetBackfillResult;
 
@@ -21,7 +21,7 @@ public class BudgetBackfillRowViewHelperTest {
   @Test
   public void should_format_the_examined_period_and_the_hours_of_an_order() {
     var row = BudgetBackfillRowViewHelper.from(orderResult("CO",
-        new BudgetBackfillCounts(3, Duration.ofMinutes(150)), BudgetBackfillCounts.NONE));
+        new BudgetBookingCounts(3, Duration.ofMinutes(150)), BudgetBookingCounts.NONE));
 
     assertThat(row.label()).isEqualTo("CO");
     assertThat(row.description()).isEqualTo("CO description");
@@ -34,7 +34,7 @@ public class BudgetBackfillRowViewHelperTest {
   @Test
   public void should_show_a_dash_for_an_outcome_that_did_not_occur() {
     var row = BudgetBackfillRowViewHelper.from(orderResult("CO",
-        new BudgetBackfillCounts(1, Duration.ofHours(1)), BudgetBackfillCounts.NONE));
+        new BudgetBookingCounts(1, Duration.ofHours(1)), BudgetBookingCounts.NONE));
 
     assertThat(row.ambiguousBookings()).isZero();
     assertThat(row.ambiguousHours()).isEqualTo("—");
@@ -43,9 +43,9 @@ public class BudgetBackfillRowViewHelperTest {
   @Test
   public void should_sum_the_orders_into_the_total_row_without_claiming_a_period() {
     var result = new BudgetBackfillResult(List.of(
-        orderResult("CO", new BudgetBackfillCounts(2, Duration.ofHours(2)), BudgetBackfillCounts.NONE),
-        orderResult("OTHER", new BudgetBackfillCounts(1, Duration.ofMinutes(30)),
-            new BudgetBackfillCounts(4, Duration.ofHours(4)))));
+        orderResult("CO", new BudgetBookingCounts(2, Duration.ofHours(2)), BudgetBookingCounts.NONE),
+        orderResult("OTHER", new BudgetBookingCounts(1, Duration.ofMinutes(30)),
+            new BudgetBookingCounts(4, Duration.ofHours(4)))));
 
     var totals = BudgetBackfillRowViewHelper.totals(result, "Summe");
 
@@ -58,9 +58,9 @@ public class BudgetBackfillRowViewHelperTest {
   }
 
   private static BudgetBackfillOrderResult orderResult(
-      String sign, BudgetBackfillCounts assigned, BudgetBackfillCounts ambiguous) {
+      String sign, BudgetBookingCounts assigned, BudgetBookingCounts ambiguous) {
     return new BudgetBackfillOrderResult(sign, sign + " description", JAN, DEC,
-        assigned, ambiguous, BudgetBackfillCounts.NONE, BudgetBackfillCounts.NONE);
+        assigned, ambiguous, BudgetBookingCounts.NONE, BudgetBookingCounts.NONE);
   }
 
 }
