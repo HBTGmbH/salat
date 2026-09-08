@@ -25,6 +25,7 @@ import org.tb.budget.domain.BudgetControllingGroup;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.BudgetControllingSection;
+import org.tb.budget.domain.BudgetScope;
 import org.tb.budget.domain.EmployeeCostLookup;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
@@ -208,13 +209,17 @@ public class BudgetControllingService {
         return new Coverage(sections, unplanned);
     }
 
-    /** The complete order sign of the suborder's first level ancestor, or its own if it is one. */
+    /**
+     * The complete order sign of the suborder's first level ancestor, or its own if it is one.
+     * Shared with the stored assignment via {@link BudgetScope}, so that the derived coverage here
+     * and the explicit assignment cannot resolve a scope differently (#931).
+     */
     private static String firstLevelSignOf(Suborder suborder) {
-        return suborder.withParents().get(0).getCompleteOrderSign();
+        return BudgetScope.firstLevelSignOf(suborder);
     }
 
     private static boolean isOrderWide(String suborderSign) {
-        return suborderSign == null || suborderSign.isBlank();
+        return BudgetScope.isOrderWide(suborderSign);
     }
 
     private BudgetControllingSection plannedSection(List<PlanCoverage> plans, List<Suborder> suborders,
