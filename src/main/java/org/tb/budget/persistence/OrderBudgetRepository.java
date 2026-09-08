@@ -48,6 +48,18 @@ public interface OrderBudgetRepository
     List<OrderBudget> findByActiveAndAlertThresholdPercentIsNotNull(Boolean active);
 
     /**
+     * The customer orders that have at least one active plan — the only orders a backfill run
+     * (#910) can assign anything on. Selecting the signs instead of the plans keeps the run from
+     * loading every plan of the installation just to learn which orders to visit.
+     */
+    @Query("""
+        SELECT DISTINCT b.customerorderSign FROM OrderBudget b
+        WHERE b.active = true
+        ORDER BY b.customerorderSign
+        """)
+    List<String> findActiveCustomerorderSigns();
+
+    /**
      * Active budgets of the customer order whose validity overlaps the given period, excluding the
      * one being edited. Whether such a budget is an actual conflict depends on its scope, which the
      * service decides — two plans on <em>different</em> suborders may share a period.

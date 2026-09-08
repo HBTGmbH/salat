@@ -179,6 +179,12 @@
                      th:text="#{main.controlling.title}">
                     Soll-Ist-Controlling
                   </a>
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
+                     th:href="@{/budget/backfill}"
+                     th:classappend="${subSection == 'backfill'} ? 'active' : ''"
+                     th:text="#{main.backfill.title}">
+                    Bestandszuordnung
+                  </a>
                 </div>
               </div>
             </div>

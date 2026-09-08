@@ -27,6 +27,18 @@ public interface TimereportBudgetAssignmentRepository
 
     long countByOrderBudgetId(long orderBudgetId);
 
+    /**
+     * The bookings already assigned to any plan of the customer order. A booking of this order can
+     * only ever be assigned to one of its own plans, so this is the complete set the backfill run
+     * (#910) has to leave alone — asked once per order rather than with an {@code IN} list of every
+     * booking found.
+     */
+    @Query("""
+        SELECT a.timereportId FROM TimereportBudgetAssignment a
+        WHERE a.orderBudget.customerorderSign = :customerorderSign
+        """)
+    List<Long> findTimereportIdsByCustomerorderSign(@Param("customerorderSign") String customerorderSign);
+
     @Modifying
     @Query("DELETE FROM TimereportBudgetAssignment a WHERE a.timereportId IN :timereportIds")
     void deleteByTimereportIdIn(@Param("timereportIds") Collection<Long> timereportIds);
