@@ -392,6 +392,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `ScheduledReportJob` | Stammdaten | `enabled` |
 | `OrderRevenueExcelMapping` | Stammdaten | — |
 | `Timereport` | Bewegungsdaten | soft-delete (`deleted` + `@SQLRestriction`) |
+| `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |
 | `Overtime` | Bewegungsdaten | — |
 | `Vacation` | Bewegungsdaten | — |
