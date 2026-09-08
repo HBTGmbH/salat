@@ -2550,5 +2550,20 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 69
+      author: kr
+      comment: Make overtime.effective mandatory - an adjustment without an effective date breaks the overtime calculation
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: overtime
+            columnName: effective
+      changes:
+        - addNotNullConstraint:
+            tableName: overtime
+            columnName: effective
+            columnDataType: date
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

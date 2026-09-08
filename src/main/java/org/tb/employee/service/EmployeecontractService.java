@@ -108,6 +108,9 @@ public class EmployeecontractService {
       Overtime overtime = new Overtime();
       overtime.setComment("initial overtime");
       overtime.setEmployeecontract(employeecontract);
+      // The balance the employee brings into the contract, so it takes effect at its begin. Without
+      // an effective date the overtime calculation dereferences null and fails (#933).
+      overtime.setEffective(employeecontract.getValidFrom());
       overtime.setTime(initialOvertime);
       create(overtime);
     }
