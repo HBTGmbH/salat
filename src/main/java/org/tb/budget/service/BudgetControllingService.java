@@ -7,7 +7,6 @@ import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -15,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,9 @@ import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.domain.ProgressStatus;
 import org.tb.budget.domain.SectionKind;
+import org.tb.budget.domain.TimereportBudgetLink;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.budget.persistence.TimereportBudgetAssignmentRepository;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -55,6 +57,7 @@ public class BudgetControllingService {
     private final SuborderService suborderService;
     private final TimereportService timereportService;
     private final OrderBudgetRepository orderBudgetRepository;
+    private final TimereportBudgetAssignmentRepository assignmentRepository;
     private final OrderPricingService orderPricingService;
     private final EmployeeCostService employeeCostService;
     private final PublicholidayService publicholidayService;
@@ -82,23 +85,36 @@ public class BudgetControllingService {
         // because the same report is looked at by every section it could fall into.
         var scored = scoreReports(suborders, timereports, customerorderSign, pricingLookup, costLookup);
 
-        var coverage = assignCoverage(budgets, suborders, filter);
+        // Which plan a booking counts against is read, not derived (#913). That is what lets a
+        // booking appear in exactly one section without anyone cutting periods against each other,
+        // and it is what allows plans to overlap from #914 on.
+        var planOfBooking = planOfBooking(customerorderSign);
+
+        var plans = evaluatedPlans(budgets, filter);
+        var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
         var sections = new ArrayList<BudgetControllingSection>();
-        for (var planned : coverage.plannedSections()) {
-            sections.add(plannedSection(planned, suborders, scored, today, holidays, includeCosts));
+        for (var group : sectionGroups(plans)) {
+            sections.add(plannedSection(group, suborders, scored, planOfBooking, today, holidays, includeCosts));
         }
-        var unplanned = unplannedSection(coverage.unplannedBySuborderId(), suborders, scored, includeCosts);
-        if (unplanned != null) {
-            sections.add(unplanned);
+        var withoutBudget = withoutBudgetSection(suborders, scored, planOfBooking, evaluatedPlanIds, includeCosts);
+        if (withoutBudget != null) {
+            sections.add(withoutBudget);
         }
 
         return new BudgetControllingResult(customerorderSign, customerorder.getShortdescription(), filter,
             sections.stream().filter(BudgetControllingSection::hasContent).toList());
     }
 
+    /** The stored assignment of every booking of the customer order, by time report id. */
+    private Map<Long, Long> planOfBooking(String customerorderSign) {
+        return assignmentRepository.findLinksByCustomerorderSign(customerorderSign).stream()
+            .collect(Collectors.toMap(TimereportBudgetLink::timereportId, TimereportBudgetLink::orderBudgetId));
+    }
+
     /** A time report with its revenue and cost already resolved. */
-    private record ScoredReport(LocalDate day, Duration duration, BigDecimal revenue, BigDecimal cost) {}
+    private record ScoredReport(long timereportId, LocalDate day, Duration duration,
+                                BigDecimal revenue, BigDecimal cost) {}
 
     private Map<Long, List<ScoredReport>> scoreReports(List<Suborder> suborders, List<TimereportDTO> timereports,
                                                        String customerorderSign, OrderPricingLookup pricingLookup,
@@ -111,7 +127,7 @@ public class BudgetControllingService {
             var soSign = suborder.getCompleteOrderSign();
             var invoiceable = suborder.isInvoiceable();
             scored.put(suborder.getId(), bySuborder.getOrDefault(suborder.getId(), List.<TimereportDTO>of()).stream()
-                .map(r -> new ScoredReport(r.getReferenceday(), r.getDuration(),
+                .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDuration(),
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
                     invoiceable ? rateOf(r, customerorderSign, soSign, pricingLookup) : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
@@ -135,78 +151,52 @@ public class BudgetControllingService {
             .orElse(BigDecimal.ZERO);
     }
 
-    /** One plan with the periods it covers per suborder. */
-    private record PlanCoverage(OrderBudget plan, LocalDateRange period, boolean orderWide,
-                                Map<Long, List<LocalDateRange>> periodsBySuborderId) {}
-
-    /** Plans grouped into sections, plus what no plan covers. */
-    private record Coverage(List<List<PlanCoverage>> plannedSections,
-                            Map<Long, List<LocalDateRange>> unplannedBySuborderId) {}
+    /** One plan with the part of its validity that falls inside the evaluated period. */
+    private record PlanPeriod(OrderBudget plan, LocalDateRange period) {
+        boolean orderWide() {
+            return isOrderWide(plan.getSuborderSign());
+        }
+    }
 
     /**
-     * Works out which plan covers which suborder when. Every {@code (suborder, day)} is claimed by at
-     * most one plan: the rules forbid overlaps (#905), but legacy data may still contain them and a
-     * booking must never be counted twice. Suborder plans win over order-wide ones, then the earlier
-     * one, then the lower id — a fixed order so the result does not depend on query order.
+     * The plans that take part in this evaluation: active, and with a validity that reaches into the
+     * evaluated period.
+     *
+     * <p>This is a filter, not a coverage derivation — no plan takes anything away from another one
+     * any more. A booking assigned to a plan that is excluded here is reported as being without a
+     * budget, so deactivating a plan does not make its hours disappear from every number.
      */
-    private Coverage assignCoverage(List<OrderBudget> budgets, List<Suborder> suborders, LocalDateRange filter) {
-        var firstLevelSignBySuborderId = suborders.stream()
-            .collect(Collectors.toMap(Suborder::getId, BudgetControllingService::firstLevelSignOf));
-
-        var candidates = budgets.stream()
+    private List<PlanPeriod> evaluatedPlans(List<OrderBudget> budgets, LocalDateRange filter) {
+        return budgets.stream()
             .filter(b -> Boolean.TRUE.equals(b.getActive()))
-            .map(b -> new AbstractMap.SimpleEntry<>(b,
+            .map(b -> new PlanPeriod(b,
                 new LocalDateRange(b.getValidFrom(), b.getValidUntil()).intersection(filter)))
-            .filter(e -> e.getValue() != null && e.getValue().isValid())
+            .filter(p -> p.period() != null && p.period().isValid())
             .sorted(Comparator
-                .comparing((AbstractMap.SimpleEntry<OrderBudget, LocalDateRange> e) -> isOrderWide(e.getKey().getSuborderSign()))
-                .thenComparing(e -> e.getKey().getValidFrom())
-                .thenComparing(e -> e.getKey().getId(), Comparator.nullsLast(Comparator.naturalOrder())))
+                .comparing((PlanPeriod p) -> p.period().getFrom())
+                .thenComparing(p -> p.period().getUntil())
+                .thenComparing(PlanPeriod::orderWide)
+                .thenComparing(p -> p.plan().getId(), Comparator.nullsLast(Comparator.naturalOrder())))
             .toList();
+    }
 
-        Map<Long, List<LocalDateRange>> claimed = new HashMap<>();
-        var covered = new ArrayList<PlanCoverage>();
-        for (var candidate : candidates) {
-            var plan = candidate.getKey();
-            var period = candidate.getValue();
-            var orderWide = isOrderWide(plan.getSuborderSign());
-            Map<Long, List<LocalDateRange>> bySuborder = new LinkedHashMap<>();
-            for (var suborder : suborders) {
-                // A plan on a first level suborder also covers everything below it — plans only live
-                // on that level, but bookings happen further down.
-                if (!orderWide && !plan.getSuborderSign().equals(firstLevelSignBySuborderId.get(suborder.getId()))) {
-                    continue;
-                }
-                var free = minusAll(List.of(period), claimed.getOrDefault(suborder.getId(), List.of()));
-                if (!free.isEmpty()) {
-                    bySuborder.put(suborder.getId(), free);
-                    claimed.computeIfAbsent(suborder.getId(), k -> new ArrayList<>()).addAll(free);
-                }
-            }
-            covered.add(new PlanCoverage(plan, period, orderWide, bySuborder));
+    /**
+     * Plans of the same level and the same period share one section, as they always have — the
+     * section total over them is the number a reader compares against the order. Only what fills the
+     * rows changed.
+     */
+    private List<List<PlanPeriod>> sectionGroups(List<PlanPeriod> plans) {
+        Map<String, List<PlanPeriod>> grouped = new LinkedHashMap<>();
+        for (var plan : plans) {
+            grouped.computeIfAbsent(plan.orderWide() + "|" + plan.period(), k -> new ArrayList<>()).add(plan);
         }
+        return List.copyOf(grouped.values());
+    }
 
-        // Plans of the same level and the same period share one section.
-        Map<String, List<PlanCoverage>> grouped = new LinkedHashMap<>();
-        for (var planCoverage : covered) {
-            grouped.computeIfAbsent(planCoverage.orderWide() + "|" + planCoverage.period(), k -> new ArrayList<>())
-                .add(planCoverage);
-        }
-        var sections = grouped.values().stream()
-            .sorted(Comparator
-                .comparing((List<PlanCoverage> s) -> s.get(0).period().getFrom())
-                .thenComparing(s -> s.get(0).period().getUntil())
-                .thenComparing(s -> !s.get(0).orderWide()))
-            .toList();
-
-        Map<Long, List<LocalDateRange>> unplanned = new LinkedHashMap<>();
-        for (var suborder : suborders) {
-            var gaps = minusAll(List.of(filter), claimed.getOrDefault(suborder.getId(), List.of()));
-            if (!gaps.isEmpty()) {
-                unplanned.put(suborder.getId(), gaps);
-            }
-        }
-        return new Coverage(sections, unplanned);
+    /** Whether the plan's scope contains the suborder — where its planned hours come from. */
+    private static boolean covers(OrderBudget plan, Suborder suborder) {
+        return isOrderWide(plan.getSuborderSign())
+            || plan.getSuborderSign().equals(firstLevelSignOf(suborder));
     }
 
     /**
@@ -222,18 +212,23 @@ public class BudgetControllingService {
         return BudgetScope.isOrderWide(suborderSign);
     }
 
-    private BudgetControllingSection plannedSection(List<PlanCoverage> plans, List<Suborder> suborders,
-                                                    Map<Long, List<ScoredReport>> scored, LocalDate today,
+    private BudgetControllingSection plannedSection(List<PlanPeriod> plans, List<Suborder> suborders,
+                                                    Map<Long, List<ScoredReport>> scored,
+                                                    Map<Long, Long> planOfBooking, LocalDate today,
                                                     Set<LocalDate> holidays, boolean includeCosts) {
         var orderWide = plans.get(0).orderWide();
         var period = plans.get(0).period();
         var groups = new ArrayList<BudgetControllingGroup>();
 
-        for (var planCoverage : plans) {
-            var plan = planCoverage.plan();
+        for (var planPeriod : plans) {
+            var plan = planPeriod.plan();
+            // The rows span the plan's scope, because that is where its planned hours come from; what
+            // is booked against it comes from the assignment alone.
             var rows = suborders.stream()
-                .filter(s -> planCoverage.periodsBySuborderId().containsKey(s.getId()))
-                .map(s -> row(s, planCoverage.periodsBySuborderId().get(s.getId()), scored, includeCosts, null))
+                .filter(suborder -> covers(plan, suborder))
+                .map(suborder -> row(suborder,
+                    reportsOf(suborder, scored, r -> plan.getId().equals(planOfBooking.get(r.timereportId()))),
+                    includeCosts))
                 .filter(BudgetControllingRow::hasContent)
                 .toList();
             var budget = budgetOf(plan, period);
@@ -259,13 +254,24 @@ public class BudgetControllingService {
             groups, total);
     }
 
-    private BudgetControllingSection unplannedSection(Map<Long, List<LocalDateRange>> gapsBySuborderId,
-                                                      List<Suborder> suborders,
-                                                      Map<Long, List<ScoredReport>> scored, boolean includeCosts) {
+    /**
+     * The bookings that belong to no budget: no assignment at all, or one pointing at a plan this
+     * evaluation excludes — an inactive plan, or one whose validity lies outside the period. Both
+     * cases have to surface, otherwise hours would silently stop appearing in any number, which is
+     * exactly what the explicit assignment must not cost us (#913).
+     */
+    private BudgetControllingSection withoutBudgetSection(List<Suborder> suborders,
+                                                          Map<Long, List<ScoredReport>> scored,
+                                                          Map<Long, Long> planOfBooking,
+                                                          Set<Long> evaluatedPlanIds, boolean includeCosts) {
         var rows = suborders.stream()
-            .filter(s -> gapsBySuborderId.containsKey(s.getId()))
-            .map(s -> row(s, gapsBySuborderId.get(s.getId()), scored, includeCosts, gapsBySuborderId.get(s.getId())))
-            .filter(BudgetControllingRow::hasContent)
+            .map(suborder -> row(suborder, reportsOf(suborder, scored, report -> {
+                var planId = planOfBooking.get(report.timereportId());
+                return planId == null || !evaluatedPlanIds.contains(planId);
+            }), includeCosts))
+            // Only the booked side counts here: a suborder with planned hours but no unassigned
+            // booking has nothing to answer for and would otherwise show up in every evaluation.
+            .filter(row -> !row.bookedHours().isZero())
             .toList();
         if (rows.isEmpty()) {
             return null;
@@ -275,16 +281,15 @@ public class BudgetControllingService {
             List.of(new BudgetControllingGroup(null, null, rows, null)), total);
     }
 
-    private BudgetControllingRow row(Suborder suborder, List<LocalDateRange> periods,
-                                     Map<Long, List<ScoredReport>> scored, boolean includeCosts,
-                                     List<LocalDateRange> shownPeriods) {
-        var reports = scored.getOrDefault(suborder.getId(), List.of()).stream()
-            .filter(r -> periods.stream().anyMatch(p -> p.contains(r.day())))
-            .toList();
+    private static List<ScoredReport> reportsOf(Suborder suborder, Map<Long, List<ScoredReport>> scored,
+                                                Predicate<ScoredReport> belongsHere) {
+        return scored.getOrDefault(suborder.getId(), List.of()).stream().filter(belongsHere).toList();
+    }
+
+    private BudgetControllingRow row(Suborder suborder, List<ScoredReport> reports, boolean includeCosts) {
         return BudgetControllingRow.builder()
             .sign(suborder.getCompleteOrderSign())
             .label(suborder.getShortdescription())
-            .periods(shownPeriods)
             .plannedHours(suborder.getDebithours() != null ? suborder.getDebithours() : Duration.ZERO)
             .bookedHours(reports.stream().map(ScoredReport::duration).reduce(Duration.ZERO, Duration::plus))
             .revenueEuro(reports.stream().map(ScoredReport::revenue).reduce(BigDecimal.ZERO, BigDecimal::add))
@@ -315,15 +320,6 @@ public class BudgetControllingService {
             .progressStatus(computeProgressStatus(progressPercent,
                 row.hasBudgetPercent() ? row.budgetUsedPercent() : null))
             .build();
-    }
-
-    /** The parts of {@code periods} that none of {@code holes} covers. */
-    private static List<LocalDateRange> minusAll(List<LocalDateRange> periods, List<LocalDateRange> holes) {
-        var remaining = periods;
-        for (var hole : holes) {
-            remaining = remaining.stream().flatMap(p -> p.minus(hole).stream()).toList();
-        }
-        return remaining;
     }
 
     public record UtilizationInfo(BigDecimal budgetEuro, BigDecimal coveredRevenueEuro) {
@@ -370,7 +366,8 @@ public class BudgetControllingService {
      */
     private record OrderData(Customerorder customerorder, List<Suborder> suborders,
                              Map<Long, String> completeSignBySuborderId,
-                             Map<Long, List<TimereportDTO>> reportsBySuborder) {}
+                             Map<Long, List<TimereportDTO>> reportsBySuborder,
+                             Map<Long, Long> planOfBooking) {}
 
     /**
      * Loads the data of one customer order over the union of the validity ranges of all its budgets.
@@ -389,32 +386,31 @@ public class BudgetControllingService {
         var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
         return new OrderData(customerorder, suborders,
             suborders.stream().collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign)),
-            timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)));
+            timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)),
+            planOfBooking(customerorderSign));
     }
 
     /**
-     * Utilization of one plan over its own validity. The scope has to be resolved exactly as the
-     * controlling does it — a plan on a first level suborder covers everything below it, because
-     * plans only live on the customer order or on that first level while bookings happen deeper.
-     * Matching the sign exactly here would report nothing for orders that book on the second level.
+     * Utilization of one plan: the revenue of the bookings assigned to it (#913).
+     *
+     * <p>Dashboard and alerts therefore rest on exactly the same basis as the evaluation. Scope and
+     * period are no longer re-derived here — the assignment already guarantees both, which is what
+     * removes the risk that this and the section calculation disagree. Only the invoiceable check
+     * stays: work that is never billed earns nothing, whatever plan it belongs to.
      */
     private UtilizationInfo computeUtilizationInfo(OrderBudget budget, OrderData orderData,
                                                    OrderPricingLookup pricingLookup) {
         var period = new LocalDateRange(budget.getValidFrom(), budget.getValidUntil());
         var coSign = budget.getCustomerorderSign();
-        var soSign = budget.getSuborderSign();
 
         var revenue = BigDecimal.ZERO;
         for (var suborder : orderData.suborders()) {
-            if (!isOrderWide(soSign) && !soSign.equals(firstLevelSignOf(suborder))) {
-                continue;
-            }
             if (!suborder.isInvoiceable()) {
                 continue;
             }
             var soCompleteSign = orderData.completeSignBySuborderId().get(suborder.getId());
             for (var report : orderData.reportsBySuborder().getOrDefault(suborder.getId(), List.<TimereportDTO>of())) {
-                if (period.contains(report.getReferenceday())) {
+                if (budget.getId().equals(orderData.planOfBooking().get(report.getId()))) {
                     revenue = revenue.add(rateOf(report, coSign, soCompleteSign, pricingLookup));
                 }
             }

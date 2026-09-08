@@ -3,10 +3,8 @@ package org.tb.budget.domain;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.Builder;
-import org.tb.common.LocalDateRange;
 
 /**
  * One line of a controlling section — a suborder, a group subtotal or the section total.
@@ -22,8 +20,6 @@ import org.tb.common.LocalDateRange;
 public record BudgetControllingRow(
     String sign,
     String label,
-    /** Only filled on unplanned rows, which each cover their own gaps. */
-    List<LocalDateRange> periods,
     Duration plannedHours,
     Duration bookedHours,
     /** The budget of the plan this line stands for; {@code null} on lines that carry none. */
@@ -36,8 +32,6 @@ public record BudgetControllingRow(
     Double progressPercent,
     ProgressStatus progressStatus
 ) {
-
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     public double bookedPercent() {
         if (plannedHours == null || plannedHours.isZero()) return 0.0;
@@ -133,13 +127,4 @@ public record BudgetControllingRow(
     public String plannedHoursFormatted() { return hasPlanned() ? formatHours(plannedHours) : "—"; }
 
     public String forecastHoursFormatted() { return hasForecast() ? formatHours(forecastHours) : "—"; }
-
-    /** The gaps this line covers, e.g. {@code 01.01.2026 – 28.02.2026, 01.07.2026 – 31.12.2026}. */
-    public String periodsFormatted() {
-        if (periods == null || periods.isEmpty()) return "—";
-        return periods.stream()
-            .map(p -> DATE.format(p.getFrom()) + " – " + DATE.format(p.getUntil()))
-            .reduce((a, b) -> a + ", " + b)
-            .orElse("—");
-    }
 }

@@ -11,7 +11,6 @@
   <thead>
     <tr>
       <th th:text="#{main.controlling.col.order}">Auftrag / Subauftrag</th>
-      <th th:if="${section.hasPeriodColumn()}" th:text="#{main.controlling.col.period}">Zeitraum</th>
       <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
       <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
       <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
@@ -50,7 +49,6 @@
     <span class="text-muted small" th:text="${row.sign()} ?: #{main.controlling.row.total}">Summe</span>
     <span class="ms-1 small" th:text="${row.label()}"></span>
   </td>
-  <td th:if="${section.hasPeriodColumn()}" th:class="${cellClass}" th:text="${row.periodsFormatted()}"></td>
   <td class="text-end" th:classappend="${cellClass}" th:text="${row.bookedHoursFormatted()}"></td>
   <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
       th:text="${row.plannedHoursFormatted()}"></td>

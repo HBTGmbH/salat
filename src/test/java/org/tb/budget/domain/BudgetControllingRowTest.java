@@ -55,20 +55,6 @@ public class BudgetControllingRowTest {
     assertThat(row().revenueEuro(new BigDecimal("800")).build().hasOverrun()).isFalse();
   }
 
-  @Test
-  public void should_list_every_gap_of_an_unplanned_line() {
-    var gaps = row().periods(List.of(
-        new LocalDateRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 28)),
-        new LocalDateRange(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 12, 31)))).build();
-
-    assertThat(gaps.periodsFormatted()).isEqualTo("01.01.2026 – 28.02.2026, 01.07.2026 – 31.12.2026");
-  }
-
-  @Test
-  public void should_render_a_dash_without_periods() {
-    assertThat(row().build().periodsFormatted()).isEqualTo("—");
-  }
-
   private static org.assertj.core.data.Offset<Double> within(double d) {
     return org.assertj.core.data.Offset.offset(d);
   }
