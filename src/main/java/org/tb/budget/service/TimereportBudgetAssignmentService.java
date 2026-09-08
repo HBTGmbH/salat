@@ -1,14 +1,16 @@
 package org.tb.budget.service;
 
+import static java.lang.Boolean.TRUE;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.budget.domain.BudgetScope;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
 import org.tb.budget.persistence.TimereportBudgetAssignmentRepository;
@@ -18,12 +20,12 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.order.service.SuborderService;
 
 /**
  * The explicit assignment of time reports to budget plans. Only the stored assignment counts — a
  * booking without one belongs to no budget, there is no derived fallback (#908).
  */
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class TimereportBudgetAssignmentService {
     private final TimereportBudgetAssignmentRepository assignmentRepository;
     private final OrderBudgetService orderBudgetService;
     private final TimereportService timereportService;
-    private final SuborderService suborderService;
+    private final BudgetResolver budgetResolver;
     private final AuthorizedUser authorizedUser;
 
     /**
@@ -48,12 +50,60 @@ public class TimereportBudgetAssignmentService {
         checkAssignable(budget, getReport(timereportId));
 
         var assignment = assignmentRepository.findByTimereportId(timereportId)
-            .orElseGet(() -> {
-                var fresh = new TimereportBudgetAssignment();
-                fresh.setTimereportId(timereportId);
-                return fresh;
-            });
+            .orElseGet(() -> newAssignment(timereportId));
         assignment.setOrderBudget(budget);
+        assignmentRepository.save(assignment);
+    }
+
+    /**
+     * Assigns the bookings automatically, as far as the plan is unambiguous: exactly one active plan
+     * of the order covers {@code (suborder, date)}. With several or with no matching plan the booking
+     * stays unassigned — the automatic assignment never guesses (#909). Unassigned bookings are not
+     * an error; they are reported in controlling and can be caught up on by bulk assignment (#911).
+     *
+     * <p>An assignment that already exists is left alone as long as it is still valid, so a
+     * deliberate manual assignment is never overwritten. Only one that the change invalidated — the
+     * booking moved to another suborder, or its date left the plan's validity — is resolved anew.
+     *
+     * <p>Deliberately not manager-only: this runs for whoever booked, as the direct consequence of
+     * their own already authorized booking.
+     */
+    @Authorized(permitAll = true)
+    public void resolveAssignments(Collection<Long> timereportIds) {
+        for (var timereportId : timereportIds) {
+            try {
+                resolveAssignment(timereportId);
+            } catch (RuntimeException e) {
+                // The booking itself is already written and must not fail over its budget
+                // assignment — an unassigned booking is a reported state, not a defect. Caught per
+                // booking and inside this transactional method, so the exception never passes a
+                // transaction boundary that would mark the booking's transaction rollback-only.
+                log.warn("Could not resolve the budget assignment of time report {}", timereportId, e);
+            }
+        }
+    }
+
+    private void resolveAssignment(long timereportId) {
+        var report = timereportService.getTimereportById(timereportId);
+        if (report == null) {
+            // Written and deleted again before this ran — there is nothing left to assign.
+            return;
+        }
+        var existing = assignmentRepository.findByTimereportId(timereportId).orElse(null);
+        if (existing != null && budgetResolver.isAssignable(existing.getOrderBudget(), report)) {
+            return;
+        }
+        var resolved = budgetResolver.resolve(report).unique().orElse(null);
+        if (resolved == null) {
+            if (existing != null) {
+                assignmentRepository.delete(existing);
+            }
+            return;
+        }
+        // Retargeted rather than replaced, as in assign(): the row keeps its audit trail, and no
+        // insert races the delete of a row the unique index still holds.
+        var assignment = existing != null ? existing : newAssignment(timereportId);
+        assignment.setOrderBudget(resolved);
         assignmentRepository.save(assignment);
     }
 
@@ -100,31 +150,30 @@ public class TimereportBudgetAssignmentService {
         assignmentRepository.deleteByTimereportIdIn(timereportIds);
     }
 
+    /**
+     * The same rule as {@link BudgetResolver#isAssignable}, checked condition by condition so that
+     * the manual assignment can say which one was violated. It delegates to the resolver instead of
+     * repeating the conditions — the automatic and the manual path must not be able to disagree
+     * about what a plan covers.
+     */
     private void checkAssignable(OrderBudget budget, TimereportDTO report) {
-        if (!Boolean.TRUE.equals(budget.getActive())) {
+        if (!TRUE.equals(budget.getActive())) {
             throw new BusinessRuleException(ErrorCode.BU_BUDGET_INACTIVE, budget.getName());
         }
         var day = report.getReferenceday();
-        if (day.isBefore(budget.getValidFrom()) || day.isAfter(budget.getValidUntil())) {
+        if (!budgetResolver.coversPeriod(budget, day)) {
             throw new BusinessRuleException(ErrorCode.BU_TIMEREPORT_OUTSIDE_BUDGET_PERIOD, day, budget.getName());
         }
-        // An order-wide plan does not look at the suborder at all, so it needs no lookup either.
-        var firstLevelSign = BudgetScope.isOrderWide(budget.getSuborderSign())
-            ? null
-            : firstLevelSignOf(report);
-        if (!BudgetScope.covers(budget, report.getCustomerorderSign(), firstLevelSign)) {
+        if (!budgetResolver.coversScope(budget, report)) {
             throw new BusinessRuleException(ErrorCode.BU_TIMEREPORT_NOT_IN_BUDGET_SCOPE,
                 report.getCompleteOrderSign(), budget.getName());
         }
     }
 
-    /**
-     * A plan on a first level suborder also covers everything below it — plans only live on that
-     * level, but bookings happen further down.
-     */
-    private String firstLevelSignOf(TimereportDTO report) {
-        var suborder = suborderService.getSuborderById(report.getSuborderId());
-        return suborder == null ? null : BudgetScope.firstLevelSignOf(suborder);
+    private static TimereportBudgetAssignment newAssignment(long timereportId) {
+        var assignment = new TimereportBudgetAssignment();
+        assignment.setTimereportId(timereportId);
+        return assignment;
     }
 
     private TimereportDTO getReport(long timereportId) {
