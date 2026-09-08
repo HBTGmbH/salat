@@ -14,6 +14,21 @@ public class InvoiceForm implements InvoiceColumnHeaders {
 
     private Long orderId;
     private Long suborderId;
+
+    /**
+     * Bill what is assigned to this budget plan instead of what is booked on one suborder (#915).
+     * Exactly one of the two narrows the invoice; a plan may span several suborders, which is why it
+     * is the more precise boundary once bookings are assigned explicitly (#908).
+     */
+    private Long orderBudgetId;
+
+    /**
+     * The plan the form was rendered with. Only when the submitted plan differs from it does the
+     * period get prefilled from the plan — otherwise every re-render would overwrite dates the user
+     * has since changed.
+     */
+    private Long previousOrderBudgetId;
+
     private String invoiceview = "month";
 
     /** Monthly mode: value from {@code <input type="month">}, format {@code yyyy-MM}. */
@@ -48,6 +63,11 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     private String titleinvoiceattachment;
     private String customername;
     private String customeraddress = "";
+
+    /** Both narrowings at once has no defined meaning, so it is refused rather than resolved. */
+    public boolean isScopeAmbiguous() {
+        return suborderId != null && orderBudgetId != null;
+    }
 
     public String getCustomeraddressFormatted() {
         if (customeraddress == null) return "";

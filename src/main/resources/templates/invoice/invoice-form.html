@@ -12,6 +12,8 @@
     .table .invoice-last-row > * { border-bottom-width: 0; }
   </style>
 
+  <div th:if="${invoiceError != null}" class="alert alert-danger mb-3" th:text="${invoiceError}"></div>
+
   <form id="invoice-form" th:action="@{/invoice/generate}" th:object="${invoiceForm}" method="post">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -38,12 +40,30 @@
           <!-- Col 2: Suborder -->
           <div class="col-12 col-md-4">
             <label class="form-label fw-semibold" th:text="#{main.monthlyreport.suborder.text}">Unterauftrag</label>
-            <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}">
+            <select class="form-select tomselect" id="suborderId" th:field="*{suborderId}"
+                    onchange="clearBudgetSelection()">
               <option value="" th:text="#{main.general.allsuborders.text}">-- Alle --</option>
               <option th:each="so : ${suborders}"
                       th:value="${so.id}"
                       th:text="${so.completeOrderSignAndDescription}"></option>
             </select>
+
+            <!-- Alternative narrowing: bill what is assigned to a budget plan (#915) -->
+            <div class="mt-2" th:if="${not #lists.isEmpty(orderBudgets)}">
+              <label class="form-label fw-semibold small" for="orderBudgetId"
+                     th:text="#{main.invoice.orderbudget.text}">Budgetplan</label>
+              <select class="form-select tomselect" id="orderBudgetId" th:field="*{orderBudgetId}"
+                      onchange="clearSuborderSelection()">
+                <option value="" th:text="#{main.invoice.orderbudget.none}">-- Kein Budgetplan --</option>
+                <option th:each="b : ${orderBudgets}"
+                        th:value="${b.id()}"
+                        th:text="${b.name()}"></option>
+              </select>
+              <div class="form-text small" th:text="#{main.invoice.orderbudget.hint}">
+                Entweder Unterauftrag oder Budgetplan.
+              </div>
+            </div>
+            <input type="hidden" th:field="*{previousOrderBudgetId}"/>
             <div class="form-check mt-1 form-switch">
               <input class="form-check-input" type="checkbox" id="showOnlyValid" role="switch"
                      th:field="*{showOnlyValid}" onchange="submitUpdate()">
@@ -505,6 +525,27 @@
     }
 
     // ── Form submission ─────────────────────────────────────────────────
+    function clearSelect(id) {
+      const select = document.getElementById(id);
+      if (!select || !select.value) return;
+      if (select.tomselect) {
+        select.tomselect.setValue('', true);
+      } else {
+        select.value = '';
+      }
+    }
+
+    /** Suborder and budget plan are alternatives, so picking one drops the other. */
+    function clearSuborderSelection() {
+      clearSelect('suborderId');
+      submitUpdate();
+    }
+
+    function clearBudgetSelection() {
+      clearSelect('orderBudgetId');
+      submitUpdate();
+    }
+
     function submitUpdate() {
       const form = document.getElementById('invoice-form');
       form.action = /*[[@{/invoice}]]*/ '/invoice';

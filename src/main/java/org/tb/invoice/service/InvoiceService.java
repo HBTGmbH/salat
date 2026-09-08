@@ -8,6 +8,7 @@ import static org.tb.common.GlobalConstants.YESNO_YES;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.service.BudgetQueryService;
 import org.tb.common.LocalDateRange;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
@@ -36,12 +38,32 @@ public class InvoiceService {
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final TimereportService timereportService;
+  private final BudgetQueryService budgetQueryService;
 
   public InvoiceData generateInvoiceData(long customerorderId, Optional<Long> suborderId, LocalDateRange invoiceDateRange, InvoiceOptions options) {
+    return generateInvoiceData(customerorderId, suborderId, Optional.empty(), invoiceDateRange, options);
+  }
+
+  /**
+   * The invoice over one customer order, narrowed either to one suborder or to one budget plan
+   * (#915) — never both, which the form refuses before it gets here.
+   *
+   * <p>In the budget case the bookings come from the assignment: billed is what was booked onto that
+   * budget, however many suborders it spreads over. The period still applies on top, so a plan
+   * running longer than the billing month yields only that month's bookings. Suborders without an
+   * assigned booking in the period drop out — they contribute nothing to this invoice.
+   */
+  public InvoiceData generateInvoiceData(long customerorderId, Optional<Long> suborderId,
+      Optional<Long> orderBudgetId, LocalDateRange invoiceDateRange, InvoiceOptions options) {
     var customerorder = customerorderService.getCustomerorderById(customerorderId);
 
     var dateFirst = invoiceDateRange.getFrom();
     var dateLast = invoiceDateRange.getUntil();
+    // Null means "no budget narrowing at all", which is not the same as "a plan with no bookings".
+    var assignedIds = orderBudgetId
+        .map(id -> Set.copyOf(budgetQueryService.getAssignedTimereportIds(id)))
+        .orElse(null);
+
     var invoiceSuborders = suborderId
         .map(sid -> List.of(suborderService.getSuborderById(sid)))
         .orElseGet(() -> suborderService.getSubordersByCustomerorderId(customerorderId))
@@ -52,11 +74,14 @@ public class InvoiceService {
         .sorted(SubOrderComparator.INSTANCE)
         .map(suborder -> {
           var timereports = timereportService.getTimereportsByDatesAndSuborderId(dateFirst, dateLast, suborder.getId()).stream()
+              .filter(timereport -> assignedIds == null || assignedIds.contains(timereport.getId()))
               .sorted(comparing(TimereportDTO::getReferenceday).thenComparing(TimereportDTO::getEmployeeSign))
               .map(timereport -> new InvoiceTimereport(timereport))
               .toList();
           return new InvoiceSuborder(suborder, timereports, options);
-        }).toList();
+        })
+        .filter(invoiceSuborder -> assignedIds == null || !invoiceSuborder.getTimereports().isEmpty())
+        .toList();
 
     var totalDuration = invoiceSuborders.stream()
         .map(InvoiceSuborder::getTotalDuration)
