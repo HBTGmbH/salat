@@ -2565,5 +2565,46 @@ databaseChangeLog:
             columnName: effective
             columnDataType: date
 
+  - changeSet:
+      id: 70
+      author: kr
+      comment: Add api_flavor to jira_replication_config - JIRA Cloud needs a different REST API than JIRA Server
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: api_flavor
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              - column:
+                  name: api_flavor
+                  type: varchar(20)
+                  defaultValue: SERVER
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 71
+      author: kr
+      comment: Widen jira_replication_config.password - JIRA Cloud API tokens exceed 255 characters
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: jira_replication_config
+            columnName: password
+      changes:
+        - modifyDataType:
+            tableName: jira_replication_config
+            columnName: password
+            newDataType: varchar(1024)
+        # modifyDataType drops the nullability on MySQL, so it has to be restored explicitly
+        - addNotNullConstraint:
+            tableName: jira_replication_config
+            columnName: password
+            columnDataType: varchar(1024)
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

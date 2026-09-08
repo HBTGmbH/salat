@@ -1,7 +1,11 @@
 package org.tb.jira.domain;
 
+import static org.tb.jira.domain.JiraApiFlavor.SERVER;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -25,9 +29,15 @@ public class JiraReplicationConfig extends AuditedEntity {
   @Column(name = "base_url", nullable = false)
   private String baseUrl;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "api_flavor")
+  private JiraApiFlavor apiFlavor;
+
+  /** On JIRA Cloud this is the Atlassian account e-mail — API tokens authenticate as that user. */
   @Column(name = "username", nullable = false)
   private String username;
 
+  /** On JIRA Cloud this is the API token, passed as the HTTP Basic password. */
   @Column(name = "password", nullable = false)
   private String password;
 
@@ -45,4 +55,12 @@ public class JiraReplicationConfig extends AuditedEntity {
 
   @Column(name = "last_max_updated")
   private LocalDateTime lastMaxUpdated;
+
+  /**
+   * These rows are maintained by hand via SQL, so a missing value has to keep behaving the way the
+   * replication did before Cloud support existed.
+   */
+  public JiraApiFlavor getApiFlavor() {
+    return apiFlavor != null ? apiFlavor : SERVER;
+  }
 }

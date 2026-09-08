@@ -17,15 +17,13 @@ import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraTicket;
 import org.tb.jira.persistence.JiraReplicationConfigRepository;
 import org.tb.jira.persistence.JiraTicketRepository;
-import org.tb.jira.service.JiraClient.JiraIssue;
-import org.tb.jira.service.JiraClient.JiraSearchResult;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class JiraReplicationService {
 
-  private final JiraClient jiraClient;
+  private final JiraSearchClients searchClients;
   private final JiraReplicationConfigRepository configRepo;
   private final JiraTicketRepository ticketRepo;
 
@@ -47,8 +45,8 @@ public class JiraReplicationService {
 
     int pageSize = cfg.getPageSize() != null && cfg.getPageSize() > 0 ? cfg.getPageSize() : 100;
 
-    log.info("Starting JIRA replication: id={}, name={}, customerorderSign={}, pageSize={}",
-        cfg.getId(), cfg.getName(), cfg.getCustomerorderSign(), pageSize);
+    log.info("Starting JIRA replication: id={}, name={}, customerorderSign={}, apiFlavor={}, pageSize={}",
+        cfg.getId(), cfg.getName(), cfg.getCustomerorderSign(), cfg.getApiFlavor(), pageSize);
 
     // Note: We do not modify JQL per requirement. We filter during upsert by updated timestamp.
     // The baseline comes solely from the config watermark, which is only written after a run has
@@ -57,40 +55,31 @@ public class JiraReplicationService {
     // skipping the ones that were never fetched. Re-fetching is harmless — upsertIfChanged is
     // idempotent — so the failure mode has to be "fetch again", never "skip".
     var baseline = cfg.getLastMaxUpdated();
-    int startAt = 0;
     int processed = 0;
     LocalDateTime newMax = baseline;
 
     var fields = buildFieldList(cfg);
     var jql = appendMaxUpdated(cfg.getJql(), baseline);
+    var request = new JiraSearchRequest(
+        cfg.getBaseUrl(), cfg.getUsername(), cfg.getPassword(), jql, fields, pageSize);
 
-    while (true) {
-      JiraSearchResult result = jiraClient.searchIssues(
-          cfg.getBaseUrl(), cfg.getUsername(), cfg.getPassword(), jql, startAt, pageSize, fields);
-
-      if (result == null || result.getIssues() == null || result.getIssues().isEmpty()) {
-        break;
-      }
-
-      for (var issue : result.getIssues()) {
-        try {
-          var changed = upsertIfChanged(cfg, issue);
-          if (changed) {
-            processed++;
-          }
-          var updated = toDateTime(getString(issue.getFields(), "updated"));
-          if (updated != null && (newMax == null || updated.isAfter(newMax))) newMax = updated;
-        } catch (Exception ex) {
-          log.error(
-              "Failed to process issue {} in replication {}: {}",
-              issue.getKey(), cfg.getName(), ex.getMessage(), ex
-          );
+    // The client pages lazily, so a failure on a later page surfaces from here and aborts the run
+    // before the watermark below is written.
+    var issues = searchClients.forFlavor(cfg.getApiFlavor()).search(request);
+    while (issues.hasNext()) {
+      var issue = issues.next();
+      try {
+        var changed = upsertIfChanged(cfg, issue);
+        if (changed) {
+          processed++;
         }
-      }
-
-      startAt += result.getIssues().size();
-      if (startAt >= result.getTotal()) {
-        break;
+        var updated = toDateTime(getString(issue.getFields(), "updated"));
+        if (updated != null && (newMax == null || updated.isAfter(newMax))) newMax = updated;
+      } catch (Exception ex) {
+        log.error(
+            "Failed to process issue {} in replication {}: {}",
+            issue.getKey(), cfg.getName(), ex.getMessage(), ex
+        );
       }
     }
 
