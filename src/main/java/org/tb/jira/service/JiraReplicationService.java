@@ -83,7 +83,7 @@ public class JiraReplicationService {
       }
     }
 
-    resolveTopLevelKeys();
+    resolveTopLevelKeys(cfg.getCustomerorderSign());
 
     // Update last_max_updated if progressed
     if (newMax != null && (cfg.getLastMaxUpdated() == null || newMax.isAfter(cfg.getLastMaxUpdated()))) {
@@ -94,8 +94,14 @@ public class JiraReplicationService {
     log.info("Finished JIRA replication: name={}, processed={} (updated/inserted)", cfg.getName(), processed);
   }
 
-  private void resolveTopLevelKeys() {
-    var ticketsByKey = ticketRepo.findAll().stream().collect(Collectors.toMap(JiraTicket::getKey, identity()));
+  /**
+   * Resolves the parent chains within one customer order. Scoped, not global: an issue key is only
+   * unique per customer order — two JIRA instances can hand out the same key — and a parent chain
+   * never crosses that boundary anyway.
+   */
+  private void resolveTopLevelKeys(String customerorderSign) {
+    var ticketsByKey = ticketRepo.findByCustomerorderSign(customerorderSign).stream()
+        .collect(Collectors.toMap(JiraTicket::getKey, identity()));
     var updatedChildren = new LinkedList<JiraTicket>();
 
     for(var ticket : ticketsByKey.values()) {
@@ -108,7 +114,8 @@ public class JiraReplicationService {
       updatedChildren.add(ticket);
     }
 
-    log.info("Resolved top-level keys for {} tickets", updatedChildren.size());
+    log.info("Resolved top-level keys for {} tickets of customer order {}",
+        updatedChildren.size(), customerorderSign);
     ticketRepo.saveAll(updatedChildren);
   }
 

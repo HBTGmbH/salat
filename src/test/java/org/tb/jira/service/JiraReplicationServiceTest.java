@@ -156,6 +156,32 @@ class JiraReplicationServiceTest {
     verify(ticketRepo, times(1)).save(any(JiraTicket.class));
   }
 
+  @Test
+  void testTopLevelKeysAreResolvedWithinTheCustomerOrderOnly() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var parent = ticket("MOCK-1", null);
+    var child = ticket("MOCK-2", "MOCK-1");
+    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(parent, child));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // an issue key is only unique per customer order, so the parent chain must not be walked
+    // across all tickets - identical keys under another order would collide
+    verify(ticketRepo, never()).findAll();
+    assertEquals("MOCK-1", child.getTopLevelKey());
+    assertEquals("MOCK-1", parent.getTopLevelKey());
+  }
+
+  private static JiraTicket ticket(String key, String parentKey) {
+    var ticket = new JiraTicket();
+    ticket.setCustomerorderSign("MOCK_ORDER");
+    ticket.setKey(key);
+    ticket.setParentKey(parentKey);
+    return ticket;
+  }
+
   private JiraSearchRequest capturedRequest() {
     var request = ArgumentCaptor.forClass(JiraSearchRequest.class);
     verify(searchClient).search(request.capture());

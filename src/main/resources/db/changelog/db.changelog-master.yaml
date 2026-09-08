@@ -2606,5 +2606,41 @@ databaseChangeLog:
             columnName: password
             columnDataType: varchar(1024)
 
+  - changeSet:
+      id: 72
+      author: kr
+      comment: Scope the unique jira_ticket.jira_id to the customer order - two JIRA instances hand out the same numeric ids
+      preConditions:
+        - onFail: MARK_RAN
+        - indexExists:
+            tableName: jira_ticket
+            indexName: uq_jira_ticket_jiraid
+      changes:
+        - dropUniqueConstraint:
+            tableName: jira_ticket
+            constraintName: uq_jira_ticket_jiraid
+        - addUniqueConstraint:
+            tableName: jira_ticket
+            columnNames: customerorder_sign, jira_id
+            constraintName: uq_jira_ticket_co_jiraid
+
+  - changeSet:
+      id: 73
+      author: kr
+      comment: Scope the unique jira_ticket.issue_key to the customer order - two JIRA instances hand out the same issue keys
+      preConditions:
+        - onFail: MARK_RAN
+        - indexExists:
+            tableName: jira_ticket
+            indexName: uq_jira_ticket_issue_key
+      changes:
+        - dropUniqueConstraint:
+            tableName: jira_ticket
+            constraintName: uq_jira_ticket_issue_key
+        - addUniqueConstraint:
+            tableName: jira_ticket
+            columnNames: customerorder_sign, issue_key
+            constraintName: uq_jira_ticket_co_issue_key
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
