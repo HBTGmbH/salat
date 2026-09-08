@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.budget.domain.BudgetBackfillCounts;
+import org.tb.budget.domain.BudgetBookingCounts;
 import org.tb.budget.domain.BudgetBackfillOrderResult;
 import org.tb.budget.domain.BudgetBackfillResult;
 import org.tb.budget.domain.OrderBudget;
@@ -92,9 +92,9 @@ public class TimereportBudgetBackfillService {
         var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByCustomerorderSign(customerorderSign));
         var pending = split(reports, assignedIds);
 
-        var assigned = BudgetBackfillCounts.NONE;
-        var ambiguous = BudgetBackfillCounts.NONE;
-        var withoutPlan = BudgetBackfillCounts.NONE;
+        var assigned = BudgetBookingCounts.NONE;
+        var ambiguous = BudgetBookingCounts.NONE;
+        var withoutPlan = BudgetBookingCounts.NONE;
         var newAssignments = new ArrayList<TimereportBudgetAssignment>();
 
         var resolutions = budgetResolver.resolveAll(pending.reports());
@@ -120,11 +120,11 @@ public class TimereportBudgetBackfillService {
     }
 
     /** The bookings still to resolve, and what was left alone because it is already assigned. */
-    private record Pending(List<TimereportDTO> reports, BudgetBackfillCounts alreadyAssigned) {}
+    private record Pending(List<TimereportDTO> reports, BudgetBookingCounts alreadyAssigned) {}
 
     private static Pending split(List<TimereportDTO> reports, Set<Long> assignedIds) {
         var pending = new ArrayList<TimereportDTO>();
-        var alreadyAssigned = BudgetBackfillCounts.NONE;
+        var alreadyAssigned = BudgetBookingCounts.NONE;
         for (var report : reports) {
             if (assignedIds.contains(report.getId())) {
                 alreadyAssigned = alreadyAssigned.plus(report.getDuration());

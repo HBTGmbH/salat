@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  The bulk assignment preview panel (#911). Used twice: inline on the first render, and as the
+  out-of-band replacement on every htmx response. One definition instead of two copies that drift
+  apart — the caller only passes whether this rendering is the out-of-band one.
+-->
+<div th:fragment="panel(oob)" id="previewPanel" class="card h-100" th:hx-swap-oob="${oob}">
+  <div class="card-header">
+    <h3 class="card-title" th:text="#{main.bulkassignment.preview.title}">Vorschau</h3>
+  </div>
+
+  <div class="card-body text-muted" th:if="${preview == null}"
+       th:text="#{main.bulkassignment.preview.incomplete}">
+    Auftrag, Zeitraum und Zielbudgetplan wählen.
+  </div>
+
+  <div class="card-body text-muted" th:if="${preview != null and preview.empty()}"
+       th:text="#{main.bulkassignment.preview.empty}">
+    Keine Buchungen im gewählten Zeitraum.
+  </div>
+
+  <div class="table-responsive" th:if="${preview != null and not preview.empty()}">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.bulkassignment.preview.outcome}">Ergebnis</th>
+          <th class="text-end" th:text="#{main.bulkassignment.preview.bookings}">Buchungen</th>
+          <th class="text-end" th:text="#{main.bulkassignment.preview.hours}">Stunden</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="line : ${preview.lines()}">
+          <td th:text="#{${line.labelKey()}}">Ergebnis</td>
+          <td class="text-end" th:text="${line.bookings()}">0</td>
+          <td class="text-end" th:text="${line.hours()}">—</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="fw-bold">
+          <td th:text="#{${preview.affected().labelKey()}}">Wird zugeordnet</td>
+          <td class="text-end" th:text="${preview.affected().bookings()}">0</td>
+          <td class="text-end" th:text="${preview.affected().hours()}">—</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

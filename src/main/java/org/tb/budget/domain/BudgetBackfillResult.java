@@ -17,24 +17,24 @@ public record BudgetBackfillResult(List<BudgetBackfillOrderResult> orders) {
         return orders.isEmpty();
     }
 
-    public BudgetBackfillCounts totalAssigned() {
+    public BudgetBookingCounts totalAssigned() {
         return total(BudgetBackfillOrderResult::assigned);
     }
 
-    public BudgetBackfillCounts totalAmbiguous() {
+    public BudgetBookingCounts totalAmbiguous() {
         return total(BudgetBackfillOrderResult::ambiguous);
     }
 
-    public BudgetBackfillCounts totalWithoutPlan() {
+    public BudgetBookingCounts totalWithoutPlan() {
         return total(BudgetBackfillOrderResult::withoutPlan);
     }
 
-    public BudgetBackfillCounts totalAlreadyAssigned() {
+    public BudgetBookingCounts totalAlreadyAssigned() {
         return total(BudgetBackfillOrderResult::alreadyAssigned);
     }
 
-    private BudgetBackfillCounts total(Function<BudgetBackfillOrderResult, BudgetBackfillCounts> part) {
-        return orders.stream().map(part).reduce(BudgetBackfillCounts.NONE, BudgetBackfillCounts::plus);
+    private BudgetBookingCounts total(Function<BudgetBackfillOrderResult, BudgetBookingCounts> part) {
+        return orders.stream().map(part).reduce(BudgetBookingCounts.NONE, BudgetBookingCounts::plus);
     }
 
 }

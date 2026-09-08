@@ -39,6 +39,17 @@ public interface TimereportBudgetAssignmentRepository
         """)
     List<Long> findTimereportIdsByCustomerorderSign(@Param("customerorderSign") String customerorderSign);
 
+    /**
+     * The assignments of the given bookings, so the bulk assignment (#911) learns in one statement
+     * which of its selection already belongs to a plan and to which one. Callers must not pass an
+     * empty collection — {@code IN ()} is not valid SQL.
+     */
+    @Query("""
+        SELECT a FROM TimereportBudgetAssignment a
+        WHERE a.timereportId IN :timereportIds
+        """)
+    List<TimereportBudgetAssignment> findByTimereportIdIn(@Param("timereportIds") Collection<Long> timereportIds);
+
     @Modifying
     @Query("DELETE FROM TimereportBudgetAssignment a WHERE a.timereportId IN :timereportIds")
     void deleteByTimereportIdIn(@Param("timereportIds") Collection<Long> timereportIds);

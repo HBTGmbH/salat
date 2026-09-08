@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='bulk-assignment',
+        title=#{main.bulkassignment.title},
+        pageTitle=#{main.bulkassignment.title},
+        sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <form method="post" th:action="@{/budget/bulk-assignment/assign}" th:object="${form}">
+    <div class="row g-3">
+
+      <!-- Selection -->
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header">
+            <h3 class="card-title" th:text="#{main.bulkassignment.selection.title}">Auswahl</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" th:text="#{main.bulkassignment.hint}">
+              Ordnet die Buchungen eines Zeitraums einem Budgetplan zu.
+            </p>
+
+            <div class="mb-3">
+              <label class="form-label required" th:text="#{main.bulkassignment.field.customerorder}">Auftrag</label>
+              <select class="form-select tomselect" th:field="*{customerorderSign}"
+                      th:hx-post="@{/budget/bulk-assignment/refresh}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="co : ${customerorders}"
+                        th:value="${co.sign}"
+                        th:text="|${co.sign} - ${co.shortdescription}|"></option>
+              </select>
+            </div>
+
+            <div class="mb-3" id="suborderSignInput">
+              <label class="form-label" th:text="#{main.bulkassignment.field.suborder}">Unterauftrag</label>
+              <select class="form-select tomselect" th:field="*{suborderSign}"
+                      th:hx-post="@{/budget/bulk-assignment/preview}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.bulkassignment.field.suborder.all}">-- Ganzer Auftrag --</option>
+                <option th:each="so : ${suborders}"
+                        th:value="${so.completeOrderSign}"
+                        th:text="${so.completeOrderSignAndDescription}"></option>
+              </select>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6 mb-3">
+                <label class="form-label required" th:text="#{main.bulkassignment.field.from}">Von</label>
+                <input type="date" class="form-control" th:field="*{from}" required
+                       th:hx-post="@{/budget/bulk-assignment/preview}"
+                       hx-swap="none"
+                       hx-include="closest form"
+                       hx-trigger="change"/>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label required" th:text="#{main.bulkassignment.field.until}">Bis</label>
+                <input type="date" class="form-control" th:field="*{until}" required
+                       th:hx-post="@{/budget/bulk-assignment/preview}"
+                       hx-swap="none"
+                       hx-include="closest form"
+                       hx-trigger="change"/>
+              </div>
+            </div>
+
+            <div class="mb-3" id="targetBudgetIdInput">
+              <label class="form-label required" th:text="#{main.bulkassignment.field.target}">Zielbudgetplan</label>
+              <select class="form-select tomselect" th:field="*{targetBudgetId}"
+                      th:hx-post="@{/budget/bulk-assignment/preview}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+                <option th:each="b : ${budgets}"
+                        th:value="${b.id}"
+                        th:text="${b.name}"></option>
+              </select>
+            </div>
+
+            <div th:hx-post="@{/budget/bulk-assignment/preview}"
+                 hx-swap="none"
+                 hx-include="closest form"
+                 hx-trigger="change">
+              <salat:checkboxSwitch th:field="*{includeAssigned}"
+                                    th:label="#{main.bulkassignment.field.includeassigned}" />
+            </div>
+          </div>
+          <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+              <i class="icon ti ti-arrow-right"></i>
+              <span th:text="#{main.bulkassignment.button.assign}">Zuordnen</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="col-lg-5">
+        <div th:replace="~{budget/bulk-assignment-preview :: panel(null)}"></div>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- HTMX out-of-band updates: the preview always, the dependent selects only when the order changed -->
+  <div th:if="${htmxRequest}">
+    <div th:replace="~{budget/bulk-assignment-preview :: panel('true')}"></div>
+
+    <div class="mb-3" id="suborderSignInput" th:hx-swap-oob="${selectionChanged}">
+      <label class="form-label" th:text="#{main.bulkassignment.field.suborder}">Unterauftrag</label>
+      <select class="form-select tomselect" name="suborderSign"
+              th:hx-post="@{/budget/bulk-assignment/preview}"
+              hx-swap="none"
+              hx-include="closest form"
+              hx-trigger="change">
+        <option value="" th:text="#{main.bulkassignment.field.suborder.all}">-- Ganzer Auftrag --</option>
+        <option th:each="so : ${suborders}"
+                th:value="${so.completeOrderSign}"
+                th:selected="${form.suborderSign != null and form.suborderSign == so.completeOrderSign}"
+                th:text="${so.completeOrderSignAndDescription}"></option>
+      </select>
+    </div>
+
+    <div class="mb-3" id="targetBudgetIdInput" th:hx-swap-oob="${selectionChanged}">
+      <label class="form-label required" th:text="#{main.bulkassignment.field.target}">Zielbudgetplan</label>
+      <select class="form-select tomselect" name="targetBudgetId"
+              th:hx-post="@{/budget/bulk-assignment/preview}"
+              hx-swap="none"
+              hx-include="closest form"
+              hx-trigger="change">
+        <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
+        <option th:each="b : ${budgets}"
+                th:value="${b.id}"
+                th:selected="${form.targetBudgetId != null and form.targetBudgetId == b.id}"
+                th:text="${b.name}"></option>
+      </select>
+    </div>
+  </div>
+
+
+</main>
+</html>

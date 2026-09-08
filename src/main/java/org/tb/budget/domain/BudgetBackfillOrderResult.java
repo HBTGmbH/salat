@@ -18,10 +18,10 @@ public record BudgetBackfillOrderResult(
     String customerorderDescription,
     LocalDate examinedFrom,
     LocalDate examinedUntil,
-    BudgetBackfillCounts assigned,
-    BudgetBackfillCounts ambiguous,
-    BudgetBackfillCounts withoutPlan,
-    BudgetBackfillCounts alreadyAssigned) {
+    BudgetBookingCounts assigned,
+    BudgetBookingCounts ambiguous,
+    BudgetBookingCounts withoutPlan,
+    BudgetBookingCounts alreadyAssigned) {
 
     /** Whether the run has anything to say about this order at all. */
     public boolean hasContent() {

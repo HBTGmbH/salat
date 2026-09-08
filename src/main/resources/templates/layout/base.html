@@ -180,6 +180,12 @@
                     Soll-Ist-Controlling
                   </a>
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
+                     th:href="@{/budget/bulk-assignment}"
+                     th:classappend="${subSection == 'bulk-assignment'} ? 'active' : ''"
+                     th:text="#{main.bulkassignment.title}">
+                    Massenzuordnung
+                  </a>
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/backfill}"
                      th:classappend="${subSection == 'backfill'} ? 'active' : ''"
                      th:text="#{main.backfill.title}">

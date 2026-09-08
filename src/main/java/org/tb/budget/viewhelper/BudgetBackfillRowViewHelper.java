@@ -1,7 +1,7 @@
 package org.tb.budget.viewhelper;
 
 import java.util.List;
-import org.tb.budget.domain.BudgetBackfillCounts;
+import org.tb.budget.domain.BudgetBookingCounts;
 import org.tb.budget.domain.BudgetBackfillOrderResult;
 import org.tb.budget.domain.BudgetBackfillResult;
 import org.tb.common.util.DateUtils;
@@ -58,7 +58,7 @@ public record BudgetBackfillRowViewHelper(
     }
 
     /** A dash rather than {@code 0:00} — an outcome that did not occur should not read as a number. */
-    private static String hours(BudgetBackfillCounts counts) {
+    private static String hours(BudgetBookingCounts counts) {
         return counts.isEmpty() ? "—" : DurationUtils.format(counts.hours());
     }
 
