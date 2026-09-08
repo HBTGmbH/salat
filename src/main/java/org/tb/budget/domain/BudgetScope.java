@@ -7,15 +7,11 @@ import org.tb.order.domain.Suborder;
  * while bookings happen anywhere below that level. A booking's scope therefore has to be compared
  * against its first level ancestor, not against its own suborder.
  *
- * <p><b>Divergence from the derived coverage.</b> {@code BudgetControllingService.firstLevelSignOf}
- * carries the same name and the same documented intent, but resolves
- * {@code withParents().get(0)} — and {@code withParents()} returns the suborder <em>itself</em>
- * first, so it yields the booking's own complete order sign instead of its first level ancestor.
- * A plan on {@code CO/01} therefore does not cover a booking on {@code CO/01/02} there, although
- * the comment at its call site says it should. That is a defect of the derived coverage, tracked
- * separately; this class resolves the ancestor as intended and is not bug-compatible with it. The
- * derivation disappears with #913, which is what makes the two definitions safe to differ in the
- * meantime.
+ * <p>Both the stored assignment and the derived coverage in {@code BudgetControllingService} resolve
+ * the scope through this class, so the two cannot drift apart while the derivation still exists
+ * (it disappears with #913). Note the direction {@code withParents()} runs in: it returns the
+ * suborder <em>itself</em> first and the ancestor last. Reading {@code get(0)} instead of
+ * {@code getLast()} yields the booking's own sign, which is exactly the defect #931 fixed.
  */
 public final class BudgetScope {
 

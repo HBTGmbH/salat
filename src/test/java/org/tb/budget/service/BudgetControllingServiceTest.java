@@ -25,6 +25,7 @@ import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.SectionKind;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -72,9 +73,9 @@ public class BudgetControllingServiceTest {
     when(customerorder.getShortdescription()).thenReturn("order");
 
     // co/01 and co/02 are first level; co/01/D hangs below co/01 and is where the work is booked.
-    var first = suborder("co/01", 'Y', 10L, null);
-    var deep = suborder("co/01/D", 'Y', 11L, first);
-    var second = suborder("co/02", 'Y', 20L, null);
+    var first = suborder("01", 'Y', 10L, null);
+    var deep = suborder("D", 'Y', 11L, first);
+    var second = suborder("02", 'Y', 20L, null);
 
     when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
     when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(first, deep, second));
@@ -127,6 +128,37 @@ public class BudgetControllingServiceTest {
     assertThat(section.rows()).extracting(BudgetControllingRow::sign).containsExactly("co/01/D");
     assertThat(section.groups().get(0).subtotal().revenueEuro()).isEqualByComparingTo("800.00");
     assertThat(section.groups().get(0).subtotal().budgetEuro()).isEqualByComparingTo("1000");
+  }
+
+  /** Plans only live on the first level, so the depth of the booking below it must not matter. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_booking_three_levels_down_against_the_first_level_plan() {
+    var first = suborder("01", 'Y', 10L, null);
+    var second = suborder("D", 'Y', 11L, first);
+    var third = suborder("E", 'Y', 12L, second);
+    when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(first, second, third));
+    givenReports(eightHoursOn(12L, IN_H1));
+    givenBudgets(plan("co/01", "co/01", FROM, UNTIL, "1000"));
+
+    assertThat(third.getCompleteOrderSign()).isEqualTo("co/01/D/E");
+
+    var section = sectionOf(SectionKind.SUBORDER_LEVEL);
+    assertThat(section.rows()).extracting(BudgetControllingRow::sign).containsExactly("co/01/D/E");
+    assertThat(section.groups().get(0).subtotal().revenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /** A plan on one first level suborder must not absorb work booked under another one. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_count_a_booking_under_another_first_level_suborder() {
+    givenBudgets(plan("co/01", "co/01", FROM, UNTIL, "1000"));
+
+    // The fixture books 8 h on co/01/D, inside the plan, and 8 h on co/02, outside it.
+    assertThat(sectionOf(SectionKind.SUBORDER_LEVEL).rows())
+        .extracting(BudgetControllingRow::sign).containsExactly("co/01/D");
+    assertThat(sectionOf(SectionKind.UNPLANNED).rows())
+        .extracting(BudgetControllingRow::sign).containsExactly("co/02");
   }
 
   @Test
@@ -236,7 +268,7 @@ public class BudgetControllingServiceTest {
   @Test
   @FixedClock("2026-06-15T10:00:00")
   public void should_earn_no_revenue_on_a_suborder_that_is_not_invoiceable() {
-    var unbilled = suborder("co/03", 'N', 30L, null);
+    var unbilled = suborder("03", 'N', 30L, null);
     when(suborderService.getSubordersByCustomerorderId(anyLong())).thenReturn(List.of(unbilled));
     givenReports(eightHoursOn(30L, IN_H1));
 
@@ -275,16 +307,32 @@ public class BudgetControllingServiceTest {
         .thenReturn(List.of(reports));
   }
 
-  private Suborder suborder(String completeSign, char invoice, long id, Suborder parent) {
-    var suborder = mock(Suborder.class);
-    when(suborder.getId()).thenReturn(id);
-    when(suborder.getCustomerorder()).thenReturn(customerorder);
-    when(suborder.getCompleteOrderSign()).thenReturn(completeSign);
-    when(suborder.getShortdescription()).thenReturn(completeSign);
-    when(suborder.isInvoiceable()).thenReturn(invoice == 'Y');
-    // Root first: the first entry is the first level ancestor a budget plan may refer to.
-    when(suborder.withParents()).thenReturn(parent == null ? List.of(suborder) : List.of(parent, suborder));
+  /**
+   * A real {@code Suborder}, not a mock. Mocking it used to include {@code withParents()}, and that
+   * mock returned the parent first while the real method returns the suborder itself first — so the
+   * test asserted the intended scope resolution while production did the opposite, and #931 stayed
+   * invisible. The sign is the leaf part; the complete order sign follows from the parent chain.
+   */
+  private Suborder suborder(String sign, char invoice, long id, Suborder parent) {
+    var suborder = new Suborder();
+    setId(suborder, id);
+    suborder.setCustomerorder(customerorder);
+    suborder.setSign(sign);
+    suborder.setShortdescription(sign);
+    suborder.setInvoice(invoice);
+    suborder.setParentorder(parent);
     return suborder;
+  }
+
+  /** The id is generated, so there is no setter; a stored suborder always has one. */
+  private static void setId(Suborder suborder, long id) {
+    try {
+      var field = AuditedEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(suborder, id);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("cannot assign an id to the test suborder", e);
+    }
   }
 
   private static TimereportDTO eightHoursOn(long suborderId, LocalDate day) {
