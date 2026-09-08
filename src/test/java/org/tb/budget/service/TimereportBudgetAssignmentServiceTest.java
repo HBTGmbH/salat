@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
+import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
 /**
@@ -52,10 +54,12 @@ public class TimereportBudgetAssignmentServiceTest {
 
   private final List<TimereportBudgetAssignment> stored = new ArrayList<>();
   private final List<OrderBudget> plans = new ArrayList<>();
+  private final List<TimereportDTO> reports = new ArrayList<>();
 
   private TimereportBudgetAssignmentRepository assignmentRepository;
   private OrderBudgetService orderBudgetService;
   private TimereportService timereportService;
+  private CustomerorderService customerorderService;
   private AuthorizedUser authorizedUser;
   private TimereportBudgetAssignmentService service;
 
@@ -65,6 +69,7 @@ public class TimereportBudgetAssignmentServiceTest {
     var orderBudgetRepository = mock(OrderBudgetRepository.class);
     orderBudgetService = mock(OrderBudgetService.class);
     timereportService = mock(TimereportService.class);
+    customerorderService = mock(CustomerorderService.class);
     var suborderService = mock(SuborderService.class);
     authorizedUser = mock(AuthorizedUser.class);
     when(authorizedUser.isManager()).thenReturn(true);
@@ -80,6 +85,26 @@ public class TimereportBudgetAssignmentServiceTest {
     });
     doAnswer(invocation -> stored.remove(invocation.<TimereportBudgetAssignment>getArgument(0)))
         .when(assignmentRepository).delete(any());
+    when(assignmentRepository.saveAll(any())).thenAnswer(invocation -> {
+      Iterable<TimereportBudgetAssignment> saved = invocation.getArgument(0);
+      saved.forEach(a -> {
+        if (!stored.contains(a)) {
+          stored.add(a);
+        }
+      });
+      return saved;
+    });
+    when(customerorderService.getCustomerorderBySign("CO")).thenReturn(customerorder("CO"));
+    // The reports of the order, narrowed to the requested period — as the real query does.
+    when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong()))
+        .thenAnswer(invocation -> {
+          LocalDate periodFrom = invocation.getArgument(0);
+          LocalDate periodUntil = invocation.getArgument(1);
+          return reports.stream()
+              .filter(r -> !r.getReferenceday().isBefore(periodFrom)
+                  && !r.getReferenceday().isAfter(periodUntil))
+              .toList();
+        });
     when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(invocation ->
         plans.stream()
             .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
@@ -94,8 +119,8 @@ public class TimereportBudgetAssignmentServiceTest {
     // The real resolver: the rule that decides what a plan covers must be the production one, both
     // for the manual check and for the automatic assignment.
     var budgetResolver = new BudgetResolver(orderBudgetRepository, suborderService);
-    service = new TimereportBudgetAssignmentService(
-        assignmentRepository, orderBudgetService, timereportService, budgetResolver, authorizedUser);
+    service = new TimereportBudgetAssignmentService(assignmentRepository, orderBudgetService,
+        timereportService, budgetResolver, customerorderService, authorizedUser);
   }
 
   // --- assigning ------------------------------------------------------------------------------
@@ -435,6 +460,132 @@ public class TimereportBudgetAssignmentServiceTest {
     assertThat(stored).hasSize(1);
   }
 
+  // --- moving between plans (#912) ------------------------------------------------------------
+
+  @Test
+  public void should_list_the_bookings_assigned_to_a_plan_within_the_period() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    givenReport(101L, "CO", 1L, JUN);
+    service.assign(100L, 7L);
+    when(assignmentRepository.findTimereportIdsByOrderBudgetId(7L)).thenReturn(List.of(100L));
+
+    var assigned = service.getAssignedTimereports(7L, JAN, DEC);
+
+    assertThat(assigned).extracting(TimereportDTO::getId).containsExactly(100L);
+  }
+
+  /** Nothing assigned means no booking query at all. */
+  @Test
+  public void should_list_nothing_for_a_plan_without_assignments() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    when(assignmentRepository.findTimereportIdsByOrderBudgetId(7L)).thenReturn(List.of());
+
+    assertThat(service.getAssignedTimereports(7L, JAN, DEC)).isEmpty();
+  }
+
+  @Test
+  public void should_move_several_bookings_to_another_plan_in_one_step() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    givenReport(101L, "CO", 1L, JUN);
+    service.assign(100L, 7L);
+    service.assign(101L, 7L);
+
+    service.move(List.of(100L, 101L), 8L);
+
+    assertThat(stored).hasSize(2);
+    assertThat(stored).allSatisfy(a -> assertThat(a.getOrderBudget().getId()).isEqualTo(8L));
+  }
+
+  /** The row is retargeted, so the audit fields keep saying who moved the booking. */
+  @Test
+  public void should_retarget_the_existing_row_when_moving() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 7L);
+    var existing = stored.get(0);
+
+    service.move(List.of(100L), 8L);
+
+    assertThat(stored).singleElement().isSameAs(existing);
+    verify(assignmentRepository, never()).delete(any());
+  }
+
+  @Test
+  public void should_dissolve_the_assignment_when_no_target_is_given() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 7L);
+
+    service.move(List.of(100L), null);
+
+    verify(assignmentRepository).deleteByTimereportIdIn(List.of(100L));
+  }
+
+  /**
+   * The decisive case: one booking of the selection does not fit the target, so nothing may move.
+   * A half-moved selection would leave nobody able to say what happened.
+   */
+  @Test
+  public void should_move_nothing_when_one_booking_does_not_fit_the_target() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", null, JAN, JUN, true);
+    givenReport(100L, "CO", 1L, MAR);
+    givenReport(101L, "CO", 1L, DEC);
+    service.assign(100L, 7L);
+    service.assign(101L, 7L);
+
+    assertThatThrownBy(() -> service.move(List.of(100L, 101L), 8L))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_TIMEREPORT_OUTSIDE_BUDGET_PERIOD.getCode());
+
+    assertThat(stored).allSatisfy(a -> assertThat(a.getOrderBudget().getId()).isEqualTo(7L));
+  }
+
+  @Test
+  public void should_reject_moving_a_booking_outside_the_scope_of_the_target() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", "CO/01", JAN, DEC, true);
+    givenReport(100L, "CO", 3L, MAR);
+    service.assign(100L, 7L);
+
+    assertThatThrownBy(() -> service.move(List.of(100L), 8L))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_TIMEREPORT_NOT_IN_BUDGET_SCOPE.getCode());
+    assertThat(stored).singleElement()
+        .extracting(a -> a.getOrderBudget().getId()).isEqualTo(7L);
+  }
+
+  @Test
+  public void should_reject_moving_to_an_inactive_plan() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", null, JAN, DEC, false);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 7L);
+
+    assertThatThrownBy(() -> service.move(List.of(100L), 8L))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_BUDGET_INACTIVE.getCode());
+  }
+
+  @Test
+  public void moving_an_empty_selection_is_not_an_error() {
+    assertThatCode(() -> service.move(List.of(), 8L)).doesNotThrowAnyException();
+    verify(assignmentRepository, never()).saveAll(any());
+  }
+
+  @Test
+  public void should_reject_moving_without_manager_rights() {
+    when(authorizedUser.isManager()).thenReturn(false);
+
+    assertThatThrownBy(() -> service.move(List.of(100L), 8L))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(ErrorCode.AA_NEEDS_MANAGER.getCode());
+  }
+
   // --- authorization --------------------------------------------------------------------------
 
   @Test
@@ -498,13 +649,25 @@ public class TimereportBudgetAssignmentServiceTest {
   }
 
   private void givenReport(long id, String customerorderSign, long suborderId, LocalDate day) {
-    when(timereportService.getTimereportById(id)).thenReturn(TimereportDTO.builder()
+    var report = TimereportDTO.builder()
         .id(id)
         .customerorderSign(customerorderSign)
         .suborderId(suborderId)
         .completeOrderSign(customerorderSign + "/xx")
         .referenceday(day)
-        .build());
+        .duration(Duration.ofHours(1))
+        .build();
+    when(timereportService.getTimereportById(id)).thenReturn(report);
+    reports.removeIf(existing -> existing.getId() == id);
+    reports.add(report);
+  }
+
+  private static Customerorder customerorder(String sign) {
+    var order = new Customerorder();
+    order.setSign(sign);
+    order.setShortdescription(sign + " description");
+    setId(order, 1L);
+    return order;
   }
 
   private static Suborder firstLevel(String orderSign, String sign) {

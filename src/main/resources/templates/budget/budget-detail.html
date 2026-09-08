@@ -180,6 +180,101 @@
     </div>
   </div>
 
+  <!-- Assigned bookings (#912) -->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center">
+      <h3 class="card-title me-auto" th:text="#{main.budget.assignments.title}">Zugeordnete Buchungen</h3>
+      <span class="text-muted small"
+            th:text="#{main.budget.assignments.summary(${assignedCount}, ${assignedHours})}">0 Buchungen</span>
+    </div>
+
+    <!-- Period filter: the plan's validity by default, narrowed when the list gets long -->
+    <div class="card-body">
+      <form method="get" th:action="@{/budget/{id}(id=${budget.id})}" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" th:text="#{main.budget.assignments.filter.from}">Von</label>
+          <input type="date" class="form-control" name="from" th:value="${assignedFrom}"/>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" th:text="#{main.budget.assignments.filter.until}">Bis</label>
+          <input type="date" class="form-control" name="until" th:value="${assignedUntil}"/>
+        </div>
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="icon ti ti-filter"></i>
+            <span th:text="#{main.budget.assignments.button.filter}">Filtern</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="alert alert-info mb-0 mx-3" th:if="${assignedTruncated}"
+         th:text="#{main.budget.assignments.truncated(${assignedLimit}, ${assignedCount})}">
+      Es werden nur die ersten Buchungen angezeigt.
+    </div>
+
+    <form th:action="@{/budget/{id}/assignments/move(id=${budget.id})}" method="post">
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th class="w-1" th:if="${isManager}">
+                <input type="checkbox" class="form-check-input m-0"
+                       th:title="#{main.budget.assignments.selectall}"
+                       onclick="this.closest('table').querySelectorAll('tbody input[type=checkbox]').forEach(cb => cb.checked = this.checked)"/>
+              </th>
+              <th th:text="#{main.budget.assignments.field.day}">Datum</th>
+              <th th:text="#{main.budget.assignments.field.suborder}">Unterauftrag</th>
+              <th th:text="#{main.budget.assignments.field.employee}">Kürzel</th>
+              <th class="text-end" th:text="#{main.budget.assignments.field.duration}">Dauer</th>
+              <th th:text="#{main.budget.assignments.field.task}">Buchungstext</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${#lists.isEmpty(assignedTimereports)}">
+              <td th:colspan="${isManager} ? 6 : 5" class="text-center text-muted py-4"
+                  th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+            </tr>
+            <tr th:each="tr : ${assignedTimereports}">
+              <td th:if="${isManager}">
+                <input type="checkbox" class="form-check-input m-0" name="timereportIds" th:value="${tr.id}"/>
+              </td>
+              <td th:text="${tr.day}"></td>
+              <td th:text="${tr.suborderSign}"></td>
+              <td th:text="${tr.employeeSign}"></td>
+              <td class="text-end" th:text="${tr.duration}"></td>
+              <td th:text="${tr.taskDescription}"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Move or dissolve the selection (managers only) -->
+      <div class="card-footer" th:if="${isManager and not #lists.isEmpty(assignedTimereports)}">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label" th:text="#{main.budget.assignments.field.target}">Ziel</label>
+            <select class="form-select tomselect" name="targetBudgetId">
+              <option value="" th:text="#{main.budget.assignments.target.none}">--- Zuordnung lösen ---</option>
+              <option th:each="t : ${moveTargets}" th:value="${t.id}" th:text="${t.name}"></option>
+            </select>
+          </div>
+          <div class="col-md-auto">
+            <button type="submit" class="btn btn-primary">
+              <i class="icon ti ti-arrows-exchange"></i>
+              <span th:text="#{main.budget.assignments.button.move}">Auswahl verschieben</span>
+            </button>
+          </div>
+          <div class="col-12">
+            <small class="text-muted" th:text="#{main.budget.assignments.hint}">
+              Ohne Ziel wird die Zuordnung gelöst.
+            </small>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
   <div class="mb-3">
     <a class="btn btn-outline-secondary" th:href="@{/budget}">
       <i class="icon ti ti-arrow-left"></i>

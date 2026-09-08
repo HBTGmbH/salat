@@ -3,9 +3,14 @@ package org.tb.budget.controller;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,8 +29,12 @@ import org.tb.budget.domain.OrderBudgetData;
 import org.tb.budget.domain.OrderBudgetScopeEntryData;
 import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.service.OrderBudgetService;
+import org.tb.budget.service.TimereportBudgetAssignmentService;
+import org.tb.budget.viewhelper.AssignedTimereportViewHelper;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -36,7 +45,14 @@ import org.tb.order.service.SuborderService;
 @Authorized(requireUnrestricted = true)
 public class BudgetController {
 
+    /**
+     * How many assigned bookings the detail page renders. Beyond this the page says how many were
+     * left out and offers the period filter — a silently truncated list would read as complete.
+     */
+    private static final int ASSIGNED_LIST_LIMIT = 200;
+
     private final OrderBudgetService orderBudgetService;
+    private final TimereportBudgetAssignmentService assignmentService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
@@ -165,14 +181,81 @@ public class BudgetController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable long id, Model model) {
+    public String detail(@PathVariable long id,
+                         @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate from,
+                         @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate until,
+                         Model model) {
         var budget = orderBudgetService.getById(id);
         model.addAttribute("budget", budget);
         model.addAttribute("adjustmentForm", new OrderBudgetAdjustmentForm());
         model.addAttribute("scopeEntryForm", new OrderBudgetScopeEntryForm());
         model.addAttribute("progressModes", ProgressMode.values());
         model.addAttribute("isManager", authorizedUser.isManager());
+        addAssignedTimereports(budget, from, until, model);
         return "budget/budget-detail";
+    }
+
+    /**
+     * The bookings assigned to the plan, and where they could be moved to (#912).
+     *
+     * <p>The period defaults to the plan's validity, which is where its bookings are. A plan can
+     * hold hundreds of them, so the list is capped and says so — the alternative would be a page
+     * that takes seconds to render and is unusable exactly for the plans that need attention.
+     */
+    private void addAssignedTimereports(OrderBudget budget, LocalDate from, LocalDate until, Model model) {
+        var periodFrom = from != null ? from : budget.getValidFrom();
+        var periodUntil = until != null ? until : budget.getValidUntil();
+        var assigned = assignmentService.getAssignedTimereports(budget.getId(), periodFrom, periodUntil);
+
+        model.addAttribute("assignedFrom", periodFrom);
+        model.addAttribute("assignedUntil", periodUntil);
+        model.addAttribute("assignedCount", assigned.size());
+        model.addAttribute("assignedHours", DurationUtils.format(assigned.stream()
+            .map(TimereportDTO::getDuration)
+            .reduce(Duration.ZERO, Duration::plus)));
+        model.addAttribute("assignedTimereports",
+            AssignedTimereportViewHelper.from(assigned.stream().limit(ASSIGNED_LIST_LIMIT).toList()));
+        model.addAttribute("assignedLimit", ASSIGNED_LIST_LIMIT);
+        model.addAttribute("assignedTruncated", assigned.size() > ASSIGNED_LIST_LIMIT);
+        // Only the other active plans of the same order are possible targets: an inactive plan
+        // cannot hold bookings, and a plan of another order can never cover them.
+        model.addAttribute("moveTargets",
+            orderBudgetService.getActiveByCustomerorderSign(budget.getCustomerorderSign()).stream()
+                .filter(other -> !other.getId().equals(budget.getId()))
+                .toList());
+    }
+
+    /**
+     * Moves the selected bookings to another plan, or dissolves their assignment when no target was
+     * chosen. Rejected as a whole if one booking does not fit the target, so the error names what is
+     * wrong instead of leaving a half-moved selection behind.
+     */
+    @Authorized(requiresManager = true)
+    @PreAuthorize("hasRole('MANAGER')")
+    @PostMapping("/{id}/assignments/move")
+    public String moveAssignments(@PathVariable long id,
+                                  @RequestParam(required = false) List<Long> timereportIds,
+                                  @RequestParam(required = false) Long targetBudgetId,
+                                  RedirectAttributes redirectAttributes) {
+        var selected = timereportIds == null ? List.<Long>of() : timereportIds;
+        if (selected.isEmpty()) {
+            redirectAttributes.addFlashAttribute("toastError",
+                messages.getMessage("main.budget.assignments.error.noselection"));
+            return "redirect:/budget/" + id;
+        }
+        try {
+            assignmentService.move(selected, targetBudgetId);
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage(
+                targetBudgetId == null
+                    ? "main.budget.assignments.message.unassigned"
+                    : "main.budget.assignments.message.moved",
+                new Object[] {selected.size()}));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
     }
 
     @Authorized(requiresManager = true)
