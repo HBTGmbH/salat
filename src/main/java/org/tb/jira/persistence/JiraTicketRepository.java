@@ -12,6 +12,8 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
 
   Optional<JiraTicket> findByCustomerorderSignAndJiraId(String customerorderSign, long jiraId);
 
+  List<JiraTicket> findByCustomerorderSign(String customerorderSign);
+
   List<JiraTicket> findByCustomerorderSignAndKeyIn(String customerorderSign, Collection<String> keys);
 
   List<JiraTicket> findByCustomerorderSignAndParentKeyIn(String customerorderSign, Collection<String> parentKeys);
