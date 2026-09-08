@@ -3,6 +3,7 @@ package org.tb.budget.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -20,9 +21,11 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.BudgetMode;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetData;
 import org.tb.budget.persistence.OrderBudgetRepository;
+import org.tb.common.test.FixedClock;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.domain.AuditedEntity;
@@ -64,15 +67,19 @@ public class OrderBudgetServiceTest {
     return authorization;
   }
 
+  /**
+   * Overlapping plans of the same mode are allowed since #914 — a follow-up order that starts
+   * before the running budget ends is the normal case. The ban only ever existed because the plan
+   * of a booking was derived from (suborder, date); the explicit assignment decides it now.
+   */
   @Test
-  public void should_reject_a_second_order_wide_plan_for_the_same_period() {
+  public void should_accept_a_second_order_wide_plan_for_an_overlapping_period() {
     givenExisting(plan(null, JAN, DEC));
 
-    assertThatThrownBy(() -> service.create(data(null, JAN, JUN, true)))
-        .isInstanceOf(BusinessRuleException.class)
-        .hasMessageContaining(ErrorCode.BU_BUDGET_OVERLAP.getCode());
+    assertThatCode(() -> service.create(data(null, JAN, JUN, true))).doesNotThrowAnyException();
   }
 
+  /** The one rule left: never both modes at the same time. */
   @Test
   public void should_reject_a_suborder_plan_next_to_an_order_wide_plan_in_the_same_period() {
     givenExisting(plan(null, JAN, DEC));
@@ -82,13 +89,43 @@ public class OrderBudgetServiceTest {
         .hasMessageContaining(ErrorCode.BU_BUDGET_LEVEL_MIXED.getCode());
   }
 
+  /** And the other way round: an order-wide plan next to an existing suborder plan. */
   @Test
-  public void should_reject_a_second_plan_for_the_same_suborder_in_the_same_period() {
+  public void should_reject_an_order_wide_plan_next_to_a_suborder_plan_in_the_same_period() {
     givenExisting(plan("co/01", JAN, DEC));
 
-    assertThatThrownBy(() -> service.create(data("co/01", JAN, JUN, true)))
+    assertThatThrownBy(() -> service.create(data(null, JAN, JUN, true)))
         .isInstanceOf(BusinessRuleException.class)
-        .hasMessageContaining(ErrorCode.BU_BUDGET_OVERLAP.getCode());
+        .hasMessageContaining(ErrorCode.BU_BUDGET_LEVEL_MIXED.getCode());
+  }
+
+  /**
+   * The rejection has to say which plan stands in the way and over which period — that is the plan
+   * whose dates have to move. The arguments travel on the feedback message, which is what
+   * {@code ErrorCodeViewHelper} formats into the text the user reads.
+   */
+  @Test
+  public void should_name_the_plan_that_blocks_a_mode_change() {
+    var blocking = plan(null, JAN, DEC);
+    blocking.setName("Jahresbudget");
+    givenExisting(blocking);
+
+    var thrown = catchThrowableOfType(BusinessRuleException.class,
+        () -> service.create(data("co/01", JAN, JUN, true)));
+
+    assertThat(thrown.getMessages()).singleElement()
+        .satisfies(message -> {
+          assertThat(message.getErrorCode()).isEqualTo(ErrorCode.BU_BUDGET_LEVEL_MIXED);
+          assertThat(message.getArguments()).containsExactly("Jahresbudget", JAN, DEC);
+        });
+  }
+
+  /** Several plans on the same suborder are allowed too — splitting a budget is a decision. */
+  @Test
+  public void should_accept_a_second_plan_for_the_same_suborder_in_an_overlapping_period() {
+    givenExisting(plan("co/01", JAN, DEC));
+
+    assertThatCode(() -> service.create(data("co/01", JAN, JUN, true))).doesNotThrowAnyException();
   }
 
   @Test
@@ -122,16 +159,32 @@ public class OrderBudgetServiceTest {
     assertThatCode(() -> service.create(data(null, JAN, JUN, false))).doesNotThrowAnyException();
   }
 
+  /**
+   * An archived plan can be activated again, and only then does its mode start to count — so the
+   * rule has to be checked at that moment as well.
+   */
   @Test
-  public void should_reject_activating_a_plan_that_would_then_conflict() {
-    var stored = plan(null, JAN, JUN, 7L);
+  public void should_reject_activating_a_plan_that_would_mix_the_modes() {
+    var stored = plan("co/01", JAN, JUN, 7L);
     stored.setActive(false);
     when(orderBudgetRepository.findById(7L)).thenReturn(Optional.of(stored));
     givenExisting(stored, plan(null, JAN, DEC));
 
     assertThatThrownBy(() -> service.setActive(7L, true))
         .isInstanceOf(BusinessRuleException.class)
-        .hasMessageContaining(ErrorCode.BU_BUDGET_OVERLAP.getCode());
+        .hasMessageContaining(ErrorCode.BU_BUDGET_LEVEL_MIXED.getCode());
+  }
+
+  /** Activating a plan that only overlaps plans of its own mode is fine. */
+  @Test
+  public void should_accept_activating_a_plan_that_overlaps_its_own_mode() {
+    var stored = plan(null, JAN, JUN, 7L);
+    stored.setActive(false);
+    when(orderBudgetRepository.findById(7L)).thenReturn(Optional.of(stored));
+    givenExisting(stored, plan(null, JAN, DEC));
+
+    assertThatCode(() -> service.setActive(7L, true)).doesNotThrowAnyException();
+    assertThat(stored.getActive()).isTrue();
   }
 
   @Test
@@ -202,6 +255,35 @@ public class OrderBudgetServiceTest {
    * intersecting inclusively, own id excluded. Stubbing a fixed list instead would hand the service
    * plans the query would never have returned, and the period rules would go untested.
    */
+  /** The mode in force today, for the badge in the list and the hint in the form (#914). */
+  @Test
+  @FixedClock("2026-03-15T10:00:00")
+  public void should_report_the_mode_in_force_today() {
+    when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
+        .thenReturn(List.of(plan(null, JAN, DEC)));
+
+    assertThat(service.currentMode("co")).isEqualTo(BudgetMode.ORDER_WIDE);
+  }
+
+  @Test
+  @FixedClock("2026-03-15T10:00:00")
+  public void should_report_the_suborder_mode_when_that_is_what_applies() {
+    when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
+        .thenReturn(List.of(plan("co/01", JAN, DEC)));
+
+    assertThat(service.currentMode("co")).isEqualTo(BudgetMode.PER_SUBORDER);
+  }
+
+  /** A plan whose period has passed says nothing about today. */
+  @Test
+  @FixedClock("2026-09-15T10:00:00")
+  public void should_report_no_mode_when_no_active_plan_covers_today() {
+    when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
+        .thenReturn(List.of(plan(null, JAN, JUN)));
+
+    assertThat(service.currentMode("co")).isEqualTo(BudgetMode.NONE);
+  }
+
   private void givenExisting(OrderBudget... plans) {
     when(orderBudgetRepository.findActiveOverlapping(anyString(), any(), any(), any()))
         .thenAnswer(invocation -> {

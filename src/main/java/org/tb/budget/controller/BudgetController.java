@@ -346,6 +346,12 @@ public class BudgetController {
         model.addAttribute("suborders",
             subordersOf(form.getCustomerorderSign(), form.getSuborderSign()));
         model.addAttribute("progressModes", ProgressMode.values());
+        // The mode in force for the selected order: overlaps within a mode are fine, mixing the two
+        // is what gets rejected (#914), so this is the constraint the person needs to see.
+        model.addAttribute("currentMode",
+            form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()
+                ? null
+                : orderBudgetService.currentMode(form.getCustomerorderSign()));
     }
 
     /**

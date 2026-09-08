@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.BudgetMode;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
@@ -18,6 +19,7 @@ import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DateUtils;
 import org.tb.order.service.SuborderService;
 
 @Service
@@ -111,7 +113,7 @@ public class OrderBudgetService {
     @Authorized(requiresManager = true)
     public OrderBudget create(OrderBudgetData data) {
         // Checked before apply, which does not know the id that has to be excluded from the search.
-        checkNoConflict(data.customerorderSign(), data.suborderSign(),
+        checkModeNotMixed(data.customerorderSign(), data.suborderSign(),
             data.validFrom(), data.validUntil(), data.active(), null);
         var budget = new OrderBudget();
         apply(budget, data);
@@ -120,7 +122,7 @@ public class OrderBudgetService {
 
     @Authorized(requiresManager = true)
     public void update(long id, OrderBudgetData data) {
-        checkNoConflict(data.customerorderSign(), data.suborderSign(),
+        checkModeNotMixed(data.customerorderSign(), data.suborderSign(),
             data.validFrom(), data.validUntil(), data.active(), id);
         var budget = getById(id);
         apply(budget, data);
@@ -132,7 +134,7 @@ public class OrderBudgetService {
         var budget = getById(id);
         // Only active plans conflict, so activating one can create a conflict that saving it did not.
         if (active) {
-            checkNoConflict(budget.getCustomerorderSign(), budget.getSuborderSign(),
+            checkModeNotMixed(budget.getCustomerorderSign(), budget.getSuborderSign(),
                 budget.getValidFrom(), budget.getValidUntil(), true, id);
         }
         budget.setActive(active);
@@ -215,31 +217,52 @@ public class OrderBudgetService {
     }
 
     /**
-     * At any point in time a customer order is budgeted either as a whole — by exactly one plan — or
-     * per first level suborder, by at most one plan each, never both (#905). That reduces to a single
-     * pairwise rule: two active plans of the same order whose periods overlap have to be on suborder
-     * level and on <em>different</em> suborders.
+     * At any point in time a customer order is budgeted either as a whole or per first level
+     * suborder, never both (#905). That is the one rule left, and it is a real one: the two modes
+     * answer different questions, and a period in which both applied would have no defined answer.
      *
-     * <p>Only active plans conflict; an inactive one takes part in no calculation and may stay on as
-     * an archive.
+     * <p>Overlapping plans of the <em>same</em> mode are allowed since #914 — several plans on the
+     * same suborder included. The ban existed only because a booking's plan was derived from
+     * (suborder, date) and an overlap made that ambiguous; the explicit assignment (#908) and the
+     * switched evaluation (#913) decide it instead. Businesswise the overlap is the normal case: a
+     * follow-up order starts before the running budget ends.
+     *
+     * <p>Switching mode stays possible as soon as the periods do not overlap — order-wide until the
+     * end of the year, per suborder from January.
+     *
+     * <p>Only active plans take part; an inactive one is in no calculation and may stay on as an
+     * archive. Activating one therefore has to check again.
      */
-    private void checkNoConflict(String customerorderSign, String suborderSign,
-                                 LocalDate validFrom, LocalDate validUntil,
-                                 boolean active, Long excludeId) {
+    private void checkModeNotMixed(String customerorderSign, String suborderSign,
+                                   LocalDate validFrom, LocalDate validUntil,
+                                   boolean active, Long excludeId) {
         if (!active || validFrom == null || validUntil == null) {
             return;
         }
+        var orderWide = isOrderWide(suborderSign);
         for (var other : orderBudgetRepository.findActiveOverlapping(
                 customerorderSign, validFrom, validUntil, excludeId)) {
-            var orderWide = isOrderWide(suborderSign);
-            var otherOrderWide = isOrderWide(other.getSuborderSign());
-            if (orderWide != otherOrderWide) {
-                throw new BusinessRuleException(ErrorCode.BU_BUDGET_LEVEL_MIXED);
-            }
-            if (orderWide || suborderSign.equals(other.getSuborderSign())) {
-                throw new BusinessRuleException(ErrorCode.BU_BUDGET_OVERLAP);
+            if (orderWide != isOrderWide(other.getSuborderSign())) {
+                // Naming the plan that stands in the way is the whole point of the message: the
+                // period to move is the one of that plan, not of the one being saved.
+                throw new BusinessRuleException(ErrorCode.BU_BUDGET_LEVEL_MIXED,
+                    other.getName(), other.getValidFrom(), other.getValidUntil());
             }
         }
+    }
+
+    /**
+     * Which mode the customer order is budgeted in today: as a whole, per first level suborder, or
+     * not at all. Well defined because mixing the two is what {@link #checkModeNotMixed} prevents.
+     */
+    @Transactional(readOnly = true)
+    public BudgetMode currentMode(String customerorderSign) {
+        var today = DateUtils.today();
+        return getActiveByCustomerorderSign(customerorderSign).stream()
+            .filter(b -> !today.isBefore(b.getValidFrom()) && !today.isAfter(b.getValidUntil()))
+            .map(b -> isOrderWide(b.getSuborderSign()) ? BudgetMode.ORDER_WIDE : BudgetMode.PER_SUBORDER)
+            .findFirst()
+            .orElse(BudgetMode.NONE);
     }
 
     /** {@code null} and blank both mean "the whole customer order", as everywhere else. */
