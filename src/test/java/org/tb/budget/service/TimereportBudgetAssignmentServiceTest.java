@@ -6,8 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
+import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.TimereportBudgetAssignmentRepository;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.AuthorizationException;
@@ -48,6 +51,7 @@ public class TimereportBudgetAssignmentServiceTest {
   private static final LocalDate MAR = LocalDate.of(2026, 3, 15);
 
   private final List<TimereportBudgetAssignment> stored = new ArrayList<>();
+  private final List<OrderBudget> plans = new ArrayList<>();
 
   private TimereportBudgetAssignmentRepository assignmentRepository;
   private OrderBudgetService orderBudgetService;
@@ -58,6 +62,7 @@ public class TimereportBudgetAssignmentServiceTest {
   @BeforeEach
   public void setUp() {
     assignmentRepository = mock(TimereportBudgetAssignmentRepository.class);
+    var orderBudgetRepository = mock(OrderBudgetRepository.class);
     orderBudgetService = mock(OrderBudgetService.class);
     timereportService = mock(TimereportService.class);
     var suborderService = mock(SuborderService.class);
@@ -73,13 +78,24 @@ public class TimereportBudgetAssignmentServiceTest {
       }
       return saved;
     });
+    doAnswer(invocation -> stored.remove(invocation.<TimereportBudgetAssignment>getArgument(0)))
+        .when(assignmentRepository).delete(any());
+    when(orderBudgetRepository.findByCustomerorderSignAndActive(any(), any())).thenAnswer(invocation ->
+        plans.stream()
+            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .filter(plan -> plan.getActive().equals(invocation.getArgument(1)))
+            .toList());
     // The suborder tree the reports live in: CO/01 with CO/01/02 below it, plus CO/02.
     when(suborderService.getSuborderById(1L)).thenReturn(firstLevel("CO", "01"));
     when(suborderService.getSuborderById(2L)).thenReturn(below(firstLevel("CO", "01"), "02"));
     when(suborderService.getSuborderById(3L)).thenReturn(firstLevel("CO", "02"));
+    when(suborderService.getSuborderById(4L)).thenReturn(below(below(firstLevel("CO", "01"), "02"), "03"));
 
+    // The real resolver: the rule that decides what a plan covers must be the production one, both
+    // for the manual check and for the automatic assignment.
+    var budgetResolver = new BudgetResolver(orderBudgetRepository, suborderService);
     service = new TimereportBudgetAssignmentService(
-        assignmentRepository, orderBudgetService, timereportService, suborderService, authorizedUser);
+        assignmentRepository, orderBudgetService, timereportService, budgetResolver, authorizedUser);
   }
 
   // --- assigning ------------------------------------------------------------------------------
@@ -220,10 +236,12 @@ public class TimereportBudgetAssignmentServiceTest {
     givenPlan(7L, "CO", null, JAN, DEC, true);
     givenReport(100L, "CO", 1L, MAR);
     service.assign(100L, 7L);
+    var assignment = stored.get(0);
 
     service.unassign(100L);
 
-    verify(assignmentRepository).delete(stored.get(0));
+    verify(assignmentRepository).delete(assignment);
+    assertThat(stored).isEmpty();
   }
 
   @Test
@@ -254,6 +272,167 @@ public class TimereportBudgetAssignmentServiceTest {
 
     assertThat(service.getAssignedTimereportIds(7L)).containsExactly(100L, 101L);
     verify(orderBudgetService).getById(7L);
+  }
+
+  // --- automatic assignment while booking (#909) ----------------------------------------------
+
+  @Test
+  public void should_assign_a_new_booking_when_exactly_one_plan_covers_it() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getTimereportId()).isEqualTo(100L);
+    assertThat(stored.get(0).getOrderBudget().getId()).isEqualTo(7L);
+  }
+
+  @Test
+  public void should_assign_a_booking_on_the_second_suborder_level_to_its_first_level_plan() {
+    givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
+    givenReport(100L, "CO", 2L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget().getId()).isEqualTo(7L);
+  }
+
+  @Test
+  public void should_assign_a_booking_on_the_third_suborder_level_to_its_first_level_plan() {
+    givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
+    givenReport(100L, "CO", 4L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget().getId()).isEqualTo(7L);
+  }
+
+  /** Never guess: with two candidates the booking stays out of every budget until someone decides. */
+  @Test
+  public void should_leave_a_booking_unassigned_when_several_plans_cover_it() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", null, JAN, JUN, true);
+    givenReport(100L, "CO", 1L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).isEmpty();
+  }
+
+  @Test
+  public void should_leave_a_booking_unassigned_when_no_plan_covers_it() {
+    givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
+    givenReport(100L, "CO", 3L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).isEmpty();
+  }
+
+  @Test
+  public void should_leave_a_booking_unassigned_when_the_only_plan_is_inactive() {
+    givenPlan(7L, "CO", null, JAN, DEC, false);
+    givenReport(100L, "CO", 1L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).isEmpty();
+  }
+
+  /** A valid assignment is not rewritten, so a deliberate manual one survives untouched. */
+  @Test
+  public void should_leave_a_still_valid_assignment_alone() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 7L);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget().getId()).isEqualTo(7L);
+    verify(assignmentRepository, times(1)).save(any());
+    verify(assignmentRepository, never()).delete(any());
+  }
+
+  /**
+   * The decisive case for manual assignments: the automatic resolution would be ambiguous, so
+   * without the validity check first the booking would lose its assignment on the next change.
+   */
+  @Test
+  public void should_keep_a_manual_assignment_that_the_automatic_resolution_could_not_reproduce() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenPlan(8L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 8L);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget().getId()).isEqualTo(8L);
+  }
+
+  @Test
+  public void should_reassign_a_booking_moved_under_another_suborder() {
+    givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
+    givenPlan(8L, "CO", "CO/02", JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 7L);
+
+    // The booking is moved from CO/01 to CO/02, which invalidates its assignment.
+    givenReport(100L, "CO", 3L, MAR);
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget().getId()).isEqualTo(8L);
+  }
+
+  @Test
+  public void should_dissolve_the_assignment_when_the_new_date_leaves_the_validity() {
+    givenPlan(7L, "CO", "CO/01", JAN, JUN, true);
+    givenReport(100L, "CO", 1L, MAR);
+    service.assign(100L, 7L);
+
+    givenReport(100L, "CO", 1L, DEC);
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).isEmpty();
+  }
+
+  /** Booking must not fail over its budget assignment — the booking is already written. */
+  @Test
+  public void should_not_let_a_failed_resolution_break_the_remaining_bookings() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    when(timereportService.getTimereportById(100L)).thenThrow(new IllegalStateException("boom"));
+    givenReport(101L, "CO", 1L, MAR);
+
+    assertThatCode(() -> service.resolveAssignments(List.of(100L, 101L))).doesNotThrowAnyException();
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getTimereportId()).isEqualTo(101L);
+  }
+
+  @Test
+  public void should_skip_a_booking_that_no_longer_exists() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+
+    assertThatCode(() -> service.resolveAssignments(List.of(100L))).doesNotThrowAnyException();
+
+    assertThat(stored).isEmpty();
+  }
+
+  /** Assigning automatically is a consequence of the booking, so it needs no manager rights. */
+  @Test
+  public void should_assign_automatically_regardless_of_the_bookers_rights() {
+    when(authorizedUser.isManager()).thenReturn(false);
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, MAR);
+
+    service.resolveAssignments(List.of(100L));
+
+    assertThat(stored).hasSize(1);
   }
 
   // --- authorization --------------------------------------------------------------------------
@@ -315,6 +494,7 @@ public class TimereportBudgetAssignmentServiceTest {
     plan.setActive(active);
     setId(plan, id);
     when(orderBudgetService.getById(id)).thenReturn(plan);
+    plans.add(plan);
   }
 
   private void givenReport(long id, String customerorderSign, long suborderId, LocalDate day) {
