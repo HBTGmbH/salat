@@ -83,6 +83,11 @@ stating why (currently: actuator `metrics` exposure, Azure auth).
 ## GitHub Workflow
 - **Branch naming**: `feature/<issue-number>-<short-description>` (e.g. `feature/606-move-fromDBtimeToString-to-DurationUtils`)
 - **One issue per branch / PR**: do not bundle unrelated changes.
+- **Commit messages**: every commit message starts with the issue ID, then ` - `, then a short
+  description in the imperative or nominal style used so far, e.g.
+  `#930 - Anfangsueberstunden mit dem Vertragsbeginn als Stichtag anlegen`. This applies to every
+  commit on the branch, not just the first one. If there is no issue, use `#noissue` in its place,
+  e.g. `#noissue - Tippfehler in der Anleitung korrigieren`.
 - **Linking to issues**: add `Closes #NNN` in the PR body — this is the standard GitHub mechanism. `gh issue develop` only creates new branches; it cannot link an existing branch to an issue.
 - **Creating a PR**:
   ```
@@ -159,6 +164,7 @@ A feature or fix is considered done when **all** of the following are true:
 
 ### Pull Request
 - [ ] Branch named `feature/<issue-number>-<short-description>`
+- [ ] Every commit message starts with the issue ID (or `#noissue`), e.g. `#930 - <short description>`
 - [ ] PR body contains `Closes #NNN`
 - [ ] Issue type set via GitHub GraphQL API
 - [ ] PR description includes: *"Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines."*
@@ -199,6 +205,8 @@ A feature or fix is considered done when **all** of the following are true:
   - Place cross-cutting Spring Boot/Spring Security enabling annotations on SalatApplication.
   - Favor standard Spring Security (@PreAuthorize/roles) over custom aspects, unless explicitly required.
   - Keep controllers thin; push logic to services within the same module.
+  - Start the commit message with the issue ID, or `#noissue` if there is none
+    (`#NNN - <short description>`).
 - Pull Request note: Include a short statement like “Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines.”
 
 ### Human review of agent proposals — where to spend the attention
