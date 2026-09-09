@@ -132,6 +132,9 @@ Before writing any code:
 
 Before marking any task complete, work through this checklist and report which items apply and whether each is satisfied.
 
+The checklist is applied **at the end of each task, to the sources that task changed** — it is not a
+periodic audit of the whole codebase.
+
 A feature or fix is considered done when **all** of the following are true:
 
 ### Code
@@ -140,6 +143,8 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] No new cross-module cycles introduced; cross-module side-effects go through Spring events
 - [ ] Controllers are thin — business logic lives in a service within the same module
 - [ ] Security: `@PreAuthorize` on every controller write method; `@Authorized` + runtime guard in the service
+- [ ] No unused imports in the changed files. Removing code tends to leave its imports behind, and
+  the compiler does not complain. Check the files the task touched — not the whole codebase.
 
 ### Views (if UI changed)
 - [ ] Uses Spring MVC + Thymeleaf
