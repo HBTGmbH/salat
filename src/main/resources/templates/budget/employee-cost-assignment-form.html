@@ -25,11 +25,14 @@
         <option value="" th:text="#{main.employeecost.assignment.select.category}">--- Kostenkategorie ---</option>
         <option th:each="name : ${costNames}" th:value="${name}" th:text="${name}"></option>
       </salat:select>
+      <!-- A hidden employee only appears when the assignment already references them; say so. -->
       <salat:select th:field="*{employeeSign}" th:label="#{main.employeecost.assignment.field.employeeSign}" required="true">
         <option value="" th:text="#{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
         <option th:each="emp : ${employees}"
                 th:value="${emp.sign}"
-                th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}|"></option>
+                th:text="${emp.hide}
+                           ? |${emp.sign} - ${emp.firstname} ${emp.lastname} (#{main.general.hidden.suffix})|
+                           : |${emp.sign} - ${emp.firstname} ${emp.lastname}|"></option>
       </salat:select>
       <!-- A hidden suborder only appears when the assignment already references it; say so. -->
       <salat:select th:field="*{suborderSign}" th:label="#{main.employeecost.assignment.field.suborderSign}">

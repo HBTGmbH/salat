@@ -72,6 +72,15 @@ public class EmployeeService {
     return employeeDAO.getEmployees();
   }
 
+  /**
+   * The employees offered in a select box: everything not hidden, plus the one carrying
+   * {@code keepSign} even if it is hidden (#956). Hiding an employee is a decluttering aid for
+   * exactly these lists — it must not make an existing record uneditable.
+   */
+  public List<Employee> getSelectableEmployees(String keepSign) {
+    return employeeDAO.getSelectableEmployees(keepSign);
+  }
+
   public List<Employee> getEmployeesWithContracts() {
     return employeeDAO.getEmployeesWithContracts();
   }

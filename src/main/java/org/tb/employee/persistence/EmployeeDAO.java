@@ -101,6 +101,32 @@ public class EmployeeDAO {
     }
 
     /**
+     * Get a list of the Employees offered in a select box, ordered by name: everything not hidden,
+     * plus the one carrying {@code keepSign} even if it is hidden (#956). Without that exception a
+     * stored employee would drop off the record the next time it is edited, and the record could no
+     * longer be saved at all.
+     *
+     * <p>The exception applies to {@code hide} only — the read authorization is checked for the kept
+     * employee like for every other one.
+     */
+    public List<Employee> getSelectableEmployees(String keepSign) {
+        var supervisedIds = getSupervisedEmployeeIds();
+        return employeeRepository.findAll(notHiddenOrSign(keepSign)).stream()
+            .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
+            .sorted(Comparator.comparing(Employee::getName))
+            .collect(Collectors.toList());
+    }
+
+    private Specification<Employee> notHiddenOrSign(String keepSign) {
+        if (keepSign == null || keepSign.isBlank()) {
+            return notHidden();
+        }
+        return (root, query, builder) -> builder.or(
+            notHidden().toPredicate(root, query, builder),
+            builder.equal(root.get(Employee_.sign), keepSign));
+    }
+
+    /**
      * Get a list of Employees fitting to the given filter ordered by name (for the list view).
      */
     public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
