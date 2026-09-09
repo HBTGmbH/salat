@@ -48,7 +48,7 @@
     <div class="card-body text-center text-muted py-3" th:text="#{main.controlling.empty}">Keine Daten im gewählten Zeitraum</div>
   </div>
 
-  <div class="card mb-3" th:each="section, iter : ${result?.sections()}">
+  <div class="card mb-3" th:each="section : ${result?.sections()}">
     <div class="card-header d-flex align-items-start">
       <div class="me-auto">
         <h3 class="card-title mb-0" th:text="#{${'main.controlling.section.' + section.kind().name()}}">Auswertung</h3>
@@ -70,9 +70,7 @@
         <span th:text="#{main.controlling.section.UNPLANNED.assign}">Zuordnen</span>
       </a>
     </div>
-    <th:block th:with="history=${histories != null ? histories[iter.index] : null}">
-      <div th:replace="~{budget/controlling-section :: table(${section}, ${isManager}, ${history})}"></div>
-    </th:block>
+    <div th:replace="~{budget/controlling-section :: table(${section}, ${isManager}, ${result.filter().getFrom()})}"></div>
   </div>
 
 </main>

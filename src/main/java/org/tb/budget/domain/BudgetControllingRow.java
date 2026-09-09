@@ -21,6 +21,12 @@ public record BudgetControllingRow(
     String sign,
     String label,
     Duration plannedHours,
+    /**
+     * Hours booked before the evaluated window opened (#917). Reported next to the window's own
+     * hours so a reader sees how much of the work already predates the period being looked at; the
+     * amounts in this line cover both.
+     */
+    Duration bookedHoursBeforeWindow,
     Duration bookedHours,
     /** The budget of the plan this line stands for; {@code null} on lines that carry none. */
     BigDecimal budgetEuro,
@@ -63,7 +69,7 @@ public record BudgetControllingRow(
      * nothing left to report — revenue, cost and forecast are all derived from those (#901).
      */
     public boolean hasContent() {
-        return hasBooked() || hasBudget() || hasPlanned();
+        return hasBooked() || hasBookedBeforeWindow() || hasBudget() || hasPlanned();
     }
 
     public boolean hasBudgetPercent() {
@@ -123,6 +129,12 @@ public record BudgetControllingRow(
     }
 
     public String bookedHoursFormatted() { return formatHours(bookedHours); }
+
+    public boolean hasBookedBeforeWindow() {
+        return bookedHoursBeforeWindow != null && !bookedHoursBeforeWindow.isZero();
+    }
+
+    public String bookedHoursBeforeWindowFormatted() { return formatHours(bookedHoursBeforeWindow); }
 
     public String plannedHoursFormatted() { return hasPlanned() ? formatHours(plannedHours) : "—"; }
 

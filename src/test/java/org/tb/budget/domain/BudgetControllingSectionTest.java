@@ -40,7 +40,7 @@ public class BudgetControllingSectionTest {
   public void should_ignore_planned_hours_that_only_the_total_carries() {
     var section = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(),
         List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null)),
-        row().plannedHours(Duration.ofHours(40)).build(), null);
+        row().plannedHours(Duration.ofHours(40)).build());
 
     assertThat(section.hasPlannedData()).isFalse();
   }
@@ -51,7 +51,7 @@ public class BudgetControllingSectionTest {
 
     var withTime = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(),
         List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null)),
-        row().bookedHours(Duration.ofHours(8)).build(), null);
+        row().bookedHours(Duration.ofHours(8)).build());
     assertThat(withTime.hasContent()).isTrue();
   }
 
@@ -60,7 +60,7 @@ public class BudgetControllingSectionTest {
     var grouped = new BudgetControllingSection(SectionKind.SUBORDER_LEVEL, YEAR, List.of("plan"),
         List.of(new BudgetControllingGroup("co/01", "plan", List.of(row().build()),
             row().budgetEuro(new BigDecimal("100")).build())),
-        row().build(), null);
+        row().build());
 
     assertThat(grouped.hasSubtotals()).isTrue();
     assertThat(section(SectionKind.ORDER_LEVEL, row().build()).hasSubtotals()).isFalse();
@@ -69,7 +69,7 @@ public class BudgetControllingSectionTest {
   private static BudgetControllingSection section(SectionKind kind, BudgetControllingRow row) {
     return new BudgetControllingSection(kind, kind == SectionKind.UNPLANNED ? null : YEAR, List.of(),
         List.of(new BudgetControllingGroup(null, null, List.of(row), null)),
-        row().build(), null);
+        row().build());
   }
 
   private static BudgetControllingRow.BudgetControllingRowBuilder row() {

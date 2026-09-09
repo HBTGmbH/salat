@@ -365,22 +365,60 @@ public class BudgetControllingServiceTest {
     assertThat(section.total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
-  // --- budgets that began before the window (#916) ---------------------------------------------
+  // --- budget in full, hours split at the window start (#917) ----------------------------------
 
   /**
-   * A window of one month with a plan that started a quarter earlier. Clipping the adjustments at
-   * the window start reported 0 EUR for such a plan, while the bookings inside the window counted
-   * against it — so the plan looked instantly overbooked.
+   * The budget is shown in full — every adjustment effective by the end of the window, with nothing
+   * deducted. #916 showed the remainder at the window start instead, which nobody could place
+   * without knowing the total; the pre-window consumption is a column now.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_the_budget_left_when_the_window_opens() {
+  public void should_report_the_full_budget_for_a_plan_that_began_before_the_window() {
     givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
 
-    // The fixture books 8 h at 100 EUR in March, before the April window.
     var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
 
-    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1200.00");
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("2000");
+  }
+
+  /** The hours split at the window start: what was booked before it, and what inside it. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_split_the_hours_at_the_window_start() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    // The fixture books 8 h in March and 8 h in September.
+    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().bookedHoursBeforeWindow()).isEqualTo(Duration.ofHours(8));
+    assertThat(section.total().bookedHours()).isEqualTo(Duration.ofHours(8));
+  }
+
+  /** The amounts cover both: they are the full figures up to the end of the window. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_the_revenue_of_the_whole_span_up_to_the_window_end() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
+
+    // 8 h before the window and 8 h inside it, at 100 EUR — both count towards the budget.
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo("1600.00");
+  }
+
+  /** Nothing beyond the window end, however far the plan runs. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_report_anything_booked_after_the_window_end() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
+
+    // Only the March booking lies before the end of June; September is out of scope.
+    assertThat(section.total().bookedHoursBeforeWindow()).isEqualTo(Duration.ofHours(8));
+    assertThat(section.total().bookedHours()).isEqualTo(Duration.ZERO);
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo("800.00");
   }
 
   @Test
@@ -392,8 +430,7 @@ public class BudgetControllingServiceTest {
 
     var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
 
-    // 1000 granted in January + 500 in May, minus 800 used up in March.
-    assertThat(section.total().budgetEuro()).isEqualByComparingTo("700.00");
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1500");
   }
 
   @Test
@@ -405,110 +442,71 @@ public class BudgetControllingServiceTest {
 
     var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
 
-    assertThat(section.total().budgetEuro()).isEqualByComparingTo("200.00");
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1000");
   }
 
-  /** Overbooked before the window even opened: reported as it is, not flattered to zero. */
+  /**
+   * The point of the change: the utilization is measured against the whole budget. Against the
+   * remainder at the window start it read two thirds for the same data, which invited the reader to
+   * think the plan was in worse shape than it is.
+   */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_a_negative_remainder_for_a_plan_already_overbooked() {
+  public void should_measure_the_utilization_against_the_full_budget() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("2000");
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo("1600.00");
+    assertThat(section.total().budgetUsedPercent()).isCloseTo(80.0, within(0.01));
+  }
+
+  /** Over the budget is still over the budget — measured against the full amount. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_an_overrun_against_the_full_budget() {
     givenBudgets(plan("small", null, FROM, UNTIL, "500"));
 
     var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
 
-    assertThat(section.total().budgetEuro()).isEqualByComparingTo("-300.00");
+    // 800 EUR booked before the window against a budget of 500.
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("500");
+    assertThat(section.total().overrunEuro()).isEqualByComparingTo("300.00");
   }
 
-  /** The remainder is what the utilization and the traffic light are measured against. */
+  /** Both parts come from one read, not one for the window and another for what precedes it. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_measure_the_utilization_against_the_remainder() {
-    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
-    // 8 h at 100 EUR in September, inside a window that starts in July; 800 used up before it.
-    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
-
-    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1200.00");
-    assertThat(section.total().revenueEuro()).isEqualByComparingTo("800.00");
-    // 800 of the 1200 remaining is two thirds — measured against the full 2000 it would be 40 %.
-    assertThat(section.total().budgetUsedPercent()).isCloseTo(66.67, within(0.01));
-  }
-
-  /** Only bookings from inside the window are listed, however far back the plan reaches. */
-  @Test
-  @FixedClock("2026-06-15T10:00:00")
-  public void should_still_report_only_the_bookings_inside_the_window() {
-    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
-
-    var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
-
-    assertThat(section.total().bookedHours()).isEqualTo(Duration.ofHours(8));
-  }
-
-  /** The pre-window consumption costs one read for the order, not one per plan. */
-  @Test
-  @FixedClock("2026-06-15T10:00:00")
-  public void should_read_the_bookings_before_the_window_only_once() {
+  public void should_read_the_bookings_of_the_whole_span_in_one_query() {
     givenBudgets(plan("a", "co/01", FROM, UNTIL, "1000"), plan("b", "co/02", FROM, UNTIL, "1000"));
 
     compute(APR, JUN);
-
-    // One read for the window itself, one for everything before it.
-    verify(timereportService, times(2))
-        .getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong());
-  }
-
-  /** A window that starts with the plan has nothing before it, so no read is issued at all. */
-  @Test
-  @FixedClock("2026-06-15T10:00:00")
-  public void should_not_look_before_a_window_that_starts_with_the_plan() {
-    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
-
-    compute(FROM, UNTIL);
 
     verify(timereportService, times(1))
         .getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong());
   }
 
-  /**
-   * The section carries the two inputs its available budget was derived from, so the info box can
-   * show the derivation rather than assert the result (#917). They have to agree with the table.
-   */
+  /** The read starts at the plan, not at the window — otherwise the earlier hours are invisible. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_carry_the_derivation_of_the_available_budget() {
+  public void should_read_from_the_earliest_plan_start() {
     givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
 
-    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
-    var history = section.history();
+    compute(APR, JUN);
 
-    assertThat(history.cumulativeEuro()).isEqualByComparingTo("2000");
-    assertThat(history.consumedBeforeEuro()).isEqualByComparingTo("800.00");
-    assertThat(history.availableAtWindowStartEuro()).isEqualByComparingTo("1200.00");
-    // The same figure the section total reports, so box and table cannot disagree.
-    assertThat(history.availableAtWindowStartEuro()).isEqualByComparingTo(section.total().budgetEuro());
-    assertThat(history.planFrom()).isEqualTo(FROM);
-    assertThat(history.planUntil()).isEqualTo(UNTIL);
-    assertThat(history.startedBeforeWindow()).isTrue();
-    assertThat(history.isWorthShowing()).isTrue();
+    verify(timereportService).getTimereportsByDatesAndCustomerOrderId(FROM, JUN, 1L);
   }
 
-  /** A window containing the whole plan has nothing to explain. */
+  /** A window that starts with the plan has nothing before it, so the read starts at the window. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_mark_the_derivation_as_not_worth_showing_without_a_history() {
+  public void should_read_from_the_window_when_the_plan_starts_with_it() {
     givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
 
-    var history = sectionOf(compute(FROM, UNTIL), SectionKind.ORDER_LEVEL).history();
+    compute(FROM, UNTIL);
 
-    assertThat(history.consumedBeforeEuro()).isEqualByComparingTo("0");
-    assertThat(history.startedBeforeWindow()).isFalse();
-    assertThat(history.isWorthShowing()).isFalse();
-  }
-
-  @Test
-  @FixedClock("2026-06-15T10:00:00")
-  public void should_carry_no_derivation_for_bookings_without_a_budget() {
-    assertThat(sectionOf(compute(FROM, UNTIL), SectionKind.UNPLANNED).history()).isNull();
+    verify(timereportService).getTimereportsByDatesAndCustomerOrderId(FROM, UNTIL, 1L);
   }
 
   // --- utilization: dashboard (#778) and alerts -----------------------------------------------

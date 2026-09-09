@@ -7,9 +7,10 @@ import org.tb.common.LocalDateRange;
  * One evaluation of the controlling view: the plans of one period and mode, or — for
  * {@link SectionKind#UNPLANNED} — the bookings that belong to no plan at all (#913).
  *
- * <p>What a section reports about bookings happened inside the evaluated window. Its budget figure
- * does not: it is what the plans had left when the window opened, so a plan that has been running
- * for months shows the remainder rather than nothing (#916).
+ * <p>The hours a section reports are the ones booked inside the evaluated window; the amounts are
+ * the full figures up to its end, so the budget and its utilization read against the whole plan
+ * rather than against a remainder (#917). How much was booked before the window is a column of its
+ * own.
  */
 public record BudgetControllingSection(
     SectionKind kind,
@@ -17,9 +18,7 @@ public record BudgetControllingSection(
     LocalDateRange period,
     List<String> budgetNames,
     List<BudgetControllingGroup> groups,
-    BudgetControllingRow total,
-    /** How the available budget came about; {@code null} for UNPLANNED, which has none (#917). */
-    BudgetHistory history
+    BudgetControllingRow total
 ) {
     /** A section worth showing at all — same rule as for a row (#901). */
     public boolean hasContent() {

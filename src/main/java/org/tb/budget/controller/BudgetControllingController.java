@@ -11,7 +11,6 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.service.BudgetControllingService;
-import org.tb.budget.viewhelper.BudgetHistoryViewHelper;
 
 @Controller
 @RequestMapping("/budget/controlling")
@@ -38,11 +37,6 @@ public class BudgetControllingController {
                 var result = budgetControllingService.compute(
                     filter.getCustomerorderSign(), from, until, authorizedUser.isManager());
                 model.addAttribute("result", result);
-                // One view helper per section, in the same order (→ ADR-0017): the info box explains
-                // how each section's available budget came about (#917).
-                model.addAttribute("histories", result.sections().stream()
-                    .map(BudgetHistoryViewHelper::from)
-                    .toList());
             } catch (Exception ex) {
                 model.addAttribute("controllingError", ex.getMessage());
             }
