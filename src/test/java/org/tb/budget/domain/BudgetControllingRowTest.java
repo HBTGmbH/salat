@@ -50,6 +50,18 @@ public class BudgetControllingRowTest {
     assertThat(within.overrunEuro()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
+  /** The sign gets separators to read by; the cell keeps it on one line. */
+  @Test
+  public void should_space_out_the_complete_order_sign() {
+    assertThat(row().sign("1612/01/D").build().signFormatted()).isEqualTo("1612 / 01 / D");
+  }
+
+  /** The total line has no sign — the template puts its own label there. */
+  @Test
+  public void should_report_no_sign_for_a_line_without_one() {
+    assertThat(BudgetControllingRow.builder().build().signFormatted()).isNull();
+  }
+
   @Test
   public void should_report_no_overrun_without_a_budget() {
     assertThat(row().revenueEuro(new BigDecimal("800")).build().hasOverrun()).isFalse();

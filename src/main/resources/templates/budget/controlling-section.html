@@ -68,9 +68,15 @@
   from drifting apart.
 -->
 <tr th:fragment="row(section, row, isManager, cellClass, rowClass)" th:class="${rowClass}">
+  <!--
+    Two lines: the complete order sign, and below it the suborder's own description — not the
+    qualified name, the sign above already carries the hierarchy. Neither line breaks; the
+    description of a suborder is short, and wrapping it would make the rows different heights.
+  -->
   <td>
-    <span class="text-muted small" th:text="${row.sign()} ?: #{main.controlling.row.total}">Summe</span>
-    <span class="ms-1 small" th:text="${row.label()}"></span>
+    <div class="text-muted small text-nowrap"
+         th:text="${row.signFormatted()} ?: #{main.controlling.row.total}">1612 / 01 / D</div>
+    <div class="small text-nowrap" th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</div>
   </td>
   <td class="text-end d-none d-lg-table-cell" th:classappend="${cellClass}"
       th:text="${row.hasBookedBeforeWindow()} ? ${row.bookedHoursBeforeWindowFormatted()} : '—'"></td>
