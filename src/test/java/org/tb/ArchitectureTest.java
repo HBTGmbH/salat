@@ -27,8 +27,8 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.tb.common.filter.UiStateFilter;
+import org.tb.common.scheduling.SchedulerRequestAttributes;
 import org.tb.common.util.ClockProvider;
-import org.tb.reporting.service.ScheduledReportJobScheduler;
 
 @AnalyzeClasses(packages = "org.tb", importOptions = {DoNotIncludeTests.class, DoNotIncludeJars.class, DoNotIncludeGradleTestFixtures.class})
 public class ArchitectureTest {
@@ -92,23 +92,18 @@ public class ArchitectureTest {
    * matters is that nothing imports it back, which is what makes the explicit booking-to-budget
    * assignment possible in the first place (see {@link #dailyreportShouldNotAccessBudget}).
    *
-   * <p>Two entries are worth naming:
-   * <ul>
-   *   <li>{@code customer} comes from the dashboard filtering by customer segment.</li>
-   *   <li>{@code reporting} is a single import: {@code BudgetAlertScheduler} reuses
-   *       {@code ScheduledReportJobScheduler.SchedulerMockRequestAttributes} to give its job a
-   *       request scope. That is a scheduling utility, not a dependency on reporting — moving the
-   *       class to {@code common} would remove the edge (#947). Listed here rather than silently
-   *       tolerated.</li>
-   * </ul>
+   * <p>{@code customer} is in the list because the dashboard filters by customer segment.
+   * {@code reporting} used to be, for a single import: the alert scheduler borrowed the report
+   * scheduler's nested request-scope helper. That was a scheduling utility at the wrong address, so
+   * it moved to {@code common.scheduling} and the edge is gone.
    */
   @ArchTest
   static final ArchRule budgetShouldAccessOnlyItsKnownDependencies = priority(HIGH).noClasses().that()
       .resideInAPackage("org.tb.budget..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "budget must only import common, auth, customer, dailyreport, employee, notification, order, reporting",
+          "budget must only import common, auth, customer, dailyreport, employee, notification, order",
           "org.tb.common.", "org.tb.auth.", "org.tb.customer.", "org.tb.dailyreport.", "org.tb.employee.",
-          "org.tb.notification.", "org.tb.order.", "org.tb.reporting.", "org.tb.budget."));
+          "org.tb.notification.", "org.tb.order.", "org.tb.budget."));
 
   /**
    * invoice bills what was booked, so it reads orders, suborders, time reports and the customer.
@@ -216,11 +211,12 @@ public class ArchitectureTest {
 
   @ArchTest
   static final ArchRule useDeterministicRandomness = priority(HIGH).noClasses()
-      // carve-outs for intentional production randomness: ScheduledReportJobScheduler mints an internal mock-request
-      // session id;
+      // carve-outs for intentional production randomness: SchedulerRequestAttributes mints the
+      // session id of the stand-in request scope a scheduled job runs in (it moved out of
+      // ScheduledReportJobScheduler in #918, and the carve-out moved with it);
       // UiStateFilter mints a random fallback HMAC signing key when none is configured (the key
       // must stay unpredictable, so it cannot be made deterministic).
-      .that().doNotBelongToAnyOf(ScheduledReportJobScheduler.class, UiStateFilter.class)
+      .that().doNotBelongToAnyOf(SchedulerRequestAttributes.class, UiStateFilter.class)
       .should().callMethod(Math.class, "random")
       .orShould().callMethod(UUID.class, "randomUUID")
       .orShould().callMethod(ThreadLocalRandom.class, "current")

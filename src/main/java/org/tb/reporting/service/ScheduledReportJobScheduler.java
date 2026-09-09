@@ -4,13 +4,10 @@ import static org.springframework.web.context.request.RequestContextHolder.reset
 import static org.springframework.web.context.request.RequestContextHolder.setRequestAttributes;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -26,8 +23,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.AbstractRequestAttributes;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.scheduling.SchedulerRequestAttributes;
 import org.tb.common.util.ClockProvider;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.event.ReportScheduledEvent;
@@ -137,7 +134,7 @@ public class ScheduledReportJobScheduler {
   private void runInTemporarySessionScope(Runnable task) {
     try {
       // Initialize a temporary session scope for the duration of this scheduled execution
-      setRequestAttributes(new SchedulerMockRequestAttributes(), true);
+      setRequestAttributes(new SchedulerRequestAttributes(), true);
       initializeAuthorizedUserForJobExecution();
       task.run();
     } finally {
@@ -181,57 +178,6 @@ public class ScheduledReportJobScheduler {
       return null;
     }
 
-  }
-
-  public static class SchedulerMockRequestAttributes extends AbstractRequestAttributes {
-    private final Map<Integer, Map<String, Object>> attributes = new HashMap<>();
-    private final String mockSessionId = UUID.randomUUID().toString();
-    private final Object mutex = this;
-
-    @Override
-    protected void updateAccessedSessionAttributes() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public @Nullable Object getAttribute(String name, int scope) {
-      return attributes.computeIfAbsent(scope, k -> new HashMap<>()).get(name);
-    }
-
-    @Override
-    public void setAttribute(String name, Object value, int scope) {
-      attributes.computeIfAbsent(scope, k -> new HashMap<>()).put(name, value);
-    }
-
-    @Override
-    public void removeAttribute(String name, int scope) {
-      attributes.computeIfAbsent(scope, k -> new HashMap<>()).remove(name);
-    }
-
-    @Override
-    public String[] getAttributeNames(int scope) {
-      return attributes.computeIfAbsent(scope, k -> new HashMap<>()).keySet().toArray(new String[0]);
-    }
-
-    @Override
-    public void registerDestructionCallback(String name, Runnable callback, int scope) {
-      throw new UnsupportedOperationException(name + "#" + callback + "#" + scope);
-    }
-
-    @Override
-    public @Nullable Object resolveReference(String key) {
-      throw new UnsupportedOperationException(key);
-    }
-
-    @Override
-    public String getSessionId() {
-      return mockSessionId;
-    }
-
-    @Override
-    public Object getSessionMutex() {
-      return mutex;
-    }
   }
 
 }

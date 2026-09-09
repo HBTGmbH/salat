@@ -10,7 +10,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.reporting.service.ScheduledReportJobScheduler.SchedulerMockRequestAttributes;
+import org.tb.common.scheduling.SchedulerRequestAttributes;
 
 @Slf4j
 @Service
@@ -23,7 +23,7 @@ public class BudgetAlertScheduler {
 
     @Scheduled(cron = "${salat.budget.alert.cron:0 0 6 * * *}")
     public void run() {
-        setRequestAttributes(new SchedulerMockRequestAttributes(), true);
+        setRequestAttributes(new SchedulerRequestAttributes(), true);
         try {
             AuthorizedUser systemUser = authorizedUserProvider.getObject();
             systemUser.initForJob();
