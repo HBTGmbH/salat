@@ -18,6 +18,11 @@ import org.tb.order.domain.Suborder;
 public class OrderPricingLookupTest {
 
   private static final LocalDate DATE = LocalDate.of(2026, 6, 15);
+  private static final LocalDate JAN = LocalDate.of(2026, 1, 1);
+  private static final LocalDate JUN = LocalDate.of(2026, 6, 30);
+  private static final LocalDate JUL = LocalDate.of(2026, 7, 1);
+  private static final LocalDate DEC = LocalDate.of(2026, 12, 31);
+  private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
 
   @Test
   public void should_prefer_employee_specific_over_suborder_wide_and_order_wide() {
@@ -217,6 +222,104 @@ public class OrderPricingLookupTest {
 
     assertThat(rate(lookup, "co", "co/01", "AB")).isEqualTo(200);
     assertThat(rate(lookup, "co", "co/01", "ABC")).isEqualTo(100);
+  }
+
+  /**
+   * The coverage check of the rate list (#957). It answers a question about the order-wide rates
+   * only: a rate for one suborder or one person does not claim to price the order as a whole, so
+   * holding it to the order period would report a gap wherever such a rate exists.
+   */
+  @Test
+  public void should_report_no_gap_for_an_order_period_covered_end_to_end() {
+    var lookup = OrderPricingLookup.of(List.of(
+        rate("co", JAN, JUN),
+        rate("co", JUL, DEC)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+  }
+
+  @Test
+  public void should_report_a_gap_between_two_rates() {
+    var lookup = OrderPricingLookup.of(List.of(
+        rate("co", JAN, JUN),
+        rate("co", JUL.plusDays(1), DEC)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+  }
+
+  @Test
+  public void should_report_a_gap_before_the_first_rate() {
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JUL, DEC)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+  }
+
+  @Test
+  public void should_report_a_gap_after_the_last_rate() {
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+  }
+
+  /** An order that runs on has to be met by a rate that runs on with it. */
+  @Test
+  public void should_report_no_gap_for_an_open_order_end_met_by_an_open_rate_end() {
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, OPEN_END)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, null)).isFalse();
+  }
+
+  @Test
+  public void should_report_a_gap_when_the_order_runs_on_beyond_its_last_rate() {
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, DEC)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, null)).isTrue();
+  }
+
+  @Test
+  public void should_report_no_gap_when_the_order_has_no_order_wide_rate_at_all() {
+    var suborderRate = rate("co", JAN, JUN);
+    suborderRate.setSuborderSign("co/01/");
+    var employeeRate = rate("co", JAN, JUN);
+    employeeRate.setEmployeeSign("emp");
+
+    var lookup = OrderPricingLookup.of(List.of(suborderRate, employeeRate));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+  }
+
+  /** A specific rate covers what it covers — it must not close the gap of the order-wide ones. */
+  @Test
+  public void should_ignore_the_specific_rates_when_judging_the_coverage() {
+    var suborderRate = rate("co", JUL, DEC);
+    suborderRate.setSuborderSign("co/01/");
+
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN), suborderRate));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+  }
+
+  @Test
+  public void should_report_no_gap_for_overlapping_rates_that_together_cover_the_period() {
+    var lookup = OrderPricingLookup.of(List.of(
+        rate("co", JAN, DEC),
+        rate("co", JUN, JUL)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+  }
+
+  @Test
+  public void should_report_no_gap_for_an_order_without_a_start() {
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JUL, DEC)));
+
+    assertThat(lookup.hasUncoveredPeriod("co", null, DEC)).isFalse();
+  }
+
+  private static OrderPricing rate(String co, LocalDate validFrom, LocalDate validUntil) {
+    var pricing = pricing(co, null, null, 100);
+    pricing.setValidFrom(validFrom);
+    pricing.setValidUntil(validUntil);
+    return pricing;
   }
 
   /** Returns the child of {@code customerorderSign/parentSign/childSign}. */
