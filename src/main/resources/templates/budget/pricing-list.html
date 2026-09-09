@@ -17,10 +17,11 @@
           <div class="col-md-6">
             <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
-              <option th:each="sign : ${customerorderSigns}"
-                      th:value="${sign}"
-                      th:text="${sign}"
-                      th:selected="${coSign != null and coSign == sign}"></option>
+              <option th:each="option : ${customerorderOptions}"
+                      th:value="${option.sign}"
+                      th:attr="data-subtext=${option.customerLabel}"
+                      th:text="${option.label}"
+                      th:selected="${coSign != null and coSign == option.sign}"></option>
             </select>
           </div>
           <div class="col-auto">

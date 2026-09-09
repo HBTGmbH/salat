@@ -6,6 +6,7 @@ import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.CU
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -126,6 +127,15 @@ public class CustomerorderService {
 
   public Customerorder getCustomerorderBySign(String selectedOrder) {
     return customerorderDAO.getCustomerorderBySign(selectedOrder);
+  }
+
+  /**
+   * The orders behind a set of signs, hidden and expired ones included — for labelling records that
+   * reference their order by sign and outlive it (#949).
+   */
+  @Transactional(readOnly = true)
+  public List<Customerorder> getCustomerordersBySigns(Collection<String> signs) {
+    return signs.isEmpty() ? List.of() : customerorderRepository.findBySignIn(signs);
   }
 
   public List<Customerorder> getCustomerordersByEmployeeContractId(long employeeContractId) {
