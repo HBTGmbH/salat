@@ -10,11 +10,42 @@
 ">
 <main layout:fragment="content">
 
-  <div class="d-flex justify-content-end mb-3" th:if="${isManager}">
-    <a class="btn btn-success" th:href="@{/budget/pricing/create}">
-      <i class="icon ti ti-plus"></i>
-      <span th:text="#{main.pricing.button.create}">Neuer Stundensatz</span>
-    </a>
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" th:action="@{/budget/pricing}" data-filter-form="pricing">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="sign : ${customerorderSigns}"
+                      th:value="${sign}"
+                      th:text="${sign}"
+                      th:selected="${coSign != null and coSign == sign}"></option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary" type="submit">
+              <i class="icon ti ti-filter m-0"></i>
+            </button>
+          </div>
+          <div class="col-auto ms-auto" th:if="${isManager}">
+            <a class="btn btn-success" th:href="@{/budget/pricing/create}">
+              <i class="icon ti ti-plus"></i>
+              <span th:text="#{main.pricing.button.create}">Neuer Stundensatz</span>
+            </a>
+          </div>
+        </div>
+        <div class="row g-2 align-items-end mt-2">
+          <div class="col-auto ms-2">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="showInactive" value="true" th:checked="${showInactive}"/>
+              <input type="hidden" name="showInactive" value="false"/>
+              <span class="form-check-label" th:text="#{main.pricing.filter.showinactive}">Inaktive anzeigen</span>
+            </label>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="table-responsive card">
@@ -61,6 +92,16 @@
       </tbody>
     </table>
   </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form[data-filter-form]');
+      if (!form) return;
+      form.querySelectorAll('input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.requestSubmit(); });
+      });
+    });
+  </script>
 
 </main>
 </html>

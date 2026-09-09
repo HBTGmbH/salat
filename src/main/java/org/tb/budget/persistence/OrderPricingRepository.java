@@ -16,7 +16,16 @@ public interface OrderPricingRepository
 
     List<OrderPricing> findAllByOrderByCustomerorderSignAscValidFromAsc();
 
-    List<OrderPricing> findByCustomerorderSign(String customerorderSign);
+    List<OrderPricing> findByCustomerorderSignOrderByValidFromAsc(String customerorderSign);
+
+    /**
+     * The customer orders the list view offers for filtering (#949). Taken from the pricings
+     * themselves rather than from the selectable orders: a pricing refers to its order by sign and
+     * outlives it, so an order that has been hidden or has expired still needs to be reachable —
+     * those are the rows one is looking for when tidying up.
+     */
+    @Query("SELECT DISTINCT p.customerorderSign FROM OrderPricing p ORDER BY p.customerorderSign ASC")
+    List<String> findDistinctCustomerorderSigns();
 
     List<OrderPricing> findByCustomerorderSignInOrderByIdAsc(Collection<String> customerorderSigns);
 

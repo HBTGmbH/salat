@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
@@ -42,8 +43,14 @@ public class OrderPricingController {
     private final MessageSourceAccessor messages;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("pricings", orderPricingService.getAll());
+    public String list(@RequestParam(required = false) String coSign,
+                       @RequestParam(required = false) Boolean showInactive,
+                       Model model) {
+        var inactive = Boolean.TRUE.equals(showInactive);
+        model.addAttribute("pricings", orderPricingService.getFiltered(coSign, inactive));
+        model.addAttribute("customerorderSigns", orderPricingService.getCustomerorderSignsWithPricing());
+        model.addAttribute("coSign", coSign);
+        model.addAttribute("showInactive", inactive);
         model.addAttribute("isManager", authorizedUser.isManager());
         return "budget/pricing-list";
     }
