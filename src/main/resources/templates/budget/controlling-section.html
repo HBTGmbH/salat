@@ -24,7 +24,7 @@
         otherwise push the numbers apart. The second line reuses the neighbouring column's label —
         it says the same thing.
       -->
-      <th class="text-end d-none d-lg-table-cell">
+      <th class="text-end d-none d-lg-table-cell" th:if="${section.hasBookedBeforeWindowData()}">
         <span th:text="#{main.controlling.col.bookedbefore(${#temporals.format(windowFrom, 'dd.MM.yyyy')})}">Bis 01.09.2026</span><br/>
         <span th:text="#{main.controlling.col.booked}">Gebucht (h)</span>
       </th>
@@ -41,7 +41,8 @@
       <th class="text-end" th:if="${section.hasOverrunData()}" th:text="#{main.controlling.col.overrun}">Über Budget (€)</th>
       <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
       <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">Gewinn (€)</th>
-      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.margin}">Marge (%)</th>
+      <th class="text-end" th:if="${isManager and section.hasGrossProfitMarginData()}"
+          th:text="#{main.controlling.col.margin}">Marge (%)</th>
       <th class="text-end" th:if="${section.hasProgressData()}" th:text="#{main.controlling.col.progress}">Fortschritt</th>
       <th class="text-center" th:if="${section.hasProgressData()}" th:text="#{main.controlling.col.progress.status}">Plan-Status</th>
     </tr>
@@ -78,7 +79,8 @@
          th:text="${row.signFormatted()} ?: #{main.controlling.row.total}">1612 / 01 / D</div>
     <div class="small text-nowrap" th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</div>
   </td>
-  <td class="text-end d-none d-lg-table-cell" th:classappend="${cellClass}"
+  <td class="text-end d-none d-lg-table-cell" th:if="${section.hasBookedBeforeWindowData()}"
+      th:classappend="${cellClass}"
       th:text="${row.hasBookedBeforeWindow()} ? ${row.bookedHoursBeforeWindowFormatted()} : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}" th:text="${row.bookedHoursFormatted()}"></td>
   <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
@@ -100,7 +102,7 @@
   <td class="text-end" th:if="${isManager}"
       th:classappend="${cellClass} + (${row.hasGrossProfit() and row.grossProfitEuro().signum() < 0} ? ' text-danger' : '')"
       th:text="${row.hasGrossProfit()} ? #{main.budget.format.amount(${row.grossProfitEuro()})} : '—'"></td>
-  <td class="text-end" th:if="${isManager}"
+  <td class="text-end" th:if="${isManager and section.hasGrossProfitMarginData()}"
       th:classappend="${cellClass} + (${row.hasGrossProfitMargin() and row.grossProfitMarginPercent() < 0} ? ' text-danger' : '')"
       th:text="${row.hasGrossProfitMargin()} ? (${#numbers.formatDecimal(row.grossProfitMarginPercent(), 1, 1)} + ' %') : '—'"></td>
   <td class="text-end" th:if="${section.hasProgressData()}" th:classappend="${cellClass}"
