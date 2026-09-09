@@ -1,6 +1,7 @@
 package org.tb.order.persistence;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -35,6 +36,13 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   List<Customerorder> findAllByCustomerId(long customerId);
 
   Optional<Customerorder> findBySign(String sign);
+
+  /**
+   * The orders behind a set of signs, hidden and expired ones included. Records that refer to an
+   * order by sign rather than by id outlive it, and labelling them must not depend on the order
+   * still being offered anywhere.
+   */
+  List<Customerorder> findBySignIn(Collection<String> signs);
 
   @Query("""
       select c from Customerorder c where (c.hide is null or c.hide = false)

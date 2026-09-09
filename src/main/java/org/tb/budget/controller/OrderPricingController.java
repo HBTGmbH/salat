@@ -1,5 +1,7 @@
 package org.tb.budget.controller;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,12 +22,15 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.service.OrderPricingService;
+import org.tb.budget.viewhelper.OrderPricingFilterOption;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.employee.service.EmployeeService;
+import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
+import org.tb.order.viewhelper.CustomerorderViewHelper;
 
 @Controller
 @RequestMapping("/budget/pricing")
@@ -38,6 +43,7 @@ public class OrderPricingController {
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final EmployeeService employeeService;
+    private final CustomerorderViewHelper customerorderViewHelper;
     private final AuthorizedUser authorizedUser;
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final MessageSourceAccessor messages;
@@ -48,7 +54,7 @@ public class OrderPricingController {
                        Model model) {
         var inactive = Boolean.TRUE.equals(showInactive);
         model.addAttribute("pricings", orderPricingService.getFiltered(coSign, inactive));
-        model.addAttribute("customerorderSigns", orderPricingService.getCustomerorderSignsWithPricing());
+        model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("coSign", coSign);
         model.addAttribute("showInactive", inactive);
         model.addAttribute("isManager", authorizedUser.isManager());
@@ -162,6 +168,20 @@ public class OrderPricingController {
         model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
         model.addAttribute("subordersChanged", true);
         return "budget/pricing-form";
+    }
+
+    /**
+     * The customer orders offered in the list filter — those that actually carry a rate, labelled
+     * like every other order select. The signs come from the pricings, the labels from the orders
+     * behind them; a sign without an order keeps its own entry (→ {@link OrderPricingFilterOption}).
+     */
+    private List<OrderPricingFilterOption> filterOptions() {
+        var signs = orderPricingService.getCustomerorderSignsWithPricing();
+        var ordersBySign = customerorderService.getCustomerordersBySigns(signs).stream()
+            .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
+        return signs.stream()
+            .map(sign -> OrderPricingFilterOption.from(sign, ordersBySign.get(sign), customerorderViewHelper))
+            .toList();
     }
 
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {
