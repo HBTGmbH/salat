@@ -45,6 +45,25 @@ public record BudgetControllingSection(
         return total.hasProgress() || rows().stream().anyMatch(BudgetControllingRow::hasProgress);
     }
 
+    /**
+     * Whether anything was booked before the window opened. Same reasoning as for the overrun
+     * column: without data it is a row of dashes under the longest header of the table — the date
+     * makes it wide — and the width is better spent on the columns that have something to say.
+     */
+    public boolean hasBookedBeforeWindowData() {
+        return total.hasBookedBeforeWindow()
+            || rows().stream().anyMatch(BudgetControllingRow::hasBookedBeforeWindow);
+    }
+
+    /**
+     * Whether a margin can be computed anywhere in the section. It needs a gross profit and a
+     * revenue to divide by, so a section without revenue shows dashes throughout.
+     */
+    public boolean hasGrossProfitMarginData() {
+        return total.hasGrossProfitMargin()
+            || rows().stream().anyMatch(BudgetControllingRow::hasGrossProfitMargin);
+    }
+
     /** Only planned sections have a budget, and only there is a utilization meaningful. */
     public boolean hasBudgetColumn() {
         return kind != SectionKind.UNPLANNED;
