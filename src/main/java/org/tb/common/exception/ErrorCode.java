@@ -121,6 +121,7 @@ public enum ErrorCode {
   BU_BUDGET_INACTIVE("BU-0015", "time reports cannot be assigned to an inactive order budget"),
   BU_TIMEREPORT_OUTSIDE_BUDGET_PERIOD("BU-0016", "the time report date lies outside the validity of the order budget"),
   BU_TIMEREPORT_NOT_IN_BUDGET_SCOPE("BU-0017", "the time report does not lie within the scope of the order budget"),
+  BU_EMPLOYEE_COST_NAME_EXISTS("BU-0018", "a cost category of that name already exists"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

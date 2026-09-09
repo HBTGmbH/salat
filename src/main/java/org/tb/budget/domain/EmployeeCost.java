@@ -17,7 +17,12 @@ import org.tb.common.domain.AuditedEntity;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class EmployeeCost extends AuditedEntity {
 
-    @Column(nullable = false, unique = true)
+    /**
+     * The cost category. Deliberately not unique: several records share one name to model a rate
+     * that changed over time, so the name is the category and not the key of a single record
+     * (→ {@code EmployeeCostRepository#findByNameOrderByValidFromAsc}).
+     */
+    @Column(nullable = false)
     private String name;
 
     @Column(name = "cost_cents_per_hour", nullable = false)
