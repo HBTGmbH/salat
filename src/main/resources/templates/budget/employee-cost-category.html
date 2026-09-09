@@ -17,24 +17,33 @@
   <!-- The name is the category: renaming carries every rate period and every assignment along, so it
        belongs here and not to a single rate period (#922, #954). -->
   <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.employeecost.category.title}">Kostenkategorie</h3>
+      <div class="card-actions">
+        <a class="btn btn-link" th:href="@{/budget/employee-cost}">
+          <i class="icon ti ti-arrow-left"></i>
+          <span th:text="#{main.general.button.back.text}">Zurück</span>
+        </a>
+      </div>
+    </div>
     <div class="card-body">
-      <form method="post" th:action="@{/budget/employee-cost/category/rename}" class="row g-2 align-items-end">
+      <form method="post" th:action="@{/budget/employee-cost/category/rename}" class="row g-2">
         <input type="hidden" name="name" th:value="${categoryName}"/>
         <div class="col-md-6">
           <label class="form-label required" th:text="#{main.employeecost.field.name}">Name</label>
-          <input type="text" class="form-control" name="newName" th:value="${categoryName}" maxlength="255" required/>
+          <!-- Feld und Button in einer input-group: der Hinweis unter dem Feld macht die Spalte
+               höher, und mit align-items-end stünde der Button neben dem Hinweis statt neben dem
+               Feld. -->
+          <div class="input-group">
+            <input type="text" class="form-control" name="newName" th:value="${categoryName}" maxlength="255" required/>
+            <button type="submit" class="btn btn-primary">
+              <i class="icon ti ti-pencil"></i>
+              <span th:text="#{main.employeecost.button.rename}">Umbenennen</span>
+            </button>
+          </div>
           <small class="form-hint" th:text="#{main.employeecost.rename.hint}">
             Die Umbenennung gilt für alle Kostensätze und Zuordnungen der Kategorie.
           </small>
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn btn-primary">
-            <i class="icon ti ti-pencil"></i>
-            <span th:text="#{main.employeecost.button.rename}">Umbenennen</span>
-          </button>
-        </div>
-        <div class="col-auto">
-          <a class="btn btn-link" th:href="@{/budget/employee-cost}" th:text="#{main.general.button.back.text}">Zurück</a>
         </div>
       </form>
     </div>
