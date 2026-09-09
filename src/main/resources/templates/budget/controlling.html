@@ -17,15 +17,10 @@
           <label class="form-label" th:text="#{main.controlling.filter.customerorder}">Auftrag</label>
           <select class="form-select tomselect" th:field="*{customerorderSign}">
             <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag wählen ---</option>
-            <!--
-              Second line in the dropdown, rendered by salat.js from data-subtext. Same shape as the
-              line above it: short name, separator, full name. salat.js searches the subtext too, so
-              the customer becomes findable in this select.
-            -->
             <option th:each="co : ${customerorders}"
                     th:value="${co.sign}"
-                    th:attr="data-subtext=${co.customer == null ? null
-                                            : co.customer.shortname + ' - ' + co.customer.name}"
+                    th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
+                    th:attr="data-subtext=${customerLabel}"
                     th:text="|${co.sign} - ${co.shortdescription}|"></option>
           </select>
         </div>
@@ -66,7 +61,8 @@
         <h3 class="card-title mb-0"
             th:text="|${result.customerorderSign()} ${result.customerorderDescription()}|">1612 SST 2025-2028</h3>
         <div th:if="${result.customerShortname() != null}"
-             th:text="${result.customerShortname()}">Kunde</div>
+             th:text="${result.customerName() == null ? result.customerShortname()
+                        : result.customerShortname() + ' - ' + result.customerName()}">Kunde</div>
         <div class="text-muted small">
           <span th:if="${not #lists.isEmpty(section.budgetNames())}"
                 th:text="${#strings.listJoin(section.budgetNames(), ', ')} + ' '"></span>

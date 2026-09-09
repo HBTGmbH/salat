@@ -11,8 +11,12 @@ import org.tb.common.LocalDateRange;
 public record BudgetControllingResult(
     String customerorderSign,
     String customerorderDescription,
-    /** Short name of the customer — that is what the header shows. */
+    /**
+     * Short name and full name of the customer. The header names the customer the way the order
+     * selects do: short name, separator, full name (see {@code CustomerorderViewHelper}).
+     */
     String customerShortname,
+    String customerName,
     LocalDateRange filter,
     List<BudgetControllingSection> sections
 ) {

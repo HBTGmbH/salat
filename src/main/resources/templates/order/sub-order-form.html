@@ -36,6 +36,8 @@
                   hx-trigger="change">
             <option th:each="co : ${customerorders}"
                     th:value="${co.id}"
+                    th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
+                    th:attr="data-subtext=${customerLabel}"
                     th:text="${co.sign + ' - ' + co.shortdescription}"></option>
           </select>
           <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
@@ -194,6 +196,8 @@
                 hx-trigger="change">
           <option th:each="co : ${customerorders}"
                   th:value="${co.id}"
+                    th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
+                    th:attr="data-subtext=${customerLabel}"
                   th:text="${co.sign + ' - ' + co.shortdescription}"></option>
         </select>
         <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>

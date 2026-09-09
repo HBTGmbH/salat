@@ -39,6 +39,8 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="co : ${customerorders}"
                         th:value="${co.sign}"
+                        th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
+                        th:attr="data-subtext=${customerLabel}"
                         th:text="|${co.sign} - ${co.shortdescription}|"></option>
               </select>
             </div>
