@@ -130,6 +130,15 @@ public record BudgetControllingRow(
 
     public String bookedHoursFormatted() { return formatHours(bookedHours); }
 
+    /**
+     * The complete order sign with room to breathe: {@code 1612 / 01 / D} instead of
+     * {@code 1612/01/D}. The line must not break, so the cell sets {@code text-nowrap} — the spaces
+     * are there to be read, not to wrap at.
+     */
+    public String signFormatted() {
+        return sign == null ? null : sign.replace("/", " / ");
+    }
+
     public boolean hasBookedBeforeWindow() {
         return bookedHoursBeforeWindow != null && !bookedHoursBeforeWindow.isZero();
     }
