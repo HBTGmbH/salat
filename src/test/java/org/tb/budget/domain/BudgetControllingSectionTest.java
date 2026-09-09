@@ -28,6 +28,22 @@ public class BudgetControllingSectionTest {
     assertThat(section(SectionKind.UNPLANNED, row().build()).hasBudgetColumn()).isFalse();
   }
 
+  /** An empty column of dashes says nothing, so it only appears when something went over budget. */
+  @Test
+  public void should_offer_the_overrun_column_only_when_something_went_over_budget() {
+    var overrun = row().budgetEuro(new BigDecimal("100")).revenueEuro(new BigDecimal("150")).build();
+    var within = row().budgetEuro(new BigDecimal("100")).revenueEuro(new BigDecimal("50")).build();
+
+    assertThat(section(SectionKind.ORDER_LEVEL, overrun).hasOverrunData()).isTrue();
+    assertThat(section(SectionKind.ORDER_LEVEL, within).hasOverrunData()).isFalse();
+  }
+
+  /** Bookings without a budget cannot exceed one. */
+  @Test
+  public void should_not_offer_the_overrun_column_without_a_budget() {
+    assertThat(section(SectionKind.UNPLANNED, row().build()).hasOverrunData()).isFalse();
+  }
+
   @Test
   public void should_report_planned_data_when_a_row_has_planned_hours() {
     assertThat(section(SectionKind.ORDER_LEVEL,
