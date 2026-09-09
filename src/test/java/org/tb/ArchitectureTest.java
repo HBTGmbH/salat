@@ -133,6 +133,107 @@ public class ArchitectureTest {
       .resideInAPackage("org.tb.dailyreport..")
       .should().dependOnClassesThat().resideInAPackage("org.tb.budget..");
 
+  /**
+   * dailyreport owns the bookings and is imported by everything that evaluates them (budget,
+   * invoice, statistic), so its own list has to stay narrow — every entry here is a module that can
+   * never evaluate bookings in turn.
+   *
+   * <p>{@code favorites} is the one to watch: the booking screens offer favourites, so dailyreport
+   * reaches into that module. It works only because favorites knows nothing about bookings; the
+   * reverse import would close a cycle.
+   */
+  @ArchTest
+  static final ArchRule dailyreportShouldAccessOnlyItsKnownDependencies = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.dailyreport..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "dailyreport must only import common, auth, customer, employee, favorites, notification, order, settings",
+          "org.tb.common.", "org.tb.auth.", "org.tb.customer.", "org.tb.employee.", "org.tb.favorites.",
+          "org.tb.notification.", "org.tb.order.", "org.tb.settings.", "org.tb.dailyreport."));
+
+  /**
+   * statistic aggregates bookings into numbers. It reads dailyreport and order and is imported by
+   * nobody — which is what keeps that edge harmless. It carries no authorization of its own because
+   * it runs off booking events rather than off requests.
+   */
+  @ArchTest
+  static final ArchRule statisticShouldAccessCommonDailyreportOrderOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.statistic..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "statistic must only import common, dailyreport, order",
+          "org.tb.common.", "org.tb.dailyreport.", "org.tb.order.", "org.tb.statistic."));
+
+  /**
+   * favorites stores which suborder a person books on most, keyed by employee. It deliberately does
+   * <em>not</em> know dailyreport — the booking screens reach into favorites, not the other way
+   * round (see {@link #dailyreportShouldAccessOnlyItsKnownDependencies}). It happens to need nothing
+   * from common either; the rule lists it anyway, because needing a utility later is no
+   * architectural event.
+   */
+  @ArchTest
+  static final ArchRule favoritesShouldAccessCommonAuthEmployeeOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.favorites..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "favorites must only import common, auth, employee",
+          "org.tb.common.", "org.tb.auth.", "org.tb.employee.", "org.tb.favorites."));
+
+  /**
+   * etl imports data from outside and needs the employee behind a record to attribute it. Nothing
+   * imports etl, so it stays a leaf.
+   */
+  @ArchTest
+  static final ArchRule etlShouldAccessCommonAuthEmployeeOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.etl..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "etl must only import common, auth, employee",
+          "org.tb.common.", "org.tb.auth.", "org.tb.employee.", "org.tb.etl."));
+
+  /**
+   * The error page needs to know who is looking at it to decide how much to show, hence auth and
+   * employee. It is reached through Spring's error handling, not by an import, so nothing depends on
+   * it (→ ADR-0015).
+   */
+  @ArchTest
+  static final ArchRule errorShouldAccessCommonAuthEmployeeOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.error..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "error must only import common, auth, employee",
+          "org.tb.common.", "org.tb.auth.", "org.tb.employee.", "org.tb.error."));
+
+  /**
+   * jira replicates tickets against a remote API. It touches no domain module — the tickets it
+   * stores are referenced by their key, and whoever needs them reads them from here.
+   */
+  @ArchTest
+  static final ArchRule jiraShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.jira..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "jira must only import common, auth",
+          "org.tb.common.", "org.tb.auth.", "org.tb.jira."));
+
+  /**
+   * reporting runs report definitions as SQL and renders the result generically, so it needs no
+   * domain module — that is the whole point of the design, and this rule keeps it that way.
+   */
+  @ArchTest
+  static final ArchRule reportingShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.reporting..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "reporting must only import common, auth",
+          "org.tb.common.", "org.tb.auth.", "org.tb.reporting."));
+
+  /**
+   * notification sends mails and is used directly by budget, dailyreport and employee alike (see
+   * {@link #employeeShouldAccessCommonAuthSettingsNotificationOnly}). It must therefore stay free of
+   * every domain module: a notification that knew what it notifies about would turn a cross-cutting
+   * capability into the centre of the dependency graph.
+   */
+  @ArchTest
+  static final ArchRule notificationShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.notification..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "notification must only import common, auth",
+          "org.tb.common.", "org.tb.auth.", "org.tb.notification."));
+
   // settingseditor is an aggregator: it may import from any module.
   // The beFreeOfCycles rule below ensures no other module can accidentally depend back on it.
 
