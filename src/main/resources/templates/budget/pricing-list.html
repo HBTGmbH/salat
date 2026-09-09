@@ -67,7 +67,7 @@
         <tr th:if="${#lists.isEmpty(pricings)}">
           <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
-        <tr th:each="p : ${pricings}">
+        <tr th:each="p : ${pricings}" th:classappend="${!p.currentlyValid} ? 'table-danger' : ''">
           <td th:text="${p.customerorderSign}"></td>
           <td th:text="${p.suborderSign} ?: '-'"></td>
           <td th:text="${p.employeeSign} ?: '-'"></td>
