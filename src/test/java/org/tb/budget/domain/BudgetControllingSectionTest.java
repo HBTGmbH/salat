@@ -54,7 +54,7 @@ public class BudgetControllingSectionTest {
   /** Planned hours only on the total describe the customer order, not the suborder breakdown. */
   @Test
   public void should_ignore_planned_hours_that_only_the_total_carries() {
-    var section = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(),
+    var section = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(), null, null,
         List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null)),
         row().plannedHours(Duration.ofHours(40)).build());
 
@@ -65,7 +65,7 @@ public class BudgetControllingSectionTest {
   public void should_be_worth_showing_only_when_its_total_says_something() {
     assertThat(section(SectionKind.ORDER_LEVEL, row().build()).hasContent()).isFalse();
 
-    var withTime = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(),
+    var withTime = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(), null, null,
         List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null)),
         row().bookedHours(Duration.ofHours(8)).build());
     assertThat(withTime.hasContent()).isTrue();
@@ -73,7 +73,7 @@ public class BudgetControllingSectionTest {
 
   @Test
   public void should_report_subtotals_only_where_groups_carry_them() {
-    var grouped = new BudgetControllingSection(SectionKind.SUBORDER_LEVEL, YEAR, List.of("plan"),
+    var grouped = new BudgetControllingSection(SectionKind.SUBORDER_LEVEL, YEAR, List.of("plan"), null, null,
         List.of(new BudgetControllingGroup("co/01", "plan", List.of(row().build()),
             row().budgetEuro(new BigDecimal("100")).build())),
         row().build());
@@ -83,7 +83,7 @@ public class BudgetControllingSectionTest {
   }
 
   private static BudgetControllingSection section(SectionKind kind, BudgetControllingRow row) {
-    return new BudgetControllingSection(kind, kind == SectionKind.UNPLANNED ? null : YEAR, List.of(),
+    return new BudgetControllingSection(kind, kind == SectionKind.UNPLANNED ? null : YEAR, List.of(), null, null,
         List.of(new BudgetControllingGroup(null, null, List.of(row), null)),
         row().build());
   }
