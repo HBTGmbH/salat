@@ -58,8 +58,8 @@
       <div class="me-auto">
         <h3 class="card-title mb-0"
             th:text="|${result.customerorderSign()} ${result.customerorderDescription()}|">1612 SST 2025-2028</h3>
-        <div th:if="${result.customerName() != null}"
-             th:text="|${result.customerShortname()} ${result.customerName()}|">Kunde</div>
+        <div th:if="${result.customerShortname() != null}"
+             th:text="${result.customerShortname()}">Kunde</div>
         <div class="text-muted small">
           <span th:if="${not #lists.isEmpty(section.budgetNames())}"
                 th:text="${#strings.listJoin(section.budgetNames(), ', ')} + ' '"></span>
