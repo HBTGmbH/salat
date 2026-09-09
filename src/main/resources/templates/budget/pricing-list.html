@@ -58,15 +58,14 @@
           <th th:text="#{main.pricing.field.employeeSign}">Mitarbeiter</th>
           <th th:text="#{main.pricing.field.description}">Beschreibung</th>
           <th th:text="#{main.pricing.field.priceEuro}">€/h</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.pricing.field.validFrom}">Gültig ab</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.pricing.field.validUntil}">Gültig bis</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.pricing.field.valid}">Gültig</th>
           <th class="w-1" th:if="${isManager}"></th>
           <th class="w-1" th:if="${isManager}"></th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(pricings)}">
-          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
         <tr th:each="p : ${pricings}" th:classappend="${!p.currentlyValid} ? 'table-danger' : ''"
             th:with="order=${orders.get(p.customerorderSign)}">
@@ -81,8 +80,13 @@
           <td th:text="${p.employeeSign} ?: '-'"></td>
           <td th:text="${p.description} ?: '-'"></td>
           <td th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
-          <td class="d-none d-md-table-cell" th:text="${p.validFrom}"></td>
-          <td class="d-none d-md-table-cell" th:text="${p.validUntil.year != 2999} ? ${p.validUntil} : '-'"></td>
+          <!--/* One column like everywhere else in the module; 31.12.2999 means "no end". */-->
+          <td class="d-none d-md-table-cell small text-muted">
+            <span th:text="${#temporals.format(p.validFrom, 'dd.MM.yyyy')}"></span>
+            –
+            <span th:if="${p.validUntil.year != 2999}" th:text="${#temporals.format(p.validUntil, 'dd.MM.yyyy')}"></span>
+            <span th:unless="${p.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
+          </td>
           <td th:if="${isManager}">
             <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/pricing/{id}/edit(id=${p.id})}">
               <i class="icon ti ti-pencil m-0"></i>
