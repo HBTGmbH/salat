@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.domain.BulkAssignmentData;
+import org.tb.budget.domain.BulkAssignmentEmployee;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
 import org.tb.budget.persistence.OrderBudgetRepository;
@@ -302,6 +303,114 @@ public class TimereportBudgetBulkAssignmentServiceTest {
     verify(assignmentRepository, never()).findByTimereportIdIn(anyCollection());
   }
 
+  // --- selection of people (#953) -------------------------------------------------------------
+
+  @Test
+  public void should_act_only_on_the_selected_person() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+    givenReport(101L, "CO", "CO/01", 1L, MAR, HOUR, 2L);
+
+    var written = service.assign(data(null, JAN, DEC, 7L, List.of(2L), false));
+
+    assertThat(stored).singleElement()
+        .extracting(TimereportBudgetAssignment::getTimereportId).isEqualTo(101L);
+    assertThat(written.bookings()).isEqualTo(1);
+  }
+
+  @Test
+  public void should_act_on_all_of_several_selected_people() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+    givenReport(101L, "CO", "CO/01", 1L, MAR, HOUR, 2L);
+    givenReport(102L, "CO", "CO/01", 1L, MAR, HOUR, 3L);
+
+    service.assign(data(null, JAN, DEC, 7L, List.of(1L, 3L), false));
+
+    assertThat(stored).extracting(TimereportBudgetAssignment::getTimereportId)
+        .containsExactlyInAnyOrder(100L, 102L);
+  }
+
+  /** Optional field: no choice must behave exactly as before the field existed. */
+  @Test
+  public void should_act_on_everyone_without_a_choice_of_people() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+    givenReport(101L, "CO", "CO/01", 1L, MAR, HOUR, 2L);
+
+    service.assign(data(null, JAN, DEC, 7L, List.of(), false));
+
+    assertThat(stored).extracting(TimereportBudgetAssignment::getTimereportId)
+        .containsExactlyInAnyOrder(100L, 101L);
+  }
+
+  @Test
+  public void should_count_only_the_bookings_of_the_selected_people_in_the_preview() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+    givenReport(101L, "CO", "CO/01", 1L, MAR, Duration.ofMinutes(30), 2L);
+
+    var preview = service.preview(data(null, JAN, DEC, 7L, List.of(1L), false));
+
+    assertThat(preview.selected().bookings()).isEqualTo(1);
+    assertThat(preview.unassigned().bookings()).isEqualTo(1);
+    assertThat(preview.unassigned().hours()).isEqualTo(HOUR);
+  }
+
+  // --- the people to choose from (#953) -------------------------------------------------------
+
+  @Test
+  public void should_offer_every_person_of_the_selection_once_sorted_by_sign() {
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 2L);
+    givenReport(101L, "CO", "CO/01", 1L, JUN, HOUR, 2L);
+    givenReport(102L, "CO", "CO/02", 3L, MAR, HOUR, 1L);
+
+    var employees = service.selectableEmployees(data(null, JAN, DEC, null, false));
+
+    assertThat(employees).extracting(BulkAssignmentEmployee::sign).containsExactly("e1", "e2");
+    assertThat(employees).extracting(BulkAssignmentEmployee::label)
+        .containsExactly("e1 - Person 1", "e2 - Person 2");
+  }
+
+  @Test
+  public void should_offer_only_the_people_who_booked_in_the_selected_suborder_and_period() {
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+    givenReport(101L, "CO", "CO/02", 3L, MAR, HOUR, 2L);
+    givenReport(102L, "CO", "CO/01", 1L, SEP, HOUR, 3L);
+
+    var employees = service.selectableEmployees(data("CO/01", JAN, JUN, null, false));
+
+    assertThat(employees).extracting(BulkAssignmentEmployee::sign).containsExactly("e1");
+  }
+
+  /** The choice of people is made before the plan, so the list must not wait for it. */
+  @Test
+  public void should_offer_the_people_without_a_chosen_target_plan() {
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+
+    assertThat(service.selectableEmployees(data(null, JAN, DEC, null, false))).hasSize(1);
+    verify(orderBudgetService, never()).getById(anyLong());
+  }
+
+  @Test
+  public void should_offer_nobody_while_the_period_is_incomplete() {
+    givenReport(100L, "CO", "CO/01", 1L, MAR, HOUR, 1L);
+
+    assertThat(service.selectableEmployees(data(null, JAN, null, null, false))).isEmpty();
+    assertThat(service.selectableEmployees(data(null, DEC, JAN, null, false))).isEmpty();
+    assertThat(service.selectableEmployees(
+        new BulkAssignmentData(null, null, JAN, DEC, null, List.of(), false))).isEmpty();
+  }
+
+  @Test
+  public void should_reject_reading_the_people_without_manager_rights() {
+    when(authorizedUser.isManager()).thenReturn(false);
+
+    assertThatThrownBy(() -> service.selectableEmployees(data(null, JAN, DEC, null, false)))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(ErrorCode.AA_NEEDS_MANAGER.getCode());
+  }
+
   // --- authorization --------------------------------------------------------------------------
 
   @Test
@@ -329,8 +438,15 @@ public class TimereportBudgetBulkAssignmentServiceTest {
   // --- test fixture ---------------------------------------------------------------------------
 
   private static BulkAssignmentData data(String suborderSign, LocalDate from, LocalDate until,
-                                         long targetBudgetId, boolean includeAssigned) {
-    return new BulkAssignmentData("CO", suborderSign, from, until, targetBudgetId, includeAssigned);
+                                         Long targetBudgetId, boolean includeAssigned) {
+    return data(suborderSign, from, until, targetBudgetId, List.of(), includeAssigned);
+  }
+
+  private static BulkAssignmentData data(String suborderSign, LocalDate from, LocalDate until,
+                                         Long targetBudgetId, List<Long> employeeIds,
+                                         boolean includeAssigned) {
+    return new BulkAssignmentData("CO", suborderSign, from, until, targetBudgetId, employeeIds,
+        includeAssigned);
   }
 
   private void givenPlan(long id, String customerorderSign, String suborderSign,
@@ -349,6 +465,11 @@ public class TimereportBudgetBulkAssignmentServiceTest {
 
   private void givenReport(long id, String customerorderSign, String completeOrderSign,
                            long suborderId, LocalDate day, Duration duration) {
+    givenReport(id, customerorderSign, completeOrderSign, suborderId, day, duration, 1L);
+  }
+
+  private void givenReport(long id, String customerorderSign, String completeOrderSign,
+                           long suborderId, LocalDate day, Duration duration, long employeeId) {
     reports.add(TimereportDTO.builder()
         .id(id)
         .customerorderSign(customerorderSign)
@@ -356,6 +477,9 @@ public class TimereportBudgetBulkAssignmentServiceTest {
         .suborderId(suborderId)
         .referenceday(day)
         .duration(duration)
+        .employeeId(employeeId)
+        .employeeSign("e" + employeeId)
+        .employeeName("Person " + employeeId)
         .build());
   }
 

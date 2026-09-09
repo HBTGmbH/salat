@@ -48,7 +48,7 @@
             <div class="mb-3" id="suborderSignInput">
               <label class="form-label" th:text="#{main.bulkassignment.field.suborder}">Unterauftrag</label>
               <select class="form-select tomselect" th:field="*{suborderSign}"
-                      th:hx-post="@{/budget/bulk-assignment/preview}"
+                      th:hx-post="@{/budget/bulk-assignment/refresh-employees}"
                       hx-swap="none"
                       hx-include="closest form"
                       hx-trigger="change">
@@ -63,7 +63,7 @@
               <div class="col-md-6 mb-3">
                 <label class="form-label required" th:text="#{main.bulkassignment.field.from}">Von</label>
                 <input type="date" class="form-control" th:field="*{from}" required
-                       th:hx-post="@{/budget/bulk-assignment/preview}"
+                       th:hx-post="@{/budget/bulk-assignment/refresh-employees}"
                        hx-swap="none"
                        hx-include="closest form"
                        hx-trigger="change"/>
@@ -71,11 +71,25 @@
               <div class="col-md-6 mb-3">
                 <label class="form-label required" th:text="#{main.bulkassignment.field.until}">Bis</label>
                 <input type="date" class="form-control" th:field="*{until}" required
-                       th:hx-post="@{/budget/bulk-assignment/preview}"
+                       th:hx-post="@{/budget/bulk-assignment/refresh-employees}"
                        hx-swap="none"
                        hx-include="closest form"
                        hx-trigger="change"/>
               </div>
+            </div>
+
+            <div class="mb-3" id="employeeIdsInput">
+              <label class="form-label" th:text="#{main.bulkassignment.field.employees}">Mitarbeitende</label>
+              <select class="form-select tomselect tomselect-multi" th:field="*{employeeIds}" multiple
+                      th:hx-post="@{/budget/bulk-assignment/preview}"
+                      hx-swap="none"
+                      hx-include="closest form"
+                      hx-trigger="change">
+                <option th:each="e : ${employees}" th:value="${e.id()}" th:text="${e.label()}"></option>
+              </select>
+              <small class="form-hint" th:text="#{main.bulkassignment.field.employees.hint}">
+                Ohne Auswahl gelten alle Mitarbeitenden.
+              </small>
             </div>
 
             <div class="mb-3" id="targetBudgetIdInput">
@@ -124,7 +138,7 @@
     <div class="mb-3" id="suborderSignInput" th:hx-swap-oob="${selectionChanged}">
       <label class="form-label" th:text="#{main.bulkassignment.field.suborder}">Unterauftrag</label>
       <select class="form-select tomselect" name="suborderSign"
-              th:hx-post="@{/budget/bulk-assignment/preview}"
+              th:hx-post="@{/budget/bulk-assignment/refresh-employees}"
               hx-swap="none"
               hx-include="closest form"
               hx-trigger="change">
@@ -149,6 +163,25 @@
                 th:selected="${form.targetBudgetId != null and form.targetBudgetId == b.id}"
                 th:text="${b.name}"></option>
       </select>
+    </div>
+
+    <!-- Multi-select: the native multiple attribute has to be here as well, or the browser would
+         submit only one of the chosen people. -->
+    <div class="mb-3" id="employeeIdsInput" th:hx-swap-oob="${employeesChanged}">
+      <label class="form-label" th:text="#{main.bulkassignment.field.employees}">Mitarbeitende</label>
+      <select class="form-select tomselect tomselect-multi" name="employeeIds" multiple
+              th:hx-post="@{/budget/bulk-assignment/preview}"
+              hx-swap="none"
+              hx-include="closest form"
+              hx-trigger="change">
+        <option th:each="e : ${employees}"
+                th:value="${e.id()}"
+                th:selected="${form.employeeIds != null and #lists.contains(form.employeeIds, e.id())}"
+                th:text="${e.label()}"></option>
+      </select>
+      <small class="form-hint" th:text="#{main.bulkassignment.field.employees.hint}">
+        Ohne Auswahl gelten alle Mitarbeitenden.
+      </small>
     </div>
   </div>
 

@@ -1,6 +1,7 @@
 package org.tb.budget.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.BulkAssignmentEmployee;
 import org.tb.budget.service.OrderBudgetService;
 import org.tb.budget.service.TimereportBudgetBulkAssignmentService;
 import org.tb.budget.viewhelper.BulkAssignmentPreviewViewHelper;
@@ -57,19 +59,12 @@ public class BudgetBulkAssignmentController {
                           HttpServletRequest request) {
         addSelectionLists(form, model);
         model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
-        if (form.isComplete()) {
-            try {
-                model.addAttribute("preview", BulkAssignmentPreviewViewHelper.from(
-                    bulkAssignmentService.preview(form.toData()), form.isIncludeAssigned()));
-            } catch (ErrorCodeException ex) {
-                model.addAttribute("formErrors", toMessages(ex));
-            }
-        }
+        addPreview(form, model);
         return "budget/bulk-assignment";
     }
 
     /**
-     * The order drives both dependent selects, so changing it replaces them as well. The preview
+     * The order drives all three dependent selects, so changing it replaces them as well. The preview
      * panel comes along and is empty until a plan is picked again — a preview belonging to the
      * previous order would be worse than none.
      */
@@ -78,9 +73,26 @@ public class BudgetBulkAssignmentController {
                           HttpServletRequest request) {
         form.setSuborderSign(null);
         form.setTargetBudgetId(null);
+        form.setEmployeeIds(new ArrayList<>());
         addSelectionLists(form, model);
         model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
         model.addAttribute("selectionChanged", true);
+        model.addAttribute("employeesChanged", true);
+        return "budget/bulk-assignment";
+    }
+
+    /**
+     * Suborder and period narrow the bookings the people are derived from, so changing them rebuilds
+     * that select — and drops anyone who no longer books in the selection (#953). Suborder and plan
+     * stay as they are: they do not depend on each other, only on the order.
+     */
+    @PostMapping("/refresh-employees")
+    public String refreshEmployees(@ModelAttribute("form") BulkAssignmentForm form, Model model,
+                                   HttpServletRequest request) {
+        form.retainEmployees(addSelectionLists(form, model));
+        model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
+        model.addAttribute("employeesChanged", true);
+        addPreview(form, model);
         return "budget/bulk-assignment";
     }
 
@@ -106,14 +118,18 @@ public class BudgetBulkAssignmentController {
         }
     }
 
-    /** The orders the manager may see, plus the suborders and plans of the selected order. */
-    private void addSelectionLists(BulkAssignmentForm form, Model model) {
+    /**
+     * The orders the manager may see, plus the suborders, plans and people of the selected order.
+     * Returns the people so a caller that has to prune the choice does not query them twice.
+     */
+    private List<BulkAssignmentEmployee> addSelectionLists(BulkAssignmentForm form, Model model) {
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
         var sign = form.getCustomerorderSign();
         if (sign == null || sign.isBlank()) {
             model.addAttribute("suborders", List.of());
             model.addAttribute("budgets", List.of());
-            return;
+            model.addAttribute("employees", List.of());
+            return List.of();
         }
         var customerorder = customerorderService.getCustomerorderBySign(sign);
         model.addAttribute("suborders", customerorder == null
@@ -122,6 +138,23 @@ public class BudgetBulkAssignmentController {
         // Only active plans can hold bookings, so offering the inactive ones would only produce a
         // preview in which everything is unassignable.
         model.addAttribute("budgets", orderBudgetService.getActiveByCustomerorderSign(sign));
+        // Only people who actually booked in the current selection (#953) — the list is derived from
+        // the bookings themselves, so no choice can come up empty.
+        var employees = bulkAssignmentService.selectableEmployees(form.toData());
+        model.addAttribute("employees", employees);
+        return employees;
+    }
+
+    private void addPreview(BulkAssignmentForm form, Model model) {
+        if (!form.isComplete()) {
+            return;
+        }
+        try {
+            model.addAttribute("preview", BulkAssignmentPreviewViewHelper.from(
+                bulkAssignmentService.preview(form.toData()), form.isIncludeAssigned()));
+        } catch (ErrorCodeException ex) {
+            model.addAttribute("formErrors", toMessages(ex));
+        }
     }
 
     private List<String> toMessages(ErrorCodeException ex) {
