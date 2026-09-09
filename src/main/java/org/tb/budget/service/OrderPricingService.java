@@ -21,6 +21,7 @@ import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -34,6 +35,7 @@ public class OrderPricingService {
     private final OrderPricingRepository orderPricingRepository;
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
+    private final EmployeeService employeeService;
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
@@ -117,6 +119,8 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkCustomerorderExists(data.customerorderSign());
+        checkEmployeeExists(data.employeeSign());
         checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
             data.validFrom(), validUntil, null);
@@ -125,9 +129,15 @@ public class OrderPricingService {
         orderPricingRepository.save(pricing);
     }
 
+    /**
+     * The customer order is deliberately not checked here: a rate references its order by sign and
+     * outlives it (#957, → {@code OrderPricingFilterOption}). Demanding the order on every edit
+     * would leave a rate whose order is gone only deletable, and editing it is how it gets corrected.
+     */
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        checkEmployeeExists(data.employeeSign());
         checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
             data.validFrom(), validUntil, id);
@@ -139,6 +149,26 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void delete(long id) {
         orderPricingRepository.deleteById(id);
+    }
+
+    /**
+     * A rate names its employee by sign, so a typo or a post that bypasses the select puts a sign
+     * into the record that no person carries (#958). Such a rate never matches during controlling
+     * and the work silently falls back to the order-wide rate, so the sign is refused when written.
+     *
+     * <p>No sign at all is the normal case: the rate then applies to everyone on the order.
+     */
+    private void checkEmployeeExists(String employeeSign) {
+        if (employeeSign != null && employeeService.getEmployeeBySign(employeeSign) == null) {
+            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN, employeeSign);
+        }
+    }
+
+    /** Only on create — see {@link #update} for why an edit must not insist on the order. */
+    private void checkCustomerorderExists(String customerorderSign) {
+        if (customerorderService.getCustomerorderBySign(customerorderSign) == null) {
+            throw new InvalidDataException(ErrorCode.BU_CUSTOMERORDER_SIGN_UNKNOWN, customerorderSign);
+        }
     }
 
     /**

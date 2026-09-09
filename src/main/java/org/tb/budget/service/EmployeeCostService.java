@@ -25,6 +25,8 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
+import org.tb.employee.service.EmployeeService;
+import org.tb.order.service.SuborderService;
 
 @Service
 @Transactional
@@ -34,6 +36,8 @@ public class EmployeeCostService {
 
     private final EmployeeCostRepository employeeCostRepository;
     private final EmployeeCostAssignmentRepository assignmentRepository;
+    private final EmployeeService employeeService;
+    private final SuborderService suborderService;
 
     @Transactional(readOnly = true)
     public EmployeeCost getById(long id) {
@@ -269,6 +273,7 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
+        checkReferences(data);
         checkNoAssignmentOverlap(data.employeeSign(), data.suborderSign(), data.validFrom(),
             endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
@@ -278,11 +283,37 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
+        checkReferences(data);
         checkNoAssignmentOverlap(data.employeeSign(), data.suborderSign(), data.validFrom(),
             endOfValidity(data.validUntil()), id);
         var assignment = getAssignmentById(id);
         applyAssignment(assignment, data);
         assignmentRepository.save(assignment);
+    }
+
+    /**
+     * An assignment names its employee, its suborder and its cost category by sign, so all three can
+     * be anything the request sends (#958). The select of the form is no protection: a post with
+     * other values, or none at all, reaches the same endpoint. An unknown sign makes
+     * {@link #findEffectiveCost} resolve nothing, and that shows up as work costing 0 EUR in
+     * controlling rather than as an error — so it is refused here.
+     *
+     * <p>The category is checked through {@link #categoryExists}, which counts a name that only
+     * assignments still carry. An assignment left behind by a deleted cost rate (#895) therefore
+     * stays editable, which is the way to move it onto a rate that exists.
+     */
+    private void checkReferences(EmployeeCostAssignmentData data) {
+        if (employeeService.getEmployeeBySign(data.employeeSign()) == null) {
+            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN, data.employeeSign());
+        }
+        // No suborder means the assignment applies regardless of suborder — nothing to check.
+        if (data.suborderSign() != null
+            && !suborderService.existsSuborderWithCompleteOrderSign(data.suborderSign())) {
+            throw new InvalidDataException(ErrorCode.BU_SUBORDER_SIGN_UNKNOWN, data.suborderSign());
+        }
+        if (!categoryExists(data.employeeCostName())) {
+            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN, data.employeeCostName());
+        }
     }
 
     @Authorized(requiresManager = true)

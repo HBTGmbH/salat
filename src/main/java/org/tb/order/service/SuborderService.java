@@ -362,6 +362,17 @@ public class SuborderService {
    * exact sign, so this applies the same rule as {@code OrderPricingLookup} — including the trailing
    * slash the pattern binds against.
    */
+  /**
+   * Whether a suborder with exactly this complete order sign exists (#958). Records that reference a
+   * suborder by sign rather than by id — the employee cost assignments do — have no customer order
+   * to narrow the search by, so the sign is matched against all suborders. That is a full read, but
+   * it happens on a manager's write, and the forms of those records load the same list anyway.
+   */
+  public boolean existsSuborderWithCompleteOrderSign(String completeOrderSign) {
+    return suborderDAO.getSuborders(false).stream()
+        .anyMatch(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()));
+  }
+
   public boolean existsSuborderMatching(String customerorderSign, String pattern) {
     var likePattern = SqlLikePattern.startingWith(pattern);
     return subordersOf(customerorderSign).stream()
