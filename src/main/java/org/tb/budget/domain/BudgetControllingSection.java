@@ -17,7 +17,9 @@ public record BudgetControllingSection(
     LocalDateRange period,
     List<String> budgetNames,
     List<BudgetControllingGroup> groups,
-    BudgetControllingRow total
+    BudgetControllingRow total,
+    /** How the available budget came about; {@code null} for UNPLANNED, which has none (#917). */
+    BudgetHistory history
 ) {
     /** A section worth showing at all — same rule as for a row (#901). */
     public boolean hasContent() {
