@@ -1,11 +1,14 @@
 package org.tb.budget.controller;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -35,6 +38,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -60,26 +64,57 @@ public class BudgetController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final MessageSourceAccessor messages;
 
+    /**
+     * The parameter is {@code budgetShowInactive} rather than {@code showInactive} because the
+     * UiState mapping is global: the rate list has a switch of the same name that means something
+     * else, and both would otherwise share one remembered value (#952).
+     */
     @GetMapping
     public String list(@RequestParam(required = false) String coSign,
-                       @RequestParam(required = false) Boolean showInactive,
+                       @RequestParam(required = false) Boolean budgetShowInactive,
                        Model model) {
         List<OrderBudget> budgets;
         if (coSign != null && !coSign.isBlank()) {
             budgets = orderBudgetService.getVisibleByCustomerorderSign(
-                coSign, Boolean.TRUE.equals(showInactive));
+                coSign, Boolean.TRUE.equals(budgetShowInactive));
         } else {
             budgets = orderBudgetService.getAllVisible();
-            if (!Boolean.TRUE.equals(showInactive)) {
+            if (!Boolean.TRUE.equals(budgetShowInactive)) {
                 budgets = budgets.stream().filter(b -> Boolean.TRUE.equals(b.getActive())).toList();
             }
         }
         model.addAttribute("budgets", budgets);
         model.addAttribute("coSign", coSign);
-        model.addAttribute("showInactive", Boolean.TRUE.equals(showInactive));
+        model.addAttribute("showInactive", Boolean.TRUE.equals(budgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        // The rows name their order and suborder by sign; description and customer hang off those.
+        // Both maps are built once per page instead of one lookup per row.
+        model.addAttribute("orders", ordersOf(budgets));
+        model.addAttribute("suborders", subordersOf(budgets));
         return "budget/budget-list";
+    }
+
+    private Map<String, Customerorder> ordersOf(List<OrderBudget> budgets) {
+        var signs = budgets.stream().map(OrderBudget::getCustomerorderSign).distinct().toList();
+        return customerorderService.getCustomerordersBySigns(signs).stream()
+            .collect(toMap(Customerorder::getSign, identity(), (a, b) -> a));
+    }
+
+    private Map<String, Suborder> subordersOf(List<OrderBudget> budgets) {
+        var signs = budgets.stream()
+            .map(OrderBudget::getSuborderSign)
+            .filter(sign -> sign != null && !sign.isBlank())
+            .distinct()
+            .toList();
+        var orderSigns = budgets.stream()
+            .filter(b -> b.getSuborderSign() != null && !b.getSuborderSign().isBlank())
+            .map(OrderBudget::getCustomerorderSign)
+            .distinct()
+            .toList();
+        return suborderService.getSubordersByCustomerorderSigns(orderSigns).stream()
+            .filter(suborder -> signs.contains(suborder.getCompleteOrderSign()))
+            .collect(toMap(Suborder::getCompleteOrderSign, identity(), (a, b) -> a));
     }
 
     @Authorized(requiresManager = true)

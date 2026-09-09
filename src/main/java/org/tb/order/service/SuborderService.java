@@ -7,8 +7,10 @@ import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.SU
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -273,6 +275,24 @@ public class SuborderService {
   }
 
   /** All suborders that are not hidden. */
+  /**
+   * The suborders of the given customer orders, hidden ones included — for lists whose rows name
+   * their suborder by its complete order sign and need its description next to it (#952).
+   *
+   * <p>The complete order sign is derived rather than stored, so it cannot be queried; the orders
+   * are matched over one query instead of one query per row.
+   */
+  public List<Suborder> getSubordersByCustomerorderSigns(Collection<String> customerorderSigns) {
+    if (customerorderSigns.isEmpty()) {
+      return List.of();
+    }
+    var signs = Set.copyOf(customerorderSigns);
+    return suborderDAO.getSuborders(false).stream()
+        .filter(suborder -> suborder.getCustomerorder() != null
+            && signs.contains(suborder.getCustomerorder().getSign()))
+        .toList();
+  }
+
   public List<Suborder> getAllVisibleSuborders() {
     return suborderDAO.getSuborders(false).stream()
         .filter(not(Suborder::isHide))

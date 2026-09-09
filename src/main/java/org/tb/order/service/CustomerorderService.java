@@ -196,8 +196,14 @@ public class CustomerorderService {
    * select boxes, so hidden orders and hidden employees are left out. A responsibility on a hidden
    * order has expired with it, which is also how budget access is decided.
    */
-  public List<Employee> getVisibleResponsibleEmployees() {
-    return customerorderRepository.findAllVisibleResponsibleHbt();
+  /**
+   * The employees offered by a "responsible" filter: everyone responsible for at least one visible
+   * order, narrowed to one customer segment when {@code customerSegmentId} is given (#952).
+   */
+  public List<Employee> getVisibleResponsibleEmployees(Long customerSegmentId) {
+    return customerSegmentId == null
+        ? customerorderRepository.findAllVisibleResponsibleHbt()
+        : customerorderRepository.findVisibleResponsibleHbtByCustomerSegmentId(customerSegmentId);
   }
 
   public List<Customerorder> getVisibleCustomerorders() {
