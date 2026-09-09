@@ -17,10 +17,15 @@
           <label class="form-label" th:text="#{main.controlling.filter.customerorder}">Auftrag</label>
           <select class="form-select tomselect" th:field="*{customerorderSign}">
             <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag wählen ---</option>
-            <!-- Second line in the dropdown, rendered by salat.js from data-subtext -->
+            <!--
+              Second line in the dropdown, rendered by salat.js from data-subtext. Same shape as the
+              line above it: short name, separator, full name. salat.js searches the subtext too, so
+              the customer becomes findable in this select.
+            -->
             <option th:each="co : ${customerorders}"
                     th:value="${co.sign}"
-                    th:attr="data-subtext=${co.customer?.name}"
+                    th:attr="data-subtext=${co.customer == null ? null
+                                            : co.customer.shortname + ' - ' + co.customer.name}"
                     th:text="|${co.sign} - ${co.shortdescription}|"></option>
           </select>
         </div>
