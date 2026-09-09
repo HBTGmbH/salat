@@ -5,8 +5,8 @@
       th:with="
         section='budget',
         subSection='employee-cost',
-        title=#{main.employeecost.assignment.form.title.edit},
-        pageTitle=#{main.employeecost.assignment.form.title.edit},
+        title=${isEdit} ? #{main.employeecost.assignment.form.title.edit} : #{main.employeecost.assignment.form.title.create},
+        pageTitle=${isEdit} ? #{main.employeecost.assignment.form.title.edit} : #{main.employeecost.assignment.form.title.create},
         sectionTitle=#{main.general.mainmenu.budget.text}
 ">
 <main layout:fragment="content">
@@ -15,9 +15,12 @@
     <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
   </div>
 
-  <salat:form th:action="@{/budget/employee-cost/assignments/{id}/store(id=${assignmentForm.id})}"
+  <salat:form th:action="@{/budget/employee-cost/assignments/store}"
               th:object="${assignmentForm}" th:id-property="*{id}">
     <salat:inputs>
+      <!-- Preselected with the category the form was opened from, but still a select: retargeting an
+           assignment to another category has to stay possible, otherwise the hint of BU-0014 —
+           retarget the assignments before deleting a rate — would lead nowhere. -->
       <salat:select th:field="*{employeeCostName}" th:label="#{main.employeecost.field.name}" required="true">
         <option value="" th:text="#{main.employeecost.assignment.select.category}">--- Kostenkategorie ---</option>
         <option th:each="name : ${costNames}" th:value="${name}" th:text="${name}"></option>
@@ -42,12 +45,14 @@
           <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.employeecost.field.validFrom}" required="true" />
         </div>
         <div class="col-md-6">
-          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.employeecost.field.validUntil}" />
+          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.employeecost.field.validUntil}"
+                           th:helpText="#{main.employeecost.validuntil.hint}" />
         </div>
       </div>
     </salat:inputs>
     <salat:buttons>
-      <salat:formButtons th:saveLabel="#{main.button.label.edit.text}" th:cancelHref="@{/budget/employee-cost}" />
+      <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}"
+                         th:cancelHref="@{/budget/employee-cost/category(name=${assignmentForm.employeeCostName})}" />
     </salat:buttons>
   </salat:form>
 

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='employee-cost',
+        title=${categoryName},
+        pageTitle=${categoryName},
+        sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <!-- The name is the category: renaming carries every rate period and every assignment along, so it
+       belongs here and not to a single rate period (#922, #954). -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="post" th:action="@{/budget/employee-cost/category/rename}" class="row g-2 align-items-end">
+        <input type="hidden" name="name" th:value="${categoryName}"/>
+        <div class="col-md-6">
+          <label class="form-label required" th:text="#{main.employeecost.field.name}">Name</label>
+          <input type="text" class="form-control" name="newName" th:value="${categoryName}" maxlength="255" required/>
+          <small class="form-hint" th:text="#{main.employeecost.rename.hint}">
+            Die Umbenennung gilt für alle Kostensätze und Zuordnungen der Kategorie.
+          </small>
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-pencil"></i>
+            <span th:text="#{main.employeecost.button.rename}">Umbenennen</span>
+          </button>
+        </div>
+        <div class="col-auto">
+          <a class="btn btn-link" th:href="@{/budget/employee-cost}" th:text="#{main.general.button.back.text}">Zurück</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Rate periods -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.employeecost.category.rates.title}">Kostensätze</h3>
+      <div class="card-actions">
+        <a class="btn btn-success btn-sm"
+           th:href="@{/budget/employee-cost/rates/create(name=${categoryName})}">
+          <i class="icon ti ti-plus"></i>
+          <span th:text="#{main.employeecost.button.createRate}">Neuer Kostensatz</span>
+        </a>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.employeecost.field.costEuro}">€/h</th>
+            <th th:text="#{main.employeecost.field.valid}">Gültig</th>
+            <th class="w-1"></th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(rates)}">
+            <td colspan="4" class="text-center text-muted py-4" th:text="#{main.employeecost.rates.empty}">
+              Kein Kostensatz vorhanden
+            </td>
+          </tr>
+          <tr th:each="rate : ${rates}">
+            <td th:text="#{main.budget.format.amount(${rate.costCentsPerHour / 100.0})}"></td>
+            <!-- The stored 2999-12-31 means "no end", not a date anybody wants to read. -->
+            <td class="small text-muted">
+              <span th:text="${#temporals.format(rate.validFrom, 'dd.MM.yyyy')}"></span>
+              –
+              <span th:if="${rate.validUntil.year != 2999}"
+                    th:text="${#temporals.format(rate.validUntil, 'dd.MM.yyyy')}"></span>
+              <span th:unless="${rate.validUntil.year != 2999}" th:text="#{main.employeecost.validity.open}">offen</span>
+            </td>
+            <td>
+              <a class="btn btn-outline-primary btn-sm"
+                 th:href="@{/budget/employee-cost/rates/{id}/edit(id=${rate.id})}">
+                <i class="icon ti ti-pencil m-0"></i>
+              </a>
+            </td>
+            <td>
+              <form th:action="@{/budget/employee-cost/rates/{id}/delete(id=${rate.id})}" method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Assignments -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.employeecost.category.assignments.title}">Zuordnungen</h3>
+      <div class="card-actions">
+        <a class="btn btn-success btn-sm"
+           th:href="@{/budget/employee-cost/assignments/create(name=${categoryName})}">
+          <i class="icon ti ti-plus"></i>
+          <span th:text="#{main.employeecost.button.createAssignment}">Neue Zuordnung</span>
+        </a>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.employeecost.assignment.field.employeeSign}">Mitarbeiter</th>
+            <th th:text="#{main.employeecost.assignment.field.suborderSign}">Unterauftrag</th>
+            <th th:text="#{main.employeecost.field.valid}">Gültig</th>
+            <th class="w-1"></th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(assignments)}">
+            <td colspan="5" class="text-center text-muted py-4" th:text="#{main.employeecost.assignments.empty}">
+              Keine Zuordnung vorhanden
+            </td>
+          </tr>
+          <tr th:each="a : ${assignments}">
+            <td th:text="${a.employeeSign}"></td>
+            <td th:text="${a.suborderSign} ?: '—'"></td>
+            <td class="small text-muted">
+              <span th:text="${#temporals.format(a.validFrom, 'dd.MM.yyyy')}"></span>
+              –
+              <span th:if="${a.validUntil.year != 2999}"
+                    th:text="${#temporals.format(a.validUntil, 'dd.MM.yyyy')}"></span>
+              <span th:unless="${a.validUntil.year != 2999}" th:text="#{main.employeecost.validity.open}">offen</span>
+            </td>
+            <td>
+              <a class="btn btn-outline-primary btn-sm"
+                 th:href="@{/budget/employee-cost/assignments/{id}/edit(id=${a.id})}">
+                <i class="icon ti ti-pencil m-0"></i>
+              </a>
+            </td>
+            <td>
+              <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</html>
