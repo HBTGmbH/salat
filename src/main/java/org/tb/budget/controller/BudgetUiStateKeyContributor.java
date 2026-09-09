@@ -33,6 +33,12 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey BUDGET_SHOW_INACTIVE = new UiStateKey("budgetList.ShowInactive");
     public static final UiStateKey PRICING_SHOW_INACTIVE = new UiStateKey("pricingList.ShowInactive");
 
+    /**
+     * Whether the rate list also shows the rates of orders whose validity has expired (#957) — a
+     * switch of its own, because it is about the order's validity and not the rate's.
+     */
+    public static final UiStateKey PRICING_SHOW_EXPIRED_ORDERS = new UiStateKey("pricingList.ShowExpiredOrders");
+
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
         var map = new HashMap<String, UiStateKey>();
@@ -41,6 +47,7 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
         map.put("coSign", CUSTOMER_ORDER_SIGN);
         map.put("budgetShowInactive", BUDGET_SHOW_INACTIVE);
         map.put("pricingShowInactive", PRICING_SHOW_INACTIVE);
+        map.put("pricingShowExpiredOrders", PRICING_SHOW_EXPIRED_ORDERS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 

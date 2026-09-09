@@ -7,7 +7,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
-import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.service.OrderPricingService;
 import org.tb.budget.viewhelper.OrderPricingFilterOption;
@@ -51,30 +49,29 @@ public class OrderPricingController {
     private final MessageSourceAccessor messages;
 
     /**
-     * The parameter is {@code pricingShowInactive} rather than {@code showInactive} because the
-     * UiState mapping is global: the plan list has a switch of the same name that means something
-     * else, and both would otherwise share one remembered value (#952).
+     * The parameters are prefixed rather than plain {@code showInactive} / {@code showExpiredOrders}
+     * because the UiState mapping is global: the plan list has a switch of the same name that means
+     * something else, and both would otherwise share one remembered value (#952).
+     *
+     * <p>The two switches are independent (#957): one is about the validity of the rate, the other
+     * about the validity of its order. A rate can have expired while its order runs on, and a
+     * current rate can hang off an order that ended last year.
      */
     @GetMapping
     public String list(@RequestParam(required = false) String coSign,
                        @RequestParam(required = false) Boolean pricingShowInactive,
+                       @RequestParam(required = false) Boolean pricingShowExpiredOrders,
                        Model model) {
         var inactive = Boolean.TRUE.equals(pricingShowInactive);
-        var pricings = orderPricingService.getFiltered(coSign, inactive);
-        model.addAttribute("pricings", pricings);
+        var expiredOrders = Boolean.TRUE.equals(pricingShowExpiredOrders);
+        // The rows name their order by sign; description, customer and validity hang off the order.
+        model.addAttribute("rows", orderPricingService.getRows(coSign, inactive, expiredOrders));
         model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("coSign", coSign);
         model.addAttribute("showInactive", inactive);
+        model.addAttribute("showExpiredOrders", expiredOrders);
         model.addAttribute("isManager", authorizedUser.isManager());
-        // The rows name their order by sign; description and customer hang off the order (#952).
-        model.addAttribute("orders", ordersOf(pricings));
         return "budget/pricing-list";
-    }
-
-    private Map<String, Customerorder> ordersOf(List<OrderPricing> pricings) {
-        var signs = pricings.stream().map(OrderPricing::getCustomerorderSign).distinct().toList();
-        return customerorderService.getCustomerordersBySigns(signs).stream()
-            .collect(toMap(Customerorder::getSign, identity(), (a, b) -> a));
     }
 
     @Authorized(requiresManager = true)

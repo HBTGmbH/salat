@@ -44,6 +44,14 @@
               <span class="form-check-label" th:text="#{main.pricing.filter.showinactive}">Inaktive anzeigen</span>
             </label>
           </div>
+          <div class="col-auto ms-2">
+            <!-- The rate's own validity and its order's are two different things (#957). -->
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="pricingShowExpiredOrders" value="true" th:checked="${showExpiredOrders}"/>
+              <input type="hidden" name="pricingShowExpiredOrders" value="false"/>
+              <span class="form-check-label" th:text="#{main.pricing.filter.showexpiredorders}">Sätze abgelaufener Aufträge anzeigen</span>
+            </label>
+          </div>
         </div>
       </form>
     </div>
@@ -64,11 +72,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:if="${#lists.isEmpty(pricings)}">
+        <tr th:if="${#lists.isEmpty(rows)}">
           <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
-        <tr th:each="p : ${pricings}" th:classappend="${!p.currentlyValid} ? 'table-danger' : ''"
-            th:with="order=${orders.get(p.customerorderSign)}">
+        <tr th:each="row : ${rows}" th:classappend="${!row.pricing().currentlyValid} ? 'table-danger' : ''"
+            th:with="p=${row.pricing()}, order=${row.customerorder()}, deviation=${row.deviation()}">
           <td>
             <div>
               <span th:text="${p.customerorderSign}"></span>
@@ -86,6 +94,20 @@
             –
             <span th:if="${p.validUntil.year != 2999}" th:text="${#temporals.format(p.validUntil, 'dd.MM.yyyy')}"></span>
             <span th:unless="${p.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
+            <!--/* The row colour already says "expired" (#949), so a deviation from the order's
+                   validity needs a mark of its own — one badge per deviation, named in its title. */-->
+            <span th:if="${deviation.startsBeforeOrder()}" class="badge bg-warning-lt ms-1"
+                  th:title="#{main.pricing.deviation.startsbeforeorder}">
+              <i class="icon ti ti-alert-triangle m-0"></i>
+            </span>
+            <span th:if="${deviation.endsAfterOrder()}" class="badge bg-warning-lt ms-1"
+                  th:title="#{main.pricing.deviation.endsafterorder}">
+              <i class="icon ti ti-alert-triangle m-0"></i>
+            </span>
+            <span th:if="${deviation.uncoveredOrderPeriod()}" class="badge bg-warning-lt ms-1"
+                  th:title="#{main.pricing.deviation.uncovered}">
+              <i class="icon ti ti-calendar-off m-0"></i>
+            </span>
           </td>
           <td th:if="${isManager}">
             <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/pricing/{id}/edit(id=${p.id})}">

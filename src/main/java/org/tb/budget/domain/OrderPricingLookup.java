@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.tb.common.LocalDateRange;
 import org.tb.common.util.SqlLikePattern;
 
 /**
@@ -80,6 +81,51 @@ public final class OrderPricingLookup {
         return covering(customerorderSign, suborderSign, employeeSign).stream()
             .filter(p -> !p.getValidFrom().isAfter(date) && !p.getValidUntil().isBefore(date))
             .findFirst();
+    }
+
+    /**
+     * Whether the given period is not covered end to end by the order-wide rates of that customer
+     * order (#957) — the rates without a suborder pattern and without an employee, the ones that
+     * apply to the order as a whole.
+     *
+     * <p>An order without rates of that kind makes no claim to cover its period, so it reports no
+     * gap: the order may well be priced per suborder or per person, and calling that a gap would
+     * report one for every order that is. An open order end has to be met by an open rate end,
+     * otherwise the order runs on beyond its last rate — which is a gap like any other.
+     */
+    public boolean hasUncoveredPeriod(String customerorderSign, LocalDate from, LocalDate until) {
+        if (from == null) {
+            return false;
+        }
+        var end = until != null ? until : LocalDateRange.FINIT_UNTIL_BOUNDARY;
+        var orderWide = byCustomerorderSign.getOrDefault(customerorderSign, List.of()).stream()
+            .map(Candidate::pricing)
+            .filter(OrderPricingLookup::isOrderWide)
+            .sorted(Comparator.comparing(OrderPricing::getValidFrom))
+            .toList();
+        if (orderWide.isEmpty()) {
+            return false;
+        }
+        // The first day not covered yet; the rates are walked in order, so a rate starting after it
+        // leaves a gap behind, and one ending later moves it on.
+        var uncovered = from;
+        for (var pricing : orderWide) {
+            if (pricing.getValidFrom().isAfter(uncovered)) {
+                return true;
+            }
+            if (!pricing.getValidUntil().isBefore(uncovered)) {
+                uncovered = pricing.getValidUntil().plusDays(1);
+            }
+        }
+        return !uncovered.isAfter(end);
+    }
+
+    private static boolean isOrderWide(OrderPricing pricing) {
+        return isBlank(pricing.getSuborderSign()) && isBlank(pricing.getEmployeeSign());
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     /**

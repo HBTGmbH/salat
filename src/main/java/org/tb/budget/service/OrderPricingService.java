@@ -1,21 +1,28 @@
 package org.tb.budget.service;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
+import org.tb.budget.domain.OrderPricingDeviation;
 import org.tb.budget.domain.OrderPricingLookup;
+import org.tb.budget.domain.OrderPricingRow;
 import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.order.domain.Customerorder;
+import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
 @Service
@@ -26,6 +33,7 @@ public class OrderPricingService {
 
     private final OrderPricingRepository orderPricingRepository;
     private final SuborderService suborderService;
+    private final CustomerorderService customerorderService;
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
@@ -33,15 +41,47 @@ public class OrderPricingService {
     }
 
     /**
-     * The pricings of the list view (#949), optionally narrowed to one customer order and, unless
-     * asked otherwise, to those that have not expired — see
-     * {@link OrderPricing#getCurrentlyValid()} for what counts as expired.
+     * The rows of the list view (#949, #957), optionally narrowed to one customer order. Two filters
+     * apply independently (→ AGENTS.md, "List View Filter Toggles"): unless asked otherwise, rates
+     * that have expired themselves are left out — see {@link OrderPricing#getCurrentlyValid()} —
+     * and so are the rates of orders whose own validity has expired.
+     *
+     * <p>Every row carries how its validity disagrees with the order's (→
+     * {@link OrderPricingDeviation}). The disagreement is judged against <em>all</em> stored rates of
+     * the order, not against the filtered ones: a hidden expired rate still covers the period it
+     * covered, and judging coverage by what the list happens to show would invent gaps.
      */
     @Transactional(readOnly = true)
-    public List<OrderPricing> getFiltered(String customerorderSign, boolean showInactive) {
+    public List<OrderPricingRow> getRows(String customerorderSign, boolean showInactive,
+                                         boolean showExpiredOrders) {
         var sign = trimToNull(customerorderSign);
         var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
-        return showInactive ? pricings : pricings.stream().filter(OrderPricing::getCurrentlyValid).toList();
+        var ordersBySign = ordersOf(pricings);
+        var coverage = OrderPricingLookup.of(pricings);
+        return pricings.stream()
+            .filter(pricing -> showInactive || pricing.getCurrentlyValid())
+            .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage))
+            .filter(row -> showExpiredOrders || orderStillValid(row))
+            .toList();
+    }
+
+    private static OrderPricingRow row(OrderPricing pricing, Customerorder order,
+                                       OrderPricingLookup coverage) {
+        return new OrderPricingRow(pricing, order, OrderPricingDeviation.of(pricing, order, coverage));
+    }
+
+    private Map<String, Customerorder> ordersOf(List<OrderPricing> pricings) {
+        var signs = pricings.stream().map(OrderPricing::getCustomerorderSign).distinct().toList();
+        return customerorderService.getCustomerordersBySigns(signs).stream()
+            .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
+    }
+
+    /**
+     * A rate whose order no longer exists stays visible: the order is the only way into the rate, so
+     * hiding it would put the rate out of reach of the user interface for good.
+     */
+    private static boolean orderStillValid(OrderPricingRow row) {
+        return row.customerorder() == null || row.customerorder().getCurrentlyValid();
     }
 
     /** The customer orders that have at least one pricing — the filter options of the list view. */
