@@ -41,7 +41,7 @@ public record OrderPricingDeviation(
         return new OrderPricingDeviation(
             startsBefore(pricing.getValidFrom(), order.getFromDate()),
             endsAfter(pricing.getValidUntil(), order.getUntilDate()),
-            isOrderWide(pricing)
+            pricing.isOrderWide()
                 && coverage.hasUncoveredPeriod(pricing.getCustomerorderSign(),
                     order.getFromDate(), order.getUntilDate()));
     }
@@ -50,21 +50,12 @@ public record OrderPricingDeviation(
         return startsBeforeOrder || endsAfterOrder || uncoveredOrderPeriod;
     }
 
-    /** Only an order-wide rate claims to cover the order period — see {@link #uncoveredOrderPeriod}. */
-    private static boolean isOrderWide(OrderPricing pricing) {
-        return isBlank(pricing.getSuborderSign()) && isBlank(pricing.getEmployeeSign());
-    }
-
     private static boolean startsBefore(LocalDate validFrom, LocalDate orderFrom) {
         return orderFrom != null && validFrom.isBefore(orderFrom);
     }
 
     private static boolean endsAfter(LocalDate validUntil, LocalDate orderUntil) {
         return orderUntil != null && validUntil.isAfter(orderUntil);
-    }
-
-    private static boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 
 }
