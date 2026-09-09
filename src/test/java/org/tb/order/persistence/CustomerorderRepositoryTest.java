@@ -18,7 +18,9 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizedUserAuditorAware;
 import org.tb.common.GlobalConstants;
 import org.tb.customer.domain.Customer;
+import org.tb.customer.domain.CustomerSegment;
 import org.tb.customer.persistence.CustomerRepository;
+import org.tb.customer.persistence.CustomerSegmentRepository;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.order.domain.Customerorder;
@@ -40,6 +42,9 @@ public class CustomerorderRepositoryTest {
 
   @Autowired
   private CustomerRepository customerRepository;
+
+  @Autowired
+  private CustomerSegmentRepository customerSegmentRepository;
 
   @Autowired
   private EmployeeRepository employeeRepository;
@@ -110,10 +115,72 @@ public class CustomerorderRepositoryTest {
     assertThat(signsOfVisibleResponsibles()).containsExactly("aaa", "mmm", "zzz");
   }
 
+  // --- narrowed to one customer segment (#952) --------------------------------------------------
+
+  /**
+   * With a segment chosen, the filter offers only the responsibles of that segment's orders —
+   * otherwise the two dashboard filters can be combined into a selection no order can match.
+   */
+  @Test
+  public void offers_only_the_responsibles_of_the_chosen_segment() {
+    var segment = segment("Segment A");
+    var otherSegment = segment("Segment B");
+    order("co-a", false, customerIn(segment), employee("aaa"));
+    order("co-b", false, customerIn(otherSegment), employee("bbb"));
+
+    assertThat(signsOfResponsiblesInSegment(segment.getId())).containsExactly("aaa");
+  }
+
+  @Test
+  public void leaves_out_a_responsible_whose_only_order_in_the_segment_is_hidden() {
+    var segment = segment("Segment C");
+    order("co-hidden", true, customerIn(segment), employee("ccc"));
+
+    assertThat(signsOfResponsiblesInSegment(segment.getId())).isEmpty();
+  }
+
+  @Test
+  public void names_a_responsible_of_several_orders_in_the_segment_only_once() {
+    var segment = segment("Segment D");
+    var customer = customerIn(segment);
+    var employee = employee("ddd");
+    order("co-one", false, customer, employee);
+    order("co-two", false, customer, employee);
+
+    assertThat(signsOfResponsiblesInSegment(segment.getId())).containsExactly("ddd");
+  }
+
+  /** A customer without a segment belongs to no segment — not to every one of them. */
+  @Test
+  public void leaves_out_a_responsible_whose_customer_has_no_segment() {
+    var segment = segment("Segment E");
+    order("co-without-segment", false, customer, employee("eee"));
+
+    assertThat(signsOfResponsiblesInSegment(segment.getId())).isEmpty();
+  }
+
   private List<String> signsOfVisibleResponsibles() {
     return customerorderRepository.findAllVisibleResponsibleHbt().stream()
         .map(Employee::getSign)
         .toList();
+  }
+
+  private List<String> signsOfResponsiblesInSegment(long segmentId) {
+    return customerorderRepository.findVisibleResponsibleHbtByCustomerSegmentId(segmentId).stream()
+        .map(Employee::getSign)
+        .toList();
+  }
+
+  private CustomerSegment segment(String name) {
+    var created = new CustomerSegment();
+    created.setName(name);
+    return customerSegmentRepository.save(created);
+  }
+
+  private Customer customerIn(CustomerSegment segment) {
+    var created = customer();
+    created.setSegment(segment);
+    return customerRepository.save(created);
   }
 
   private Customer customer() {
@@ -140,8 +207,12 @@ public class CustomerorderRepositoryTest {
   }
 
   private void order(String sign, boolean hidden, Employee... responsibles) {
+    order(sign, hidden, customer, responsibles);
+  }
+
+  private void order(String sign, boolean hidden, Customer orderCustomer, Employee... responsibles) {
     var order = new Customerorder();
-    order.setCustomer(customer);
+    order.setCustomer(orderCustomer);
     order.setSign(sign);
     order.setDescription(sign);
     order.setFromDate(LocalDate.of(2026, 1, 1));

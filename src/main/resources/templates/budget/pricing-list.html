@@ -15,7 +15,10 @@
       <form method="get" th:action="@{/budget/pricing}" data-filter-form="pricing">
         <div class="row g-2 align-items-end">
           <div class="col-md-6">
-            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}">
+            <label class="form-label" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
+            <!-- No submit button: the select filters on change (#952). -->
+            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}"
+                    onchange="form.requestSubmit()">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="option : ${customerorderOptions}"
                       th:value="${option.sign}"
@@ -23,11 +26,6 @@
                       th:text="${option.label}"
                       th:selected="${coSign != null and coSign == option.sign}"></option>
             </select>
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-primary" type="submit">
-              <i class="icon ti ti-filter m-0"></i>
-            </button>
           </div>
           <div class="col-auto ms-auto" th:if="${isManager}">
             <a class="btn btn-success" th:href="@{/budget/pricing/create}">
@@ -39,8 +37,10 @@
         <div class="row g-2 align-items-end mt-2">
           <div class="col-auto ms-2">
             <label class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="showInactive" value="true" th:checked="${showInactive}"/>
-              <input type="hidden" name="showInactive" value="false"/>
+              <!-- Prefixed: the plan list has a switch of the same meaning but a different subject,
+                   and the UiState parameter mapping is global (#952). -->
+              <input class="form-check-input" type="checkbox" name="pricingShowInactive" value="true" th:checked="${showInactive}"/>
+              <input type="hidden" name="pricingShowInactive" value="false"/>
               <span class="form-check-label" th:text="#{main.pricing.filter.showinactive}">Inaktive anzeigen</span>
             </label>
           </div>
@@ -68,8 +68,15 @@
         <tr th:if="${#lists.isEmpty(pricings)}">
           <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
-        <tr th:each="p : ${pricings}" th:classappend="${!p.currentlyValid} ? 'table-danger' : ''">
-          <td th:text="${p.customerorderSign}"></td>
+        <tr th:each="p : ${pricings}" th:classappend="${!p.currentlyValid} ? 'table-danger' : ''"
+            th:with="order=${orders.get(p.customerorderSign)}">
+          <td>
+            <div>
+              <span th:text="${p.customerorderSign}"></span>
+              <span class="ms-1 small" th:text="${order?.shortdescription}"></span>
+            </div>
+            <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
+          </td>
           <td th:text="${p.suborderSign} ?: '-'"></td>
           <td th:text="${p.employeeSign} ?: '-'"></td>
           <td th:text="${p.description} ?: '-'"></td>

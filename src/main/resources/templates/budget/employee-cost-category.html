@@ -79,13 +79,13 @@
           </tr>
           <tr th:each="rate : ${rates}">
             <td th:text="#{main.budget.format.amount(${rate.costCentsPerHour / 100.0})}"></td>
-            <!-- The stored 2999-12-31 means "no end", not a date anybody wants to read. -->
+            <!--/* The stored 2999-12-31 means "no end", not a date anybody wants to read. */-->
             <td class="small text-muted">
               <span th:text="${#temporals.format(rate.validFrom, 'dd.MM.yyyy')}"></span>
               –
               <span th:if="${rate.validUntil.year != 2999}"
                     th:text="${#temporals.format(rate.validUntil, 'dd.MM.yyyy')}"></span>
-              <span th:unless="${rate.validUntil.year != 2999}" th:text="#{main.employeecost.validity.open}">offen</span>
+              <span th:unless="${rate.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
             </td>
             <td>
               <a class="btn btn-outline-primary btn-sm"
@@ -144,7 +144,7 @@
               –
               <span th:if="${a.validUntil.year != 2999}"
                     th:text="${#temporals.format(a.validUntil, 'dd.MM.yyyy')}"></span>
-              <span th:unless="${a.validUntil.year != 2999}" th:text="#{main.employeecost.validity.open}">offen</span>
+              <span th:unless="${a.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
             </td>
             <td>
               <a class="btn btn-outline-primary btn-sm"

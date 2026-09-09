@@ -33,6 +33,18 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
   @Query("select distinct e from Customerorder c join c.responsibleHbt e where c.hide != true and e.hide != true order by e.sign")
   List<Employee> findAllVisibleResponsibleHbt();
 
+  /**
+   * Same, but restricted to the orders of one customer segment — the choices of the "responsible"
+   * filter once a segment is chosen (#952). Without the restriction the two filters can be combined
+   * into a selection that no order can match.
+   */
+  @Query("""
+      select distinct e from Customerorder c join c.responsibleHbt e
+      where c.hide != true and e.hide != true and c.customer.segment.id = :segmentId
+      order by e.sign
+      """)
+  List<Employee> findVisibleResponsibleHbtByCustomerSegmentId(long segmentId);
+
   List<Customerorder> findAllByCustomerId(long customerId);
 
   Optional<Customerorder> findBySign(String sign);

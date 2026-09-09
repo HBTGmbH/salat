@@ -9,14 +9,15 @@
 ">
 <main layout:fragment="content">
 
-  <!-- Filter form. Both selects always submit their parameter; the empty option clears the
-       remembered choice instead of leaving the previous one in place. -->
+  <!-- Filter form without a submit button: every select filters on change (#952). Both selects
+       always submit their parameter; the empty option clears the remembered choice instead of
+       leaving the previous one in place. -->
   <div class="card mb-4">
     <div class="card-body">
       <form method="get" th:action="@{/budget/dashboard}" th:object="${filter}" class="row g-2 align-items-end">
         <div class="col-md-4">
           <label class="form-label" th:text="#{main.budget.dashboard.filter.segment}">Kundensegment</label>
-          <select class="form-select tomselect" th:field="*{budgetSegmentId}">
+          <select class="form-select tomselect" th:field="*{budgetSegmentId}" onchange="form.requestSubmit()">
             <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
             <option th:each="segment : ${segments}"
                     th:value="${segment.id}"
@@ -25,18 +26,12 @@
         </div>
         <div class="col-md-4" th:if="${showResponsibleFilter}">
           <label class="form-label" th:text="#{main.budget.dashboard.filter.responsible}">Auftragsverantwortlicher</label>
-          <select class="form-select tomselect" th:field="*{budgetResponsibleId}">
+          <select class="form-select tomselect" th:field="*{budgetResponsibleId}" onchange="form.requestSubmit()">
             <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
             <option th:each="employee : ${responsibles}"
                     th:value="${employee.id}"
                     th:text="|${employee.sign} - ${employee.name}|"></option>
           </select>
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn btn-primary">
-            <i class="icon ti ti-filter"></i>
-            <span th:text="#{main.budget.dashboard.button.filter}">Filtern</span>
-          </button>
         </div>
       </form>
     </div>
@@ -48,31 +43,36 @@
         <tr>
           <th th:text="#{main.budget.dashboard.col.order}">Auftrag</th>
           <th th:text="#{main.budget.dashboard.col.budget}">Budgetplan</th>
-          <th th:text="#{main.budget.dashboard.col.valid}">Gültigkeitszeitraum</th>
+          <th th:text="#{main.budget.dashboard.col.valid}">Gültig</th>
           <th class="text-end" th:text="#{main.budget.dashboard.col.budgetEuro}">Budget (€)</th>
           <th class="text-end" th:text="#{main.budget.dashboard.col.coveredRevenue}">Ist-Erlös (€)</th>
           <th th:text="#{main.budget.dashboard.col.utilization}">Auslastung</th>
-          <th class="text-end" th:text="#{main.budget.dashboard.col.threshold}">Schwellenwert</th>
           <th class="text-center" th:text="#{main.budget.dashboard.col.status}">Status</th>
           <th th:text="#{main.budget.dashboard.col.action}">Aktion</th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(rows)}">
-          <td colspan="9" class="text-center text-muted py-3" th:text="#{main.budget.dashboard.empty}">Keine aktiven Budgetpläne vorhanden.</td>
+          <td colspan="8" class="text-center text-muted py-3" th:text="#{main.budget.dashboard.empty}">Keine aktiven Budgetpläne vorhanden.</td>
         </tr>
-        <tr th:each="row : ${rows}">
+        <tr th:each="row : ${rows}" th:with="customerorder=${customerorders.get(row.customerorderSign())}">
           <td>
-            <span class="text-muted small" th:text="${row.customerorderSign()}"></span>
-            <span class="ms-1 small" th:text="${row.customerorderName()}"></span>
+            <div>
+              <span class="text-muted small" th:text="${row.customerorderSign()}"></span>
+              <span class="ms-1 small" th:text="${row.customerorderName()}"></span>
+            </div>
+            <!--/* The customer belongs to the order, not to the plan — taken from the order of the row. */-->
+            <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(customerorder)}"></div>
           </td>
           <td>
             <a th:href="@{/budget/{id}(id=${row.budgetId()})}" th:text="${row.budgetName()}"></a>
           </td>
+          <!--/* Same as in the plan list: 31.12.2999 means "no end", not a date to read. */-->
           <td class="small text-muted">
             <span th:text="${#temporals.format(row.validFrom(), 'dd.MM.yyyy')}"></span>
             –
-            <span th:text="${#temporals.format(row.validUntil(), 'dd.MM.yyyy')}"></span>
+            <span th:if="${row.validUntil().year != 2999}" th:text="${#temporals.format(row.validUntil(), 'dd.MM.yyyy')}"></span>
+            <span th:unless="${row.validUntil().year != 2999}" th:text="#{main.general.validity.open}">offen</span>
           </td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
           <td class="text-end small" th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.coveredRevenueEuro()})} : '—'"></td>
@@ -93,7 +93,6 @@
             </div>
             <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
           </td>
-          <td class="text-end small" th:text="${row.hasAlertThreshold()} ? (${row.alertThresholdPercent()} + ' %') : '—'"></td>
           <td class="text-center">
             <!-- text-white is needed: on the solid red the inherited text colour is unreadable. -->
             <span th:if="${row.isOverBudget()}" class="badge bg-danger text-white" th:text="#{main.budget.dashboard.status.overbudget}">Überbucht</span>
