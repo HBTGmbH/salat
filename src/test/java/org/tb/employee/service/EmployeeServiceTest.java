@@ -2,8 +2,10 @@ package org.tb.employee.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.tb.testutils.EmployeeTestUtils.BOSS_SIGN;
 import static org.tb.testutils.EmployeeTestUtils.TESTY_SIGN;
 
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -114,5 +116,53 @@ public class EmployeeServiceTest {
 		employeeDAO.deleteEmployeeById(employeeId);
 		assertThat(employeeDAO.getEmployeeById(employeeId)).isNull();
 	}
-	
+
+	/**
+	 * Hiding an employee declutters the select boxes — it must not make a record that already
+	 * references that employee uneditable (#956). So the stored one stays in the list, and only
+	 * that one.
+	 */
+	@Test
+	public void select_leaves_out_hidden_employees() {
+		givenHiddenEmployee(TESTY_SIGN);
+		givenVisibleEmployee(BOSS_SIGN);
+
+		assertThat(signsOfSelectable(null)).contains(BOSS_SIGN).doesNotContain(TESTY_SIGN);
+	}
+
+	@Test
+	public void select_keeps_the_hidden_employee_the_record_still_references() {
+		givenHiddenEmployee(TESTY_SIGN);
+		givenVisibleEmployee(BOSS_SIGN);
+
+		assertThat(signsOfSelectable(TESTY_SIGN)).contains(BOSS_SIGN, TESTY_SIGN);
+	}
+
+	@Test
+	public void select_does_not_keep_a_hidden_employee_the_record_does_not_reference() {
+		givenHiddenEmployee(TESTY_SIGN);
+		givenVisibleEmployee(BOSS_SIGN);
+
+		assertThat(signsOfSelectable(BOSS_SIGN)).contains(BOSS_SIGN).doesNotContain(TESTY_SIGN);
+	}
+
+	/** The flag is set explicitly: {@code notHidden()} compares against TRUE, so NULL is no answer. */
+	private void givenVisibleEmployee(String sign) {
+		Employee employee = EmployeeTestUtils.createEmployee(sign);
+		employee.setHide(false);
+		employeeDAO.createOrUpdate(employee);
+	}
+
+	private void givenHiddenEmployee(String sign) {
+		Employee employee = EmployeeTestUtils.createEmployee(sign);
+		employee.setHide(true);
+		employeeDAO.createOrUpdate(employee);
+	}
+
+	private List<String> signsOfSelectable(String keepSign) {
+		return employeeDAO.getSelectableEmployees(keepSign).stream()
+				.map(Employee::getSign)
+				.toList();
+	}
+
 }

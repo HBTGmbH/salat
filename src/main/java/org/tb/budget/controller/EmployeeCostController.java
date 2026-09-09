@@ -327,7 +327,7 @@ public class EmployeeCostController {
     private void addAssignmentFormModel(Model model, EmployeeCostAssignmentForm form) {
         model.addAttribute("assignmentForm", form);
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
-        model.addAttribute("employees", employeeService.getAllEmployees());
+        model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeSign()));
         model.addAttribute("suborders", suborderService.getAllSelectableSuborders(form.getSuborderSign()));
         model.addAttribute("isEdit", !form.isNew());
     }

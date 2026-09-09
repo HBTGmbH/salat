@@ -206,7 +206,7 @@ public class OrderPricingController {
         model.addAttribute("customerorders",
             customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
         model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
-        model.addAttribute("employees", employeeService.getAllEmployees());
+        model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeSign()));
     }
 
     /**
