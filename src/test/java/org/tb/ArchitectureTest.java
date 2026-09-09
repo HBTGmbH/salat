@@ -86,6 +86,58 @@ public class ArchitectureTest {
           "settings must only import common, auth",
           "org.tb.common.", "org.tb.auth.", "org.tb.settings."));
 
+  /**
+   * budget sits high in the stack: it evaluates orders, suborders and time reports, prices them with
+   * employee data and notifies about overruns. It is therefore allowed to import a lot — what
+   * matters is that nothing imports it back, which is what makes the explicit booking-to-budget
+   * assignment possible in the first place (see {@link #dailyreportShouldNotAccessBudget}).
+   *
+   * <p>Two entries are worth naming:
+   * <ul>
+   *   <li>{@code customer} comes from the dashboard filtering by customer segment.</li>
+   *   <li>{@code reporting} is a single import: {@code BudgetAlertScheduler} reuses
+   *       {@code ScheduledReportJobScheduler.SchedulerMockRequestAttributes} to give its job a
+   *       request scope. That is a scheduling utility, not a dependency on reporting — moving the
+   *       class to {@code common} would remove the edge (#947). Listed here rather than silently
+   *       tolerated.</li>
+   * </ul>
+   */
+  @ArchTest
+  static final ArchRule budgetShouldAccessOnlyItsKnownDependencies = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.budget..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "budget must only import common, auth, customer, dailyreport, employee, notification, order, reporting",
+          "org.tb.common.", "org.tb.auth.", "org.tb.customer.", "org.tb.dailyreport.", "org.tb.employee.",
+          "org.tb.notification.", "org.tb.order.", "org.tb.reporting.", "org.tb.budget."));
+
+  /**
+   * invoice bills what was booked, so it reads orders, suborders, time reports and the customer.
+   * Since #915 it may also pick a budget plan instead of a suborder as the billing boundary, which
+   * adds {@code invoice -> budget}. That edge is free of cycles because budget does not import
+   * invoice — and it reaches budget through a narrow query port that hands out records, not
+   * entities.
+   */
+  @ArchTest
+  static final ArchRule invoiceShouldAccessOnlyItsKnownDependencies = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.invoice..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "invoice must only import common, auth, budget, customer, dailyreport, order",
+          "org.tb.common.", "org.tb.auth.", "org.tb.budget.", "org.tb.customer.", "org.tb.dailyreport.",
+          "org.tb.order.", "org.tb.invoice."));
+
+  /**
+   * The assumption the whole assignment data model rests on (#908): a booking's budget lives in the
+   * budget module, in its own table, referencing the time report only by id. A field on the
+   * {@code Timereport} entity would force {@code dailyreport -> budget}, and since
+   * {@code budget -> dailyreport} already exists that would be a cycle. {@code beFreeOfCycles} would
+   * catch it eventually, but only after the fact and with a message about slices; this says what is
+   * actually meant.
+   */
+  @ArchTest
+  static final ArchRule dailyreportShouldNotAccessBudget = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.dailyreport..")
+      .should().dependOnClassesThat().resideInAPackage("org.tb.budget..");
+
   // settingseditor is an aggregator: it may import from any module.
   // The beFreeOfCycles rule below ensures no other module can accidentally depend back on it.
 
