@@ -1,6 +1,9 @@
 package org.tb.budget.service;
 
 import static java.lang.Boolean.TRUE;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsLast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +16,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.domain.BudgetBookingCounts;
 import org.tb.budget.domain.BulkAssignmentData;
+import org.tb.budget.domain.BulkAssignmentEmployee;
 import org.tb.budget.domain.BulkAssignmentPreview;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
@@ -48,6 +52,31 @@ public class TimereportBudgetBulkAssignmentService {
     private final TimereportService timereportService;
     private final CustomerorderService customerorderService;
     private final AuthorizedUser authorizedUser;
+
+    /**
+     * The people who booked within the current selection (#953), as Kürzel plus name. Derived from
+     * the same bookings the run itself acts on, so the list can never offer a person whose selection
+     * would come up empty. It deliberately does not require the target plan: the selection is built
+     * from the top down, and the plan is picked after the people.
+     */
+    @Authorized(requiresManager = true)
+    @Transactional(readOnly = true)
+    public List<BulkAssignmentEmployee> selectableEmployees(BulkAssignmentData data) {
+        checkManager();
+        if (!data.hasSelectableReports()) {
+            return List.of();
+        }
+        var customerorder = customerorderService.getCustomerorderBySign(data.customerorderSign());
+        if (customerorder == null) {
+            return List.of();
+        }
+        return reportsInScope(customerorder.getId(), data).stream()
+            .map(report -> new BulkAssignmentEmployee(
+                report.getEmployeeId(), report.getEmployeeSign(), report.getEmployeeName()))
+            .distinct()
+            .sorted(comparing(BulkAssignmentEmployee::sign, nullsLast(naturalOrder())))
+            .toList();
+    }
 
     /** What the run would do, without doing it. */
     @Authorized(requiresManager = true)
@@ -114,6 +143,10 @@ public class TimereportBudgetBulkAssignmentService {
     }
 
     private Classified classify(BulkAssignmentData data) {
+        if (data.targetBudgetId() == null) {
+            // The plan is optional only while the selection is being built (#953); a run needs one.
+            throw new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, "");
+        }
         // Also runs the authorization check on the plan's customer order.
         var target = orderBudgetService.getById(data.targetBudgetId());
         if (!TRUE.equals(target.getActive())) {
@@ -147,8 +180,17 @@ public class TimereportBudgetBulkAssignmentService {
         if (customerorder == null) {
             throw new InvalidDataException(ErrorCode.CO_NOT_FOUND, data.customerorderSign());
         }
+        return reportsInScope(customerorder.getId(), data).stream()
+            // Applied after the scope, so the option list of the people (#953) sees everyone who
+            // booked in the scope — narrowing to a person must not remove them from their own list.
+            .filter(report -> data.coversEmployee(report.getEmployeeId()))
+            .toList();
+    }
+
+    /** The bookings of order, suborder and period — everything but the choice of people. */
+    private List<TimereportDTO> reportsInScope(long customerorderId, BulkAssignmentData data) {
         return timereportService
-            .getTimereportsByDatesAndCustomerOrderId(data.from(), data.until(), customerorder.getId())
+            .getTimereportsByDatesAndCustomerOrderId(data.from(), data.until(), customerorderId)
             .stream()
             // The booking already carries its suborder's complete sign, so narrowing to a suborder
             // needs no lookup — and the prefix match includes the levels below it.
