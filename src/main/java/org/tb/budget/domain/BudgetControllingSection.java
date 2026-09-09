@@ -42,6 +42,15 @@ public record BudgetControllingSection(
         return kind != SectionKind.UNPLANNED;
     }
 
+    /**
+     * Whether anything actually went over budget. An empty column of dashes says nothing and costs
+     * width in a table that already has nine of them, so it only appears when it has news.
+     */
+    public boolean hasOverrunData() {
+        return hasBudgetColumn()
+            && (total.hasOverrun() || rows().stream().anyMatch(BudgetControllingRow::hasOverrun));
+    }
+
     public boolean hasSubtotals() {
         return groups.stream().anyMatch(BudgetControllingGroup::hasSubtotal);
     }
