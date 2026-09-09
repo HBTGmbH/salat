@@ -49,17 +49,30 @@
   </div>
 
   <div class="card mb-3" th:each="section : ${result?.sections()}">
+    <!--
+      Four lines: what is being looked at (order, customer) and which budget answers for it (name
+      with its kind, and the plan's own validity). The evaluated window sits in the filter above the
+      card; the period here is the one of the plan, which is usually the longer of the two.
+    -->
     <div class="card-header d-flex align-items-start">
       <div class="me-auto">
-        <h3 class="card-title mb-0" th:text="#{${'main.controlling.section.' + section.kind().name()}}">Auswertung</h3>
+        <h3 class="card-title mb-0"
+            th:text="|${result.customerorderSign()} ${result.customerorderDescription()}|">1612 SST 2025-2028</h3>
+        <div th:if="${result.customerName() != null}"
+             th:text="|${result.customerShortname()} ${result.customerName()}|">Kunde</div>
         <div class="text-muted small">
-          <span th:if="${section.period() != null}"
-                th:text="|${#temporals.format(section.period().getFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.period().getUntil(), 'dd.MM.yyyy')}|"></span>
           <span th:if="${not #lists.isEmpty(section.budgetNames())}"
-                th:text="' · ' + ${#strings.listJoin(section.budgetNames(), ', ')}"></span>
-          <span th:if="${section.kind().name() == 'UNPLANNED'}"
-                th:text="#{main.controlling.section.UNPLANNED.hint}">Diese Buchungen zählen gegen kein Budget.</span>
+                th:text="${#strings.listJoin(section.budgetNames(), ', ')} + ' '"></span>
+          <span th:text="${#lists.isEmpty(section.budgetNames())}
+                         ? #{${'main.controlling.section.' + section.kind().name()}}
+                         : '(' + #{${'main.controlling.section.' + section.kind().name()}} + ')'">Auftragsweites Budget</span>
         </div>
+        <div class="text-muted small" th:if="${section.hasPlanPeriod()}"
+             th:text="|${#temporals.format(section.planFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.planUntil(), 'dd.MM.yyyy')}|">
+          01.01.2026 – 31.12.2999
+        </div>
+        <div class="text-muted small" th:if="${section.kind().name() == 'UNPLANNED'}"
+             th:text="#{main.controlling.section.UNPLANNED.hint}">Diese Buchungen zählen gegen kein Budget.</div>
       </div>
       <!-- Straight into the bulk assignment, order and period already filled in (#913) -->
       <a class="btn btn-outline-primary btn-sm ms-2"

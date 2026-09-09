@@ -112,7 +112,11 @@ public class BudgetControllingService {
             sections.add(withoutBudget);
         }
 
-        return new BudgetControllingResult(customerorderSign, customerorder.getShortdescription(), filter,
+        var customer = customerorder.getCustomer();
+        return new BudgetControllingResult(customerorderSign, customerorder.getShortdescription(),
+            customer == null ? null : customer.getShortname(),
+            customer == null ? null : customer.getName(),
+            filter,
             sections.stream().filter(BudgetControllingSection::hasContent).toList());
     }
 
@@ -270,6 +274,8 @@ public class BudgetControllingService {
             orderWide ? SectionKind.ORDER_LEVEL : SectionKind.SUBORDER_LEVEL,
             period,
             plans.stream().map(p -> p.plan().getName()).toList(),
+            plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder()).orElse(null),
+            plans.stream().map(p -> p.plan().getValidUntil()).max(naturalOrder()).orElse(null),
             groups, total);
     }
 
@@ -296,7 +302,7 @@ public class BudgetControllingService {
             return null;
         }
         var total = aggregate(null, null, rows, null, null, includeCosts);
-        return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(),
+        return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(), null, null,
             List.of(new BudgetControllingGroup(null, null, rows, null)), total);
     }
 

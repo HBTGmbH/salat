@@ -11,6 +11,9 @@ import org.tb.common.LocalDateRange;
 public record BudgetControllingResult(
     String customerorderSign,
     String customerorderDescription,
+    /** Short name and full name of the customer, both raw — the view decides how to show them. */
+    String customerShortname,
+    String customerName,
     LocalDateRange filter,
     List<BudgetControllingSection> sections
 ) {
