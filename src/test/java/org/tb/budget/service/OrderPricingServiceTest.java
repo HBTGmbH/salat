@@ -1,20 +1,30 @@
 package org.tb.budget.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.budget.domain.OrderPricing;
+import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.domain.OrderPricingRow;
 import org.tb.budget.persistence.OrderPricingRepository;
+import org.tb.common.domain.AuditedEntity;
+import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.test.FixedClock;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -35,6 +45,7 @@ public class OrderPricingServiceTest {
 
   private OrderPricingRepository orderPricingRepository;
   private CustomerorderService customerorderService;
+  private EmployeeService employeeService;
   private OrderPricingService service;
 
   @BeforeEach
@@ -43,8 +54,12 @@ public class OrderPricingServiceTest {
     customerorderService = mock(CustomerorderService.class);
     // No orders unless a test says so: a rate whose order is gone behaves as before (#957).
     when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of());
+    // The order and the employee of a written rate exist unless a test says otherwise (#958).
+    when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
+    employeeService = mock(EmployeeService.class);
+    when(employeeService.getEmployeeBySign(any())).thenReturn(new Employee());
     service = new OrderPricingService(orderPricingRepository, mock(SuborderService.class),
-        customerorderService);
+        customerorderService, employeeService);
   }
 
   @Test
@@ -189,6 +204,93 @@ public class OrderPricingServiceTest {
 
     assertThat(rows).singleElement()
         .extracting(row -> row.deviation().uncoveredOrderPeriod()).isEqualTo(false);
+  }
+
+  // --- the signs a rate references (#958) -----------------------------------------------------
+
+  /**
+   * The form protects the employee only as long as the input comes from its select. A rate with a
+   * sign no person carries never matches during controlling: the work silently falls back to the
+   * order-wide rate, which is a wrong number rather than an error.
+   */
+  @Test
+  public void should_reject_a_new_rate_for_an_employee_that_does_not_exist() {
+    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
+
+    assertThatThrownBy(() -> service.save(data("co", null, "ghost")))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+    verify(orderPricingRepository, never()).save(any());
+  }
+
+  @Test
+  public void should_accept_a_new_rate_for_an_employee_that_exists() {
+    service.save(data("co", null, "emp"));
+
+    verify(orderPricingRepository).save(any());
+  }
+
+  /** No employee at all is the normal case: the rate then applies to everyone on the order. */
+  @Test
+  public void should_not_ask_for_an_employee_when_the_rate_names_none() {
+    service.save(data("co", null, null));
+
+    verify(employeeService, never()).getEmployeeBySign(any());
+    verify(orderPricingRepository).save(any());
+  }
+
+  @Test
+  public void should_reject_a_new_rate_for_a_customer_order_that_does_not_exist() {
+    when(customerorderService.getCustomerorderBySign("gone")).thenReturn(null);
+
+    assertThatThrownBy(() -> service.save(data("gone", null, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_CUSTOMERORDER_SIGN_UNKNOWN.getCode());
+    verify(orderPricingRepository, never()).save(any());
+  }
+
+  /**
+   * A rate outlives its order on purpose (#957). Insisting on the order when editing would leave
+   * such a rate only deletable — while editing it is how it gets corrected.
+   */
+  @Test
+  public void should_keep_a_rate_editable_whose_customer_order_no_longer_exists() {
+    var orphan = pricing("gone", TODAY.minusYears(1), OPEN_END);
+    setId(orphan, 5L);
+    when(orderPricingRepository.findById(5L)).thenReturn(Optional.of(orphan));
+    when(customerorderService.getCustomerorderBySign("gone")).thenReturn(null);
+
+    service.update(5L, data("gone", null, null));
+
+    verify(orderPricingRepository).save(orphan);
+  }
+
+  @Test
+  public void should_reject_an_edit_that_moves_a_rate_to_an_unknown_employee() {
+    var edited = pricing("co", TODAY.minusYears(1), OPEN_END);
+    setId(edited, 6L);
+    when(orderPricingRepository.findById(6L)).thenReturn(Optional.of(edited));
+    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
+
+    assertThatThrownBy(() -> service.update(6L, data("co", null, "ghost")))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+    verify(orderPricingRepository, never()).save(any());
+  }
+
+  private static OrderPricingData data(String customerorderSign, String suborderSign, String employeeSign) {
+    return new OrderPricingData(customerorderSign, suborderSign, employeeSign, null, 10000, TODAY, null);
+  }
+
+  /** The id is generated, so there is no setter; a stored record always has one. */
+  private static void setId(OrderPricing pricing, long id) {
+    try {
+      var field = AuditedEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(pricing, id);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("cannot assign an id to the test record", e);
+    }
   }
 
   private void givenOrder(String sign, LocalDate fromDate, LocalDate untilDate) {

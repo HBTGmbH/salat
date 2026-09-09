@@ -122,6 +122,13 @@ public enum ErrorCode {
   BU_TIMEREPORT_OUTSIDE_BUDGET_PERIOD("BU-0016", "the time report date lies outside the validity of the order budget"),
   BU_TIMEREPORT_NOT_IN_BUDGET_SCOPE("BU-0017", "the time report does not lie within the scope of the order budget"),
   BU_EMPLOYEE_COST_NAME_EXISTS("BU-0018", "a cost category of that name already exists"),
+  // #958: budget records reference employees, orders and cost categories by sign rather than by a
+  // foreign key. An unknown sign resolves to nothing at all, and it does so silently, so it is
+  // rejected when written instead of surfacing as a missing cost or an unused rate months later.
+  BU_EMPLOYEE_SIGN_UNKNOWN("BU-0019", "no employee exists with that sign"),
+  BU_SUBORDER_SIGN_UNKNOWN("BU-0020", "no suborder exists with that complete order sign"),
+  BU_CUSTOMERORDER_SIGN_UNKNOWN("BU-0021", "no customer order exists with that sign"),
+  BU_EMPLOYEE_COST_NAME_UNKNOWN("BU-0022", "no cost category exists with that name"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),

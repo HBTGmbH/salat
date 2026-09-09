@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.tb.budget.domain.EmployeeCost;
 import org.tb.budget.domain.EmployeeCostAssignment;
 import org.tb.budget.domain.EmployeeCostAssignmentData;
@@ -31,6 +32,10 @@ import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.InvalidDataException;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.service.EmployeeService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Assignments bind their cost rate by name, and several cost records share one name to model a rate
@@ -55,15 +60,24 @@ public class EmployeeCostServiceTest {
 
   private EmployeeCostRepository costRepository;
   private EmployeeCostAssignmentRepository assignmentRepository;
+  private EmployeeService employeeService;
+  private SuborderService suborderService;
   private EmployeeCostService service;
 
   @BeforeEach
   public void setUp() {
     costRepository = mock(EmployeeCostRepository.class);
     assignmentRepository = mock(EmployeeCostAssignmentRepository.class);
+    employeeService = mock(EmployeeService.class);
+    suborderService = mock(SuborderService.class);
+    // Every sign exists unless a test says otherwise (#958) — the point of those tests is the
+    // rejection, and every other test would otherwise have to know about the check.
+    when(employeeService.getEmployeeBySign(any())).thenReturn(new Employee());
+    when(suborderService.existsSuborderWithCompleteOrderSign(any())).thenReturn(true);
     stubCostRepository();
     stubAssignmentRepository();
-    service = new EmployeeCostService(costRepository, assignmentRepository);
+    service = new EmployeeCostService(costRepository, assignmentRepository, employeeService,
+        suborderService);
   }
 
   // --- editing an assignment -------------------------------------------------------------------
@@ -114,6 +128,8 @@ public class EmployeeCostServiceTest {
   @Test
   public void should_edit_an_assignment_in_place_rather_than_replace_it() {
     var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+    // The category it moves to has to exist since #958.
+    givenCost("junior", 6000, JUL, DEC, 2L);
 
     service.updateAssignment(edited.getId(), assignmentData("junior", "other", "co/01", JUL, DEC));
 
@@ -131,6 +147,90 @@ public class EmployeeCostServiceTest {
     service.updateAssignment(edited.getId(), assignmentData("senior", "emp", null, JAN, null));
 
     assertThat(edited.getValidUntil()).isEqualTo(OPEN_END);
+  }
+
+  // --- the signs an assignment references (#958) ----------------------------------------------
+
+  /**
+   * The form protects the signs only as long as the input comes from its selects. A post with other
+   * values reaches the same endpoint, and an unknown sign resolves to no cost at all — silently.
+   */
+  @Test
+  public void should_reject_an_assignment_for_an_employee_that_does_not_exist() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
+
+    assertThatThrownBy(() -> service.createAssignment(assignmentData("senior", "ghost", null, JAN, DEC)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+    verify(assignmentRepository, never()).save(any());
+  }
+
+  @Test
+  public void should_accept_an_assignment_for_an_employee_that_exists() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+
+    service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC));
+
+    var saved = ArgumentCaptor.forClass(EmployeeCostAssignment.class);
+    verify(assignmentRepository).save(saved.capture());
+    assertThat(saved.getValue().getEmployeeSign()).isEqualTo("emp");
+  }
+
+  @Test
+  public void should_reject_an_assignment_for_a_suborder_that_does_not_exist() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    when(suborderService.existsSuborderWithCompleteOrderSign("co/nope")).thenReturn(false);
+
+    assertThatThrownBy(() -> service.createAssignment(assignmentData("senior", "emp", "co/nope", JAN, DEC)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_SUBORDER_SIGN_UNKNOWN.getCode());
+    verify(assignmentRepository, never()).save(any());
+  }
+
+  /** No suborder is the normal case: the assignment then applies regardless of suborder. */
+  @Test
+  public void should_not_ask_for_a_suborder_when_the_assignment_names_none() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+
+    service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC));
+
+    verify(suborderService, never()).existsSuborderWithCompleteOrderSign(any());
+  }
+
+  @Test
+  public void should_reject_an_assignment_for_a_cost_category_that_does_not_exist() {
+    assertThatThrownBy(() -> service.createAssignment(assignmentData("nonexistent", "emp", null, JAN, DEC)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_COST_NAME_UNKNOWN.getCode());
+    verify(assignmentRepository, never()).save(any());
+  }
+
+  /**
+   * An assignment can be the last thing carrying a category name, once the cost rates behind it are
+   * deleted (#895). Editing it is the way to move it onto a name that has a rate again, so the
+   * check must not stand in the way of exactly that record.
+   */
+  @Test
+  public void should_keep_an_assignment_editable_whose_cost_category_has_no_rate_any_more() {
+    var orphaned = givenAssignment("gone", "emp", null, JAN, DEC, 1L);
+
+    service.updateAssignment(orphaned.getId(), assignmentData("gone", "emp", null, JAN, OPEN_END));
+
+    assertThat(orphaned.getValidUntil()).isEqualTo(OPEN_END);
+  }
+
+  @Test
+  public void should_reject_an_edit_that_moves_an_assignment_to_an_unknown_employee() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
+
+    assertThatThrownBy(() -> service.updateAssignment(edited.getId(),
+        assignmentData("senior", "ghost", null, JAN, DEC)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+    assertThat(edited.getEmployeeSign()).isEqualTo("emp");
   }
 
   // --- renaming a cost rate -------------------------------------------------------------------
