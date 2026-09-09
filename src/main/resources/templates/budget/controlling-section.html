@@ -10,48 +10,16 @@
   window is measured against what was left when it opened, and that number means nothing without the
   total it was derived from.
 -->
-<div th:fragment="table(section, isManager, history)">
-
-  <!--
-    Tabler's .alert is a flex container, so the whole box lives in one child element — otherwise
-    title, validity and the figures would line up side by side. The list is capped in width so the
-    amounts stay next to their labels instead of at the far edge of a wide screen.
-  -->
-  <div class="alert m-3" th:if="${history != null and history.visible()}"
-       th:classappend="${history.isExhausted()} ? 'alert-warning' : 'alert-info'">
-    <div class="w-100">
-      <div class="fw-bold" th:text="#{main.controlling.history.title}">Herleitung des Restbudgets</div>
-      <div class="text-muted small mb-2"
-           th:text="#{main.controlling.history.planperiod} + ': ' + ${history.planPeriod()}">Laufzeit</div>
-      <dl class="row mb-0" style="max-width: 32rem">
-        <dt class="col-7 fw-normal" th:text="#{main.controlling.history.total}">Gesamtbudget</dt>
-        <dd class="col-5 text-end mb-1"
-            th:text="#{main.budget.format.amount(${history.totalBudgetEuro()})}"></dd>
-
-        <dt class="col-7 fw-normal" th:text="#{main.controlling.history.consumedbefore}">Verbrauch vor dem Fenster</dt>
-        <dd class="col-5 text-end mb-1"
-            th:text="'− ' + #{main.budget.format.amount(${history.consumedBeforeEuro()})}"></dd>
-
-        <dt class="col-7 border-top pt-1" th:text="#{main.controlling.history.availablestart}">Restbudget zum Fensterstart</dt>
-        <dd class="col-5 text-end mb-1 fw-bold border-top pt-1"
-            th:text="#{main.budget.format.amount(${history.availableAtWindowStartEuro()})}"></dd>
-
-        <dt class="col-7 fw-normal" th:text="#{main.controlling.history.consumedwindow}">Verbrauch im Fenster</dt>
-        <dd class="col-5 text-end mb-1"
-            th:text="'− ' + #{main.budget.format.amount(${history.consumedInWindowEuro()})}"></dd>
-
-        <dt class="col-7 border-top pt-1" th:text="#{main.controlling.history.availableend}">Restbudget zum Fensterende</dt>
-        <dd class="col-5 text-end mb-0 fw-bold border-top pt-1"
-            th:text="#{main.budget.format.amount(${history.availableAtWindowEndEuro()})}"></dd>
-      </dl>
-    </div>
-  </div>
+<div th:fragment="table(section, isManager, windowFrom)">
 
   <div class="table-responsive">
 <table class="table table-vcenter card-table">
   <thead>
     <tr>
       <th th:text="#{main.controlling.col.order}">Auftrag / Subauftrag</th>
+      <!-- What was already booked when the window opened; the amounts to the right cover it (#917) -->
+      <th class="text-end d-none d-lg-table-cell"
+          th:text="#{main.controlling.col.bookedbefore(${#temporals.format(windowFrom, 'dd.MM.yyyy')})}">Bis zum Start gebucht (h)</th>
       <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
       <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
       <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
@@ -92,6 +60,8 @@
     <span class="text-muted small" th:text="${row.sign()} ?: #{main.controlling.row.total}">Summe</span>
     <span class="ms-1 small" th:text="${row.label()}"></span>
   </td>
+  <td class="text-end d-none d-lg-table-cell" th:classappend="${cellClass}"
+      th:text="${row.hasBookedBeforeWindow()} ? ${row.bookedHoursBeforeWindowFormatted()} : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}" th:text="${row.bookedHoursFormatted()}"></td>
   <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
       th:text="${row.plannedHoursFormatted()}"></td>

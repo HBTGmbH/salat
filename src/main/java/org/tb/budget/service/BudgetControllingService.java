@@ -25,7 +25,6 @@ import org.tb.budget.domain.BudgetControllingGroup;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.BudgetControllingSection;
-import org.tb.budget.domain.BudgetHistory;
 import org.tb.budget.domain.BudgetScope;
 import org.tb.budget.domain.EmployeeCostLookup;
 import org.tb.budget.domain.OrderBudget;
@@ -74,17 +73,12 @@ public class BudgetControllingService {
 
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
-        var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
         var budgets = orderBudgetRepository.findByCustomerorderSign(customerorderSign);
 
         // Rates and costs are resolved once per time report. Loading both tables up front keeps
         // that in memory instead of issuing up to five statements per report.
         var pricingLookup = orderPricingService.lookupFor(List.of(customerorderSign));
         var costLookup = includeCosts ? employeeCostService.lookup() : null;
-
-        // Every report is priced exactly once here. Sections then only filter and add, which matters
-        // because the same report is looked at by every section it could fall into.
-        var scored = scoreReports(suborders, timereports, customerorderSign, pricingLookup, costLookup);
 
         // Which plan a booking counts against is read, not derived (#913). That is what lets a
         // booking appear in exactly one section without anyone cutting periods against each other,
@@ -94,12 +88,23 @@ public class BudgetControllingService {
         var plans = evaluatedPlans(budgets, filter);
         var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
-        // One extra read for the whole order, not one per plan (#916).
-        var consumedBefore = consumedBeforeWindow(plans, suborders, customerorder, from, planOfBooking, pricingLookup);
+        // One read over the whole span this evaluation talks about: from the earliest plan start to
+        // the end of the window (#917). The amounts are reported in full over that span, while the
+        // hours are split into what was booked before the window and what inside it — a second query
+        // for the earlier part would only add a round trip.
+        var readFrom = plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder())
+            .filter(planStart -> planStart.isBefore(from))
+            .orElse(from);
+        var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(
+            readFrom, until, customerorder.getId());
+
+        // Every report is priced exactly once here. Sections then only filter and add, which matters
+        // because the same report is looked at by every section it could fall into.
+        var scored = scoreReports(suborders, timereports, customerorderSign, pricingLookup, costLookup, from);
 
         var sections = new ArrayList<BudgetControllingSection>();
         for (var group : sectionGroups(plans)) {
-            sections.add(plannedSection(group, suborders, scored, planOfBooking, filter, consumedBefore,
+            sections.add(plannedSection(group, suborders, scored, planOfBooking, filter,
                 today, holidays, includeCosts));
         }
         var withoutBudget = withoutBudgetSection(suborders, scored, planOfBooking, evaluatedPlanIds, includeCosts);
@@ -117,13 +122,16 @@ public class BudgetControllingService {
             .collect(Collectors.toMap(TimereportBudgetLink::timereportId, TimereportBudgetLink::orderBudgetId));
     }
 
-    /** A time report with its revenue and cost already resolved. */
+    /**
+     * A time report with its revenue and cost already resolved, and whether it lies before the
+     * evaluated window: the hours of the two are reported apart, the amounts together (#917).
+     */
     private record ScoredReport(long timereportId, LocalDate day, Duration duration,
-                                BigDecimal revenue, BigDecimal cost) {}
+                                BigDecimal revenue, BigDecimal cost, boolean beforeWindow) {}
 
     private Map<Long, List<ScoredReport>> scoreReports(List<Suborder> suborders, List<TimereportDTO> timereports,
                                                        String customerorderSign, OrderPricingLookup pricingLookup,
-                                                       EmployeeCostLookup costLookup) {
+                                                       EmployeeCostLookup costLookup, LocalDate windowStart) {
         Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
             .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
         Map<Long, List<ScoredReport>> scored = new HashMap<>();
@@ -136,7 +144,8 @@ public class BudgetControllingService {
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
                     invoiceable ? rateOf(r, customerorderSign, soSign, pricingLookup) : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
-                    costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, costLookup)))
+                    costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, costLookup),
+                    r.getReferenceday().isBefore(windowStart)))
                 .toList());
         }
         return scored;
@@ -223,7 +232,7 @@ public class BudgetControllingService {
     private BudgetControllingSection plannedSection(List<PlanPeriod> plans, List<Suborder> suborders,
                                                     Map<Long, List<ScoredReport>> scored,
                                                     Map<Long, Long> planOfBooking, LocalDateRange window,
-                                                    Map<Long, BigDecimal> consumedBefore, LocalDate today,
+                                                    LocalDate today,
                                                     Set<LocalDate> holidays, boolean includeCosts) {
         var orderWide = plans.get(0).orderWide();
         var period = plans.get(0).period();
@@ -240,7 +249,7 @@ public class BudgetControllingService {
                     includeCosts))
                 .filter(BudgetControllingRow::hasContent)
                 .toList();
-            var budget = availableBudgetOf(plan, window.getUntil(), consumedBefore);
+            var budget = cumulativeBudgetOf(plan, window.getUntil());
             var progress = computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
             // An order-wide plan is the whole section, so its figures belong on the section total.
             var subtotal = orderWide ? null
@@ -250,7 +259,7 @@ public class BudgetControllingService {
 
         var allRows = groups.stream().flatMap(g -> g.rows().stream()).toList();
         var totalBudget = plans.stream()
-            .map(p -> availableBudgetOf(p.plan(), window.getUntil(), consumedBefore))
+            .map(p -> cumulativeBudgetOf(p.plan(), window.getUntil()))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         var totalProgress = orderWide
             ? computeProgress(plans.get(0).plan(), period.getFrom(), period.getUntil(), today, holidays)
@@ -261,27 +270,7 @@ public class BudgetControllingService {
             orderWide ? SectionKind.ORDER_LEVEL : SectionKind.SUBORDER_LEVEL,
             period,
             plans.stream().map(p -> p.plan().getName()).toList(),
-            groups, total,
-            budgetHistory(plans, window, consumedBefore));
-    }
-
-    /**
-     * The two inputs the section's available budget was derived from, so the view can show the
-     * derivation instead of asserting the result (#917). Summed over the plans of the section,
-     * exactly as the section total is.
-     */
-    private static BudgetHistory budgetHistory(List<PlanPeriod> plans, LocalDateRange window,
-                                               Map<Long, BigDecimal> consumedBefore) {
-        var cumulative = plans.stream()
-            .map(p -> cumulativeBudgetOf(p.plan(), window.getUntil()))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        var consumed = plans.stream()
-            .map(p -> consumedBefore.getOrDefault(p.plan().getId(), BigDecimal.ZERO))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return new BudgetHistory(cumulative, consumed,
-            plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder()).orElseThrow(),
-            plans.stream().map(p -> p.plan().getValidUntil()).max(naturalOrder()).orElseThrow(),
-            plans.stream().anyMatch(p -> p.plan().getValidFrom().isBefore(window.getFrom())));
+            groups, total);
     }
 
     /**
@@ -301,15 +290,14 @@ public class BudgetControllingService {
             }), includeCosts))
             // Only the booked side counts here: a suborder with planned hours but no unassigned
             // booking has nothing to answer for and would otherwise show up in every evaluation.
-            .filter(row -> !row.bookedHours().isZero())
+            .filter(row -> !row.bookedHours().isZero() || row.hasBookedBeforeWindow())
             .toList();
         if (rows.isEmpty()) {
             return null;
         }
         var total = aggregate(null, null, rows, null, null, includeCosts);
-        // No plan, so no budget and nothing to derive.
         return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(),
-            List.of(new BudgetControllingGroup(null, null, rows, null)), total, null);
+            List.of(new BudgetControllingGroup(null, null, rows, null)), total);
     }
 
     private static List<ScoredReport> reportsOf(Suborder suborder, Map<Long, List<ScoredReport>> scored,
@@ -317,16 +305,29 @@ public class BudgetControllingService {
         return scored.getOrDefault(suborder.getId(), List.of()).stream().filter(belongsHere).toList();
     }
 
+    /**
+     * One line of a section. The hours are split — what was booked before the window and what inside
+     * it — while revenue and cost are the full figures over both (#917). That way the budget and its
+     * utilization read against the whole plan, and the extra hours column says how much of the work
+     * already predates the window.
+     */
     private BudgetControllingRow row(Suborder suborder, List<ScoredReport> reports, boolean includeCosts) {
         return BudgetControllingRow.builder()
             .sign(suborder.getCompleteOrderSign())
             .label(suborder.getShortdescription())
             .plannedHours(suborder.getDebithours() != null ? suborder.getDebithours() : Duration.ZERO)
-            .bookedHours(reports.stream().map(ScoredReport::duration).reduce(Duration.ZERO, Duration::plus))
+            .bookedHoursBeforeWindow(hoursOf(reports, ScoredReport::beforeWindow))
+            .bookedHours(hoursOf(reports, report -> !report.beforeWindow()))
             .revenueEuro(reports.stream().map(ScoredReport::revenue).reduce(BigDecimal.ZERO, BigDecimal::add))
             .costEuro(includeCosts
                 ? reports.stream().map(ScoredReport::cost).reduce(BigDecimal.ZERO, BigDecimal::add) : null)
             .build();
+    }
+
+    private static Duration hoursOf(List<ScoredReport> reports, Predicate<ScoredReport> selected) {
+        return reports.stream().filter(selected)
+            .map(ScoredReport::duration)
+            .reduce(Duration.ZERO, Duration::plus);
     }
 
     private BudgetControllingRow aggregate(String sign, String label, List<BudgetControllingRow> rows,
@@ -336,6 +337,8 @@ public class BudgetControllingService {
             .sign(sign)
             .label(label)
             .plannedHours(rows.stream().map(BudgetControllingRow::plannedHours).reduce(Duration.ZERO, Duration::plus))
+            .bookedHoursBeforeWindow(rows.stream().map(BudgetControllingRow::bookedHoursBeforeWindow)
+                .reduce(Duration.ZERO, Duration::plus))
             .bookedHours(rows.stream().map(BudgetControllingRow::bookedHours).reduce(Duration.ZERO, Duration::plus))
             .budgetEuro(budget)
             .revenueEuro(revenue)
@@ -345,7 +348,8 @@ public class BudgetControllingService {
             .build();
         return BudgetControllingRow.builder()
             .sign(row.sign()).label(row.label())
-            .plannedHours(row.plannedHours()).bookedHours(row.bookedHours())
+            .plannedHours(row.plannedHours())
+            .bookedHoursBeforeWindow(row.bookedHoursBeforeWindow()).bookedHours(row.bookedHours())
             .budgetEuro(row.budgetEuro()).revenueEuro(row.revenueEuro()).costEuro(row.costEuro())
             .progressPercent(progressPercent)
             .progressStatus(computeProgressStatus(progressPercent,
@@ -507,49 +511,6 @@ public class BudgetControllingService {
             .filter(a -> !a.getEffective().isAfter(windowEnd))
             .map(OrderBudgetAdjustment::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    /**
-     * What the plan still has to spend when the window opens: everything granted by the end of the
-     * window minus what was already used up before it started.
-     *
-     * <p>Deliberately not floored at zero — a plan that was already overbooked when the window
-     * opened has a negative amount left, and saying so is the whole point. The utilization and the
-     * traffic light read this figure, so they follow along.
-     */
-    private static BigDecimal availableBudgetOf(OrderBudget budget, LocalDate windowEnd,
-                                                Map<Long, BigDecimal> consumedBefore) {
-        return cumulativeBudgetOf(budget, windowEnd)
-            .subtract(consumedBefore.getOrDefault(budget.getId(), BigDecimal.ZERO));
-    }
-
-    /**
-     * What each plan had already consumed before the window opened, in one query for the whole
-     * customer order — resolving it per plan would multiply the booking read by the number of plans.
-     *
-     * <p>Valued exactly as the bookings inside the window are: through {@link #scoreReports}, so the
-     * same rates apply and work on a suborder that is never billed contributes nothing (#897).
-     */
-    private Map<Long, BigDecimal> consumedBeforeWindow(List<PlanPeriod> plans, List<Suborder> suborders,
-                                                       Customerorder customerorder, LocalDate windowStart,
-                                                       Map<Long, Long> planOfBooking,
-                                                       OrderPricingLookup pricingLookup) {
-        var earliestStart = plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder());
-        if (earliestStart.isEmpty() || !earliestStart.get().isBefore(windowStart)) {
-            return Map.of();
-        }
-        var reports = timereportService.getTimereportsByDatesAndCustomerOrderId(
-            earliestStart.get(), windowStart.minusDays(1), customerorder.getId());
-        Map<Long, BigDecimal> consumed = new HashMap<>();
-        scoreReports(suborders, reports, customerorder.getSign(), pricingLookup, null)
-            .values().stream().flatMap(List::stream)
-            .forEach(report -> {
-                var planId = planOfBooking.get(report.timereportId());
-                if (planId != null) {
-                    consumed.merge(planId, report.revenue(), BigDecimal::add);
-                }
-            });
-        return consumed;
     }
 
     private static BigDecimal minutesToHours(long minutes) {
