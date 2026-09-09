@@ -33,6 +33,8 @@
               <option value="" th:text="#{main.invoice.choose.text}">-- Bitte wählen --</option>
               <option th:each="order : ${orders}"
                       th:value="${order.id}"
+                      th:with="customerLabel=${@customerorderViewHelper.customerLabel(order)}"
+                      th:attr="data-subtext=${customerLabel}"
                       th:text="${order.signAndDescription}"></option>
             </select>
           </div>

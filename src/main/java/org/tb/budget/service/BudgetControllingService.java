@@ -115,6 +115,7 @@ public class BudgetControllingService {
         var customer = customerorder.getCustomer();
         return new BudgetControllingResult(customerorderSign, customerorder.getShortdescription(),
             customer == null ? null : customer.getShortname(),
+            customer == null ? null : customer.getName(),
             filter,
             sections.stream().filter(BudgetControllingSection::hasContent).toList());
     }
