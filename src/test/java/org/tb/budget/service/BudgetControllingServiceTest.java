@@ -469,6 +469,48 @@ public class BudgetControllingServiceTest {
         .getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong());
   }
 
+  /**
+   * The section carries the two inputs its available budget was derived from, so the info box can
+   * show the derivation rather than assert the result (#917). They have to agree with the table.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_carry_the_derivation_of_the_available_budget() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
+    var history = section.history();
+
+    assertThat(history.cumulativeEuro()).isEqualByComparingTo("2000");
+    assertThat(history.consumedBeforeEuro()).isEqualByComparingTo("800.00");
+    assertThat(history.availableAtWindowStartEuro()).isEqualByComparingTo("1200.00");
+    // The same figure the section total reports, so box and table cannot disagree.
+    assertThat(history.availableAtWindowStartEuro()).isEqualByComparingTo(section.total().budgetEuro());
+    assertThat(history.planFrom()).isEqualTo(FROM);
+    assertThat(history.planUntil()).isEqualTo(UNTIL);
+    assertThat(history.startedBeforeWindow()).isTrue();
+    assertThat(history.isWorthShowing()).isTrue();
+  }
+
+  /** A window containing the whole plan has nothing to explain. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_mark_the_derivation_as_not_worth_showing_without_a_history() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var history = sectionOf(compute(FROM, UNTIL), SectionKind.ORDER_LEVEL).history();
+
+    assertThat(history.consumedBeforeEuro()).isEqualByComparingTo("0");
+    assertThat(history.startedBeforeWindow()).isFalse();
+    assertThat(history.isWorthShowing()).isFalse();
+  }
+
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_carry_no_derivation_for_bookings_without_a_budget() {
+    assertThat(sectionOf(compute(FROM, UNTIL), SectionKind.UNPLANNED).history()).isNull();
+  }
+
   // --- utilization: dashboard (#778) and alerts -----------------------------------------------
 
   /**

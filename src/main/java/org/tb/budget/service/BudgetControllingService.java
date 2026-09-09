@@ -25,6 +25,7 @@ import org.tb.budget.domain.BudgetControllingGroup;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.BudgetControllingSection;
+import org.tb.budget.domain.BudgetHistory;
 import org.tb.budget.domain.BudgetScope;
 import org.tb.budget.domain.EmployeeCostLookup;
 import org.tb.budget.domain.OrderBudget;
@@ -260,7 +261,27 @@ public class BudgetControllingService {
             orderWide ? SectionKind.ORDER_LEVEL : SectionKind.SUBORDER_LEVEL,
             period,
             plans.stream().map(p -> p.plan().getName()).toList(),
-            groups, total);
+            groups, total,
+            budgetHistory(plans, window, consumedBefore));
+    }
+
+    /**
+     * The two inputs the section's available budget was derived from, so the view can show the
+     * derivation instead of asserting the result (#917). Summed over the plans of the section,
+     * exactly as the section total is.
+     */
+    private static BudgetHistory budgetHistory(List<PlanPeriod> plans, LocalDateRange window,
+                                               Map<Long, BigDecimal> consumedBefore) {
+        var cumulative = plans.stream()
+            .map(p -> cumulativeBudgetOf(p.plan(), window.getUntil()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var consumed = plans.stream()
+            .map(p -> consumedBefore.getOrDefault(p.plan().getId(), BigDecimal.ZERO))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return new BudgetHistory(cumulative, consumed,
+            plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder()).orElseThrow(),
+            plans.stream().map(p -> p.plan().getValidUntil()).max(naturalOrder()).orElseThrow(),
+            plans.stream().anyMatch(p -> p.plan().getValidFrom().isBefore(window.getFrom())));
     }
 
     /**
@@ -286,8 +307,9 @@ public class BudgetControllingService {
             return null;
         }
         var total = aggregate(null, null, rows, null, null, includeCosts);
+        // No plan, so no budget and nothing to derive.
         return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(),
-            List.of(new BudgetControllingGroup(null, null, rows, null)), total);
+            List.of(new BudgetControllingGroup(null, null, rows, null)), total, null);
     }
 
     private static List<ScoredReport> reportsOf(Suborder suborder, Map<Long, List<ScoredReport>> scored,
