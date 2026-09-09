@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.common.domain.AuditedEntity;
+import org.tb.common.util.DateUtils;
 
 @Entity
 @Table(name = "order_pricing")
@@ -42,5 +43,18 @@ public class OrderPricing extends AuditedEntity {
 
     @Column(name = "valid_until", nullable = false)
     private LocalDate validUntil;
+
+    /**
+     * Whether the pricing has not expired yet — the same rule as
+     * {@code Employeecontract#getCurrentlyValid()} and {@code Suborder#getCurrentlyValid()}: an end
+     * on today still counts, and an open end never expires. Unlike those two, an open end is stored
+     * as the sentinel 31.12.2999 rather than as {@code null}, so it needs no case of its own.
+     *
+     * <p>A start in the future does not make a pricing invalid but merely not yet in effect; it
+     * stays in the list, or a rate entered ahead of time would be entered a second time.
+     */
+    public boolean getCurrentlyValid() {
+        return !DateUtils.today().isAfter(validUntil);
+    }
 
 }

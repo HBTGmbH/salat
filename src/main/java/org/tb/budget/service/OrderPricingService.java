@@ -1,7 +1,6 @@
 package org.tb.budget.service;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -35,23 +34,14 @@ public class OrderPricingService {
 
     /**
      * The pricings of the list view (#949), optionally narrowed to one customer order and, unless
-     * asked otherwise, to those that have not expired.
+     * asked otherwise, to those that have not expired — see
+     * {@link OrderPricing#getCurrentlyValid()} for what counts as expired.
      */
     @Transactional(readOnly = true)
     public List<OrderPricing> getFiltered(String customerorderSign, boolean showInactive) {
         var sign = trimToNull(customerorderSign);
         var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
-        return showInactive ? pricings : pricings.stream().filter(OrderPricingService::isActive).toList();
-    }
-
-    /**
-     * A pricing is inactive once its validity lies entirely in the past. An end on today is still
-     * active, and an open end — stored as the sentinel 31.12.2999 — never expires. A start in the
-     * future does not make it inactive but merely not yet active, so it stays visible: a rate
-     * entered ahead of time must not drop out of the list, or it gets entered a second time.
-     */
-    private static boolean isActive(OrderPricing pricing) {
-        return !pricing.getValidUntil().isBefore(today());
+        return showInactive ? pricings : pricings.stream().filter(OrderPricing::getCurrentlyValid).toList();
     }
 
     /** The customer orders that have at least one pricing — the filter options of the list view. */
