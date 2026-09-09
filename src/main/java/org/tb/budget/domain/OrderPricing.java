@@ -57,4 +57,17 @@ public class OrderPricing extends AuditedEntity {
         return !DateUtils.today().isAfter(validUntil);
     }
 
+    /**
+     * Whether this rate prices the customer order as a whole — no suborder pattern, no employee. It
+     * is the only kind that claims to cover the order period, which is what the coverage check of
+     * the rate list judges (#957, → {@code OrderPricingLookup#hasUncoveredPeriod}).
+     */
+    public boolean isOrderWide() {
+        return isBlank(suborderSign) && isBlank(employeeSign);
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
 }

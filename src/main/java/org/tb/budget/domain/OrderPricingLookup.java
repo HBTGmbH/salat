@@ -100,7 +100,7 @@ public final class OrderPricingLookup {
         var end = until != null ? until : LocalDateRange.FINIT_UNTIL_BOUNDARY;
         var orderWide = byCustomerorderSign.getOrDefault(customerorderSign, List.of()).stream()
             .map(Candidate::pricing)
-            .filter(OrderPricingLookup::isOrderWide)
+            .filter(OrderPricing::isOrderWide)
             .sorted(Comparator.comparing(OrderPricing::getValidFrom))
             .toList();
         if (orderWide.isEmpty()) {
@@ -118,14 +118,6 @@ public final class OrderPricingLookup {
             }
         }
         return !uncovered.isAfter(end);
-    }
-
-    private static boolean isOrderWide(OrderPricing pricing) {
-        return isBlank(pricing.getSuborderSign()) && isBlank(pricing.getEmployeeSign());
-    }
-
-    private static boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 
     /**
