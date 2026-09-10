@@ -131,7 +131,10 @@ public class MatrixService {
         boolean hasTarget = employeeContractId > 0
             && !employeecontractService.getEmployeecontractById(employeeContractId).getDailyWorkingTime().isZero();
 
-        String totalString = hasTarget ? DurationUtils.format(grand) : null;
+        // the grand total is nothing but the sum of the bookings shown above it, so it exists
+        // whenever the matrix does. It used to be suppressed together with SOLL and difference for
+        // a contract without a daily working time, which left the GESAMT row without its Σ (#887)
+        String totalString = DurationUtils.format(grand);
         String targetString = null;
         String diffString = null;
         boolean diffNegative = false;
