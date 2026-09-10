@@ -143,8 +143,14 @@ public record BudgetControllingRow(
         return grossProfitEuro() != null;
     }
 
+    /**
+     * A flat rate line has no cost of its own — an agreed amount is not worked — so its margin can
+     * only ever be 100 % (#972). A column of that says nothing and invites a comparison with the
+     * lines around it, which do carry cost. Aggregates are unaffected: a subtotal or total that
+     * includes flat rates has a margin worth reading.
+     */
     public boolean hasGrossProfitMargin() {
-        return hasGrossProfit() && hasTotalRevenue();
+        return !flatRate && hasGrossProfit() && hasTotalRevenue();
     }
 
     public double grossProfitMarginPercent() {
