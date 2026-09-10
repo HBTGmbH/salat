@@ -23,8 +23,8 @@ Chosen: **Option A**, weil `CsrfTokenRequestAttributeHandler` cookie-Wert, Formu
 
 * Good: Stateless — kein HttpSession erforderlich; passt zur bestehenden `STATELESS` Session-Policy.
 * Good: Thymeleaf-Formulare funktionieren ohne Template-Änderungen — `CsrfRequestDataValueProcessor` injiziert das Hidden-Feld automatisch über `th:action`.
-* Good: HTMX-Anfragen senden den Token als `X-XSRF-TOKEN`-Header (via `htmx:configRequest`-Listener in `base.html`).
-* Good: Nach einem HTMX-Response werden veraltete `_csrf` Hidden-Felder per `htmx:afterSettle`-Handler in `salat.js` aktualisiert.
+* Good: HTMX-Anfragen senden den Token als `X-XSRF-TOKEN`-Header (via `htmx:config:request`-Listener in `base.html`).
+* Good: Nach einem HTMX-Response werden veraltete `_csrf` Hidden-Felder per `htmx:after:swap`-Handler in `salat.js` aktualisiert.
 * Bad (BREACH-Trade-off): `XorCsrfTokenRequestAttributeHandler` würde pro Render einen anderen XOR-maskierten Wert liefern und damit BREACH-Angriffe erschweren. `CsrfTokenRequestAttributeHandler` omitiert dieses Masking. Für diese Anwendung akzeptabel, weil: (a) ein Angreifer, der komprimierte Antwortinhalte kontrolliert, ein unrealistisches Bedrohungsmodell für eine interne Zeiterfassungsanwendung darstellt; (b) HTMX-Anfragen senden den Raw-Token ohnehin als Header; (c) die Cookie-Refresh-Anforderung macht XOR-Masking ohne server-seitige Koordination nicht praktikabel.
 * Neutral: REST-API-Chains (`/api/**`, `/rest/**`) und statische Ressourcen (Order 0) behalten `csrf(disable)` — sie verwenden Token-basierte Authentifizierung bzw. haben keine State-modifizierenden Formulare.
 * Neutral: `LocalDevSecurityConfiguration` (`local`-Profil) behält `csrf(disable)`. Grund: Chrome sendet Cookies ohne explizites `SameSite`-Attribut bei Plain-HTTP auf localhost nicht zuverlässig, was zu 403-Fehlern beim Lokaltesting führt. Da der lokale Dev-Server nicht aus dem Internet erreichbar ist, ist das Risiko akzeptabel.
@@ -33,5 +33,5 @@ Chosen: **Option A**, weil `CsrfTokenRequestAttributeHandler` cookie-Wert, Formu
 
 - **Repository:** `CookieCsrfTokenRepository.withHttpOnlyFalse()` — speichert den Token im Cookie `XSRF-TOKEN`; `httpOnly=false` erlaubt JavaScript den Zugriff.
 - **Handler:** `CsrfTokenRequestAttributeHandler` — Token im Formularfeld = Token im Header = Token im Cookie (raw, kein XOR).
-- **HTMX:** `htmx:configRequest`-Listener in `layout/base.html` liest `XSRF-TOKEN`-Cookie und setzt `X-XSRF-TOKEN`-Header auf jeder HTMX-Anfrage.
-- **Stale Forms:** `htmx:afterSettle`-Handler in `salat.js` refresht alle `input[name="_csrf"]` aus dem aktuellen Cookie-Wert nach jedem HTMX-Response.
+- **HTMX:** `htmx:config:request`-Listener in `layout/base.html` liest `XSRF-TOKEN`-Cookie und setzt `X-XSRF-TOKEN`-Header auf jeder HTMX-Anfrage.
+- **Stale Forms:** `htmx:after:swap`-Handler in `salat.js` refresht alle `input[name="_csrf"]` aus dem aktuellen Cookie-Wert nach jedem HTMX-Response.

@@ -50,7 +50,7 @@
                        hx-target="#orders-suborders-wrapper"
                        hx-swap="outerHTML"
                        hx-trigger="change"
-                       hx-on="htmx:afterSettle: refreshShareRecipientsOnFieldChange()"/>
+                       hx-on="htmx:after:swap -> refreshShareRecipientsOnFieldChange()"/>
               </div>
 
               <!-- beginEnd: the entry mode the user prefers (#844), rendered server-side so the
@@ -148,7 +148,7 @@
                       hx-target="#form-sidebar"
                       hx-swap="outerHTML"
                       hx-trigger="change"
-                      hx-on="htmx:afterSettle: refreshShareRecipientsOnFieldChange()">
+                      hx-on="htmx:after:swap -> refreshShareRecipientsOnFieldChange()">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
@@ -384,7 +384,7 @@
       }
       updateCommentRequired();
     });
-    document.addEventListener('htmx:afterSettle', function() {
+    document.addEventListener('htmx:after:swap', function() {
       var sel = document.getElementById('suborderId');
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
