@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='flat-rate',
+        title=${flatRate.description} ?: #{main.flatrate.form.title.edit},
+        pageTitle=${flatRate.description} ?: #{main.flatrate.form.title.edit},
+        sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center">
+      <h3 class="card-title me-auto" th:text="${flatRate.description} ?: #{main.flatrate.list.title}">Pauschale</h3>
+      <span class="badge ms-2" th:classappend="${flatRate.currentlyValid} ? 'bg-success-lt' : 'bg-secondary-lt'"
+            th:text="${flatRate.currentlyValid} ? #{main.general.active.text} : #{main.general.inactive.text}">Aktiv</span>
+      <div class="ms-3">
+        <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/flat-rate/{id}/edit(id=${flatRate.id})}">
+          <i class="icon ti ti-pencil"></i>
+          <span th:text="#{main.button.label.edit.text}">Bearbeiten</span>
+        </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-5" th:text="#{main.flatrate.field.customerorderSign}">Auftrag</dt>
+            <dd class="col-sm-7" th:text="${flatRate.customerorderSign}"></dd>
+            <dt class="col-sm-5" th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</dt>
+            <dd class="col-sm-7" th:text="${flatRate.suborderSign} ?: #{main.flatrate.field.suborderSign.wholeorder}"></dd>
+            <dt class="col-sm-5" th:text="#{main.flatrate.field.rhythm}">Abrechnung</dt>
+            <dd class="col-sm-7" th:text="#{${flatRate.rhythm.label}}"></dd>
+          </dl>
+        </div>
+        <div class="col-md-6">
+          <dl class="row">
+            <dt class="col-sm-5" th:text="#{main.flatrate.field.valid}">Gültig</dt>
+            <dd class="col-sm-7">
+              <span th:text="${#temporals.format(flatRate.validFrom, 'dd.MM.yyyy')}"></span>
+              <th:block th:if="${flatRate.rhythm.name() != 'ONCE'}">
+                – <span th:text="${#temporals.format(flatRate.validUntil, 'dd.MM.yyyy')}"></span>
+              </th:block>
+            </dd>
+            <dt class="col-sm-5" th:if="${flatRate.amount != null}" th:text="#{main.flatrate.field.amountEuro}">Betrag (€)</dt>
+            <dd class="col-sm-7" th:if="${flatRate.amount != null}"
+                th:text="#{main.budget.format.amount(${flatRate.amount})}"></dd>
+            <dt class="col-sm-5" th:text="#{main.flatrate.field.total}">Summe (€)</dt>
+            <dd class="col-sm-7 fw-bold"
+                th:text="#{main.budget.format.amount(${dueTotal})}"></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    The due dates the definition amounts to. Derived for a one-off and a monthly rate, stored for
+    instalments — the table reads the same either way, which is what makes the rhythms comparable.
+  -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.flatrate.schedule.title}">Fällige Beträge</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.flatrate.field.due}">Fällig am</th>
+            <th class="text-end" th:text="#{main.flatrate.field.amountEuro}">Betrag (€)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(dueAmounts)}">
+            <td colspan="2" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="due : ${dueAmounts}">
+            <td th:text="${#temporals.format(due.due(), 'dd.MM.yyyy')}"></td>
+            <td class="text-end" th:text="#{main.budget.format.amount(${due.amount()})}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Instalments: the only rhythm whose dates are entered rather than derived. -->
+  <div class="card mb-3" th:if="${flatRate.rhythm.name() == 'INSTALMENTS'}">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.flatrate.instalments.title}">Abschläge</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.flatrate.field.due}">Fällig am</th>
+            <th class="text-end" th:text="#{main.flatrate.field.amountEuro}">Betrag (€)</th>
+            <th th:text="#{main.flatrate.field.comment}">Kommentar</th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(flatRate.instalments)}">
+            <td colspan="4" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="instalment : ${flatRate.instalments}">
+            <td th:text="${#temporals.format(instalment.due, 'dd.MM.yyyy')}"></td>
+            <td class="text-end" th:text="#{main.budget.format.amount(${instalment.amount})}"></td>
+            <td th:text="${instalment.comment} ?: '-'"></td>
+            <td>
+              <form th:action="@{/budget/flat-rate/{id}/instalments/{instalmentId}/delete(id=${flatRate.id},instalmentId=${instalment.id})}"
+                    method="post"
+                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="icon ti ti-trash m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer">
+      <form th:action="@{/budget/flat-rate/{id}/instalments/add(id=${flatRate.id})}" method="post"
+            th:object="${instalmentForm}" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" th:text="#{main.flatrate.field.due}">Fällig am</label>
+          <!-- Bounded by the validity: an instalment outside it would be due but invisible. -->
+          <input type="date" class="form-control" th:field="*{due}" required
+                 th:min="${flatRate.validFrom}" th:max="${flatRate.validUntil}"/>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" th:text="#{main.flatrate.field.amountEuro}">Betrag (€)</label>
+          <input type="number" step="0.01" class="form-control" th:field="*{amountEuro}" required/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" th:text="#{main.flatrate.field.comment}">Kommentar</label>
+          <input type="text" class="form-control" th:field="*{comment}" maxlength="2000"/>
+        </div>
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-primary">
+            <i class="icon ti ti-plus"></i>
+            <span th:text="#{main.flatrate.instalment.button.add}">Abschlag hinzufügen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <a class="btn btn-outline-secondary" th:href="@{/budget/flat-rate}">
+    <i class="icon ti ti-arrow-left"></i>
+    <span th:text="#{main.general.button.back.text}">Zurück</span>
+  </a>
+
+</main>
+</html>

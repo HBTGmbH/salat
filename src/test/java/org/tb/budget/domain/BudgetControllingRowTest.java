@@ -29,6 +29,61 @@ public class BudgetControllingRowTest {
     assertThat(derived.hasContent()).isFalse();
   }
 
+  // --- flat rates (#972) -----------------------------------------------------------------------
+
+  /**
+   * A flat rate is not derived from booked time — it is due whether or not anybody booked. A line
+   * carrying nothing else therefore has something to report, unlike one with only revenue on it.
+   */
+  @Test
+  public void should_treat_a_line_with_only_a_flat_rate_as_content() {
+    assertThat(row().flatRateRevenueEuro(new BigDecimal("1000")).build().hasContent()).isTrue();
+  }
+
+  @Test
+  public void should_add_hourly_and_flat_rate_revenue_into_the_total() {
+    var mixed = row().revenueEuro(new BigDecimal("800")).flatRateRevenueEuro(new BigDecimal("200")).build();
+
+    assertThat(mixed.totalRevenueEuro()).isEqualByComparingTo("1000");
+    assertThat(mixed.hasRevenue()).isTrue();
+    assertThat(mixed.hasFlatRateRevenue()).isTrue();
+  }
+
+  /** Without either source there is no total at all, which keeps "no data" apart from a real zero. */
+  @Test
+  public void should_report_no_total_revenue_without_either_source() {
+    assertThat(row().build().totalRevenueEuro()).isNull();
+    assertThat(row().build().hasTotalRevenue()).isFalse();
+  }
+
+  @Test
+  public void should_measure_the_budget_against_the_total_revenue() {
+    var mixed = row().budgetEuro(new BigDecimal("1000"))
+        .revenueEuro(new BigDecimal("400")).flatRateRevenueEuro(new BigDecimal("600")).build();
+
+    assertThat(mixed.budgetUsedPercent()).isCloseTo(100.0, within(0.01));
+    assertThat(mixed.hasOverrun()).isFalse();
+  }
+
+  /** A flat rate can be what pushes a plan over, so the overrun has to see it. */
+  @Test
+  public void should_report_an_overrun_a_flat_rate_causes() {
+    var over = row().budgetEuro(new BigDecimal("1000"))
+        .revenueEuro(new BigDecimal("800")).flatRateRevenueEuro(new BigDecimal("500")).build();
+
+    assertThat(over.overrunEuro()).isEqualByComparingTo("300");
+  }
+
+  /** An agreed amount is not worked, so it lifts the gross profit and the margin with it. */
+  @Test
+  public void should_count_a_flat_rate_towards_gross_profit_and_margin() {
+    var mixed = row().revenueEuro(new BigDecimal("800")).flatRateRevenueEuro(new BigDecimal("200"))
+        .costEuro(new BigDecimal("600")).build();
+
+    assertThat(mixed.grossProfitEuro()).isEqualByComparingTo("400");
+    assertThat(mixed.grossProfitMarginPercent()).isCloseTo(40.0, within(0.01));
+  }
+
   /** Going over budget is normal, so it is reported as an amount rather than only as a percentage. */
   @Test
   public void should_report_the_amount_a_budget_was_exceeded_by() {

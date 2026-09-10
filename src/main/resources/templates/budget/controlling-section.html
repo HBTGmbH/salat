@@ -10,6 +10,10 @@
   The hours are split at the window start (#917): the first column says what was already booked when
   the window opened, the next one what was booked inside it. The amounts are the full figures up to
   the end of the window, so the budget and its utilization read against the whole plan.
+
+  The revenue column is everything a line earns — hours times rate plus the flat rates falling due in
+  it (#972). Where flat rates are involved at all, the column next to it says how much of that came
+  from them, so nobody has to guess which of the two sources a figure is made of.
 -->
 <div th:fragment="table(section, isManager, windowFrom)">
 
@@ -32,6 +36,12 @@
       <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
       <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
       <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
+      <!--
+        The flat rate share of the column before it (#972). Only where flat rates actually fall due:
+        on an order billed purely by the hour this would be a column of dashes, and the table has
+        enough of them to fit already.
+      -->
+      <th class="text-end" th:if="${section.hasFlatRateData()}" th:text="#{main.controlling.col.flatrate}">davon Pauschal (€)</th>
       <th class="text-end" th:if="${section.hasBudgetColumn()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
       <!-- Two lines, like the column before it: the label is wider than the numbers below it. -->
       <th class="text-end" th:if="${section.hasBudgetColumn()}">
@@ -77,7 +87,12 @@
   <td>
     <div class="text-muted small text-nowrap"
          th:text="${row.signFormatted()} ?: #{main.controlling.row.total}">1612 / 01 / D</div>
-    <div class="small text-nowrap" th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</div>
+    <div class="small text-nowrap">
+      <!--/* A flat rate line carries no hours, so it says what its amount stands for (#972). */-->
+      <span th:if="${row.flatRate()}" class="badge bg-blue-lt me-1"
+            th:text="#{main.controlling.row.flatrate}">Pauschale</span>
+      <span th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</span>
+    </div>
   </td>
   <td class="text-end d-none d-lg-table-cell" th:if="${section.hasBookedBeforeWindowData()}"
       th:classappend="${cellClass}"
@@ -88,7 +103,9 @@
   <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
       th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}"
-      th:text="${row.hasRevenue()} ? #{main.budget.format.amount(${row.revenueEuro()})} : '—'"></td>
+      th:text="${row.hasTotalRevenue()} ? #{main.budget.format.amount(${row.totalRevenueEuro()})} : '—'"></td>
+  <td class="text-end" th:if="${section.hasFlatRateData()}" th:classappend="${cellClass}"
+      th:text="${row.hasFlatRateRevenue()} ? #{main.budget.format.amount(${row.flatRateRevenueEuro()})} : '—'"></td>
   <td class="text-end" th:if="${section.hasBudgetColumn()}" th:classappend="${cellClass}"
       th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
   <td class="text-end" th:if="${section.hasBudgetColumn()}"

@@ -56,6 +56,15 @@ public record BudgetControllingSection(
     }
 
     /**
+     * Whether any flat rate falls due in this section (#972). Only then is the breakdown column
+     * worth its width — on an order billed purely by the hour it would be a column of dashes.
+     */
+    public boolean hasFlatRateData() {
+        return total.hasFlatRateRevenue()
+            || rows().stream().anyMatch(BudgetControllingRow::hasFlatRateRevenue);
+    }
+
+    /**
      * Whether a margin can be computed anywhere in the section. It needs a gross profit and a
      * revenue to divide by, so a section without revenue shows dashes throughout.
      */

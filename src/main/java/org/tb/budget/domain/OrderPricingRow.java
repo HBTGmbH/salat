@@ -8,7 +8,7 @@ import org.tb.order.domain.Customerorder;
  *
  * @param customerorder   the order behind the sign, or {@code null} when it no longer exists — a
  *                        rate outlives its order and stays reachable either way (→
- *                        {@code OrderPricingFilterOption}).
+ *                        {@code CustomerorderFilterOption}).
  * @param employeeUnknown whether the rate names an employee that no longer carries that sign
  *                        (#966). Such a rate never matches and the work falls back to the
  *                        order-wide rate without a word, so the list says so.

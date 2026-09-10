@@ -145,7 +145,7 @@ public class OrderPricingService {
 
     /**
      * The customer order is deliberately not checked here: a rate references its order by sign and
-     * outlives it (#957, → {@code OrderPricingFilterOption}). Demanding the order on every edit
+     * outlives it (#957, → {@code CustomerorderFilterOption}). Demanding the order on every edit
      * would leave a rate whose order is gone only deletable, and editing it is how it gets corrected.
      */
     @Authorized(requiresManager = true)

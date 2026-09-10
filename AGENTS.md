@@ -420,6 +420,8 @@ Entities are divided into two categories (→ ADR-0011):
 | `ReportDefinition` | Stammdaten | `hide` (proposed — not yet implemented) |
 | `ScheduledReportJob` | Stammdaten | `enabled` |
 | `OrderRevenueExcelMapping` | Stammdaten | — |
+| `OrderFlatRate` | Stammdaten | `validFrom`/`validUntil` |
+| `OrderFlatRateInstalment` | Stammdaten | inherits the validity of its `OrderFlatRate` |
 | `Timereport` | Bewegungsdaten | soft-delete (`deleted` + `@SQLRestriction`) |
 | `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |
@@ -498,6 +500,18 @@ builder.or(
 )
 ```
 Keep this predicate separate from `notHidden()` — they are independent concerns.
+
+### Revenue in the Budget Module
+An order earns from two sources, and they add up (#972):
+
+- **Hourly** — a time report priced with the `OrderPricing` rate that matches its suborder, employee and date. No booking, no revenue.
+- **Flat rate** — an `OrderFlatRate` amount falling due on a date, regardless of any booking: a maintenance retainer, an initial fee, the instalments of a fixed price order. Several definitions per order are normal and add up; there is deliberately no overlap rule.
+
+Rules that follow from this:
+- `BudgetControllingRow.revenueEuro` is the **hourly** part only. Every figure derived from revenue — budget utilization, overrun, gross profit, margin — must read `totalRevenueEuro()`, which is the sum of both. Reading `revenueEuro` for those would silently drop the flat rates.
+- A flat rate schedule is derived in exactly one place, `OrderFlatRate.dueAmountsWithin`. The form preview and the controlling both call it, so a rate cannot be previewed as one calendar and evaluated as another.
+- Which plan a flat rate amount counts against follows `FlatRateAllocation.uniquePlanFor`: the one active plan whose period contains the due date and whose scope covers it. Where several plans qualify, none does — the amount is reported as being without a budget, exactly as an ambiguous booking is. Never guess a plan; double counting and silent reassignment are both worse than an explicit "without budget".
+- The unit of allocation is a single due amount, not the definition: a monthly rate spanning two plans has each month counted against the plan it falls into.
 
 ### List View Filter Toggles
 List views that support both validity and visibility filtering expose two independent boolean toggles in the advanced filter section:

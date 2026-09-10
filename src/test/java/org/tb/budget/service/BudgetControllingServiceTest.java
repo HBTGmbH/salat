@@ -25,6 +25,10 @@ import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.BudgetControllingSection;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
+import org.tb.budget.domain.FlatRateRhythm;
+import org.tb.budget.domain.OrderFlatRate;
+import org.tb.budget.domain.OrderFlatRateInstalment;
+import org.tb.budget.domain.OrderFlatRateLookup;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.SectionKind;
@@ -65,6 +69,7 @@ public class BudgetControllingServiceTest {
   private static final LocalDate IN_H2 = LocalDate.of(2026, 9, 10);
 
   private final List<OrderBudget> plans = new ArrayList<>();
+  private final List<OrderFlatRate> flatRates = new ArrayList<>();
   private final List<TimereportDTO> reports = new ArrayList<>();
   private final List<TimereportBudgetLink> links = new ArrayList<>();
   private final List<Suborder> suborders = new ArrayList<>();
@@ -84,6 +89,7 @@ public class BudgetControllingServiceTest {
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     assignmentRepository = mock(TimereportBudgetAssignmentRepository.class);
     var orderPricingService = mock(OrderPricingService.class);
+    var orderFlatRateService = mock(OrderFlatRateService.class);
     var employeeCostService = mock(EmployeeCostService.class);
     var publicholidayService = mock(PublicholidayService.class);
 
@@ -124,14 +130,16 @@ public class BudgetControllingServiceTest {
     givenReports(eightHoursOn(11L, IN_H1), eightHoursOn(20L, IN_H2));
     // One order-wide rate of 100 EUR/h — 8 h are worth 800 EUR wherever they are booked.
     when(orderPricingService.lookupFor(any())).thenReturn(OrderPricingLookup.of(List.of(orderWideRate())));
+    // No flat rates unless a test sets some up; the list is mutable so the last word wins.
+    when(orderFlatRateService.lookupFor(any())).thenAnswer(i -> OrderFlatRateLookup.of(List.copyOf(flatRates)));
 
     // These tests are about the evaluation, so authorization lets every order through.
     var budgetAuthorization = mock(BudgetAuthorization.class);
     when(budgetAuthorization.isAuthorizedForCustomerorder(anyString())).thenReturn(true);
 
     service = new BudgetControllingService(customerorderService, suborderService, timereportService,
-        orderBudgetRepository, assignmentRepository, orderPricingService, employeeCostService,
-        publicholidayService, budgetAuthorization);
+        orderBudgetRepository, assignmentRepository, orderPricingService, orderFlatRateService,
+        employeeCostService, publicholidayService, budgetAuthorization);
   }
 
   /**
@@ -551,6 +559,235 @@ public class BudgetControllingServiceTest {
         .isEqualByComparingTo("800.00");
   }
 
+  // --- flat rates (#972) -----------------------------------------------------------------------
+
+  /**
+   * The reason the feature exists: an order can earn without anybody booking. A plan with no
+   * bookings at all still has to report the flat rate falling due inside it.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_flat_rate_against_the_plan_covering_its_due_date() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "1000"));
+
+    var section = sectionOf(SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().flatRateRevenueEuro()).isEqualByComparingTo("1000");
+    // 16 h at 100 EUR plus the flat rate.
+    assertThat(section.total().totalRevenueEuro()).isEqualByComparingTo("2600.00");
+  }
+
+  /** A flat rate and hourly work on the same order add up; neither replaces the other. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_measure_the_budget_against_hourly_and_flat_rate_revenue_together() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2600"));
+    givenFlatRates(once("initial fee", null, IN_H1, "1000"));
+
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).total().budgetUsedPercent()).isCloseTo(100.0, within(0.01));
+  }
+
+  /** Several definitions on one order are the normal case and must not replace each other. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_add_up_several_flat_rates_of_one_order() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "1000"),
+        monthly("retainer", null, FROM, LocalDate.of(2026, 3, 31), "100"));
+
+    // Three monthly amounts on 01.01, 01.02 and 01.03 plus the one-off fee.
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro()).isEqualByComparingTo("1300");
+  }
+
+  /** A monthly flat rate is one record; every month of its validity is due on its own. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_one_line_per_flat_rate_rather_than_per_due_date() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
+
+    var flatRateRows = sectionOf(SectionKind.ORDER_LEVEL).rows().stream()
+        .filter(BudgetControllingRow::flatRate).toList();
+
+    assertThat(flatRateRows).hasSize(1);
+    assertThat(flatRateRows.get(0).label()).isEqualTo("retainer");
+    assertThat(flatRateRows.get(0).flatRateRevenueEuro()).isEqualByComparingTo("1200");
+  }
+
+  /**
+   * The point of allocating a due amount rather than a definition: a monthly rate spanning two
+   * plans has each of its months counted against the plan it falls into.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_split_a_monthly_flat_rate_across_the_plans_its_months_fall_into() {
+    givenBudgets(plan("H1", null, FROM, JUN, "1000"), plan("H2", null, JUL, UNTIL, "1000"));
+    givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
+
+    // Six months in each half of the year.
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro()).isEqualByComparingTo("600");
+    assertThat(compute().sections()).filteredOn(s -> s.kind() == SectionKind.ORDER_LEVEL).hasSize(2);
+    // 16 h at 100 EUR plus twelve monthly amounts of 100 EUR, each counted exactly once.
+    assertThat(totalRevenueOverAllSections()).isEqualByComparingTo("2800.00");
+  }
+
+  /** A line carrying nothing but a flat rate has something to report and must not be filtered out. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_a_flat_rate_on_an_order_nobody_booked_on() {
+    reports.clear();
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "1000"));
+
+    var section = sectionOf(SectionKind.ORDER_LEVEL);
+
+    assertThat(section.total().bookedHours()).isEqualTo(Duration.ZERO);
+    assertThat(section.rows()).extracting(BudgetControllingRow::label).contains("initial fee");
+    assertThat(section.total().totalRevenueEuro()).isEqualByComparingTo("1000");
+  }
+
+  /** A flat rate on a suborder belongs to the plan of that suborder, not to another one. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_suborder_flat_rate_against_the_plan_of_that_suborder() {
+    givenBudgets(plan("A", "co/01", FROM, UNTIL, "1000"), plan("B", "co/02", FROM, UNTIL, "1000"));
+    givenFlatRates(once("milestone", "co/01", IN_H1, "500"));
+
+    var groups = sectionOf(SectionKind.SUBORDER_LEVEL).groups();
+
+    assertThat(groups).filteredOn(g -> "co/01".equals(g.sign()))
+        .allSatisfy(g -> assertThat(g.subtotal().flatRateRevenueEuro()).isEqualByComparingTo("500"));
+    assertThat(groups).filteredOn(g -> "co/02".equals(g.sign()))
+        .allSatisfy(g -> assertThat(g.subtotal().flatRateRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO));
+  }
+
+  /** A flat rate deep below a first level suborder still meets the plan living on that level. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_a_flat_rate_on_a_deep_suborder_against_its_first_level_plan() {
+    givenBudgets(plan("co/01", "co/01", FROM, UNTIL, "1000"));
+    givenFlatRates(once("milestone", "co/01/D", IN_H1, "500"));
+
+    assertThat(sectionOf(SectionKind.SUBORDER_LEVEL).groups().get(0).subtotal().flatRateRevenueEuro())
+        .isEqualByComparingTo("500");
+  }
+
+  /** An order-wide flat rate is not the business of a plan that only covers one suborder. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_count_an_order_wide_flat_rate_against_a_suborder_plan() {
+    givenBudgets(plan("co/01", "co/01", FROM, UNTIL, "1000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "500"));
+
+    assertThat(sectionOf(SectionKind.SUBORDER_LEVEL).total().flatRateRevenueEuro())
+        .isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo("500");
+  }
+
+  /**
+   * Where two plans could hold the amount, neither does: counting it twice would report revenue
+   * that does not exist, and picking one would count it against a plan nobody chose.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_a_flat_rate_once_when_plans_overlap() {
+    givenBudgets(plan("A", null, FROM, UNTIL, "1000"), plan("B", null, FROM, UNTIL, "1000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "500"));
+
+    var flatRateOverAllSections = compute().sections().stream()
+        .map(s -> s.total().flatRateRevenueEuro()).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    assertThat(flatRateOverAllSections).isEqualByComparingTo("500");
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo("500");
+  }
+
+  /** No plan at all is the same case as an ambiguous one: the amount is due and has to be visible. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_a_flat_rate_no_plan_covers_as_without_budget() {
+    givenBudgets(plan("H1", null, FROM, JUN, "1000"));
+    givenFlatRates(once("late fee", null, IN_H2, "500"));
+
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo("500");
+  }
+
+  /** An inactive plan holds nothing, so its flat rates surface instead of disappearing. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_the_flat_rates_of_a_deactivated_plan_as_without_budget() {
+    var archived = plan("archived", null, FROM, UNTIL, "1000");
+    archived.setActive(false);
+    givenBudgets(archived);
+    givenFlatRates(once("initial fee", null, IN_H1, "500"));
+
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo("500");
+  }
+
+  /** Nothing outside the window, whatever the definition runs to. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_report_a_flat_rate_falling_due_after_the_window() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(once("late fee", null, IN_H2, "500"));
+
+    assertThat(sectionOf(compute(FROM, JUN), SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro())
+        .isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  /**
+   * The amounts are the full figures over the span the evaluation talks about (#917), so a flat rate
+   * from before the window counts towards the budget just as the earlier hours do.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_a_flat_rate_from_before_the_window() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(once("initial fee", null, IN_H1, "500"));
+
+    assertThat(sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro())
+        .isEqualByComparingTo("500");
+  }
+
+  /** Instalments are entered per date and are the case a fixed price order is paid in. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_the_instalments_of_a_fixed_price_flat_rate() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
+    givenFlatRates(instalments("fixed price", null, FROM, UNTIL,
+        instalment(IN_H1, "1000"), instalment(IN_H2, "2000")));
+
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro()).isEqualByComparingTo("3000");
+  }
+
+  /** Dashboard and alerts have to see the flat rates, or they report a lower utilization than the evaluation. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_include_flat_rates_in_the_utilization() {
+    var whole = plan("whole year", null, FROM, UNTIL, "4000");
+    givenBudgets(whole);
+    givenFlatRates(once("initial fee", null, IN_H1, "2400"));
+
+    var info = service.computeUtilizationInfo(whole);
+
+    // 1600 EUR from 16 h plus the flat rate of 2400 against a budget of 4000.
+    assertThat(info.coveredRevenueEuro()).isEqualByComparingTo("4000.00");
+    assertThat(info.percent()).isEqualTo(100.0);
+  }
+
+  /** The utilization follows the same allocation as the sections, so an ambiguous amount counts nowhere. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_leave_an_ambiguous_flat_rate_out_of_the_utilization() {
+    var a = plan("A", null, FROM, UNTIL, "1000");
+    var b = plan("B", null, FROM, UNTIL, "1000");
+    givenBudgets(a, b);
+    givenFlatRates(once("initial fee", null, IN_H1, "500"));
+
+    assertThat(service.computeUtilizationInfo(a).coveredRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(service.computeUtilizationInfo(b).coveredRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
   // --- helpers ---------------------------------------------------------------------------------
 
   private BudgetControllingResult compute() {
@@ -580,6 +817,12 @@ public class BudgetControllingServiceTest {
 
   private BigDecimal revenueOverAllSections() {
     return compute().sections().stream().map(s -> s.total().revenueEuro())
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  /** Hours and flat rates together — what the budget is actually measured against (#972). */
+  private BigDecimal totalRevenueOverAllSections() {
+    return compute().sections().stream().map(s -> s.total().totalRevenueEuro())
         .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
@@ -687,6 +930,51 @@ public class BudgetControllingServiceTest {
       budget.getAdjustments().add(adjustment);
     }
     return budget;
+  }
+
+  private void givenFlatRates(OrderFlatRate... rates) {
+    flatRates.clear();
+    flatRates.addAll(List.of(rates));
+  }
+
+  private static OrderFlatRate once(String description, String suborderSign, LocalDate due, String amount) {
+    return flatRate(description, suborderSign, FlatRateRhythm.ONCE, due, due, amount);
+  }
+
+  private static OrderFlatRate monthly(String description, String suborderSign, LocalDate from,
+                                       LocalDate until, String amount) {
+    return flatRate(description, suborderSign, FlatRateRhythm.MONTHLY, from, until, amount);
+  }
+
+  private static OrderFlatRate instalments(String description, String suborderSign, LocalDate from,
+                                           LocalDate until, OrderFlatRateInstalment... payments) {
+    var rate = flatRate(description, suborderSign, FlatRateRhythm.INSTALMENTS, from, until, null);
+    for (var payment : payments) {
+      payment.setOrderFlatRate(rate);
+      rate.getInstalments().add(payment);
+    }
+    return rate;
+  }
+
+  private static OrderFlatRateInstalment instalment(LocalDate due, String amount) {
+    var instalment = new OrderFlatRateInstalment();
+    instalment.setDue(due);
+    instalment.setAmount(new BigDecimal(amount));
+    return instalment;
+  }
+
+  private static OrderFlatRate flatRate(String description, String suborderSign, FlatRateRhythm rhythm,
+                                        LocalDate from, LocalDate until, String amount) {
+    var rate = new OrderFlatRate();
+    setId(rate, nextId++);
+    rate.setCustomerorderSign("co");
+    rate.setSuborderSign(suborderSign);
+    rate.setDescription(description);
+    rate.setRhythm(rhythm);
+    rate.setAmount(amount == null ? null : new BigDecimal(amount));
+    rate.setValidFrom(from);
+    rate.setValidUntil(until);
+    return rate;
   }
 
   private static OrderPricing orderWideRate() {
