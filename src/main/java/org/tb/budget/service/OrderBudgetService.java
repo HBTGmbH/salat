@@ -31,6 +31,7 @@ public class OrderBudgetService {
     private final OrderBudgetRepository orderBudgetRepository;
     private final SuborderService suborderService;
     private final BudgetAuthorization budgetAuthorization;
+    private final TimereportBudgetAssignmentService assignmentService;
 
     /**
      * Every caller goes through here, so this is where the customer order of the plan is checked —
@@ -120,13 +121,38 @@ public class OrderBudgetService {
         return orderBudgetRepository.save(budget);
     }
 
+    /**
+     * Saves the plan and, when the edit changed what it covers, brings the assignments of its
+     * bookings back in line (#974).
+     *
+     * <p>Without that, shortening a plan or moving its scope left assignments pointing at a plan
+     * that no longer covers them — the controlling kept counting those bookings against it while the
+     * dashboard did not, and the stored state contradicted what {@code BudgetResolver.isAssignable}
+     * treats as given. Renaming a plan or moving its alert threshold cannot invalidate an
+     * assignment, so those edits are not worth the queries.
+     */
     @Authorized(requiresManager = true)
     public void update(long id, OrderBudgetData data) {
         checkModeNotMixed(data.customerorderSign(), data.suborderSign(),
             data.validFrom(), data.validUntil(), data.active(), id);
         var budget = getById(id);
+        var coverageBefore = coverageOf(budget);
         apply(budget, data);
         orderBudgetRepository.save(budget);
+        if (!coverageOf(budget).equals(coverageBefore)) {
+            assignmentService.revalidateAssignmentsOf(id);
+        }
+    }
+
+    /**
+     * What a plan covers: the period it is valid in and the scope it applies to. Deactivating a plan
+     * is deliberately not part of it — an inactive plan keeps its assignments, and the controlling
+     * reports its bookings under "without budget" (→ {@code BudgetControllingService}).
+     */
+    private record Coverage(LocalDate validFrom, LocalDate validUntil, String suborderSign) {}
+
+    private static Coverage coverageOf(OrderBudget budget) {
+        return new Coverage(budget.getValidFrom(), budget.getValidUntil(), budget.getSuborderSign());
     }
 
     @Authorized(requiresManager = true)

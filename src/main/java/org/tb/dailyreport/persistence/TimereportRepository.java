@@ -5,6 +5,7 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 
 import jakarta.persistence.QueryHint;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.jpa.HibernateHints;
@@ -28,6 +29,14 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   )
   @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId and t.referenceday.refdate = :refDate")
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdate(long employeecontractId, LocalDate refDate);
+
+  /**
+   * The given bookings in one statement. Callers that hold a set of ids — the budget module holds
+   * the ids of the bookings assigned to a plan (#974) — would otherwise ask for them one by one.
+   * Deleted bookings are left out, as everywhere: their assignments are cleaned up on delete.
+   */
+  @Query("select t from Timereport t where t.deleted = false and t.id in :ids")
+  List<Timereport> findAllByIdIn(Collection<Long> ids);
 
   @Query("select t from Timereport t where t.deleted = false and t.employeecontract.id = :employeecontractId and t.referenceday.refdate >= :refDate")
   List<Timereport> findAllByEmployeecontractIdAndReferencedayRefdateIsGreaterThanEqual(long employeecontractId, LocalDate refDate);

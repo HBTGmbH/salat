@@ -10,6 +10,7 @@ import static org.tb.common.GlobalConstants.YESNO_YES;
 import jakarta.persistence.criteria.Order;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,6 +40,11 @@ public class TimereportDAO {
      */
     public TimereportDTO getTimereportById(long id) {
         return toDao(timereportRepository.findById(id)).orElse(null);
+    }
+
+    /** The given bookings in one statement; an empty request asks nothing of the database. */
+    public List<TimereportDTO> getTimereportsByIds(Collection<Long> ids) {
+        return ids.isEmpty() ? List.of() : toDaoList(timereportRepository.findAllByIdIn(ids));
     }
 
     /**

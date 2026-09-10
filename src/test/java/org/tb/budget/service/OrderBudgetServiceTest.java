@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -48,6 +49,8 @@ public class OrderBudgetServiceTest {
   private OrderBudgetService service;
   private BudgetAuthorization budgetAuthorization;
 
+  private TimereportBudgetAssignmentService assignmentService;
+
   @BeforeEach
   public void setUp() {
     orderBudgetRepository = mock(OrderBudgetRepository.class);
@@ -55,7 +58,9 @@ public class OrderBudgetServiceTest {
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
     when(suborderService.isFirstLevelSuborder(anyString(), anyString())).thenReturn(true);
     budgetAuthorization = permissiveAuthorization();
-    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization);
+    assignmentService = mock(TimereportBudgetAssignmentService.class);
+    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization,
+        assignmentService);
   }
 
   /** These tests are about the budget rules, so authorization lets everything through. */
@@ -211,7 +216,8 @@ public class OrderBudgetServiceTest {
     var suborderService = mock(SuborderService.class);
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
     when(suborderService.isFirstLevelSuborder("co", "co/01/02")).thenReturn(false);
-    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization);
+    service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization,
+        assignmentService);
     givenExisting();
 
     assertThatThrownBy(() -> service.create(data("co/01/02", JAN, DEC, true)))
@@ -282,6 +288,65 @@ public class OrderBudgetServiceTest {
         .thenReturn(List.of(plan(null, JAN, JUN)));
 
     assertThat(service.currentMode("co")).isEqualTo(BudgetMode.NONE);
+  }
+
+
+  // --- assignments follow a changed plan (#974) -------------------------------------------------
+
+  /**
+   * Editing a plan's period used to leave its assignments behind, pointing at a plan that no longer
+   * covered them. The controlling kept counting those bookings against it while the dashboard did
+   * not — two numbers for one plan.
+   */
+  @Test
+  public void revalidates_the_assignments_when_the_period_changed() {
+    givenExisting();
+    givenStored(7L, plan(null, JAN, DEC));
+
+    service.update(7L, data(null, JAN, JUN, true));
+
+    verify(assignmentService).revalidateAssignmentsOf(7L);
+  }
+
+  @Test
+  public void revalidates_the_assignments_when_the_scope_changed() {
+    givenExisting();
+    givenStored(7L, plan("co/01", JAN, DEC));
+
+    service.update(7L, data("co/02", JAN, DEC, true));
+
+    verify(assignmentService).revalidateAssignmentsOf(7L);
+  }
+
+  /**
+   * Renaming a plan or moving its alert threshold cannot invalidate an assignment, and re-resolving
+   * every booking of the plan for that would be work without a reason.
+   */
+  @Test
+  public void leaves_the_assignments_alone_when_only_the_name_changed() {
+    givenExisting();
+    givenStored(7L, plan(null, JAN, DEC));
+
+    service.update(7L, data(null, JAN, DEC, true));
+
+    verify(assignmentService, never()).revalidateAssignmentsOf(anyLong());
+  }
+
+  /** A plan that is only deactivated keeps its assignments — the controlling reports them as unplanned. */
+  @Test
+  public void leaves_the_assignments_alone_when_the_plan_is_only_deactivated() {
+    givenExisting();
+    givenStored(7L, plan(null, JAN, DEC));
+
+    service.update(7L, data(null, JAN, DEC, false));
+
+    verify(assignmentService, never()).revalidateAssignmentsOf(anyLong());
+  }
+
+  /** A plan as it already stands in the database, so an update has something to compare against. */
+  private void givenStored(long id, OrderBudget stored) {
+    setId(stored, id);
+    when(orderBudgetRepository.findById(id)).thenReturn(Optional.of(stored));
   }
 
   private void givenExisting(OrderBudget... plans) {
