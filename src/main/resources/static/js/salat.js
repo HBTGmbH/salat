@@ -1,9 +1,11 @@
-document.addEventListener("htmx:configRequest", function(evt) {
+document.addEventListener("htmx:config:request", function(evt) {
   const token = document.cookie.split("; ")
     .find(r => r.startsWith("XSRF-TOKEN="))
     ?.split("=")[1];
   if (token) {
-    evt.detail.headers["X-XSRF-TOKEN"] = decodeURIComponent(token);
+    // htmx 4 carries the whole request context in the event detail; the headers of htmx 2 sat
+    // directly on it (https://four.htmx.org/docs#migrating-from-htmx-2x-to-4x)
+    evt.detail.ctx.request.headers["X-XSRF-TOKEN"] = decodeURIComponent(token);
   }
 });
 
@@ -143,7 +145,7 @@ document.querySelectorAll('select.tomselect').forEach((el) => {
   new TomSelect(el, tomSelectConfig(el));
 });
 
-document.addEventListener('htmx:afterSettle', function () {
+document.addEventListener('htmx:after:swap', function () {
   document.querySelectorAll('select.tomselect').forEach((el) => {
     if (!el.tomselect) {
       new TomSelect(el, tomSelectConfig(el));
@@ -151,7 +153,7 @@ document.addEventListener('htmx:afterSettle', function () {
   });
 });
 
-document.addEventListener('htmx:afterSettle', function () {
+document.addEventListener('htmx:after:swap', function () {
   const raw = document.cookie.split('; ')
     .find(r => r.startsWith('XSRF-TOKEN='))
     ?.split('=')[1];
@@ -456,7 +458,7 @@ function initTimeInputs() {
 }
 
 initTimeInputs();
-document.addEventListener('htmx:afterSettle', initTimeInputs);
+document.addEventListener('htmx:after:swap', initTimeInputs);
 
 function applyFormTabOrder() {
   var wrapper = document.querySelector('.page-body');
@@ -470,4 +472,4 @@ function applyFormTabOrder() {
   });
 }
 applyFormTabOrder();
-document.addEventListener('htmx:afterSettle', applyFormTabOrder);
+document.addEventListener('htmx:after:swap', applyFormTabOrder);

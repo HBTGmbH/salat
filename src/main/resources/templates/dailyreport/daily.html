@@ -916,13 +916,9 @@
     htmx.trigger('#workingday-form', 'submit');
   }
 
-  document.addEventListener('htmx:afterOnLoad', function () {
-    workingdaySaveInFlight = false;
-  });
-  document.addEventListener('htmx:responseError', function () {
-    workingdaySaveInFlight = false;
-  });
-  document.addEventListener('htmx:sendError', function () {
+  // htmx 4 has one event for "the request is over, whatever came of it", so the three handlers of
+  // htmx 2 (afterOnLoad, responseError, sendError) collapse into it
+  document.addEventListener('htmx:finally:request', function () {
     workingdaySaveInFlight = false;
   });
 
@@ -993,18 +989,19 @@
 </section>
 
 <script layout:fragment="scripts">
-  htmx.on('htmx:beforeRequest', function(evt) {
+  htmx.on('htmx:before:request', function(evt) {
     if (evt.target.classList.contains('inline-edit-input') && inlineEditEscaped) {
       evt.preventDefault();
       inlineEditEscaped = false;
     }
   });
 
-  htmx.on('htmx:afterRequest', function(evt) {
+  htmx.on('htmx:after:request', function(evt) {
     var input = evt.target;
     if (!input.classList.contains('inline-edit-input')) return;
-    // On error restore display (HTMX replaces on success)
-    if (!evt.detail.successful) {
+    // On error restore display (HTMX replaces on success). htmx 4 reports the status on the request
+    // context instead of the `successful` flag of htmx 2.
+    if (evt.detail.ctx.response.status >= 400) {
       inlineEditFieldOf(input).classList.add('d-none');
       inlineEditDisplayOf(input).classList.remove('d-none');
     }

@@ -271,7 +271,7 @@ The rule of thumb: spend the review time where wrong results come from, not wher
 
 ## TomSelect Dropdowns
 
-All `<select>` elements use [TomSelect](https://tom-select.github.io/) for search-as-you-type behaviour. Initialisation is handled centrally in `layout/base.html` via a `querySelectorAll` on page load and again on `htmx:afterSettle` (so OOB-swapped selects are picked up automatically).
+All `<select>` elements use [TomSelect](https://tom-select.github.io/) for search-as-you-type behaviour. Initialisation is handled centrally in `layout/base.html` via a `querySelectorAll` on page load and again on `htmx:after:swap` (so OOB-swapped selects are picked up automatically).
 
 ### CSS class contract
 
@@ -301,7 +301,7 @@ Always add both `tomselect-multi` **and** the native `multiple` attribute. The c
 
 ### HTMX + OOB swaps
 
-`htmx:afterSettle` re-initialises any `select.tomselect` that does not yet have a `.tomselect` instance, so OOB-replaced selects are picked up without extra work. **Do not** add a `multiple` attribute to single-select OOB replacements — if the original select was single, the OOB replacement must also be single.
+`htmx:after:swap` re-initialises any `select.tomselect` that does not yet have a `.tomselect` instance, so OOB-replaced selects are picked up without extra work. **Do not** add a `multiple` attribute to single-select OOB replacements — if the original select was single, the OOB replacement must also be single.
 
 ---
 

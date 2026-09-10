@@ -320,7 +320,7 @@ nicht durchgängig.
 
 ### 5.3 Auswahlfelder
 Alle `<select>` werden per [TomSelect](https://tom-select.github.io/) zu Suchfeldern aufgewertet —
-zentral initialisiert in `salat.js`, auch nach HTMX-Swaps (`htmx:afterSettle`).
+zentral initialisiert in `salat.js`, auch nach HTMX-Swaps (`htmx:after:swap`).
 Klassenvertrag: `tomselect` = Einzelauswahl, `tomselect tomselect-multi` + `multiple` = Mehrfachauswahl.
 Optionen können über `data-subtext` eine zweite Zeile anzeigen (z. B. Vertragslaufzeit).
 
@@ -355,7 +355,7 @@ fachlicher Logik.
 `th:hx-post` / `hx-get`, `hx-include="closest form"`, `hx-target`, `hx-swap`; Controller erkennt
 `HX-Request` und liefert `"view :: fragment"`. Eingesetzt für: abhängige Auswahlfelder in
 Auftragsformularen, Inline-Toggles, Benachrichtigungsglocke, Buchungs-Popover in der Matrix.
-CSRF-Token werden in `salat.js` per `htmx:configRequest` nachgezogen.
+CSRF-Token werden in `salat.js` per `htmx:config:request` nachgezogen.
 
 ## 6. Eingabekomponenten nach Datentyp
 
