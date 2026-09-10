@@ -68,7 +68,7 @@ public class BudgetDashboardRowTest {
 
   private static BudgetDashboardRow noBudget(Integer alertThresholdPercent, double utilizationPercent) {
     return new BudgetDashboardRow(1L, "plan", "co", "order", LocalDate.of(2026, 1, 1),
-        LocalDate.of(2026, 12, 31), BigDecimal.ZERO, BigDecimal.TEN,
+        LocalDate.of(2026, 12, 31), LocalDate.of(2026, 6, 15), BigDecimal.ZERO, BigDecimal.TEN,
         alertThresholdPercent, utilizationPercent);
   }
 
@@ -79,7 +79,7 @@ public class BudgetDashboardRowTest {
 
   private static BudgetDashboardRow row(Integer alertThresholdPercent, double utilizationPercent) {
     return new BudgetDashboardRow(1L, "plan", "co", "order",
-        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), LocalDate.of(2026, 6, 15),
         new BigDecimal("1000"), new BigDecimal("1500"),
         alertThresholdPercent, utilizationPercent);
   }

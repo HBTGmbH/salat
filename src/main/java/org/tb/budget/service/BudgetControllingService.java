@@ -485,7 +485,13 @@ public class BudgetControllingService {
             .build();
     }
 
-    public record UtilizationInfo(BigDecimal budgetEuro, BigDecimal coveredRevenueEuro) {
+    /**
+     * @param evaluatedUntil the last day the figures cover (→ {@link #evaluatedUntil(LocalDate)}).
+     *                       Carried along so that a view can name its reference date and link to a
+     *                       controlling evaluation over the same window instead of a wider one.
+     */
+    public record UtilizationInfo(BigDecimal budgetEuro, BigDecimal coveredRevenueEuro,
+                                  LocalDate evaluatedUntil) {
         public double percent() {
             if (budgetEuro == null || budgetEuro.signum() == 0) return 0.0;
             return coveredRevenueEuro.divide(budgetEuro, 6, RoundingMode.HALF_UP)
@@ -543,25 +549,49 @@ public class BudgetControllingService {
                              List<OrderBudget> activePlans) {}
 
     /**
-     * Loads the data of one customer order over the union of the validity ranges of all its budgets.
-     * Every budget filters the reports down to its own range again, so the wider range does not
-     * change any result.
+     * Loads the data of one customer order over the union of the validity ranges of all its budgets,
+     * cut off at today (→ {@link #evaluatedUntil}). Every budget filters the reports down to its own
+     * range again, so the wider range does not change any result.
      */
     private OrderData loadOrderData(String customerorderSign, List<OrderBudget> budgets) {
         var ownBudgets = budgets.stream()
             .filter(b -> customerorderSign.equals(b.getCustomerorderSign()))
             .toList();
         var from = ownBudgets.stream().map(OrderBudget::getValidFrom).min(naturalOrder()).orElseThrow();
-        var until = ownBudgets.stream().map(OrderBudget::getValidUntil).max(naturalOrder()).orElseThrow();
+        var until = evaluatedUntil(
+            ownBudgets.stream().map(OrderBudget::getValidUntil).max(naturalOrder()).orElseThrow());
 
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         var suborders = suborderService.getSubordersByCustomerorderId(customerorder.getId());
-        var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
+        // A plan that only starts in the future has nothing behind it yet, and an inverted range
+        // would be a query asking the database for it.
+        var timereports = until.isBefore(from) ? List.<TimereportDTO>of()
+            : timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId());
         return new OrderData(customerorder, suborders,
             suborders.stream().collect(Collectors.toMap(Suborder::getId, Suborder::getCompleteOrderSign)),
             timereports.stream().collect(Collectors.groupingBy(TimereportDTO::getSuborderId)),
             planOfBooking(customerorderSign),
             orderBudgetRepository.findByCustomerorderSignAndActive(customerorderSign, TRUE));
+    }
+
+    /**
+     * The end of the window the utilization is measured over: the plan's own end, but never later
+     * than today (#972).
+     *
+     * <p>Dashboard and alerts answer "where does this plan stand", and that question is about the
+     * present. Reading a plan to its own end counted what has not happened yet — with hourly work
+     * that was rare enough to go unnoticed, because bookings in the future barely exist, but a
+     * monthly flat rate made it plain: a retainer running to December contributed all twelve months
+     * in June, and the plan looked used up while it was on track.
+     *
+     * <p>The cut applies to the budget as well, not only to the revenue. An adjustment that takes
+     * effect in November has not been granted yet, and counting it today would understate the
+     * utilization for the same reason. With both ends cut, the dashboard now says exactly what a
+     * controlling evaluation up to today says.
+     */
+    private static LocalDate evaluatedUntil(LocalDate planUntil) {
+        var today = DateUtils.today();
+        return planUntil.isBefore(today) ? planUntil : today;
     }
 
     /**
@@ -576,8 +606,8 @@ public class BudgetControllingService {
     private UtilizationInfo computeUtilizationInfo(OrderBudget budget, OrderData orderData,
                                                    OrderPricingLookup pricingLookup,
                                                    OrderFlatRateLookup flatRateLookup) {
-        var period = new LocalDateRange(budget.getValidFrom(), budget.getValidUntil());
         var coSign = budget.getCustomerorderSign();
+        var until = evaluatedUntil(budget.getValidUntil());
 
         var revenue = BigDecimal.ZERO;
         for (var suborder : orderData.suborders()) {
@@ -586,22 +616,26 @@ public class BudgetControllingService {
             }
             var soCompleteSign = orderData.completeSignBySuborderId().get(suborder.getId());
             for (var report : orderData.reportsBySuborder().getOrDefault(suborder.getId(), List.<TimereportDTO>of())) {
-                if (budget.getId().equals(orderData.planOfBooking().get(report.getId()))) {
+                // The date is checked here as well, not only through the loaded range: the order data
+                // is shared by every plan of the order, and this is the one place that decides what
+                // counts towards this plan.
+                if (budget.getId().equals(orderData.planOfBooking().get(report.getId()))
+                    && !report.getReferenceday().isAfter(until)) {
                     revenue = revenue.add(rateOf(report, coSign, soCompleteSign, pricingLookup));
                 }
             }
         }
-        // The flat rates of the plan's own period, allocated through the same rule the sections use —
-        // an amount several plans could hold counts against none of them.
+        // The flat rates due by now, allocated through the same rule the sections use — an amount
+        // several plans could hold counts against none of them.
         var flatRates = allocate(
-            flatRateLookup.dueAmounts(coSign, period.getFrom(), period.getUntil()),
+            flatRateLookup.dueAmounts(coSign, budget.getValidFrom(), until),
             orderData.activePlans());
         for (var dueAmount : flatRates.of(budget.getId())) {
             revenue = revenue.add(dueAmount.amount());
         }
-        // The window here is the plan's own validity, so nothing can have been consumed before it —
-        // an assignment always sits inside the plan's period.
-        return new UtilizationInfo(cumulativeBudgetOf(budget, period.getUntil()), revenue);
+        // Nothing can have been consumed before the plan started — an assignment always sits inside
+        // the plan's period — so the window needs no start of its own.
+        return new UtilizationInfo(cumulativeBudgetOf(budget, until), revenue, until);
     }
 
     private Double computeProgress(OrderBudget budget, LocalDate from, LocalDate until,

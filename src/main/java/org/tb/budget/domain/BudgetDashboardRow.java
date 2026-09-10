@@ -10,6 +10,12 @@ public record BudgetDashboardRow(
     String customerorderName,
     LocalDate validFrom,
     LocalDate validUntil,
+    /**
+     * The last day the figures of this row cover — the plan's end, or today when the plan runs on
+     * (#972). The row shows a plan's whole validity but reports where it stands now, so the two
+     * dates are not the same thing.
+     */
+    LocalDate evaluatedUntil,
     BigDecimal budgetEuro,
     BigDecimal coveredRevenueEuro,
     Integer alertThresholdPercent,

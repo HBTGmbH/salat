@@ -15,6 +15,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.BudgetDashboardRow;
 import org.tb.budget.service.BudgetDashboardService;
+import org.tb.common.util.DateUtils;
 import org.tb.customer.service.CustomerSegmentService;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
@@ -55,6 +56,9 @@ public class BudgetDashboardController {
 
         var rows = budgetDashboardService.computeDashboard(filter.getBudgetSegmentId(), responsibleId);
         model.addAttribute("rows", rows);
+        // The reference date the figures refer to. Taken from the clock here rather than in the
+        // template, so the view has no date source of its own to disagree with.
+        model.addAttribute("today", DateUtils.today());
         model.addAttribute("customerorders", customerordersOf(rows));
         return "budget/dashboard";
     }
