@@ -373,9 +373,16 @@
     <!--
       Runs the Playwright E2E test suite (Chrome + Firefox) against the dailyreport module.
       Requires a one-time local browser install: jenv exec ./mvnw -Pe2e test-compile exec:java@install-playwright-browsers
-      Usage: jenv exec ./mvnw test -Pe2e
-      Watch it run in a visible, slowed-down browser: jenv exec ./mvnw test -Pe2e -De2e.headless=false -De2e.slowmo=500
-      Run only one browser (used by the CI matrix): -De2e.browsers=chrome (or firefox)
+
+      Usage - always one browser per run, the browsers in separate runs:
+        jenv exec ./mvnw test -Pe2e -De2e.browsers=chrome
+        jenv exec ./mvnw test -Pe2e -De2e.browsers=firefox
+      Leaving out -De2e.browsers drives both browsers from one JVM against one database. The suite
+      shares that database and never cleans up its bookings, so the second browser then sees the
+      data of the first one and tests asserting on a per-day total fail for no good reason. The CI
+      matrix passes one browser per runner for the same reason (see AGENTS.md, Testing and Quality).
+
+      Watch it run in a visible, slowed-down browser: add -De2e.headless=false -De2e.slowmo=500
     -->
     <profile>
       <id>e2e</id>
