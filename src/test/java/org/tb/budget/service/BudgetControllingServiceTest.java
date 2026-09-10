@@ -532,8 +532,79 @@ public class BudgetControllingServiceTest {
     var info = service.computeUtilizationInfo(whole);
 
     assertThat(info.budgetEuro()).isEqualByComparingTo("2000");
-    assertThat(info.coveredRevenueEuro()).isEqualByComparingTo("1600.00");
-    assertThat(info.percent()).isEqualTo(80.0);
+    // Only the March booking; the one in September has not happened yet (#972).
+    assertThat(info.coveredRevenueEuro()).isEqualByComparingTo("800.00");
+    assertThat(info.percent()).isEqualTo(40.0);
+  }
+
+  // --- the utilization window ends today (#972) --------------------------------------------------
+
+  /**
+   * "Where does this plan stand" is a question about the present, so the window ends today rather
+   * than at the plan's own end. Reading it to the end counted what has not happened yet.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_measure_the_utilization_up_to_today_rather_than_to_the_plan_end() {
+    var whole = plan("whole year", null, FROM, UNTIL, "2000");
+    givenBudgets(whole);
+
+    // The fixture books 8 h in March and 8 h in September; today is the 15th of June.
+    assertThat(service.computeUtilizationInfo(whole).coveredRevenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /** A plan that has already ended is read to its own end, not to today. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_measure_a_finished_plan_up_to_its_own_end() {
+    var firstQuarter = plan("Q1", null, FROM, LocalDate.of(2026, 3, 31), "2000");
+    givenBudgets(firstQuarter);
+
+    assertThat(service.computeUtilizationInfo(firstQuarter).coveredRevenueEuro())
+        .isEqualByComparingTo("800.00");
+  }
+
+  /**
+   * The case that made the old window plain: a monthly retainer running to December contributed all
+   * twelve months in June, and the plan looked used up while it was on track.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_only_the_flat_rate_amounts_due_by_today() {
+    var whole = plan("whole year", null, FROM, UNTIL, "2000");
+    givenBudgets(whole);
+    givenFlatRates(monthly("retainer", null, FROM, UNTIL, "100"));
+
+    // Six monthly amounts are due by the 15th of June, not twelve — plus the March booking.
+    assertThat(service.computeUtilizationInfo(whole).coveredRevenueEuro()).isEqualByComparingTo("1400.00");
+  }
+
+  /**
+   * The cut applies to the budget as well. An adjustment taking effect in November has not been
+   * granted yet, and counting it today would understate the utilization.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_only_the_budget_granted_by_today() {
+    var whole = plan("whole year", null, FROM, UNTIL, "1000");
+    addAdjustment(whole, "500", LocalDate.of(2026, 11, 1));
+    givenBudgets(whole);
+
+    assertThat(service.computeUtilizationInfo(whole).budgetEuro()).isEqualByComparingTo("1000");
+  }
+
+  /** A plan that only starts next month has nothing behind it yet — neither budget nor revenue. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_nothing_for_a_plan_that_only_starts_in_the_future() {
+    var later = plan("H2", null, JUL, UNTIL, "2000");
+    givenBudgets(later);
+    givenFlatRates(once("initial fee", null, LocalDate.of(2026, 8, 1), "500"));
+
+    var info = service.computeUtilizationInfo(later);
+
+    assertThat(info.budgetEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(info.coveredRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
   @Test
@@ -766,11 +837,11 @@ public class BudgetControllingServiceTest {
   public void should_include_flat_rates_in_the_utilization() {
     var whole = plan("whole year", null, FROM, UNTIL, "4000");
     givenBudgets(whole);
-    givenFlatRates(once("initial fee", null, IN_H1, "2400"));
+    givenFlatRates(once("initial fee", null, IN_H1, "3200"));
 
     var info = service.computeUtilizationInfo(whole);
 
-    // 1600 EUR from 16 h plus the flat rate of 2400 against a budget of 4000.
+    // 800 EUR from the 8 h booked by today plus the flat rate of 3200 against a budget of 4000.
     assertThat(info.coveredRevenueEuro()).isEqualByComparingTo("4000.00");
     assertThat(info.percent()).isEqualTo(100.0);
   }

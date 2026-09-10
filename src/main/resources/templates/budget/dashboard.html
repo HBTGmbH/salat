@@ -104,13 +104,22 @@
           </td>
           <td>
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/budget/controlling(customerorderSign=${row.customerorderSign()},from=${#temporals.format(row.validFrom(),'yyyy-MM-dd')},until=${#temporals.format(row.validUntil(),'yyyy-MM-dd')})}"
+               th:href="@{/budget/controlling(customerorderSign=${row.customerorderSign()},from=${#temporals.format(row.validFrom(),'yyyy-MM-dd')},until=${#temporals.format(row.evaluatedUntil(),'yyyy-MM-dd')})}"
                th:text="#{main.budget.dashboard.link.controlling}">Controlling</a>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <!--
+    The validity column shows how long a plan runs; budget, revenue and utilization say where it
+    stands today (#972). Two different dates in one row, so the reference date is named.
+  -->
+  <p class="text-muted small mt-2" th:unless="${#lists.isEmpty(rows)}"
+     th:text="#{main.budget.dashboard.asof(${#temporals.format(today, 'dd.MM.yyyy')})}">
+    Budget, Ist-Erlös und Auslastung zum Stichtag 15.06.2026.
+  </p>
 
 </main>
 </html>

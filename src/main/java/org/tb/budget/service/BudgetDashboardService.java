@@ -44,6 +44,7 @@ public class BudgetDashboardService {
                     utilization.customerorderDescription(),
                     b.getValidFrom(),
                     b.getValidUntil(),
+                    info.evaluatedUntil(),
                     info.budgetEuro(),
                     info.coveredRevenueEuro(),
                     b.getAlertThresholdPercent(),
