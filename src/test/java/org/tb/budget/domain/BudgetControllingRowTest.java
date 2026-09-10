@@ -74,7 +74,21 @@ public class BudgetControllingRowTest {
     assertThat(over.overrunEuro()).isEqualByComparingTo("300");
   }
 
-  /** An agreed amount is not worked, so it lifts the gross profit and the margin with it. */
+  /**
+   * The line of a flat rate itself has no cost, so its margin would always read 100 % — a number
+   * that says nothing next to the lines that do carry cost.
+   */
+  @Test
+  public void should_report_no_margin_on_a_flat_rate_line() {
+    var flatRateLine = row().flatRateRevenueEuro(new BigDecimal("1000"))
+        .costEuro(BigDecimal.ZERO).flatRate(true).build();
+
+    assertThat(flatRateLine.hasGrossProfitMargin()).isFalse();
+    // The amount itself stays readable; only the percentage is dropped.
+    assertThat(flatRateLine.grossProfitEuro()).isEqualByComparingTo("1000");
+  }
+
+  /** An agreed amount is not worked, so it lifts the gross profit and the margin of an aggregate. */
   @Test
   public void should_count_a_flat_rate_towards_gross_profit_and_margin() {
     var mixed = row().revenueEuro(new BigDecimal("800")).flatRateRevenueEuro(new BigDecimal("200"))
