@@ -58,6 +58,29 @@ redirect(registry, "/old-path", "/new-path");
 - Preserve unit, integration, and UI tests across module boundaries.
 - Prefer testing observable behavior at module boundaries over implementation details.
 
+### E2E tests: one browser per run, in separate runs
+
+The E2E suite shares a single H2 database across all test classes and never cleans up the
+bookings a test creates (see the class comment on `PlaywrightE2ETestBase`). A
+`@ParameterizedTest` over `browsers()` therefore creates them **once per browser**, and the
+second browser sees what the first one left behind.
+
+**Always pass exactly one browser and run the browsers in separate runs:**
+
+```
+jenv exec ./mvnw test -Pe2e -De2e.browsers=chrome
+jenv exec ./mvnw test -Pe2e -De2e.browsers=firefox
+```
+
+- Do **not** run `jenv exec ./mvnw test -Pe2e` without `-De2e.browsers`. That drives both
+  browsers from one JVM against one database and produces failures that have nothing to do with
+  the change under test — a test asserting on a per-day total reads the sum of both runs.
+- CI works the same way: `.github/workflows/e2e-tests.yml` runs a `[chrome, firefox]` matrix, one
+  runner and one database per browser. A green CI therefore says nothing about the two-browser
+  constellation, and a failure that only appears locally is usually this and not a regression.
+- When a single-browser run is green and a combined run is not, the test is at fault, not the
+  code: it asserts on shared state instead of on the data it created itself (#846).
+
 ## Build and Tooling
 - Always use `./mvnw` (the Maven wrapper) to build, test, and run Maven goals — never a system-wide `mvn` command.
 - On macOS, prefix every `./mvnw` call with `jenv exec` so the correct JDK is on `PATH`: `jenv exec ./mvnw <goal>`.

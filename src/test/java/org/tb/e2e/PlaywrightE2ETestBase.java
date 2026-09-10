@@ -56,6 +56,14 @@ import org.tb.order.persistence.SuborderRepository;
  *   <li>prefer a dedicated day or month per test class, so month-spanning views such as the
  *       matrix overview do not mix bookings of different classes in the first place.</li>
  * </ul>
+ *
+ * <p><b>Run one browser per run, in separate runs:</b> {@code -De2e.browsers=chrome} and then
+ * {@code -De2e.browsers=firefox}, never both browsers in one run. Without the property
+ * {@link #browsers()} expands to every browser inside one JVM and one database, so the second
+ * browser inherits the bookings of the first — a test asserting on a per-day total then reads the
+ * sum of both runs and fails for a reason that has nothing to do with the code under test. The CI
+ * matrix passes one browser per runner, so such a failure never shows up there; see AGENTS.md,
+ * "Testing and Quality".
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "management.health.mail.enabled=false")
 @ActiveProfiles({"unittest", "local"})
