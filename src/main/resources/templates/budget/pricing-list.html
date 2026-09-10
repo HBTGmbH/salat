@@ -85,7 +85,14 @@
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td th:text="${p.suborderSign} ?: '-'"></td>
-          <td th:text="${p.employeeSign} ?: '-'"></td>
+          <!--/* Ein Kürzel, das niemand mehr trägt, löst sich lautlos auf (#966). */-->
+          <td>
+            <span th:text="${p.employeeSign} ?: '-'"></span>
+            <span th:if="${row.employeeUnknown()}" class="badge bg-red-lt ms-1"
+                  th:title="#{main.budget.employeesign.unknown}">
+              <i class="icon ti ti-user-off m-0"></i>
+            </span>
+          </td>
           <td th:text="${p.description} ?: '-'"></td>
           <td th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
           <!--/* One column like everywhere else in the module; 31.12.2999 means "no end". */-->

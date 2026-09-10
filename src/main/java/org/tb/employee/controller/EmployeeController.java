@@ -107,6 +107,9 @@ public class EmployeeController {
                     employee = new Employee();
                     employee.setSalatUser(new SalatUser());
                 }
+                // The sign as stored, read before the form overwrites it: records elsewhere
+                // reference the employee by it and have to be told when it changes (#966).
+                String previousSign = employee.getSign();
                 employee.getSalatUser().setLoginname(form.getLoginname());
                 employee.getSalatUser().setStatus(form.getStatus());
                 employee.setFirstname(form.getFirstname());
@@ -114,7 +117,7 @@ public class EmployeeController {
                 employee.setSign(form.getSign());
                 employee.setGender(form.getGender().charAt(0));
                 employee.setHide(Boolean.TRUE.equals(form.getHide()));
-                employeeService.createOrUpdate(employee);
+                employeeService.createOrUpdate(employee, previousSign);
             } catch (ErrorCodeException ex) {
                 model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
                 hasErrors = true;

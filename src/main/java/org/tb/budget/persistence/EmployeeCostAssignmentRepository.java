@@ -2,6 +2,7 @@ package org.tb.budget.persistence;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -47,5 +48,13 @@ public interface EmployeeCostAssignmentRepository
     List<EmployeeCostAssignment> findEffectiveGeneral(
         @Param("emp") String employeeSign,
         @Param("date") LocalDate date);
+
+    @Query("SELECT DISTINCT a.employeeSign FROM EmployeeCostAssignment a")
+    List<String> findDistinctEmployeeSigns();
+
+    /** Carries the assignments of an employee over to a new sign (#966). */
+    @Modifying
+    @Query("UPDATE EmployeeCostAssignment a SET a.employeeSign = :newSign WHERE a.employeeSign = :oldSign")
+    int updateEmployeeSign(@Param("oldSign") String oldSign, @Param("newSign") String newSign);
 
 }

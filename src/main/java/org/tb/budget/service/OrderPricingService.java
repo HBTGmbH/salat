@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,16 +61,29 @@ public class OrderPricingService {
         var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
         var ordersBySign = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
+        var knownEmployeeSigns = employeeService.getAllEmployeeSigns();
         return pricings.stream()
             .filter(pricing -> showInactive || pricing.getCurrentlyValid())
-            .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage))
+            .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage,
+                knownEmployeeSigns))
             .filter(row -> showExpiredOrders || orderStillValid(row))
             .toList();
     }
 
     private static OrderPricingRow row(OrderPricing pricing, Customerorder order,
-                                       OrderPricingLookup coverage) {
-        return new OrderPricingRow(pricing, order, OrderPricingDeviation.of(pricing, order, coverage));
+                                       OrderPricingLookup coverage, Set<String> knownEmployeeSigns) {
+        return new OrderPricingRow(pricing, order, OrderPricingDeviation.of(pricing, order, coverage),
+            employeeUnknown(pricing, knownEmployeeSigns));
+    }
+
+    /**
+     * A rate naming a sign nobody carries is a leftover of #966 — since a sign change is followed,
+     * it can only come from before. It resolves to nothing and lets the work fall back to the
+     * order-wide rate, so the list marks it rather than leaving it to be discovered in a total.
+     */
+    private static boolean employeeUnknown(OrderPricing pricing, Set<String> knownEmployeeSigns) {
+        var sign = pricing.getEmployeeSign();
+        return sign != null && !sign.isBlank() && !knownEmployeeSigns.contains(sign);
     }
 
     private Map<String, Customerorder> ordersOf(List<OrderPricing> pricings) {
@@ -149,6 +163,14 @@ public class OrderPricingService {
     @Authorized(requiresManager = true)
     public void delete(long id) {
         orderPricingRepository.deleteById(id);
+    }
+
+    /**
+     * Carries every rate of {@code oldSign} over to {@code newSign} (#966). Driven by the event of
+     * the employee module, where changing a sign takes a manager.
+     */
+    public void movePricingsToSign(String oldSign, String newSign) {
+        orderPricingRepository.updateEmployeeSign(oldSign, newSign);
     }
 
     /**

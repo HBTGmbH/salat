@@ -3,6 +3,7 @@ package org.tb.budget.persistence;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -50,5 +51,13 @@ public interface OrderPricingRepository
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
         @Param("excludeId") Long excludeId);
+
+    /**
+     * Carries the rates of an employee over to a new sign (#966). Rates without an employee apply
+     * to everyone and are left alone by the {@code =} comparison.
+     */
+    @Modifying
+    @Query("UPDATE OrderPricing p SET p.employeeSign = :newSign WHERE p.employeeSign = :oldSign")
+    int updateEmployeeSign(@Param("oldSign") String oldSign, @Param("newSign") String newSign);
 
 }

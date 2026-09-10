@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -276,6 +277,49 @@ public class OrderPricingServiceTest {
         .isInstanceOf(InvalidDataException.class)
         .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
     verify(orderPricingRepository, never()).save(any());
+  }
+
+  // --- rates left behind on a sign nobody carries (#966) ---------------------------------------
+
+  /**
+   * Since a sign change is followed, a rate on a sign no person carries can only be a leftover from
+   * before. It resolves to nothing and lets the work fall back to the order-wide rate, so the list
+   * has to say so instead of leaving it to be noticed in a total.
+   */
+  @Test
+  public void marks_a_rate_whose_employee_sign_nobody_carries() {
+    given(pricingFor("ghost"));
+
+    assertThat(service.getRows(null, false, true))
+        .singleElement().extracting(OrderPricingRow::employeeUnknown).isEqualTo(true);
+  }
+
+  @Test
+  public void leaves_a_rate_alone_whose_employee_still_exists() {
+    givenEmployees("emp");
+    given(pricingFor("emp"));
+
+    assertThat(service.getRows(null, false, true))
+        .singleElement().extracting(OrderPricingRow::employeeUnknown).isEqualTo(false);
+  }
+
+  /** A rate without an employee applies to everyone on the order — there is nothing to be unknown. */
+  @Test
+  public void marks_no_rate_that_names_no_employee() {
+    given(pricingFor(null));
+
+    assertThat(service.getRows(null, false, true))
+        .singleElement().extracting(OrderPricingRow::employeeUnknown).isEqualTo(false);
+  }
+
+  private void givenEmployees(String... signs) {
+    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of(signs));
+  }
+
+  private static OrderPricing pricingFor(String employeeSign) {
+    var pricing = pricing("co", TODAY.minusYears(1), OPEN_END);
+    pricing.setEmployeeSign(employeeSign);
+    return pricing;
   }
 
   private static OrderPricingData data(String customerorderSign, String suborderSign, String employeeSign) {
