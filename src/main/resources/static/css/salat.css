@@ -9,6 +9,47 @@
   --bs-font-sans-serif: var(--tblr-font-sans-serif);
 }
 
+/* ===== Manuelle Textselektion =====
+   An data-bs-theme gekoppelt, nicht an prefers-color-scheme: der Salat-Umschalter
+   ist maßgeblich, nicht das Theme des Betriebssystems.
+   Eine Regelgruppe mit einem unbekannten Pseudo-Element wird vom Browser komplett
+   verworfen, deshalb steht ::-moz-selection jeweils in einer eigenen Regel. */
+::selection {
+  background-color: #066fd1; /* Tabler primary; 5,0:1 gegen #fff */
+  color: #fff;
+}
+
+::-moz-selection {
+  background-color: #066fd1;
+  color: #fff;
+}
+
+[data-bs-theme="dark"] ::selection {
+  background-color: #9ec5fe; /* 8,8:1 gegen #16202e */
+  color: #16202e;
+}
+
+[data-bs-theme="dark"] ::-moz-selection {
+  background-color: #9ec5fe;
+  color: #16202e;
+}
+
+/* Die Markierung wird nicht mitgedruckt. Die Dark-Mode-Regeln oben sind
+   spezifischer, deshalb werden sie hier einzeln zurueckgesetzt. */
+@media print {
+  ::selection,
+  [data-bs-theme="dark"] ::selection {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  ::-moz-selection,
+  [data-bs-theme="dark"] ::-moz-selection {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
 .ts-control, .ts-dropdown-content {
   color: var(--tblr-body-color);
 }
