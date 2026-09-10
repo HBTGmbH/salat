@@ -17,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizedUserAuditorAware;
 import org.tb.auth.service.AuthService;
+import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.auth.EmployeecontractAuthorization;
@@ -144,6 +145,48 @@ public class EmployeeServiceTest {
 		givenVisibleEmployee(BOSS_SIGN);
 
 		assertThat(signsOfSelectable(BOSS_SIGN)).contains(BOSS_SIGN).doesNotContain(TESTY_SIGN);
+	}
+
+	/**
+	 * The pseudonym an anonymized employee gets must not be a sign somebody could be given (#966).
+	 * Records elsewhere reference the person by sign, and handing them a sign in use would cost
+	 * their work against a different person — worse than losing the reference. The employee form
+	 * cannot produce anything longer than the maximum, so a longer pseudonym cannot collide.
+	 */
+	@Test
+	public void anonymized_sign_is_out_of_reach_of_the_employee_form() {
+		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		employeeDAO.createOrUpdate(employee);
+
+		employeeDAO.anonymizeEmployee(employee.getId(), TESTY_SIGN);
+
+		assertThat(employee.getSign().length())
+				.isGreaterThan(GlobalConstants.EMPLOYEE_SIGN_MAX_LENGTH);
+	}
+
+	/** The login name is a reference too, and a duplicate one would make the login ambiguous. */
+	@Test
+	public void anonymized_loginname_is_out_of_reach_of_the_employee_form() {
+		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		employeeDAO.createOrUpdate(employee);
+
+		employeeDAO.anonymizeEmployee(employee.getId(), TESTY_SIGN);
+
+		assertThat(employee.getSalatUser().getLoginname().length())
+				.isGreaterThan(GlobalConstants.EMPLOYEE_LOGINNAME_MAX_LENGTH);
+	}
+
+	@Test
+	public void anonymized_employees_do_not_end_up_sharing_a_sign() {
+		Employee one = EmployeeTestUtils.createEmployee(TESTY_SIGN);
+		Employee other = EmployeeTestUtils.createEmployee(BOSS_SIGN);
+		employeeDAO.createOrUpdate(one);
+		employeeDAO.createOrUpdate(other);
+
+		employeeDAO.anonymizeEmployee(one.getId(), TESTY_SIGN);
+		employeeDAO.anonymizeEmployee(other.getId(), BOSS_SIGN);
+
+		assertThat(one.getSign()).isNotEqualTo(other.getSign());
 	}
 
 	/** The flag is set explicitly: {@code notHidden()} compares against TRUE, so NULL is no answer. */

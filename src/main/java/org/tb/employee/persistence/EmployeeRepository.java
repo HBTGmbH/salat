@@ -20,6 +20,14 @@ public interface EmployeeRepository extends PagingAndSortingRepository<Employee,
   Optional<Employee> findByLoginname(@Param("loginname") String loginname);
 
   /**
+   * Every sign in use (→ {@code EmployeeService#getAllEmployeeSigns}). A projection rather than
+   * {@code findAll()}: the employees themselves are not wanted, and loading them would drag every
+   * {@link org.tb.auth.domain.SalatUser} along with a select of its own.
+   */
+  @Query("SELECT e.sign FROM Employee e WHERE e.sign IS NOT NULL")
+  List<String> findAllSigns();
+
+  /**
    * Wie {@code findAll()}, lädt den {@link org.tb.auth.domain.SalatUser} aber im selben
    * Statement mit. {@code Employee.salatUser} ist ein {@code @ManyToOne} über eine
    * {@code @JoinTable} und damit EAGER; ohne Join-Fetch löst Hibernate die Assoziation

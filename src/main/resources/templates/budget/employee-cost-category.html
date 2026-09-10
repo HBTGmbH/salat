@@ -137,7 +137,15 @@
             </td>
           </tr>
           <tr th:each="a : ${assignments}">
-            <td th:text="${a.employeeSign}"></td>
+            <!--/* Ein Kürzel, das niemand mehr trägt, löst sich lautlos auf (#966). */-->
+            <td>
+              <span th:text="${a.employeeSign}"></span>
+              <span th:if="${unknownEmployeeSigns.contains(a.employeeSign)}"
+                    class="badge bg-red-lt ms-1"
+                    th:title="#{main.budget.employeesign.unknown}">
+                <i class="icon ti ti-user-off m-0"></i>
+              </span>
+            </td>
             <td th:text="${a.suborderSign} ?: '—'"></td>
             <td class="small text-muted">
               <span th:text="${#temporals.format(a.validFrom, 'dd.MM.yyyy')}"></span>

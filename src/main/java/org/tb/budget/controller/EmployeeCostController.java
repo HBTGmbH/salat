@@ -310,6 +310,9 @@ public class EmployeeCostController {
         model.addAttribute("categoryName", name);
         model.addAttribute("rates", rates);
         model.addAttribute("assignments", assignments);
+        // An assignment on a sign nobody carries resolves to nothing and costs the work 0 EUR
+        // without a word (#966) — the list marks it so it can be corrected.
+        model.addAttribute("unknownEmployeeSigns", employeeCostService.getUnknownEmployeeSigns());
     }
 
     private String rateFormWithErrors(Model model, EmployeeCostForm form, List<String> errors) {

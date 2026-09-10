@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -624,6 +625,37 @@ public class EmployeeCostServiceTest {
     });
   }
 
+  // --- assignments left behind on a sign nobody carries (#966) ---------------------------------
+
+  @Test
+  public void should_name_an_assignment_sign_no_employee_carries() {
+    givenAssignment("senior", "ghost", null, JAN, DEC, 1L);
+    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of("emp"));
+
+    assertThat(service.getUnknownEmployeeSigns()).containsExactly("ghost");
+  }
+
+  /**
+   * Hiding somebody declutters the select boxes and nothing else — their assignment resolves
+   * exactly as before (#956), so calling it lost would raise an alarm about a healthy record.
+   */
+  @Test
+  public void should_stay_silent_about_a_sign_an_employee_carries() {
+    givenAssignment("senior", "emp", null, JAN, DEC, 1L);
+    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of("emp"));
+
+    assertThat(service.getUnknownEmployeeSigns()).isEmpty();
+  }
+
+  /** The lookup resolves the sign with {@code equals}, so a differing case is a differing sign. */
+  @Test
+  public void should_name_a_sign_that_matches_an_employee_only_apart_from_case() {
+    givenAssignment("senior", "EMP", null, JAN, DEC, 1L);
+    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of("emp"));
+
+    assertThat(service.getUnknownEmployeeSigns()).containsExactly("EMP");
+  }
+
   private void stubAssignmentRepository() {
     when(assignmentRepository.findById(anyLong())).thenAnswer(invocation ->
         assignments.stream().filter(a -> a.getId().equals(invocation.getArgument(0))).findFirst());
@@ -640,6 +672,8 @@ public class EmployeeCostServiceTest {
         assignments.stream()
             .filter(a -> a.getEmployeeCostName().equals(invocation.<String>getArgument(0)))
             .count());
+    when(assignmentRepository.findDistinctEmployeeSigns()).thenAnswer(invocation ->
+        assignments.stream().map(EmployeeCostAssignment::getEmployeeSign).distinct().toList());
     when(assignmentRepository.findOverlapping(any(), any(), any(), any(), any())).thenAnswer(invocation -> {
       String employeeSign = invocation.getArgument(0);
       String suborderSign = invocation.getArgument(1);

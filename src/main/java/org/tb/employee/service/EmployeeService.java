@@ -11,6 +11,7 @@ import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,6 +24,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.SalatUser;
 import org.tb.auth.persistence.SalatUserRepository;
+import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
@@ -31,6 +33,7 @@ import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.event.EmployeeAnonymizedEvent;
 import org.tb.employee.event.EmployeeDeleteEvent;
+import org.tb.employee.event.EmployeeSignChangedEvent;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeeRepository;
 
@@ -87,6 +90,18 @@ public class EmployeeService {
 
   public Employee getEmployeeBySign(String sign) {
     return employeeDAO.getEmployeeBySign(sign);
+  }
+
+  /**
+   * Every sign that exists, for deciding whether a record referencing one still resolves (#966).
+   *
+   * <p>Deliberately not {@link #getAllEmployees()}: that one leaves out hidden employees and
+   * everyone the viewer may not read. Both are display concerns, and neither has any bearing on
+   * whether a stored sign resolves — a rate on a hidden person applies exactly as before (#956),
+   * and whether it does must not depend on who is looking.
+   */
+  public Set<String> getAllEmployeeSigns() {
+    return Set.copyOf(employeeRepository.findAllSigns());
   }
 
   public Employee getEmployeeById(long employeeId) {
@@ -169,31 +184,83 @@ public class EmployeeService {
     if (!employee.getSign().equals(confirmSign)) {
       throw new InvalidDataException(EM_ANONYMIZE_WRONG_SIGN, employee.getSign());
     }
-    String pseudo = Long.toString(employeeId, 36);
+    var previousSign = employee.getSign();
     employee.setFirstname("Anonymized");
     employee.setLastname("User");
-    employee.setSign(pseudo.toUpperCase());
+    employee.setSign(anonymousSign(employeeId));
     employee.setHide(true);
     eventPublisher.publishEvent(new EmployeeAnonymizedEvent(employeeId));
     if (employee.getSalatUser() != null) {
-      employee.getSalatUser().setLoginname(pseudo);
+      employee.getSalatUser().setLoginname(anonymousLoginname(employeeId));
       salatUserRepository.save(employee.getSalatUser());
     }
     employeeRepository.save(employee);
+    publishSignChange(employeeId, previousSign, employee.getSign());
   }
 
+  /**
+   * The sign an anonymized employee carries from then on (#966).
+   *
+   * <p>It is deliberately longer than {@link GlobalConstants#EMPLOYEE_SIGN_MAX_LENGTH} and therefore
+   * a value the employee form cannot produce, and it carries the id and is therefore unique among
+   * pseudonyms. Together that makes it collide with no sign in use.
+   *
+   * <p>The previous form was the id in base 36, which is two characters wide for the usual range of
+   * ids — the shape of an ordinary sign and free to collide with one. A collision would have handed
+   * the cost assignments of the anonymized person to whoever carries that sign, which is worse than
+   * losing them: the work would have been costed, only against the wrong person.
+   */
+  private static String anonymousSign(long employeeId) {
+    return "ANON-" + employeeId;
+  }
+
+  /** The login name follows the sign, for the same reason and with the same guarantee. */
+  private static String anonymousLoginname(long employeeId) {
+    return "anon-" + employeeId;
+  }
+
+  /**
+   * For creating an employee and for changes that leave the sign alone. A change that touches the
+   * sign belongs in {@link #createOrUpdate(Employee, String)} — records elsewhere reference the
+   * employee by it and have to be told.
+   */
   @Authorized(requiresManager = true)
   public void createOrUpdate(Employee employee) {
+    createOrUpdate(employee, employee.getSign());
+  }
+
+  /**
+   * Saves the employee and announces a changed sign to whoever references it, with {@code
+   * previousSign} being the sign as it was stored before the change.
+   *
+   * <p>The caller has to pass it because by the time the employee arrives here it already carries
+   * the new one: the form is applied to the loaded entity, so the old value is gone from the object
+   * before the service ever sees it.
+   */
+  @Authorized(requiresManager = true)
+  public void createOrUpdate(Employee employee, String previousSign) {
     if(!employeeAuthorization.isAuthorized(employee, AccessLevel.WRITE)) {
       throw new RuntimeException("Illegal access to save " + employee.getId() + " by " + authorizedUser.getLoginSign());
     }
-    
+
     // Ensure SalatUser is persisted before saving Employee
     if (employee.getSalatUser() != null) {
       SalatUser salatUser = employee.getSalatUser();
       salatUserRepository.save(salatUser);
     }
-    
+
     employeeRepository.save(employee);
+    publishSignChange(employee.getId(), previousSign, employee.getSign());
+  }
+
+  /**
+   * Announces a changed sign, and only a changed one — a save that leaves the sign alone is the
+   * normal case and must not make followers rewrite anything.
+   */
+  private void publishSignChange(long employeeId, String previousSign, String newSign) {
+    if (previousSign == null || previousSign.equals(newSign)) {
+      return;
+    }
+    eventPublisher.publishEvent(new EmployeeSignChangedEvent(employeeId, previousSign, newSign));
   }
 }

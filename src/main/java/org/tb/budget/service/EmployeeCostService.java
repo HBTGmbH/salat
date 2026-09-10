@@ -1,12 +1,14 @@
 package org.tb.budget.service;
 
 import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.toSet;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -91,6 +93,33 @@ public class EmployeeCostService {
     @Transactional(readOnly = true)
     public List<EmployeeCostAssignment> getAssignmentsByName(String employeeCostName) {
         return assignmentRepository.findByEmployeeCostName(employeeCostName);
+    }
+
+    /**
+     * The employee signs of the assignments that no person carries any more (#966). Since a sign
+     * change is followed, these can only be leftovers from before — the category page marks them so
+     * they can be corrected instead of costing 0 EUR unnoticed.
+     *
+     * <p>Compared in Java rather than by a query on purpose: {@link EmployeeCostLookup} resolves the
+     * sign with {@code equals}, so it has to be judged the same way. A database comparison folds
+     * case together on the usual collation and would call a sign resolvable that the lookup will
+     * never match.
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getUnknownEmployeeSigns() {
+        var knownSigns = employeeService.getAllEmployeeSigns();
+        return assignmentRepository.findDistinctEmployeeSigns().stream()
+            .filter(sign -> sign != null && !knownSigns.contains(sign))
+            .collect(toSet());
+    }
+
+    /**
+     * Carries every assignment of {@code oldSign} over to {@code newSign} (#966). Driven by the
+     * event of the employee module; changing a sign takes a manager there just as the class-level
+     * authorization demands one here.
+     */
+    public void moveAssignmentsToSign(String oldSign, String newSign) {
+        assignmentRepository.updateEmployeeSign(oldSign, newSign);
     }
 
     @Transactional(readOnly = true)
