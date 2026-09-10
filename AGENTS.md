@@ -514,6 +514,25 @@ Rules that follow from this:
 - The unit of allocation is a single due amount, not the definition: a monthly rate spanning two plans has each month counted against the plan it falls into.
 - **Dashboard and alerts end their window today**, never at the plan's own end (`BudgetControllingService.evaluatedUntil`). They answer "where does this plan stand", which is a question about the present; reading a plan to its end counted what has not happened yet — a monthly flat rate running to December contributed all twelve months in June. The cut applies to the budget as well: an adjustment taking effect in November has not been granted yet. With both ends cut, a dashboard row says exactly what a controlling evaluation up to today says, and the row links to that window rather than to a wider one. The controlling view itself keeps its explicit `from`/`until` filter and is not capped.
 
+### Budget Assignments Follow a Changed Plan
+A booking is assigned to a budget plan explicitly (#913), and that assignment is what every
+evaluation reads. Editing the plan therefore has to bring its assignments back in line (#974):
+
+- `OrderBudgetService.update` compares what the plan covers — validity period and scope — before and
+  after the edit, and only then calls `TimereportBudgetAssignmentService.revalidateAssignmentsOf`. A
+  renamed plan or a moved alert threshold cannot invalidate an assignment.
+- Revalidation looks only at the bookings **of that plan**. A booking the change newly brings into
+  the plan's reach belongs to another plan or to none; pulling it in would take it away from a
+  decision somebody else made. Bulk assignment (#911) and the backfill (#910) serve that direction.
+- An assignment that survives the change is left alone, including a deliberate manual one. One the
+  change invalidated moves to the single other active plan covering the booking, or is dropped when
+  none or several do — the booking then shows up under "without budget".
+- Deactivating a plan is deliberately **not** part of its coverage: an inactive plan keeps its
+  assignments, and the controlling reports its bookings as unplanned.
+- `TimereportBudgetAssignmentService` loads and authorizes a plan through `OrderBudgetRepository` +
+  `BudgetAuthorization` rather than through `OrderBudgetService`. That service has to be able to call
+  this one, so going the other way would close a bean cycle.
+
 ### List View Filter Toggles
 List views that support both validity and visibility filtering expose two independent boolean toggles in the advanced filter section:
 - `show` (`Boolean`) — when `true`, includes expired/invalid records; default `null`/`false` shows only currently valid

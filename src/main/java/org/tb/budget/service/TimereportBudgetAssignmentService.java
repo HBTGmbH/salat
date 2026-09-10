@@ -1,6 +1,8 @@
 package org.tb.budget.service;
 
 import static java.lang.Boolean.TRUE;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
+import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.TimereportBudgetAssignmentRepository;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
@@ -37,7 +41,10 @@ import org.tb.order.service.CustomerorderService;
 public class TimereportBudgetAssignmentService {
 
     private final TimereportBudgetAssignmentRepository assignmentRepository;
-    private final OrderBudgetService orderBudgetService;
+    // The plan is loaded and authorized here rather than through OrderBudgetService: that service
+    // has to be able to call this one (#974), and going through it would close a bean cycle.
+    private final OrderBudgetRepository orderBudgetRepository;
+    private final BudgetAuthorization budgetAuthorization;
     private final TimereportService timereportService;
     private final BudgetResolver budgetResolver;
     private final CustomerorderService customerorderService;
@@ -51,7 +58,7 @@ public class TimereportBudgetAssignmentService {
     public void assign(long timereportId, long orderBudgetId) {
         checkManager();
         // Also runs the authorization check on the plan's customer order.
-        var budget = orderBudgetService.getById(orderBudgetId);
+        var budget = authorizedBudget(orderBudgetId);
         checkAssignable(budget, getReport(timereportId));
 
         var assignment = assignmentRepository.findByTimereportId(timereportId)
@@ -112,6 +119,85 @@ public class TimereportBudgetAssignmentService {
         assignmentRepository.save(assignment);
     }
 
+    /**
+     * Brings the assignments of a plan back in line after the plan itself changed (#974).
+     *
+     * <p>Editing a plan's period or scope left its assignments pointing at a plan that no longer
+     * covers them: the controlling kept counting the booking against it, because sections go by the
+     * assignment and not by the date, while the dashboard stopped at the plan's new end (#972). Two
+     * numbers for one plan — and a stored state contradicting what {@link BudgetResolver#isAssignable}
+     * treats as given everywhere else.
+     *
+     * <p>An assignment that is still valid is left alone, including a deliberate manual one — the
+     * same promise {@link #resolveAssignments} makes. One the change invalidated is retargeted to
+     * the single other active plan covering the booking, or dropped when none or several do; the
+     * booking then shows up under "without budget", where bulk assignment can pick it up (#911).
+     *
+     * <p>Only the bookings <em>of this plan</em> are looked at. A booking the change newly brings
+     * into the plan's reach belongs to another plan or to none, and pulling it in here would take it
+     * away from a decision somebody else made.
+     *
+     * <p>Runs on a fixed number of statements rather than one per booking: the ids, the bookings and
+     * the assignment rows are each read once, and {@link BudgetResolver#resolveAll} reads the plans
+     * once per customer order.
+     *
+     * <p>Deliberately not manager-only: it is the consequence of a plan edit that
+     * {@code OrderBudgetService.update} has already authorized, in the same transaction.
+     */
+    @Authorized(permitAll = true)
+    public void revalidateAssignmentsOf(long orderBudgetId) {
+        var timereportIds = assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId);
+        if (timereportIds.isEmpty()) {
+            return;
+        }
+        var reports = timereportService.getTimereportsByIds(timereportIds);
+        var assignments = assignmentRepository.findByTimereportIdIn(timereportIds).stream()
+            .collect(toMap(TimereportBudgetAssignment::getTimereportId, identity()));
+        var resolutions = budgetResolver.resolveAll(reports);
+
+        var retargeted = new ArrayList<TimereportBudgetAssignment>();
+        var orphaned = new ArrayList<Long>();
+        for (var report : reports) {
+            var assignment = assignments.get(report.getId());
+            // Deleted between the two reads; there is nothing left to correct.
+            if (assignment == null || budgetResolver.isAssignable(assignment.getOrderBudget(), report)) {
+                continue;
+            }
+            var resolved = resolutions.get(report.getId()).unique().orElse(null);
+            if (resolved == null) {
+                orphaned.add(report.getId());
+            } else {
+                // Retargeted rather than replaced, as in assign(): the row keeps its audit trail,
+                // and no insert races the delete of a row the unique index still holds.
+                assignment.setOrderBudget(resolved);
+                retargeted.add(assignment);
+            }
+        }
+
+        if (!retargeted.isEmpty()) {
+            assignmentRepository.saveAll(retargeted);
+        }
+        if (!orphaned.isEmpty()) {
+            assignmentRepository.deleteByTimereportIdIn(orphaned);
+        }
+        if (!retargeted.isEmpty() || !orphaned.isEmpty()) {
+            log.info("Order budget {} changed: {} assignment(s) moved to another plan, {} dropped",
+                orderBudgetId, retargeted.size(), orphaned.size());
+        }
+    }
+
+    /**
+     * The plan, with the access check on its customer order — the same two steps
+     * {@code OrderBudgetService.getById} performs. Kept here so that this service does not have to
+     * depend on that one, which depends on this one since #974.
+     */
+    private OrderBudget authorizedBudget(long orderBudgetId) {
+        var budget = orderBudgetRepository.findById(orderBudgetId)
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, orderBudgetId));
+        budgetAuthorization.checkAuthorized(budget);
+        return budget;
+    }
+
     /** Removes the assignment of the booking, if it has one. Assigning nothing is not an error. */
     @Authorized(requiresManager = true)
     public void unassign(long timereportId) {
@@ -129,7 +215,7 @@ public class TimereportBudgetAssignmentService {
     /** The bookings assigned to the plan. Reading them requires access to the plan itself. */
     @Transactional(readOnly = true)
     public List<Long> getAssignedTimereportIds(long orderBudgetId) {
-        orderBudgetService.getById(orderBudgetId);
+        authorizedBudget(orderBudgetId);
         return assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId);
     }
 
@@ -143,7 +229,7 @@ public class TimereportBudgetAssignmentService {
      */
     @Transactional(readOnly = true)
     public List<TimereportDTO> getAssignedTimereports(long orderBudgetId, LocalDate from, LocalDate until) {
-        var plan = orderBudgetService.getById(orderBudgetId);
+        var plan = authorizedBudget(orderBudgetId);
         var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId));
         if (assignedIds.isEmpty()) {
             return List.of();
@@ -181,7 +267,7 @@ public class TimereportBudgetAssignmentService {
             return;
         }
         // Also runs the authorization check on the plan's customer order.
-        var target = orderBudgetService.getById(targetBudgetId);
+        var target = authorizedBudget(targetBudgetId);
         var reports = timereportIds.stream().map(this::getReport).toList();
         reports.forEach(report -> checkAssignable(target, report));
 
@@ -199,7 +285,7 @@ public class TimereportBudgetAssignmentService {
     /** How many bookings the plan holds. Reading it requires access to the plan itself. */
     @Transactional(readOnly = true)
     public long countAssignedTimereports(long orderBudgetId) {
-        orderBudgetService.getById(orderBudgetId);
+        authorizedBudget(orderBudgetId);
         return assignmentRepository.countByOrderBudgetId(orderBudgetId);
     }
 

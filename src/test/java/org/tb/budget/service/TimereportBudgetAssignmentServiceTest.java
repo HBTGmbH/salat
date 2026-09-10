@@ -1,5 +1,8 @@
 package org.tb.budget.service;
 
+import java.util.Collection;
+import java.util.Optional;
+import org.tb.budget.auth.BudgetAuthorization;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,7 +59,8 @@ public class TimereportBudgetAssignmentServiceTest {
   private final List<TimereportDTO> reports = new ArrayList<>();
 
   private TimereportBudgetAssignmentRepository assignmentRepository;
-  private OrderBudgetService orderBudgetService;
+  private OrderBudgetRepository orderBudgetRepository;
+  private BudgetAuthorization budgetAuthorization;
   private TimereportService timereportService;
   private CustomerorderService customerorderService;
   private AuthorizedUser authorizedUser;
@@ -65,8 +69,10 @@ public class TimereportBudgetAssignmentServiceTest {
   @BeforeEach
   public void setUp() {
     assignmentRepository = mock(TimereportBudgetAssignmentRepository.class);
-    var orderBudgetRepository = mock(OrderBudgetRepository.class);
-    orderBudgetService = mock(OrderBudgetService.class);
+    orderBudgetRepository = mock(OrderBudgetRepository.class);
+    // The plan is loaded and authorized in the service itself since #974 — going through
+    // OrderBudgetService would close a bean cycle, because that service calls this one.
+    budgetAuthorization = mock(BudgetAuthorization.class);
     timereportService = mock(TimereportService.class);
     customerorderService = mock(CustomerorderService.class);
     var suborderService = mock(SuborderService.class);
@@ -84,6 +90,24 @@ public class TimereportBudgetAssignmentServiceTest {
     });
     doAnswer(invocation -> stored.remove(invocation.<TimereportBudgetAssignment>getArgument(0)))
         .when(assignmentRepository).delete(any());
+    when(assignmentRepository.findTimereportIdsByOrderBudgetId(anyLong())).thenAnswer(invocation ->
+        stored.stream()
+            .filter(a -> a.getOrderBudget().getId().equals(invocation.<Long>getArgument(0)))
+            .map(TimereportBudgetAssignment::getTimereportId)
+            .toList());
+    when(assignmentRepository.findByTimereportIdIn(any())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return stored.stream().filter(a -> ids.contains(a.getTimereportId())).toList();
+    });
+    doAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      stored.removeIf(a -> ids.contains(a.getTimereportId()));
+      return null;
+    }).when(assignmentRepository).deleteByTimereportIdIn(any());
+    when(timereportService.getTimereportsByIds(any())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return reports.stream().filter(r -> ids.contains(r.getId())).toList();
+    });
     when(assignmentRepository.saveAll(any())).thenAnswer(invocation -> {
       Iterable<TimereportBudgetAssignment> saved = invocation.getArgument(0);
       saved.forEach(a -> {
@@ -118,8 +142,8 @@ public class TimereportBudgetAssignmentServiceTest {
     // The real resolver: the rule that decides what a plan covers must be the production one, both
     // for the manual check and for the automatic assignment.
     var budgetResolver = new BudgetResolver(orderBudgetRepository, suborderService);
-    service = new TimereportBudgetAssignmentService(assignmentRepository, orderBudgetService,
-        timereportService, budgetResolver, customerorderService, authorizedUser);
+    service = new TimereportBudgetAssignmentService(assignmentRepository, orderBudgetRepository,
+        budgetAuthorization, timereportService, budgetResolver, customerorderService, authorizedUser);
   }
 
   // --- assigning ------------------------------------------------------------------------------
@@ -291,11 +315,11 @@ public class TimereportBudgetAssignmentServiceTest {
   /** Reading a plan's bookings goes through the plan, so its authorization check runs. */
   @Test
   public void reading_the_bookings_of_a_plan_checks_access_to_the_plan() {
-    givenPlan(7L, "CO", null, JAN, DEC, true);
+    var plan = givenPlan(7L, "CO", null, JAN, DEC, true);
     when(assignmentRepository.findTimereportIdsByOrderBudgetId(7L)).thenReturn(List.of(100L, 101L));
 
     assertThat(service.getAssignedTimereportIds(7L)).containsExactly(100L, 101L);
-    verify(orderBudgetService).getById(7L);
+    verify(budgetAuthorization).checkAuthorized(plan);
   }
 
   // --- automatic assignment while booking (#909) ----------------------------------------------
@@ -633,8 +657,131 @@ public class TimereportBudgetAssignmentServiceTest {
 
   // --- test fixture ---------------------------------------------------------------------------
 
-  private void givenPlan(long id, String customerorderSign, String suborderSign,
-                         LocalDate validFrom, LocalDate validUntil, boolean active) {
+
+  // --- revalidation after a plan changed (#974) -------------------------------------------------
+
+  /**
+   * The defect: shortening a plan left its assignments pointing at a plan that no longer covers
+   * them, and the controlling kept counting those bookings against it.
+   */
+  @Test
+  public void drops_an_assignment_the_shortened_period_no_longer_covers() {
+    var plan = givenPlan(7L, "CO", null, JAN, JUN, true);
+    givenReport(100L, "CO", 1L, DEC);
+    givenStoredAssignment(100L, plan);
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).isEmpty();
+  }
+
+  /** An assignment that survives the change is left alone — including a deliberate manual one. */
+  @Test
+  public void keeps_an_assignment_the_changed_plan_still_covers() {
+    var plan = givenPlan(7L, "CO", null, JAN, JUN, true);
+    givenReport(100L, "CO", 1L, MAR);
+    givenStoredAssignment(100L, plan);
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget()).isEqualTo(plan);
+  }
+
+  /** Where exactly one other active plan now covers the booking, it moves there rather than nowhere. */
+  @Test
+  public void moves_an_assignment_to_the_single_other_plan_that_covers_it() {
+    var shortened = givenPlan(7L, "CO", null, JAN, JUN, true);
+    var second = givenPlan(8L, "CO", null, LocalDate.of(2026, 7, 1), DEC, true);
+    givenReport(100L, "CO", 1L, DEC);
+    givenStoredAssignment(100L, shortened);
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).hasSize(1);
+    assertThat(stored.get(0).getOrderBudget()).isEqualTo(second);
+  }
+
+  /** Two candidates are no answer: the resolution never guesses (#909), so the booking loses its plan. */
+  @Test
+  public void drops_an_assignment_when_several_other_plans_would_cover_it() {
+    var shortened = givenPlan(7L, "CO", null, JAN, JUN, true);
+    givenPlan(8L, "CO", null, JAN, DEC, true);
+    givenPlan(9L, "CO", null, JAN, DEC, true);
+    givenReport(100L, "CO", 1L, DEC);
+    givenStoredAssignment(100L, shortened);
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).isEmpty();
+  }
+
+  /** The scope is the other half of what a plan covers, and editing it has the same consequence. */
+  @Test
+  public void drops_an_assignment_the_changed_scope_no_longer_covers() {
+    var moved = givenPlan(7L, "CO", "CO/02", JAN, DEC, true);
+    // The booking sits on CO/01, which the plan no longer covers.
+    givenReport(100L, "CO", 1L, MAR);
+    givenStoredAssignment(100L, moved);
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).isEmpty();
+  }
+
+  /** An inactive plan holds nothing, so nothing of it can stay assigned. */
+  @Test
+  public void drops_the_assignments_of_a_plan_that_was_deactivated() {
+    var archived = givenPlan(7L, "CO", null, JAN, DEC, false);
+    givenReport(100L, "CO", 1L, MAR);
+    givenStoredAssignment(100L, archived);
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).isEmpty();
+  }
+
+  @Test
+  public void does_nothing_for_a_plan_without_assignments() {
+    givenPlan(7L, "CO", null, JAN, JUN, true);
+
+    service.revalidateAssignmentsOf(7L);
+
+    verify(timereportService, never()).getTimereportsByIds(any());
+    verify(assignmentRepository, never()).saveAll(any());
+  }
+
+  /**
+   * A plan can hold hundreds of bookings. The bookings, their assignment rows and the deletes are
+   * each one statement — anything per booking would make editing a plan a page that hangs.
+   */
+  @Test
+  public void revalidates_a_whole_plan_without_a_statement_per_booking() {
+    var shortened = givenPlan(7L, "CO", null, JAN, JUN, true);
+    for (long id = 100L; id < 110L; id++) {
+      givenReport(id, "CO", 1L, DEC);
+      givenStoredAssignment(id, shortened);
+    }
+
+    service.revalidateAssignmentsOf(7L);
+
+    assertThat(stored).isEmpty();
+    verify(timereportService, times(1)).getTimereportsByIds(any());
+    verify(assignmentRepository, times(1)).findByTimereportIdIn(any());
+    verify(assignmentRepository, times(1)).deleteByTimereportIdIn(any());
+    verify(timereportService, never()).getTimereportById(anyLong());
+  }
+
+  /** An assignment as it already stands in the database, without going through the service. */
+  private void givenStoredAssignment(long timereportId, OrderBudget plan) {
+    var assignment = new TimereportBudgetAssignment();
+    assignment.setTimereportId(timereportId);
+    assignment.setOrderBudget(plan);
+    stored.add(assignment);
+  }
+
+  private OrderBudget givenPlan(long id, String customerorderSign, String suborderSign,
+                                LocalDate validFrom, LocalDate validUntil, boolean active) {
     var plan = new OrderBudget();
     plan.setName("plan-" + id);
     plan.setCustomerorderSign(customerorderSign);
@@ -643,8 +790,9 @@ public class TimereportBudgetAssignmentServiceTest {
     plan.setValidUntil(validUntil);
     plan.setActive(active);
     setId(plan, id);
-    when(orderBudgetService.getById(id)).thenReturn(plan);
+    when(orderBudgetRepository.findById(id)).thenReturn(Optional.of(plan));
     plans.add(plan);
+    return plan;
   }
 
   private void givenReport(long id, String customerorderSign, long suborderId, LocalDate day) {

@@ -60,6 +60,7 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -689,6 +690,10 @@ public class TimereportService {
 
   public List<TimereportDTO> getTimereportsForEmployeecontractAndDate(long employeecontractId, LocalDate date) {
     return timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date);
+  }
+
+  public List<TimereportDTO> getTimereportsByIds(Collection<Long> ids) {
+    return timereportDAO.getTimereportsByIds(ids);
   }
 
   public List<TimereportDTO> getTimereportsByDates(LocalDate beginDate, LocalDate endDate) {
