@@ -103,7 +103,12 @@
 
       <!-- Month navigation -->
       <th:block th:replace="~{fragments/month-picker :: monthPicker('matrix-month', null, ${yearMonth})}"></th:block>
-      <a class="btn btn-sm btn-outline-secondary" th:href="@{/dailyreport/matrix}"
+      <!--/* month and year have to be named explicitly: the matrix remembers them as UiState, and
+             UiStateFilter refills a missing request parameter from that state - a link without them
+             would land on the remembered month again instead of the current one (#923) */-->
+      <a class="btn btn-sm btn-outline-secondary"
+         th:with="currentYearMonth=${@dateUtils.currentYearMonth}"
+         th:href="@{/dailyreport/matrix(month=${currentYearMonth.monthValue},year=${currentYearMonth.year})}"
          th:text="#{main.general.month.current}">Aktueller Monat</a>
     </div>
   </div>
