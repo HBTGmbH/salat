@@ -689,8 +689,12 @@
                  at the same spot in both modes. Anything else here would be hit by the click that
                  got the user into this view in the first place (#855) */-->
           <div class="d-flex justify-content-center gap-2">
+            <!--/* month and year have to be named explicitly: they are remembered as UiState, and
+                   UiStateFilter refills a missing request parameter from that state - a link
+                   without them would land on the remembered month again (#923) */-->
             <a class="btn btn-sm btn-outline-primary"
-               th:href="@{/dailyreport/daily(mode='list')}">
+               th:with="currentYearMonth=${@dateUtils.currentYearMonth}"
+               th:href="@{/dailyreport/daily(mode='list',month=${currentYearMonth.monthValue},year=${currentYearMonth.year})}">
               <span th:text="#{main.general.month.current}">Aktueller Monat</span>
             </a>
             <a class="btn btn-sm btn-outline-secondary"
