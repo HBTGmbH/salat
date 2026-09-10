@@ -41,7 +41,7 @@
         on an order billed purely by the hour this would be a column of dashes, and the table has
         enough of them to fit already.
       -->
-      <th class="text-end" th:if="${section.hasFlatRateData()}" th:text="#{main.controlling.col.flatrate}">davon Pauschal (€)</th>
+      <th class="text-end" th:if="${section.hasFlatRateData()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
       <th class="text-end" th:if="${section.hasBudgetColumn()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
       <!-- Two lines, like the column before it: the label is wider than the numbers below it. -->
       <th class="text-end" th:if="${section.hasBudgetColumn()}">
