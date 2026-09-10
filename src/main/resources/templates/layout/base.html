@@ -169,6 +169,12 @@
                     Kundenstundensätze
                   </a>
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
+                     th:href="@{/budget/flat-rate}"
+                     th:classappend="${subSection == 'flat-rate'} ? 'active' : ''"
+                     th:text="#{main.flatrate.list.title}">
+                    Pauschalen
+                  </a>
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/employee-cost}"
                      th:classappend="${subSection == 'employee-cost'} ? 'active' : ''"
                      th:text="#{main.employeecost.list.title}">

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='flat-rate',
+        title=#{main.flatrate.list.title},
+        pageTitle=#{main.flatrate.list.title},
+        sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" th:action="@{/budget/flat-rate}" data-filter-form="flatRate">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
+            <!-- No submit button: the select filters on change, like every other list here (#952). -->
+            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}"
+                    onchange="form.requestSubmit()">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="option : ${customerorderOptions}"
+                      th:value="${option.sign}"
+                      th:attr="data-subtext=${option.customerLabel}"
+                      th:text="${option.label}"
+                      th:selected="${coSign != null and coSign == option.sign}"></option>
+            </select>
+          </div>
+          <div class="col-auto ms-auto">
+            <a class="btn btn-success" th:href="@{/budget/flat-rate/create}">
+              <i class="icon ti ti-plus"></i>
+              <span th:text="#{main.flatrate.button.create}">Neue Pauschale</span>
+            </a>
+          </div>
+        </div>
+        <div class="row g-2 align-items-end mt-2">
+          <div class="col-auto ms-2">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="flatRateShowInactive" value="true" th:checked="${showInactive}"/>
+              <input type="hidden" name="flatRateShowInactive" value="false"/>
+              <span class="form-check-label" th:text="#{main.flatrate.filter.showinactive}">Abgelaufene anzeigen</span>
+            </label>
+          </div>
+          <div class="col-auto ms-2">
+            <!-- The definition's own validity and its order's are two different things (#957). -->
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="flatRateShowExpiredOrders" value="true" th:checked="${showExpiredOrders}"/>
+              <input type="hidden" name="flatRateShowExpiredOrders" value="false"/>
+              <span class="form-check-label" th:text="#{main.flatrate.filter.showexpiredorders}">Pauschalen abgelaufener Aufträge anzeigen</span>
+            </label>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.flatrate.field.customerorderSign}">Auftrag</th>
+          <th th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</th>
+          <th th:text="#{main.flatrate.field.description}">Beschreibung</th>
+          <th th:text="#{main.flatrate.field.rhythm}">Abrechnung</th>
+          <th class="text-end" th:text="#{main.flatrate.field.total}">Summe (€)</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.flatrate.field.valid}">Gültig</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(rows)}">
+          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+        </tr>
+        <tr th:each="row : ${rows}" th:classappend="${!row.flatRate().currentlyValid} ? 'table-danger' : ''"
+            th:with="f=${row.flatRate()}, order=${row.customerorder()}">
+          <td>
+            <div>
+              <span th:text="${f.customerorderSign}"></span>
+              <span class="ms-1 small" th:text="${order?.shortdescription}"></span>
+            </div>
+            <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
+          </td>
+          <td th:text="${f.suborderSign} ?: '-'"></td>
+          <td>
+            <a th:href="@{/budget/flat-rate/{id}(id=${f.id})}" th:text="${f.description} ?: '-'">Beschreibung</a>
+          </td>
+          <td>
+            <span th:text="#{${f.rhythm.label}}">Einmalig</span>
+            <!--/* How many dates the definition puts on the calendar — the number a monthly rate or a
+                   set of instalments is actually read by. */-->
+            <span class="small text-muted ms-1" th:if="${row.dueCount() > 1}"
+                  th:text="|(#{main.flatrate.duecount(${row.dueCount()})})|">(12 Termine)</span>
+            <!--/* Nothing on the calendar earns nothing, and the record looks complete otherwise. */-->
+            <span th:if="${row.emptySchedule}" class="badge bg-warning-lt ms-1"
+                  th:title="#{main.flatrate.warning.noschedule}">
+              <i class="icon ti ti-calendar-off m-0"></i>
+            </span>
+          </td>
+          <td class="text-end" th:text="#{main.budget.format.amount(${row.totalAmount()})}"></td>
+          <td class="d-none d-md-table-cell small text-muted">
+            <span th:text="${#temporals.format(f.validFrom, 'dd.MM.yyyy')}"></span>
+            <th:block th:if="${f.rhythm.name() != 'ONCE'}">
+              –
+              <span th:text="${#temporals.format(f.validUntil, 'dd.MM.yyyy')}"></span>
+            </th:block>
+          </td>
+          <td>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/budget/flat-rate/{id}/edit(id=${f.id})}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td>
+            <form th:action="@{/budget/flat-rate/{id}/delete(id=${f.id})}" method="post"
+                  th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form[data-filter-form]');
+      if (!form) return;
+      form.querySelectorAll('input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.requestSubmit(); });
+      });
+    });
+  </script>
+
+</main>
+</html>

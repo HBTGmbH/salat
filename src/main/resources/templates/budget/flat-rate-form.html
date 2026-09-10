@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='budget',
+        subSection='flat-rate',
+        title=${isEdit} ? #{main.flatrate.form.title.edit} : #{main.flatrate.form.title.create},
+        pageTitle=${isEdit} ? #{main.flatrate.form.title.edit} : #{main.flatrate.form.title.create},
+        sectionTitle=#{main.general.mainmenu.budget.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/budget/flat-rate/store}" th:object="${flatRateForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <div class="row">
+        <div class="col-md-6">
+          <!-- Plain select rather than salat:select, which does not forward the hx-* attributes. -->
+          <div class="mb-3">
+            <label class="form-label required" for="customerorderSign"
+                   th:text="#{main.flatrate.field.customerorderSign}">Auftrag</label>
+            <select class="form-select tomselect" th:field="*{customerorderSign}"
+                    th:hx-post="@{/budget/flat-rate/refresh}"
+                    hx-swap="none"
+                    hx-include="closest form"
+                    hx-trigger="change">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="co : ${customerorders}"
+                      th:value="${co.sign}"
+                      th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
+                      th:attr="data-subtext=${customerLabel}"
+                      th:text="${co.hide}
+                            ? |${co.sign} - ${co.shortdescription} (#{main.general.hidden.suffix})|
+                            : |${co.sign} - ${co.shortdescription}|"></option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{budget/flat-rate-form :: suborderSelect(${suborders}, ${flatRateForm.suborderSign}, null)}"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{description}" th:label="#{main.flatrate.field.description}" maxlength="255"
+                           th:helpText="#{main.flatrate.field.description.help}" />
+        </div>
+        <div class="col-md-6">
+          <!-- The rhythm decides which of the fields below mean anything, so it drives the preview. -->
+          <div class="mb-3">
+            <label class="form-label required" for="rhythm" th:text="#{main.flatrate.field.rhythm}">Abrechnung</label>
+            <select class="form-select tomselect" th:field="*{rhythm}"
+                    th:hx-post="@{/budget/flat-rate/refresh}"
+                    hx-swap="none"
+                    hx-include="closest form"
+                    hx-trigger="change">
+              <option th:each="r : ${rhythms}" th:value="${r.name()}" th:text="#{${r.label}}">Einmalig</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- One htmx trigger for the three fields the schedule follows from; change bubbles up here. -->
+      <div class="row"
+           th:hx-post="@{/budget/flat-rate/refresh}"
+           hx-swap="none"
+           hx-include="closest form"
+           hx-trigger="change">
+        <div class="col-md-4">
+          <salat:textInput th:field="*{amountEuro}" type="text" th:label="#{main.flatrate.field.amountEuro}"
+                           th:helpText="#{main.flatrate.field.amountEuro.help}" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.flatrate.field.validFrom}" required="true"
+                           th:helpText="#{main.flatrate.field.validFrom.help}" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.flatrate.field.validUntil}"
+                           th:helpText="#{main.flatrate.field.validUntil.help}" />
+        </div>
+      </div>
+      <div th:replace="~{budget/flat-rate-form :: schedulePreview(
+              ${previewDueAmounts}, ${previewTotal}, ${previewInstalmentsPending}, null)}"></div>
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}"
+                         th:cancelHref="@{/budget/flat-rate}" />
+    </salat:buttons>
+  </salat:form>
+
+  <!-- HTMX OOB updates: the suborders of the chosen order, and the dates the definition amounts to. -->
+  <div th:if="${htmxRequest}">
+    <div th:replace="~{budget/flat-rate-form :: suborderSelect(${suborders}, ${flatRateForm.suborderSign}, true)}"></div>
+    <div th:replace="~{budget/flat-rate-form :: schedulePreview(
+            ${previewDueAmounts}, ${previewTotal}, ${previewInstalmentsPending}, true)}"></div>
+  </div>
+
+</main>
+
+<!--
+  Rendered twice: inline in the form, and again as an out-of-band swap when the customer order
+  changes — that is what the oob parameter is for.
+
+  Unlike an hourly rate the suborder is a concrete one, not a pattern: a flat rate is a single agreed
+  amount and has nothing to spread over several matches. So this is the field itself, not a picker
+  that prefills one.
+-->
+<div th:fragment="suborderSelect(suborders, selectedSign, oob)" class="mb-3" id="flatRateSuborderSelect"
+     th:attr="hx-swap-oob=${oob}">
+  <label class="form-label" for="suborderSign" th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</label>
+  <select class="form-select tomselect" id="suborderSign" name="suborderSign"
+          th:attr="data-value=${selectedSign}"
+          th:disabled="${#lists.isEmpty(suborders)}">
+    <option value="" th:text="#{main.flatrate.field.suborderSign.wholeorder}">--- Ganzer Auftrag ---</option>
+    <option th:each="so : ${suborders}"
+            th:value="${so.completeOrderSign}"
+            th:text="${so.hide}
+                       ? |${so.completeOrderSign} - ${so.shortdescription} (#{main.general.hidden.suffix})|
+                       : |${so.completeOrderSign} - ${so.shortdescription}|"
+            th:selected="${selectedSign != null and selectedSign == so.completeOrderSign}"></option>
+  </select>
+  <div class="form-text" th:text="#{main.flatrate.field.suborderSign.help}">Ohne Unterauftrag gilt die Pauschale für den ganzen Auftrag.</div>
+</div>
+
+<!--
+  What the definition would put on the calendar, before it is saved. Computed on an unsaved
+  OrderFlatRate, so the preview and the schedule the controlling later expands cannot disagree —
+  both ask the entity itself.
+-->
+<div th:fragment="schedulePreview(dueAmounts, total, instalmentsPending, oob)" id="flatRateSchedulePreview"
+     th:attr="hx-swap-oob=${oob}">
+  <!-- Instalments are stored, not derived, so an unsaved definition has none to show yet. -->
+  <div class="alert alert-info mb-0" th:if="${instalmentsPending}"
+       th:text="#{main.flatrate.preview.instalments.hint}">
+    Abschläge werden nach dem Speichern erfasst.
+  </div>
+  <th:block th:unless="${instalmentsPending}">
+    <label class="form-label" th:text="#{main.flatrate.preview.title}">Fällige Beträge</label>
+    <p class="text-muted mb-0" th:if="${#lists.isEmpty(dueAmounts)}"
+       th:text="#{main.flatrate.preview.empty}">Noch keine Termine — Betrag und Zeitraum ergänzen.</p>
+    <div th:unless="${#lists.isEmpty(dueAmounts)}">
+      <div class="mb-2">
+        <span class="text-muted" th:text="#{main.flatrate.duecount(${#lists.size(dueAmounts)})}">12 Termine</span>
+        <span class="ms-2 fw-bold" th:text="#{main.budget.format.amount(${total})}">1.200,00 €</span>
+      </div>
+      <div class="d-flex flex-wrap gap-1">
+        <span class="badge bg-blue-lt" th:each="due : ${dueAmounts}">
+          <span th:text="${#temporals.format(due.due(), 'dd.MM.yyyy')}">01.01.2026</span>:
+          <span th:text="#{main.budget.format.amount(${due.amount()})}">100,00 €</span>
+        </span>
+      </div>
+    </div>
+  </th:block>
+</div>
+
+</html>

@@ -2642,5 +2642,128 @@ databaseChangeLog:
             columnNames: customerorder_sign, issue_key
             constraintName: uq_jira_ticket_co_issue_key
 
+  - changeSet:
+      id: 74
+      author: kr
+      comment: Create tables order_flat_rate and order_flat_rate_instalment - flat rate revenues per order (#972)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: order_flat_rate
+      changes:
+        - createTable:
+            tableName: order_flat_rate
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_order_flat_rate
+                    nullable: false
+              - column:
+                  name: customerorder_sign
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              # Empty means the flat rate applies to the customer order as a whole.
+              - column:
+                  name: suborder_sign
+                  type: varchar(255)
+              - column:
+                  name: description
+                  type: varchar(255)
+              - column:
+                  name: rhythm
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              # Null for instalments, which carry an amount each.
+              - column:
+                  name: amount
+                  type: decimal(15,2)
+              - column:
+                  name: valid_from
+                  type: date
+                  constraints:
+                    nullable: false
+              # Never open ended, unlike order_pricing.valid_until: an open end would let a monthly
+              # flat rate run up an unbounded revenue.
+              - column:
+                  name: valid_until
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+        - createIndex:
+            tableName: order_flat_rate
+            indexName: idx_order_flat_rate_co_sign
+            columns:
+              - column:
+                  name: customerorder_sign
+        - createTable:
+            tableName: order_flat_rate_instalment
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_order_flat_rate_instalment
+                    nullable: false
+              - column:
+                  name: order_flat_rate_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_order_flat_rate_instalment_flat_rate
+                    references: order_flat_rate(id)
+                    deleteCascade: true
+              - column:
+                  name: amount
+                  type: decimal(15,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: due
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: comment
+                  type: varchar(2000)
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: updatecounter
+                  type: int
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

@@ -22,7 +22,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.service.OrderPricingService;
-import org.tb.budget.viewhelper.OrderPricingFilterOption;
+import org.tb.budget.viewhelper.CustomerorderFilterOption;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.employee.service.EmployeeService;
@@ -186,14 +186,14 @@ public class OrderPricingController {
     /**
      * The customer orders offered in the list filter — those that actually carry a rate, labelled
      * like every other order select. The signs come from the pricings, the labels from the orders
-     * behind them; a sign without an order keeps its own entry (→ {@link OrderPricingFilterOption}).
+     * behind them; a sign without an order keeps its own entry (→ {@link CustomerorderFilterOption}).
      */
-    private List<OrderPricingFilterOption> filterOptions() {
+    private List<CustomerorderFilterOption> filterOptions() {
         var signs = orderPricingService.getCustomerorderSignsWithPricing();
         var ordersBySign = customerorderService.getCustomerordersBySigns(signs).stream()
             .collect(toMap(Customerorder::getSign, identity(), (first, second) -> first));
         return signs.stream()
-            .map(sign -> OrderPricingFilterOption.from(sign, ordersBySign.get(sign), customerorderViewHelper))
+            .map(sign -> CustomerorderFilterOption.from(sign, ordersBySign.get(sign), customerorderViewHelper))
             .toList();
     }
 

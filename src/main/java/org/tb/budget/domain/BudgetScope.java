@@ -33,6 +33,22 @@ public final class BudgetScope {
     }
 
     /**
+     * The first level part of a complete order sign, e.g. {@code 1612/01/D} → {@code 1612/01}.
+     * {@code null} for an order-wide scope and for a sign that names no suborder at all — both mean
+     * "the whole customer order", which is what an order-wide plan covers.
+     *
+     * <p>Works on the sign rather than on an entity, for the scopes that are stored as a sign and
+     * never resolved to a suborder: a flat rate names its suborder by complete order sign (#972).
+     */
+    public static String firstLevelSignOf(String completeOrderSign) {
+        if (isOrderWide(completeOrderSign)) {
+            return null;
+        }
+        var parts = completeOrderSign.split("/");
+        return parts.length < 2 ? null : parts[0] + "/" + parts[1];
+    }
+
+    /**
      * Whether the plan covers a booking on the given customer order whose first level ancestor
      * carries {@code firstLevelSign}. For an order-wide plan the sign is irrelevant and may be
      * {@code null} — the caller then does not have to resolve the suborder at all.

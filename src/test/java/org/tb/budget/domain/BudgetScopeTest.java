@@ -34,6 +34,33 @@ public class BudgetScopeTest {
     assertThat(BudgetScope.firstLevelSignOf(deep)).isEqualTo("CO/01");
   }
 
+  /**
+   * The overload on the sign, for the scopes that are stored as a sign and never resolved to a
+   * suborder — a flat rate names its suborder that way (#972).
+   */
+  @Test
+  public void a_first_level_sign_is_its_own_scope() {
+    assertThat(BudgetScope.firstLevelSignOf("CO/01")).isEqualTo("CO/01");
+  }
+
+  @Test
+  public void a_deeper_sign_resolves_to_its_first_level_part() {
+    assertThat(BudgetScope.firstLevelSignOf("CO/01/02/03")).isEqualTo("CO/01");
+  }
+
+  /** An order-wide scope has no first level at all — that is what an order-wide plan covers. */
+  @Test
+  public void an_order_wide_sign_resolves_to_no_scope() {
+    assertThat(BudgetScope.firstLevelSignOf((String) null)).isNull();
+    assertThat(BudgetScope.firstLevelSignOf(" ")).isNull();
+  }
+
+  /** A bare customer order sign names no suborder, so it means the order as a whole. */
+  @Test
+  public void a_sign_without_a_suborder_part_resolves_to_no_scope() {
+    assertThat(BudgetScope.firstLevelSignOf("CO")).isNull();
+  }
+
   @Test
   public void a_suborder_plan_covers_a_booking_below_its_suborder() {
     assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/01")).isTrue();

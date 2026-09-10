@@ -129,6 +129,13 @@ public enum ErrorCode {
   BU_SUBORDER_SIGN_UNKNOWN("BU-0020", "no suborder exists with that complete order sign"),
   BU_CUSTOMERORDER_SIGN_UNKNOWN("BU-0021", "no customer order exists with that sign"),
   BU_EMPLOYEE_COST_NAME_UNKNOWN("BU-0022", "no cost category exists with that name"),
+  // #972: flat rates. There is deliberately no overlap code — flat rates add up by design, so two
+  // definitions covering the same period are a legitimate case, not a conflict.
+  BU_FLAT_RATE_NOT_FOUND("BU-0023", "order flat rate not found"),
+  BU_FLAT_RATE_INSTALMENT_NOT_FOUND("BU-0024", "order flat rate instalment not found"),
+  BU_FLAT_RATE_NOT_BILLED_IN_INSTALMENTS("BU-0025", "instalments only exist on a flat rate billed in instalments"),
+  BU_FLAT_RATE_INSTALMENT_OUTSIDE_PERIOD("BU-0026", "the instalment date lies outside the validity of the flat rate"),
+  BU_FLAT_RATE_AMOUNT_REQUIRED("BU-0027", "a flat rate billed once or monthly needs an amount"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
