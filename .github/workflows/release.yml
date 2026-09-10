@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Versionssprung gegenueber der aktuellen SNAPSHOT-Version"
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag and publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write  # push the release commits and the tag, create the release
+      checks: read     # read the check runs of the commit to release
+    outputs:
+      tag: ${{ steps.versions.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # The release commits and the tag are pushed back to main, so the
+          # checkout credentials have to stay available.
+          persist-credentials: true  # zizmor: ignore[artipacked]
+
+      - name: Verify main is green
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # In-progress check runs are ignored on purpose: this workflow shows up
+          # as one of them, and the release build re-runs the tests anyway.
+          failed=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs" \
+            --paginate \
+            --jq '.check_runs[]
+                  | select(.conclusion == "failure"
+                        or .conclusion == "timed_out"
+                        or .conclusion == "cancelled"
+                        or .conclusion == "action_required")
+                  | .name')
+          if [ -n "$failed" ]; then
+            echo "::error::Checks auf main sind nicht gruen: $(echo "$failed" | tr '\n' ' ')"
+            exit 1
+          fi
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c  # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          # Maven dependency cache. Accepted risk: this workflow only runs on
+          # manual dispatch from main, so a PR cannot poison its cache.
+          cache: maven  # zizmor: ignore[cache-poisoning]
+
+      - name: Determine versions
+        id: versions
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          current=$(./mvnw help:evaluate \
+            --quiet \
+            --batch-mode \
+            --no-transfer-progress \
+            -Dexpression=project.version \
+            -DforceStdout)
+          case "$current" in
+            *-SNAPSHOT) ;;
+            *)
+              echo "::error::main steht auf $current statt auf einer SNAPSHOT-Version"
+              exit 1
+              ;;
+          esac
+
+          IFS=. read -r major minor patch <<< "${current%-SNAPSHOT}"
+          case "$BUMP" in
+            patch) release="$major.$minor.$patch" ;;
+            minor) release="$major.$((minor + 1)).0" ;;
+            major) release="$((major + 1)).0.0" ;;
+          esac
+          IFS=. read -r major minor patch <<< "$release"
+          next="$major.$minor.$((patch + 1))-SNAPSHOT"
+
+          if git rev-parse --verify --quiet "refs/tags/v$release" > /dev/null; then
+            echo "::error::Tag v$release existiert bereits"
+            exit 1
+          fi
+
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "tag=v$release" >> "$GITHUB_OUTPUT"
+          echo "$current -> $release -> $next" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push release commits and tag
+        env:
+          RELEASE: ${{ steps.versions.outputs.release }}
+          NEXT: ${{ steps.versions.outputs.next }}
+          TAG: ${{ steps.versions.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          ./mvnw versions:set \
+            --batch-mode \
+            --no-transfer-progress \
+            -DnewVersion="$RELEASE" \
+            -DgenerateBackupPoms=false
+          git commit --all --message "Release version $RELEASE"
+          git tag --annotate "$TAG" --message "Release version $RELEASE"
+
+          ./mvnw versions:set \
+            --batch-mode \
+            --no-transfer-progress \
+            -DnewVersion="$NEXT" \
+            -DgenerateBackupPoms=false
+          git commit --all --message "Prepare next development version $NEXT"
+
+          git push origin main "refs/tags/$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.versions.outputs.tag }}
+        run: |
+          # Release notes come from .github/release.yml, the same categories the
+          # manually created releases used.
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --verify-tag \
+            --generate-notes
+
+  image:
+    name: Image
+    needs: release
+    # A tag pushed with the GITHUB_TOKEN does not trigger workflows, so the
+    # image build has to be called explicitly.
+    uses: ./.github/workflows/build-and-publish-image.yml
+    permissions:
+      contents: read   # checkout the tagged revision
+      packages: write  # push the image to GHCR
+    with:
+      tag: ${{ needs.release.outputs.tag }}

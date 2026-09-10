@@ -117,6 +117,22 @@ stating why (currently: actuator `metrics` exposure, Azure auth).
   # get node_id via: gh api repos/HBTGmbH/salat/issues/NNN --jq .node_id
   ```
 
+## Releases
+- Releases run through the **Release** workflow (`.github/workflows/release.yml`), started manually
+  from the Actions tab on `main` with the version bump as input (`patch`, `minor`, `major`).
+- `patch` releases the version `main` already carries as SNAPSHOT (`5.0.10-SNAPSHOT` → `5.0.10`),
+  `minor` and `major` raise it accordingly. The next development version is always the released
+  version with the patch level raised, e.g. `5.1.0` → `5.1.1-SNAPSHOT`.
+- The workflow refuses to run if a check run on the commit to release has failed, or if `main` is not
+  on a SNAPSHOT version.
+- It then pushes the two commits `Release version X` and `Prepare next development version Y` plus
+  the tag `vX` to `main`, creates the GitHub release with generated notes, and builds and publishes
+  the image to GHCR.
+- Release notes are grouped by the label categories in `.github/release.yml`, so labelling the merged
+  PRs is what shapes the notes.
+- Nothing has to be done by hand: no `pom.xml` edit, no tag, no release. A tag pushed by hand still
+  triggers the image build on its own.
+
 ## Definition of Ready
 
 Before writing any code:
