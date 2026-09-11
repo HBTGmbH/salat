@@ -163,19 +163,9 @@
               <input type="hidden" id="ticketOrderSign" disabled th:value="${selectedOrderSign}"/>
             </div>
 
-            <!-- Comment -->
-            <div class="mb-3">
-              <label id="commentLabel"
-                     th:class="${'form-label' + (commentNecessary == true ? ' required' : '')}"
-                     th:text="#{main.timereport.form.comment.label}">Kommentar</label>
-              <textarea id="commentField" class="form-control" th:field="*{comment}" rows="3"
-                        th:attr="required=${commentNecessary == true ? 'required' : null}"
-                        th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>
-            </div>
-
             <!-- Ticket reference (#982): free text, with suggestions from the tickets replicated for
-                 the selected order. Stored is the number alone; picking a suggestion fills an empty
-                 comment with the ticket title. -->
+                 the selected order. Stored is the number alone. Sits above the comment: picking a
+                 ticket fills an empty comment with its title, so it is read before the comment. -->
             <div class="mb-3">
               <label class="form-label" for="ticketReference"
                      th:text="#{main.timereport.form.ticketreference.label}">Ticket</label>
@@ -189,6 +179,16 @@
                               placeholder=#{main.timereport.form.ticketreference.placeholder}"/>
               <small class="form-text text-muted mt-1"
                      th:text="#{main.timereport.form.ticketreference.help}"></small>
+            </div>
+
+            <!-- Comment -->
+            <div class="mb-3">
+              <label id="commentLabel"
+                     th:class="${'form-label' + (commentNecessary == true ? ' required' : '')}"
+                     th:text="#{main.timereport.form.comment.label}">Kommentar</label>
+              <textarea id="commentField" class="form-control" th:field="*{comment}" rows="3"
+                        th:attr="required=${commentNecessary == true ? 'required' : null}"
+                        th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>
             </div>
 
             <!-- Training -->
