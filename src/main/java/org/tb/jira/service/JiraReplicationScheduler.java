@@ -14,8 +14,11 @@ public class JiraReplicationScheduler {
 
   private final JiraReplicationService replicationService;
 
-  // Default: run daily at 02:00 local time; can be overridden by property 'salat.jira.replication.cron'
-  @Scheduled(cron = "${salat.jira.replication.cron:0 0 2 * * *}")
+  // Default: hourly at :15 local time; can be overridden by property 'salat.jira.replication.cron'.
+  // Since #982 the replicated tickets are offered as suggestions while booking, so a ticket created
+  // in the morning has to be bookable the same day — once a night was the wrong granularity for
+  // that. Not on the hour: the ETL runs at 02:00 and there is no reason to meet it there.
+  @Scheduled(cron = "${salat.jira.replication.cron:0 15 * * * *}")
   public void runAll() {
     log.info("Scheduled JIRA replication start");
     List<JiraReplicationConfig> enabled = replicationService.getEnabledReplications();
