@@ -165,7 +165,7 @@
 
             <!-- Ticket reference (#982): free text, with suggestions from the tickets replicated for
                  the selected order. Stored is the number alone. Sits above the comment: picking a
-                 ticket fills an empty comment with its title, so it is read before the comment. -->
+                 ticket writes its title into an untouched comment, so it is read before it. -->
             <div class="mb-3">
               <label class="form-label" for="ticketReference"
                      th:text="#{main.timereport.form.ticketreference.label}">Ticket</label>
@@ -174,7 +174,7 @@
                      data-remote-url="/jira/tickets/suggestions"
                      data-remote-context-field="#ticketOrderSign"
                      data-remote-context-param="orderSign"
-                     data-fill-empty-target="#commentField"
+                     data-fill-target="#commentField"
                      th:attr="data-create-label=#{main.timereport.form.ticketreference.create},
                               placeholder=#{main.timereport.form.ticketreference.placeholder}"/>
               <small class="form-text text-muted mt-1"
