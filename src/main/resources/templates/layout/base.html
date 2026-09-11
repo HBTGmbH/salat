@@ -270,6 +270,12 @@
                     <span th:text="#{main.general.mainmenu.orderrevenue.upload.text}">Umsatz-Upload</span>
                     <span class="badge bg-green-lt ms-1">New</span>
                   </a>
+                  <a class="dropdown-item" th:href="@{/jira/replications}"
+                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                     th:classappend="${subSection == 'jira-replications'} ? 'active' : ''">
+                    <span th:text="#{main.general.mainmenu.jirareplications.text}">JIRA-Replikationen</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
+                  </a>
                 </div>
               </div>
             </div>

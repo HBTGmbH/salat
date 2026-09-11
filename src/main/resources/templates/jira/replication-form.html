@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='backoffice',
+        subSection='jira-replications',
+        title=${isEdit} ? #{main.jira.replication.form.title.edit} : #{main.jira.replication.form.title.create},
+        pageTitle=${isEdit} ? #{main.jira.replication.form.title.edit} : #{main.jira.replication.form.title.create},
+        sectionTitle=#{main.general.mainmenu.backoffice.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/jira/replications/store}" th:object="${replicationForm}" th:id-property="*{id}">
+    <salat:inputs>
+      <div class="row">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{name}" th:label="#{main.jira.replication.field.name}"
+                           required="true" maxlength="255" />
+        </div>
+        <div class="col-md-6">
+          <!-- Free text, no select: jira knows no orders (ArchitectureTest), and a sign whose order
+               is gone has to stay visible and correctable rather than drop out of a list. -->
+          <salat:textInput th:field="*{customerorderSign}" th:label="#{main.jira.replication.field.customerorderSign}"
+                           required="true" maxlength="255"
+                           th:helpText="#{main.jira.replication.field.customerorderSign.help}" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8">
+          <salat:textInput th:field="*{baseUrl}" th:label="#{main.jira.replication.field.baseUrl}"
+                           required="true" maxlength="255"
+                           th:placeholder="#{main.jira.replication.field.baseUrl.placeholder}" />
+        </div>
+        <div class="col-md-4">
+          <salat:select th:field="*{apiFlavor}" th:label="#{main.jira.replication.field.apiFlavor}" required="true">
+            <option th:each="flavor : ${apiFlavors}" th:value="${flavor.name()}"
+                    th:text="#{${flavor.label}}">Server</option>
+          </salat:select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{username}" th:label="#{main.jira.replication.field.username}"
+                           required="true" maxlength="255"
+                           th:helpText="#{main.jira.replication.field.username.help}" />
+        </div>
+        <div class="col-md-6">
+          <!-- Never prefilled: the stored password does not leave the service. An empty field keeps
+               it, a filled one replaces it. -->
+          <salat:textInput th:field="*{password}" type="password"
+                           th:label="#{main.jira.replication.field.password}" maxlength="255"
+                           th:helpText="${isEdit}
+                               ? #{main.jira.replication.field.password.help.edit}
+                               : #{main.jira.replication.field.password.help.create}" />
+        </div>
+      </div>
+
+      <salat:textarea th:field="*{jql}" th:label="#{main.jira.replication.field.jql}" required="true"
+                      rows="3" monospace="true" th:helpText="#{main.jira.replication.field.jql.help}" />
+
+      <div class="row">
+        <div class="col-md-8">
+          <salat:textInput th:field="*{parentFieldNames}" th:label="#{main.jira.replication.field.parentFieldNames}"
+                           maxlength="255" th:helpText="#{main.jira.replication.field.parentFieldNames.help}" />
+        </div>
+        <div class="col-md-4">
+          <salat:textInput th:field="*{pageSize}" th:label="#{main.jira.replication.field.pageSize}"
+                           th:helpText="#{main.jira.replication.field.pageSize.help}" />
+        </div>
+      </div>
+
+      <salat:checkboxSwitch th:field="*{enabled}" th:label="#{main.jira.replication.field.enabled}" />
+
+      <!--/* The watermark is not a form field: a date entered by hand would skip every ticket
+             updated before it, for good. Resetting it is the one operation that makes sense, and it
+             is a button of its own rather than an input. */-->
+      <div th:if="${isEdit}" class="mb-0">
+        <label class="form-label" th:text="#{main.jira.replication.field.lastMaxUpdated}">Wasserstand</label>
+        <div class="d-flex align-items-center gap-2">
+          <span th:if="${lastMaxUpdated != null}"
+                th:text="${#temporals.format(lastMaxUpdated, 'dd.MM.yyyy HH:mm')}">01.01.2026 02:00</span>
+          <span th:if="${lastMaxUpdated == null}" class="text-muted"
+                th:text="#{main.jira.replication.watermark.none}">noch nie gelaufen</span>
+        </div>
+        <div class="form-text" th:text="#{main.jira.replication.field.lastMaxUpdated.help}">
+          Wird von der Replikation fortgeschrieben.
+        </div>
+      </div>
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="#{main.button.label.save.text}" th:cancelHref="@{/jira/replications}" />
+    </salat:buttons>
+  </salat:form>
+
+  <!--/* Its own form, outside the one above: resetting the watermark is an action on the stored
+         record, not an unsaved edit of it. */-->
+  <form th:if="${isEdit}" th:action="@{/jira/replications/{id}/reset-watermark(id=${replicationForm.id})}"
+        method="post" class="mt-3"
+        th:onsubmit="|return confirm('#{main.jira.replication.confirm.resetwatermark}');|">
+    <button type="submit" class="btn btn-outline-secondary">
+      <i class="icon ti ti-restore"></i>
+      <span th:text="#{main.jira.replication.action.resetwatermark}">Wasserstand zurücksetzen</span>
+    </button>
+  </form>
+
+</main>
+</html>
