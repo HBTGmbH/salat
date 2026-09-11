@@ -95,6 +95,15 @@ body {
   padding-left: 0.75rem;
 }
 
+/* Tabler turns every .badge inside a top-level nav link into a corner notification dot
+   (position: absolute; right: .375rem), which pushes a text label past the sidebar edge and clips
+   it. A marker on a section belongs next to its title, so keep it in the flow. It sits inside
+   .nav-link-title, which is what makes it collapse and expand with the sidebar. */
+.navbar .navbar-nav .nav-link .nav-link-badge {
+  position: static;
+  transform: none;
+}
+
 /* ===== Collapsible sidebar ===== */
 #nav-toggle {
   display: none;

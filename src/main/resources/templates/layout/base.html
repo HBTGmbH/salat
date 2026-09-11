@@ -154,8 +154,10 @@
             <a class="nav-link dropdown-toggle" href="#navbar-budget" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button">
               <i class="nav-link-icon bi bi-calculator"></i>
-              <span class="nav-link-title" th:text="#{main.general.mainmenu.budget.text}">Budget</span>
-              <span class="badge bg-green-lt ms-1">New</span>
+              <span class="nav-link-title">
+                <span th:text="#{main.general.mainmenu.budget.text}">Budget</span>
+                <span class="badge bg-green-lt ms-2 nav-link-badge">New</span>
+              </span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'budget'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
