@@ -3,11 +3,11 @@
       xmlns:salat="http://hbt.de/salat/thymeleaf"
       layout:decorate="~{layout/base}"
       th:with="
-        section='backoffice',
+        section='systemsettings',
         subSection='jira-replications',
         title=${isEdit} ? #{main.jira.replication.form.title.edit} : #{main.jira.replication.form.title.create},
         pageTitle=${isEdit} ? #{main.jira.replication.form.title.edit} : #{main.jira.replication.form.title.create},
-        sectionTitle=#{main.general.mainmenu.backoffice.text}
+        sectionTitle=#{main.general.mainmenu.systemsettings.text}
 ">
 <main layout:fragment="content">
 
