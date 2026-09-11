@@ -101,13 +101,20 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_menu_entry_is_there_for_the_management_and_for_nobody_else(E2EBrowser browser) {
-    runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/dailyreport/dashboard", page ->
-        assertThat(page.locator("a[href$='/jira/replications']")).hasCount(1));
+    // it sits under its own "Systemeinstellungen" section, not under Backoffice: what the
+    // application itself is configured with, as opposed to the business data of every other section
+    runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/dailyreport/dashboard", page -> {
+      assertThat(page.locator("a[href='#navbar-systemsettings']")).hasCount(1);
+      assertThat(page.locator("a[href$='/jira/replications']")).hasCount(1);
+    });
 
     for (var sign : new String[]{E2ETestData.EMPLOYEE_BO_SIGN, E2ETestData.EMPLOYEE_PV_SIGN,
         E2ETestData.EMPLOYEE_MA_SIGN}) {
-      runAsUser(browser, sign, "/dailyreport/dashboard", page ->
-          assertThat(page.locator("a[href$='/jira/replications']")).hasCount(0));
+      runAsUser(browser, sign, "/dailyreport/dashboard", page -> {
+        // the whole section goes away, not just the entry inside it
+        assertThat(page.locator("a[href='#navbar-systemsettings']")).hasCount(0);
+        assertThat(page.locator("a[href$='/jira/replications']")).hasCount(0);
+      });
     }
   }
 
