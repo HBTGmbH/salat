@@ -504,6 +504,7 @@ public class TimereportDAO {
             .durationhours(timereport.getDurationhours())
             .durationminutes(timereport.getDurationminutes())
             .taskdescription(timereport.getTaskdescription())
+            .ticketReference(timereport.getTicketReference())
             .sequencenumber(timereport.getSequencenumber())
             .training(Optional.ofNullable(timereport.getTraining()).orElse(false))
             .status(timereport.getStatus())

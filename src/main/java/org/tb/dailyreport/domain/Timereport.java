@@ -58,6 +58,12 @@ public class Timereport extends AuditedEntity implements Serializable {
     @Column(columnDefinition = "text")
     private String taskdescription;
     private String status;
+    /**
+     * Optional free text reference to an external ticket (#982). Deliberately not a relation to
+     * {@code jira_ticket} — it has to survive a booking whose ticket was never replicated.
+     */
+    @Column(name = "ticket_reference")
+    private String ticketReference;
     private Boolean training; // TODO switch to boolean
     private int sequencenumber;
     /**
@@ -81,6 +87,7 @@ public class Timereport extends AuditedEntity implements Serializable {
         timereport.setStatus(status);
         timereport.setSuborder(suborder);
         timereport.setTaskdescription(taskdescription);
+        timereport.setTicketReference(ticketReference);
         timereport.setTraining(training);
         timereport.setSequencenumber(0);
         timereport.setEmployeeorder(employeeorder);

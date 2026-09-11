@@ -2,6 +2,7 @@ package org.tb.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.tb.dailyreport.controller.TimereportController.nextBookingUrl;
+import static org.tb.dailyreport.controller.TimereportController.orderSignOf;
 import static org.tb.dailyreport.controller.TimereportController.trainingDefaultOf;
 
 import java.time.LocalDate;
@@ -15,9 +16,9 @@ import org.junit.jupiter.api.Test;
 class TimereportControllerTest {
 
   private static final SuborderOption TRAINING =
-      new SuborderOption(1L, "FORTBILDUNG", "HBT", false, true);
+      new SuborderOption(1L, "FORTBILDUNG", "HBT", false, true, "INTERN");
   private static final SuborderOption PROJECT =
-      new SuborderOption(2L, "ALPHA-DEV", "Contoso", false, false);
+      new SuborderOption(2L, "ALPHA-DEV", "Contoso", false, false, "ALPHA");
   private static final LocalDate DATE = LocalDate.parse("2026-06-18");
 
   @Test
@@ -39,6 +40,17 @@ class TimereportControllerTest {
   void a_suborder_outside_the_offered_options_leaves_the_switch_off() {
     // the deeplink parameter suborderId is not validated against the employee's orders here
     assertThat(trainingDefaultOf(List.of(PROJECT, TRAINING), 99L)).isFalse();
+  }
+
+  @Test
+  void the_order_sign_of_the_selected_suborder_drives_the_ticket_suggestions() {
+    assertThat(orderSignOf(List.of(PROJECT, TRAINING), 2L)).isEqualTo("ALPHA");
+  }
+
+  @Test
+  void without_a_selected_suborder_there_is_no_order_to_suggest_tickets_for() {
+    assertThat(orderSignOf(List.of(PROJECT, TRAINING), null)).isEmpty();
+    assertThat(orderSignOf(List.of(PROJECT, TRAINING), 99L)).isEmpty();
   }
 
   @Test

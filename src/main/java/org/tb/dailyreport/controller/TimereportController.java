@@ -138,6 +138,7 @@ public class TimereportController {
                 valueOf(tr.getDurationhours()).intValueExact(),
                 valueOf(tr.getDurationminutes()).intValueExact()));
         form.setComment(tr.getTaskdescription() != null ? tr.getTaskdescription() : "");
+        form.setTicketReference(tr.getTicketReference() != null ? tr.getTicketReference() : "");
         form.setTraining(tr.isTraining());
 
         var suborders = suborderOptions(ecId, date);
@@ -199,6 +200,7 @@ public class TimereportController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
+        model.addAttribute("selectedOrderSign", orderSignOf(suborders, form.getSuborderId()));
         model.addAttribute("recentComments", loadRecentComments(employeeContractId, form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
@@ -378,10 +380,10 @@ public class TimereportController {
 
             if (isEdit) {
                 timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
-                        form.getComment(), form.isTraining(), durationHours, durationMinutes);
+                        form.getComment(), form.getTicketReference(), form.isTraining(), durationHours, durationMinutes);
             } else {
                 timereportService.createTimereports(ecId, employeeOrderId, date,
-                        form.getComment(), form.isTraining(), durationHours, durationMinutes,
+                        form.getComment(), form.getTicketReference(), form.isTraining(), durationHours, durationMinutes,
                         form.getNumberOfSerialDays());
                 // #844: only creating a booking teaches the preference — an edit always opens in
                 // duration mode because begin/end are not stored per booking
@@ -459,6 +461,7 @@ public class TimereportController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
+        model.addAttribute("selectedOrderSign", orderSignOf(suborders, form.getSuborderId()));
         model.addAttribute("isEdit", isEdit);
         var todaysBookings = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
         model.addAttribute("todaysBookings", todaysBookings);
@@ -534,9 +537,25 @@ public class TimereportController {
                         : s.completeOrderSign();
                     var subtext = order.getSign() + " · " + order.getShortdescription()
                         + " · " + order.getCustomer().getShortname();
-                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary(), s.trainingFlag());
+                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary(), s.trainingFlag(),
+                        order.getSign());
                 }))
             .toList();
+    }
+
+    /**
+     * Sign of the customer order the selected suborder belongs to; empty when nothing is selected.
+     * The booking form looks the ticket suggestions up for it (#982).
+     */
+    static String orderSignOf(List<SuborderOption> suborders, Long suborderId) {
+        if (suborderId == null) {
+            return "";
+        }
+        return suborders.stream()
+            .filter(s -> suborderId.equals(s.id()))
+            .findFirst()
+            .map(SuborderOption::customerorderSign)
+            .orElse("");
     }
 
     /** Default state of the training switch for a suborder; false when nothing is preselected. */

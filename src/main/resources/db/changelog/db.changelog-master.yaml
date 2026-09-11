@@ -2765,5 +2765,25 @@ databaseChangeLog:
                   name: updatecounter
                   type: int
 
+  - changeSet:
+      id: 75
+      author: kr
+      comment: Add ticket_reference to timereport - optional free text reference to an external ticket (#982)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: timereport
+                columnName: ticket_reference
+      changes:
+        - addColumn:
+            tableName: timereport
+            columns:
+              # Free text, deliberately without a foreign key to jira_ticket: the reference has to
+              # survive a booking whose ticket was never replicated.
+              - column:
+                  name: ticket_reference
+                  type: varchar(64)
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

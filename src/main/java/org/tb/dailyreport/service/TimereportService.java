@@ -17,6 +17,7 @@ import static org.tb.common.GlobalConstants.MINUTES_PER_DAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
 import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
+import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
@@ -36,6 +37,7 @@ import static org.tb.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
 import static org.tb.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static org.tb.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
+import static org.tb.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
 import static org.tb.common.exception.ErrorCode.TR_TIMEREPORTS_EXIST_CANNOT_DELETE_OR_UPDATE_EMPLOYEE_ORDER;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_TOTAL_BUDGET_EXCEEDED;
@@ -134,10 +136,19 @@ public class TimereportService {
 
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays) throws ErrorCodeException {
+    createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, null, trainingFlag, durationHours,
+        durationMinutes, numberOfSerialDays);
+  }
+
+  public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      String ticketReference, boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
+      throws ErrorCodeException {
 
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereportTemplate);
+    // set on the template, so getTwin() carries it to every serial day
+    timereportTemplate.setTicketReference(normalizeTicketReference(ticketReference));
 
     // create a timereport for every serial day requested - in most cases this is 1
     List<Timereport> timereportsToSave = new ArrayList<>();
@@ -159,8 +170,28 @@ public class TimereportService {
     updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours, durationMinutes, false);
   }
 
+  /**
+   * Leaves a stored ticket reference untouched. Callers that do not know about the reference — moving,
+   * shifting, importing — must not silently drop it (#982).
+   */
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, boolean force) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
+        durationMinutes, force, null, false);
+  }
+
+  /**
+   * Writes the ticket reference as given — an empty one clears it, which is what an emptied form field means.
+   */
+  public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      String ticketReference, boolean trainingFlag, long durationHours, long durationMinutes) throws ErrorCodeException {
+    updateTimereport(timereportId, employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
+        durationMinutes, false, ticketReference, true);
+  }
+
+  private void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
+      boolean trainingFlag, long durationHours, long durationMinutes, boolean force,
+      String ticketReference, boolean applyTicketReference) throws ErrorCodeException {
     if (force && !authorizedUser.isManager()) {
       throw new AuthorizationException(AA_NEEDS_MANAGER);
     }
@@ -168,7 +199,20 @@ public class TimereportService {
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
+    if (applyTicketReference) {
+      timereport.setTicketReference(normalizeTicketReference(ticketReference));
+    }
     checkAndSaveTimereports(Collections.singletonList(timereport), force);
+  }
+
+  /** Empty input and a blank one both mean "no reference"; anything longer than the column is rejected. */
+  static String normalizeTicketReference(String ticketReference) {
+    if (ticketReference == null || ticketReference.isBlank()) {
+      return null;
+    }
+    String trimmed = ticketReference.trim();
+    DataValidationUtils.lengthIsInRange(trimmed, 0, TICKET_REFERENCE_MAX_LENGTH, TR_TICKET_REFERENCE_INVALID_LENGTH);
+    return trimmed;
   }
 
   /**

@@ -17,6 +17,9 @@ public class GlobalConstants {
 
     public static final int COMMENT_MAX_LENGTH = 32000;
 
+    /** Free text reference to an external ticket on a time report (#982) - matches timereport.ticket_reference */
+    public static final int TICKET_REFERENCE_MAX_LENGTH = 64;
+
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_EXCEL_DATE_FORMAT = "dd.MM.yyyy";
     public static final String DEFAULT_EXCEL_DATETIME_FORMAT = "dd.MM.yyyy HH:mm:ss";
