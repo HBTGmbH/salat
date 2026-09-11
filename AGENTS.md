@@ -322,6 +322,26 @@ Always add both `tomselect-multi` **and** the native `multiple` attribute. The c
 </select>
 ```
 
+### Free text field with remote suggestions
+
+A field whose value is free text but where the known values should be offered while typing is an
+`<input type="text" class="form-control tomselect">` — the central initialisation picks up inputs as
+well as selects. What the user types always wins; the list is a convenience.
+
+| Attribute | Purpose |
+|---|---|
+| `data-remote-url` | endpoint queried on every keystroke; gets `q` plus the context parameter, answers with JSON `[{key, summary}]` |
+| `data-remote-context-field` | CSS selector of the field whose value scopes the search (e.g. the order behind the selected suborder) |
+| `data-remote-context-param` | name of the request parameter that carries that value |
+| `data-fill-empty-target` | CSS selector of a field that gets the chosen entry's `summary` — **only while it is empty**, a typed text is never overwritten |
+| `data-create-label` | prefix of the "use what I typed" row; pass an `#{...}` message |
+
+Without a context value nothing is loaded, so the field degrades to a plain text input. The endpoint
+belongs to the module that owns the data — a browser call crosses no module boundary, whereas a
+command event would keep the coupling while hiding the import (`/jira/tickets/suggestions`, #982).
+Such an endpoint must not live under `/api` or `/rest`: those are stateless filter chains for machine
+clients and do not accept a browser session.
+
 ### HTMX + OOB swaps
 
 `htmx:after:swap` re-initialises any `select.tomselect` that does not yet have a `.tomselect` instance, so OOB-replaced selects are picked up without extra work. **Do not** add a `multiple` attribute to single-select OOB replacements — if the original select was single, the OOB replacement must also be single.

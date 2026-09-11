@@ -63,6 +63,11 @@
         <span th:unless="${singleTrEditable}"
               class="badge bg-blue-lt"
               th:text="${@durationUtils.format(singleTr.duration)}"></span>
+        <span th:if="${not #strings.isEmpty(singleTr.ticketReference)}"
+              class="badge bg-secondary-lt d-inline-block text-truncate"
+              style="max-width:140px"
+              th:title="#{main.daily.timereport.ticketreference.title}"
+              th:text="${singleTr.ticketReference}"></span>
         <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple"
               th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
       </div>

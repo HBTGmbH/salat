@@ -76,6 +76,7 @@ public enum ErrorCode {
   TR_MOVE_DATE_RANGE_OUTSIDE_TARGET("TR-0029", "date range must fit within target suborder validity"),
   TR_DURATION_EXCEEDS_ONE_DAY("TR-0030", "duration must not exceed 24 hours"),
   TR_DURATION_INVALID_FORMAT("TR-0031", "duration could not be interpreted"),
+  TR_TICKET_REFERENCE_INVALID_LENGTH("TR-0032", "ticket reference is too long"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

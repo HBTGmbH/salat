@@ -33,6 +33,14 @@ public class TimereportForm {
     private String endTime;
 
     private String comment = "";
+
+    /**
+     * Optional free text reference to an external ticket (#982). Free text on purpose: the
+     * suggestions are a convenience, not a constraint, and a ticket that was never replicated must
+     * still be bookable.
+     */
+    private String ticketReference = "";
+
     private boolean training;
 
     /** 1 = no repeat; > 1 = create one timereport per working day, skipping weekends/holidays */

@@ -39,6 +39,8 @@ public class TimereportDTO implements Serializable {
   private final long employeeorderId;
   private final Duration duration;
   private final String taskdescription;
+  /** Optional free text reference to an external ticket (#982); null when none was entered. */
+  private final String ticketReference;
   private final String status;
   private final boolean training;
   private final int sequencenumber;

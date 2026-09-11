@@ -308,7 +308,13 @@
               <tr th:each="tr : ${dailyData.timereports}">
                 <td style="position:relative; padding-right:5rem">
                   <div class="text-muted small" th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
-                  <div class="fw-medium" th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></div>
+                  <div class="fw-medium">
+                    <span th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></span>
+                    <span th:if="${not #strings.isEmpty(tr.ticketReference)}"
+                          class="badge bg-secondary-lt ms-1"
+                          th:title="#{main.daily.timereport.ticketreference.title}"
+                          th:text="${tr.ticketReference}"></span>
+                  </div>
                   <!-- task description: editable or read-only -->
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap mt-1">
                     <div class="text-muted small inline-edit-display"

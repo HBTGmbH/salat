@@ -37,8 +37,10 @@ function selectContract(id) {
 }
 
 const tomSelectConfig = (el) => {
-  const hasSubtext = Array.from(el.options).some(opt => opt.dataset.subtext);
+  // a remote field is an <input>, which has no options at all
+  const hasSubtext = Array.from(el.options || []).some(opt => opt.dataset.subtext);
   const favoriteTarget = el.dataset.favoriteTarget || null;
+  const remoteUrl = el.dataset.remoteUrl || null;
 
   const config = {
     create: false,
@@ -56,6 +58,82 @@ const tomSelectConfig = (el) => {
       this.control.style.minHeight = '';
     },
   };
+
+  // Free text field with suggestions fetched while typing (#982). The typed text always wins: the
+  // list is a convenience, and a value that matches nothing on the server is kept as entered.
+  if (remoteUrl) {
+    const contextField = el.dataset.remoteContextField || null;
+    const contextParam = el.dataset.remoteContextParam || null;
+    const fillTarget = el.dataset.fillEmptyTarget || null;
+    const createLabel = el.dataset.createLabel || '';
+    const context = () => (contextField ? (document.querySelector(contextField)?.value || '') : '');
+
+    Object.assign(config, {
+      create: true,
+      createOnBlur: true,
+      persist: false,
+      maxItems: 1,
+      valueField: 'value',
+      labelField: 'value',
+      searchField: ['value', 'subtext'],
+      // the dropdown_input plugin would put the typing into a second field above the list; here the
+      // control itself is the text field
+      plugins: [],
+      // without a context there is nothing to search in — an order without replicated tickets stays
+      // a plain text field
+      shouldLoad: () => !!context(),
+      load(query, callback) {
+        const params = new URLSearchParams({ q: query });
+        if (contextParam) {
+          params.set(contextParam, context());
+        }
+        fetch(remoteUrl + '?' + params.toString(), { headers: { Accept: 'application/json' } })
+          .then(response => (response.ok ? response.json() : []))
+          .then(rows => callback(rows.map(row => ({ value: row.key, subtext: row.summary }))))
+          .catch(() => callback([]));
+      },
+      onInitialize() {
+        // an existing booking opens with its stored reference; only the number is stored, so there
+        // is no title to show for it yet
+        const initial = el.getAttribute('value') || '';
+        if (initial) {
+          this.addOption({ value: initial });
+          this.addItem(initial, true);
+        }
+      },
+      onItemAdd(value) {
+        this.setTextboxValue('');
+        if (!fillTarget) return;
+        const summary = this.options[value]?.subtext;
+        const target = document.querySelector(fillTarget);
+        // never overwrite what somebody typed — only an empty field is offered the title
+        if (summary && target && !target.value.trim()) {
+          target.value = summary;
+          target.dispatchEvent(new Event('input', { bubbles: true }));
+          target.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      },
+      render: {
+        option(data, escape) {
+          return '<div class="d-flex flex-column py-1">'
+            + '<span class="text-nowrap">' + escape(data.value) + '</span>'
+            + (data.subtext
+              ? '<small class="text-muted lh-1 mb-1 text-truncate">' + escape(data.subtext) + '</small>'
+              : '')
+            + '</div>';
+        },
+        item(data, escape) {
+          return '<div>' + escape(data.value) + '</div>';
+        },
+        option_create(data, escape) {
+          return '<div class="create">' + escape(createLabel) + ' <strong>'
+            + escape(data.input) + '</strong></div>';
+        },
+        no_results: null,
+      },
+    });
+    return config;
+  }
 
   if (hasSubtext || favoriteTarget) {
     const favoriteId = el.dataset.favoriteId || null;
@@ -141,12 +219,15 @@ const tomSelectConfig = (el) => {
   return config;
 };
 
-document.querySelectorAll('select.tomselect').forEach((el) => {
+// inputs take part as well: a free text field with remote suggestions is an input, not a select
+const TOMSELECT_SELECTOR = 'select.tomselect, input.tomselect';
+
+document.querySelectorAll(TOMSELECT_SELECTOR).forEach((el) => {
   new TomSelect(el, tomSelectConfig(el));
 });
 
 document.addEventListener('htmx:after:swap', function () {
-  document.querySelectorAll('select.tomselect').forEach((el) => {
+  document.querySelectorAll(TOMSELECT_SELECTOR).forEach((el) => {
     if (!el.tomselect) {
       new TomSelect(el, tomSelectConfig(el));
     }
