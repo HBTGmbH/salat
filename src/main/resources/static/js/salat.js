@@ -109,13 +109,18 @@ const tomSelectConfig = (el) => {
         if (!fillTarget) return;
         const summary = this.options[value]?.subtext;
         const target = document.querySelector(fillTarget);
+        // no subtext means this is not one of the offered entries but text somebody typed, and
+        // nothing is invented for the comment from that
         if (!summary || !target) return;
+        // number and title, so the comment says which ticket this is without having to look the
+        // number up somewhere else
+        const filled = value + ' - ' + summary;
         const current = target.value.trim();
-        // what somebody typed is theirs and stays; an empty field and one still holding the title of
-        // the previously picked entry follow the new pick
+        // what somebody typed is theirs and stays; an empty field and one still holding what the
+        // previously picked entry wrote follow the new pick
         if (current && current !== ownFill) return;
-        target.value = summary;
-        ownFill = summary;
+        target.value = filled;
+        ownFill = filled;
         target.dispatchEvent(new Event('input', { bubbles: true }));
         target.dispatchEvent(new Event('change', { bubbles: true }));
       },
