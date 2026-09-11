@@ -17,8 +17,8 @@ import org.tb.jira.persistence.JiraTicketRepository;
 
 /**
  * The optional ticket reference on a booking (#982): free text, with the tickets replicated for the
- * selected order offered while typing. Picking one stores its number and fills an empty comment with
- * its title.
+ * selected order offered while typing. Picking one stores its number and writes its title into an
+ * untouched comment - a comment somebody typed themselves stays as it is.
  *
  * <p>Books on a day of its own, as every E2E class does - the bookings are never cleaned up.
  */
@@ -28,6 +28,8 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
   private static final LocalDate OTHER_DAY = LocalDate.parse("2026-07-01");
   private static final String TICKET_KEY = "ALPHA-4711";
   private static final String TICKET_SUMMARY = "Anmeldung schlägt bei langen Namen fehl";
+  private static final String OTHER_TICKET_KEY = "ALPHA-4712";
+  private static final String OTHER_TICKET_SUMMARY = "Export bricht bei großen Berichten ab";
 
   @Autowired
   private JiraTicketRepository jiraTicketRepository;
@@ -37,11 +39,16 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
     if (!jiraTicketRepository.findByCustomerorderSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN).isEmpty()) {
       return;
     }
+    saveTicket(4711L, TICKET_KEY, TICKET_SUMMARY);
+    saveTicket(4712L, OTHER_TICKET_KEY, OTHER_TICKET_SUMMARY);
+  }
+
+  private void saveTicket(long jiraId, String key, String summary) {
     var ticket = new JiraTicket();
     ticket.setCustomerorderSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
-    ticket.setJiraId(4711L);
-    ticket.setKey(TICKET_KEY);
-    ticket.setSummary(TICKET_SUMMARY);
+    ticket.setJiraId(jiraId);
+    ticket.setKey(key);
+    ticket.setSummary(summary);
     jiraTicketRepository.save(ticket);
   }
 
@@ -51,7 +58,7 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(DAY), page -> {
       selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
 
-      pickTicketSuggestion(page, "Anmeldung");
+      pickTicketSuggestion(page, TICKET_KEY);
 
       // the number is what gets stored, the title is what made it recognisable in the list
       assertThat(ticketReferenceControl(page)).containsText(TICKET_KEY);
@@ -71,9 +78,26 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
       selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
       page.fill("#commentField", "Von Hand geschrieben");
 
-      pickTicketSuggestion(page, "Anmeldung");
+      pickTicketSuggestion(page, TICKET_KEY);
 
       assertThat(page.locator("#commentField")).hasValue("Von Hand geschrieben");
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void switching_the_ticket_rewrites_a_comment_nobody_touched(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, bookingFormPath(OTHER_DAY), page -> {
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+
+      pickTicketSuggestion(page, TICKET_KEY);
+      assertThat(page.locator("#commentField")).hasValue(TICKET_SUMMARY);
+
+      // the comment still says what the first pick wrote, so it is not somebody's own text
+      pickTicketSuggestion(page, OTHER_TICKET_KEY);
+
+      assertThat(ticketReferenceControl(page)).containsText(OTHER_TICKET_KEY);
+      assertThat(page.locator("#commentField")).hasValue(OTHER_TICKET_SUMMARY);
     });
   }
 
@@ -102,11 +126,11 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
     return page.locator("#ticketReference ~ .ts-wrapper .ts-control");
   }
 
-  private void pickTicketSuggestion(Page page, String typed) {
+  private void pickTicketSuggestion(Page page, String key) {
     ticketReferenceControl(page).click();
-    page.locator("#ticketReference-ts-control").pressSequentially(typed);
+    page.locator("#ticketReference-ts-control").pressSequentially(key);
     page.locator("#ticketReference ~ .ts-wrapper .ts-dropdown .option")
-        .filter(new Locator.FilterOptions().setHasText(TICKET_KEY))
+        .filter(new Locator.FilterOptions().setHasText(key))
         .first()
         .click();
   }

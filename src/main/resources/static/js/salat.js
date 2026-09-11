@@ -64,7 +64,10 @@ const tomSelectConfig = (el) => {
   if (remoteUrl) {
     const contextField = el.dataset.remoteContextField || null;
     const contextParam = el.dataset.remoteContextParam || null;
-    const fillTarget = el.dataset.fillEmptyTarget || null;
+    const fillTarget = el.dataset.fillTarget || null;
+    // what this field last wrote into the target. As long as the target still holds exactly that,
+    // nobody has taken the text over as their own, so a later pick may replace it.
+    let ownFill = null;
     const createLabel = el.dataset.createLabel || '';
     const context = () => (contextField ? (document.querySelector(contextField)?.value || '') : '');
 
@@ -106,12 +109,15 @@ const tomSelectConfig = (el) => {
         if (!fillTarget) return;
         const summary = this.options[value]?.subtext;
         const target = document.querySelector(fillTarget);
-        // never overwrite what somebody typed — only an empty field is offered the title
-        if (summary && target && !target.value.trim()) {
-          target.value = summary;
-          target.dispatchEvent(new Event('input', { bubbles: true }));
-          target.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+        if (!summary || !target) return;
+        const current = target.value.trim();
+        // what somebody typed is theirs and stays; an empty field and one still holding the title of
+        // the previously picked entry follow the new pick
+        if (current && current !== ownFill) return;
+        target.value = summary;
+        ownFill = summary;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.dispatchEvent(new Event('change', { bubbles: true }));
       },
       render: {
         option(data, escape) {
