@@ -9,4 +9,6 @@ import org.tb.jira.domain.JiraReplicationConfig;
 public interface JiraReplicationConfigRepository extends JpaRepository<JiraReplicationConfig, Long> {
 
   List<JiraReplicationConfig> findByEnabledTrue();
+
+  List<JiraReplicationConfig> findAllByOrderByNameAsc();
 }

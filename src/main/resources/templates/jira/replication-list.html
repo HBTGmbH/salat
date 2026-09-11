@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='backoffice',
+        subSection='jira-replications',
+        title=#{main.jira.replication.list.title},
+        pageTitle=#{main.jira.replication.list.title},
+        sectionTitle=#{main.general.mainmenu.backoffice.text}
+">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-center">
+        <div class="col">
+          <p class="text-secondary mb-0" th:text="#{main.jira.replication.list.hint}">
+            Die Replikation holt die Tickets der eingeschalteten Konfigurationen taeglich.
+          </p>
+        </div>
+        <div class="col-auto">
+          <a class="btn btn-success" th:href="@{/jira/replications/create}">
+            <i class="icon ti ti-plus"></i>
+            <span th:text="#{main.jira.replication.button.create}">Neue Replikation</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.jira.replication.field.name}">Name</th>
+          <th th:text="#{main.jira.replication.field.customerorderSign}">Auftragskürzel</th>
+          <th th:text="#{main.jira.replication.field.baseUrl}">Basis-URL</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.apiFlavor}">API-Variante</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Merkmale</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.lastMaxUpdated}">Wasserstand</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(replications)}">
+          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+            Keine Einträge vorhanden
+          </td>
+        </tr>
+        <tr th:each="replication : ${replications}" th:classappend="${!replication.enabled} ? 'text-muted' : ''">
+          <td>
+            <a th:href="@{/jira/replications/{id}/edit(id=${replication.id})}" th:text="${replication.name}">Name</a>
+          </td>
+          <td th:text="${replication.customerorderSign}">ALPHA</td>
+          <td class="text-break small" th:text="${replication.baseUrl}">https://jira.example.com</td>
+          <td class="d-none d-md-table-cell" th:text="#{${replication.apiFlavor.label}}">Server</td>
+          <td class="d-none d-lg-table-cell">
+            <!--/* The switch is the state: one click is what turning a replication on and off takes. */-->
+            <form th:action="@{/jira/replications/{id}/enabled(id=${replication.id})}" method="post" class="d-inline">
+              <input type="hidden" name="enabled" th:value="${!replication.enabled}"/>
+              <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
+                      th:title="${replication.enabled}
+                          ? #{main.jira.replication.action.disable}
+                          : #{main.jira.replication.action.enable}">
+                <span class="badge" th:classappend="${replication.enabled} ? 'bg-green-lt' : 'bg-danger-lt'">
+                  <i class="bi" th:classappend="${replication.enabled} ? 'bi-play-fill' : 'bi-pause-fill'"></i>
+                </span>
+              </button>
+            </form>
+          </td>
+          <td class="d-none d-md-table-cell small">
+            <!--/* This is where you see whether a replication still runs at all — an old date or none
+                   at all is the symptom a manager comes here for. */-->
+            <span th:if="${replication.lastMaxUpdated != null}"
+                  th:text="${#temporals.format(replication.lastMaxUpdated, 'dd.MM.yyyy HH:mm')}">01.01.2026 02:00</span>
+            <span th:if="${replication.lastMaxUpdated == null}" class="text-muted"
+                  th:text="#{main.jira.replication.watermark.none}">noch nie gelaufen</span>
+          </td>
+          <td>
+            <!--/* Synchronous: the button says it waits and stops itself from being pressed twice. */-->
+            <form th:action="@{/jira/replications/{id}/run(id=${replication.id})}" method="post"
+                  data-run-form="true">
+              <button type="submit" class="btn btn-outline-primary btn-sm"
+                      th:title="#{main.jira.replication.action.run.title}">
+                <i class="icon ti ti-player-play m-0"></i>
+              </button>
+            </form>
+          </td>
+          <td>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/jira/replications/{id}/edit(id=${replication.id})}"
+               th:title="#{main.button.label.edit.text}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td>
+            <form th:action="@{/jira/replications/{id}/delete(id=${replication.id})}" method="post"
+                  th:onsubmit="|return confirm('#{main.jira.replication.confirm.delete}');|">
+              <button type="submit" class="btn btn-outline-danger btn-sm" th:title="#{main.button.label.delete.text}">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script th:inline="none">
+    // A run fetches page after page from a foreign system; without this the page looks idle and
+    // invites a second click, which would start the same replication twice.
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('form[data-run-form]').forEach(function (form) {
+        form.addEventListener('submit', function () {
+          const button = form.querySelector('button[type="submit"]');
+          if (!button) return;
+          button.disabled = true;
+          button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        });
+      });
+    });
+  </script>
+
+</main>
+</html>

@@ -138,6 +138,16 @@ public enum ErrorCode {
   BU_FLAT_RATE_INSTALMENT_OUTSIDE_PERIOD("BU-0026", "the instalment date lies outside the validity of the flat rate"),
   BU_FLAT_RATE_AMOUNT_REQUIRED("BU-0027", "a flat rate billed once or monthly needs an amount"),
 
+  JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
+  JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),
+  JI_REPLICATION_ORDER_SIGN_REQUIRED("JI-0003", "a jira replication needs a customer order sign"),
+  JI_REPLICATION_BASE_URL_REQUIRED("JI-0004", "a jira replication needs a base url"),
+  JI_REPLICATION_BASE_URL_INVALID("JI-0005", "the base url must start with http:// or https://"),
+  JI_REPLICATION_USERNAME_REQUIRED("JI-0006", "a jira replication needs a username"),
+  JI_REPLICATION_PASSWORD_REQUIRED("JI-0007", "a new jira replication needs a password"),
+  JI_REPLICATION_JQL_REQUIRED("JI-0008", "a jira replication needs a jql query"),
+  JI_REPLICATION_PAGE_SIZE_INVALID("JI-0009", "the page size must be a positive number"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   ;

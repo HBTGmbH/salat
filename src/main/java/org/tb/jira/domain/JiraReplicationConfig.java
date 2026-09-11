@@ -57,8 +57,9 @@ public class JiraReplicationConfig extends AuditedEntity {
   private LocalDateTime lastMaxUpdated;
 
   /**
-   * These rows are maintained by hand via SQL, so a missing value has to keep behaving the way the
-   * replication did before Cloud support existed.
+   * A missing value keeps behaving the way the replication did before Cloud support existed. Since
+   * #984 the form always writes a flavor, but the rows that were maintained by hand via SQL until
+   * then may still carry none.
    */
   public JiraApiFlavor getApiFlavor() {
     return apiFlavor != null ? apiFlavor : SERVER;
