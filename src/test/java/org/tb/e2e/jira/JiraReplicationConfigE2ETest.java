@@ -101,7 +101,7 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_menu_entry_is_there_for_the_management_and_for_nobody_else(E2EBrowser browser) {
-    // it sits under its own "Systemeinstellungen" section, not under Backoffice: what the
+    // it sits under its own "System" section, not under Backoffice: what the
     // application itself is configured with, as opposed to the business data of every other section
     runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/dailyreport/dashboard", page -> {
       assertThat(page.locator("a[href='#navbar-systemsettings']")).hasCount(1);

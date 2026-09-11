@@ -278,24 +278,29 @@
             </div>
           </li>
 
-          <!-- System settings: what the application itself is configured with, as opposed to the
-               business data every other section deals with. Management only — the entries here reach
-               into foreign systems and carry their credentials (#984). -->
+          <!-- System: what the application itself is configured with, as opposed to the business
+               data every other section deals with. Management only — the entries here reach into
+               foreign systems and carry their credentials (#984). -->
           <li class="nav-item dropdown"
               th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
               th:classappend="${section == 'systemsettings'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-systemsettings" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button">
               <i class="nav-link-icon bi bi-gear"></i>
-              <span class="nav-link-title" th:text="#{main.general.mainmenu.systemsettings.text}">Systemeinstellungen</span>
+              <!-- The marker sits on the section, not on the single entry inside it: the whole area
+                   is what is new here. -->
+              <span class="nav-link-title">
+                <span th:text="#{main.general.mainmenu.system.text}">System</span>
+                <span class="badge bg-green-lt ms-2 nav-link-badge">New</span>
+              </span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'systemsettings'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
                 <div class="dropdown-menu-column">
                   <a class="dropdown-item" th:href="@{/jira/replications}"
-                     th:classappend="${subSection == 'jira-replications'} ? 'active' : ''">
-                    <span th:text="#{main.general.mainmenu.jirareplications.text}">JIRA-Replikationen</span>
-                    <span class="badge bg-green-lt ms-1">New</span>
+                     th:classappend="${subSection == 'jira-replications'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.jirareplications.text}">
+                    JIRA-Replikationen
                   </a>
                 </div>
               </div>
