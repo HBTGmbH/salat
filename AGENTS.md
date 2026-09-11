@@ -333,7 +333,7 @@ well as selects. What the user types always wins; the list is a convenience.
 | `data-remote-url` | endpoint queried on every keystroke; gets `q` plus the context parameter, answers with JSON `[{key, summary}]` |
 | `data-remote-context-field` | CSS selector of the field whose value scopes the search (e.g. the order behind the selected suborder) |
 | `data-remote-context-param` | name of the request parameter that carries that value |
-| `data-fill-target` | CSS selector of a field that gets the chosen entry's `summary` — **only while it is untouched**: empty, or still holding exactly what an earlier pick wrote there. A text somebody typed is theirs and is never overwritten, not even on the next pick |
+| `data-fill-target` | CSS selector of a field that gets the chosen entry as `key - summary` — **only while it is untouched**: empty, or still holding exactly what an earlier pick wrote there. A text somebody typed is theirs and is never overwritten, not even on the next pick. An entry without a `summary` is text somebody typed rather than one of the offered rows, and fills nothing |
 | `data-create-label` | prefix of the "use what I typed" row; pass an `#{...}` message |
 
 Without a context value nothing is loaded, so the field degrades to a plain text input. The endpoint

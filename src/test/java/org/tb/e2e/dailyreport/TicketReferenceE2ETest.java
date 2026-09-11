@@ -17,8 +17,8 @@ import org.tb.jira.persistence.JiraTicketRepository;
 
 /**
  * The optional ticket reference on a booking (#982): free text, with the tickets replicated for the
- * selected order offered while typing. Picking one stores its number and writes its title into an
- * untouched comment - a comment somebody typed themselves stays as it is.
+ * selected order offered while typing. Picking one stores its number and writes number and title
+ * into an untouched comment - a comment somebody typed themselves stays as it is.
  *
  * <p>Books on a day of its own, as every E2E class does - the bookings are never cleaned up.
  */
@@ -30,6 +30,10 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
   private static final String TICKET_SUMMARY = "Anmeldung schlägt bei langen Namen fehl";
   private static final String OTHER_TICKET_KEY = "ALPHA-4712";
   private static final String OTHER_TICKET_SUMMARY = "Export bricht bei großen Berichten ab";
+
+  /** What a pick writes into the comment: the number, so the title does not stand there alone. */
+  private static final String TICKET_COMMENT = TICKET_KEY + " - " + TICKET_SUMMARY;
+  private static final String OTHER_TICKET_COMMENT = OTHER_TICKET_KEY + " - " + OTHER_TICKET_SUMMARY;
 
   @Autowired
   private JiraTicketRepository jiraTicketRepository;
@@ -60,9 +64,9 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
 
       pickTicketSuggestion(page, TICKET_KEY);
 
-      // the number is what gets stored, the title is what made it recognisable in the list
+      // the number is what gets stored; the comment gets number and title
       assertThat(ticketReferenceControl(page)).containsText(TICKET_KEY);
-      assertThat(page.locator("#commentField")).hasValue(TICKET_SUMMARY);
+      assertThat(page.locator("#commentField")).hasValue(TICKET_COMMENT);
 
       page.fill("#durationTime", "01:00");
       page.click("#timereportMainForm button[type=submit]");
@@ -91,13 +95,13 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
       selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
 
       pickTicketSuggestion(page, TICKET_KEY);
-      assertThat(page.locator("#commentField")).hasValue(TICKET_SUMMARY);
+      assertThat(page.locator("#commentField")).hasValue(TICKET_COMMENT);
 
       // the comment still says what the first pick wrote, so it is not somebody's own text
       pickTicketSuggestion(page, OTHER_TICKET_KEY);
 
       assertThat(ticketReferenceControl(page)).containsText(OTHER_TICKET_KEY);
-      assertThat(page.locator("#commentField")).hasValue(OTHER_TICKET_SUMMARY);
+      assertThat(page.locator("#commentField")).hasValue(OTHER_TICKET_COMMENT);
     });
   }
 
