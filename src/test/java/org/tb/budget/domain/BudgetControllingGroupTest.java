@@ -47,7 +47,15 @@ public class BudgetControllingGroupTest {
     assertThat(group.progressFormatted()).matches("40[.,]0 %");
   }
 
+  /** The header links to the plan; the group of an unplanned section has none to link to. */
+  @Test
+  public void should_link_to_its_plan_only_when_there_is_one() {
+    assertThat(group(40.0, ProgressStatus.BEHIND).hasBudgetPlan()).isTrue();
+    assertThat(new BudgetControllingGroup(null, null, null, List.of(), null, null, null)
+        .hasBudgetPlan()).isFalse();
+  }
+
   private static BudgetControllingGroup group(Double progressPercent, ProgressStatus status) {
-    return new BudgetControllingGroup("co/01", "plan", List.of(), null, progressPercent, status);
+    return new BudgetControllingGroup("co/01", "plan", 1L, List.of(), null, progressPercent, status);
   }
 }
