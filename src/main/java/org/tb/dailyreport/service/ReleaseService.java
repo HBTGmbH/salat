@@ -7,6 +7,7 @@ import static java.util.Optional.of;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
+import static org.tb.common.GlobalConstants.DAY_MAX_LENGTH_ALLOWED_IN_MINUTES;
 import static org.tb.common.GlobalConstants.REST_PERIOD_IN_MINUTES;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
@@ -20,6 +21,7 @@ import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANC
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.WD_DAY_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 import static org.tb.common.util.DateTimeUtils.now;
@@ -246,6 +248,14 @@ public class ReleaseService {
       }
     }
 
+    // A day has 24 hours for everyone, whatever the working time regulations say about the person:
+    // standby is exempt from the 10 hour limit above, but together with the working time it still
+    // has to fit into the day (#463).
+    timereports.stream()
+        .collect(groupingBy(TimereportDTO::getReferenceday))
+        .forEach((date, reportsOfDay) -> validateDayLength(date, reportsOfDay)
+            .ifPresent(error -> errors.add(Pair.of(date, error))));
+
     var publicHolidays = publicholidayDAO.getPublicHolidaysBetween(begin, end)
         .stream()
         .map(Publicholiday::getRefdate)
@@ -445,6 +455,22 @@ public class ReleaseService {
     Duration restTime = Duration.between(theDayBeforeEndOfWorkingDay, startOfWorkingDay);
     if (restTime.toMinutes() < REST_PERIOD_IN_MINUTES) {
       return of(ServiceFeedbackMessage.error(ErrorCode.WD_REST_TIME_TOO_SHORT, date));
+    }
+    return empty();
+  }
+
+  /**
+   * Everything booked on one day has to fit into it (#463). Unlike
+   * {@link #validateWorkingDayLength} this counts standby too — it is the only limit standby is
+   * subject to.
+   */
+  @VisibleForTesting
+  static Optional<ServiceFeedbackMessage> validateDayLength(LocalDate date, List<TimereportDTO> reportsOfDay) {
+    Duration bookedSum = reportsOfDay.stream()
+        .map(TimereportDTO::getDuration)
+        .reduce(Duration.ZERO, Duration::plus);
+    if(bookedSum.toMinutes() > DAY_MAX_LENGTH_ALLOWED_IN_MINUTES) {
+      return of(ServiceFeedbackMessage.error(WD_DAY_LENGTH_TOO_LONG, date));
     }
     return empty();
   }

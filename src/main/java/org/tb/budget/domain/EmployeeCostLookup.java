@@ -7,10 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.tb.order.domain.OrderType;
 
 /**
  * In-memory resolver for the employee cost fallback hierarchy
- * (suborder-specific assignment → general assignment), analogous to {@link OrderPricingLookup}.
+ * (suborder-specific assignment → general assignment, the latter only where the suborder is no
+ * standby order), analogous to {@link OrderPricingLookup}.
  *
  * <p>Resolving a cost per time report through the repository produced two statements for every
  * single report. Both tables are small, so they are loaded once and every lookup is answered
@@ -49,12 +51,24 @@ public final class EmployeeCostLookup {
         return new EmployeeCostLookup(assignmentsByKey, costsByName);
     }
 
-    public Optional<EmployeeCost> findEffectiveCost(String employeeSign, String suborderSign, LocalDate date) {
+    /**
+     * The cost of one hour the employee books on that suborder.
+     *
+     * <p>Standby costs something else than the work the general rate of an employee was made for,
+     * so a standby suborder is resolved from its own assignment alone (#463). Without one there is
+     * no rate — and no rate means 0 EUR, deliberately, rather than the general rate of the
+     * employee, which would be wrong by a wide margin.
+     */
+    public Optional<EmployeeCost> findEffectiveCost(String employeeSign, String suborderSign,
+                                                    OrderType orderType, LocalDate date) {
         if (suborderSign != null) {
             var assignment = findAssignment(new AssignmentKey(employeeSign, suborderSign), date);
             if (assignment.isPresent()) {
                 return findCost(assignment.get().getEmployeeCostName(), date);
             }
+        }
+        if (orderType == OrderType.BEREITSCHAFT) {
+            return Optional.empty();
         }
         return findAssignment(new AssignmentKey(employeeSign, null), date)
             .flatMap(a -> findCost(a.getEmployeeCostName(), date));

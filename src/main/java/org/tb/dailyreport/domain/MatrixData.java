@@ -6,6 +6,11 @@ import java.util.List;
 public record MatrixData(
     List<DayHeader> dayHeaders,
     List<Row> rows,
+    /**
+     * The standby orders, shown below the sum row and counted in no sum of it (#463). They keep
+     * their own row total; an aggregated standby sum is deliberately not offered.
+     */
+    List<Row> standbyRows,
     List<FooterDay> footerDays,
     String totalString,
     String targetString,

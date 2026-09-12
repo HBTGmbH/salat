@@ -166,6 +166,11 @@ public class GlobalConstants {
     public static final int BREAK_MINUTES_AFTER_NINE_HOURS = 45;
 
     public static final long WORKDAY_MAX_LENGTH_ALLOWED_IN_MINUTES = 10 * MINUTES_PER_HOUR;
+    /**
+     * Everything booked on a day — working time and standby together — has to fit into that day
+     * (#463). Standby is exempt from the 10 hour limit, but not from the calendar.
+     */
+    public static final long DAY_MAX_LENGTH_ALLOWED_IN_MINUTES = 24 * MINUTES_PER_HOUR;
     public static final long REST_PERIOD_IN_MINUTES = 11 * MINUTES_PER_HOUR;
 
     public static final int DEFAULT_WORK_DAY_START = 9;

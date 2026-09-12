@@ -20,6 +20,7 @@ import org.tb.budget.domain.EmployeeCostAssignmentData;
 import org.tb.budget.domain.EmployeeCostCategory;
 import org.tb.budget.domain.EmployeeCostData;
 import org.tb.budget.domain.EmployeeCostLookup;
+import org.tb.order.domain.OrderType;
 import org.tb.budget.persistence.EmployeeCostAssignmentRepository;
 import org.tb.budget.persistence.EmployeeCostRepository;
 import org.tb.common.LocalDateRange;
@@ -158,14 +159,22 @@ public class EmployeeCostService {
     /**
      * Fallback hierarchy: suborder-specific assignment → general assignment.
      * Returns the matching EmployeeCost active on the given date.
+     *
+     * <p>A standby suborder ({@link OrderType#BEREITSCHAFT}) takes no general assignment: standby
+     * is paid differently from the work the general rate stands for, so without an assignment of
+     * its own it costs nothing (#463).
      */
     @Transactional(readOnly = true)
-    public Optional<EmployeeCost> findEffectiveCost(String employeeSign, String suborderSign, LocalDate date) {
+    public Optional<EmployeeCost> findEffectiveCost(String employeeSign, String suborderSign,
+                                                    OrderType orderType, LocalDate date) {
         if (suborderSign != null) {
             var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeSign, suborderSign, date);
             if (!assignments.isEmpty()) {
                 return employeeCostRepository.findEffectiveByName(assignments.get(0).getEmployeeCostName(), date);
             }
+        }
+        if (orderType == OrderType.BEREITSCHAFT) {
+            return Optional.empty();
         }
         var assignments = assignmentRepository.findEffectiveGeneral(employeeSign, date);
         if (!assignments.isEmpty()) {

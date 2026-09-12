@@ -171,7 +171,7 @@ public class WorkingdayService {
   public LocalTime determineBeginTimeToDisplay(long ecId, LocalDate date, Workingday workingday) {
     Duration elapsed = timereportDAO.getTimereportsByDateAndEmployeeContractId(ecId, date)
         .stream()
-        .map(TimereportDTO::getDuration)
+        .map(TimereportDTO::getWorkingTime)
         .reduce(Duration.ZERO, Duration::plus);
     if (workingday != null) {
       elapsed = elapsed
@@ -193,7 +193,7 @@ public class WorkingdayService {
   public String calculateQuittingTime(long employeecontractId, LocalDate date) {
     Duration laborTime = timereportDAO
         .getTimereportsByDateAndEmployeeContractId(employeecontractId, date)
-        .stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+        .stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
     return endOfDay(getWorkingday(employeecontractId, date), employeecontractId, laborTime);
   }
 
@@ -216,7 +216,7 @@ public class WorkingdayService {
   }
 
   public boolean checkLaborTimeMaximum(List<TimereportDTO> timereports) {
-    Duration actual = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+    Duration actual = timereports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
     return checkLaborTimeMaximum(actual);
   }
 

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  One order line of the matrix overview. Used twice: for the orders above the sum row and for the
+  standby orders below it (#463), which are the same line with a marker and no share in any sum.
+-->
+<tr th:fragment="matrixRow(row, even, dayHeaders, standby)"
+    th:classappend="${even ? 'matrix-row-even' : ''}">
+  <td class="matrix-first-col text-nowrap">
+    <span class="small nowrap" style="display: block"
+          th:text="|${row.customerOrderSign} · ${row.customerOrderDesc} · ${row.customer}|">1417 · Alpha · Kunde</span>
+    <span style="display: block">
+      <span th:text="|${row.suborderSign} · ${row.suborderDesc}|">01 · DEV-BACKEND</span>
+      <span th:if="${standby}" class="badge bg-purple-lt ms-1"
+            th:title="#{main.matrixoverview.table.standby.hint}"
+            th:text="#{main.customerorder.orderType.bereitschaft}">Bereitschaft</span>
+    </span>
+  </td>
+  <td th:each="cell, cs : ${row.cells}"
+      class="text-center px-1"
+      th:classappend="${dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.weekend ? 'bg-azure-lt' : (cell.publicHoliday ? 'bg-warning-lt' : '')}">
+    <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
+    <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail d-none">
+      <div th:each="d : ${cell.details}"
+           class="text-start py-1"
+           th:text="${d.durationString + (d.taskDescription ne '' ? ': ' + d.taskDescription : '')}">
+        MOS-16345 did something
+      </div>
+    </div>
+  </td>
+  <td class="matrix-last-col text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>
+</tr>
+
+</body>
+</html>

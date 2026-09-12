@@ -27,6 +27,7 @@ import org.tb.budget.persistence.EmployeeCostAssignmentRepository;
 import org.tb.budget.persistence.EmployeeCostRepository;
 import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.budget.service.EmployeeCostService;
+import org.tb.order.domain.OrderType;
 import org.tb.budget.service.OrderPricingService;
 import org.tb.common.SalatProperties;
 import org.tb.employee.auth.EmployeeAuthorization;
@@ -128,7 +129,7 @@ public class EmployeeSignChangedListenerTest {
 
     var newSign = whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(newSign, null, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(newSign, null, OrderType.STANDARD, WORKDAY)).isPresent();
   }
 
   @Test
@@ -155,7 +156,7 @@ public class EmployeeSignChangedListenerTest {
 
     whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, WORKDAY)).isEmpty();
+    assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, OrderType.STANDARD, WORKDAY)).isEmpty();
     assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
         .findEffectiveRate(ORDER_SIGN, null, TESTY_SIGN, WORKDAY)).isEmpty();
   }
@@ -171,7 +172,7 @@ public class EmployeeSignChangedListenerTest {
 
     whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(BOSS_SIGN, null, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(BOSS_SIGN, null, OrderType.STANDARD, WORKDAY)).isPresent();
   }
 
   /** The same has to hold for an ordinary correction of the sign, which is the commoner case. */
@@ -188,7 +189,7 @@ public class EmployeeSignChangedListenerTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(employeeCostService.findEffectiveCost("newby", null, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost("newby", null, OrderType.STANDARD, WORKDAY)).isPresent();
     assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
         .findEffectiveRate(ORDER_SIGN, null, "newby", WORKDAY)).isPresent();
   }
@@ -205,7 +206,7 @@ public class EmployeeSignChangedListenerTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, OrderType.STANDARD, WORKDAY)).isPresent();
   }
 
   private String whenAnonymized(Employee employee) {

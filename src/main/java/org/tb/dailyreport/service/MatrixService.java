@@ -70,18 +70,17 @@ public class MatrixService {
                 d.isEqual(today)))
             .toList();
 
-        List<MatrixData.Row> rows = reports.stream()
-            .collect(Collectors.groupingBy(TimereportDTO::getSuborderId))
-            .entrySet().stream()
-            .sorted(Comparator.comparing(e -> e.getValue().getFirst().getCompleteOrderSign()))
-            .map(e -> buildRow(e.getValue(), days, holidays))
-            .toList();
+        // standby is no working time, so its orders are kept apart: they are listed below the sum
+        // row and are part of neither the daily sums nor the total, SOLL and difference (#463)
+        var reportsByKind = reports.stream().collect(Collectors.partitioningBy(TimereportDTO::isStandby));
+        List<MatrixData.Row> rows = buildRows(reportsByKind.get(false), days, holidays);
+        List<MatrixData.Row> standbyRows = buildRows(reportsByKind.get(true), days, holidays);
 
         Map<LocalDate, Duration> durationByDay = reports
             .stream()
             .collect(toMap(
                 TimereportDTO::getReferenceday,
-                TimereportDTO::getDuration,
+                TimereportDTO::getWorkingTime,
                 Duration::plus
             )
         );
@@ -125,7 +124,7 @@ public class MatrixService {
             .toList();
 
         Duration grand = reports.stream()
-            .map(TimereportDTO::getDuration)
+            .map(TimereportDTO::getWorkingTime)
             .reduce(Duration.ZERO, Duration::plus);
 
         boolean hasTarget = employeeContractId > 0
@@ -153,7 +152,7 @@ public class MatrixService {
             if (!cutoff.isBefore(dateFirst)) {
                 Duration grandPrevDay = reports.stream()
                     .filter(r -> !r.getReferenceday().isAfter(cutoff))
-                    .map(TimereportDTO::getDuration)
+                    .map(TimereportDTO::getWorkingTime)
                     .reduce(Duration.ZERO, Duration::plus);
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, dateFirst, cutoff);
                 Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
@@ -162,7 +161,7 @@ public class MatrixService {
             }
         }
 
-        return new MatrixData(dayHeaders, rows, footerDays, totalString, targetString, diffString, diffNegative, prevDayDiffString, prevDayDiffNegative);
+        return new MatrixData(dayHeaders, rows, standbyRows, footerDays, totalString, targetString, diffString, diffNegative, prevDayDiffString, prevDayDiffNegative);
     }
 
     public void fillNotWorked(YearMonth yearMonth, long employeeContractId) {
@@ -197,6 +196,18 @@ public class MatrixService {
                 }
             }
         });
+    }
+
+    private List<MatrixData.Row> buildRows(
+            List<TimereportDTO> reports,
+            List<LocalDate> days,
+            Map<LocalDate, String> holidays) {
+        return reports.stream()
+            .collect(Collectors.groupingBy(TimereportDTO::getSuborderId))
+            .entrySet().stream()
+            .sorted(Comparator.comparing(e -> e.getValue().getFirst().getCompleteOrderSign()))
+            .map(e -> buildRow(e.getValue(), days, holidays))
+            .toList();
     }
 
     private MatrixData.Row buildRow(

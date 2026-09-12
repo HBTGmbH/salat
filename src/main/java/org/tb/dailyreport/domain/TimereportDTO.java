@@ -64,4 +64,14 @@ public class TimereportDTO implements Serializable {
     return duration.toMinutesPart() % 5 == 0;
   }
 
+  /** Standby, and therefore not part of any working time sum (#463). */
+  public boolean isStandby() {
+    return orderType == OrderType.BEREITSCHAFT;
+  }
+
+  /** The duration as far as it counts as working time — {@link Duration#ZERO} for standby (#463). */
+  public Duration getWorkingTime() {
+    return isStandby() ? Duration.ZERO : duration;
+  }
+
 }
