@@ -545,6 +545,86 @@ class ReleaseServiceTest {
             assertThat(errors).hasSize(0);
         }
 
+        @Test
+        void whenOnlyStandbyWasBookedWithoutWorkingDay_shouldNotReturnError() {
+            // given a day on which nothing but standby was booked - no start of work, no break
+            final long employeeContractId = 1L;
+            final LocalDate date = LocalDate.of(2024, 1, 1);
+            final TimereportDTO standby = TimereportDTO.builder()
+                    .orderType(OrderType.BEREITSCHAFT)
+                    .referenceday(date)
+                    .duration(Duration.ofHours(12))
+                    .build();
+
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date)).thenReturn(List.of(standby));
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, date.minusDays(1), date)).thenReturn(List.of());
+            when(timereportService.needsWorkingHoursLawValidation(employeeContractId)).thenReturn(true);
+
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(date);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
+
+            // when validating
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
+
+            // then neither the missing begin nor the missing break is complained about
+            assertThat(errors).isEmpty();
+        }
+
+        @Test
+        void whenStandbyAndWorkTogetherAreExactly24Hours_shouldNotReturnError() {
+            // given
+            final long employeeContractId = 1L;
+            final LocalDate date = LocalDate.of(2024, 1, 1);
+
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date))
+                .thenReturn(dayOf(date, Duration.ofHours(8), Duration.ofHours(16)));
+            whenContractStartsAt(employeeContractId, date);
+
+            // when validating
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
+
+            // then the day is still accepted
+            assertThat(errors).isEmpty();
+        }
+
+        @Test
+        void whenStandbyAndWorkTogetherExceed24Hours_shouldReturnError() {
+            // given one minute more than the day has
+            final long employeeContractId = 1L;
+            final LocalDate date = LocalDate.of(2024, 1, 1);
+
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(employeeContractId, date))
+                .thenReturn(dayOf(date, Duration.ofHours(8), Duration.ofHours(16).plusMinutes(1)));
+            whenContractStartsAt(employeeContractId, date);
+
+            // when validating
+            final List<ServiceFeedbackMessage> errors = runValidateForRelease(employeeContractId, date);
+
+            // then the release is refused, naming the day
+            assertThat(errors).hasSize(1);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_DAY_LENGTH_TOO_LONG);
+            assertThat(errors.getFirst().getArguments().getFirst()).isEqualTo(date);
+        }
+
+        private List<TimereportDTO> dayOf(LocalDate date, Duration worked, Duration standby) {
+            return List.of(
+                TimereportDTO.builder().orderType(OrderType.STANDARD).referenceday(date).duration(worked).build(),
+                TimereportDTO.builder().orderType(OrderType.BEREITSCHAFT).referenceday(date).duration(standby).build());
+        }
+
+        private void whenContractStartsAt(long employeeContractId, LocalDate date) {
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(date);
+            when(employeecontractDAO.getEmployeecontractById(employeeContractId)).thenReturn(contract);
+        }
+
         private List<ServiceFeedbackMessage> runValidateForRelease(long employeeContractId, LocalDate date) {
             try {
                 classUnderTest.validateForRelease(employeeContractId, date);

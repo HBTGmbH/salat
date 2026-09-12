@@ -59,7 +59,9 @@ public class DailyService {
         boolean hasDayTarget = !dayTarget.isZero();
 
         List<TimereportDTO> timereports = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, date);
-        Duration totalBooked = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+        // standby is booked on this day like any other time, but it is no working time and therefore
+        // part of no sum here - not of the total, not of the progress, not of the quitting time (#463)
+        Duration totalBooked = timereports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
         Workingday workingday = workingdayService.getWorkingday(employeeContractId, date);
 
         // the quitting time follows from what has been booked, not from a target - it is useful on a
@@ -120,7 +122,7 @@ public class DailyService {
 
         List<ListDay> days = first.datesUntil(last.plusDays(1)).map(day -> {
             List<TimereportDTO> dayReports = reportsByDate.getOrDefault(day, List.of());
-            Duration dayTotal = dayReports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+            Duration dayTotal = dayReports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
             boolean isWeekend = day.getDayOfWeek() == DayOfWeek.SATURDAY || day.getDayOfWeek() == DayOfWeek.SUNDAY;
             boolean isHoliday = holidays.containsKey(day);
             Workingday wd = workingdays.get(day);
@@ -128,7 +130,7 @@ public class DailyService {
             return new ListDay(day, dayReports, DurationUtils.format(dayTotal, false), isWeekend, isHoliday, holidays.get(day), notWorked, day.isEqual(today));
         }).collect(Collectors.toList());
 
-        Duration grand = timereports.stream().map(TimereportDTO::getDuration).reduce(Duration.ZERO, Duration::plus);
+        Duration grand = timereports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
         String monthTotal = hasTarget ? DurationUtils.format(grand) : null;
         String monthTarget = null;
         String monthDiff = null;
@@ -148,7 +150,7 @@ public class DailyService {
             if (!cutoff.isBefore(first)) {
                 Duration grandPrevDay = timereports.stream()
                     .filter(r -> !r.getReferenceday().isAfter(cutoff))
-                    .map(TimereportDTO::getDuration)
+                    .map(TimereportDTO::getWorkingTime)
                     .reduce(Duration.ZERO, Duration::plus);
                 Duration targetPrevDay = overtimeService.calculateWorkingTimeTarget(employeeContractId, first, cutoff);
                 Duration prevDayDiff = grandPrevDay.minus(targetPrevDay);
@@ -182,7 +184,7 @@ public class DailyService {
 
         List<TimereportDTO> weekReports = timereportService.getTimereportsByDatesAndEmployeeContractId(employeeContractId, monday, sunday);
         Map<LocalDate, Duration> bookedByDay = weekReports.stream().collect(
-            toMap(TimereportDTO::getReferenceday, TimereportDTO::getDuration, Duration::plus));
+            toMap(TimereportDTO::getReferenceday, TimereportDTO::getWorkingTime, Duration::plus));
 
         Map<LocalDate, Long> countByDay = weekReports.stream().collect(
             Collectors.groupingBy(TimereportDTO::getReferenceday, Collectors.counting()));

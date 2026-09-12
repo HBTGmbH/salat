@@ -16,4 +16,16 @@ public enum OrderType {
         this.label = label;
     }
 
+    /**
+     * Whether time booked on an order of this type is working time (#463).
+     *
+     * <p>Standby is time an employee is available, not time worked, so it is left out of every
+     * sum of working time — the daily and monthly totals as well as the overtime account.
+     * Sickness, vacation and absence stay working time: they are what the daily working time
+     * would otherwise have been spent on.
+     */
+    public boolean isWorkingTime() {
+        return this != BEREITSCHAFT;
+    }
+
 }

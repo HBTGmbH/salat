@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.tb.order.domain.OrderType;
 
 /**
  * The lookup replaces the assignment and cost repository queries, so these tests pin the fallback
@@ -50,7 +51,7 @@ public class EmployeeCostLookupTest {
         List.of(assignment("other", null, "general")),
         List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost("emp", "so", DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost("emp", "so", OrderType.STANDARD, DATE)).isEmpty();
   }
 
   @Test
@@ -60,7 +61,7 @@ public class EmployeeCostLookupTest {
 
     var lookup = EmployeeCostLookup.of(List.of(expired), List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost("emp", null, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost("emp", null, OrderType.STANDARD, DATE)).isEmpty();
   }
 
   @Test
@@ -79,7 +80,7 @@ public class EmployeeCostLookupTest {
     var lookup = EmployeeCostLookup.of(
         List.of(assignment("emp", null, "missing")), List.of(cost("general", 100)));
 
-    assertThat(lookup.findEffectiveCost("emp", null, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveCost("emp", null, OrderType.STANDARD, DATE)).isEmpty();
   }
 
   @Test
@@ -96,12 +97,35 @@ public class EmployeeCostLookupTest {
   }
 
   @Test
+  public void should_use_the_suborder_specific_assignment_of_a_standby_order() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(assignment("emp", null, "general"), assignment("emp", "so", "standby")),
+        List.of(cost("general", 100), cost("standby", 20)));
+
+    assertThat(cents(lookup, "emp", "so", OrderType.BEREITSCHAFT)).isEqualTo(20);
+  }
+
+  @Test
+  public void should_not_fall_back_to_the_general_assignment_for_a_standby_order() {
+    var lookup = EmployeeCostLookup.of(
+        List.of(assignment("emp", null, "general")), List.of(cost("general", 100)));
+
+    assertThat(lookup.findEffectiveCost("emp", "so", OrderType.BEREITSCHAFT, DATE)).isEmpty();
+    // the very same constellation on a standard order does fall back
+    assertThat(cents(lookup, "emp", "so")).isEqualTo(100);
+  }
+
+  @Test
   public void should_return_empty_for_an_empty_lookup() {
-    assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost("emp", "so", DATE)).isEmpty();
+    assertThat(EmployeeCostLookup.of(List.of(), List.of()).findEffectiveCost("emp", "so", OrderType.STANDARD, DATE)).isEmpty();
   }
 
   private static Integer cents(EmployeeCostLookup lookup, String employeeSign, String suborderSign) {
-    return lookup.findEffectiveCost(employeeSign, suborderSign, DATE)
+    return cents(lookup, employeeSign, suborderSign, OrderType.STANDARD);
+  }
+
+  private static Integer cents(EmployeeCostLookup lookup, String employeeSign, String suborderSign, OrderType orderType) {
+    return lookup.findEffectiveCost(employeeSign, suborderSign, orderType, DATE)
         .map(EmployeeCost::getCostCentsPerHour)
         .orElse(null);
   }

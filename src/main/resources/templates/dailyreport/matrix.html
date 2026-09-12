@@ -139,32 +139,15 @@
       <tbody>
 
         <!-- Empty state -->
-        <tr th:if="${#lists.isEmpty(matrixData.rows)}">
+        <tr th:if="${#lists.isEmpty(matrixData.rows) and #lists.isEmpty(matrixData.standbyRows)}">
           <td th:colspan="${#lists.size(matrixData.dayHeaders) + 2}" class="text-center py-3"
               th:text="#{main.matrixoverview.table.empty.text}">
             Keine Buchungen in diesem Monat.
           </td>
         </tr>
 
-        <tr th:each="row, rs : ${matrixData.rows}" th:classappend="${rs.even ? 'matrix-row-even' : ''}">
-          <td class="matrix-first-col text-nowrap">
-            <span class="small nowrap" style="display: block" th:text="|${row.customerOrderSign} · ${row.customerOrderDesc} · ${row.customer}|">1417 · Alpha · Kunde</span>
-            <span style="display: block" th:text="|${row.suborderSign} · ${row.suborderDesc}|">01 · DEV-BACKEND</span>
-          </td>
-          <td th:each="cell, cs : ${row.cells}"
-              class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.weekend ? 'bg-azure-lt' : (cell.publicHoliday ? 'bg-warning-lt' : '')}">
-            <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
-            <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail d-none">
-              <div th:each="d : ${cell.details}"
-                   class="text-start py-1"
-                   th:text="${d.durationString + (d.taskDescription ne '' ? ': ' + d.taskDescription : '')}">
-                MOS-16345 did something
-              </div>
-            </div>
-          </td>
-          <td class="matrix-last-col text-center px-1 fw-medium" th:text="${row.totalString}">0:00</td>
-        </tr>
+        <tr th:each="row, rs : ${matrixData.rows}"
+            th:replace="~{fragments/matrix-row :: matrixRow(${row}, ${rs.even}, ${matrixData.dayHeaders}, false)}"></tr>
 
       </tbody>
 
@@ -179,6 +162,10 @@
           </td>
           <td class="matrix-last-col text-center px-1 fw-bold" th:text="${matrixData.totalString}">0:00</td>
         </tr>
+
+        <!-- Standby below the sum row: own row totals, no share in any sum of the day or month (#463) -->
+        <tr th:each="row, rs : ${matrixData.standbyRows}"
+            th:replace="~{fragments/matrix-row :: matrixRow(${row}, ${rs.even}, ${matrixData.dayHeaders}, true)}"></tr>
 
         <tr th:if="${showBeginBreakEnd}" class="small">
           <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.startofwork.text}">Beginn</td>

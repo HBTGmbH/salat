@@ -98,6 +98,7 @@ public enum ErrorCode {
   WD_OUTSIDE_CONTRACT("WD-0011", "the date is outside the validity of the employee contract!"),
   WD_DELETE_REQ_EMPLOYEE_OR_MANAGER("WD-0012", "you can only delete your own working days or you must be a manager!"),
   WD_READ_REQ_EMPLOYEE_OR_MANAGER("WD-0013", "you can only read your own working days or you must be a manager!"),
+  WD_DAY_LENGTH_TOO_LONG("WD-0014", "standby and working time together must not exceed 24 hours per day!"),
 
   ETL_INVALID_DATE_RANGE("ETL-0001", "etl definition executed with invalid date range"),
 

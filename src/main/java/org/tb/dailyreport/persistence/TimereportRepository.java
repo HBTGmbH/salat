@@ -22,6 +22,18 @@ import org.tb.dailyreport.domain.Timereport;
 @Repository
 public interface TimereportRepository extends CrudRepository<Timereport, Long>, JpaSpecificationExecutor<Timereport> {
 
+  /**
+   * Restricts a sum to the bookings that are working time (#463): standby is booked like any other
+   * time but counts towards no working time sum. The type of the suborder wins over the one of its
+   * customer order, and no type at all is a standard order — the same fallback
+   * {@code Suborder#getEffectiveOrderType} applies, expressed in JPQL.
+   */
+  String IS_WORKING_TIME = """
+      and (case when tr.suborder.orderType is not null then tr.suborder.orderType
+                else tr.suborder.customerorder.orderType end
+           is distinct from org.tb.order.domain.OrderType.BEREITSCHAFT)
+      """;
+
   @QueryHints(value = {
           @QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"),
           @QueryHint(name = HibernateHints.HINT_CACHE_REGION, value = "TimereportRepository.findAllByEmployeecontractIdAndReferencedayRefdate")
@@ -132,7 +144,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       select sum(tr.durationminutes) + 60 * sum(tr.durationhours) from Timereport tr
       where tr.deleted = false and tr.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= coalesce(:begin, tr.referenceday.refdate) and tr.referenceday.refdate <= coalesce(:end, tr.referenceday.refdate)
-  """)
+  """ + IS_WORKING_TIME)
   Optional<Long> getReportedMinutesForEmployeecontractAndBetween(long employeecontractId, LocalDate begin, LocalDate end);
 
   @Query("""
@@ -143,6 +155,7 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       from Timereport tr
       where tr.deleted = false and tr.employeecontract.id = :employeecontractId
       and tr.referenceday.refdate >= :begin and tr.referenceday.refdate <= :end
+  """ + IS_WORKING_TIME + """
       group by extract(year from tr.referenceday.refdate), extract(month from tr.referenceday.refdate)
   """)
   List<MonthlyReportedMinutes> getReportedMinutesByMonthForEmployeecontract(long employeecontractId, LocalDate begin, LocalDate end);

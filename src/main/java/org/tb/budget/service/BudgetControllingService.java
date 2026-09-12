@@ -48,6 +48,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.OrderType;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
@@ -160,7 +161,7 @@ public class BudgetControllingService {
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
                     invoiceable ? rateOf(r, customerorderSign, soSign, pricingLookup) : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
-                    costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, costLookup),
+                    costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, suborder.getEffectiveOrderType(), costLookup),
                     r.getReferenceday().isBefore(windowStart)))
                 .toList());
         }
@@ -174,9 +175,9 @@ public class BudgetControllingService {
             .orElse(BigDecimal.ZERO);
     }
 
-    private static BigDecimal costOf(TimereportDTO report, String soSign, EmployeeCostLookup lookup) {
+    private static BigDecimal costOf(TimereportDTO report, String soSign, OrderType orderType, EmployeeCostLookup lookup) {
         var hours = minutesToHours(report.getDuration().toMinutes());
-        return lookup.findEffectiveCost(report.getEmployeeSign(), soSign, report.getReferenceday())
+        return lookup.findEffectiveCost(report.getEmployeeSign(), soSign, orderType, report.getReferenceday())
             .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }
