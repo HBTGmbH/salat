@@ -360,9 +360,8 @@
                   <span th:if="${tr.training}" class="badge bg-purple-lt text-purple d-block mt-1"
                         th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
                   <!-- standby is booked here but counts towards no sum of this day (#463) -->
-                  <span th:if="${tr.standby}" class="badge bg-orange-lt text-orange d-block mt-1"
-                        th:title="#{main.daily.standby.hint}"
-                        th:text="#{main.customerorder.orderType.bereitschaft}">Bereitschaft</span>
+                  <span th:if="${tr.standby}" class="badge bg-orange-lt text-orange ms-1" data-standby-badge
+                        th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">

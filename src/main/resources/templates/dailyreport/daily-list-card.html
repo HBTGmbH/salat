@@ -75,9 +75,8 @@
         <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple"
               th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
         <!-- standby is booked here but counts towards no sum of this day (#463) -->
-        <span th:if="${singleTr.standby}" class="badge bg-orange-lt text-orange"
-              th:title="#{main.daily.standby.hint}"
-              th:text="#{main.customerorder.orderType.bereitschaft}">Bereitschaft</span>
+        <span th:if="${singleTr.standby}" class="badge bg-orange-lt text-orange" data-standby-badge
+              th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
       </div>
     </div>
     <div th:if="${singleTrEditable}" class="d-flex gap-1 mt-auto pt-2">

@@ -58,6 +58,10 @@ public class E2ETestData {
   public static final String SUBORDER_INITECH_SUPPORT_SIGN = "INITECH-SUPPORT";
   public static final String SUBORDER_INITECH_MIGRATION_SIGN = "INITECH-MIGRATION";
 
+  /** Standby: booked like any other time, but no working time (#463). */
+  public static final String CUSTOMERORDER_STANDBY_SIGN = "INITECH-02";
+  public static final String SUBORDER_STANDBY_SIGN = "INITECH-RUFBEREITSCHAFT";
+
   /**
    * Public holidays for the daily view's target calculation (#857). Deliberately in October 2026,
    * a month no other E2E class looks at - a holiday changes the working time target of its whole
@@ -132,6 +136,11 @@ public class E2ETestData {
     suborder(suborderRepository, initechOrder, SUBORDER_INITECH_SUPPORT_SIGN, "Support", PAST, false, false);
     suborder(suborderRepository, initechOrder, SUBORDER_INITECH_MIGRATION_SIGN, "Migration", PAST, false, false);
 
+    Customerorder standbyOrder = customerorder(customerorderRepository, initech,
+        CUSTOMERORDER_STANDBY_SIGN, "Rufbereitschaft", OrderType.BEREITSCHAFT);
+    Suborder standby = suborder(suborderRepository, standbyOrder, SUBORDER_STANDBY_SIGN, "Rufbereitschaft",
+        PAST, false, false);
+
     // --- Employees across roles ---
     Employee peopleLead = employee(employeeRepository, salatUserRepository, EMPLOYEE_PV_SIGN,
         "Petra", "Vorgesetzte", GlobalConstants.EMPLOYEE_STATUS_PV);
@@ -154,6 +163,7 @@ public class E2ETestData {
 
     employeeorder(employeeorderRepository, regularContract, alphaDev);
     employeeorder(employeeorderRepository, regularContract, globexConsult);
+    employeeorder(employeeorderRepository, regularContract, standby);
 
     Vacation vacation = new Vacation();
     vacation.setEmployeecontract(regularContract);
