@@ -42,6 +42,15 @@ salat:
       enabled: true                  # env: SALAT_REPORTING_EMAIL_ENABLED
       from: noreply@salat.local      # env: SALAT_REPORTING_EMAIL_FROM
 server:
+  # Kompression textueller Antworten. Bewusst hier und nicht profilspezifisch: sie soll in
+  # jeder deployten Umgebung identisch gelten und ist damit versioniert. Aufgeführt sind nur
+  # Typen, die noch nicht komprimiert sind — Bilder, Fonts und die Excel-Downloads
+  # (application/vnd.openxmlformats-...) fehlen absichtlich, sonst würden sie doppelt gepackt.
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/csv,text/javascript,application/javascript,application/json,application/xml,image/svg+xml
+    # Unterhalb dieser Grösse kostet das Packen mehr, als es einspart.
+    min-response-size: 1KB
   tomcat:
     max-part-count: 100
   servlet:
