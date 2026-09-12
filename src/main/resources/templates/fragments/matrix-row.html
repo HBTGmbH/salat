@@ -9,14 +9,13 @@
 <tr th:fragment="matrixRow(row, even, dayHeaders, standby)"
     th:classappend="${even ? 'matrix-row-even' : ''}">
   <td class="matrix-first-col text-nowrap">
-    <span class="small nowrap" style="display: block"
-          th:text="|${row.customerOrderSign} · ${row.customerOrderDesc} · ${row.customer}|">1417 · Alpha · Kunde</span>
-    <span style="display: block">
-      <span th:text="|${row.suborderSign} · ${row.suborderDesc}|">01 · DEV-BACKEND</span>
-      <span th:if="${standby}" class="badge bg-purple-lt ms-1"
-            th:title="#{main.matrixoverview.table.standby.hint}"
-            th:text="#{main.customerorder.orderType.bereitschaft}">Bereitschaft</span>
+    <span class="small nowrap" style="display: block">
+      <!-- the marker sits in the first line and is icon-only: the order column is narrow (#463) -->
+      <i th:if="${standby}" class="ti ti-bell text-orange me-1" data-standby-badge
+         th:title="#{main.matrixoverview.table.standby.hint}"></i>
+      <span th:text="|${row.customerOrderSign} · ${row.customerOrderDesc} · ${row.customer}|">1417 · Alpha · Kunde</span>
     </span>
+    <span style="display: block" th:text="|${row.suborderSign} · ${row.suborderDesc}|">01 · DEV-BACKEND</span>
   </td>
   <td th:each="cell, cs : ${row.cells}"
       class="text-center px-1"
