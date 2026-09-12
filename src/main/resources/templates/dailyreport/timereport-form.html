@@ -225,10 +225,10 @@
                 <div class="d-flex gap-2 align-items-center">
                   <select class="form-select" th:field="*{numberOfSerialDays}" style="width:210px">
                     <option value="1" th:text="#{main.timereport.form.serial.none}">Nicht wiederholen</option>
-                    <option value="2">2 <span th:text="#{main.timereport.form.serial.days.label}">Arbeitstage</span></option>
-                    <option value="3">3 <span th:text="#{main.timereport.form.serial.days.label}">Arbeitstage</span></option>
-                    <option value="5">5 <span th:text="#{main.timereport.form.serial.days.label}">Arbeitstage</span></option>
-                    <option value="10">10 <span th:text="#{main.timereport.form.serial.days.label}">Arbeitstage</span></option>
+                    <!-- 2..MAX_SERIAL_BOOKING_DAYS generated, so the list cannot drift apart again (#826) -->
+                    <option th:each="days : ${#numbers.sequence(2, T(org.tb.common.GlobalConstants).MAX_SERIAL_BOOKING_DAYS)}"
+                            th:value="${days}"
+                            th:text="${days} + ' ' + #{main.timereport.form.serial.days.label}">2 Arbeitstage</option>
                   </select>
                   <span class="text-muted small" th:text="#{main.timereport.form.serial.hint}"></span>
                 </div>

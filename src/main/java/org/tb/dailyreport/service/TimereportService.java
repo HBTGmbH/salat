@@ -13,6 +13,7 @@ import static org.tb.common.GlobalConstants.COMMENT_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_MONTH;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_TOTALTIME;
 import static org.tb.common.GlobalConstants.DEBITHOURS_UNIT_YEAR;
+import static org.tb.common.GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
 import static org.tb.common.GlobalConstants.MINUTES_PER_DAY;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
@@ -35,6 +36,7 @@ import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
 import static org.tb.common.exception.ErrorCode.TR_REFERENCE_DAY_NULL;
 import static org.tb.common.exception.ErrorCode.TR_SEQUENCE_NUMBER_ALREADY_SET;
+import static org.tb.common.exception.ErrorCode.TR_SERIAL_DAYS_OUT_OF_RANGE;
 import static org.tb.common.exception.ErrorCode.TR_SUBORDER_COMMENT_MANDATORY;
 import static org.tb.common.exception.ErrorCode.TR_TASK_DESCRIPTION_INVALID_LENGTH;
 import static org.tb.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
@@ -82,6 +84,7 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DataValidationUtils;
@@ -143,6 +146,11 @@ public class TimereportService {
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       String ticketReference, boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays)
       throws ErrorCodeException {
+
+    // the form offers 1..MAX_SERIAL_BOOKING_DAYS; a hand-crafted POST must not ask for more (#826)
+    if (numberOfSerialDays < 1 || numberOfSerialDays > MAX_SERIAL_BOOKING_DAYS) {
+      throw new InvalidDataException(TR_SERIAL_DAYS_OUT_OF_RANGE);
+    }
 
     Timereport timereportTemplate = new Timereport();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
@@ -401,6 +409,11 @@ public class TimereportService {
 
   @Transactional(readOnly = true)
   public List<LocalDate> getWorkableSerialDates(LocalDate start, int count) {
+    // same bound as createTimereports: callers seed a working day per date, so an oversized count
+    // must be rejected here as well and not only when the bookings are saved (#826)
+    if (count < 1 || count > MAX_SERIAL_BOOKING_DAYS) {
+      throw new InvalidDataException(TR_SERIAL_DAYS_OUT_OF_RANGE);
+    }
     List<LocalDate> dates = new ArrayList<>();
     LocalDate current = start;
     for (int i = 0; i < count; i++) {

@@ -126,7 +126,8 @@ public class GlobalConstants {
     public static final int MATRIX_SPECIFICDATE_ALLORDERS_SPECIFICEMPLOYEES = 3;
     public static final int MATRIX_SPECIFICDATE_SPECIFICORDERS_SPECIFICEMPLOYEES = 4;
 
-    public static final int MAX_SERIAL_BOOKING_DAYS = 25;
+    /** upper bound of the "Wiederholen für" selection in the booking form (#826) */
+    public static final int MAX_SERIAL_BOOKING_DAYS = 10;
 
     public static final byte DEBITHOURS_UNIT_MONTH = 12;
     public static final byte DEBITHOURS_UNIT_YEAR = 1;

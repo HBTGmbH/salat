@@ -77,6 +77,7 @@ public enum ErrorCode {
   TR_DURATION_EXCEEDS_ONE_DAY("TR-0030", "duration must not exceed 24 hours"),
   TR_DURATION_INVALID_FORMAT("TR-0031", "duration could not be interpreted"),
   TR_TICKET_REFERENCE_INVALID_LENGTH("TR-0032", "ticket reference is too long"),
+  TR_SERIAL_DAYS_OUT_OF_RANGE("TR-0033", "number of serial days out of valid range"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
