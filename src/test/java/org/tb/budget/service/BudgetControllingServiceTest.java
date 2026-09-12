@@ -31,10 +31,13 @@ import org.tb.budget.domain.OrderFlatRateInstalment;
 import org.tb.budget.domain.OrderFlatRateLookup;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingLookup;
+import org.tb.budget.domain.ProgressMode;
+import org.tb.budget.domain.ProgressStatus;
 import org.tb.budget.domain.SectionKind;
 import org.tb.budget.domain.TimereportBudgetLink;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.TimereportBudgetAssignmentRepository;
+import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -1001,6 +1004,60 @@ public class BudgetControllingServiceTest {
       budget.getAdjustments().add(adjustment);
     }
     return budget;
+  }
+
+  /**
+   * The dashboard asks for the progress of every active plan at once (behind-plan warning). A plan
+   * in TIME mode has come as far as the share of its working days that have passed.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_compute_the_time_progress_of_several_plans_at_once() {
+    var running = plan("H1", null, FROM, UNTIL, "1000");
+    running.setProgressMode(ProgressMode.TIME);
+    var finished = plan("done", null, FROM, APR, "500");
+    finished.setProgressMode(ProgressMode.TIME);
+
+    var progress = service.computeProgressPercents(List.of(running, finished));
+
+    assertThat(progress.get(running.getId())).isBetween(40.0, 50.0);
+    // Its end is behind us, so the plan has run its course: 100%, not more.
+    assertThat(progress.get(finished.getId())).isEqualTo(100.0);
+  }
+
+  /** Without a progress mode there is nothing to be behind of — the plan is simply absent. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_no_progress_for_a_plan_without_a_progress_mode() {
+    var plan = plan("H1", null, FROM, UNTIL, "1000");
+
+    assertThat(service.computeProgressPercents(List.of(plan))).isEmpty();
+  }
+
+  /**
+   * An open-ended plan has no time progress: 31.12.2999 says "no end", and measuring elapsed time
+   * against it would both be meaningless and walk a thousand years of days.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_no_time_progress_for_an_open_ended_plan() {
+    var plan = plan("open", null, FROM, LocalDateRange.FINIT_UNTIL_BOUNDARY, "1000");
+    plan.setProgressMode(ProgressMode.TIME);
+
+    assertThat(service.computeProgressPercents(List.of(plan))).isEmpty();
+  }
+
+  /**
+   * BEHIND is the dashboard's warning: more of the budget spent than of the plan achieved. The ten
+   * point band around equality keeps a plan that is a few days off from being flagged.
+   */
+  @Test
+  public void should_judge_a_plan_that_spent_more_budget_than_it_made_progress_as_behind() {
+    assertThat(BudgetControllingService.computeProgressStatus(20.0, 45.0)).isEqualTo(ProgressStatus.BEHIND);
+    assertThat(BudgetControllingService.computeProgressStatus(50.0, 45.0)).isEqualTo(ProgressStatus.ON_TRACK);
+    assertThat(BudgetControllingService.computeProgressStatus(60.0, 45.0)).isEqualTo(ProgressStatus.AHEAD);
+    assertThat(BudgetControllingService.computeProgressStatus(null, 45.0)).isEqualTo(ProgressStatus.UNKNOWN);
+    assertThat(BudgetControllingService.computeProgressStatus(50.0, null)).isEqualTo(ProgressStatus.UNKNOWN);
   }
 
   private void givenFlatRates(OrderFlatRate... rates) {

@@ -663,7 +663,55 @@ public class BudgetControllingService {
             .orElse(null);
     }
 
-    private ProgressStatus computeProgressStatus(Double progressPercent, Double budgetUsedPercent) {
+    /**
+     * How far each of the given plans has come, by plan id — plans without a progress mode and plans
+     * whose progress cannot be determined are absent rather than mapped to {@code null}.
+     *
+     * <p>One holiday query for all of them instead of one per plan: the dashboard asks this for
+     * every active plan at once.
+     *
+     * <p>A plan that runs open-ended has no time progress: the share of its running time that has
+     * elapsed would be measured against the sentinel end 31.12.2999, which says "no end", not a
+     * date. Such a plan is simply absent here, and the dashboard shows no progress for it.
+     */
+    public Map<Long, Double> computeProgressPercents(List<OrderBudget> budgets) {
+        var relevant = budgets.stream()
+            .filter(b -> b.getProgressMode() != null)
+            .filter(b -> b.getProgressMode() != ProgressMode.TIME || hasEnd(b))
+            .toList();
+        if (relevant.isEmpty()) {
+            return Map.of();
+        }
+        var today = DateUtils.today();
+        var from = relevant.stream().map(OrderBudget::getValidFrom).min(naturalOrder()).orElse(today);
+        var until = relevant.stream().filter(BudgetControllingService::hasEnd)
+            .map(OrderBudget::getValidUntil).max(naturalOrder()).orElse(today);
+        Set<LocalDate> holidays = publicholidayService.getPublicHolidaysBetween(from, until).stream()
+            .map(h -> h.getRefdate()).collect(Collectors.toSet());
+
+        var progressPercents = new LinkedHashMap<Long, Double>();
+        for (var budget : relevant) {
+            var progress = computeProgress(budget, budget.getValidFrom(), budget.getValidUntil(),
+                today, holidays);
+            if (progress != null) {
+                progressPercents.put(budget.getId(), progress);
+            }
+        }
+        return progressPercents;
+    }
+
+    private static boolean hasEnd(OrderBudget budget) {
+        return budget.getValidUntil() != null
+            && budget.getValidUntil().isBefore(LocalDateRange.FINIT_UNTIL_BOUNDARY);
+    }
+
+    /**
+     * Where a plan stands against its own progress: {@code BEHIND} once it has consumed noticeably
+     * more of its budget than of its planned progress. Public and static because the dashboard
+     * judges its rows by exactly this rule — two thresholds that drift apart would have the two
+     * views disagree about the same plan.
+     */
+    public static ProgressStatus computeProgressStatus(Double progressPercent, Double budgetUsedPercent) {
         if (progressPercent == null || budgetUsedPercent == null) return ProgressStatus.UNKNOWN;
         var diff = progressPercent - budgetUsedPercent;
         if (diff >= 10.0) return ProgressStatus.AHEAD;
