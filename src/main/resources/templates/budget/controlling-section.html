@@ -53,8 +53,6 @@
       <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">Gewinn (€)</th>
       <th class="text-end" th:if="${isManager and section.hasGrossProfitMarginData()}"
           th:text="#{main.controlling.col.margin}">Marge (%)</th>
-      <th class="text-end" th:if="${section.hasProgressData()}" th:text="#{main.controlling.col.progress}">Fortschritt</th>
-      <th class="text-center" th:if="${section.hasProgressData()}" th:text="#{main.controlling.col.progress.status}">Plan-Status</th>
     </tr>
   </thead>
   <tbody>
@@ -122,14 +120,6 @@
   <td class="text-end" th:if="${isManager and section.hasGrossProfitMarginData()}"
       th:classappend="${cellClass} + (${row.hasGrossProfitMargin() and row.grossProfitMarginPercent() < 0} ? ' text-danger' : '')"
       th:text="${row.hasGrossProfitMargin()} ? (${#numbers.formatDecimal(row.grossProfitMarginPercent(), 1, 1)} + ' %') : '—'"></td>
-  <td class="text-end" th:if="${section.hasProgressData()}" th:classappend="${cellClass}"
-      th:text="${row.progressFormatted()}"></td>
-  <td class="text-center" th:if="${section.hasProgressData()}" th:classappend="${cellClass}">
-    <span th:if="${row.hasProgress() and row.progressStatus().name() == 'ON_TRACK'}" class="badge bg-success-lt" th:text="#{main.controlling.progress.status.ON_TRACK}">Im Plan</span>
-    <span th:if="${row.hasProgress() and row.progressStatus().name() == 'AHEAD'}" class="badge bg-info-lt" th:text="#{main.controlling.progress.status.AHEAD}">Voraus</span>
-    <span th:if="${row.hasProgress() and row.progressStatus().name() == 'BEHIND'}" class="badge bg-danger-lt" th:text="#{main.controlling.progress.status.BEHIND}">Hinter Plan</span>
-    <span th:if="${!row.hasProgress()}" class="text-muted">—</span>
-  </td>
 </tr>
 
 </body>

@@ -20,11 +20,13 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.BudgetControllingGroup;
 import org.tb.budget.domain.BudgetControllingResult;
 import org.tb.budget.domain.BudgetControllingRow;
 import org.tb.budget.domain.BudgetControllingSection;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
+import org.tb.budget.domain.OrderBudgetScopeEntry;
 import org.tb.budget.domain.FlatRateRhythm;
 import org.tb.budget.domain.OrderFlatRate;
 import org.tb.budget.domain.OrderFlatRateInstalment;
@@ -1004,6 +1006,75 @@ public class BudgetControllingServiceTest {
       budget.getAdjustments().add(adjustment);
     }
     return budget;
+  }
+
+  /**
+   * The progress belongs to the plan, so it rides on the group rather than on a row (#989). For a
+   * plan on suborder level the verdict is read from its own subtotal — not from the section total,
+   * which sums every plan of the section and would judge this one by its neighbours' spending.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_judge_a_suborder_level_plan_against_its_own_subtotal() {
+    var first = plan("co/01", "co/01", FROM, UNTIL, "1000");
+    withScopeProgress(first, 85);
+    givenBudgets(first, plan("co/02", "co/02", FROM, UNTIL, "4000"));
+
+    var group = groupOf(sectionOf(SectionKind.SUBORDER_LEVEL), "co/01");
+
+    // 800 EUR against 1000 EUR is 80 %, and 85 % progress sits inside the ten point band.
+    // Against the section total (1600 of 5000, i.e. 32 %) the same plan would read as AHEAD.
+    assertThat(group.progressPercent()).isEqualTo(85.0);
+    assertThat(group.progressStatus()).isEqualTo(ProgressStatus.ON_TRACK);
+  }
+
+  /** An order-wide plan has no subtotal — it is the whole section, so the total is its line. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_judge_an_order_wide_plan_against_the_section_total() {
+    var plan = plan("H1", null, FROM, UNTIL, "1000");
+    withScopeProgress(plan, 20);
+    givenBudgets(plan);
+
+    var group = sectionOf(SectionKind.ORDER_LEVEL).groups().get(0);
+
+    // 1600 EUR against 1000 EUR is 160 %, far beyond the 20 % the plan has come.
+    assertThat(group.progressPercent()).isEqualTo(20.0);
+    assertThat(group.progressStatus()).isEqualTo(ProgressStatus.BEHIND);
+  }
+
+  /** Without a progress mode there is nothing to show, and the header says nothing about the plan. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_no_progress_on_a_group_whose_plan_has_no_progress_mode() {
+    givenBudgets(plan("H1", null, FROM, UNTIL, "1000"));
+
+    var group = sectionOf(SectionKind.ORDER_LEVEL).groups().get(0);
+
+    assertThat(group.hasProgress()).isFalse();
+    assertThat(group.progressFormatted()).isEqualTo("—");
+  }
+
+  /** Bookings that answer to no plan cannot be behind one. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_no_progress_on_the_section_without_budget() {
+    givenBudgets();
+
+    assertThat(sectionOf(SectionKind.UNPLANNED).groups().get(0).hasProgress()).isFalse();
+  }
+
+  private static void withScopeProgress(OrderBudget budget, int percent) {
+    budget.setProgressMode(ProgressMode.SCOPE);
+    var entry = new OrderBudgetScopeEntry();
+    entry.setOrderBudget(budget);
+    entry.setRefdate(budget.getValidFrom());
+    entry.setPercent(percent);
+    budget.getScopeEntries().add(entry);
+  }
+
+  private static BudgetControllingGroup groupOf(BudgetControllingSection section, String sign) {
+    return section.groups().stream().filter(g -> sign.equals(g.sign())).findFirst().orElseThrow();
   }
 
   /**
