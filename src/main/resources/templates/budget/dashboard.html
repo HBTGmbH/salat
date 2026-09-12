@@ -90,6 +90,15 @@
               <!-- th:class, not classappend: text-muted would otherwise override text-danger. -->
               <small th:class="${row.isOverBudget()} ? 'text-danger fw-bold' : 'text-muted'"
                      th:text="${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)} + ' %'"></small>
+              <!-- The warning for a plan that is behind its own progress: it has spent more of its
+                   budget than it has come along. A case of its own, next to the utilization rather
+                   than in the status column — that column judges the budget alone, and a plan can be
+                   behind plan while still being well inside its budget. -->
+              <small th:if="${row.isBehindPlan()}" class="text-danger ms-1"
+                     th:title="#{main.budget.dashboard.progress.behind.hint(${#numbers.formatDecimal(row.progressPercent(), 1, 1)},${#numbers.formatDecimal(row.utilizationPercent(), 1, 1)})}">
+                <i class="ti ti-alert-triangle"></i>
+                <span th:text="#{main.budget.dashboard.progress.behind}">Hinter Plan</span>
+              </small>
             </div>
             <span th:unless="${row.hasBudget()}" class="text-muted">—</span>
           </td>

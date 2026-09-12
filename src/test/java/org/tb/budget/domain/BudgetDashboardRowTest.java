@@ -69,7 +69,7 @@ public class BudgetDashboardRowTest {
   private static BudgetDashboardRow noBudget(Integer alertThresholdPercent, double utilizationPercent) {
     return new BudgetDashboardRow(1L, "plan", "co", "order", LocalDate.of(2026, 1, 1),
         LocalDate.of(2026, 12, 31), LocalDate.of(2026, 6, 15), BigDecimal.ZERO, BigDecimal.TEN,
-        alertThresholdPercent, utilizationPercent);
+        alertThresholdPercent, utilizationPercent, null, ProgressStatus.UNKNOWN);
   }
 
   @Test
@@ -81,7 +81,44 @@ public class BudgetDashboardRowTest {
     return new BudgetDashboardRow(1L, "plan", "co", "order",
         LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), LocalDate.of(2026, 6, 15),
         new BigDecimal("1000"), new BigDecimal("1500"),
-        alertThresholdPercent, utilizationPercent);
+        alertThresholdPercent, utilizationPercent, null, ProgressStatus.UNKNOWN);
+  }
+
+  /**
+   * The behind-plan warning is a case of its own: it fires on a plan that is well inside its budget
+   * and inside its alert threshold, because it compares the budget used to the progress made, not
+   * to 100%.
+   */
+  @Test
+  public void should_warn_behind_plan_independently_of_budget_and_threshold() {
+    var row = withProgress(20.0, 45.0, ProgressStatus.BEHIND);
+
+    assertThat(row.isBehindPlan()).isTrue();
+    assertThat(row.isOverBudget()).isFalse();
+    assertThat(row.isAboveThreshold()).isFalse();
+  }
+
+  @Test
+  public void should_not_warn_behind_plan_when_the_plan_is_on_track_or_ahead() {
+    assertThat(withProgress(50.0, 45.0, ProgressStatus.ON_TRACK).isBehindPlan()).isFalse();
+    assertThat(withProgress(80.0, 45.0, ProgressStatus.AHEAD).isBehindPlan()).isFalse();
+  }
+
+  /** A plan without a progress mode has no progress, so it can be neither behind nor on track. */
+  @Test
+  public void should_have_no_progress_without_a_progress_percent() {
+    var row = withProgress(null, 45.0, ProgressStatus.UNKNOWN);
+
+    assertThat(row.hasProgress()).isFalse();
+    assertThat(row.isBehindPlan()).isFalse();
+  }
+
+  private static BudgetDashboardRow withProgress(Double progressPercent, double utilizationPercent,
+      ProgressStatus progressStatus) {
+    return new BudgetDashboardRow(1L, "plan", "co", "order",
+        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31), LocalDate.of(2026, 6, 15),
+        new BigDecimal("1000"), new BigDecimal("450"), 80, utilizationPercent,
+        progressPercent, progressStatus);
   }
 
 }
