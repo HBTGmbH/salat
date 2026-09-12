@@ -353,7 +353,8 @@ public class BudgetControllingService {
             // An order-wide plan is the whole section, so its figures belong on the section total.
             var subtotal = orderWide ? null
                 : aggregate(plan.getSuborderSign(), plan.getName(), rows, budget, includeCosts);
-            collected.add(new CollectedPlan(plan.getSuborderSign(), plan.getName(), rows, subtotal, progress));
+            collected.add(new CollectedPlan(plan.getId(), plan.getSuborderSign(), plan.getName(),
+                rows, subtotal, progress));
         }
 
         var allRows = collected.stream().flatMap(c -> c.rows().stream()).toList();
@@ -365,7 +366,7 @@ public class BudgetControllingService {
         // The line a plan's budget consumption is read from: its own subtotal, or the section total
         // for an order-wide plan, which has no subtotal because it is the whole section.
         var groups = collected.stream()
-            .map(c -> new BudgetControllingGroup(c.sign(), c.label(), c.rows(), c.subtotal(),
+            .map(c -> new BudgetControllingGroup(c.sign(), c.label(), c.budgetId(), c.rows(), c.subtotal(),
                 c.progressPercent(),
                 computeProgressStatus(c.progressPercent(),
                     budgetUsedPercentOf(orderWide ? total : c.subtotal()))))
@@ -409,7 +410,7 @@ public class BudgetControllingService {
         var total = aggregate(null, null, rows, null, includeCosts);
         // No plan, so no progress either — these bookings answer to nothing that could be behind.
         return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(), null, null,
-            List.of(new BudgetControllingGroup(null, null, rows, null, null, null)), total);
+            List.of(new BudgetControllingGroup(null, null, null, rows, null, null, null)), total);
     }
 
     /** The flat rate amounts this evaluation cannot put under any of its sections. */
@@ -464,8 +465,9 @@ public class BudgetControllingService {
     }
 
     /** One plan of a section before its group is assembled (→ {@link #plannedSection}). */
-    private record CollectedPlan(String sign, String label, List<BudgetControllingRow> rows,
-                                 BudgetControllingRow subtotal, Double progressPercent) {}
+    private record CollectedPlan(Long budgetId, String sign, String label,
+                                 List<BudgetControllingRow> rows, BudgetControllingRow subtotal,
+                                 Double progressPercent) {}
 
     /** The share of its budget a line has consumed, or {@code null} where there is no budget. */
     private static Double budgetUsedPercentOf(BudgetControllingRow row) {

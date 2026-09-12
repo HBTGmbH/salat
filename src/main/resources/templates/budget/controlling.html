@@ -91,6 +91,17 @@
         <div class="text-muted small" th:if="${section.kind().name() == 'UNPLANNED'}"
              th:text="#{main.controlling.section.UNPLANNED.hint}">Diese Buchungen zählen gegen kein Budget.</div>
       </div>
+      <!--
+        Zum Budgetplan, den dieser Abschnitt auswertet. Ein Button je Plan: bei mehreren Plänen im
+        Abschnitt trägt er den Plannamen, sonst wäre nicht erkennbar, welchen er öffnet.
+      -->
+      <a th:each="group : ${section.groups()}" th:if="${group.hasBudgetPlan()}"
+         class="btn btn-outline-secondary btn-sm ms-2"
+         th:href="@{/budget/{id}(id=${group.budgetId()})}">
+        <i class="icon ti ti-external-link"></i>
+        <span th:text="${#lists.size(section.groups()) > 1}
+                       ? ${group.label()} : #{main.controlling.section.openbudget}">Budgetplan öffnen</span>
+      </a>
       <!-- Straight into the bulk assignment, order and period already filled in (#913) -->
       <a class="btn btn-outline-primary btn-sm ms-2"
          th:if="${section.kind().name() == 'UNPLANNED' and isManager}"

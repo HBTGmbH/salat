@@ -1055,13 +1055,26 @@ public class BudgetControllingServiceTest {
     assertThat(group.progressFormatted()).isEqualTo("—");
   }
 
+  /** The header links to the plan of the group, so the group has to carry its id. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_carry_the_plan_id_on_the_group() {
+    var plan = plan("H1", null, FROM, UNTIL, "1000");
+    givenBudgets(plan);
+
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).groups().get(0).budgetId()).isEqualTo(plan.getId());
+  }
+
   /** Bookings that answer to no plan cannot be behind one. */
   @Test
   @FixedClock("2026-06-15T10:00:00")
   public void should_report_no_progress_on_the_section_without_budget() {
     givenBudgets();
 
-    assertThat(sectionOf(SectionKind.UNPLANNED).groups().get(0).hasProgress()).isFalse();
+    var group = sectionOf(SectionKind.UNPLANNED).groups().get(0);
+
+    assertThat(group.hasProgress()).isFalse();
+    assertThat(group.hasBudgetPlan()).isFalse();
   }
 
   private static void withScopeProgress(OrderBudget budget, int percent) {

@@ -15,6 +15,11 @@ import java.util.List;
 public record BudgetControllingGroup(
     String sign,
     String label,
+    /**
+     * The plan this group stands for, so the header can link to it. {@code null} on the group of an
+     * {@link SectionKind#UNPLANNED} section — those bookings answer to no plan.
+     */
+    Long budgetId,
     List<BudgetControllingRow> rows,
     BudgetControllingRow subtotal,
     /**
@@ -28,6 +33,11 @@ public record BudgetControllingGroup(
 ) {
     public boolean hasSubtotal() {
         return subtotal != null;
+    }
+
+    /** Whether there is a plan to link to — an unplanned section has none. */
+    public boolean hasBudgetPlan() {
+        return budgetId != null;
     }
 
     /** A progress worth showing — a plan without a progress mode has none. */

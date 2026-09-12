@@ -55,7 +55,7 @@ public class BudgetControllingSectionTest {
   @Test
   public void should_ignore_planned_hours_that_only_the_total_carries() {
     var section = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(), null, null,
-        List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null, null, null)),
+        List.of(new BudgetControllingGroup(null, null, null, List.of(row().build()), null, null, null)),
         row().plannedHours(Duration.ofHours(40)).build());
 
     assertThat(section.hasPlannedData()).isFalse();
@@ -66,7 +66,7 @@ public class BudgetControllingSectionTest {
     assertThat(section(SectionKind.ORDER_LEVEL, row().build()).hasContent()).isFalse();
 
     var withTime = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(), null, null,
-        List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null, null, null)),
+        List.of(new BudgetControllingGroup(null, null, null, List.of(row().build()), null, null, null)),
         row().bookedHours(Duration.ofHours(8)).build());
     assertThat(withTime.hasContent()).isTrue();
   }
@@ -95,7 +95,7 @@ public class BudgetControllingSectionTest {
   @Test
   public void should_offer_the_column_when_only_the_total_was_booked_before_the_window() {
     var section = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(), null, null,
-        List.of(new BudgetControllingGroup(null, null, List.of(row().build()), null, null, null)),
+        List.of(new BudgetControllingGroup(null, null, null, List.of(row().build()), null, null, null)),
         row().bookedHoursBeforeWindow(Duration.ofHours(8)).build());
 
     assertThat(section.hasBookedBeforeWindowData()).isTrue();
@@ -114,7 +114,7 @@ public class BudgetControllingSectionTest {
   @Test
   public void should_report_subtotals_only_where_groups_carry_them() {
     var grouped = new BudgetControllingSection(SectionKind.SUBORDER_LEVEL, YEAR, List.of("plan"), null, null,
-        List.of(new BudgetControllingGroup("co/01", "plan", List.of(row().build()),
+        List.of(new BudgetControllingGroup("co/01", "plan", 1L, List.of(row().build()),
             row().budgetEuro(new BigDecimal("100")).build(), null, null)),
         row().build());
 
@@ -124,7 +124,7 @@ public class BudgetControllingSectionTest {
 
   private static BudgetControllingSection section(SectionKind kind, BudgetControllingRow row) {
     return new BudgetControllingSection(kind, kind == SectionKind.UNPLANNED ? null : YEAR, List.of(), null, null,
-        List.of(new BudgetControllingGroup(null, null, List.of(row), null, null, null)),
+        List.of(new BudgetControllingGroup(null, null, null, List.of(row), null, null, null)),
         row().build());
   }
 
