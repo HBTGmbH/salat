@@ -268,7 +268,7 @@
             <li th:each="fav : ${favorites}">
               <div class="d-flex align-items-stretch">
                 <form th:replace="~{:: favoriteApplyForm(${fav}, true)}"></form>
-                <form th:replace="~{:: favoriteDeleteForm(${fav})}"></form>
+                <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
               </div>
             </li>
           </ul>
@@ -535,7 +535,7 @@
         <div class="list-group list-group-flush">
           <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
             <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
-            <form th:replace="~{:: favoriteDeleteForm(${fav})}"></form>
+            <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
           </div>
         </div>
       </div>
@@ -597,7 +597,7 @@
         <div class="list-group list-group-flush">
           <div class="list-group-item d-flex align-items-stretch p-0" th:each="fav : ${favorites}">
             <form th:replace="~{:: favoriteApplyForm(${fav}, false)}"></form>
-            <form th:replace="~{:: favoriteDeleteForm(${fav})}"></form>
+            <div th:replace="~{:: favoriteDeleteButton(${fav})}"></div>
           </div>
         </div>
       </div>
@@ -804,7 +804,46 @@
   </div>
 </div>
 
+<!-- Deleting a favourite (#835). One modal for the whole page; the button of a favourite only
+     fills in which one it is. The form posts through HTMX like the buttons did before, so the
+     bookings area and the favourites panel are swapped in place. -->
+<div class="modal modal-blur fade" id="deleteFavouriteModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="modal-title" th:text="#{main.daily.favourites.delete.modal.title}">Favorit löschen?</div>
+        <div id="deleteFavouriteModalComment" class="fw-medium mt-1"></div>
+        <div id="deleteFavouriteModalLabel" class="text-muted small mt-1"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal"
+                th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+        <form id="deleteFavouriteForm" method="post" th:action="@{/dailyreport/daily/delete-favourite}"
+              th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
+              hx-target="#daily-bookings-area"
+              hx-swap="outerHTML">
+          <input type="hidden" id="deleteFavouriteId" name="favoriteId"/>
+          <input type="hidden" name="date" th:value="${date}"/>
+          <!-- data-bs-dismiss closes the dialog while HTMX sends the request: the list is swapped
+               in place, so nothing else would take the modal off the screen -->
+          <button type="submit" class="btn btn-danger" data-bs-dismiss="modal"
+                  th:text="#{main.daily.delete.modal.confirm}">Löschen</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script th:inline="javascript">
+  function openDeleteFavouriteModal(btn) {
+    document.getElementById('deleteFavouriteId').value = btn.dataset.favId;
+    var comment = document.getElementById('deleteFavouriteModalComment');
+    // a favourite without a comment leaves the line out rather than opening a gap above the order
+    comment.textContent = btn.dataset.favComment || '';
+    comment.classList.toggle('d-none', !btn.dataset.favComment);
+    document.getElementById('deleteFavouriteModalLabel').textContent = btn.dataset.favLabel || '';
+  }
+
   function openShareModal(btn) {
     var trId = btn.dataset.trId;
     var suborderId = btn.dataset.suborderId;
@@ -965,23 +1004,20 @@
 </div>
 
 <!--
-  Deleting a favourite (#835). The confirmation names what is about to go - see
-  FavoriteView.deleteConfirmName for what exactly, and why it is shortened there and not here.
+  Deleting a favourite (#835). The button only opens #deleteFavouriteModal and hands it the
+  favourite; the posting form lives there, once for the whole page. The dialog repeats the
+  hierarchy of the list: comment first, order and suborder as the secondary line under it. Why the
+  comment is shortened: FavoriteView.shortComment.
 -->
-<form th:fragment="favoriteDeleteForm(fav)"
-      th:action="@{/dailyreport/daily/delete-favourite}" method="post" class="d-flex align-items-center"
-      th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
-      hx-target="#daily-bookings-area"
-      hx-swap="outerHTML">
-  <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
-  <input type="hidden" name="date" th:value="${date}"/>
-  <button type="submit" class="btn btn-ghost-danger btn-sm py-2 pe-2"
+<div th:fragment="favoriteDeleteButton(fav)" class="d-flex align-items-center">
+  <button type="button" class="btn btn-ghost-danger btn-sm py-2 pe-2"
           th:title="#{main.daily.favourites.delete.title}"
-          th:attr="data-confirm=#{main.daily.favourites.delete.confirm(${fav.deleteConfirmName})}"
-          onclick="return confirm(this.dataset.confirm)">
+          th:attr="data-fav-id=${fav.id},data-fav-comment=${fav.shortComment},data-fav-label=${fav.label}"
+          onclick="openDeleteFavouriteModal(this)"
+          data-bs-toggle="modal" data-bs-target="#deleteFavouriteModal">
     <i class="icon ti ti-trash m-0"></i>
   </button>
-</form>
+</div>
 
 <!--
   Order and suborder of a booking as the secondary line of its row (#834). Defined once and used
