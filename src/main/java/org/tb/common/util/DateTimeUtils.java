@@ -125,13 +125,6 @@ public class DateTimeUtils {
     });
   }
 
-  public static List<OptionItem> getSerialDayList() {
-    List<OptionItem> days = new ArrayList<>();
-    days.add(new OptionItem("0", "--"));
-    days.addAll(getOptionItemListOfInts(1, GlobalConstants.MAX_SERIAL_BOOKING_DAYS));
-    return days;
-  }
-
   /*
    * builds up a list of string with hour to display (1-5)
    */
