@@ -74,6 +74,20 @@
              th:text="|${#temporals.format(section.planFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.planUntil(), 'dd.MM.yyyy')}|">
           01.01.2026 – 31.12.2999
         </div>
+        <!--
+          Fortschritt und Plan-Status stehen hier statt in der Tabelle (#989): beides gehört zum
+          Plan, nicht zu einer Zeile, und eine Gruppe ist genau ein Plan. Bei mehreren Plänen im
+          Abschnitt bekommt jeder seine eigene Zeile, damit die Zuordnung eindeutig bleibt; Pläne
+          ohne Fortschrittsmodus stehen gar nicht erst da.
+        -->
+        <div class="text-muted small" th:each="group : ${section.groups()}" th:if="${group.hasProgress()}">
+          <span th:if="${#lists.size(section.groups()) > 1}" th:text="${group.label()} + ': '"></span>
+          <span th:text="#{main.controlling.progress.header(${group.progressFormatted()})}">Fortschritt 40,0 %</span>
+          <span th:if="${group.hasProgressStatus()}" class="badge ms-1"
+                th:classappend="${group.progressStatus().name() == 'BEHIND'} ? 'bg-danger-lt'
+                                : (${group.progressStatus().name() == 'AHEAD'} ? 'bg-info-lt' : 'bg-success-lt')"
+                th:text="#{${'main.controlling.progress.status.' + group.progressStatus().name()}}">Im Plan</span>
+        </div>
         <div class="text-muted small" th:if="${section.kind().name() == 'UNPLANNED'}"
              th:text="#{main.controlling.section.UNPLANNED.hint}">Diese Buchungen zählen gegen kein Budget.</div>
       </div>

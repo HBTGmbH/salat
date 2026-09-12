@@ -41,8 +41,6 @@ public record BudgetControllingRow(
     Duration forecastHours,
     BigDecimal forecastRevenueEuro,
     ForecastStatus forecastStatus,
-    Double progressPercent,
-    ProgressStatus progressStatus,
     /**
      * Whether this line is a flat rate rather than a suborder (#972). Such a line has no hours at
      * all, so the view says what the amount in it stands for instead of leaving a row of dashes.
@@ -156,14 +154,6 @@ public record BudgetControllingRow(
     public double grossProfitMarginPercent() {
         return grossProfitEuro().divide(totalRevenueEuro(), 4, RoundingMode.HALF_UP)
             .multiply(BigDecimal.valueOf(100)).doubleValue();
-    }
-
-    public boolean hasProgress() {
-        return progressPercent != null;
-    }
-
-    public String progressFormatted() {
-        return hasProgress() ? String.format("%.1f", progressPercent) + " %" : "—";
     }
 
     public String formatHours(Duration d) {

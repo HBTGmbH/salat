@@ -16,9 +16,35 @@ public record BudgetControllingGroup(
     String sign,
     String label,
     List<BudgetControllingRow> rows,
-    BudgetControllingRow subtotal
+    BudgetControllingRow subtotal,
+    /**
+     * How far the plan of this group has come, and where that puts it against its budget (#989).
+     * Both belong to the plan rather than to any of its rows, which is why they live here and not on
+     * a row: a group is exactly one plan, whether the section reports it through a subtotal or
+     * through the section total.
+     */
+    Double progressPercent,
+    ProgressStatus progressStatus
 ) {
     public boolean hasSubtotal() {
         return subtotal != null;
+    }
+
+    /** A progress worth showing — a plan without a progress mode has none. */
+    public boolean hasProgress() {
+        return progressPercent != null;
+    }
+
+    /**
+     * Whether the progress can be judged against the budget. It cannot without a budget to spend, so
+     * such a plan reports how far it has come but no verdict — reported apart from
+     * {@link #hasProgress()} rather than suppressing the progress along with the verdict.
+     */
+    public boolean hasProgressStatus() {
+        return hasProgress() && progressStatus != null && progressStatus != ProgressStatus.UNKNOWN;
+    }
+
+    public String progressFormatted() {
+        return hasProgress() ? String.format("%.1f", progressPercent) + " %" : "—";
     }
 }

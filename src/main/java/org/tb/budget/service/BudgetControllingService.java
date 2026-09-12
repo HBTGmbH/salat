@@ -329,7 +329,10 @@ public class BudgetControllingService {
                                                     Set<LocalDate> holidays, boolean includeCosts) {
         var orderWide = plans.get(0).orderWide();
         var period = plans.get(0).period();
-        var groups = new ArrayList<BudgetControllingGroup>();
+        // Collected first and turned into groups below: a group carries its plan's progress status,
+        // and for an order-wide plan that status is judged against the section total, which does not
+        // exist until every plan has been walked.
+        var collected = new ArrayList<CollectedPlan>();
 
         for (var planPeriod : plans) {
             var plan = planPeriod.plan();
@@ -349,18 +352,24 @@ public class BudgetControllingService {
             var progress = computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
             // An order-wide plan is the whole section, so its figures belong on the section total.
             var subtotal = orderWide ? null
-                : aggregate(plan.getSuborderSign(), plan.getName(), rows, budget, progress, includeCosts);
-            groups.add(new BudgetControllingGroup(plan.getSuborderSign(), plan.getName(), rows, subtotal));
+                : aggregate(plan.getSuborderSign(), plan.getName(), rows, budget, includeCosts);
+            collected.add(new CollectedPlan(plan.getSuborderSign(), plan.getName(), rows, subtotal, progress));
         }
 
-        var allRows = groups.stream().flatMap(g -> g.rows().stream()).toList();
+        var allRows = collected.stream().flatMap(c -> c.rows().stream()).toList();
         var totalBudget = plans.stream()
             .map(p -> cumulativeBudgetOf(p.plan(), window.getUntil()))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        var totalProgress = orderWide
-            ? computeProgress(plans.get(0).plan(), period.getFrom(), period.getUntil(), today, holidays)
-            : null;
-        var total = aggregate(null, null, allRows, totalBudget, totalProgress, includeCosts);
+        var total = aggregate(null, null, allRows, totalBudget, includeCosts);
+
+        // The line a plan's budget consumption is read from: its own subtotal, or the section total
+        // for an order-wide plan, which has no subtotal because it is the whole section.
+        var groups = collected.stream()
+            .map(c -> new BudgetControllingGroup(c.sign(), c.label(), c.rows(), c.subtotal(),
+                c.progressPercent(),
+                computeProgressStatus(c.progressPercent(),
+                    budgetUsedPercentOf(orderWide ? total : c.subtotal()))))
+            .toList();
 
         return new BudgetControllingSection(
             orderWide ? SectionKind.ORDER_LEVEL : SectionKind.SUBORDER_LEVEL,
@@ -397,9 +406,10 @@ public class BudgetControllingService {
         if (rows.isEmpty()) {
             return null;
         }
-        var total = aggregate(null, null, rows, null, null, includeCosts);
+        var total = aggregate(null, null, rows, null, includeCosts);
+        // No plan, so no progress either — these bookings answer to nothing that could be behind.
         return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(), null, null,
-            List.of(new BudgetControllingGroup(null, null, rows, null)), total);
+            List.of(new BudgetControllingGroup(null, null, rows, null, null, null)), total);
     }
 
     /** The flat rate amounts this evaluation cannot put under any of its sections. */
@@ -453,13 +463,22 @@ public class BudgetControllingService {
             .reduce(Duration.ZERO, Duration::plus);
     }
 
+    /** One plan of a section before its group is assembled (→ {@link #plannedSection}). */
+    private record CollectedPlan(String sign, String label, List<BudgetControllingRow> rows,
+                                 BudgetControllingRow subtotal, Double progressPercent) {}
+
+    /** The share of its budget a line has consumed, or {@code null} where there is no budget. */
+    private static Double budgetUsedPercentOf(BudgetControllingRow row) {
+        return row != null && row.hasBudgetPercent() ? row.budgetUsedPercent() : null;
+    }
+
     private BudgetControllingRow aggregate(String sign, String label, List<BudgetControllingRow> rows,
-                                           BigDecimal budget, Double progressPercent, boolean includeCosts) {
+                                           BigDecimal budget, boolean includeCosts) {
         var revenue = rows.stream().map(BudgetControllingRow::revenueEuro).reduce(BigDecimal.ZERO, BigDecimal::add);
         var flatRateRevenue = rows.stream().map(BudgetControllingRow::flatRateRevenueEuro)
             .map(amount -> amount == null ? BigDecimal.ZERO : amount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        var row = BudgetControllingRow.builder()
+        return BudgetControllingRow.builder()
             .sign(sign)
             .label(label)
             .plannedHours(rows.stream().map(BudgetControllingRow::plannedHours).reduce(Duration.ZERO, Duration::plus))
@@ -471,17 +490,6 @@ public class BudgetControllingService {
             .flatRateRevenueEuro(flatRateRevenue)
             .costEuro(includeCosts
                 ? rows.stream().map(BudgetControllingRow::costEuro).reduce(BigDecimal.ZERO, BigDecimal::add) : null)
-            .progressPercent(progressPercent)
-            .build();
-        return BudgetControllingRow.builder()
-            .sign(row.sign()).label(row.label())
-            .plannedHours(row.plannedHours())
-            .bookedHoursBeforeWindow(row.bookedHoursBeforeWindow()).bookedHours(row.bookedHours())
-            .budgetEuro(row.budgetEuro()).revenueEuro(row.revenueEuro())
-            .flatRateRevenueEuro(row.flatRateRevenueEuro()).costEuro(row.costEuro())
-            .progressPercent(progressPercent)
-            .progressStatus(computeProgressStatus(progressPercent,
-                row.hasBudgetPercent() ? row.budgetUsedPercent() : null))
             .build();
     }
 

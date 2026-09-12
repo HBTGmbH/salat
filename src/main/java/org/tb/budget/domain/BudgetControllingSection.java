@@ -41,10 +41,6 @@ public record BudgetControllingSection(
         return rows().stream().anyMatch(BudgetControllingRow::hasPlanned);
     }
 
-    public boolean hasProgressData() {
-        return total.hasProgress() || rows().stream().anyMatch(BudgetControllingRow::hasProgress);
-    }
-
     /**
      * Whether anything was booked before the window opened. Same reasoning as for the overrun
      * column: without data it is a row of dashes under the longest header of the table — the date
