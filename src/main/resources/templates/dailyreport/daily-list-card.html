@@ -7,21 +7,24 @@
      style="min-width:200px; max-width:320px">
   <div class="card-body py-2 px-3 d-flex flex-column">
     <div class="d-flex justify-content-between align-items-start gap-2 flex-grow-1">
-      <div class="overflow-hidden flex-grow-1">
+      <!-- The month view has no columns to move the text into, so it takes the other half of #834:
+           the booking text is the main line of the card, the order the context above it. -->
+      <div class="overflow-hidden flex-grow-1" th:with="hasText=${not #strings.isEmpty(singleTr.taskdescription)}">
         <div class="text-muted text-truncate" style="font-size:0.75rem"
              th:text="|${singleTr.customerorderSign} · ${singleTr.customerorderDescription} · ${singleTr.customerShortname}|"></div>
-        <div class="fw-medium text-truncate" style="font-size:0.85rem"
+        <div class="text-muted text-truncate" style="font-size:0.75rem"
              th:text="|${singleTr.completeOrderSign} · ${singleTr.suborderDescription}|"></div>
         <!-- task description: editable or read-only -->
         <div th:if="${singleTrEditable}" class="inline-edit-wrap mt-1">
-          <div class="text-muted inline-edit-display"
-               style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
+          <div class="inline-edit-display"
                th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
-               th:classappend="${#strings.isEmpty(singleTr.taskdescription)} ? 'is-empty'"
+               th:classappend="${hasText} ? 'fw-medium' : 'is-empty text-muted'"
+               th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; min-height:1.4em'"
                th:text="${singleTr.taskdescription}"></div>
+          <!-- same size as the display it replaces, so the card does not jump on edit -->
           <textarea class="form-control form-control-sm inline-edit-input d-none"
                     rows="2"
-                    style="font-size:0.75rem; resize:none"
+                    style="font-size:0.85rem; resize:none"
                     name="taskdescription"
                     th:placeholder="#{main.daily.timereport.comment.placeholder}"
                     th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${singleTr.id})},hx-target=|#tr-card-${singleTr.id}|"
@@ -30,8 +33,9 @@
                     th:text="${singleTr.taskdescription}"></textarea>
         </div>
         <div th:unless="${singleTrEditable}"
-             class="text-muted mt-1"
-             style="font-size:0.75rem; white-space:pre-wrap; min-height:1.4em"
+             class="mt-1"
+             th:classappend="${hasText} ? 'fw-medium' : 'text-muted'"
+             th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; min-height:1.4em'"
              th:text="${singleTr.taskdescription}"></div>
       </div>
       <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">

@@ -13,6 +13,12 @@
   #daily-list tbody tr:hover td {
     background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
   }
+  /* The order column takes what it needs and no more; a long customer description must not eat
+     the width of the booking text next to it (#834). */
+  .daily-order-col {
+    max-width: 18rem;
+    width: 1%;
+  }
   .inline-edit-display { cursor: pointer; }
   .inline-edit-display.is-empty::before {
     content: attr(data-placeholder);
@@ -264,12 +270,7 @@
                   <input type="hidden" name="date" th:value="${date}"/>
                   <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2"
                           data-bs-dismiss="dropdown">
-                    <div class="flex-fill">
-                      <div class="fw-medium small" th:text="${fav.label}"></div>
-                      <div th:if="${fav.comment != null and !fav.comment.isEmpty()}"
-                           class="text-muted mt-1" style="font-size:0.75rem"
-                           th:text="${fav.comment}"></div>
-                    </div>
+                    <div th:replace="~{:: favoriteLines(${fav})}"></div>
                     <span class="badge bg-blue-lt flex-shrink-0"
                           th:text="${@durationUtils.format(fav.duration)}"></span>
                   </button>
@@ -299,32 +300,39 @@
           <table class="table table-vcenter card-table">
             <thead>
               <tr>
-                <th class="w-100" th:text="#{main.daily.column.order}">Auftrag / Unterauftrag</th>
+                <!-- The order is context, the booking text is what the day is read for (#834), so
+                     the text gets the whole remaining width. Below md the order column folds into
+                     the text cell instead of forcing the table to scroll sideways. -->
+                <th class="d-none d-md-table-cell daily-order-col" th:text="#{main.daily.column.order}">Auftrag / Unterauftrag</th>
+                <th class="w-100" th:text="#{main.daily.column.taskdescription}">Buchungstext</th>
                 <th class="w-1 text-nowrap" th:text="#{main.daily.column.duration}">Zeit</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               <tr th:each="tr : ${dailyData.timereports}">
-                <td style="position:relative; padding-right:5rem">
-                  <div class="text-muted small" th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
-                  <div class="fw-medium">
-                    <span th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></span>
-                    <span th:if="${not #strings.isEmpty(tr.ticketReference)}"
-                          class="badge bg-secondary-lt ms-1"
-                          th:title="#{main.daily.timereport.ticketreference.title}"
-                          th:text="${tr.ticketReference}"></span>
+                <td class="d-none d-md-table-cell daily-order-col">
+                  <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
+                </td>
+                <td th:with="hasText=${not #strings.isEmpty(tr.taskdescription)}">
+                  <!-- below md the order has no column of its own and rides along here, still as
+                       the secondary line -->
+                  <div class="d-md-none mb-1">
+                    <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
                   </div>
-                  <!-- task description: editable or read-only -->
-                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap mt-1">
-                    <div class="text-muted small inline-edit-display"
+                  <!-- task description: editable or read-only. It carries the weight of the row
+                       unless it is empty - then the order is all there is to read (#834). -->
+                  <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap">
+                    <div class="inline-edit-display"
                          style="white-space:pre-wrap; min-height:1.4em"
                          th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
-                         th:classappend="${#strings.isEmpty(tr.taskdescription)} ? 'is-empty'"
+                         th:classappend="${hasText} ? 'fw-medium' : 'is-empty text-muted small'"
                          th:text="${tr.taskdescription}"></div>
+                    <!-- same font size as the display above: the row must not jump when the
+                         textarea takes its place -->
                     <textarea class="form-control form-control-sm inline-edit-input d-none"
                               rows="2"
-                              style="font-size:0.8rem; resize:none"
+                              style="font-size:1rem; resize:none"
                               name="taskdescription"
                               th:placeholder="#{main.daily.timereport.comment.placeholder}"
                               th:attr="hx-post=@{/dailyreport/daily/timereport/{id}/update-inline(id=${tr.id})}"
@@ -334,8 +342,8 @@
                               th:text="${tr.taskdescription}"></textarea>
                   </div>
                   <div th:unless="${dailyData.editableTimereportIds.contains(tr.id)}"
-                       class="text-muted small mt-1"
                        style="white-space:pre-wrap; min-height:1.4em"
+                       th:classappend="${hasText} ? 'fw-medium' : 'text-muted small'"
                        th:text="${tr.taskdescription}"></div>
                 </td>
                 <td class="w-1 text-nowrap">
@@ -400,6 +408,9 @@
             </tbody>
             <tfoot th:if="${dailyData != null}" style="border-top: 2px solid var(--tblr-border-color);">
               <tr>
+                <!-- one cell per column up to the duration, so the total keeps sitting under it
+                     (the order column is gone below md, hence the two spans instead of a colspan) -->
+                <td class="d-none d-md-table-cell"></td>
                 <td class="text-muted" th:text="#{main.daily.column.total}" style="text-align: right">Gesamt</td>
                 <td><span class="badge bg-blue-lt" th:text="${@durationUtils.format(dailyData.totalBooked)}"></span></td>
                 <td></td>
@@ -549,12 +560,7 @@
               <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
               <input type="hidden" name="date" th:value="${date}"/>
               <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2">
-                <div class="flex-fill">
-                  <div class="fw-medium small" th:text="${fav.label}"></div>
-                  <div th:if="${fav.comment != null and !fav.comment.isEmpty()}"
-                       class="text-muted mt-1" style="font-size:0.75rem"
-                       th:text="${fav.comment}"></div>
-                </div>
+                <div th:replace="~{:: favoriteLines(${fav})}"></div>
                 <span class="badge bg-blue-lt flex-shrink-0"
                       th:text="${@durationUtils.format(fav.duration)}"></span>
               </button>
@@ -639,12 +645,7 @@
               <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
               <input type="hidden" name="date" th:value="${date}"/>
               <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2">
-                <div class="flex-fill">
-                  <div class="fw-medium small" th:text="${fav.label}"></div>
-                  <div th:if="${fav.comment != null and !fav.comment.isEmpty()}"
-                       class="text-muted mt-1" style="font-size:0.75rem"
-                       th:text="${fav.comment}"></div>
-                </div>
+                <div th:replace="~{:: favoriteLines(${fav})}"></div>
                 <span class="badge bg-blue-lt flex-shrink-0"
                       th:text="${@durationUtils.format(fav.duration)}"></span>
               </button>
@@ -993,6 +994,37 @@
 
 
 </section>
+
+<!--
+  Order and suborder of a booking as the secondary line of its row (#834). Defined once and used
+  twice: as its own column from md upwards, and folded into the text cell below that. Sits outside
+  layout:fragment="content", so it is invisible to the page renderer and only reachable as a
+  fragment.
+-->
+<!--
+  A favourite as it is offered for applying (#834): favourites differ from each other by their
+  comment, so that is the main line; without one the order has to carry the entry. Used by the
+  dropdown, by the sidebar panel and by its OOB refresh.
+-->
+<div th:fragment="favoriteLines(fav)" class="flex-fill"
+     th:with="hasComment=${fav.comment != null and !fav.comment.isEmpty()}">
+  <div th:if="${hasComment}" class="fw-medium small" th:text="${fav.comment}"></div>
+  <div th:text="${fav.label}"
+       th:classappend="${hasComment} ? 'text-muted mt-1' : 'fw-medium small'"
+       th:style="${hasComment} ? 'font-size:0.75rem' : null"></div>
+</div>
+
+<th:block th:fragment="timereportOrderLines(tr)">
+  <div class="text-muted small text-truncate"
+       th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>
+  <div class="small text-truncate">
+    <span th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|"></span>
+    <span th:if="${not #strings.isEmpty(tr.ticketReference)}"
+          class="badge bg-secondary-lt ms-1"
+          th:title="#{main.daily.timereport.ticketreference.title}"
+          th:text="${tr.ticketReference}"></span>
+  </div>
+</th:block>
 
 <script layout:fragment="scripts">
   htmx.on('htmx:before:request', function(evt) {
