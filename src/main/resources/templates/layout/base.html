@@ -161,11 +161,32 @@
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'budget'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
+                <!--
+                  Erst auswerten, dann pflegen: Dashboard, Controlling und die Segmentauswertung
+                  stehen zusammen oben, weil sie dieselbe Frage in drei Flughöhen beantworten. Die
+                  Stammdaten darunter werden selten angefasst.
+                -->
                 <div class="dropdown-menu-column">
                   <a class="dropdown-item" th:href="@{/budget/dashboard}"
                      th:classappend="${subSection == 'dashboard'} ? 'active' : ''"
                      th:text="#{main.budget.dashboard.nav}">
                     Dashboard
+                  </a>
+                  <a class="dropdown-item" th:href="@{/budget/controlling}"
+                     th:classappend="${subSection == 'controlling'} ? 'active' : ''"
+                     th:text="#{main.controlling.title}">
+                    Soll-Ist-Controlling
+                  </a>
+                  <!--
+                    Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779).
+                    Eigenes, kurzes Label statt des Seitentitels — der Eintrag steht ohnehin unter
+                    "Controlling", und die volle Überschrift wäre die längste Zeile des Menüs.
+                  -->
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
+                     th:href="@{/budget/controlling/by-segment}"
+                     th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''">
+                    <span th:text="#{main.controlling.bysegment.menu}">Kundensegmente</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                   <a class="dropdown-item" th:href="@{/budget}"
                      th:classappend="${subSection == 'budgets'} ? 'active' : ''"
@@ -189,23 +210,6 @@
                      th:classappend="${subSection == 'employee-cost'} ? 'active' : ''"
                      th:text="#{main.employeecost.list.title}">
                     Mitarbeiterkostensätze
-                  </a>
-                  <a class="dropdown-item" th:href="@{/budget/controlling}"
-                     th:classappend="${subSection == 'controlling'} ? 'active' : ''"
-                     th:text="#{main.controlling.title}">
-                    Soll-Ist-Controlling
-                  </a>
-                  <!--
-                    Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779).
-                    Eigenes, kurzes Label statt des Seitentitels — im Dropdown steht der Eintrag
-                    ohnehin unter "Controlling", und die volle Überschrift wäre dort die längste
-                    Zeile des Menüs.
-                  -->
-                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
-                     th:href="@{/budget/controlling/by-segment}"
-                     th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''">
-                    <span th:text="#{main.controlling.bysegment.menu}">Kundensegmente</span>
-                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/bulk-assignment}"
