@@ -73,19 +73,19 @@ public class BudgetControllingSectionTest {
 
   /** The header of that column carries a date and is the widest of the table — not worth dashes. */
   @Test
-  public void should_offer_the_column_of_hours_booked_before_the_window_only_when_there_are_any() {
-    var before = row().bookedHoursBeforeWindow(Duration.ofHours(8)).build();
+  public void should_offer_the_column_of_revenue_earned_before_the_window_only_when_there_is_any() {
+    var before = row().revenueBeforeWindowEuro(new BigDecimal("800")).build();
 
-    assertThat(section(SectionKind.ORDER_LEVEL, before).hasBookedBeforeWindowData()).isTrue();
-    assertThat(section(SectionKind.ORDER_LEVEL, row().build()).hasBookedBeforeWindowData()).isFalse();
+    assertThat(section(SectionKind.ORDER_LEVEL, before).hasRevenueBeforeWindowData()).isTrue();
+    assertThat(section(SectionKind.ORDER_LEVEL, row().build()).hasRevenueBeforeWindowData()).isFalse();
   }
 
-  /** Zero hours before the window is the same as none — nothing had been booked yet. */
+  /** Zero euro before the window is the same as none — nothing had been earned yet. */
   @Test
-  public void should_not_count_zero_hours_before_the_window_as_data() {
-    var zero = row().bookedHoursBeforeWindow(Duration.ZERO).build();
+  public void should_not_count_zero_revenue_before_the_window_as_data() {
+    var zero = row().revenueBeforeWindowEuro(BigDecimal.ZERO).build();
 
-    assertThat(section(SectionKind.ORDER_LEVEL, zero).hasBookedBeforeWindowData()).isFalse();
+    assertThat(section(SectionKind.ORDER_LEVEL, zero).hasRevenueBeforeWindowData()).isFalse();
   }
 
   /**
@@ -93,12 +93,12 @@ public class BudgetControllingSectionTest {
    * the column is shown for the whole section.
    */
   @Test
-  public void should_offer_the_column_when_only_the_total_was_booked_before_the_window() {
+  public void should_offer_the_column_when_only_the_total_earned_before_the_window() {
     var section = new BudgetControllingSection(SectionKind.ORDER_LEVEL, YEAR, List.of(), null, null,
         List.of(new BudgetControllingGroup(null, null, null, List.of(row().build()), null, null, null)),
-        row().bookedHoursBeforeWindow(Duration.ofHours(8)).build());
+        row().revenueBeforeWindowEuro(new BigDecimal("800")).build());
 
-    assertThat(section.hasBookedBeforeWindowData()).isTrue();
+    assertThat(section.hasRevenueBeforeWindowData()).isTrue();
   }
 
   /** A margin needs a revenue to divide by, so without one the column is dashes throughout. */

@@ -122,6 +122,9 @@ public class BudgetSegmentControllingServiceTest {
     assertThat(result.segments().get(0).total().budgetEuro()).isNull();
     assertThat(result.columns().budget()).isFalse();
     assertThat(result.columns().overrun()).isFalse();
+    // With the budget columns gone, what was earned before the window has nothing left to explain.
+    assertThat(result.columns().revenueBeforeWindow()).isFalse();
+    assertThat(result.columns().planned()).isFalse();
   }
 
   /** The line is the order's own total, so it has to carry the order's name rather than "Summe". */
@@ -244,14 +247,14 @@ public class BudgetSegmentControllingServiceTest {
     givenEvaluations(
         evaluation("A", section(SectionKind.ORDER_LEVEL,
             row("100", "150", "10", Duration.ofHours(1)).toBuilder()
-                .bookedHoursBeforeWindow(Duration.ofHours(4)).build())),
+                .flatRateRevenueEuro(new BigDecimal("40")).build())),
         evaluation("B", section(SectionKind.UNPLANNED, row(null, "50", "10", Duration.ofHours(1)))));
 
     var columns = service.compute(FROM, UNTIL).columns();
 
-    // Only the first order has hours from before the window, and the column appears in both tables,
-    // so that the two stay comparable side by side.
-    assertThat(columns.bookedBeforeWindow()).isTrue();
+    // Only the first order has a flat rate, and the column appears in both tables, so that the two
+    // stay comparable side by side.
+    assertThat(columns.flatRate()).isTrue();
   }
 
   // --- fixture ---------------------------------------------------------------------------------
@@ -298,7 +301,7 @@ public class BudgetSegmentControllingServiceTest {
   private static BudgetControllingRow row(String budget, String revenue, String cost, Duration booked) {
     return BudgetControllingRow.builder()
         .plannedHours(Duration.ZERO)
-        .bookedHoursBeforeWindow(Duration.ZERO)
+        .revenueBeforeWindowEuro(BigDecimal.ZERO)
         .bookedHours(booked)
         .budgetEuro(budget == null ? null : new BigDecimal(budget))
         .revenueEuro(new BigDecimal(revenue))

@@ -142,7 +142,9 @@ public class BudgetSegmentControllingService {
 
     /**
      * The columns of the whole page, decided over every line it shows, the segment totals included.
-     * One set for all tables, so that lines in different segments stay comparable.
+     * One set for all tables, so that lines in different segments stay comparable — and without
+     * anything a plan answers for (→ {@link BudgetControllingColumns#withoutPlan()}): this page
+     * reports orders, and some of them have no plan at all.
      */
     private static BudgetControllingColumns columnsOf(List<SegmentControllingGroup> segments) {
         var rows = new ArrayList<BudgetControllingRow>();
@@ -150,7 +152,7 @@ public class BudgetSegmentControllingService {
             segment.orders().forEach(order -> rows.add(order.total()));
             rows.add(segment.total());
         }
-        return BudgetControllingColumns.of(rows).withoutBudget();
+        return BudgetControllingColumns.of(rows).withoutPlan();
     }
 
     private Map<String, Customerorder> customerordersBySign(List<String> signs) {

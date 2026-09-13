@@ -8,10 +8,10 @@ import org.tb.common.LocalDateRange;
  * One evaluation of the controlling view: the plans of one period and mode, or — for
  * {@link SectionKind#UNPLANNED} — the bookings that belong to no plan at all (#913).
  *
- * <p>The hours a section reports are the ones booked inside the evaluated window; the amounts are
- * the full figures up to its end, so the budget and its utilization read against the whole plan
- * rather than against a remainder (#917). How much was booked before the window is a column of its
- * own.
+ * <p>Hours, revenue and cost all describe the evaluated window (#779). What the plans earned before
+ * it opened is reported as an amount of its own, and the budget columns add the two — that is how
+ * they keep reading against the whole plan while every other column stays inside the period being
+ * looked at.
  */
 public record BudgetControllingSection(
     SectionKind kind,
@@ -38,7 +38,7 @@ public record BudgetControllingSection(
      * sections can be rendered by the same fragment and under the same headers (#779).
      */
     public BudgetControllingColumns columns() {
-        return new BudgetControllingColumns(hasBookedBeforeWindowData(), hasPlannedData(),
+        return new BudgetControllingColumns(hasRevenueBeforeWindowData(), hasPlannedData(),
             hasFlatRateData(), hasBudgetColumn(), hasOverrunData(), hasGrossProfitMarginData());
     }
 
@@ -51,13 +51,13 @@ public record BudgetControllingSection(
     }
 
     /**
-     * Whether anything was booked before the window opened. Same reasoning as for the overrun
+     * Whether anything was earned before the window opened. Same reasoning as for the overrun
      * column: without data it is a row of dashes under the longest header of the table — the date
      * makes it wide — and the width is better spent on the columns that have something to say.
      */
-    public boolean hasBookedBeforeWindowData() {
-        return total.hasBookedBeforeWindow()
-            || rows().stream().anyMatch(BudgetControllingRow::hasBookedBeforeWindow);
+    public boolean hasRevenueBeforeWindowData() {
+        return total.hasRevenueBeforeWindow()
+            || rows().stream().anyMatch(BudgetControllingRow::hasRevenueBeforeWindow);
     }
 
     /**

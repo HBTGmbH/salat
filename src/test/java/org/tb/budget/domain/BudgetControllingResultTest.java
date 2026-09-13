@@ -26,12 +26,12 @@ public class BudgetControllingResultTest {
   public void should_add_up_hours_revenue_and_cost_of_every_section() {
     var result = result(
         section(SectionKind.ORDER_LEVEL, row()
-            .bookedHours(Duration.ofHours(10)).bookedHoursBeforeWindow(Duration.ofHours(2))
+            .bookedHours(Duration.ofHours(10)).revenueBeforeWindowEuro(new BigDecimal("200"))
             .plannedHours(Duration.ofHours(20))
             .budgetEuro(new BigDecimal("1000")).revenueEuro(new BigDecimal("400"))
             .costEuro(new BigDecimal("100")).build()),
         section(SectionKind.SUBORDER_LEVEL, row()
-            .bookedHours(Duration.ofHours(5)).bookedHoursBeforeWindow(Duration.ofHours(1))
+            .bookedHours(Duration.ofHours(5)).revenueBeforeWindowEuro(new BigDecimal("100"))
             .plannedHours(Duration.ofHours(30))
             .budgetEuro(new BigDecimal("500")).revenueEuro(new BigDecimal("200"))
             .flatRateRevenueEuro(new BigDecimal("50"))
@@ -40,7 +40,7 @@ public class BudgetControllingResultTest {
     var total = result.total();
 
     assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(15));
-    assertThat(total.bookedHoursBeforeWindow()).isEqualTo(Duration.ofHours(3));
+    assertThat(total.revenueBeforeWindowEuro()).isEqualByComparingTo("300");
     assertThat(total.plannedHours()).isEqualTo(Duration.ofHours(50));
     assertThat(total.revenueEuro()).isEqualByComparingTo("600");
     assertThat(total.flatRateRevenueEuro()).isEqualByComparingTo("50");
@@ -121,7 +121,8 @@ public class BudgetControllingResultTest {
   @Test
   public void should_offer_every_other_column_any_of_its_sections_offers() {
     var withPlanned = section(SectionKind.ORDER_LEVEL,
-        row().plannedHours(Duration.ofHours(10)).build());
+        row().plannedHours(Duration.ofHours(10))
+            .revenueBeforeWindowEuro(new BigDecimal("800")).build());
     var withFlatRate = section(SectionKind.UNPLANNED,
         row().flatRateRevenueEuro(new BigDecimal("50")).build());
 
@@ -129,7 +130,8 @@ public class BudgetControllingResultTest {
 
     assertThat(columns.planned()).isTrue();
     assertThat(columns.flatRate()).isTrue();
-    assertThat(columns.bookedBeforeWindow()).isFalse();
+    // The revenue earned before the window explains the budget columns, and those are gone.
+    assertThat(columns.revenueBeforeWindow()).isFalse();
   }
 
   private static BudgetControllingResult result(BudgetControllingSection... sections) {
@@ -145,7 +147,7 @@ public class BudgetControllingResultTest {
   private static BudgetControllingRow.BudgetControllingRowBuilder row() {
     return BudgetControllingRow.builder()
         .plannedHours(Duration.ZERO)
-        .bookedHoursBeforeWindow(Duration.ZERO)
+        .revenueBeforeWindowEuro(BigDecimal.ZERO)
         .bookedHours(Duration.ZERO)
         .revenueEuro(BigDecimal.ZERO)
         .flatRateRevenueEuro(BigDecimal.ZERO)

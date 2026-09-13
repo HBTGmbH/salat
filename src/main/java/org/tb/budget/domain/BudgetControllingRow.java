@@ -23,22 +23,32 @@ public record BudgetControllingRow(
     String label,
     Duration plannedHours,
     /**
-     * Hours booked before the evaluated window opened (#917). Reported next to the window's own
-     * hours so a reader sees how much of the work already predates the period being looked at; the
-     * amounts in this line cover both.
+     * Everything this line earned before the evaluated window opened — hours times rate plus the flat
+     * rates that fell due back then.
+     *
+     * <p>Reported in euro rather than in hours (#779): what predates the window matters as a share of
+     * the budget, and hours cannot be compared with the amounts next to them. It is what the budget
+     * columns add to the window's own revenue, and it is why they can read against the whole plan
+     * while every other column stays inside the period being looked at.
      */
-    Duration bookedHoursBeforeWindow,
+    BigDecimal revenueBeforeWindowEuro,
     Duration bookedHours,
     /** The budget of the plan this line stands for; {@code null} on lines that carry none. */
     BigDecimal budgetEuro,
+    /**
+     * What the hours booked <em>inside</em> the window earned (#779). Revenue, cost and hours all
+     * describe the same period now — otherwise profit and margin would divide an amount covering
+     * years by the cost of one quarter.
+     */
     BigDecimal revenueEuro,
     /**
-     * Revenue from flat rates falling due in this line's span (#972) — amounts agreed for the order
+     * Revenue from flat rates falling due inside the window (#972) — amounts agreed for the order
      * rather than earned by the hour. Reported apart from {@code revenueEuro} so a reader can tell
      * the two sources apart; every figure derived from revenue uses {@link #totalRevenueEuro()},
      * which is their sum.
      */
     BigDecimal flatRateRevenueEuro,
+    /** What the work booked inside the window cost; {@code null} where costs are not reported. */
     BigDecimal costEuro,
     Duration forecastHours,
     BigDecimal forecastRevenueEuro,
@@ -73,7 +83,7 @@ public record BudgetControllingRow(
             .sign(sign)
             .label(label)
             .plannedHours(sumHours(rows, BudgetControllingRow::plannedHours))
-            .bookedHoursBeforeWindow(sumHours(rows, BudgetControllingRow::bookedHoursBeforeWindow))
+            .revenueBeforeWindowEuro(sumAmount(rows, BudgetControllingRow::revenueBeforeWindowEuro))
             .bookedHours(sumHours(rows, BudgetControllingRow::bookedHours))
             .budgetEuro(budgetEuro)
             .revenueEuro(sumAmount(rows, BudgetControllingRow::revenueEuro))
@@ -155,23 +165,37 @@ public record BudgetControllingRow(
      * or not anybody booked, so a line carrying nothing else still has something to report (#972).
      */
     public boolean hasContent() {
-        return hasBooked() || hasBookedBeforeWindow() || hasBudget() || hasPlanned() || hasFlatRateRevenue();
+        return hasBooked() || hasRevenueBeforeWindow() || hasBudget() || hasPlanned() || hasFlatRateRevenue();
+    }
+
+    /**
+     * Everything the plan has consumed by the end of the window, the part earned before it included
+     * (#917). The budget columns read against this and not against {@link #totalRevenueEuro()}: a
+     * budget is granted for the whole plan, and measuring one quarter of consumption against all of
+     * it would report every plan as barely touched.
+     */
+    public BigDecimal cumulativeRevenueEuro() {
+        var inWindow = totalRevenueEuro();
+        if (inWindow == null && revenueBeforeWindowEuro == null) {
+            return null;
+        }
+        return orZero(inWindow).add(orZero(revenueBeforeWindowEuro));
     }
 
     public boolean hasBudgetPercent() {
-        return hasBudget() && totalRevenueEuro() != null;
+        return hasBudget() && cumulativeRevenueEuro() != null;
     }
 
     public double budgetUsedPercent() {
         if (!hasBudgetPercent()) return 0.0;
-        return totalRevenueEuro().divide(budgetEuro, 6, RoundingMode.HALF_UP)
+        return cumulativeRevenueEuro().divide(budgetEuro, 6, RoundingMode.HALF_UP)
             .multiply(BigDecimal.valueOf(100)).doubleValue();
     }
 
     /** What the plan was exceeded by. Going over budget is normal, so it is reported as an amount. */
     public BigDecimal overrunEuro() {
-        if (!hasBudget() || totalRevenueEuro() == null) return BigDecimal.ZERO;
-        var diff = totalRevenueEuro().subtract(budgetEuro);
+        if (!hasBudget() || cumulativeRevenueEuro() == null) return BigDecimal.ZERO;
+        var diff = cumulativeRevenueEuro().subtract(budgetEuro);
         return diff.signum() > 0 ? diff : BigDecimal.ZERO;
     }
 
@@ -223,11 +247,9 @@ public record BudgetControllingRow(
         return sign == null ? null : sign.replace("/", " / ");
     }
 
-    public boolean hasBookedBeforeWindow() {
-        return bookedHoursBeforeWindow != null && !bookedHoursBeforeWindow.isZero();
+    public boolean hasRevenueBeforeWindow() {
+        return revenueBeforeWindowEuro != null && revenueBeforeWindowEuro.signum() != 0;
     }
-
-    public String bookedHoursBeforeWindowFormatted() { return formatHours(bookedHoursBeforeWindow); }
 
     public String plannedHoursFormatted() { return hasPlanned() ? formatHours(plannedHours) : "—"; }
 

@@ -15,7 +15,7 @@ import java.util.Collection;
  * (→ {@link BudgetControllingSection#columns()}); this record only carries the answer.
  */
 public record BudgetControllingColumns(
-    boolean bookedBeforeWindow,
+    boolean revenueBeforeWindow,
     boolean planned,
     boolean flatRate,
     boolean budget,
@@ -35,7 +35,7 @@ public record BudgetControllingColumns(
      */
     public static BudgetControllingColumns of(Collection<BudgetControllingRow> rows) {
         return new BudgetControllingColumns(
-            rows.stream().anyMatch(BudgetControllingRow::hasBookedBeforeWindow),
+            rows.stream().anyMatch(BudgetControllingRow::hasRevenueBeforeWindow),
             rows.stream().anyMatch(BudgetControllingRow::hasPlanned),
             rows.stream().anyMatch(BudgetControllingRow::hasFlatRateRevenue),
             rows.stream().anyMatch(BudgetControllingRow::hasBudget),
@@ -51,9 +51,32 @@ public record BudgetControllingColumns(
      * nothing anybody agreed to, and a utilization or an overrun computed from it is arithmetic
      * without a subject. Aggregates therefore report what was worked, earned and cost, and leave the
      * budget where it is decided: in the section of its plan.
+     *
+     * <p>The revenue earned before the window goes with them. It is not a figure of its own right —
+     * it exists so the budget columns can read against the whole plan while everything else stays
+     * inside the period. Without those columns it is a number without a question.
      */
     public BudgetControllingColumns withoutBudget() {
-        return new BudgetControllingColumns(bookedBeforeWindow, planned, flatRate, false, false,
+        return new BudgetControllingColumns(false, planned, flatRate, false, false,
+            grossProfitMargin);
+    }
+
+    /**
+     * The same columns without anything a plan answers for: the budget columns and, on top of them,
+     * the planned hours and their consumption.
+     *
+     * <p>For the segment listing (#779), which reports orders and not plans. Sollstunden come from
+     * the suborders of an order and a consumption read against them says how far that one order has
+     * come — next to orders that carry no plan at all, and summed over a segment, the figure invites
+     * a comparison that does not exist. What the segment is read for is what was worked, earned,
+     * cost and earned on top.
+     */
+    public BudgetControllingColumns withoutPlan() {
+        return withoutBudget().withoutPlannedHours();
+    }
+
+    private BudgetControllingColumns withoutPlannedHours() {
+        return new BudgetControllingColumns(revenueBeforeWindow, false, flatRate, budget, overrun,
             grossProfitMargin);
     }
 
@@ -67,7 +90,7 @@ public record BudgetControllingColumns(
             return this;
         }
         return new BudgetControllingColumns(
-            bookedBeforeWindow || other.bookedBeforeWindow(),
+            revenueBeforeWindow || other.revenueBeforeWindow(),
             planned || other.planned(),
             flatRate || other.flatRate(),
             budget || other.budget(),
