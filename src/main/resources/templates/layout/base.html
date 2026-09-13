@@ -198,9 +198,9 @@
                   <!-- Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779) -->
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/controlling/by-segment}"
-                     th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''"
-                     th:text="#{main.controlling.bysegment.title}">
-                    Controlling nach Kundensegment
+                     th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''">
+                    <span th:text="#{main.controlling.bysegment.title}">Controlling nach Kundensegment</span>
+                    <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/bulk-assignment}"
