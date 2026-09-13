@@ -28,12 +28,12 @@ public class BudgetControllingColumnsTest {
   public void should_show_a_column_as_soon_as_one_line_has_something_for_it() {
     var columns = BudgetControllingColumns.of(List.of(
         row().build(),
-        row().bookedHoursBeforeWindow(Duration.ofHours(3)).build(),
+        row().revenueBeforeWindowEuro(new BigDecimal("300")).build(),
         row().plannedHours(Duration.ofHours(10)).build(),
         row().flatRateRevenueEuro(new BigDecimal("20")).build(),
         row().budgetEuro(new BigDecimal("100")).revenueEuro(new BigDecimal("150")).build()));
 
-    assertThat(columns.bookedBeforeWindow()).isTrue();
+    assertThat(columns.revenueBeforeWindow()).isTrue();
     assertThat(columns.planned()).isTrue();
     assertThat(columns.flatRate()).isTrue();
     assertThat(columns.budget()).isTrue();
@@ -59,6 +59,20 @@ public class BudgetControllingColumnsTest {
     assertThat(BudgetControllingColumns.of(List.of(row().build())).grossProfitMargin()).isFalse();
   }
 
+  /**
+   * The revenue earned before the window explains the budget columns and has no question of its own,
+   * so it leaves with them — and a listing of orders drops the planned hours on top (#779).
+   */
+  @Test
+  public void should_drop_the_columns_a_plan_answers_for() {
+    var all = new BudgetControllingColumns(true, true, true, true, true, true);
+
+    assertThat(all.withoutBudget())
+        .isEqualTo(new BudgetControllingColumns(false, true, true, false, false, true));
+    assertThat(all.withoutPlan())
+        .isEqualTo(new BudgetControllingColumns(false, false, true, false, false, true));
+  }
+
   @Test
   public void should_take_over_every_column_of_the_sets_it_is_merged_with() {
     var withBudget = new BudgetControllingColumns(false, false, false, true, true, false);
@@ -80,7 +94,7 @@ public class BudgetControllingColumnsTest {
   private static BudgetControllingRow.BudgetControllingRowBuilder row() {
     return BudgetControllingRow.builder()
         .plannedHours(Duration.ZERO)
-        .bookedHoursBeforeWindow(Duration.ZERO)
+        .revenueBeforeWindowEuro(BigDecimal.ZERO)
         .bookedHours(Duration.ZERO)
         .revenueEuro(BigDecimal.ZERO)
         .flatRateRevenueEuro(BigDecimal.ZERO);

@@ -7,9 +7,9 @@
   section has a budget to compare against, and the overrun column only appears when something
   actually went over it.
 
-  The hours are split at the window start (#917): the first column says what was already booked when
-  the window opened, the next one what was booked inside it. The amounts are the full figures up to
-  the end of the window, so the budget and its utilization read against the whole plan.
+  Hours, revenue and cost describe the evaluated window (#779). What was earned before it opened is
+  a column of its own, in euro — the budget columns add it to the window's own revenue and therefore
+  still read against the whole plan, while profit and margin divide figures covering one period.
 
   The revenue column is everything a line earns — hours times rate plus the flat rates falling due in
   it (#972). Where flat rates are involved at all, the column next to it says how much of that came
@@ -52,14 +52,14 @@
     <tr>
       <th th:text="${firstColumnLabel}">Auftrag / Subauftrag</th>
       <!--
-        What was already booked when the window opened; the amounts to the right cover it (#917).
-        Two lines, because the date makes this the longest header of the table and the column would
-        otherwise push the numbers apart. The second line reuses the neighbouring column's label —
-        it says the same thing.
+        What was earned before the window opened — the part of the budget that was already consumed
+        when the period being looked at began (#779). Two lines, because the date makes this the
+        longest header of the table and the column would otherwise push the numbers apart. The second
+        line reuses the neighbouring revenue label: it is the same figure, for an earlier time.
       -->
-      <th class="text-end d-none d-lg-table-cell" th:if="${columns.bookedBeforeWindow()}">
+      <th class="text-end d-none d-lg-table-cell" th:if="${columns.revenueBeforeWindow()}">
         <span th:text="#{main.controlling.col.bookedbefore(${#temporals.format(windowFrom, 'dd.MM.yyyy')})}">Bis 01.09.2026</span><br/>
-        <span th:text="#{main.controlling.col.booked}">Gebucht (h)</span>
+        <span th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</span>
       </th>
       <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
       <th class="text-end" th:if="${columns.planned()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
@@ -111,9 +111,9 @@
       <span th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</span>
     </div>
   </td>
-  <td class="text-end d-none d-lg-table-cell" th:if="${columns.bookedBeforeWindow()}"
+  <td class="text-end d-none d-lg-table-cell" th:if="${columns.revenueBeforeWindow()}"
       th:classappend="${cellClass}"
-      th:text="${row.hasBookedBeforeWindow()} ? ${row.bookedHoursBeforeWindowFormatted()} : '—'"></td>
+      th:text="${row.hasRevenueBeforeWindow()} ? #{main.budget.format.amount(${row.revenueBeforeWindowEuro()})} : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}" th:text="${row.bookedHoursFormatted()}"></td>
   <td class="text-end" th:if="${columns.planned()}" th:classappend="${cellClass}"
       th:text="${row.plannedHoursFormatted()}"></td>

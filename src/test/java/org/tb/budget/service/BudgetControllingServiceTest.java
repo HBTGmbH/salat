@@ -446,29 +446,48 @@ public class BudgetControllingServiceTest {
     assertThat(section.total().budgetEuro()).isEqualByComparingTo("2000");
   }
 
-  /** The hours split at the window start: what was booked before it, and what inside it. */
+  /** Only what was booked inside the window; the work before it is reported as an amount (#779). */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_split_the_hours_at_the_window_start() {
+  public void should_report_only_the_hours_booked_inside_the_window() {
     givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
 
     // The fixture books 8 h in March and 8 h in September.
     var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
 
-    assertThat(section.total().bookedHoursBeforeWindow()).isEqualTo(Duration.ofHours(8));
     assertThat(section.total().bookedHours()).isEqualTo(Duration.ofHours(8));
   }
 
-  /** The amounts cover both: they are the full figures up to the end of the window. */
+  /**
+   * Revenue describes the window, exactly as the hours and the costs do (#779). What the plan earned
+   * earlier is reported apart, so that profit and margin divide figures covering the same period.
+   */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_the_revenue_of_the_whole_span_up_to_the_window_end() {
+  public void should_split_the_revenue_at_the_window_start() {
     givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
 
     var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
 
-    // 8 h before the window and 8 h inside it, at 100 EUR — both count towards the budget.
-    assertThat(section.total().revenueEuro()).isEqualByComparingTo("1600.00");
+    // 8 h in March before the window and 8 h in September inside it, at 100 EUR each.
+    assertThat(section.total().revenueBeforeWindowEuro()).isEqualByComparingTo("800.00");
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /**
+   * The budget columns still read against the whole plan: what was earned before the window counts
+   * towards it, otherwise a quarterly evaluation would report every long plan as barely touched.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_measure_the_budget_against_everything_earned_by_the_window_end() {
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var total = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL).total();
+
+    // 800 before the window plus 800 inside it, against a budget of 2000.
+    assertThat(total.cumulativeRevenueEuro()).isEqualByComparingTo("1600.00");
+    assertThat(total.budgetUsedPercent()).isCloseTo(80.0, within(0.001));
   }
 
   /** Nothing beyond the window end, however far the plan runs. */
@@ -479,10 +498,11 @@ public class BudgetControllingServiceTest {
 
     var section = sectionOf(compute(APR, JUN), SectionKind.ORDER_LEVEL);
 
-    // Only the March booking lies before the end of June; September is out of scope.
-    assertThat(section.total().bookedHoursBeforeWindow()).isEqualTo(Duration.ofHours(8));
+    // Only the March booking lies before the end of June; September is out of scope. March is
+    // before the window as well, so it lands in the amount earned before it.
     assertThat(section.total().bookedHours()).isEqualTo(Duration.ZERO);
-    assertThat(section.total().revenueEuro()).isEqualByComparingTo("800.00");
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(section.total().revenueBeforeWindowEuro()).isEqualByComparingTo("800.00");
   }
 
   @Test
@@ -522,7 +542,7 @@ public class BudgetControllingServiceTest {
     var section = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL);
 
     assertThat(section.total().budgetEuro()).isEqualByComparingTo("2000");
-    assertThat(section.total().revenueEuro()).isEqualByComparingTo("1600.00");
+    assertThat(section.total().cumulativeRevenueEuro()).isEqualByComparingTo("1600.00");
     assertThat(section.total().budgetUsedPercent()).isCloseTo(80.0, within(0.01));
   }
 
@@ -863,17 +883,21 @@ public class BudgetControllingServiceTest {
   }
 
   /**
-   * The amounts are the full figures over the span the evaluation talks about (#917), so a flat rate
-   * from before the window counts towards the budget just as the earlier hours do.
+   * A flat rate is split at the window start like the hourly revenue (#779): an amount that fell due
+   * earlier is not what this period earned, but it counts towards the budget all the same.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_a_flat_rate_from_before_the_window() {
+  public void should_report_a_flat_rate_from_before_the_window_apart() {
     givenBudgets(plan("year", null, FROM, UNTIL, "5000"));
     givenFlatRates(once("initial fee", null, IN_H1, "500"));
 
-    assertThat(sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL).total().flatRateRevenueEuro())
-        .isEqualByComparingTo("500");
+    var total = sectionOf(compute(JUL, UNTIL), SectionKind.ORDER_LEVEL).total();
+
+    assertThat(total.flatRateRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+    // 500 of the flat rate plus the 800 the March booking earned.
+    assertThat(total.revenueBeforeWindowEuro()).isEqualByComparingTo("1300.00");
+    assertThat(total.cumulativeRevenueEuro()).isEqualByComparingTo("2100.00");
   }
 
   /** Instalments are entered per date and are the case a fixed price order is paid in. */

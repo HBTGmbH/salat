@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -96,9 +97,10 @@ public class BudgetControllingService {
         var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
         // One read over the whole span this evaluation talks about: from the earliest plan start to
-        // the end of the window (#917). The amounts are reported in full over that span, while the
-        // hours are split into what was booked before the window and what inside it — a second query
-        // for the earlier part would only add a round trip.
+        // the end of the window. Everything before the window feeds exactly one figure — what was
+        // earned back then (#779) — which is what the budget columns add to the window's own revenue;
+        // hours, revenue and cost themselves stay inside the window. A second query for the earlier
+        // part would only add a round trip.
         var readFrom = plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder())
             .filter(planStart -> planStart.isBefore(from))
             .orElse(from);
@@ -120,7 +122,7 @@ public class BudgetControllingService {
                 today, holidays, includeCosts));
         }
         var withoutBudget = withoutBudgetSection(suborders, scored, planOfBooking, flatRatesByPlan,
-            evaluatedPlanIds, includeCosts);
+            evaluatedPlanIds, from, includeCosts);
         if (withoutBudget != null) {
             sections.add(withoutBudget);
         }
@@ -141,7 +143,8 @@ public class BudgetControllingService {
 
     /**
      * A time report with its revenue and cost already resolved, and whether it lies before the
-     * evaluated window: the hours of the two are reported apart, the amounts together (#917).
+     * evaluated window. Everything of a report that lies before it contributes to one figure only:
+     * the revenue earned before the window (#779).
      */
     private record ScoredReport(long timereportId, LocalDate day, Duration duration,
                                 BigDecimal revenue, BigDecimal cost, boolean beforeWindow) {}
@@ -227,13 +230,13 @@ public class BudgetControllingService {
      * one by one would bury the suborders they sit next to.
      */
     private static List<BudgetControllingRow> flatRateRows(List<FlatRateDueAmount> dueAmounts,
-                                                           boolean includeCosts) {
+                                                           LocalDate windowStart, boolean includeCosts) {
         Map<OrderFlatRate, List<FlatRateDueAmount>> byFlatRate = new LinkedHashMap<>();
         for (var dueAmount : dueAmounts) {
             byFlatRate.computeIfAbsent(dueAmount.flatRate(), rate -> new ArrayList<>()).add(dueAmount);
         }
         return byFlatRate.entrySet().stream()
-            .map(entry -> flatRateRow(entry.getKey(), entry.getValue(), includeCosts))
+            .map(entry -> flatRateRow(entry.getKey(), entry.getValue(), windowStart, includeCosts))
             .toList();
     }
 
@@ -243,19 +246,26 @@ public class BudgetControllingService {
      */
     private static BudgetControllingRow flatRateRow(OrderFlatRate flatRate,
                                                     List<FlatRateDueAmount> dueAmounts,
-                                                    boolean includeCosts) {
+                                                    LocalDate windowStart, boolean includeCosts) {
         return BudgetControllingRow.builder()
             .sign(flatRate.isOrderWide() ? flatRate.getCustomerorderSign() : flatRate.getSuborderSign())
             .label(flatRate.getDescription())
             .plannedHours(Duration.ZERO)
-            .bookedHoursBeforeWindow(Duration.ZERO)
+            // Split at the window start like the hourly revenue: an amount that fell due before the
+            // period counts against the budget, but it is not what this period earned (#779).
+            .revenueBeforeWindowEuro(flatRateAmount(dueAmounts, due -> due.isBefore(windowStart)))
             .bookedHours(Duration.ZERO)
             .revenueEuro(BigDecimal.ZERO)
-            .flatRateRevenueEuro(dueAmounts.stream().map(FlatRateDueAmount::amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add))
+            .flatRateRevenueEuro(flatRateAmount(dueAmounts, due -> !due.isBefore(windowStart)))
             .costEuro(includeCosts ? BigDecimal.ZERO : null)
             .flatRate(true)
             .build();
+    }
+
+    private static BigDecimal flatRateAmount(List<FlatRateDueAmount> dueAmounts,
+                                             Predicate<LocalDate> selected) {
+        return dueAmounts.stream().filter(due -> selected.test(due.due()))
+            .map(FlatRateDueAmount::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /** One plan with the part of its validity that falls inside the evaluated period. */
@@ -348,7 +358,8 @@ public class BudgetControllingService {
                 .toList();
             // The flat rates allocated to this plan follow its suborders: they belong to the same
             // budget and have to count towards the same subtotal (#972).
-            var rows = concat(suborderRows, flatRateRows(flatRates.of(plan.getId()), includeCosts));
+            var rows = concat(suborderRows, flatRateRows(flatRates.of(plan.getId()), window.getFrom(),
+                includeCosts));
             var budget = cumulativeBudgetOf(plan, window.getUntil());
             var progress = computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
             // An order-wide plan is the whole section, so its figures belong on the section total.
@@ -392,7 +403,8 @@ public class BudgetControllingService {
                                                           Map<Long, List<ScoredReport>> scored,
                                                           Map<Long, Long> planOfBooking,
                                                           AllocatedFlatRates flatRates,
-                                                          Set<Long> evaluatedPlanIds, boolean includeCosts) {
+                                                          Set<Long> evaluatedPlanIds,
+                                                          LocalDate windowStart, boolean includeCosts) {
         var bookedRows = suborders.stream()
             .map(suborder -> row(suborder, reportsOf(suborder, scored, report -> {
                 var planId = planOfBooking.get(report.timereportId());
@@ -400,11 +412,12 @@ public class BudgetControllingService {
             }), includeCosts))
             // Only the booked side counts here: a suborder with planned hours but no unassigned
             // booking has nothing to answer for and would otherwise show up in every evaluation.
-            .filter(row -> !row.bookedHours().isZero() || row.hasBookedBeforeWindow())
+            .filter(row -> !row.bookedHours().isZero() || row.hasRevenueBeforeWindow())
             .toList();
         // Flat rates land here for the two reasons a booking does: no plan covers the amount, or
         // several do and none was picked, or the plan holding it is excluded from this evaluation.
-        var rows = concat(bookedRows, flatRateRows(orphanedFlatRates(flatRates, evaluatedPlanIds), includeCosts));
+        var rows = concat(bookedRows,
+            flatRateRows(orphanedFlatRates(flatRates, evaluatedPlanIds), windowStart, includeCosts));
         if (rows.isEmpty()) {
             return null;
         }
@@ -440,22 +453,23 @@ public class BudgetControllingService {
     }
 
     /**
-     * One line of a section. The hours are split — what was booked before the window and what inside
-     * it — while revenue and cost are the full figures over both (#917). That way the budget and its
-     * utilization read against the whole plan, and the extra hours column says how much of the work
-     * already predates the window.
+     * One line of a section. Hours, revenue and cost all describe the evaluated window, and what was
+     * earned before it stands next to them as an amount of its own (#779). The budget columns add the
+     * two up, so they still read against the whole plan, while profit and margin divide figures that
+     * cover the same period — which they did not while the amounts spanned years and the hours one
+     * quarter.
      */
     private BudgetControllingRow row(Suborder suborder, List<ScoredReport> reports, boolean includeCosts) {
         return BudgetControllingRow.builder()
             .sign(suborder.getCompleteOrderSign())
             .label(suborder.getShortdescription())
             .plannedHours(suborder.getDebithours() != null ? suborder.getDebithours() : Duration.ZERO)
-            .bookedHoursBeforeWindow(hoursOf(reports, ScoredReport::beforeWindow))
+            .revenueBeforeWindowEuro(amountOf(reports, ScoredReport::beforeWindow, ScoredReport::revenue))
             .bookedHours(hoursOf(reports, report -> !report.beforeWindow()))
-            .revenueEuro(reports.stream().map(ScoredReport::revenue).reduce(BigDecimal.ZERO, BigDecimal::add))
+            .revenueEuro(amountOf(reports, report -> !report.beforeWindow(), ScoredReport::revenue))
             .flatRateRevenueEuro(BigDecimal.ZERO)
             .costEuro(includeCosts
-                ? reports.stream().map(ScoredReport::cost).reduce(BigDecimal.ZERO, BigDecimal::add) : null)
+                ? amountOf(reports, report -> !report.beforeWindow(), ScoredReport::cost) : null)
             .build();
     }
 
@@ -463,6 +477,11 @@ public class BudgetControllingService {
         return reports.stream().filter(selected)
             .map(ScoredReport::duration)
             .reduce(Duration.ZERO, Duration::plus);
+    }
+
+    private static BigDecimal amountOf(List<ScoredReport> reports, Predicate<ScoredReport> selected,
+                                       Function<ScoredReport, BigDecimal> amount) {
+        return reports.stream().filter(selected).map(amount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /** One plan of a section before its group is assembled (→ {@link #plannedSection}). */
