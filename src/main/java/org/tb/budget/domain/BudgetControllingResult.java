@@ -32,16 +32,15 @@ public record BudgetControllingResult(
      * reader to add up. This is that sum, and it is the same line the segment listing shows per
      * order — built here so both read one calculation rather than two that can drift apart.
      *
-     * <p>The budget is the sum of the section budgets, so the unplanned section contributes hours
-     * and revenue but no budget. That is deliberate: those bookings answer to no plan, but they were
-     * still worked and still cost money. The utilization therefore reports everything the order
-     * earned against everything that was planned for it, which is the honest reading — hiding the
-     * unassigned part would make a plan look better than the order it belongs to.
+     * <p>It carries no budget. An order can hold several plans of different periods and scopes, and
+     * the bookings of the unplanned section answer to none of them — their hours and their revenue
+     * belong in this line, but adding the plan amounts up next to them would produce a budget nobody
+     * agreed to and a utilization measured against it. What a plan may spend stays in the section of
+     * that plan; this line says what the order worked, earned and cost.
      */
     public BudgetControllingRow total() {
         var sectionTotals = sections.stream().map(BudgetControllingSection::total).toList();
-        return BudgetControllingRow.sum(null, null, sectionTotals,
-            BudgetControllingRow.sumBudget(sectionTotals), includesCosts());
+        return BudgetControllingRow.sum(null, null, sectionTotals, null, includesCosts());
     }
 
     /**
@@ -53,10 +52,14 @@ public record BudgetControllingResult(
         return sections.size() > 1;
     }
 
-    /** The columns of the total: everything any section offers (→ {@code BudgetControllingColumns}). */
+    /**
+     * The columns of the total: everything any section offers, minus the budget columns — the line
+     * carries no budget (→ {@link BudgetControllingColumns#withoutBudget()}).
+     */
     public BudgetControllingColumns totalColumns() {
         return sections.stream().map(BudgetControllingSection::columns)
-            .reduce(BudgetControllingColumns.NONE, BudgetControllingColumns::merge);
+            .reduce(BudgetControllingColumns.NONE, BudgetControllingColumns::merge)
+            .withoutBudget();
     }
 
     /**

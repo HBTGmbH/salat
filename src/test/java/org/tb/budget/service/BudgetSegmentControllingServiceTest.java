@@ -29,14 +29,15 @@ import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.domain.CustomerSegment;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 
 /**
  * The segment listing (#779) does not calculate anything of its own: it asks
- * {@link BudgetControllingService} for each budgeted order exactly as that order's own page does and
- * shows the total of that evaluation. What is tested here is therefore the grouping, the segment
- * sums and that the window is passed through unchanged.
+ * {@link BudgetControllingService} for each order exactly as that order's own page does and shows
+ * the total of that evaluation. What is tested here is therefore which orders reach the page, the
+ * grouping, the segment sums and that the window is passed through unchanged.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BudgetSegmentControllingServiceTest {
@@ -45,8 +46,10 @@ public class BudgetSegmentControllingServiceTest {
   private static final LocalDate UNTIL = LocalDate.of(2026, 3, 31);
 
   private OrderBudgetService orderBudgetService;
+  private OrderFlatRateService orderFlatRateService;
   private BudgetControllingService budgetControllingService;
   private CustomerorderService customerorderService;
+  private TimereportService timereportService;
   private BudgetSegmentControllingService service;
 
   private static long nextId = 1;
@@ -54,10 +57,16 @@ public class BudgetSegmentControllingServiceTest {
   @BeforeEach
   public void setUp() {
     orderBudgetService = mock(OrderBudgetService.class);
+    orderFlatRateService = mock(OrderFlatRateService.class);
     budgetControllingService = mock(BudgetControllingService.class);
     customerorderService = mock(CustomerorderService.class);
-    service = new BudgetSegmentControllingService(orderBudgetService, budgetControllingService,
-        customerorderService);
+    timereportService = mock(TimereportService.class);
+    service = new BudgetSegmentControllingService(orderBudgetService, orderFlatRateService,
+        budgetControllingService, customerorderService, timereportService);
+
+    when(orderBudgetService.getAllActiveVisible()).thenReturn(List.of());
+    when(orderFlatRateService.getCustomerorderSignsWithFlatRate()).thenReturn(List.of());
+    when(timereportService.getCustomerorderSignsWithReportsBetween(any(), any())).thenReturn(List.of());
   }
 
   @Test
@@ -88,12 +97,31 @@ public class BudgetSegmentControllingServiceTest {
 
     var total = service.compute(FROM, UNTIL).segments().get(0).total();
 
-    assertThat(total.budgetEuro()).isEqualByComparingTo("1500");
     assertThat(total.revenueEuro()).isEqualByComparingTo("650");
     assertThat(total.costEuro()).isEqualByComparingTo("150");
     assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(6));
-    // 650 of 1500 — derived from the sums, not averaged over the two orders.
-    assertThat(total.budgetUsedPercent()).isBetween(43.3, 43.4);
+    assertThat(total.grossProfitEuro()).isEqualByComparingTo("500");
+    // 500 of 650 — derived from the sums, not averaged over the two orders.
+    assertThat(total.grossProfitMarginPercent()).isBetween(76.9, 77.0);
+  }
+
+  /**
+   * The orders of a segment answer to different plans, and some to none at all. A sum over their
+   * budgets would be a figure nobody agreed to, so neither the line nor the table has one.
+   */
+  @Test
+  public void should_report_no_budget_for_a_segment() {
+    var segment = segment("Industrie");
+    givenOrders(order("A", segment), order("B", segment));
+    givenEvaluations(
+        evaluation("A", section(SectionKind.ORDER_LEVEL, row("1000", "400", "100", Duration.ofHours(4)))),
+        evaluation("B", section(SectionKind.UNPLANNED, row(null, "250", "50", Duration.ofHours(2)))));
+
+    var result = service.compute(FROM, UNTIL);
+
+    assertThat(result.segments().get(0).total().budgetEuro()).isNull();
+    assertThat(result.columns().budget()).isFalse();
+    assertThat(result.columns().overrun()).isFalse();
   }
 
   /** The line is the order's own total, so it has to carry the order's name rather than "Summe". */
@@ -113,7 +141,7 @@ public class BudgetSegmentControllingServiceTest {
 
   /**
    * An order whose customer is in no segment is a gap in the master data, not a reason to drop the
-   * order — it would otherwise be missing from a page that claims to list everything budgeted.
+   * order — it would otherwise be missing from a page that claims to list everything.
    */
   @Test
   public void should_list_the_orders_without_a_segment_in_a_group_of_their_own_at_the_end() {
@@ -151,13 +179,13 @@ public class BudgetSegmentControllingServiceTest {
     verify(budgetControllingService).compute("A", FROM, UNTIL, true);
   }
 
-  /** Several plans on one order are one line, not one per plan. */
+  /** Several plans on one order, and bookings besides — still one line and one evaluation. */
   @Test
-  public void should_evaluate_an_order_carrying_several_plans_only_once() {
-    var order = order("A", segment("Industrie"));
-    givenOrders(order);
+  public void should_evaluate_an_order_only_once_however_often_it_is_named() {
+    givenOrders(order("A", segment("Industrie")));
     when(orderBudgetService.getAllActiveVisible())
         .thenReturn(List.of(plan("A"), plan("A"), plan("A")));
+    when(orderFlatRateService.getCustomerorderSignsWithFlatRate()).thenReturn(List.of("A"));
     givenEvaluations(revenue("A", "100"));
 
     var segments = service.compute(FROM, UNTIL).segments();
@@ -166,33 +194,80 @@ public class BudgetSegmentControllingServiceTest {
     assertThat(segments.get(0).orders()).hasSize(1);
   }
 
+  /**
+   * The reason the page does not start from the plans: an order billed by the hour without any
+   * budget still earns and still costs, and leaving it out would make its segment look more or less
+   * profitable than it is.
+   */
+  @Test
+  public void should_list_an_order_that_has_no_budget_plan_at_all() {
+    givenOrders(order("A", segment("Industrie")));
+    when(orderBudgetService.getAllActiveVisible()).thenReturn(List.of());
+    givenEvaluations(evaluation("A", section(SectionKind.UNPLANNED,
+        row(null, "900", "300", Duration.ofHours(9)))));
+
+    var segment = service.compute(FROM, UNTIL).segments().get(0);
+
+    assertThat(segment.orders()).extracting(SegmentControllingOrder::customerorderSign)
+        .containsExactly("A");
+    assertThat(segment.total().grossProfitEuro()).isEqualByComparingTo("600");
+  }
+
+  /** A plan without a booking in the window can still carry a flat rate falling due. */
+  @Test
+  public void should_list_a_budgeted_order_nobody_booked_on() {
+    var order = order("A", segment("Industrie"));
+    when(orderBudgetService.getAllActiveVisible()).thenReturn(List.of(plan("A")));
+    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(order));
+    givenEvaluations(revenue("A", "100"));
+
+    assertThat(service.compute(FROM, UNTIL).segments().get(0).orders())
+        .extracting(SegmentControllingOrder::customerorderSign).containsExactly("A");
+  }
+
+  /** An order carrying nothing but a flat rate is pure revenue and has to be in the picture. */
+  @Test
+  public void should_list_an_order_that_is_named_only_by_its_flat_rate() {
+    var order = order("A", segment("Industrie"));
+    when(orderFlatRateService.getCustomerorderSignsWithFlatRate()).thenReturn(List.of("A"));
+    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(order));
+    givenEvaluations(revenue("A", "100"));
+
+    assertThat(service.compute(FROM, UNTIL).segments().get(0).orders())
+        .extracting(SegmentControllingOrder::customerorderSign).containsExactly("A");
+  }
+
   /** The columns are decided once for the whole page, over every line any of its tables shows. */
   @Test
   public void should_decide_the_columns_over_all_segments_at_once() {
     givenOrders(order("A", segment("Industrie")), order("B", segment("Öffentlicher Sektor")));
     givenEvaluations(
-        evaluation("A", section(SectionKind.ORDER_LEVEL, row("100", "150", "10", Duration.ofHours(1)))),
+        evaluation("A", section(SectionKind.ORDER_LEVEL,
+            row("100", "150", "10", Duration.ofHours(1)).toBuilder()
+                .bookedHoursBeforeWindow(Duration.ofHours(4)).build())),
         evaluation("B", section(SectionKind.UNPLANNED, row(null, "50", "10", Duration.ofHours(1)))));
 
     var columns = service.compute(FROM, UNTIL).columns();
 
-    // The budget of the first order and its overrun are shown in both tables, so that the two stay
-    // comparable side by side.
-    assertThat(columns.budget()).isTrue();
-    assertThat(columns.overrun()).isTrue();
+    // Only the first order has hours from before the window, and the column appears in both tables,
+    // so that the two stay comparable side by side.
+    assertThat(columns.bookedBeforeWindow()).isTrue();
   }
 
   // --- fixture ---------------------------------------------------------------------------------
 
   /**
-   * The plans are built before the stubbing starts: reading {@code getSign()} off an order mock
-   * inside a {@code when(...)} would count as the next interaction to stub and leave the previous
-   * one unfinished.
+   * Orders that were booked on in the window — the usual case, and the one that does not depend on a
+   * plan existing at all.
+   *
+   * <p>The signs are read off the mocks before the stubbing starts: a {@code getSign()} inside a
+   * {@code when(...)} would count as the next interaction to stub and leave the previous one
+   * unfinished.
    */
   private void givenOrders(Customerorder... orders) {
-    var plans = List.of(orders).stream().map(order -> plan(order.getSign())).toList();
+    var signs = List.of(orders).stream().map(Customerorder::getSign).toList();
     when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(orders));
-    when(orderBudgetService.getAllActiveVisible()).thenReturn(plans);
+    when(timereportService.getCustomerorderSignsWithReportsBetween(any(), any())).thenReturn(signs);
   }
 
   private void givenEvaluations(BudgetControllingResult... results) {

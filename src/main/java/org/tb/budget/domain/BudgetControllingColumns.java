@@ -44,6 +44,20 @@ public record BudgetControllingColumns(
     }
 
     /**
+     * The same columns without everything that answers to a budget plan.
+     *
+     * <p>A budget belongs to one plan with one period and one scope. Added up over the plans of an
+     * order — or over the orders of a segment, unbudgeted ones among them — the sum stands for
+     * nothing anybody agreed to, and a utilization or an overrun computed from it is arithmetic
+     * without a subject. Aggregates therefore report what was worked, earned and cost, and leave the
+     * budget where it is decided: in the section of its plan.
+     */
+    public BudgetControllingColumns withoutBudget() {
+        return new BudgetControllingColumns(bookedBeforeWindow, planned, flatRate, false, false,
+            grossProfitMargin);
+    }
+
+    /**
      * The columns of a table made of several parts: a column appears when any part shows it. A total
      * over the sections of an order carries the figures of all of them, so it has to offer every
      * column any one of them offers.
