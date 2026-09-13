@@ -42,7 +42,6 @@ public class BudgetControllingResultTest {
     assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(15));
     assertThat(total.bookedHoursBeforeWindow()).isEqualTo(Duration.ofHours(3));
     assertThat(total.plannedHours()).isEqualTo(Duration.ofHours(50));
-    assertThat(total.budgetEuro()).isEqualByComparingTo("1500");
     assertThat(total.revenueEuro()).isEqualByComparingTo("600");
     assertThat(total.flatRateRevenueEuro()).isEqualByComparingTo("50");
     assertThat(total.costEuro()).isEqualByComparingTo("160");
@@ -50,23 +49,9 @@ public class BudgetControllingResultTest {
 
   /**
    * The point of the line: percentages come out of the summed amounts, not out of the percentages of
-   * the sections. Averaging those would let a section with a hundred euro of budget weigh as much as
-   * one with a hundred thousand.
+   * the sections. Averaging those would let a line that booked an hour weigh as much as one that
+   * booked a thousand.
    */
-  @Test
-  public void should_derive_the_budget_utilization_from_the_sums_and_not_average_the_sections() {
-    // 100 % in the one section, 10 % in the other — their mean would be 55 %.
-    var result = result(
-        section(SectionKind.ORDER_LEVEL,
-            row().budgetEuro(new BigDecimal("100")).revenueEuro(new BigDecimal("100")).build()),
-        section(SectionKind.SUBORDER_LEVEL,
-            row().budgetEuro(new BigDecimal("900")).revenueEuro(new BigDecimal("90")).build()));
-
-    // 190 of 1000.
-    assertThat(result.total().budgetUsedPercent()).isCloseTo(19.0, within(0.001));
-  }
-
-  /** Same rule for the consumption of planned hours. */
   @Test
   public void should_derive_the_consumption_of_planned_hours_from_the_sums() {
     var result = result(
@@ -78,13 +63,9 @@ public class BudgetControllingResultTest {
     assertThat(result.total().bookedPercent()).isCloseTo(19.0, within(0.001));
   }
 
-  /**
-   * Unassigned work was still worked and still cost money, but it answers to no plan. It therefore
-   * raises the revenue of the order without raising its budget — the utilization has to feel that,
-   * otherwise the order would look better than the sum of what happened on it.
-   */
+  /** Unassigned work was still worked and still cost money, so it belongs in the order's figures. */
   @Test
-  public void should_count_the_unplanned_section_towards_revenue_but_not_towards_the_budget() {
+  public void should_count_the_unplanned_section_towards_the_revenue_and_the_hours() {
     var result = result(
         section(SectionKind.ORDER_LEVEL,
             row().budgetEuro(new BigDecimal("1000")).revenueEuro(new BigDecimal("500"))
@@ -94,19 +75,26 @@ public class BudgetControllingResultTest {
 
     var total = result.total();
 
-    assertThat(total.budgetEuro()).isEqualByComparingTo("1000");
     assertThat(total.totalRevenueEuro()).isEqualByComparingTo("750");
     assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(8));
-    assertThat(total.budgetUsedPercent()).isCloseTo(75.0, within(0.001));
   }
 
-  /** Without a single budget anywhere there is nothing to report in the budget columns. */
+  /**
+   * The plans of an order have their own periods and scopes, and the unplanned section answers to
+   * none of them. Adding the amounts up would produce a budget nobody agreed to, so the line carries
+   * none and the view shows no budget columns for it.
+   */
   @Test
-  public void should_report_no_budget_at_all_when_no_section_carries_one() {
-    var result = result(section(SectionKind.UNPLANNED,
-        row().revenueEuro(new BigDecimal("250")).build()));
+  public void should_carry_no_budget_however_many_plans_the_order_has() {
+    var result = result(
+        section(SectionKind.ORDER_LEVEL,
+            row().budgetEuro(new BigDecimal("1000")).revenueEuro(new BigDecimal("500")).build()),
+        section(SectionKind.SUBORDER_LEVEL,
+            row().budgetEuro(new BigDecimal("500")).revenueEuro(new BigDecimal("250")).build()));
 
     assertThat(result.total().budgetEuro()).isNull();
+    assertThat(result.totalColumns().budget()).isFalse();
+    assertThat(result.totalColumns().overrun()).isFalse();
   }
 
   /** Costs stay away from someone who may not see them, and a summed zero is not "no cost". */
@@ -126,20 +114,22 @@ public class BudgetControllingResultTest {
         section(SectionKind.UNPLANNED, row().build())).hasTotal()).isTrue();
   }
 
-  /** A figure has to keep the header it had above, so the total offers every column any section does. */
+  /**
+   * A figure has to keep the header it had above, so the total offers every column any section does
+   * — the budget columns excepted, which it has no figures for.
+   */
   @Test
-  public void should_offer_every_column_any_of_its_sections_offers() {
-    var withBudget = section(SectionKind.ORDER_LEVEL,
-        row().budgetEuro(new BigDecimal("100")).revenueEuro(new BigDecimal("150")).build());
+  public void should_offer_every_other_column_any_of_its_sections_offers() {
+    var withPlanned = section(SectionKind.ORDER_LEVEL,
+        row().plannedHours(Duration.ofHours(10)).build());
     var withFlatRate = section(SectionKind.UNPLANNED,
         row().flatRateRevenueEuro(new BigDecimal("50")).build());
 
-    var columns = result(withBudget, withFlatRate).totalColumns();
+    var columns = result(withPlanned, withFlatRate).totalColumns();
 
-    assertThat(columns.budget()).isTrue();
-    assertThat(columns.overrun()).isTrue();
+    assertThat(columns.planned()).isTrue();
     assertThat(columns.flatRate()).isTrue();
-    assertThat(columns.planned()).isFalse();
+    assertThat(columns.bookedBeforeWindow()).isFalse();
   }
 
   private static BudgetControllingResult result(BudgetControllingSection... sections) {

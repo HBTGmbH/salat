@@ -106,6 +106,17 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       """)
   List<Timereport> findAllByEmployeecontractIdAndInvalidRegardingZeroDuration(long employeecontractId, LocalDate releaseDate);
 
+  /**
+   * The customer orders anything was booked on in the period (#779). Signs rather than orders,
+   * because the caller uses them to decide what to evaluate, not to display them — and one query
+   * instead of loading every booking of the period only to throw the bookings away.
+   */
+  @Query("""
+      select distinct t.suborder.customerorder.sign from Timereport t
+      where t.deleted = false and t.referenceday.refdate between :from and :until
+      """)
+  List<String> findDistinctCustomerorderSignsBetween(LocalDate from, LocalDate until);
+
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
       + "where tr.deleted = false and tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId")
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);

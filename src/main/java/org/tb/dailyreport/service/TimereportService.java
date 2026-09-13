@@ -767,6 +767,11 @@ public class TimereportService {
     return timereportDAO.getTimereportsByDatesAndCustomerOrderId(beginDate, endDate, orderId);
   }
 
+  /** The customer orders anything was booked on in the period (#779). */
+  public List<String> getCustomerorderSignsWithReportsBetween(LocalDate beginDate, LocalDate endDate) {
+    return timereportRepository.findDistinctCustomerorderSignsBetween(beginDate, endDate);
+  }
+
   public List<TimereportDTO> getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(long employeecontractId, LocalDate beginDate,
       LocalDate endDate, long orderId) {
     return timereportDAO.getTimereportsByDatesAndEmployeeContractIdAndCustomerOrderId(employeecontractId, beginDate, endDate, orderId);

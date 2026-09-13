@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +20,16 @@ import org.tb.budget.domain.SegmentControllingResult;
 import org.tb.common.LocalDateRange;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.domain.CustomerSegment;
+import org.tb.dailyreport.service.TimereportService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.service.CustomerorderService;
 
 /**
- * The controlling of every budgeted customer order at once, grouped by customer segment (#779).
+ * The controlling of every customer order at once, grouped by customer segment (#779).
+ *
+ * <p>Every order that earned or cost something in the window is listed, budgeted or not
+ * (→ {@link #candidateSigns}). Profit and margin do not need a plan, and they are what a segment is
+ * read for.
  *
  * <p>Each order is evaluated by {@link BudgetControllingService#compute} exactly as its own page
  * evaluates it, and the line this view shows is that evaluation's total over all its sections. The
@@ -44,21 +50,17 @@ import org.tb.order.service.CustomerorderService;
 public class BudgetSegmentControllingService {
 
     private final OrderBudgetService orderBudgetService;
+    private final OrderFlatRateService orderFlatRateService;
     private final BudgetControllingService budgetControllingService;
     private final CustomerorderService customerorderService;
+    private final TimereportService timereportService;
 
     /**
      * @param from  first day of the evaluated window
      * @param until last day of the evaluated window
      */
     public SegmentControllingResult compute(LocalDate from, LocalDate until) {
-        // The budgeted orders are the subject of this page: an order without an active plan has
-        // nothing to control against and would be a row of dashes. Same basis as the dashboard.
-        var signs = orderBudgetService.getAllActiveVisible().stream()
-            .map(OrderBudget::getCustomerorderSign)
-            .distinct()
-            .sorted()
-            .toList();
+        var signs = candidateSigns(from, until);
         var customerorders = customerordersBySign(signs);
 
         var ordersBySegment = new LinkedHashMap<SegmentKey, List<SegmentControllingOrder>>();
@@ -93,6 +95,30 @@ public class BudgetSegmentControllingService {
             columnsOf(segments));
     }
 
+    /**
+     * The orders this page reports on: everything that earned or cost something in the window, not
+     * only what is budgeted.
+     *
+     * <p>Profit and margin are the point of the segment view, and both exist without a plan — an
+     * order billed by the hour without a budget still earns and still costs. Listing only budgeted
+     * orders would have left exactly those out and made a segment look more or less profitable than
+     * it is, depending on how completely it happens to be planned.
+     *
+     * <p>Three sources, because each can be the only one: bookings in the window; an active plan,
+     * which may carry a flat rate falling due without anybody booking; and a flat rate on an order
+     * that has neither. Orders that turn out to have nothing to report drop out below, when their
+     * evaluation comes back empty.
+     */
+    private List<String> candidateSigns(LocalDate from, LocalDate until) {
+        var signs = new LinkedHashSet<String>();
+        signs.addAll(timereportService.getCustomerorderSignsWithReportsBetween(from, until));
+        orderBudgetService.getAllActiveVisible().stream()
+            .map(OrderBudget::getCustomerorderSign)
+            .forEach(signs::add);
+        signs.addAll(orderFlatRateService.getCustomerorderSignsWithFlatRate());
+        return signs.stream().sorted().toList();
+    }
+
     /** Segment identity of an order — {@code null} id and name for a customer without a segment. */
     private record SegmentKey(Long id, String name) {}
 
@@ -108,9 +134,9 @@ public class BudgetSegmentControllingService {
             .toList();
         var totals = sorted.stream().map(SegmentControllingOrder::total).toList();
         // Costs are part of every line here — the page is managers only — so the segment total
-        // reports them as well.
-        var total = BudgetControllingRow.sum(null, null, totals,
-            BudgetControllingRow.sumBudget(totals), true);
+        // reports them as well. No budget: the orders of a segment answer to different plans, and
+        // some to none at all (→ BudgetControllingColumns#withoutBudget).
+        var total = BudgetControllingRow.sum(null, null, totals, null, true);
         return new SegmentControllingGroup(key.id(), key.name(), sorted, total);
     }
 
@@ -124,7 +150,7 @@ public class BudgetSegmentControllingService {
             segment.orders().forEach(order -> rows.add(order.total()));
             rows.add(segment.total());
         }
-        return BudgetControllingColumns.of(rows);
+        return BudgetControllingColumns.of(rows).withoutBudget();
     }
 
     private Map<String, Customerorder> customerordersBySign(List<String> signs) {
