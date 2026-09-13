@@ -195,11 +195,16 @@
                      th:text="#{main.controlling.title}">
                     Soll-Ist-Controlling
                   </a>
-                  <!-- Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779) -->
+                  <!--
+                    Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779).
+                    Eigenes, kurzes Label statt des Seitentitels — im Dropdown steht der Eintrag
+                    ohnehin unter "Controlling", und die volle Überschrift wäre dort die längste
+                    Zeile des Menüs.
+                  -->
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/controlling/by-segment}"
                      th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''">
-                    <span th:text="#{main.controlling.bysegment.title}">Controlling nach Kundensegment</span>
+                    <span th:text="#{main.controlling.bysegment.menu}">Kundensegmente</span>
                     <span class="badge bg-green-lt ms-1">New</span>
                   </a>
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
