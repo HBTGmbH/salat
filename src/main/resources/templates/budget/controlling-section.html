@@ -14,69 +14,88 @@
   The revenue column is everything a line earns — hours times rate plus the flat rates falling due in
   it (#972). Where flat rates are involved at all, the column next to it says how much of that came
   from them, so nobody has to guess which of the two sources a figure is made of.
+
+  Header and row are fragments of their own because three tables share them (#779): the sections of
+  an order, the total over those sections, and the listing of orders per customer segment. Which
+  columns they carry is decided by the caller and handed in as one object, so the same figures never
+  appear under different headers depending on where they are read.
 -->
-<div th:fragment="table(section, isManager, windowFrom)">
+<!--/* The column set is resolved once here: it is derived from every row of the section, and
+       asking for it again per line would walk them all over again. */-->
+<div th:fragment="table(section, isManager, windowFrom)" th:with="columns=${section.columns()}">
 
   <div class="table-responsive">
 <table class="table table-vcenter card-table">
-  <thead>
-    <tr>
-      <th th:text="#{main.controlling.col.order}">Auftrag / Subauftrag</th>
-      <!--
-        What was already booked when the window opened; the amounts to the right cover it (#917).
-        Two lines, because the date makes this the longest header of the table and the column would
-        otherwise push the numbers apart. The second line reuses the neighbouring column's label —
-        it says the same thing.
-      -->
-      <th class="text-end d-none d-lg-table-cell" th:if="${section.hasBookedBeforeWindowData()}">
-        <span th:text="#{main.controlling.col.bookedbefore(${#temporals.format(windowFrom, 'dd.MM.yyyy')})}">Bis 01.09.2026</span><br/>
-        <span th:text="#{main.controlling.col.booked}">Gebucht (h)</span>
-      </th>
-      <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
-      <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
-      <th class="text-end" th:if="${section.hasPlannedData()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
-      <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
-      <!--
-        The flat rate share of the column before it (#972). Only where flat rates actually fall due:
-        on an order billed purely by the hour this would be a column of dashes, and the table has
-        enough of them to fit already.
-      -->
-      <th class="text-end" th:if="${section.hasFlatRateData()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
-      <th class="text-end" th:if="${section.hasBudgetColumn()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
-      <!-- Two lines, like the column before it: the label is wider than the numbers below it. -->
-      <th class="text-end" th:if="${section.hasBudgetColumn()}">
-        <span th:text="#{main.controlling.col.budgetused.line1}">Budget</span><br/>
-        <span th:text="#{main.controlling.col.budgetused.line2}">genutzt</span>
-      </th>
-      <th class="text-end" th:if="${section.hasOverrunData()}" th:text="#{main.controlling.col.overrun}">Über Budget (€)</th>
-      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
-      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">Gewinn (€)</th>
-      <th class="text-end" th:if="${isManager and section.hasGrossProfitMarginData()}"
-          th:text="#{main.controlling.col.margin}">Marge (%)</th>
-    </tr>
-  </thead>
+  <thead th:replace="~{budget/controlling-section :: headers(${columns}, ${isManager}, ${windowFrom}, #{main.controlling.col.order}, false)}"></thead>
   <tbody>
     <!-- th:each and th:if sit on an outer block: th:replace has higher precedence and would be
          evaluated before either of them, leaving the fragment without its row. -->
     <th:block th:each="group : ${section.groups()}">
       <th:block th:each="row : ${group.rows()}">
-        <tr th:replace="~{budget/controlling-section :: row(${section}, ${row}, ${isManager}, 'small', '')}"></tr>
+        <tr th:replace="~{budget/controlling-section :: row(${columns}, ${row}, ${isManager}, 'small', '', null)}"></tr>
       </th:block>
       <th:block th:if="${group.hasSubtotal()}">
-        <tr th:replace="~{budget/controlling-section :: row(${section}, ${group.subtotal()}, ${isManager}, 'small fw-bold', 'table-active')}"></tr>
+        <tr th:replace="~{budget/controlling-section :: row(${columns}, ${group.subtotal()}, ${isManager}, 'small fw-bold', 'table-active', null)}"></tr>
       </th:block>
     </th:block>
-    <tr th:replace="~{budget/controlling-section :: row(${section}, ${section.total()}, ${isManager}, 'fw-bold', 'table-active fw-bold')}"></tr>
+    <tr th:replace="~{budget/controlling-section :: row(${columns}, ${section.total()}, ${isManager}, 'fw-bold', 'table-active fw-bold', null)}"></tr>
   </tbody>
 </table>
   </div>
 </div>
 
 <!--
+  The header row of every controlling table. The label of the first column is a parameter: it names
+  suborders in a section, whole orders in the segment listing.
+-->
+<thead th:fragment="headers(columns, isManager, windowFrom, firstColumnLabel, hasAction)">
+    <tr>
+      <th th:text="${firstColumnLabel}">Auftrag / Subauftrag</th>
+      <!--
+        What was already booked when the window opened; the amounts to the right cover it (#917).
+        Two lines, because the date makes this the longest header of the table and the column would
+        otherwise push the numbers apart. The second line reuses the neighbouring column's label —
+        it says the same thing.
+      -->
+      <th class="text-end d-none d-lg-table-cell" th:if="${columns.bookedBeforeWindow()}">
+        <span th:text="#{main.controlling.col.bookedbefore(${#temporals.format(windowFrom, 'dd.MM.yyyy')})}">Bis 01.09.2026</span><br/>
+        <span th:text="#{main.controlling.col.booked}">Gebucht (h)</span>
+      </th>
+      <th class="text-end" th:text="#{main.controlling.col.booked}">Gebucht (h)</th>
+      <th class="text-end" th:if="${columns.planned()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
+      <th class="text-end" th:if="${columns.planned()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
+      <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
+      <!--
+        The flat rate share of the column before it (#972). Only where flat rates actually fall due:
+        on an order billed purely by the hour this would be a column of dashes, and the table has
+        enough of them to fit already.
+      -->
+      <th class="text-end" th:if="${columns.flatRate()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
+      <th class="text-end" th:if="${columns.budget()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
+      <!-- Two lines, like the column before it: the label is wider than the numbers below it. -->
+      <th class="text-end" th:if="${columns.budget()}">
+        <span th:text="#{main.controlling.col.budgetused.line1}">Budget</span><br/>
+        <span th:text="#{main.controlling.col.budgetused.line2}">genutzt</span>
+      </th>
+      <th class="text-end" th:if="${columns.overrun()}" th:text="#{main.controlling.col.overrun}">Über Budget (€)</th>
+      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.cost}">Ist-Kosten (€)</th>
+      <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">Gewinn (€)</th>
+      <th class="text-end" th:if="${isManager and columns.grossProfitMargin()}"
+          th:text="#{main.controlling.col.margin}">Marge (%)</th>
+      <!-- Where the lines lead somewhere (#779); the column carries the buttons and needs no label. -->
+      <th th:if="${hasAction}"></th>
+    </tr>
+</thead>
+
+<!--
   Detail, subtotal and total line are identical apart from their emphasis; one fragment keeps them
   from drifting apart.
+
+  actionUrl decides the trailing cell (#779): null leaves it out entirely — that is every table
+  without buttons — while an empty string keeps the cell but shows no button, which is what the
+  summary line of a table whose other lines link somewhere needs to stay aligned with them.
 -->
-<tr th:fragment="row(section, row, isManager, cellClass, rowClass)" th:class="${rowClass}">
+<tr th:fragment="row(columns, row, isManager, cellClass, rowClass, actionUrl)" th:class="${rowClass}">
   <!--
     Two lines: the complete order sign, and below it the suborder's own description — not the
     qualified name, the sign above already carries the hierarchy. Neither line breaks; the
@@ -92,24 +111,24 @@
       <span th:if="${row.label() != null}" th:text="${row.label()}">Support Developer</span>
     </div>
   </td>
-  <td class="text-end d-none d-lg-table-cell" th:if="${section.hasBookedBeforeWindowData()}"
+  <td class="text-end d-none d-lg-table-cell" th:if="${columns.bookedBeforeWindow()}"
       th:classappend="${cellClass}"
       th:text="${row.hasBookedBeforeWindow()} ? ${row.bookedHoursBeforeWindowFormatted()} : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}" th:text="${row.bookedHoursFormatted()}"></td>
-  <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
+  <td class="text-end" th:if="${columns.planned()}" th:classappend="${cellClass}"
       th:text="${row.plannedHoursFormatted()}"></td>
-  <td class="text-end" th:if="${section.hasPlannedData()}" th:classappend="${cellClass}"
+  <td class="text-end" th:if="${columns.planned()}" th:classappend="${cellClass}"
       th:text="${row.hasPlanned()} ? (${#numbers.formatDecimal(row.bookedPercent(), 1, 1)} + ' %') : '—'"></td>
   <td class="text-end" th:classappend="${cellClass}"
       th:text="${row.hasTotalRevenue()} ? #{main.budget.format.amount(${row.totalRevenueEuro()})} : '—'"></td>
-  <td class="text-end" th:if="${section.hasFlatRateData()}" th:classappend="${cellClass}"
+  <td class="text-end" th:if="${columns.flatRate()}" th:classappend="${cellClass}"
       th:text="${row.hasFlatRateRevenue()} ? #{main.budget.format.amount(${row.flatRateRevenueEuro()})} : '—'"></td>
-  <td class="text-end" th:if="${section.hasBudgetColumn()}" th:classappend="${cellClass}"
+  <td class="text-end" th:if="${columns.budget()}" th:classappend="${cellClass}"
       th:text="${row.hasBudget()} ? #{main.budget.format.amount(${row.budgetEuro()})} : '—'"></td>
-  <td class="text-end" th:if="${section.hasBudgetColumn()}"
+  <td class="text-end" th:if="${columns.budget()}"
       th:classappend="${cellClass} + (${row.hasBudgetPercent() and row.budgetUsedPercent() > 100} ? ' text-danger' : '')"
       th:text="${row.hasBudgetPercent()} ? (${#numbers.formatDecimal(row.budgetUsedPercent(), 1, 1)} + ' %') : '—'"></td>
-  <td class="text-end" th:if="${section.hasOverrunData()}"
+  <td class="text-end" th:if="${columns.overrun()}"
       th:classappend="${cellClass} + (${row.hasOverrun()} ? ' text-danger' : '')"
       th:text="${row.hasOverrun()} ? #{main.budget.format.amount(${row.overrunEuro()})} : '—'"></td>
   <td class="text-end" th:if="${isManager}" th:classappend="${cellClass}"
@@ -117,9 +136,16 @@
   <td class="text-end" th:if="${isManager}"
       th:classappend="${cellClass} + (${row.hasGrossProfit() and row.grossProfitEuro().signum() < 0} ? ' text-danger' : '')"
       th:text="${row.hasGrossProfit()} ? #{main.budget.format.amount(${row.grossProfitEuro()})} : '—'"></td>
-  <td class="text-end" th:if="${isManager and section.hasGrossProfitMarginData()}"
+  <td class="text-end" th:if="${isManager and columns.grossProfitMargin()}"
       th:classappend="${cellClass} + (${row.hasGrossProfitMargin() and row.grossProfitMarginPercent() < 0} ? ' text-danger' : '')"
       th:text="${row.hasGrossProfitMargin()} ? (${#numbers.formatDecimal(row.grossProfitMarginPercent(), 1, 1)} + ' %') : '—'"></td>
+  <td class="text-end" th:if="${actionUrl != null}">
+    <a class="btn btn-outline-primary btn-sm text-nowrap" th:if="${!#strings.isEmpty(actionUrl)}"
+       th:href="${actionUrl}">
+      <i class="icon ti ti-chart-bar"></i>
+      <span th:text="#{main.controlling.bysegment.open}">Controlling</span>
+    </a>
+  </td>
 </tr>
 
 </body>

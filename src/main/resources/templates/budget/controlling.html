@@ -114,5 +114,26 @@
     <div th:replace="~{budget/controlling-section :: table(${section}, ${isManager}, ${result.filter().getFrom()})}"></div>
   </div>
 
+  <!--
+    What the order comes to over all its budget plans (#779). Only with more than one section: a
+    single section's total already is the order's, and a card repeating it would raise the question
+    what the two lines differ in. The columns are those of all sections together, so a figure keeps
+    the header it had above.
+  -->
+  <div class="card mb-3" th:if="${result != null and result.hasTotal()}"
+       th:with="columns=${result.totalColumns()}">
+    <div class="card-header">
+      <h3 class="card-title mb-0" th:text="#{main.controlling.total.title}">Gesamt über alle Budgetpläne</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead th:replace="~{budget/controlling-section :: headers(${columns}, ${isManager}, ${result.filter().getFrom()}, #{main.controlling.col.order}, false)}"></thead>
+        <tbody>
+          <tr th:replace="~{budget/controlling-section :: row(${columns}, ${result.total()}, ${isManager}, 'fw-bold', 'table-active fw-bold', null)}"></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </main>
 </html>

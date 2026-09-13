@@ -378,6 +378,57 @@ public class BudgetControllingServiceTest {
     assertThat(section.total().revenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
+  // --- the total over all sections of the order (#779) -----------------------------------------
+
+  /**
+   * The line the view gained below the sections, and the very line the segment listing shows for
+   * this order. It has to be the sum of the sections above it, or the two readings of one order
+   * would disagree on the same page.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_total_the_sections_of_the_order() {
+    givenBudgets(plan("H1", null, FROM, JUN, "1000"), plan("H2 co/01", "co/01", JUL, UNTIL, "500"));
+
+    var total = compute().total();
+
+    assertThat(total.bookedHours()).isEqualTo(hoursOverAllSections());
+    assertThat(total.revenueEuro()).isEqualByComparingTo(revenueOverAllSections());
+    // Both plans answer for the order, so their budgets do too.
+    assertThat(total.budgetEuro()).isEqualByComparingTo("1500");
+  }
+
+  /**
+   * The bookings of the unplanned section were worked and earned money, but no plan answers for
+   * them. They raise the revenue of the order without raising its budget.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_count_unassigned_bookings_towards_the_order_total_but_not_towards_its_budget() {
+    // The fixture books 8 h on co/01/D and 8 h on co/02; only the first is covered by the plan.
+    givenBudgets(plan("co/01", "co/01", FROM, UNTIL, "1000"));
+
+    var total = compute().total();
+
+    assertThat(total.bookedHours()).isEqualTo(Duration.ofHours(16));
+    assertThat(total.revenueEuro()).isEqualByComparingTo("1600.00");
+    assertThat(total.budgetEuro()).isEqualByComparingTo("1000");
+  }
+
+  /** A single section is the order already; a second line repeating it would explain nothing. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_offer_no_total_where_one_section_already_is_the_order() {
+    givenSuborders(suborder("01", 'Y', 10L, null));
+    givenReports(eightHoursOn(10L, IN_H1));
+    givenBudgets(plan("year", null, FROM, UNTIL, "2000"));
+
+    var result = compute();
+
+    assertThat(result.sections()).hasSize(1);
+    assertThat(result.hasTotal()).isFalse();
+  }
+
   // --- budget in full, hours split at the window start (#917) ----------------------------------
 
   /**

@@ -195,6 +195,13 @@
                      th:text="#{main.controlling.title}">
                     Soll-Ist-Controlling
                   </a>
+                  <!-- Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779) -->
+                  <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
+                     th:href="@{/budget/controlling/by-segment}"
+                     th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''"
+                     th:text="#{main.controlling.bysegment.title}">
+                    Controlling nach Kundensegment
+                  </a>
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/bulk-assignment}"
                      th:classappend="${subSection == 'bulk-assignment'} ? 'active' : ''"
