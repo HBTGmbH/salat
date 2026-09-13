@@ -3,6 +3,8 @@ package org.tb.budget.domain;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.util.List;
+import java.util.function.Function;
 import lombok.Builder;
 
 /**
@@ -15,7 +17,7 @@ import lombok.Builder;
  * <p>Built through the generated builder — the constructor grew to fourteen positional arguments and
  * broke every test twice when a field was added.
  */
-@Builder
+@Builder(toBuilder = true)
 public record BudgetControllingRow(
     String sign,
     String label,
@@ -47,6 +49,55 @@ public record BudgetControllingRow(
      */
     boolean flatRate
 ) {
+
+    /**
+     * The sum over several lines: a group subtotal, a section total, the total over the sections of
+     * an order (#779) or the total over the orders of a segment.
+     *
+     * <p>Only the absolute figures are added. Everything relative — consumption, budget utilization,
+     * margin — is derived from them by the accessors above, so an aggregate is computed from its own
+     * sums and never from the percentages of its parts. Averaging those would weight a line that
+     * booked an hour like one that booked a thousand.
+     *
+     * <p>{@code budgetEuro} is passed in rather than summed: a budget belongs to a plan, and the
+     * lines below it carry none. Where several plans answer for one sum, the caller adds their
+     * budgets; where no plan does, it passes {@code null} and the budget columns stay empty.
+     *
+     * @param includeCosts whether cost is reported at all. Without the privilege it is not summed
+     *                     but left {@code null}, which is what keeps the cost columns away — a
+     *                     summed zero would look like a genuine figure.
+     */
+    public static BudgetControllingRow sum(String sign, String label, List<BudgetControllingRow> rows,
+                                           BigDecimal budgetEuro, boolean includeCosts) {
+        return BudgetControllingRow.builder()
+            .sign(sign)
+            .label(label)
+            .plannedHours(sumHours(rows, BudgetControllingRow::plannedHours))
+            .bookedHoursBeforeWindow(sumHours(rows, BudgetControllingRow::bookedHoursBeforeWindow))
+            .bookedHours(sumHours(rows, BudgetControllingRow::bookedHours))
+            .budgetEuro(budgetEuro)
+            .revenueEuro(sumAmount(rows, BudgetControllingRow::revenueEuro))
+            .flatRateRevenueEuro(sumAmount(rows, BudgetControllingRow::flatRateRevenueEuro))
+            .costEuro(includeCosts ? sumAmount(rows, BudgetControllingRow::costEuro) : null)
+            .build();
+    }
+
+    /** The budgets of several lines, or {@code null} where not one of them carries a budget. */
+    public static BigDecimal sumBudget(List<BudgetControllingRow> rows) {
+        var budgets = rows.stream().map(BudgetControllingRow::budgetEuro).filter(b -> b != null).toList();
+        return budgets.isEmpty() ? null : budgets.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private static Duration sumHours(List<BudgetControllingRow> rows,
+                                     Function<BudgetControllingRow, Duration> hours) {
+        return rows.stream().map(hours).filter(d -> d != null).reduce(Duration.ZERO, Duration::plus);
+    }
+
+    private static BigDecimal sumAmount(List<BudgetControllingRow> rows,
+                                        Function<BudgetControllingRow, BigDecimal> amount) {
+        return rows.stream().map(amount).map(BudgetControllingRow::orZero)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
     public double bookedPercent() {
         if (plannedHours == null || plannedHours.isZero()) return 0.0;

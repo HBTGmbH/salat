@@ -475,25 +475,14 @@ public class BudgetControllingService {
         return row != null && row.hasBudgetPercent() ? row.budgetUsedPercent() : null;
     }
 
+    /**
+     * Subtotals and section totals. The summing itself lives on the row (#779), because the total
+     * over the sections of an order and the one over the orders of a segment are the same operation
+     * and must not be written a second time.
+     */
     private BudgetControllingRow aggregate(String sign, String label, List<BudgetControllingRow> rows,
                                            BigDecimal budget, boolean includeCosts) {
-        var revenue = rows.stream().map(BudgetControllingRow::revenueEuro).reduce(BigDecimal.ZERO, BigDecimal::add);
-        var flatRateRevenue = rows.stream().map(BudgetControllingRow::flatRateRevenueEuro)
-            .map(amount -> amount == null ? BigDecimal.ZERO : amount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return BudgetControllingRow.builder()
-            .sign(sign)
-            .label(label)
-            .plannedHours(rows.stream().map(BudgetControllingRow::plannedHours).reduce(Duration.ZERO, Duration::plus))
-            .bookedHoursBeforeWindow(rows.stream().map(BudgetControllingRow::bookedHoursBeforeWindow)
-                .reduce(Duration.ZERO, Duration::plus))
-            .bookedHours(rows.stream().map(BudgetControllingRow::bookedHours).reduce(Duration.ZERO, Duration::plus))
-            .budgetEuro(budget)
-            .revenueEuro(revenue)
-            .flatRateRevenueEuro(flatRateRevenue)
-            .costEuro(includeCosts
-                ? rows.stream().map(BudgetControllingRow::costEuro).reduce(BigDecimal.ZERO, BigDecimal::add) : null)
-            .build();
+        return BudgetControllingRow.sum(sign, label, rows, budget, includeCosts);
     }
 
     /**

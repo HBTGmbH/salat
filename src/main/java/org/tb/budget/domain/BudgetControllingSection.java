@@ -33,6 +33,15 @@ public record BudgetControllingSection(
         return total.hasContent();
     }
 
+    /**
+     * The optional columns this section shows. Gathered into one object so that the total over the
+     * sections can be rendered by the same fragment and under the same headers (#779).
+     */
+    public BudgetControllingColumns columns() {
+        return new BudgetControllingColumns(hasBookedBeforeWindowData(), hasPlannedData(),
+            hasFlatRateData(), hasBudgetColumn(), hasOverrunData(), hasGrossProfitMarginData());
+    }
+
     public List<BudgetControllingRow> rows() {
         return groups.stream().flatMap(g -> g.rows().stream()).toList();
     }
