@@ -5,7 +5,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ import org.tb.budget.viewhelper.AssignedTimereportViewHelper;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
@@ -234,25 +232,25 @@ public class BudgetController {
      * The bookings assigned to the plan, and where they could be moved to (#912).
      *
      * <p>The period defaults to the plan's validity, which is where its bookings are. A plan can
-     * hold hundreds of them, so the list is capped and says so — the alternative would be a page
+     * hold thousands of them, so the list is capped and says so — the alternative would be a page
      * that takes seconds to render and is unusable exactly for the plans that need attention.
+     *
+     * <p>Sorting, capping and the figures of the header all come out of the database already shaped
+     * (#997); nothing is counted or reordered here.
      */
     private void addAssignedTimereports(OrderBudget budget, LocalDate from, LocalDate until, Model model) {
         var periodFrom = from != null ? from : budget.getValidFrom();
         var periodUntil = until != null ? until : budget.getValidUntil();
-        var assigned = assignmentService.getAssignedTimereports(budget.getId(), periodFrom, periodUntil);
+        var assigned = assignmentService.getAssignedBookings(
+            budget.getId(), periodFrom, periodUntil, ASSIGNED_LIST_LIMIT);
 
         model.addAttribute("assignedFrom", periodFrom);
         model.addAttribute("assignedUntil", periodUntil);
-        model.addAttribute("assignedCount", assigned.size());
-        model.addAttribute("assignedHours", DurationUtils.format(assigned.stream()
-            .map(TimereportDTO::getDuration)
-            .reduce(Duration.ZERO, Duration::plus)));
-        // Youngest first, and capped only after sorting — see AssignedTimereportViewHelper (#997).
-        model.addAttribute("assignedTimereports",
-            AssignedTimereportViewHelper.newestFirst(assigned, ASSIGNED_LIST_LIMIT));
+        model.addAttribute("assignedCount", assigned.count());
+        model.addAttribute("assignedHours", DurationUtils.format(assigned.totalDuration()));
+        model.addAttribute("assignedTimereports", AssignedTimereportViewHelper.from(assigned.newest()));
         model.addAttribute("assignedLimit", ASSIGNED_LIST_LIMIT);
-        model.addAttribute("assignedTruncated", assigned.size() > ASSIGNED_LIST_LIMIT);
+        model.addAttribute("assignedTruncated", assigned.truncated());
         // Only the other active plans of the same order are possible targets: an inactive plan
         // cannot hold bookings, and a plan of another order can never cover them.
         model.addAttribute("moveTargets",

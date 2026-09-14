@@ -14,7 +14,11 @@ import org.tb.order.domain.OrderType;
  * Timereports are very sensitive information. Thus we need to care about time reports in a special kind of way
  * to protect the data from unintended access or modification. This is why we are using a special class to
  * copy the entity data to a DTO and use it outside the {@link org.tb.dailyreport.service.TimereportService}.
- * Only {@link org.tb.dailyreport.service.TimereportService} should use {@link Timereport} directly.
+ *
+ * <p>{@link Timereport} entities stay inside this module: they are not handed to another module, and
+ * another module's query may join them but must return a record or DTO of its own rather than the
+ * entity (→ ADR-0021). This DTO is the copy for callers that want the whole booking; a module that
+ * needs three of its columns is better served by a record naming those three.
  */
 @Data
 @Builder

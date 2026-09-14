@@ -9,7 +9,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -25,6 +27,8 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.budget.domain.AssignedBooking;
+import org.tb.budget.domain.AssignedBookingTotals;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
 import org.tb.budget.persistence.OrderBudgetRepository;
@@ -63,6 +67,7 @@ public class TimereportBudgetAssignmentServiceTest {
   private BudgetAuthorization budgetAuthorization;
   private TimereportService timereportService;
   private CustomerorderService customerorderService;
+  private SuborderService suborderService;
   private AuthorizedUser authorizedUser;
   private TimereportBudgetAssignmentService service;
 
@@ -75,7 +80,7 @@ public class TimereportBudgetAssignmentServiceTest {
     budgetAuthorization = mock(BudgetAuthorization.class);
     timereportService = mock(TimereportService.class);
     customerorderService = mock(CustomerorderService.class);
-    var suborderService = mock(SuborderService.class);
+    suborderService = mock(SuborderService.class);
     authorizedUser = mock(AuthorizedUser.class);
     when(authorizedUser.isManager()).thenReturn(true);
 
@@ -143,7 +148,7 @@ public class TimereportBudgetAssignmentServiceTest {
     // for the manual check and for the automatic assignment.
     var budgetResolver = new BudgetResolver(orderBudgetRepository, suborderService);
     service = new TimereportBudgetAssignmentService(assignmentRepository, orderBudgetRepository,
-        budgetAuthorization, timereportService, budgetResolver, customerorderService, authorizedUser);
+        budgetAuthorization, timereportService, budgetResolver, suborderService, authorizedUser);
   }
 
   // --- assigning ------------------------------------------------------------------------------
@@ -488,23 +493,81 @@ public class TimereportBudgetAssignmentServiceTest {
   @Test
   public void should_list_the_bookings_assigned_to_a_plan_within_the_period() {
     givenPlan(7L, "CO", null, JAN, DEC, true);
-    givenReport(100L, "CO", 1L, MAR);
-    givenReport(101L, "CO", 1L, JUN);
-    service.assign(100L, 7L);
-    when(assignmentRepository.findTimereportIdsByOrderBudgetId(7L)).thenReturn(List.of(100L));
+    givenAssignedBookings(7L, 2, Duration.ofHours(3), assignedBooking(100L, MAR, 2L));
 
-    var assigned = service.getAssignedTimereports(7L, JAN, DEC);
+    var assigned = service.getAssignedBookings(7L, JAN, DEC, 200);
 
-    assertThat(assigned).extracting(TimereportDTO::getId).containsExactly(100L);
+    assertThat(assigned.newest()).extracting(AssignedBooking::id).containsExactly(100L);
+    assertThat(assigned.count()).isEqualTo(2);
+    assertThat(assigned.totalDuration()).isEqualTo(Duration.ofHours(3));
+  }
+
+  /**
+   * The list is capped, the figures are not — so a plan with more bookings than the page shows still
+   * reports what it really holds, and says that the list was shortened.
+   */
+  @Test
+  public void should_report_the_figures_of_the_whole_period_next_to_the_capped_list() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenAssignedBookings(7L, 5000, Duration.ofHours(4000), assignedBooking(100L, MAR, 1L));
+
+    var assigned = service.getAssignedBookings(7L, JAN, DEC, 1);
+
+    assertThat(assigned.count()).isEqualTo(5000);
+    assertThat(assigned.truncated()).isTrue();
+  }
+
+  /** The full order sign of a suborder cannot come out of the query; the service fills it in. */
+  @Test
+  public void should_complete_the_bookings_with_the_full_order_sign_of_their_suborder() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    givenAssignedBookings(7L, 2, Duration.ofHours(2),
+        assignedBooking(100L, MAR, 2L), assignedBooking(101L, JUN, 2L));
+
+    var assigned = service.getAssignedBookings(7L, JAN, DEC, 200);
+
+    assertThat(assigned.newest()).extracting(AssignedBooking::suborderSign)
+        .containsExactly("CO/01/02", "CO/01/02");
+    // Resolved once for the suborder the two bookings share, not once per booking.
+    verify(suborderService, times(1)).getSuborderById(2L);
   }
 
   /** Nothing assigned means no booking query at all. */
   @Test
   public void should_list_nothing_for_a_plan_without_assignments() {
     givenPlan(7L, "CO", null, JAN, DEC, true);
-    when(assignmentRepository.findTimereportIdsByOrderBudgetId(7L)).thenReturn(List.of());
+    when(assignmentRepository.findAssignedBookingTotals(eq(7L), any(), any()))
+        .thenReturn(new AssignedBookingTotals(0L, null));
 
-    assertThat(service.getAssignedTimereports(7L, JAN, DEC)).isEmpty();
+    var assigned = service.getAssignedBookings(7L, JAN, DEC, 200);
+
+    assertThat(assigned.newest()).isEmpty();
+    assertThat(assigned.count()).isZero();
+    assertThat(assigned.totalDuration()).isEqualTo(Duration.ZERO);
+    verify(assignmentRepository, never()).findAssignedBookings(anyLong(), any(), any(), any());
+  }
+
+  /** Reading the bookings of a plan requires access to that plan. */
+  @Test
+  public void should_refuse_the_bookings_of_a_plan_the_user_may_not_see() {
+    givenPlan(7L, "CO", null, JAN, DEC, true);
+    doThrow(new AuthorizationException(ErrorCode.BU_ORDER_NOT_AUTHORIZED, "CO"))
+        .when(budgetAuthorization).checkAuthorized(any());
+
+    assertThatThrownBy(() -> service.getAssignedBookings(7L, JAN, DEC, 200))
+        .isInstanceOf(AuthorizationException.class);
+  }
+
+  private void givenAssignedBookings(long budgetId, long count, Duration total, AssignedBooking... newest) {
+    when(assignmentRepository.findAssignedBookingTotals(eq(budgetId), any(), any()))
+        .thenReturn(new AssignedBookingTotals(count, total.toMinutes()));
+    when(assignmentRepository.findAssignedBookings(eq(budgetId), any(), any(), any()))
+        .thenReturn(List.of(newest));
+  }
+
+  private static AssignedBooking assignedBooking(long id, LocalDate day, long suborderId) {
+    return new AssignedBooking(id, day, suborderId, null, "abc", "Abc Person",
+        Duration.ofHours(1), "task");
   }
 
   @Test

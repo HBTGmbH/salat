@@ -24,6 +24,12 @@ See also README.md
   - Modules publish domain/application events via Spring’s ApplicationEventPublisher (or related facilities).
   - Other modules subscribe to these events using event listeners.
   - Events should carry stable, minimal data contracts to reduce coupling.
+- **Reading across a module boundary that the import direction allows** (→ ADR-0021): a module may
+  join another module's entities in its own query, but those entities must not leave the query —
+  the result is a record or DTO, a controlled copy. That copy is what makes extracting a module
+  later a replication task instead of a remodelling. Authorization is then the reading service's
+  responsibility; where a per-row filter of the owning module no longer applies, say at the call
+  site why it is moot or covered otherwise.
 
 ## Controller and View Guidelines (target stack)
 - Controllers:

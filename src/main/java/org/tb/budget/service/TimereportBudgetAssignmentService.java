@@ -7,16 +7,19 @@ import static java.util.stream.Collectors.toMap;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.AssignedBooking;
+import org.tb.budget.domain.AssignedBookings;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
 import org.tb.budget.persistence.OrderBudgetRepository;
@@ -27,7 +30,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.TimereportService;
-import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * The explicit assignment of time reports to budget plans. Only the stored assignment counts — a
@@ -47,7 +50,7 @@ public class TimereportBudgetAssignmentService {
     private final BudgetAuthorization budgetAuthorization;
     private final TimereportService timereportService;
     private final BudgetResolver budgetResolver;
-    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
 
     /**
@@ -220,30 +223,54 @@ public class TimereportBudgetAssignmentService {
     }
 
     /**
-     * The bookings assigned to the plan within the period (#912). Reading them requires access to
-     * the plan itself.
+     * The bookings the detail page of a plan lists, youngest first, and the figures above them
+     * (#912, #997). Reading them requires access to the plan itself.
      *
-     * <p>Read as "the bookings of the plan's order in the period, minus those not assigned here"
-     * rather than one lookup per assigned id — a plan holds hundreds of bookings, and this is two
-     * statements instead of hundreds.
+     * <p>Both come out of the database already shaped: the list sorted and capped, the figures
+     * counted and summed over the whole period. It used to read every booking of the plan's
+     * <em>customer order</em> in the period and keep the assigned ones in Java — on a plan with
+     * thousands of bookings that loaded the whole order to render 200 rows.
+     *
+     * <p><b>Authorization.</b> The query joins {@code Timereport} directly and therefore does not
+     * pass the per-booking read filter of {@code TimereportDAO.toDaoList}. On this page that filter
+     * cannot remove anything: {@code BudgetAuthorization} lets only managers and the
+     * {@code responsibleHbt} of the plan's customer order reach it, {@code TimereportAuthorization}
+     * grants READ to exactly those two, and every booking of the plan belongs to that order. Whoever
+     * sees the page may read every row of it.
      */
     @Transactional(readOnly = true)
-    public List<TimereportDTO> getAssignedTimereports(long orderBudgetId, LocalDate from, LocalDate until) {
-        var plan = authorizedBudget(orderBudgetId);
-        var assignedIds = new HashSet<>(assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId));
-        if (assignedIds.isEmpty()) {
-            return List.of();
+    public AssignedBookings getAssignedBookings(long orderBudgetId, LocalDate from, LocalDate until, int limit) {
+        authorizedBudget(orderBudgetId);
+        var totals = assignmentRepository.findAssignedBookingTotals(orderBudgetId, from, until);
+        if (totals == null || totals.bookings() == 0) {
+            return AssignedBookings.NONE;
         }
-        var customerorder = customerorderService.getCustomerorderBySign(plan.getCustomerorderSign());
-        if (customerorder == null) {
-            log.warn("Budget plan {} references the unknown customer order {}",
-                orderBudgetId, plan.getCustomerorderSign());
-            return List.of();
-        }
-        return timereportService.getTimereportsByDatesAndCustomerOrderId(from, until, customerorder.getId())
-            .stream()
-            .filter(report -> assignedIds.contains(report.getId()))
+        var newest = assignmentRepository.findAssignedBookings(orderBudgetId, from, until, Limit.of(limit));
+        return new AssignedBookings(withSuborderSigns(newest), totals.bookings(), totals.totalDuration());
+    }
+
+    /**
+     * Completes the bookings with the full order sign of their suborder.
+     *
+     * <p>{@code Suborder#getCompleteOrderSign()} walks the parent chain of suborders and cannot be
+     * expressed in JPQL, so it is resolved here — once per distinct suborder, not once per booking.
+     * The rendered rows share a handful of suborders between them.
+     */
+    private List<AssignedBooking> withSuborderSigns(List<AssignedBooking> bookings) {
+        var signs = new HashMap<Long, String>();
+        return bookings.stream()
+            .map(booking -> booking.withSuborderSign(
+                signs.computeIfAbsent(booking.suborderId(), this::completeOrderSign)))
             .toList();
+    }
+
+    private String completeOrderSign(long suborderId) {
+        var suborder = suborderService.getSuborderById(suborderId);
+        if (suborder == null) {
+            log.warn("Booking assigned to budget references the unknown suborder {}", suborderId);
+            return null;
+        }
+        return suborder.getCompleteOrderSign();
     }
 
     /**
