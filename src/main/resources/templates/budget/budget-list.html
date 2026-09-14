@@ -91,13 +91,13 @@
             <span th:if="${b.validUntil.year != 2999}" th:text="${#temporals.format(b.validUntil, 'dd.MM.yyyy')}"></span>
             <span th:unless="${b.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
           </td>
-          <!--/* Who booked on this plan (#964), most hours first — signs only. No rates and no
-                 findings: the overview answers the question before those, and the detail page has
+          <!--/* Who booked on this plan (#964), alphabetically — signs only. No hours, no rates and
+                 no findings: the overview answers the question before those, and the detail page has
                  the full card. A plan without bookings leaves the cell empty rather than showing a
                  zero that would read like something went wrong. */-->
           <td class="d-none d-md-table-cell">
             <span th:each="e : ${employees.shown}" class="badge bg-secondary-lt me-1"
-                  th:title="#{main.budget.list.employees.sign.title(${e.employeeName}, ${e.hours})}"
+                  th:title="${e.employeeName}"
                   th:text="${e.employeeSign}"></span>
             <span th:if="${employees.hasMore()}" class="badge bg-secondary-lt"
                   th:title="#{main.budget.list.employees.more.title(${employees.more})}"

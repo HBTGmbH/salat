@@ -15,7 +15,9 @@ import org.tb.common.util.DurationUtils;
  * rate changed or a suborder carries one of its own, and all of them are named rather than one of
  * them chosen.
  *
- * <p>The hours behind each finding travel along so the marks can say how much work they are about.
+ * <p>Two marks, not three: a rate the resolution did not find is one the person needs, while a
+ * suborder that is not invoiceable says nothing about the person at all. Those hours are reported
+ * for the plan as a whole ({@link BudgetEmployeesViewHelper}) and row by row in the booking list.
  */
 public record BudgetEmployeeViewHelper(
     String employeeSign,
@@ -25,11 +27,7 @@ public record BudgetEmployeeViewHelper(
     List<CostCategoryRate> costs,
     List<BigDecimal> pricesEuroPerHour,
     boolean missingCost,
-    boolean missingPrice,
-    boolean notInvoiceable,
-    String hoursWithoutCost,
-    String hoursWithoutPrice,
-    String hoursNotInvoiceable) {
+    boolean missingPrice) {
 
     public static BudgetEmployeeViewHelper from(BudgetEmployee employee) {
         return new BudgetEmployeeViewHelper(
@@ -42,11 +40,7 @@ public record BudgetEmployeeViewHelper(
                 .map(cents -> new BigDecimal(cents).movePointLeft(2))
                 .toList(),
             employee.missingCost(),
-            employee.missingPrice(),
-            employee.hasNotInvoiceable(),
-            DurationUtils.format(employee.durationWithoutCost()),
-            DurationUtils.format(employee.durationWithoutPrice()),
-            DurationUtils.format(employee.durationNotInvoiceable()));
+            employee.missingPrice());
     }
 
     /** Whether any cost category applies at all — an empty list is what the mark stands for. */
