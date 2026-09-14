@@ -215,13 +215,6 @@ public class TimereportBudgetAssignmentService {
             .map(assignment -> assignment.getOrderBudget().getId());
     }
 
-    /** The bookings assigned to the plan. Reading them requires access to the plan itself. */
-    @Transactional(readOnly = true)
-    public List<Long> getAssignedTimereportIds(long orderBudgetId) {
-        authorizedBudget(orderBudgetId);
-        return assignmentRepository.findTimereportIdsByOrderBudgetId(orderBudgetId);
-    }
-
     /**
      * The bookings the detail page of a plan lists, youngest first, and the figures above them
      * (#912, #997). Reading them requires access to the plan itself.

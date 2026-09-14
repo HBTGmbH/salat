@@ -317,16 +317,6 @@ public class TimereportBudgetAssignmentServiceTest {
     assertThat(service.getAssignedBudgetId(100L)).isEmpty();
   }
 
-  /** Reading a plan's bookings goes through the plan, so its authorization check runs. */
-  @Test
-  public void reading_the_bookings_of_a_plan_checks_access_to_the_plan() {
-    var plan = givenPlan(7L, "CO", null, JAN, DEC, true);
-    when(assignmentRepository.findTimereportIdsByOrderBudgetId(7L)).thenReturn(List.of(100L, 101L));
-
-    assertThat(service.getAssignedTimereportIds(7L)).containsExactly(100L, 101L);
-    verify(budgetAuthorization).checkAuthorized(plan);
-  }
-
   // --- automatic assignment while booking (#909) ----------------------------------------------
 
   @Test
@@ -492,7 +482,7 @@ public class TimereportBudgetAssignmentServiceTest {
 
   @Test
   public void should_list_the_bookings_assigned_to_a_plan_within_the_period() {
-    givenPlan(7L, "CO", null, JAN, DEC, true);
+    var plan = givenPlan(7L, "CO", null, JAN, DEC, true);
     givenAssignedBookings(7L, 2, Duration.ofHours(3), assignedBooking(100L, MAR, 2L));
 
     var assigned = service.getAssignedBookings(7L, JAN, DEC, 200);
@@ -500,6 +490,8 @@ public class TimereportBudgetAssignmentServiceTest {
     assertThat(assigned.newest()).extracting(AssignedBooking::id).containsExactly(100L);
     assertThat(assigned.count()).isEqualTo(2);
     assertThat(assigned.totalDuration()).isEqualTo(Duration.ofHours(3));
+    // Reading a plan's bookings goes through the plan, so its authorization check runs.
+    verify(budgetAuthorization).checkAuthorized(plan);
   }
 
   /**
