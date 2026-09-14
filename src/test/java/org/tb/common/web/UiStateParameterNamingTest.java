@@ -41,8 +41,12 @@ class UiStateParameterNamingTest {
     private static final Pattern POST_FORM = Pattern.compile(
         "<form[^>]*method=\"post\"[^>]*>(.*?)</form>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-    /** A URL ending in {@code /create} that hands over a parameter, in a template or in Java. */
-    private static final Pattern CREATE_LINK = Pattern.compile("/create[^\"'\n]*?\\b(f[A-Z][A-Za-z0-9]*)=");
+    /**
+     * A URL opening a create form — {@code /create} or the booking form's {@code /new} — that
+     * hands over a parameter, in a template or in Java.
+     */
+    private static final Pattern CREATE_LINK =
+        Pattern.compile("/(?:create|new)[^\"'\n]*?\\b(f[A-Z][A-Za-z0-9]*)=");
 
     private final Set<String> registeredParams = registry().getParamToKey().keySet();
 
@@ -106,10 +110,15 @@ class UiStateParameterNamingTest {
     }
 
     /**
-     * A button that opens a create form must not carry a filter parameter: the filter would be
-     * rewritten by the click (ADR-0023). Where the new entry should start out with the current
-     * selection, the fallback delivers it anyway; where it should start out with something else,
-     * the link names the form field, not the filter.
+     * A button that opens a create form must not carry a filter parameter. Two things go wrong at
+     * once: the click rewrites the filter (ADR-0023), and an <em>empty</em> value — the usual case,
+     * because the link renders whatever the list happens to have — is a parameter that is present,
+     * so {@code UiStateParameterRequestWrapper} stops supplying the remembered one. The form then
+     * opens with nothing preselected, which is the opposite of the intent.
+     *
+     * <p>A deeplink into a create form stays possible; it names the <em>form field</em> —
+     * {@code ?customerorderId=42} — not the filter. A create button without such a context passes
+     * nothing at all and lets the fallback do its work.
      */
     @Test
     void noCreateLinkCarriesAFilterParameter() throws IOException {
@@ -119,7 +128,7 @@ class UiStateParameterNamingTest {
                 Matcher link = CREATE_LINK.matcher(content);
                 while (link.find()) {
                     if (registeredParams.contains(link.group(1))) {
-                        offending.add(file + ": /create…" + link.group(1) + "=");
+                        offending.add(file + ": " + link.group());
                     }
                 }
             }, ".html", ".java");

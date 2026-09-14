@@ -77,6 +77,12 @@ gleichermaßen: Auch eine Änderung kann einen Eintrag aus dem Filter herausfall
 `UiStateFilter` übernimmt jeden Filterparameter, den eine Anfrage mitbringt — auch den eines
 Links. Ein „Neu"-Knopf, der `?fCustomerId=…` anhängt, schreibt den Filter also beim Klick neu.
 
+Schlimmer noch ist der Regelfall, dass der Wert **leer** ist. Der Link rendert, was die Liste beim
+Aufbau der Seite gerade hatte; war das nichts, steht `?fCustomerId=` in der URL. Ein vorhandener
+Parameter ist aber ein Parameter — `UiStateParameterRequestWrapper` liefert den gemerkten Wert nur
+dort nach, wo die Anfrage **keinen** mitbringt. Der leere Parameter schaltet den Fallback also ab,
+und das Formular öffnet ohne Vorauswahl: das Gegenteil dessen, wofür der Parameter gedacht war.
+
 - **Der Link übergibt nichts.** Soll das neue Formular mit der aktuellen Auswahl starten, liefert
   der Fallback sie ohnehin an `createForm`; der Parameter im Link wäre nur eine Wiederholung mit
   Nebenwirkung. Die „Neu"-Knöpfe der Auftrags-, Unterauftrags- und Mitarbeiterauftragslisten zeigen
