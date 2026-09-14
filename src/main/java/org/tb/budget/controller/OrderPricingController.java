@@ -3,6 +3,7 @@ package org.tb.budget.controller;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.tb.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import org.tb.budget.service.OrderPricingService;
 import org.tb.budget.viewhelper.CustomerorderFilterOption;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
@@ -46,6 +48,7 @@ public class OrderPricingController {
     private final CustomerorderViewHelper customerorderViewHelper;
     private final AuthorizedUser authorizedUser;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final FilterHintViewHelper filterHintViewHelper;
     private final MessageSourceAccessor messages;
 
     /**
@@ -58,16 +61,16 @@ public class OrderPricingController {
      * current rate can hang off an order that ended last year.
      */
     @GetMapping
-    public String list(@RequestParam(required = false) String coSign,
-                       @RequestParam(required = false) Boolean pricingShowInactive,
-                       @RequestParam(required = false) Boolean pricingShowExpiredOrders,
+    public String list(@RequestParam(required = false) String fCustomerOrderSign,
+                       @RequestParam(required = false) Boolean fPricingShowInactive,
+                       @RequestParam(required = false) Boolean fPricingShowExpiredOrders,
                        Model model) {
-        var inactive = Boolean.TRUE.equals(pricingShowInactive);
-        var expiredOrders = Boolean.TRUE.equals(pricingShowExpiredOrders);
+        var inactive = Boolean.TRUE.equals(fPricingShowInactive);
+        var expiredOrders = Boolean.TRUE.equals(fPricingShowExpiredOrders);
         // The rows name their order by sign; description, customer and validity hang off the order.
-        model.addAttribute("rows", orderPricingService.getRows(coSign, inactive, expiredOrders));
+        model.addAttribute("rows", orderPricingService.getRows(fCustomerOrderSign, inactive, expiredOrders));
         model.addAttribute("customerorderOptions", filterOptions());
-        model.addAttribute("coSign", coSign);
+        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
         model.addAttribute("showInactive", inactive);
         model.addAttribute("showExpiredOrders", expiredOrders);
         model.addAttribute("isManager", authorizedUser.isManager());
@@ -81,11 +84,11 @@ public class OrderPricingController {
      */
     @Authorized(requiresManager = true)
     @GetMapping("/create")
-    public String createForm(@RequestParam(required = false) String coSign,
+    public String createForm(@RequestParam(required = false) String fCustomerOrderSign,
                              @RequestParam(required = false) String employeeSign,
                              Model model) {
         var form = new OrderPricingForm();
-        form.setCustomerorderSign(trimToNull(coSign));
+        form.setCustomerorderSign(trimToNull(fCustomerOrderSign));
         form.setEmployeeSign(trimToNull(employeeSign));
         addFormModel(model, form, false);
         return "budget/pricing-form";
@@ -150,10 +153,12 @@ public class OrderPricingController {
         try {
             if (form.isNew()) {
                 orderPricingService.save(data);
-                redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.pricing.message.created"));
+                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                    messages.getMessage("main.pricing.message.created"), CUSTOMER_ORDER_SIGN));
             } else {
                 orderPricingService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.pricing.message.updated"));
+                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                    messages.getMessage("main.pricing.message.updated"), CUSTOMER_ORDER_SIGN));
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

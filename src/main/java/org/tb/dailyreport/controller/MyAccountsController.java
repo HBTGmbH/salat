@@ -60,8 +60,8 @@ public class MyAccountsController {
     private final EmployeeService employeeService;
 
     @GetMapping
-    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
-        var contract = currentContract(employeeContractId);
+    public String show(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
+        var contract = currentContract(fEmployeeContractId);
         var today = today();
         var currentYear = today.getYear();
         var yearStart = LocalDate.of(currentYear, 1, 1);
@@ -89,8 +89,8 @@ public class MyAccountsController {
 
     @PostMapping("/overtime/correct")
     @PreAuthorize("hasRole('MANAGER')")
-    public String correctOvertime(@RequestParam(required = false) Long employeeContractId, RedirectAttributes redirectAttributes) {
-        var contract = currentContract(employeeContractId);
+    public String correctOvertime(@RequestParam(required = false) Long fEmployeeContractId, RedirectAttributes redirectAttributes) {
+        var contract = currentContract(fEmployeeContractId);
         overtimeService.updateOvertimeStatic(contract.getId());
         redirectAttributes.addFlashAttribute("toastSuccess",
             messageSourceAccessor.getMessage("main.overtime.employeecontract.correct.label"));
@@ -347,9 +347,9 @@ public class MyAccountsController {
         return timereport.isTraining() || COMPLETE_ORDER_SIGN_TRAINING.equals(timereport.getCompleteOrderSign());
     }
 
-    private Employeecontract currentContract(Long employeeContractId) {
-        if (employeeContractId != null && employeeContractId > 0) {
-            var contract = employeecontractService.getEmployeecontractById(employeeContractId);
+    private Employeecontract currentContract(Long fEmployeeContractId) {
+        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            var contract = employeecontractService.getEmployeecontractById(fEmployeeContractId);
             if (contract != null) return contract;
         }
         var loginEmployee = employeeService.getLoginEmployee();

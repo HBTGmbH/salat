@@ -15,16 +15,16 @@
         <div class="row g-2 align-items-end">
           <div class="col-md-8">
             <label class="form-label" th:text="#{main.employeecontract.employee.text}">Employee</label>
-            <select class="form-select tomselect" name="eoEmployeeContractId">
+            <select class="form-select tomselect" name="fEmployeeOrderEmployeeContractId">
               <option value="" th:text="#{main.employee.select.please}">--- Please select ---</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
                       th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}"
-                      th:selected="${eoEmployeeContractId != null and eoEmployeeContractId == ec.id}"></option>
+                      th:selected="${fEmployeeOrderEmployeeContractId != null and fEmployeeOrderEmployeeContractId == ec.id}"></option>
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
-            <a id="create-button" class="btn btn-success" th:href="@{/orders/employeeorders/create(orderId=${orderId}, employeeContractId=${employeeContractId}, customerId=${customerId}, suborderId=${suborderId})}">
+            <a id="create-button" class="btn btn-success" th:href="@{/orders/employeeorders/create(fCustomerOrderId=${fCustomerOrderId}, fEmployeeOrderEmployeeContractId=${fEmployeeOrderEmployeeContractId}, fCustomerId=${fCustomerId}, fSuborderId=${fSuborderId})}">
               <i class="icon ti ti-file-plus"></i>
               <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>
             </a>
@@ -34,22 +34,22 @@
         <div class="row g-2 mt-2">
           <div class="col-md-4">
             <label class="form-label" th:text="#{main.customerorder.customer.text}">Customer</label>
-            <select class="form-select tomselect" name="customerId" th:attr="data-value=${customerId}">
+            <select class="form-select tomselect" name="fCustomerId" th:attr="data-value=${fCustomerId}">
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
                       th:text="|${c.shortname} - ${c.name}| + ${@hiddenMarkerViewHelper.suffix(c.hide)}"
-                      th:selected="${customerId != null and customerId == c.id}"></option>
+                      th:selected="${fCustomerId != null and fCustomerId == c.id}"></option>
             </select>
           </div>
           <div class="col-md-4" id="order-select-wrapper">
             <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
-            <select class="form-select tomselect" name="orderId" th:attr="data-value=${orderId}">
+            <select class="form-select tomselect" name="fCustomerOrderId" th:attr="data-value=${fCustomerOrderId}">
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${orders}"
                       th:value="${co.id}"
                       th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                      th:selected="${orderId != null and orderId == co.id}"></option>
+                      th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
             </select>
           </div>
         </div>
@@ -68,7 +68,7 @@
         <div class="collapse mt-3" id="advanced-filters">
           <div class="row g-2 align-items-end">
             <div class="col-md-4">
-              <input type="text" class="form-control" name="eoFilter" th:value="${eoFilter}"
+              <input type="text" class="form-control" name="fEmployeeOrderFilter" th:value="${fEmployeeOrderFilter}"
                      th:placeholder="#{main.general.filter.text}" />
             </div>
             <div class="col-auto">
@@ -80,34 +80,34 @@
           <div class="row g-2 align-items-end mt-2">
             <div class="col-md-4" id="suborder-select-wrapper">
               <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
-              <select class="form-select tomselect" name="suborderId" th:attr="data-value=${suborderId}">
+              <select class="form-select tomselect" name="fSuborderId" th:attr="data-value=${fSuborderId}">
                 <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
                 <option th:each="so : ${suborders}"
                         th:value="${so.id}"
                         th:text="${so.completeOrderSign + ' - ' + so.shortdescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
-                        th:selected="${suborderId != null and suborderId == so.id}"></option>
+                        th:selected="${fSuborderId != null and fSuborderId == so.id}"></option>
               </select>
             </div>
           </div>
           <div class="row g-2 align-items-end mt-2">
             <div class="col-auto ms-2">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="eoShowInvalid" value="true" th:checked="${eoShowInvalid}"/>
-                <input type="hidden" name="eoShowInvalid" value="false"/>
+                <input class="form-check-input" type="checkbox" name="fEmployeeOrderShowInvalid" value="true" th:checked="${fEmployeeOrderShowInvalid}"/>
+                <input type="hidden" name="fEmployeeOrderShowInvalid" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showexpired.text}">Show expired</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="eoShowHidden" value="true" th:checked="${eoShowHidden}"/>
-                <input type="hidden" name="eoShowHidden" value="false"/>
+                <input class="form-check-input" type="checkbox" name="fEmployeeOrderShowHidden" value="true" th:checked="${fEmployeeOrderShowHidden}"/>
+                <input type="hidden" name="fEmployeeOrderShowHidden" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showhidden.text}">Show hidden</span>
               </label>
             </div>
             <div class="col-auto">
               <label class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="eoShowActualHours" value="true" th:checked="${eoShowActualHours}"/>
-                <input type="hidden" name="eoShowActualHours" value="false"/>
+                <input class="form-check-input" type="checkbox" name="fEmployeeOrderShowActualHours" value="true" th:checked="${fEmployeeOrderShowActualHours}"/>
+                <input type="hidden" name="fEmployeeOrderShowActualHours" value="false"/>
                 <span class="form-check-label" th:text="#{main.general.showactualhoursflag.text}">Show actual hours</span>
               </label>
             </div>
@@ -129,8 +129,8 @@
           <th th:text="#{main.employeeorder.suborder.text}">Suborder</th>
           <th class="d-none d-md-table-cell" th:text="#{main.employeeorder.valid.text}">Valid</th>
           <th class="d-none d-md-table-cell" th:text="#{main.general.debithours.text}">Debit Hours</th>
-          <th class="d-none d-md-table-cell" th:if="${eoShowActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
-          <th class="d-none d-md-table-cell" th:if="${eoShowActualHours}" th:text="#{main.general.difference.text}">Diff</th>
+          <th class="d-none d-md-table-cell" th:if="${fEmployeeOrderShowActualHours}" th:text="#{main.general.showactualhours.text}">Actual</th>
+          <th class="d-none d-md-table-cell" th:if="${fEmployeeOrderShowActualHours}" th:text="#{main.general.difference.text}">Diff</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Flags</th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
           <th th:if="${#authorization.expression('hasRole(''MANAGER'')')}" class="w-1"></th>
@@ -164,10 +164,10 @@
               <span th:if="${eo.debithoursunit == 12}" class="badge bg-warning-lt" th:title="#{main.general.month.text}"><i class="icon bi-calendar-date"></i></span>
             </span>
           </td>
-          <td class="d-none d-md-table-cell" th:if="${eoShowActualHours}">
+          <td class="d-none d-md-table-cell" th:if="${fEmployeeOrderShowActualHours}">
             <span th:text="${@durationUtils.format(eo.duration)}">0:00</span>
           </td>
-          <td class="d-none d-md-table-cell" th:if="${eoShowActualHours}">
+          <td class="d-none d-md-table-cell" th:if="${fEmployeeOrderShowActualHours}">
             <span th:if="${eo.difference != null and eo.difference.negative}" class="text-danger"
                   th:text="${@durationUtils.format(eo.difference)}">0:00</span>
             <span th:if="${eo.difference != null and !eo.difference.negative}"
@@ -196,27 +196,27 @@
   <div th:if="${htmxRequest}">
     <div id="order-select-wrapper" class="col-md-4" hx-swap-oob="true">
       <label class="form-label" th:text="#{main.customerorder.order.text}">Order</label>
-      <select class="form-select tomselect" name="orderId" th:attr="data-value=${orderId}" onchange="form.requestSubmit()">
+      <select class="form-select tomselect" name="fCustomerOrderId" th:attr="data-value=${fCustomerOrderId}" onchange="form.requestSubmit()">
         <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
         <option th:each="co : ${orders}"
                 th:value="${co.id}"
                 th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
-                th:selected="${orderId != null and orderId == co.id}"></option>
+                th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
       </select>
     </div>
     <div id="suborder-select-wrapper" class="col-md-4" hx-swap-oob="true">
       <label class="form-label" th:text="#{main.employeeorder.suborder.text}">Suborder</label>
-      <select class="form-select tomselect" name="suborderId" th:attr="data-value=${suborderId}" onchange="form.requestSubmit()">
+      <select class="form-select tomselect" name="fSuborderId" th:attr="data-value=${fSuborderId}" onchange="form.requestSubmit()">
         <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
         <option th:each="so : ${suborders}"
                 th:value="${so.id}"
                 th:text="${so.completeOrderSign + ' - ' + so.shortdescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
-                th:selected="${suborderId != null and suborderId == so.id}"></option>
+                th:selected="${fSuborderId != null and fSuborderId == so.id}"></option>
       </select>
     </div>
     <a id="create-button"
        class="btn btn-success"
-       th:href="@{/orders/employeeorders/create(orderId=${orderId}, employeeContractId=${employeeContractId}, customerId=${customerId}, suborderId=${suborderId})}"
+       th:href="@{/orders/employeeorders/create(fCustomerOrderId=${fCustomerOrderId}, fEmployeeOrderEmployeeContractId=${fEmployeeOrderEmployeeContractId}, fCustomerId=${fCustomerId}, fSuborderId=${fSuborderId})}"
        hx-swap-oob="true">
       <i class="icon ti ti-file-plus"></i>
       <span th:text="#{main.general.button.createemployeeorder.text}">New Employee Order</span>

@@ -108,7 +108,7 @@
              would land on the remembered month again instead of the current one (#923) */-->
       <a class="btn btn-sm btn-outline-secondary"
          th:with="currentYearMonth=${@dateUtils.currentYearMonth}"
-         th:href="@{/dailyreport/matrix(month=${currentYearMonth.monthValue},year=${currentYearMonth.year})}"
+         th:href="@{/dailyreport/matrix(fMonth=${currentYearMonth.monthValue},fYear=${currentYearMonth.year})}"
          th:text="#{main.general.month.current}">Aktueller Monat</a>
     </div>
   </div>
@@ -395,8 +395,8 @@ document.getElementById('matrix-month')?.addEventListener('change', function () 
 
   // the matrix always shows some month, so a cleared selection means "back to the default month"
   if (Number.isInteger(year) && Number.isInteger(month)) {
-    url.searchParams.set('month', String(month));
-    url.searchParams.set('year', String(year));
+    url.searchParams.set('fMonth', String(month));
+    url.searchParams.set('fYear', String(year));
   }
   location.href = url.toString();
 });

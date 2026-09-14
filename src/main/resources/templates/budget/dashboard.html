@@ -14,22 +14,24 @@
        leaving the previous one in place. -->
   <div class="card mb-4">
     <div class="card-body">
-      <form method="get" th:action="@{/budget/dashboard}" th:object="${filter}" class="row g-2 align-items-end">
+      <form method="get" th:action="@{/budget/dashboard}" class="row g-2 align-items-end">
         <div class="col-md-4">
           <label class="form-label" th:text="#{main.budget.dashboard.filter.segment}">Kundensegment</label>
-          <select class="form-select tomselect" th:field="*{budgetSegmentId}" onchange="form.requestSubmit()">
+          <select class="form-select tomselect" name="fBudgetSegmentId" onchange="form.requestSubmit()">
             <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
             <option th:each="segment : ${segments}"
                     th:value="${segment.id}"
+                    th:selected="${segment.id == fBudgetSegmentId}"
                     th:text="${segment.name}"></option>
           </select>
         </div>
         <div class="col-md-4" th:if="${showResponsibleFilter}">
           <label class="form-label" th:text="#{main.budget.dashboard.filter.responsible}">Auftragsverantwortlicher</label>
-          <select class="form-select tomselect" th:field="*{budgetResponsibleId}" onchange="form.requestSubmit()">
+          <select class="form-select tomselect" name="fBudgetResponsibleId" onchange="form.requestSubmit()">
             <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
             <option th:each="employee : ${responsibles}"
                     th:value="${employee.id}"
+                    th:selected="${employee.id == fBudgetResponsibleId}"
                     th:text="|${employee.sign} - ${employee.name}|"></option>
           </select>
         </div>

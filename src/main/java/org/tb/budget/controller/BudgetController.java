@@ -3,6 +3,7 @@ package org.tb.budget.controller;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.tb.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -39,6 +40,7 @@ import org.tb.budget.viewhelper.BudgetEmployeesViewHelper;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
@@ -64,30 +66,31 @@ public class BudgetController {
     private final AuthorizedUser authorizedUser;
     private final BudgetAuthorization budgetAuthorization;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final FilterHintViewHelper filterHintViewHelper;
     private final MessageSourceAccessor messages;
 
     /**
-     * The parameter is {@code budgetShowInactive} rather than {@code showInactive} because the
+     * The parameter is {@code fBudgetShowInactive} rather than {@code showInactive} because the
      * UiState mapping is global: the rate list has a switch of the same name that means something
      * else, and both would otherwise share one remembered value (#952).
      */
     @GetMapping
-    public String list(@RequestParam(required = false) String coSign,
-                       @RequestParam(required = false) Boolean budgetShowInactive,
+    public String list(@RequestParam(required = false) String fCustomerOrderSign,
+                       @RequestParam(required = false) Boolean fBudgetShowInactive,
                        Model model) {
         List<OrderBudget> budgets;
-        if (coSign != null && !coSign.isBlank()) {
+        if (fCustomerOrderSign != null && !fCustomerOrderSign.isBlank()) {
             budgets = orderBudgetService.getVisibleByCustomerorderSign(
-                coSign, Boolean.TRUE.equals(budgetShowInactive));
+                fCustomerOrderSign, Boolean.TRUE.equals(fBudgetShowInactive));
         } else {
             budgets = orderBudgetService.getAllVisible();
-            if (!Boolean.TRUE.equals(budgetShowInactive)) {
+            if (!Boolean.TRUE.equals(fBudgetShowInactive)) {
                 budgets = budgets.stream().filter(b -> Boolean.TRUE.equals(b.getActive())).toList();
             }
         }
         model.addAttribute("budgets", budgets);
-        model.addAttribute("coSign", coSign);
-        model.addAttribute("showInactive", Boolean.TRUE.equals(budgetShowInactive));
+        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
+        model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
         model.addAttribute("isManager", authorizedUser.isManager());
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
         // The rows name their order and suborder by sign; description and customer hang off those.
@@ -199,10 +202,12 @@ public class BudgetController {
         try {
             if (form.isNew()) {
                 orderBudgetService.create(data);
-                redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.message.created"));
+                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                    messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_SIGN));
             } else {
                 orderBudgetService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.message.updated"));
+                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                    messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_SIGN));
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

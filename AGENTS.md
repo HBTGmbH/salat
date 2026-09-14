@@ -530,7 +530,46 @@ Entities are divided into two categories (→ ADR-0011):
 - Form validation errors: call the service inside `try/catch(ErrorCodeException)`, convert via `ErrorCodeViewHelper.toViewMessages(ex)`, add to model, and re-render the form view (do not redirect)
 - HTMX partial updates: use `th:hx-post`, `hx-swap=”none”`, `hx-include=”closest form”`, `hx-trigger=”change”` on select/input elements; detect `HX-Request` header in the controller and return `”view :: fragmentName”` for partial responses
 - CSRF tokens: **never** add an explicit `<input type=”hidden” th:name=”${_csrf.parameterName}” th:value=”${_csrf.token}” />`. Spring Security 6 uses deferred tokens — `_csrf` is null when accessed directly in templates. Using `th:action=”@{...}”` is sufficient; Thymeleaf's `CsrfRequestDataValueProcessor` injects the token automatically into every POST form.
+- **UiState parameters are named `f…`** (→ ADR-0022): see the section below before registering a key.
 - **No direct `HttpSession` access** (→ ADR-0013): new Spring MVC controllers must not read or write `HttpSession` for UI state. Pass state via URL parameters, path variables, or form fields. User selection state (e.g. currently selected employee contract) must be expressed in the URL or stored in a cookie — not the session. Exceptions (`AuthorizedUser`, `AuthorizedEmployee`, impersonation) must be documented with a comment `// ADR-0013: Ausnahme — [Begründung]` at the point of use.
+
+### UiState: Filter Parameters Carry the Prefix `f` (→ ADR-0022)
+
+`UiStateFilter` remembers a selection across page changes and puts every remembered value **under
+the request as a fallback parameter** — `getParameter`, `getParameterValues` and `getParameterMap`
+answer with it wherever the request itself brings none. The mapping is global across all modules
+and applies to every request, whatever its method or path.
+
+A name registered in a `UiStateKeyContributor` therefore acts in every form of the application.
+That is why the two namespaces are kept disjoint:
+
+- **Every registered parameter name is `f` + a capital letter**: `fYear`, `fMonth`,
+  `fCustomerOrderId`, `fCustomerFilter`, `fEmployeeOrderShowHidden`. `UiStateKeyRegistry` refuses a
+  name without the prefix at startup — the application does not come up.
+- **A form field is never called `f…`**. `UiStateParameterNamingTest` checks that no registered
+  name is bound via `th:field`, appears in a POST form, or is a field of a `*Form` class.
+- The prefix replaces the old module abbreviations: names are spelled out (`cFilter` →
+  `fCustomerFilter`, `eoFilter` → `fEmployeeOrderFilter`).
+- **Filter forms carry the parameters directly** — `<input name="fCustomerFilter">`, not a bound
+  form object. A filter has no `*FilterForm`.
+- **A create form may use the filter values as optional input**: `createForm(@RequestParam(required
+  = false) Long fCustomerId, …)` prefills the new entry with what the list has selected. That is
+  the wanted half of the mechanism.
+
+### Saving Never Changes the Filter (→ ADR-0023)
+
+A filter is the user's setting; adding or editing an entry is no reason to change it. A store
+method therefore never calls `uiState.clearState(...)`. Where the filter may hide what was just
+saved, the success message says so:
+
+```java
+redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+    messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
+    SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID));
+```
+
+Pass only the filters that can **exclude** an entry — search text and selections. `showHidden` and
+`showInvalid` only ever widen a list and can never be the reason something is missing.
 
 ### The `hide` Flag (UX Declutter)
 The `hide` boolean flag is a UX feature: it removes an entity from all dropdown select inputs in forms, keeping the app compact when a customer, order, or suborder is no longer actively used but must not be deleted (e.g. historical records still referenced by time reports). Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.

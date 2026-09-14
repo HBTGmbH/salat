@@ -52,12 +52,12 @@ public class DailyReportCsvController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
 
     @GetMapping
-    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
+    public String show(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
         YearMonth current = YearMonth.from(today());
         List<YearMonth> availableMonths = IntStream.range(0, 12)
             .mapToObj(current::minusMonths)
             .toList();
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
         if (ecId > 0) {
             var ec = employeecontractService.getEmployeecontractById(ecId);
             if (ec != null) {
@@ -80,14 +80,14 @@ public class DailyReportCsvController {
     public String importCsv(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "add") String importMode,
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             RedirectAttributes redirectAttributes) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("toastError",
                 messages.getMessage("main.dailyreport.csv.import.error.file.required.text"));
             return "redirect:/dailyreport/csv";
         }
-        long ecId = employeeContractId != null ? employeeContractId : effectiveContractId(employeeContractId);
+        long ecId = fEmployeeContractId != null ? fEmployeeContractId : effectiveContractId(fEmployeeContractId);
         try {
             var readResult = csvConverter.read(file.getInputStream());
             var importReport = "replace".equals(importMode)
@@ -111,9 +111,9 @@ public class DailyReportCsvController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<byte[]> exportCsv(@RequestParam(required = false) Long employeeContractId, @RequestParam String month) throws IOException {
+    public ResponseEntity<byte[]> exportCsv(@RequestParam(required = false) Long fEmployeeContractId, @RequestParam String month) throws IOException {
         YearMonth yearMonth = YearMonth.parse(month);
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
         var reports = dailyWorkingReportService.getReportsForMonth(yearMonth, ecId);
         var baos = new ByteArrayOutputStream();
         csvConverter.write(reports, null, new HttpOutputMessage() {
@@ -126,9 +126,9 @@ public class DailyReportCsvController {
             .body(baos.toByteArray());
     }
 
-    private long effectiveContractId(Long employeeContractId) {
-        if (employeeContractId != null && employeeContractId > 0) {
-            return employeeContractId;
+    private long effectiveContractId(Long fEmployeeContractId) {
+        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            return fEmployeeContractId;
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

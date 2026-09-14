@@ -17,14 +17,14 @@
           <div class="col-md-6">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
             <!-- No submit button: the select filters on change, like every other list here (#952). -->
-            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}"
+            <select class="form-select tomselect" name="fCustomerOrderSign" th:attr="data-value=${fCustomerOrderSign}"
                     onchange="form.requestSubmit()">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="option : ${customerorderOptions}"
                       th:value="${option.sign}"
                       th:attr="data-subtext=${option.customerLabel}"
                       th:text="${option.label}"
-                      th:selected="${coSign != null and coSign == option.sign}"></option>
+                      th:selected="${fCustomerOrderSign != null and fCustomerOrderSign == option.sign}"></option>
             </select>
           </div>
           <div class="col-auto ms-auto">

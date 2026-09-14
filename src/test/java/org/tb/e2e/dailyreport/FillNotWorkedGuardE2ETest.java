@@ -64,7 +64,7 @@ class FillNotWorkedGuardE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_matrix_keeps_the_mass_change_out_of_its_filter_bar(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/dailyreport/matrix?month=6&year=2026", page -> {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/matrix?fMonth=6&fYear=2026", page -> {
       Locator filterBar = page.locator("div.card:has([data-month-picker])").first();
       assertThat(filterBar).not().containsText(FILL_NOT_WORKED);
 
@@ -114,7 +114,7 @@ class FillNotWorkedGuardE2ETest extends PlaywrightE2ETestBase {
   }
 
   private String listView() {
-    return "/dailyreport/daily?mode=list&month=6&year=2026";
+    return "/dailyreport/daily?mode=list&fMonth=6&fYear=2026";
   }
 
 }

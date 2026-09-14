@@ -20,7 +20,7 @@
         <label class="col-sm-3 col-form-label fw-semibold" th:text="#{main.release.supervisor.text}">People Lead</label>
         <div class="col-sm-5">
           <select class="form-select tomselect"
-                  onchange="window.location='/acceptance?accSupervisorId=' + encodeURIComponent(this.value)">
+                  onchange="window.location='/acceptance?fAcceptanceSupervisorId=' + encodeURIComponent(this.value)">
             <option value="-1"
                     th:selected="${supervisorId == null or supervisorId == -1}"
                     th:text="#{main.general.all.text}">Alle</option>
@@ -192,10 +192,10 @@
       }
       contractSelect.addEventListener('change', function () {
         var url = new URL('/acceptance', window.location.origin);
-        url.searchParams.set('accEmployeeContractId', contractSelect.value);
+        url.searchParams.set('fAcceptanceEmployeeContractId', contractSelect.value);
         var supervisorId = contractSelect.dataset.supervisorId;
         if (supervisorId) {
-          url.searchParams.set('accSupervisorId', supervisorId);
+          url.searchParams.set('fAcceptanceSupervisorId', supervisorId);
         }
         window.location.assign(url.pathname + url.search);
       });

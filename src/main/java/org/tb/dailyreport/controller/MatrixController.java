@@ -38,17 +38,17 @@ public class MatrixController {
 
     @GetMapping
     public String show(
-            @RequestParam(required = false) Long employeeContractId,
-            @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Long fEmployeeContractId,
+            @RequestParam(required = false) Integer fMonth,
+            @RequestParam(required = false) Integer fYear,
             Model model) {
 
         var today = today();
-        int targetMonth = month != null ? month : today.getMonthValue();
-        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = fMonth != null ? fMonth : today.getMonthValue();
+        int targetYear = fYear != null ? fYear : today.getYear();
         YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
 
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
 
         var matrixData = matrixService.buildMatrix(yearMonth, ecId);
         var selectedContract = Optional.ofNullable(employeecontractService.getEmployeecontractById(ecId));
@@ -83,11 +83,11 @@ public class MatrixController {
     @PostMapping("/fill-not-worked")
     @PreAuthorize("isAuthenticated()")
     public String fillNotWorked(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Integer month,
             @RequestParam Integer year,
             RedirectAttributes redirectAttributes) {
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
         try {
             matrixService.fillNotWorked(YearMonth.of(year, month), ecId);
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -97,12 +97,12 @@ public class MatrixController {
                 errorCodeViewHelper.toViewMessages(ex).stream()
                     .map(Object::toString).findFirst().orElse("Error"));
         }
-        return "redirect:/dailyreport/matrix?month=" + month + "&year=" + year;
+        return "redirect:/dailyreport/matrix?fMonth=" + month + "&fYear=" + year;
     }
 
-    private long effectiveContractId(Long employeeContractId) {
-        if (employeeContractId != null && employeeContractId > 0) {
-            return employeeContractId;
+    private long effectiveContractId(Long fEmployeeContractId) {
+        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            return fEmployeeContractId;
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

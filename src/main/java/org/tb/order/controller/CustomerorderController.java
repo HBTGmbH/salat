@@ -30,7 +30,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.GlobalConstants;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.customer.service.CustomerService;
 import org.tb.customer.domain.Customer;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -54,20 +54,20 @@ public class CustomerorderController {
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final AuthorizedEmployee authorizedEmployee;
-  private final UiState uiState;
+  private final FilterHintViewHelper filterHintViewHelper;
 
   @GetMapping
   public String list(
-      @RequestParam(required = false) String coFilter,
-      @RequestParam(required = false) Long customerId,
-      @RequestParam(required = false) Boolean coShowInvalid,
-      @RequestParam(required = false) Boolean coShowActualHours,
-      @RequestParam(required = false) Boolean coShowHidden,
+      @RequestParam(required = false) String fCustomerOrderFilter,
+      @RequestParam(required = false) Long fCustomerId,
+      @RequestParam(required = false) Boolean fCustomerOrderShowInvalid,
+      @RequestParam(required = false) Boolean fCustomerOrderShowActualHours,
+      @RequestParam(required = false) Boolean fCustomerOrderShowHidden,
       HttpServletRequest request,
       Model model) {
-    var filterSet = (coFilter != null && !coFilter.isEmpty()) || customerId != null;
-    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(coShowInvalid, coFilter, customerId, coShowHidden) : List.<Customerorder>of();
-    if (Boolean.TRUE.equals(coShowActualHours)) {
+    var filterSet = (fCustomerOrderFilter != null && !fCustomerOrderFilter.isEmpty()) || fCustomerId != null;
+    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(fCustomerOrderShowInvalid, fCustomerOrderFilter, fCustomerId, fCustomerOrderShowHidden) : List.<Customerorder>of();
+    if (Boolean.TRUE.equals(fCustomerOrderShowActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
       for (Customerorder co : customerorders) {
         decorators.add(new CustomerOrderViewDecorator(customerorderService, co));
@@ -77,11 +77,11 @@ public class CustomerorderController {
       model.addAttribute("customerorders", customerorders);
     }
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
-    model.addAttribute("coFilter", coFilter);
-    model.addAttribute("customerId", customerId);
-    model.addAttribute("coShowInvalid", coShowInvalid);
-    model.addAttribute("coShowHidden", coShowHidden);
-    model.addAttribute("coShowActualHours", Boolean.TRUE.equals(coShowActualHours));
+    model.addAttribute("fCustomerOrderFilter", fCustomerOrderFilter);
+    model.addAttribute("fCustomerId", fCustomerId);
+    model.addAttribute("fCustomerOrderShowInvalid", fCustomerOrderShowInvalid);
+    model.addAttribute("fCustomerOrderShowHidden", fCustomerOrderShowHidden);
+    model.addAttribute("fCustomerOrderShowActualHours", Boolean.TRUE.equals(fCustomerOrderShowActualHours));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "customerorders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.customerorders.text", "Customer Orders"));
@@ -93,13 +93,13 @@ public class CustomerorderController {
 
   @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/create")
-  public String createForm(@RequestParam(required = false) Long customerId, Model model) {
+  public String createForm(@RequestParam(required = false) Long fCustomerId, Model model) {
     var form = new CustomerorderForm();
     form.setValidFrom(format(today()));
     form.setOrderType(OrderType.STANDARD);
     form.setResponsibleHbtIds(new java.util.ArrayList<>(List.of(authorizedEmployee.getEmployeeId())));
     form.setRespContrEmployeeId(authorizedEmployee.getEmployeeId());
-    form.setCustomerId(customerId);
+    form.setCustomerId(fCustomerId);
     form.setHide(false);
     addFormModel(model, form, false);
     return "order/customer-order-form";
@@ -151,16 +151,13 @@ public class CustomerorderController {
       return "order/customer-order-form";
     }
 
+    // The filter stays as the user left it (ADR-0023); where it hides the saved order, the
+    // message says so instead of the list silently not showing it.
+    redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+        messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"),
+        CUSTOMER_ORDER_FILTER, CUSTOMER_ID));
     if (newId != null) {
-      uiState.clearState(CUSTOMER_ORDER_FILTER);
-      if(!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
-        uiState.clearState(CUSTOMER_ID);
-      }
-    }
-    redirectAttributes.addFlashAttribute("toastSuccess",
-        messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"));
-    if (newId != null) {
-      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerOrderId=" + newId);
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?fCustomerOrderId=" + newId);
       redirectAttributes.addFlashAttribute("toastActionLabel",
           messages.getMessage("main.general.button.add.suborder.text", "Add Suborder"));
     }

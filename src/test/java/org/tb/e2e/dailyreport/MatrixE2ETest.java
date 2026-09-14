@@ -34,7 +34,7 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
       page.waitForLoadState();
 
       page.navigate(urlWithLogin(
-          "/dailyreport/matrix?month=" + BOOKING_DATE.getMonthValue() + "&year=" + BOOKING_DATE.getYear(),
+          "/dailyreport/matrix?fMonth=" + BOOKING_DATE.getMonthValue() + "&fYear=" + BOOKING_DATE.getYear(),
           E2ETestData.EMPLOYEE_MA_SIGN));
 
       assertThat(page.locator("#matrix")).isVisible();
@@ -60,7 +60,7 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
       page.waitForLoadState();
 
       page.navigate(urlWithLogin(
-          "/dailyreport/matrix?month=" + BOOKING_DATE.getMonthValue() + "&year=" + BOOKING_DATE.getYear(),
+          "/dailyreport/matrix?fMonth=" + BOOKING_DATE.getMonthValue() + "&fYear=" + BOOKING_DATE.getYear(),
           E2ETestData.EMPLOYEE_MA_SIGN));
 
       // address the cell this test booked itself: the E2E suite shares one database, so other
@@ -120,8 +120,8 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
 
       assertThat(page.locator("#matrix-month")).hasValue("2026-09");
       assertThat(picker.locator("[data-month-label]")).hasText("September 2026");
-      assertEquals("9", urlParameter(page.url(), "month"));
-      assertEquals("2026", urlParameter(page.url(), "year"));
+      assertEquals("9", urlParameter(page.url(), "fMonth"));
+      assertEquals("2026", urlParameter(page.url(), "fYear"));
     });
   }
 
@@ -131,13 +131,13 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void month_arrows_step_month_by_month(E2EBrowser browser) {
-    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2026", page -> {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?fMonth=12&fYear=2026", page -> {
       page.locator("[data-month-step='1']").click();
       page.waitForLoadState();
 
       assertThat(page.locator("#matrix-month")).hasValue("2027-01");
-      assertEquals("1", urlParameter(page.url(), "month"));
-      assertEquals("2027", urlParameter(page.url(), "year"));
+      assertEquals("1", urlParameter(page.url(), "fMonth"));
+      assertEquals("2027", urlParameter(page.url(), "fYear"));
     });
   }
 
@@ -148,15 +148,15 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void current_month_button_jumps_to_the_month_of_the_application_clock(E2EBrowser browser) {
-    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2027", page -> {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?fMonth=12&fYear=2027", page -> {
       Locator picker = page.locator("div[data-month-picker]");
       picker.locator("[data-month-label]").click();
       picker.locator("[data-month-current]").click();
       page.waitForLoadState();
 
       assertThat(page.locator("#matrix-month")).hasValue("2026-06");
-      assertEquals("6", urlParameter(page.url(), "month"));
-      assertEquals("2026", urlParameter(page.url(), "year"));
+      assertEquals("6", urlParameter(page.url(), "fMonth"));
+      assertEquals("2026", urlParameter(page.url(), "fYear"));
     });
   }
 
@@ -169,7 +169,7 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_picker_offers_no_way_to_empty_the_selection(E2EBrowser browser) {
-    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?month=12&year=2027", page -> {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/matrix?fMonth=12&fYear=2027", page -> {
       Locator picker = page.locator("div[data-month-picker]");
       picker.locator("[data-month-label]").click();
 
@@ -203,8 +203,8 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
       page.waitForLoadState();
 
       assertThat(monthPicker).hasText("September 2027");
-      assertEquals("9", urlParameter(page.url(), "month"));
-      assertEquals("2027", urlParameter(page.url(), "year"));
+      assertEquals("9", urlParameter(page.url(), "fMonth"));
+      assertEquals("2027", urlParameter(page.url(), "fYear"));
     });
   }
 

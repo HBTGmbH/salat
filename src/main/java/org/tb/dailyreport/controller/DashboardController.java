@@ -59,8 +59,8 @@ public class DashboardController {
     private final PublicholidayService publicholidayService;
     private final MessageSourceAccessor messageSourceAccessor;
     @GetMapping
-    public String dashboard(@RequestParam(required = false) Long employeeContractId, Model model) {
-        var employeecontract = currentContract(employeeContractId);
+    public String dashboard(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
+        var employeecontract = currentContract(fEmployeeContractId);
 
         var overtimeStatus = overtimeService.calculateOvertime(employeecontract.getId(), false);
         var vacations = vacationService.getVacations(employeecontract).stream()
@@ -205,13 +205,13 @@ public class DashboardController {
     }
 
     @PostMapping(params = "task=refresh")
-    public String refresh(@RequestParam Long employeeContractId) {
+    public String refresh(@RequestParam Long fEmployeeContractId) {
         return "redirect:/dailyreport/dashboard";
     }
 
-    private Employeecontract currentContract(Long employeeContractId) {
-        if (employeeContractId != null && employeeContractId > 0) {
-            var contract = employeecontractService.getEmployeecontractById(employeeContractId);
+    private Employeecontract currentContract(Long fEmployeeContractId) {
+        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            var contract = employeecontractService.getEmployeecontractById(fEmployeeContractId);
             if (contract != null) return contract;
         }
         var loginEmployee = employeeService.getLoginEmployee();

@@ -66,7 +66,7 @@ class StandbyE2ETest extends PlaywrightE2ETestBase {
       book(page, MATRIX_DAY, E2ETestData.SUBORDER_STANDBY_SIGN, "04:00");
 
       page.navigate(urlWithLogin(
-          "/dailyreport/matrix?month=" + MATRIX_DAY.getMonthValue() + "&year=" + MATRIX_DAY.getYear(), EMPLOYEE));
+          "/dailyreport/matrix?fMonth=" + MATRIX_DAY.getMonthValue() + "&fYear=" + MATRIX_DAY.getYear(), EMPLOYEE));
 
       // the worked order stands above the sum row, the standby order below it
       assertThat(page.locator("#matrix tbody")).containsText(E2ETestData.SUBORDER_ALPHA_DEV_SIGN);

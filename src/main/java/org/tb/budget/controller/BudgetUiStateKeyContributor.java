@@ -42,12 +42,12 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
         var map = new HashMap<String, UiStateKey>();
-        map.put("budgetSegmentId", DASHBOARD_SEGMENT_ID);
-        map.put("budgetResponsibleId", DASHBOARD_RESPONSIBLE_ID);
-        map.put("coSign", CUSTOMER_ORDER_SIGN);
-        map.put("budgetShowInactive", BUDGET_SHOW_INACTIVE);
-        map.put("pricingShowInactive", PRICING_SHOW_INACTIVE);
-        map.put("pricingShowExpiredOrders", PRICING_SHOW_EXPIRED_ORDERS);
+        map.put("fBudgetSegmentId", DASHBOARD_SEGMENT_ID);
+        map.put("fBudgetResponsibleId", DASHBOARD_RESPONSIBLE_ID);
+        map.put("fCustomerOrderSign", CUSTOMER_ORDER_SIGN);
+        map.put("fBudgetShowInactive", BUDGET_SHOW_INACTIVE);
+        map.put("fPricingShowInactive", PRICING_SHOW_INACTIVE);
+        map.put("fPricingShowExpiredOrders", PRICING_SHOW_EXPIRED_ORDERS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 

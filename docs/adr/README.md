@@ -35,3 +35,5 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0019](0019-direkter-repository-zugriff-in-services.md) | Direkter Repository-Zugriff in Services (kein DAO für neue Module) | Accepted | 2026-07-05 |
 | [0020](0020-local-qa-profil-fuer-performancemessungen.md) | Profil `local-qa` für Performancemessungen | Accepted | 2026-08-22 |
 | [0021](0021-moduluebergreifender-lesezugriff.md) | Modulübergreifender Lesezugriff: Join erlaubt, Entities bleiben im Modul | Accepted | 2026-09-14 |
+| [0022](0022-praefix-f-fuer-uistate-parameter.md) | Präfix `f` für UiState-Parameter | Accepted | 2026-09-14 |
+| [0023](0023-speichern-aendert-den-filter-nicht.md) | Speichern ändert den Filter nicht | Accepted | 2026-09-14 |

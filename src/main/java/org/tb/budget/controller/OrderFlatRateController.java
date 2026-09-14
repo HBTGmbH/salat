@@ -3,6 +3,7 @@ package org.tb.budget.controller;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.tb.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ import org.tb.budget.service.OrderFlatRateService;
 import org.tb.budget.viewhelper.CustomerorderFilterOption;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
@@ -51,6 +53,7 @@ public class OrderFlatRateController {
     private final SuborderService suborderService;
     private final CustomerorderViewHelper customerorderViewHelper;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final FilterHintViewHelper filterHintViewHelper;
     private final MessageSourceAccessor messages;
 
     /**
@@ -59,15 +62,15 @@ public class OrderFlatRateController {
      * (#952).
      */
     @GetMapping
-    public String list(@RequestParam(required = false) String coSign,
+    public String list(@RequestParam(required = false) String fCustomerOrderSign,
                        @RequestParam(required = false) Boolean flatRateShowInactive,
                        @RequestParam(required = false) Boolean flatRateShowExpiredOrders,
                        Model model) {
         var inactive = Boolean.TRUE.equals(flatRateShowInactive);
         var expiredOrders = Boolean.TRUE.equals(flatRateShowExpiredOrders);
-        model.addAttribute("rows", orderFlatRateService.getRows(coSign, inactive, expiredOrders));
+        model.addAttribute("rows", orderFlatRateService.getRows(fCustomerOrderSign, inactive, expiredOrders));
         model.addAttribute("customerorderOptions", filterOptions());
-        model.addAttribute("coSign", coSign);
+        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
         model.addAttribute("showInactive", inactive);
         model.addAttribute("showExpiredOrders", expiredOrders);
         return "budget/flat-rate-list";
@@ -126,8 +129,8 @@ public class OrderFlatRateController {
         try {
             if (form.isNew()) {
                 var id = orderFlatRateService.save(data);
-                redirectAttributes.addFlashAttribute("toastSuccess",
-                    messages.getMessage("main.flatrate.message.created"));
+                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                    messages.getMessage("main.flatrate.message.created"), CUSTOMER_ORDER_SIGN));
                 // Instalments are the point of that rhythm and can only be entered once the
                 // definition exists, so go where they are maintained rather than back to the list.
                 if (form.getRhythm() == FlatRateRhythm.INSTALMENTS) {
@@ -135,8 +138,8 @@ public class OrderFlatRateController {
                 }
             } else {
                 orderFlatRateService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess",
-                    messages.getMessage("main.flatrate.message.updated"));
+                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                    messages.getMessage("main.flatrate.message.updated"), CUSTOMER_ORDER_SIGN));
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

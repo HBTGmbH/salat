@@ -63,15 +63,15 @@ public class DailyController {
 
     @GetMapping
     public String show(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam(required = false) String mode,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer fMonth,
+            @RequestParam(required = false) Integer fYear,
             Model model) {
 
         var today = today();
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
 
         String effectiveMode = (mode != null && mode.equals("list")) ? "list" : "daily";
 
@@ -92,8 +92,8 @@ public class DailyController {
         LocalDate targetDate = date != null ? date : today;
 
         if ("list".equals(effectiveMode)) {
-            int targetMonth = month != null ? month : today.getMonthValue();
-            int targetYear = year != null ? year : today.getYear();
+            int targetMonth = fMonth != null ? fMonth : today.getMonthValue();
+            int targetYear = fYear != null ? fYear : today.getYear();
             YearMonth yearMonth = YearMonth.of(targetYear, targetMonth);
             YearMonth prev = yearMonth.minusMonths(1);
             YearMonth next = yearMonth.plusMonths(1);
@@ -144,13 +144,13 @@ public class DailyController {
 
     @PostMapping("/workingday")
     public String saveWorkingday(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             @ModelAttribute WorkingdayForm form,
             HttpServletRequest request,
             HttpServletResponse response,
             Model model,
             RedirectAttributes redirectAttributes) {
-        long effEmployeeContractId = effectiveContractId(employeeContractId);
+        long effEmployeeContractId = effectiveContractId(fEmployeeContractId);
         LocalDate date = form.getDate();
         try {
             var contract = employeecontractService.getEmployeecontractById(effEmployeeContractId);
@@ -301,12 +301,12 @@ public class DailyController {
 
     @PostMapping("/apply-favourite")
     public String applyFavourite(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             HttpServletResponse response,
             Model model) {
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
         try {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
@@ -338,11 +338,11 @@ public class DailyController {
 
     @PostMapping("/delete-favourite")
     public String deleteFavourite(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             Model model) {
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
         try {
             favoriteService.deleteFavorite(favoriteId);
         } catch (Exception ex) {
@@ -382,9 +382,9 @@ public class DailyController {
         return new FavoriteView(f.getId(), label, f.getComment(), duration);
     }
 
-    private long effectiveContractId(Long employeeContractId) {
-        if (employeeContractId != null && employeeContractId > 0) {
-            return employeeContractId;
+    private long effectiveContractId(Long fEmployeeContractId) {
+        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            return fEmployeeContractId;
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
@@ -431,18 +431,18 @@ public class DailyController {
                     .map(Object::toString).findFirst().orElse("Error"));
         }
         if ("list".equals(mode) && month != null && year != null) {
-            return "redirect:/dailyreport/daily?mode=list&month=" + month + "&year=" + year;
+            return "redirect:/dailyreport/daily?mode=list&fMonth=" + month + "&fYear=" + year;
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date;
     }
 
     @PostMapping("/fill-not-worked")
     public String fillNotWorked(
-            @RequestParam(required = false) Long employeeContractId,
+            @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Integer month,
             @RequestParam Integer year,
             RedirectAttributes redirectAttributes) {
-        long ecId = effectiveContractId(employeeContractId);
+        long ecId = effectiveContractId(fEmployeeContractId);
         try {
             matrixService.fillNotWorked(YearMonth.of(year, month), ecId);
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -452,6 +452,6 @@ public class DailyController {
                 errorCodeViewHelper.toViewMessages(ex).stream()
                     .map(Object::toString).findFirst().orElse("Error"));
         }
-        return "redirect:/dailyreport/daily?mode=list&month=" + month + "&year=" + year;
+        return "redirect:/dailyreport/daily?mode=list&fMonth=" + month + "&fYear=" + year;
     }
 }
