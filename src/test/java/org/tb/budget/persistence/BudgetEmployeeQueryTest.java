@@ -18,7 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizedUserAuditorAware;
 import org.tb.budget.domain.AssignedEmployeeDay;
-import org.tb.budget.domain.BudgetEmployeeMinutes;
+import org.tb.budget.domain.BudgetEmployeeSign;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.TimereportBudgetAssignment;
 import org.tb.common.GlobalConstants;
@@ -141,8 +141,8 @@ public class BudgetEmployeeQueryTest {
           assertThat(row.bookings()).isEqualTo(1);
           assertThat(row.duration()).isEqualTo(Duration.ofHours(1));
         });
-    assertThat(minutes()).singleElement()
-        .satisfies(row -> assertThat(row.duration()).isEqualTo(Duration.ofHours(1)));
+    assertThat(signs()).singleElement()
+        .satisfies(row -> assertThat(row.employeeSign()).isEqualTo("abc"));
   }
 
   /**
@@ -176,47 +176,48 @@ public class BudgetEmployeeQueryTest {
     book(second, DAY, "abc", suborderA, 2, 0);
     book(second, DAY, "def", suborderA, 1, 0);
 
-    var rows = assignmentRepository.findEmployeeMinutesByBudgetIds(List.of(plan.getId(), second.getId()));
+    var rows = assignmentRepository.findEmployeeSignsByBudgetIds(List.of(plan.getId(), second.getId()));
 
     assertThat(rows).hasSize(3);
     assertThat(rows).filteredOn(row -> row.orderBudgetId() == plan.getId())
-        .extracting(BudgetEmployeeMinutes::employeeSign).containsExactly("abc");
+        .extracting(BudgetEmployeeSign::employeeSign).containsExactly("abc");
     assertThat(rows).filteredOn(row -> row.orderBudgetId() == second.getId())
-        .extracting(BudgetEmployeeMinutes::employeeSign).containsExactly("abc", "def");
+        .extracting(BudgetEmployeeSign::employeeSign).containsExactly("abc", "def");
+  }
+
+  /** The order the column shows: alphabetical by sign, whatever anybody booked. */
+  @Test
+  public void orders_the_people_of_a_plan_alphabetically_by_sign() {
+    book(plan, DAY, "ghi", suborderA, 1, 0);
+    book(plan, DAY, "abc", suborderA, 8, 0);
+    book(plan, DAY, "def", suborderA, 4, 0);
+
+    assertThat(signs()).extracting(BudgetEmployeeSign::employeeSign)
+        .containsExactly("abc", "def", "ghi");
   }
 
   /**
-   * The order the column shows. It is the only {@code ORDER BY sum(...)} in the project, so it is
-   * pinned against the database rather than trusted.
+   * One entry per person, however often and wherever they booked — several bookings, suborders,
+   * days and even employee contracts of one person collapse into one sign.
    */
   @Test
-  public void orders_the_people_of_a_plan_by_hours_descending() {
-    book(plan, DAY, "abc", suborderA, 1, 0);
-    book(plan, DAY, "def", suborderA, 8, 0);
-    book(plan, DAY, "ghi", suborderA, 4, 0);
-
-    assertThat(minutes()).extracting(BudgetEmployeeMinutes::employeeSign)
-        .containsExactly("def", "ghi", "abc");
-  }
-
-  /** The bookings of one person add up across suborders and days. */
-  @Test
-  public void sums_the_bookings_of_one_person_over_the_whole_plan() {
+  public void names_a_person_once_however_much_they_booked() {
     book(plan, DAY, "abc", suborderA, 2, 30);
     book(plan, DAY.plusDays(40), "abc", suborderB, 1, 30);
 
-    assertThat(minutes()).singleElement()
-        .satisfies(row -> assertThat(row.duration()).isEqualTo(Duration.ofHours(4)));
+    assertThat(signs()).singleElement().satisfies(row -> {
+      assertThat(row.employeeSign()).isEqualTo("abc");
+      assertThat(row.employeeName()).isEqualTo("abc abc");
+    });
   }
 
   /** No period parameter: an assignment only exists for a booking inside the plan's validity. */
   @Test
-  public void counts_every_assigned_booking_regardless_of_its_date() {
+  public void names_a_person_regardless_of_when_they_booked() {
     book(plan, FROM, "abc", suborderA, 1, 0);
-    book(plan, UNTIL, "abc", suborderA, 1, 0);
+    book(plan, UNTIL, "def", suborderA, 1, 0);
 
-    assertThat(minutes()).singleElement()
-        .satisfies(row -> assertThat(row.duration()).isEqualTo(Duration.ofHours(2)));
+    assertThat(signs()).extracting(BudgetEmployeeSign::employeeSign).containsExactly("abc", "def");
   }
 
   @Test
@@ -224,9 +225,9 @@ public class BudgetEmployeeQueryTest {
     var empty = plan("empty plan");
     book(plan, DAY, "abc", suborderA, 1, 0);
 
-    var rows = assignmentRepository.findEmployeeMinutesByBudgetIds(List.of(plan.getId(), empty.getId()));
+    var rows = assignmentRepository.findEmployeeSignsByBudgetIds(List.of(plan.getId(), empty.getId()));
 
-    assertThat(rows).extracting(BudgetEmployeeMinutes::orderBudgetId).containsExactly(plan.getId());
+    assertThat(rows).extracting(BudgetEmployeeSign::orderBudgetId).containsExactly(plan.getId());
   }
 
   // --- fixtures ---------------------------------------------------------------------------------
@@ -235,8 +236,8 @@ public class BudgetEmployeeQueryTest {
     return assignmentRepository.findAssignedEmployeeDays(plan.getId(), FROM, UNTIL);
   }
 
-  private List<BudgetEmployeeMinutes> minutes() {
-    return assignmentRepository.findEmployeeMinutesByBudgetIds(List.of(plan.getId()));
+  private List<BudgetEmployeeSign> signs() {
+    return assignmentRepository.findEmployeeSignsByBudgetIds(List.of(plan.getId()));
   }
 
   /** Written straight to the column: reading the booking back would already be filtered out. */

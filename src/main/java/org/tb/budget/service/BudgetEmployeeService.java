@@ -5,10 +5,10 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -30,7 +30,7 @@ import org.tb.budget.domain.AppliedRates;
 import org.tb.budget.domain.AssignedBooking;
 import org.tb.budget.domain.AssignedEmployeeDay;
 import org.tb.budget.domain.BudgetEmployee;
-import org.tb.budget.domain.BudgetEmployeeMinutes;
+import org.tb.budget.domain.BudgetEmployeeSign;
 import org.tb.budget.domain.BudgetEmployees;
 import org.tb.budget.domain.CostCategoryRate;
 import org.tb.budget.domain.OrderBudget;
@@ -109,7 +109,7 @@ public class BudgetEmployeeService {
     }
 
     /**
-     * Who booked on which of these plans, most hours first — for the overview column (#964).
+     * Who booked on which of these plans, alphabetically by sign — for the overview column (#964).
      *
      * <p>One statement for every row of the page, not one per row: reading the bookings of a whole
      * customer order per plan is the pattern that broke the budget dashboard
@@ -119,7 +119,7 @@ public class BudgetEmployeeService {
      * check is repeated here rather than trusted: the query itself establishes nothing, and
      * {@code BudgetAuthorization} is request scoped, so asking it again costs nothing.
      */
-    public Map<Long, List<BudgetEmployeeMinutes>> employeesOf(Collection<OrderBudget> budgets) {
+    public Map<Long, List<BudgetEmployeeSign>> employeesOf(Collection<OrderBudget> budgets) {
         var ids = budgets.stream()
             .filter(budgetAuthorization::isAuthorized)
             .map(OrderBudget::getId)
@@ -128,31 +128,30 @@ public class BudgetEmployeeService {
         if (ids.isEmpty()) {
             return Map.of();
         }
-        return assignmentRepository.findEmployeeMinutesByBudgetIds(ids).stream()
-            .collect(groupingBy(BudgetEmployeeMinutes::orderBudgetId, LinkedHashMap::new, toList()));
+        return assignmentRepository.findEmployeeSignsByBudgetIds(ids).stream()
+            .collect(groupingBy(BudgetEmployeeSign::orderBudgetId, LinkedHashMap::new, toList()));
     }
 
     /**
-     * The suborders the resolution needs, read once per distinct suborder.
+     * The suborders the resolution needs — one statement, not one per suborder.
      *
-     * <p>Read one by one on purpose. The collective methods of {@code SuborderService} either drop
-     * hidden suborders — a booking on one would silently lose its sign and its rate — or load every
-     * suborder there is. A plan touches a handful of them, and the bookings of the rendered list
-     * share them with the aggregated ones.
+     * <p>Asked for by id rather than through one of the collective methods that go by customer
+     * order: those drop hidden suborders, and a booking on one would then silently lose its sign
+     * and its rate.
+     *
+     * <p>The ids come from the whole period, not only from the rendered rows, because the card
+     * resolves rates for every booking of the period.
      */
     private List<Suborder> subordersOf(List<AssignedEmployeeDay> days, List<AssignedBooking> rendered) {
         var ids = new LinkedHashSet<Long>();
         days.forEach(day -> ids.add(day.suborderId()));
         rendered.forEach(booking -> ids.add(booking.suborderId()));
 
-        var suborders = new ArrayList<Suborder>(ids.size());
-        for (var id : ids) {
-            var suborder = suborderService.getSuborderById(id);
-            if (suborder == null) {
-                log.warn("Booking assigned to budget references the unknown suborder {}", id);
-                continue;
-            }
-            suborders.add(suborder);
+        var suborders = suborderService.getSubordersByIds(ids);
+        if (suborders.size() < ids.size()) {
+            var found = suborders.stream().map(Suborder::getId).collect(toSet());
+            ids.stream().filter(id -> !found.contains(id)).forEach(id ->
+                log.warn("Booking assigned to budget references the unknown suborder {}", id));
         }
         return suborders;
     }

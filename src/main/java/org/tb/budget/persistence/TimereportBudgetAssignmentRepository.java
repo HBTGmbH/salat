@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 import org.tb.budget.domain.AssignedBooking;
 import org.tb.budget.domain.AssignedBookingTotals;
 import org.tb.budget.domain.AssignedEmployeeDay;
-import org.tb.budget.domain.BudgetEmployeeMinutes;
+import org.tb.budget.domain.BudgetEmployeeSign;
 import org.tb.budget.domain.TimereportBudgetAssignment;
 import org.tb.budget.domain.TimereportBudgetLink;
 
@@ -139,9 +139,12 @@ public interface TimereportBudgetAssignmentRepository
                                                        @Param("until") LocalDate until);
 
     /**
-     * Who booked how much on which plan (#964) — for every plan of the overview in one statement
-     * rather than one per row (→ {@code docs/performance-tips.md}). The rows arrive with the person
-     * who booked most first, which is the order the column shows them in.
+     * Who booked on which plan (#964) — for every plan of the overview in one statement rather than
+     * one per row (→ {@code docs/performance-tips.md}).
+     *
+     * <p>Signs and names, no hours: the column only answers who works on a plan at all, and the
+     * order is alphabetical by sign. Grouped rather than distinct because a person books through
+     * several contracts over the years, and each of them would otherwise bring the sign along again.
      *
      * <p>No period parameter, deliberately. An assignment only ever exists for a booking inside the
      * plan's validity, and one that a date change invalidated is resolved anew
@@ -162,11 +165,10 @@ public interface TimereportBudgetAssignmentRepository
      * {@code responsibleHbt}.
      */
     @Query("""
-        SELECT new org.tb.budget.domain.BudgetEmployeeMinutes(
+        SELECT new org.tb.budget.domain.BudgetEmployeeSign(
                a.orderBudget.id,
                t.employeecontract.employee.sign,
-               concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname),
-               sum(t.durationhours * 60 + t.durationminutes))
+               concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname))
         FROM TimereportBudgetAssignment a, Timereport t
         WHERE t.id = a.timereportId
           AND a.orderBudget.id IN :budgetIds
@@ -175,10 +177,9 @@ public interface TimereportBudgetAssignmentRepository
                  t.employeecontract.employee.firstname,
                  t.employeecontract.employee.lastname
         ORDER BY a.orderBudget.id ASC,
-                 sum(t.durationhours * 60 + t.durationminutes) DESC,
                  t.employeecontract.employee.sign ASC
         """)
-    List<BudgetEmployeeMinutes> findEmployeeMinutesByBudgetIds(@Param("budgetIds") Collection<Long> budgetIds);
+    List<BudgetEmployeeSign> findEmployeeSignsByBudgetIds(@Param("budgetIds") Collection<Long> budgetIds);
 
     /**
      * The bookings already assigned to any plan of the customer order. A booking of this order can

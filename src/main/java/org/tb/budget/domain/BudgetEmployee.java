@@ -17,7 +17,9 @@ import java.util.List;
  * "without one" — {@link #missingCost()} follows from the duration, not the other way round.
  *
  * <p>Hours on a suborder that is not invoiceable are counted apart and are <em>not</em> hours
- * without a condition: 0 EUR revenue is right there, whatever rate would match.
+ * without a condition: 0 EUR revenue is right there, whatever rate would match. They are reported
+ * for the plan as a whole rather than per person — the suborder is what is not invoiceable, not
+ * the person's work on it.
  */
 public record BudgetEmployee(
     String employeeSign,
@@ -36,10 +38,6 @@ public record BudgetEmployee(
 
     public boolean missingPrice() {
         return !durationWithoutPrice.isZero();
-    }
-
-    public boolean hasNotInvoiceable() {
-        return !durationNotInvoiceable.isZero();
     }
 
 }

@@ -51,6 +51,10 @@ public class BudgetEmployeesViewHelperTest {
     assertThat(card.rows().getFirst().pricesEuroPerHour()).hasSize(2);
   }
 
+  /**
+   * The row carries no "not invoiceable" mark: that says something about the suborder, not about
+   * the person. It is reported for the plan as a whole, and row by row in the booking list.
+   */
   @Test
   public void sums_the_hours_without_a_rate_and_says_there_is_something_to_report() {
     var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(

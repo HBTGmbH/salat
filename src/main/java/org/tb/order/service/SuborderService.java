@@ -266,6 +266,23 @@ public class SuborderService {
     return suborderDAO.getSuborderById(suborderId);
   }
 
+  /**
+   * The suborders of the given ids in one statement (#964), hidden ones included.
+   *
+   * <p>Deliberately no {@code hide} filter: callers here start from bookings that already reference
+   * the suborder, and dropping a hidden one would leave that booking without a sign and without a
+   * rate. The other collective methods filter it out because they feed pickers.
+   *
+   * <p>An unknown id yields no row rather than an error — the caller knows what it asked for and
+   * decides what a missing suborder means.
+   */
+  public List<Suborder> getSubordersByIds(Collection<Long> suborderIds) {
+    if (suborderIds.isEmpty()) {
+      return List.of();
+    }
+    return suborderDAO.getSubordersByIds(suborderIds);
+  }
+
   public List<Suborder> getSubordersByEmployeeContractId(long employeeContractId) {
     return suborderDAO.getSubordersByEmployeeContractId(employeeContractId);
   }

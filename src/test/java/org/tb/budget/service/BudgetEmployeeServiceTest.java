@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -23,7 +24,7 @@ import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.AssignedBooking;
 import org.tb.budget.domain.AssignedEmployeeDay;
 import org.tb.budget.domain.BudgetEmployee;
-import org.tb.budget.domain.BudgetEmployeeMinutes;
+import org.tb.budget.domain.BudgetEmployeeSign;
 import org.tb.budget.domain.CostCategoryRate;
 import org.tb.budget.domain.EmployeeCost;
 import org.tb.budget.domain.EmployeeCostAssignment;
@@ -86,9 +87,13 @@ public class BudgetEmployeeServiceTest {
     plan = plan(42L);
     when(authorizedUser.isManager()).thenReturn(true);
     when(assignmentRepository.findAssignedEmployeeDays(anyLong(), any(), any())).thenReturn(days);
-    when(suborderService.getSuborderById(BILLED)).thenReturn(suborder(BILLED, "01", true));
-    when(suborderService.getSuborderById(NOT_INVOICEABLE))
-        .thenReturn(suborder(NOT_INVOICEABLE, "02", false));
+    // One statement for every suborder the period touches, hidden ones included.
+    when(suborderService.getSubordersByIds(any())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return List.of(suborder(BILLED, "01", true), suborder(NOT_INVOICEABLE, "02", false)).stream()
+          .filter(suborder -> ids.contains(suborder.getId()))
+          .toList();
+    });
     when(employeeCostService.lookup())
         .thenAnswer(invocation -> EmployeeCostLookup.of(costAssignments, costs));
     when(orderPricingService.lookupFor(any()))
@@ -206,7 +211,7 @@ public class BudgetEmployeeServiceTest {
     assertThat(employees.durationNotInvoiceable()).isEqualTo(Duration.ofHours(4));
     assertThat(employees.durationWithoutPrice()).isZero();
     assertThat(employees.rows()).singleElement()
-        .satisfies(row -> assertThat(row.hasNotInvoiceable()).isTrue());
+        .satisfies(row -> assertThat(row.durationNotInvoiceable()).isEqualTo(Duration.ofHours(4)));
   }
 
   /** A rate that cannot take effect is not named either — the row says "not invoiceable" instead. */
@@ -262,6 +267,33 @@ public class BudgetEmployeeServiceTest {
     });
   }
 
+  /** Each row names the rate of its own day; the card sums up exactly those rows. */
+  @Test
+  public void gives_each_rendered_booking_the_rate_of_its_own_day() {
+    costAssignment("abc", null, "Senior");
+    cost("Senior", 9500, FROM, JUN);
+    cost("Senior", 10000, JUN.plusDays(1), UNTIL);
+    day("abc", BILLED, JUN, 1, Duration.ofHours(4));
+    day("abc", BILLED, JUL, 1, Duration.ofHours(4));
+
+    var rates = service.resolve(plan, FROM, UNTIL,
+        List.of(booking(11L, "abc", BILLED, JUN), booking(12L, "abc", BILLED, JUL)));
+
+    assertThat(rates.of(11L).costCentsPerHour()).isEqualTo(9500);
+    assertThat(rates.of(12L).costCentsPerHour()).isEqualTo(10000);
+    assertThat(rates.employees().rows()).singleElement().satisfies(row ->
+        assertThat(row.costs()).containsExactly(
+            new CostCategoryRate("Senior", 9500), new CostCategoryRate("Senior", 10000)));
+  }
+
+  /** The card hangs on the chosen period, not on the validity of the plan. */
+  @Test
+  public void reads_the_days_of_the_chosen_period_rather_than_of_the_whole_plan() {
+    service.resolve(plan, JUN, JUL, List.of());
+
+    verify(assignmentRepository).findAssignedEmployeeDays(42L, JUN, JUL);
+  }
+
   @Test
   public void checks_the_access_to_the_plan_before_reading_anything() {
     service.resolve(plan, FROM, UNTIL, List.of());
@@ -285,16 +317,16 @@ public class BudgetEmployeeServiceTest {
   public void groups_the_people_of_the_overview_by_plan() {
     var second = plan(43L);
     when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
-    when(assignmentRepository.findEmployeeMinutesByBudgetIds(List.of(42L, 43L))).thenReturn(List.of(
-        new BudgetEmployeeMinutes(42L, "abc", "Abc Person", 480L),
-        new BudgetEmployeeMinutes(42L, "def", "Def Person", 120L),
-        new BudgetEmployeeMinutes(43L, "abc", "Abc Person", 60L)));
+    when(assignmentRepository.findEmployeeSignsByBudgetIds(List.of(42L, 43L))).thenReturn(List.of(
+        new BudgetEmployeeSign(42L, "abc", "Abc Person"),
+        new BudgetEmployeeSign(42L, "def", "Def Person"),
+        new BudgetEmployeeSign(43L, "abc", "Abc Person")));
 
     var byPlan = service.employeesOf(List.of(plan, second));
 
-    assertThat(byPlan.get(42L)).extracting(BudgetEmployeeMinutes::employeeSign)
+    assertThat(byPlan.get(42L)).extracting(BudgetEmployeeSign::employeeSign)
         .containsExactly("abc", "def");
-    assertThat(byPlan.get(43L)).extracting(BudgetEmployeeMinutes::employeeSign).containsExactly("abc");
+    assertThat(byPlan.get(43L)).extracting(BudgetEmployeeSign::employeeSign).containsExactly("abc");
   }
 
   /** The query establishes nothing about who may see a plan, so the check is repeated here. */
@@ -303,11 +335,11 @@ public class BudgetEmployeeServiceTest {
     var forbidden = plan(43L);
     when(budgetAuthorization.isAuthorized(plan)).thenReturn(true);
     when(budgetAuthorization.isAuthorized(forbidden)).thenReturn(false);
-    when(assignmentRepository.findEmployeeMinutesByBudgetIds(List.of(42L))).thenReturn(List.of());
+    when(assignmentRepository.findEmployeeSignsByBudgetIds(List.of(42L))).thenReturn(List.of());
 
     service.employeesOf(List.of(plan, forbidden));
 
-    verify(assignmentRepository).findEmployeeMinutesByBudgetIds(List.of(42L));
+    verify(assignmentRepository).findEmployeeSignsByBudgetIds(List.of(42L));
   }
 
   /** {@code IN ()} is not valid SQL, and there is nothing to group anyway. */
@@ -317,7 +349,7 @@ public class BudgetEmployeeServiceTest {
 
     assertThat(service.employeesOf(List.of(plan))).isEmpty();
 
-    verify(assignmentRepository, never()).findEmployeeMinutesByBudgetIds(any());
+    verify(assignmentRepository, never()).findEmployeeSignsByBudgetIds(any());
   }
 
   // --- fixtures ---------------------------------------------------------------------------------

@@ -236,19 +236,16 @@
               </span>
             </td>
             <!--/* 0,00 € is a rate like any other and carries no mark — only a resolution that
-                   found nothing does. Hours on a suborder that is not invoiceable are named
-                   apart and are not a missing condition. */-->
+                   found nothing does. That somebody also booked on a suborder which is not
+                   invoiceable is deliberately not marked per person: it says nothing about them,
+                   only about the suborder, and the booking list says it row by row. The plan-wide
+                   hours are named below the table. */-->
             <td>
               <div th:each="p : ${e.pricesEuroPerHour}" th:text="#{main.budget.format.amount(${p})}"></div>
               <span th:if="${e.missingPrice}" class="badge bg-warning-lt"
                     th:title="#{main.budget.rate.price.missing}">
                 <i class="icon ti ti-alert-triangle m-0 me-1"></i>
                 <span th:text="#{main.budget.rate.price.missing.label}">keine</span>
-              </span>
-              <span th:if="${e.notInvoiceable}" class="badge bg-blue-lt ms-1"
-                    th:title="#{main.budget.rate.notinvoiceable}">
-                <i class="icon ti ti-receipt-off m-0 me-1"></i>
-                <span th:text="#{main.budget.rate.notinvoiceable.label}">nicht fakt.</span>
               </span>
             </td>
             <!--/* The card is the occasion to enter a missing rate, so it leads to both forms with
@@ -279,7 +276,13 @@
         <span th:if="${employees.anyNotInvoiceable}" class="me-3 text-muted"
               th:text="#{main.budget.employees.summary.notinvoiceable(${employees.hoursNotInvoiceable})}"></span>
       </div>
-      <small class="text-muted" th:text="#{main.budget.employees.hint}">
+      <!--/* Two texts, because the hint names the columns: whoever has no cost column must not be
+             told about one. */-->
+      <small class="text-muted" th:if="${employees.costsIncluded}" th:text="#{main.budget.employees.hint}">
+        Mehrere Einträge bedeuten mehrere greifende Sätze.
+      </small>
+      <small class="text-muted" th:unless="${employees.costsIncluded}"
+             th:text="#{main.budget.employees.hint.rateonly}">
         Mehrere Einträge bedeuten mehrere greifende Sätze.
       </small>
     </div>

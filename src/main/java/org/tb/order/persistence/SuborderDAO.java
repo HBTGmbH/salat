@@ -7,6 +7,7 @@ import static org.tb.common.util.DateUtils.today;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,14 @@ public class SuborderDAO {
      */
     public Suborder getSuborderById(long id) {
         return suborderRepository.findById(id).orElse(null);
+    }
+
+    /**
+     * Gets the suborders for the given ids, in one statement. Hidden ones included and unknown ids
+     * silently absent — the caller knows which ids it asked for.
+     */
+    public List<Suborder> getSubordersByIds(Collection<Long> ids) {
+        return StreamSupport.stream(suborderRepository.findAllById(ids).spliterator(), false).toList();
     }
 
     /**
