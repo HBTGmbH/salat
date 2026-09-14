@@ -137,12 +137,10 @@ public class ReportController {
     // message says so instead of the list silently not showing it.
     if (form.getId() == null) {
       reportService.create(form.getName(), form.getSql());
-      redirectAttributes.addFlashAttribute("toastSuccess",
-          filterHintViewHelper.appendTo("Report created successfully", REPORT_FILTER));
+      filterHintViewHelper.addSuccess(redirectAttributes, "Report created successfully", REPORT_FILTER);
     } else {
       reportService.update(form.getId(), form.getName(), form.getSql());
-      redirectAttributes.addFlashAttribute("toastSuccess",
-          filterHintViewHelper.appendTo("Report updated successfully", REPORT_FILTER));
+      filterHintViewHelper.addSuccess(redirectAttributes, "Report updated successfully", REPORT_FILTER);
     }
 
     return "redirect:/reporting/reports";

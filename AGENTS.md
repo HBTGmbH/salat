@@ -563,10 +563,13 @@ method therefore never calls `uiState.clearState(...)`. Where the filter may hid
 saved, the success message says so:
 
 ```java
-redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+filterHintViewHelper.addSuccess(redirectAttributes,
     messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
-    SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID));
+    SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
 ```
+
+The hint travels as its own flash attribute (`toastSuccessHint`) and the toast gives it a line of
+its own — it is about the list, not about the saving.
 
 Pass only the filters that can **exclude** an entry — search text and selections. `showHidden` and
 `showInvalid` only ever widen a list and can never be the reason something is missing.

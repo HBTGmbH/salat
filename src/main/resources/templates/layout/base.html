@@ -464,6 +464,11 @@
               <div>
                 <h4 class="alert-title mb-1" th:text="#{main.general.toast.success.title}">Erfolg</h4>
                 <div class="text-secondary">[[${toastSuccess}]]</div>
+                <!--/* eigene Zeile: der Hinweis auf einen gesetzten Filter sagt etwas über die
+                       Liste, nicht über das Speichern (ADR-0023) */-->
+                <div class="text-secondary small mt-1" th:if="${not #strings.isEmpty(toastSuccessHint)}">
+                  <i class="ti ti-filter me-1"></i>[[${toastSuccessHint}]]
+                </div>
               </div>
               <a th:if="${not #strings.isEmpty(toastAction)}"
                  th:href="${toastAction}"

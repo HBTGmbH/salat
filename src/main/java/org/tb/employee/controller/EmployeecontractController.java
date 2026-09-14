@@ -207,9 +207,9 @@ public class EmployeecontractController {
         }
         // The filter stays as the user left it (ADR-0023); where it hides the saved contract, the
         // message says so instead of the list silently not showing it.
-        redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+        filterHintViewHelper.addSuccess(redirectAttributes,
                 messages.getMessage("form.employeecontract.message.stored", "Employee contract saved successfully"),
-                EMPLOYEE_CONTRACT_FILTER, EMPLOYEE_ID));
+                EMPLOYEE_CONTRACT_FILTER, EMPLOYEE_ID);
         return "redirect:/employees/contracts";
     }
 

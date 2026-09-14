@@ -131,9 +131,9 @@ public class EmployeeController {
 
         // The filter stays as the user left it (ADR-0023); where it hides the saved employee, the
         // message says so instead of the list silently not showing it.
-        redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+        filterHintViewHelper.addSuccess(redirectAttributes,
                 messages.getMessage("form.employee.message.stored", "Employee saved successfully"),
-                EmployeeUiStateKeyContributor.EMPLOYEE_FILTER));
+                EmployeeUiStateKeyContributor.EMPLOYEE_FILTER);
         return "redirect:/employees";
     }
 

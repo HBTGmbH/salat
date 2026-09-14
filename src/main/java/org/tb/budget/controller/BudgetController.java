@@ -202,12 +202,12 @@ public class BudgetController {
         try {
             if (form.isNew()) {
                 orderBudgetService.create(data);
-                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
-                    messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_SIGN));
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_SIGN);
             } else {
                 orderBudgetService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
-                    messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_SIGN));
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_SIGN);
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

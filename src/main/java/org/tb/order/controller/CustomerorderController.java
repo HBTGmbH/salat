@@ -153,9 +153,9 @@ public class CustomerorderController {
 
     // The filter stays as the user left it (ADR-0023); where it hides the saved order, the
     // message says so instead of the list silently not showing it.
-    redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+    filterHintViewHelper.addSuccess(redirectAttributes,
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"),
-        CUSTOMER_ORDER_FILTER, CUSTOMER_ID));
+        CUSTOMER_ORDER_FILTER, CUSTOMER_ID);
     if (newId != null) {
       redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + newId);
       redirectAttributes.addFlashAttribute("toastActionLabel",

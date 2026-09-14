@@ -124,9 +124,9 @@ public class CustomerController {
 
     // The filter stays as the user left it (ADR-0023); where it hides the saved customer, the
     // message says so instead of the list silently not showing it.
-    redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+    filterHintViewHelper.addSuccess(redirectAttributes,
         messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"),
-        CustomerUiStateKeyContributor.CUSTOMER_FILTER));
+        CustomerUiStateKeyContributor.CUSTOMER_FILTER);
     return "redirect:/customers";
   }
 
