@@ -58,11 +58,10 @@ public class BudgetQueryService {
      *
      * <p>Narrowing by period is left to the caller, which already reads its bookings by date range
      * and only has to intersect. A period-aware query here would have to join the {@code Timereport}
-     * entity in JPQL: allowed as far as module dependencies go — {@code budget} imports
-     * {@code dailyreport} — but it would be the first place outside {@code dailyreport} to touch that
-     * entity, which is deliberately reserved for {@code TimereportService} (#908). The saving would
-     * be a shorter id list, next to nothing against the per-suborder booking reads the caller does
-     * anyway, so the convention wins.
+     * entity in JPQL — permitted, as long as no entity leaves the query (→ ADR-0021, and
+     * {@code TimereportBudgetAssignmentRepository.findAssignedBookings} does exactly that). It would
+     * only buy a shorter id list here, next to nothing against the per-suborder booking reads the
+     * caller does anyway, so it stays as it is for want of a reason, not for want of permission.
      */
     public List<Long> getAssignedTimereportIds(long orderBudgetId) {
         var plan = orderBudgetRepository.findById(orderBudgetId).orElse(null);
