@@ -75,7 +75,8 @@ seitdem ausgeschrieben (`cFilter` → `fCustomerFilter`, `eoFilter` → `fEmploy
 - **Anlegeformulare dürfen die Filterwerte als optionale Eingabe verwenden**: `createForm`
   übernimmt `fCustomerId`, `fCustomerOrderId` und so weiter als Vorbelegung. Das ist der erwünschte
   Teil des Mechanismus — die Vorbelegung eines neuen Eintrags mit dem, was in der Liste gerade
-  ausgewählt ist.
+  ausgewählt ist. Der **Link** auf das Formular übergibt sie aber nicht: der Fallback liefert sie
+  ohnehin, und ein übergebener Parameter würde den Filter neu schreiben (→ ADR-0023).
 - Gemerkte Werte im Cookie bleiben erhalten: der Cookie-Schlüssel ist der Name des `UiStateKey`
   (`matrix.Month`), nicht der Parametername. Die Umbenennung berührt den Cookie nicht.
 

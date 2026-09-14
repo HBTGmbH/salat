@@ -72,6 +72,23 @@ können nie der Grund dafür sein, dass etwas fehlt.
 Der Hinweis hängt an `main.general.message.filtered.hint` und gilt für Anlegen und Ändern
 gleichermaßen: Auch eine Änderung kann einen Eintrag aus dem Filter herausfallen lassen.
 
+### Auch ein Knopf, der ein Formular öffnet, ändert den Filter nicht
+
+`UiStateFilter` übernimmt jeden Filterparameter, den eine Anfrage mitbringt — auch den eines
+Links. Ein „Neu"-Knopf, der `?fCustomerId=…` anhängt, schreibt den Filter also beim Klick neu.
+
+- **Der Link übergibt nichts.** Soll das neue Formular mit der aktuellen Auswahl starten, liefert
+  der Fallback sie ohnehin an `createForm`; der Parameter im Link wäre nur eine Wiederholung mit
+  Nebenwirkung. Die „Neu"-Knöpfe der Auftrags-, Unterauftrags- und Mitarbeiterauftragslisten zeigen
+  deshalb auf den nackten Pfad.
+- **Soll das Formular mit etwas anderem starten**, nennt der Link das **Formularfeld**, nicht den
+  Filter: `/orders/suborders/create?customerorderId=42` nach dem Anlegen eines Auftrags,
+  `/budget/pricing/create?customerorderSign=…` aus der Mitarbeitenden-Karte eines Budgetplans. Der
+  Controller nimmt den expliziten Wert und fällt ohne ihn auf den gemerkten zurück.
+
+`UiStateParameterNamingTest.noCreateLinkCarriesAFilterParameter` prüft die Regel über Templates und
+Java-Quellen.
+
 ### Consequences
 
 * Good: eine Filtereinstellung bleibt, bis der Benutzer sie ändert

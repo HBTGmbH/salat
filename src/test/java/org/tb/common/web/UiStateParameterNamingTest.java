@@ -41,6 +41,9 @@ class UiStateParameterNamingTest {
     private static final Pattern POST_FORM = Pattern.compile(
         "<form[^>]*method=\"post\"[^>]*>(.*?)</form>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
+    /** A URL ending in {@code /create} that hands over a parameter, in a template or in Java. */
+    private static final Pattern CREATE_LINK = Pattern.compile("/create[^\"'\n]*?\\b(f[A-Z][A-Za-z0-9]*)=");
+
     private final Set<String> registeredParams = registry().getParamToKey().keySet();
 
     @Test
@@ -102,6 +105,30 @@ class UiStateParameterNamingTest {
             .isEmpty();
     }
 
+    /**
+     * A button that opens a create form must not carry a filter parameter: the filter would be
+     * rewritten by the click (ADR-0023). Where the new entry should start out with the current
+     * selection, the fallback delivers it anyway; where it should start out with something else,
+     * the link names the form field, not the filter.
+     */
+    @Test
+    void noCreateLinkCarriesAFilterParameter() throws IOException {
+        var offending = new ArrayList<String>();
+        for (Path root : List.of(TEMPLATES, Path.of("src/main/java"))) {
+            forEachFile(root, (file, content) -> {
+                Matcher link = CREATE_LINK.matcher(content);
+                while (link.find()) {
+                    if (registeredParams.contains(link.group(1))) {
+                        offending.add(file + ": /create…" + link.group(1) + "=");
+                    }
+                }
+            }, ".html", ".java");
+        }
+        assertThat(offending)
+            .describedAs("a link to a create form must not set a UiState filter parameter")
+            .isEmpty();
+    }
+
     @Test
     void noRegisteredParameterIsAFieldOfAFormClass() {
         var classes = new ClassFileImporter()
@@ -122,13 +149,20 @@ class UiStateParameterNamingTest {
     }
 
     private interface TemplateVisitor {
-        void visit(Path file, String content);
+        void visit(Path file, String content) throws IOException;
     }
 
     private static void forEachTemplate(TemplateVisitor visitor) throws IOException {
-        try (Stream<Path> files = Files.walk(TEMPLATES)) {
-            for (Path file : files.filter(p -> p.toString().endsWith(".html")).toList()) {
-                visitor.visit(TEMPLATES.relativize(file), Files.readString(file, UTF_8));
+        forEachFile(TEMPLATES, visitor, ".html");
+    }
+
+    private static void forEachFile(Path root, TemplateVisitor visitor, String... suffixes)
+        throws IOException {
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files
+                .filter(p -> Stream.of(suffixes).anyMatch(s -> p.toString().endsWith(s)))
+                .toList()) {
+                visitor.visit(root.relativize(file), Files.readString(file, UTF_8));
             }
         }
     }
