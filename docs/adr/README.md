@@ -33,5 +33,5 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0017](0017-viewhelper-fuer-darstellungslogik.md) | ViewHelper-Klassen für darstellungsspezifische Aufbereitung | Accepted | 2026-06-22 |
 | [0018](0018-csrf-schutz-mit-cookie-tokenrepository.md) | CSRF-Schutz mit CookieCsrfTokenRepository und CsrfTokenRequestAttributeHandler | Accepted | 2026-06-28 |
 | [0019](0019-direkter-repository-zugriff-in-services.md) | Direkter Repository-Zugriff in Services (kein DAO für neue Module) | Accepted | 2026-07-05 |
-| [0020](0020-local-qa-profil-fuer-performancemessungen.md) | Profil `local-qa` für Performancemessungen | Proposed | 2026-08-22 |
+| [0020](0020-local-qa-profil-fuer-performancemessungen.md) | Profil `local-qa` für Performancemessungen | Accepted | 2026-08-22 |
 | [0021](0021-modeluebergreifender-lesezugriff.md) | Modulübergreifender Lesezugriff: Join erlaubt, Entities bleiben im Modul | Accepted | 2026-09-14 |

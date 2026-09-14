@@ -1,7 +1,7 @@
 # ADR-0020 Profil `local-qa` für Performancemessungen
 
 Date: 2026-08-22
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 
