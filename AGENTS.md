@@ -554,7 +554,7 @@ That is why the two namespaces are kept disjoint:
   form object. A filter has no `*FilterForm`.
 - **A create form may use the filter values as optional input**: `createForm(@RequestParam(required
   = false) Long fCustomerId, …)` prefills the new entry with what the list has selected. That is
-  the wanted half of the mechanism.
+  the wanted half of the mechanism — but the **link** to that form passes nothing (see below).
 
 ### Saving Never Changes the Filter (→ ADR-0023)
 
@@ -570,6 +570,12 @@ redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.append
 
 Pass only the filters that can **exclude** an entry — search text and selections. `showHidden` and
 `showInvalid` only ever widen a list and can never be the reason something is missing.
+
+**A link to a create form carries no filter parameter either** — the filter would be rewritten by
+the click. `th:href="@{/orders/suborders/create}"`, not `@{/orders/suborders/create(fCustomerId=…)}`:
+the fallback prefills the form anyway. Where the form must start with something *other* than the
+current selection, the link names the **form field** — `/orders/suborders/create?customerorderId=42`
+after creating an order — and the controller falls back to the remembered value without it.
 
 ### The `hide` Flag (UX Declutter)
 The `hide` boolean flag is a UX feature: it removes an entity from all dropdown select inputs in forms, keeping the app compact when a customer, order, or suborder is no longer actively used but must not be deleted (e.g. historical records still referenced by time reports). Hidden records remain in the database and in list management views, but are suppressed everywhere a user picks from a list.

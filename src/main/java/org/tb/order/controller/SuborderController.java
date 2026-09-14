@@ -102,12 +102,20 @@ public class SuborderController {
     return htmxRequest ? "order/sub-order-list :: results" : "order/sub-order-list";
   }
 
+  /**
+   * The "add another suborder" action after saving names the order it just created as
+   * {@code customerorderId}, the form field — a button that opens a form must not change the
+   * filter of the list behind it (ADR-0023). Without it the form is prefilled with what the list
+   * is filtered to.
+   */
   @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/create")
   public String createForm(
+      @RequestParam(required = false) Long customerorderId,
       @RequestParam(required = false) Long fCustomerOrderId,
       @RequestParam(required = false) Long fCustomerId,
       Model model) {
+    var orderId = customerorderId != null ? customerorderId : fCustomerOrderId;
     var form = new SuborderForm();
     form.setInvoice(true);
     form.setStandard(false);
@@ -117,8 +125,8 @@ public class SuborderController {
     form.setHide(false);
     form.setOrderType(OrderType.STANDARD);
     form.setCustomerId(fCustomerId);
-    form.setCustomerorderId(fCustomerOrderId);
-    form.setParentId(fCustomerOrderId);
+    form.setCustomerorderId(orderId);
+    form.setParentId(orderId);
     addFormModel(model, form, false, true);
     prefillValidity(form);
     return "order/sub-order-form";
@@ -188,7 +196,7 @@ public class SuborderController {
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
         SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID));
     if (isCreate && customerorderId != null) {
-      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?fCustomerOrderId=" + customerorderId);
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + customerorderId);
       redirectAttributes.addFlashAttribute("toastActionLabel",
           messages.getMessage("main.general.button.add.another.suborder.text", "Add Another Suborder"));
     }

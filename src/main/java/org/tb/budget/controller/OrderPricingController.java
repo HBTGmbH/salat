@@ -78,17 +78,22 @@ public class OrderPricingController {
     }
 
     /**
-     * Both parameters only prefill, and both are optional (#964). The "Mitarbeitende" card of a
+     * All three parameters only prefill, and all are optional (#964). The "Mitarbeitende" card of a
      * budget plan links here for a person whose work has no condition at all — order and person are
      * known there, the rate and its validity are not.
+     *
+     * <p>That link names the order as {@code customerorderSign}, the form field, not as the filter
+     * parameter: a button that opens a form must not change the filter of the list behind it
+     * (ADR-0023). Where it brings no order, the one the list is filtered to prefills the form.
      */
     @Authorized(requiresManager = true)
     @GetMapping("/create")
-    public String createForm(@RequestParam(required = false) String fCustomerOrderSign,
+    public String createForm(@RequestParam(required = false) String customerorderSign,
+                             @RequestParam(required = false) String fCustomerOrderSign,
                              @RequestParam(required = false) String employeeSign,
                              Model model) {
         var form = new OrderPricingForm();
-        form.setCustomerorderSign(trimToNull(fCustomerOrderSign));
+        form.setCustomerorderSign(trimToNull(customerorderSign != null ? customerorderSign : fCustomerOrderSign));
         form.setEmployeeSign(trimToNull(employeeSign));
         addFormModel(model, form, false);
         return "budget/pricing-form";

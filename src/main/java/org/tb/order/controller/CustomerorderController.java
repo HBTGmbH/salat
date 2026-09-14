@@ -157,7 +157,7 @@ public class CustomerorderController {
         messages.getMessage("form.customerorder.message.stored", "Customer order saved successfully"),
         CUSTOMER_ORDER_FILTER, CUSTOMER_ID));
     if (newId != null) {
-      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?fCustomerOrderId=" + newId);
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + newId);
       redirectAttributes.addFlashAttribute("toastActionLabel",
           messages.getMessage("main.general.button.add.suborder.text", "Add Suborder"));
     }
