@@ -30,18 +30,14 @@
         <option value="" th:text="#{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
         <option th:each="emp : ${employees}"
                 th:value="${emp.sign}"
-                th:text="${emp.hide}
-                           ? |${emp.sign} - ${emp.firstname} ${emp.lastname} (#{main.general.hidden.suffix})|
-                           : |${emp.sign} - ${emp.firstname} ${emp.lastname}|"></option>
+                th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}| + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
       </salat:select>
       <!-- A hidden suborder only appears when the assignment already references it; say so. -->
       <salat:select th:field="*{suborderSign}" th:label="#{main.employeecost.assignment.field.suborderSign}">
         <option value="" th:text="#{main.budget.field.suborderSign.none}">--- Kein Unterauftrag ---</option>
         <option th:each="so : ${suborders}"
                 th:value="${so.completeOrderSign}"
-                th:text="${so.hide}
-                           ? |${so.completeOrderSign} - ${so.shortdescription} (#{main.general.hidden.suffix})|
-                           : |${so.completeOrderSign} - ${so.shortdescription}|"></option>
+                th:text="|${so.completeOrderSign} - ${so.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
       </salat:select>
       <div class="row">
         <div class="col-md-6">

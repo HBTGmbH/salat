@@ -33,7 +33,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="ec : ${employeecontracts}"
                   th:value="${ec.id}"
-                  th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'}"></option>
+                  th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' ∞' : '') + ')'} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeContractId')}" th:errors="*{employeeContractId}"></div>
       </div>
@@ -49,7 +49,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="c : ${customers}"
                   th:value="${c.id}"
-                  th:text="${c.shortname + ' - ' + c.name}"></option>
+                  th:text="${c.shortname + ' - ' + c.name} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('customerId')}" th:errors="*{customerId}"></div>
       </div>
@@ -65,7 +65,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="co : ${orders}"
                   th:value="${co.id}"
-                  th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                  th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('orderId')}" th:errors="*{orderId}"></div>
       </div>
@@ -81,7 +81,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="so : ${suborders}"
                   th:value="${so.id}"
-                  th:text="${so.completeOrderSignAndDescription}"></option>
+                  th:text="${so.completeOrderSignAndDescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('suborderId')}" th:errors="*{suborderId}"></div>
       </div>
@@ -148,7 +148,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="co : ${orders}"
                   th:value="${co.id}"
-                  th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                  th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('orderId')}" th:errors="*{orderId}"></div>
       </div>
@@ -164,7 +164,7 @@
           <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
           <option th:each="so : ${suborders}"
                   th:value="${so.id}"
-                  th:text="${so.completeOrderSignAndDescription}"></option>
+                  th:text="${so.completeOrderSignAndDescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('suborderId')}" th:errors="*{suborderId}"></div>
       </div>

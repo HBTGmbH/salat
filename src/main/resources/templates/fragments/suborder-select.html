@@ -19,9 +19,7 @@
     <option th:each="so : ${suborders}"
             th:value="${so.completeOrderSign}"
             th:selected="${selected != null and selected == so.completeOrderSign}"
-            th:text="${so.hide}
-                       ? |${so.completeOrderSign} - ${so.shortdescription} (#{main.general.hidden.suffix})|
-                       : |${so.completeOrderSign} - ${so.shortdescription}|"></option>
+            th:text="|${so.completeOrderSign} - ${so.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
   </select>
 </div>
 

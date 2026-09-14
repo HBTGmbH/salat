@@ -20,7 +20,7 @@
                   hx-include="closest form"
                   hx-trigger="change">
             <option th:each="c : ${customers}"
-                    th:text="|${c.shortname} - ${c.name}|"
+                    th:text="|${c.shortname} - ${c.name}| + ${@hiddenMarkerViewHelper.suffix(c.hide)}"
                     th:value="${c.id}"></option>
           </select>
         </div>
@@ -38,7 +38,7 @@
                     th:value="${co.id}"
                     th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
                     th:attr="data-subtext=${customerLabel}"
-                    th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                    th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
           </select>
           <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('customerorderId')}" th:errors="*{customerorderId}"></div>
         </div>
@@ -59,7 +59,7 @@
             <!-- All suborders of the selected customer order as optional parent -->
             <option th:each="pso : ${parentSuborders}"
                     th:value="${pso.id}"
-                    th:text="${'  > ' + pso.completeOrderSignAndDescription}">
+                    th:text="${'  > ' + pso.completeOrderSignAndDescription} + ${@hiddenMarkerViewHelper.suffix(pso.hide)}">
             </option>
           </select>
         </div>
