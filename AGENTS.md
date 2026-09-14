@@ -571,8 +571,10 @@ redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.append
 Pass only the filters that can **exclude** an entry — search text and selections. `showHidden` and
 `showInvalid` only ever widen a list and can never be the reason something is missing.
 
-**A link to a create form carries no filter parameter either** — the filter would be rewritten by
-the click. `th:href="@{/orders/suborders/create}"`, not `@{/orders/suborders/create(fCustomerId=…)}`:
+**A link to a create form carries no filter parameter either** — the click would rewrite the
+filter, and an *empty* value (the usual case: the link renders whatever the list had) is a
+parameter that is present, so the fallback stops supplying the remembered one and the form opens
+with nothing preselected. `th:href="@{/orders/suborders/create}"`, not `@{/orders/suborders/create(fCustomerId=…)}`:
 the fallback prefills the form anyway. Where the form must start with something *other* than the
 current selection, the link names the **form field** — `/orders/suborders/create?customerorderId=42`
 after creating an order — and the controller falls back to the remembered value without it.
