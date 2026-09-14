@@ -19,7 +19,7 @@
               <option value="" th:text="#{main.employee.select.please}">--- Please select ---</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
-                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'}"
+                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}"
                       th:selected="${eoEmployeeContractId != null and eoEmployeeContractId == ec.id}"></option>
             </select>
           </div>
@@ -38,7 +38,7 @@
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
-                      th:text="|${c.shortname} - ${c.name}|"
+                      th:text="|${c.shortname} - ${c.name}| + ${@hiddenMarkerViewHelper.suffix(c.hide)}"
                       th:selected="${customerId != null and customerId == c.id}"></option>
             </select>
           </div>
@@ -48,7 +48,7 @@
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${orders}"
                       th:value="${co.id}"
-                      th:text="${co.sign + ' - ' + co.shortdescription}"
+                      th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
                       th:selected="${orderId != null and orderId == co.id}"></option>
             </select>
           </div>
@@ -84,7 +84,7 @@
                 <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
                 <option th:each="so : ${suborders}"
                         th:value="${so.id}"
-                        th:text="${so.completeOrderSign + ' - ' + so.shortdescription}"
+                        th:text="${so.completeOrderSign + ' - ' + so.shortdescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
                         th:selected="${suborderId != null and suborderId == so.id}"></option>
               </select>
             </div>
@@ -200,7 +200,7 @@
         <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
         <option th:each="co : ${orders}"
                 th:value="${co.id}"
-                th:text="${co.sign + ' - ' + co.shortdescription}"
+                th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
                 th:selected="${orderId != null and orderId == co.id}"></option>
       </select>
     </div>
@@ -210,7 +210,7 @@
         <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
         <option th:each="so : ${suborders}"
                 th:value="${so.id}"
-                th:text="${so.completeOrderSign + ' - ' + so.shortdescription}"
+                th:text="${so.completeOrderSign + ' - ' + so.shortdescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
                 th:selected="${suborderId != null and suborderId == so.id}"></option>
       </select>
     </div>

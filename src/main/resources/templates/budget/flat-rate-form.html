@@ -33,9 +33,7 @@
                       th:value="${co.sign}"
                       th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
                       th:attr="data-subtext=${customerLabel}"
-                      th:text="${co.hide}
-                            ? |${co.sign} - ${co.shortdescription} (#{main.general.hidden.suffix})|
-                            : |${co.sign} - ${co.shortdescription}|"></option>
+                      th:text="|${co.sign} - ${co.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
             </select>
           </div>
         </div>
@@ -116,9 +114,7 @@
     <option value="" th:text="#{main.flatrate.field.suborderSign.wholeorder}">--- Ganzer Auftrag ---</option>
     <option th:each="so : ${suborders}"
             th:value="${so.completeOrderSign}"
-            th:text="${so.hide}
-                       ? |${so.completeOrderSign} - ${so.shortdescription} (#{main.general.hidden.suffix})|
-                       : |${so.completeOrderSign} - ${so.shortdescription}|"
+            th:text="|${so.completeOrderSign} - ${so.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
             th:selected="${selectedSign != null and selectedSign == so.completeOrderSign}"></option>
   </select>
   <div class="form-text" th:text="#{main.flatrate.field.suborderSign.help}">Ohne Unterauftrag gilt die Pauschale für den ganzen Auftrag.</div>

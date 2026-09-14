@@ -40,7 +40,8 @@
         <label class="form-label required" th:text="#{main.employeecontract.supervisor.text}">People Lead</label>
         <select class="form-select tomselect tomselect-multi" id="supervisorIds"
                 th:field="*{supervisorIds}" multiple th:errorclass="is-invalid">
-          <option th:each="s : ${supervisors}" th:value="${s.id}" th:text="${s.name}"></option>
+          <option th:each="s : ${supervisors}" th:value="${s.id}"
+                  th:text="${s.name} + ${@hiddenMarkerViewHelper.suffix(s.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('supervisorIds')}" th:errors="*{supervisorIds}"></div>
       </div>
