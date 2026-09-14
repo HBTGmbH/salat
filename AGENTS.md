@@ -26,10 +26,21 @@ See also README.md
   - Events should carry stable, minimal data contracts to reduce coupling.
 - **Reading across a module boundary that the import direction allows** (→ ADR-0021): a module may
   join another module's entities in its own query, but those entities must not leave the query —
-  the result is a record or DTO, a controlled copy. That copy is what makes extracting a module
-  later a replication task instead of a remodelling. Authorization is then the reading service's
-  responsibility; where a per-row filter of the owning module no longer applies, say at the call
-  site why it is moot or covered otherwise.
+  the result is a record or DTO of plain values and ids, a controlled copy. That copy is what makes
+  extracting a module later a replication task instead of a remodelling. Four constraints come with
+  it:
+  - Every module the query **traverses** must be import-legal too, not just the one it names — a
+    path over `Timereport.employeecontract.employee` reads `employee`.
+  - No entity as a record component, no interface projection that navigates in the caller, no
+    `Object[]`/`Tuple` — each hands the association graph back out.
+  - Read only: no `@Modifying`, no DML, no cascade across the boundary. Writing stays with events.
+  - JPQL, never `nativeQuery = true`: a JPQL query at least breaks at application start when the
+    other module renames something.
+
+  Authorization is then the reading service's responsibility; where a per-row filter of the owning
+  module no longer applies, say at the call site why it is moot or covered otherwise, and name the
+  premises that argument rests on. Nothing enforces any of this automatically — `ArchitectureTest`
+  sees class dependencies, and the contents of a `@Query` are a string.
 
 ## Controller and View Guidelines (target stack)
 - Controllers:

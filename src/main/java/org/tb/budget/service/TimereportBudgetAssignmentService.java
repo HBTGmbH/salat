@@ -226,10 +226,28 @@ public class TimereportBudgetAssignmentService {
      *
      * <p><b>Authorization.</b> The query joins {@code Timereport} directly and therefore does not
      * pass the per-booking read filter of {@code TimereportDAO.toDaoList}. On this page that filter
-     * cannot remove anything: {@code BudgetAuthorization} lets only managers and the
-     * {@code responsibleHbt} of the plan's customer order reach it, {@code TimereportAuthorization}
-     * grants READ to exactly those two, and every booking of the plan belongs to that order. Whoever
-     * sees the page may read every row of it.
+     * cannot remove anything: whoever reaches the page is already allowed to read every row of it,
+     * because the set {@code BudgetAuthorization} admits is contained in the one
+     * {@code TimereportAuthorization} grants READ to. Three premises carry that (→ ADR-0021,
+     * point 5):
+     *
+     * <ul>
+     *   <li>{@code BudgetAuthorization} admits managers and the {@code responsibleHbt} of the plan's
+     *       customer order, nobody else.</li>
+     *   <li>{@code TimereportAuthorization} grants READ to both of them for every booking of that
+     *       order — to managers outright, to the responsible over
+     *       {@code Customerorder#getResponsibleHbt()}. That it grants READ to further people too
+     *       (the booking's owner, people leads, backoffice on invoiceable suborders) is irrelevant
+     *       here: the argument needs the containment, not equality.</li>
+     *   <li>Every booking of the plan belongs to that customer order. {@code BudgetResolver} enforces
+     *       it whenever an assignment is written, and {@link #resolveAssignments} and
+     *       {@link #revalidateAssignmentsOf} restore it after a booking or a plan changed.</li>
+     * </ul>
+     *
+     * <p>Both sides resolve the same identity, so impersonation cannot pull them apart:
+     * {@code BudgetAuthorization} goes by the employee {@code AuthorizedEmployeeFilter} looked up
+     * from {@code getEffectiveLoginSign()}, and {@code TimereportAuthorization} compares against
+     * that same sign.
      */
     @Transactional(readOnly = true)
     public AssignedBookings getAssignedBookings(long orderBudgetId, LocalDate from, LocalDate until, int limit) {
