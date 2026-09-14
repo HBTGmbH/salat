@@ -92,4 +92,4 @@ seitdem ausgeschrieben (`cFilter` → `fCustomerFilter`, `eoFilter` → `fEmploy
   Der Grund ist jetzt ein anderer: Mit einem registrierten Mapping stünde der gemerkte Wert auch in
   `getParameterMap()`, und die Unterscheidung „abgeschickt oder nur aufgerufen" — an der die teure
   Auswertung hängt — wäre nicht mehr möglich. Das braucht ein eigenes Absende-Merkmal und ist als
-  Folgeticket festgehalten.
+  #1009 festgehalten.
