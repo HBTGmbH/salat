@@ -26,6 +26,14 @@ public class CustomerDAO {
     }
 
     /**
+     * Get the customers offered in a select box: everything not hidden, plus the one with
+     * {@code keepId} even if it is hidden.
+     */
+    public List<Customer> getSelectableCustomers(Long keepId) {
+        return customerRepository.findAllVisibleOrWithIdOrderByShortnameIgnoreCase(keepId);
+    }
+
+    /**
      * Gets the customer for the given id.
      */
     public Customer getCustomerById(long id) {

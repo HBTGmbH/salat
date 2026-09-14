@@ -156,4 +156,15 @@ public class CustomerService {
   public List<Customer> getCustomersOrderedByShortName() {
     return customerDAO.getCustomersOrderedByShortName();
   }
+
+  /**
+   * The customers offered in a select box: everything not hidden, plus the one with {@code keepId}
+   * even if it is hidden (#1005). Hiding a customer is a decluttering aid for exactly these lists —
+   * it must not make a record that already references the customer uneditable, and it must not turn
+   * a select box that cannot mark its stored value into one that silently shows a different
+   * customer.
+   */
+  public List<Customer> getSelectableCustomers(Long keepId) {
+    return customerDAO.getSelectableCustomers(keepId);
+  }
 }

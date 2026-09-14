@@ -341,6 +341,18 @@ public class SuborderService {
   }
 
   /**
+   * Same, addressed by id rather than by complete order sign. Budget and cost records reference a
+   * suborder by its sign, the order forms by its id (#1005) — the rule behind both is one and the
+   * same: a hidden suborder that a record already stores has to stay in the list, otherwise the
+   * form drops it and writes back whatever the browser preselected instead.
+   */
+  public List<Suborder> getSelectableSubordersByCustomerorderId(long customerorderId, Long keepId) {
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
+        .filter(suborder -> !suborder.isHide() || Objects.equals(suborder.getId(), keepId))
+        .toList();
+  }
+
+  /**
    * Same, but restricted to direct children of the customer order — budget plans only live on that
    * first level (#905). The stored one stays in the list either way, so an older plan on a deeper
    * suborder remains editable.

@@ -87,18 +87,52 @@ public class CustomerServiceTest {
     assertThat(shortNames).containsExactly("acme-a", "ACME-z");
   }
 
+  /**
+   * Ein ausgeblendeter Auftraggeber fällt aus den Auswahllisten — nur der, den ein Datensatz bereits
+   * trägt, bleibt drin. Ohne ihn kann die Auswahl ihren gespeicherten Wert nicht markieren und der
+   * Browser zeigt den alphabetisch ersten Auftraggeber an, also einen fremden (#1005).
+   */
+  @Test
+  public void hidden_customers_are_left_out_of_the_selection() {
+    createCustomer("visible", "Visible GmbH", false);
+    createCustomer("Hidden", "Hidden GmbH", true);
+
+    assertThat(selectableShortNames(null)).containsExactly("visible");
+  }
+
+  @Test
+  public void the_stored_customer_stays_in_the_selection_even_when_hidden() {
+    createCustomer("visible", "Visible GmbH", false);
+    var hidden = createCustomer("Hidden", "Hidden GmbH", true);
+
+    assertThat(selectableShortNames(hidden.getId())).containsExactly("Hidden", "visible");
+  }
+
+  @Test
+  public void another_hidden_customer_stays_out_of_the_selection() {
+    var hidden = createCustomer("Hidden", "Hidden GmbH", true);
+    createCustomer("alsoHidden", "Also Hidden GmbH", true);
+
+    assertThat(selectableShortNames(hidden.getId())).containsExactly("Hidden");
+  }
+
+  private List<String> selectableShortNames(Long keepId) {
+    return customerService.getSelectableCustomers(keepId)
+        .stream().map(Customer::getShortname).toList();
+  }
+
   private List<String> shortNames(boolean showHidden) {
     return customerService.getAllCustomerDTOsByFilter(null, showHidden)
         .stream().map(CustomerDTO::getShortName).toList();
   }
 
-  private void createCustomer(String shortname, String name, boolean hide) {
+  private Customer createCustomer(String shortname, String name, boolean hide) {
     Customer customer = new Customer();
     customer.setShortname(shortname);
     customer.setName(name);
     customer.setAddress(name + " Street 1");
     customer.setHide(hide);
-    customerRepository.save(customer);
+    return customerRepository.save(customer);
   }
 
 }
