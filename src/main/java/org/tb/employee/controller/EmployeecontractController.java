@@ -33,7 +33,7 @@ import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
@@ -52,30 +52,30 @@ public class EmployeecontractController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final UiState uiState;
+    private final FilterHintViewHelper filterHintViewHelper;
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) String ecFilter,
-            @RequestParam(required = false) Long employeeId,
-            @RequestParam(required = false) Boolean ecShowInvalid,
-            @RequestParam(required = false) Boolean ecShowHidden,
+            @RequestParam(required = false) String fEmployeeContractFilter,
+            @RequestParam(required = false) Long fEmployeeId,
+            @RequestParam(required = false) Boolean fEmployeeContractShowInvalid,
+            @RequestParam(required = false) Boolean fEmployeeContractShowHidden,
             Model model) {
         var employees = employeecontractService.getVisibleEmployeeContracts().stream()
                 .map(Employeecontract::getEmployee)
                 .distinct()
                 .sorted(Comparator.comparing(Employee::getName))
                 .toList();
-        if (employeeId == null && employees.size() == 1) {
-            employeeId = employees.getFirst().getId();
+        if (fEmployeeId == null && employees.size() == 1) {
+            fEmployeeId = employees.getFirst().getId();
         }
-        var contracts = employeecontractService.getEmployeeContractViewsByFilters(ecShowInvalid, ecFilter, employeeId, ecShowHidden);
+        var contracts = employeecontractService.getEmployeeContractViewsByFilters(fEmployeeContractShowInvalid, fEmployeeContractFilter, fEmployeeId, fEmployeeContractShowHidden);
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("employees", employees);
-        model.addAttribute("ecFilter", ecFilter);
-        model.addAttribute("employeeId", employeeId);
-        model.addAttribute("ecShowInvalid", ecShowInvalid);
-        model.addAttribute("ecShowHidden", ecShowHidden);
+        model.addAttribute("fEmployeeContractFilter", fEmployeeContractFilter);
+        model.addAttribute("fEmployeeId", fEmployeeId);
+        model.addAttribute("fEmployeeContractShowInvalid", fEmployeeContractShowInvalid);
+        model.addAttribute("fEmployeeContractShowHidden", fEmployeeContractShowHidden);
         addListModel(model);
         return "employee/employee-contract-list";
     }
@@ -105,9 +105,9 @@ public class EmployeecontractController {
 
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/create")
-    public String createForm(@RequestParam(required = false) Long employeeId, Model model) {
+    public String createForm(@RequestParam(required = false) Long fEmployeeId, Model model) {
         var form = new EmployeecontractForm();
-        form.setEmployeeId(employeeId != null && employeeId > 0 ? employeeId : null);
+        form.setEmployeeId(fEmployeeId != null && fEmployeeId > 0 ? fEmployeeId : null);
         form.setValidFrom(DateUtils.getCurrentYearString() + "-01-01");
         form.setValidUntil("");
         form.setDailyWorkingTime("8:00");
@@ -202,17 +202,14 @@ public class EmployeecontractController {
             return "employee/employee-contract-form";
         }
 
-        if (isCreate) {
-            uiState.clearState(EMPLOYEE_CONTRACT_FILTER);
-            if(!Objects.equals(form.getEmployeeId(), uiState.getLongValue(EMPLOYEE_ID))) {
-                uiState.clearState(EMPLOYEE_ID);
-            }
-        }
         if (!logs.isEmpty()) {
             redirectAttributes.addFlashAttribute("logs", logs);
         }
-        redirectAttributes.addFlashAttribute("toastSuccess",
-                messages.getMessage("form.employeecontract.message.stored", "Employee contract saved successfully"));
+        // The filter stays as the user left it (ADR-0023); where it hides the saved contract, the
+        // message says so instead of the list silently not showing it.
+        redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                messages.getMessage("form.employeecontract.message.stored", "Employee contract saved successfully"),
+                EMPLOYEE_CONTRACT_FILTER, EMPLOYEE_ID));
         return "redirect:/employees/contracts";
     }
 

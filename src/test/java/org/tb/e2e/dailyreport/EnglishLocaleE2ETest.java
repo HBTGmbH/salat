@@ -39,7 +39,7 @@ class EnglishLocaleE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void matrix_navigation_and_legend_are_translated(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN,
-        "/dailyreport/matrix?month=" + BOOKING_DATE.getMonthValue() + "&year=" + BOOKING_DATE.getYear(),
+        "/dailyreport/matrix?fMonth=" + BOOKING_DATE.getMonthValue() + "&fYear=" + BOOKING_DATE.getYear(),
         ENGLISH, page -> {
 
       // the month picker replaced the native <input type="month">, which Chrome rendered as

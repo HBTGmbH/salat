@@ -12,6 +12,6 @@ public class ReportingUiStateKeyContributor implements UiStateKeyContributor {
 
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
-        return Map.of("rFilter", REPORT_FILTER);
+        return Map.of("fReportFilter", REPORT_FILTER);
     }
 }

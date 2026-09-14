@@ -30,23 +30,22 @@ public class OrderUiStateKeyContributor implements UiStateKeyContributor {
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
         var map = new HashMap<String, UiStateKey>();
-        map.put("customerId", CUSTOMER_ID);
-        map.put("orderId", CUSTOMER_ORDER_ID);
-        map.put("customerOrderId", CUSTOMER_ORDER_ID);
-        map.put("suborderId", SUBORDER_ID);
-        map.put("coFilter", CUSTOMER_ORDER_FILTER);
-        map.put("coShowInvalid", CUSTOMER_ORDER_SHOW_INVALID);
-        map.put("coShowHidden", CUSTOMER_ORDER_SHOW_HIDDEN);
-        map.put("coShowActualHours", CUSTOMER_ORDER_SHOW_ACTUAL_HOURS);
-        map.put("soFilter", SUBORDER_FILTER);
-        map.put("soShowInvalid", SUBORDER_SHOW_INVALID);
-        map.put("soShowHidden", SUBORDER_SHOW_HIDDEN);
-        map.put("soShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
-        map.put("eoEmployeeContractId", EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID);
-        map.put("eoFilter", EMPLOYEEORDER_FILTER);
-        map.put("eoShowInvalid", EMPLOYEEORDER_SHOW_INVALID);
-        map.put("eoShowHidden", EMPLOYEEORDER_SHOW_HIDDEN);
-        map.put("eoShowActualHours", EMPLOYEEORDER_SHOW_ACTUAL_HOURS);
+        map.put("fCustomerId", CUSTOMER_ID);
+        map.put("fCustomerOrderId", CUSTOMER_ORDER_ID);
+        map.put("fSuborderId", SUBORDER_ID);
+        map.put("fCustomerOrderFilter", CUSTOMER_ORDER_FILTER);
+        map.put("fCustomerOrderShowInvalid", CUSTOMER_ORDER_SHOW_INVALID);
+        map.put("fCustomerOrderShowHidden", CUSTOMER_ORDER_SHOW_HIDDEN);
+        map.put("fCustomerOrderShowActualHours", CUSTOMER_ORDER_SHOW_ACTUAL_HOURS);
+        map.put("fSuborderFilter", SUBORDER_FILTER);
+        map.put("fSuborderShowInvalid", SUBORDER_SHOW_INVALID);
+        map.put("fSuborderShowHidden", SUBORDER_SHOW_HIDDEN);
+        map.put("fSuborderShowActualHours", SUBORDER_SHOW_ACTUAL_HOURS);
+        map.put("fEmployeeOrderEmployeeContractId", EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID);
+        map.put("fEmployeeOrderFilter", EMPLOYEEORDER_FILTER);
+        map.put("fEmployeeOrderShowInvalid", EMPLOYEEORDER_SHOW_INVALID);
+        map.put("fEmployeeOrderShowHidden", EMPLOYEEORDER_SHOW_HIDDEN);
+        map.put("fEmployeeOrderShowActualHours", EMPLOYEEORDER_SHOW_ACTUAL_HOURS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 

@@ -32,7 +32,7 @@ import org.tb.common.web.UiStateKeyRegistry;
 class UiStateFilterTest {
 
     private static final UiStateKey KEY = new UiStateKey("contract");
-    private static final String PARAM = "contractId";
+    private static final String PARAM = "fContractId";
     private static final SensitiveUiStateKey SENSITIVE_KEY = new SensitiveUiStateKey("sensitiveKey");
     private static final String SIGNING_KEY = "test-signing-key";
 

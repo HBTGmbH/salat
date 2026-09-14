@@ -42,8 +42,8 @@ public class AcceptanceController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
 
     @GetMapping
-    public String show(@RequestParam(required = false) Long accEmployeeContractId,
-                       @RequestParam(required = false) Long accSupervisorId,
+    public String show(@RequestParam(required = false) Long fAcceptanceEmployeeContractId,
+                       @RequestParam(required = false) Long fAcceptanceSupervisorId,
                        Model model) {
         var loginEmployee = employeeService.getLoginEmployee();
 
@@ -55,19 +55,19 @@ public class AcceptanceController {
                 .sorted(Comparator.comparing(Employee::getName))
                 .toList();
             model.addAttribute("supervisors", supervisors);
-            if (accSupervisorId == null && supervisors.stream().anyMatch(s -> s.getId().equals(loginEmployee.getId()))) {
-                accSupervisorId = loginEmployee.getId();
+            if (fAcceptanceSupervisorId == null && supervisors.stream().anyMatch(s -> s.getId().equals(loginEmployee.getId()))) {
+                fAcceptanceSupervisorId = loginEmployee.getId();
             }
         }
 
-        List<Employeecontract> employeeContracts = loadContracts(loginEmployee, accSupervisorId);
+        List<Employeecontract> employeeContracts = loadContracts(loginEmployee, fAcceptanceSupervisorId);
         employeeContracts = employeeContracts.stream()
             .sorted(Comparator.comparing(ec -> ec.getEmployee().getName()))
             .toList();
 
         Employeecontract selected = null;
-        if (accEmployeeContractId != null) {
-            selected = employeecontractService.getEmployeecontractById(accEmployeeContractId);
+        if (fAcceptanceEmployeeContractId != null) {
+            selected = employeecontractService.getEmployeecontractById(fAcceptanceEmployeeContractId);
         }
         if (selected == null && !employeeContracts.isEmpty()) {
             selected = employeeContracts.getFirst();
@@ -75,7 +75,7 @@ public class AcceptanceController {
 
         model.addAttribute("employeeContracts", employeeContracts);
         model.addAttribute("selectedContract", selected);
-        model.addAttribute("supervisorId", accSupervisorId);
+        model.addAttribute("supervisorId", fAcceptanceSupervisorId);
         model.addAttribute("releasedUntil", selected != null ? format(selected.getReportReleaseDate()) : "");
         model.addAttribute("acceptedUntil", selected != null ? format(selected.getReportAcceptanceDate()) : "");
         model.addAttribute("releaseDateStr", defaultReleaseDateStr(selected));

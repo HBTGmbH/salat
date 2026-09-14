@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.exception.ErrorCodeException;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.customer.domain.CustomerDTO;
 import org.tb.customer.service.CustomerSegmentService;
 import org.tb.customer.service.CustomerService;
@@ -35,17 +35,17 @@ public class CustomerController {
   private final CustomerSegmentService customerSegmentService;
   private final MessageSourceAccessor messageSourceAccessor;
   private final ErrorCodeViewHelper errorCodeViewHelper;
-  private final UiState uiState;
+  private final FilterHintViewHelper filterHintViewHelper;
 
   @GetMapping
-  public String list(@RequestParam(required = false) String cFilter,
-                     @RequestParam(required = false) Boolean cShowHidden,
+  public String list(@RequestParam(required = false) String fCustomerFilter,
+                     @RequestParam(required = false) Boolean fCustomerShowHidden,
                      Model model) {
-    boolean showHiddenFlag = Boolean.TRUE.equals(cShowHidden);
+    boolean showHiddenFlag = Boolean.TRUE.equals(fCustomerShowHidden);
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
-    model.addAttribute("cFilter", cFilter);
-    model.addAttribute("cShowHidden", showHiddenFlag);
-    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(cFilter, showHiddenFlag));
+    model.addAttribute("fCustomerFilter", fCustomerFilter);
+    model.addAttribute("fCustomerShowHidden", showHiddenFlag);
+    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(fCustomerFilter, showHiddenFlag));
     return "customer/customer-list";
   }
 
@@ -122,11 +122,11 @@ public class CustomerController {
       return "customer/customer-form";
     }
 
-    if (isCreate) {
-      uiState.clearState(CustomerUiStateKeyContributor.CUSTOMER_FILTER);
-    }
-    redirectAttributes.addFlashAttribute("toastSuccess",
-        messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"));
+    // The filter stays as the user left it (ADR-0023); where it hides the saved customer, the
+    // message says so instead of the list silently not showing it.
+    redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+        messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"),
+        CustomerUiStateKeyContributor.CUSTOMER_FILTER));
     return "redirect:/customers";
   }
 

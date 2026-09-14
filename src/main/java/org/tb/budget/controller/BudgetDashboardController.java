@@ -9,8 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.BudgetDashboardRow;
@@ -32,9 +32,17 @@ public class BudgetDashboardController {
     private final CustomerorderService customerorderService;
     private final BudgetAuthorization budgetAuthorization;
 
+    /**
+     * The two filters are plain request parameters rather than a bound form object: they are
+     * remembered as UiState, and a UiState parameter must not be the name of a form field
+     * (ADR-0022).
+     */
     @GetMapping
-    public String dashboard(@ModelAttribute("filter") DashboardFilterForm filter, Model model) {
+    public String dashboard(@RequestParam(required = false) Long fBudgetSegmentId,
+                            @RequestParam(required = false) Long fBudgetResponsibleId,
+                            Model model) {
         model.addAttribute("segments", customerSegmentService.getAll());
+        model.addAttribute("fBudgetSegmentId", fBudgetSegmentId);
 
         // Order responsibles only ever see their own orders, so the responsible filter would have a
         // single choice for them and is offered only to those who see every order. Where it is not
@@ -48,13 +56,13 @@ public class BudgetDashboardController {
         // stayed filtered by a value nobody can see.
         Long responsibleId = null;
         if (showResponsibleFilter) {
-            var responsibles = customerorderService.getVisibleResponsibleEmployees(filter.getBudgetSegmentId());
+            var responsibles = customerorderService.getVisibleResponsibleEmployees(fBudgetSegmentId);
             model.addAttribute("responsibles", responsibles);
-            responsibleId = offeredResponsibleId(filter.getBudgetResponsibleId(), responsibles);
-            filter.setBudgetResponsibleId(responsibleId);
+            responsibleId = offeredResponsibleId(fBudgetResponsibleId, responsibles);
         }
+        model.addAttribute("fBudgetResponsibleId", responsibleId);
 
-        var rows = budgetDashboardService.computeDashboard(filter.getBudgetSegmentId(), responsibleId);
+        var rows = budgetDashboardService.computeDashboard(fBudgetSegmentId, responsibleId);
         model.addAttribute("rows", rows);
         // The reference date the figures refer to. Taken from the clock here rather than in the
         // template, so the view has no date source of its own to disagree with.

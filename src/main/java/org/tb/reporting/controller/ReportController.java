@@ -40,7 +40,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.util.DateTimeUtils;
 import org.tb.common.util.DateUtils;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
@@ -57,11 +57,11 @@ public class ReportController {
   private final ReportService reportService;
   private final ReportAuthorization reportAuthorization;
   private final ExcelExportService excelExportService;
-  private final UiState uiState;
+  private final FilterHintViewHelper filterHintViewHelper;
 
   @GetMapping
-  public String list(@RequestParam(value = "rFilter", required = false) String rFilter, Model model) {
-    var reports = reportService.getReportDefinitionsByFilter(rFilter);
+  public String list(@RequestParam(value = "fReportFilter", required = false) String fReportFilter, Model model) {
+    var reports = reportService.getReportDefinitionsByFilter(fReportFilter);
     Map<Long, Boolean> mayEdit = new HashMap<>();
     Map<Long, Boolean> mayDelete = new HashMap<>();
     for (ReportDefinition r : reports) {
@@ -75,7 +75,7 @@ public class ReportController {
     model.addAttribute("reports", reports);
     model.addAttribute("mayEdit", mayEdit);
     model.addAttribute("mayDelete", mayDelete);
-    model.addAttribute("rFilter", rFilter);
+    model.addAttribute("fReportFilter", fReportFilter);
     return "reporting/reports-list";
   }
 
@@ -133,13 +133,16 @@ public class ReportController {
       return "reporting/report-form";
     }
 
+    // The filter stays as the user left it (ADR-0023); where it hides the saved report, the
+    // message says so instead of the list silently not showing it.
     if (form.getId() == null) {
       reportService.create(form.getName(), form.getSql());
-      uiState.clearState(REPORT_FILTER);
-      redirectAttributes.addFlashAttribute("toastSuccess", "Report created successfully");
+      redirectAttributes.addFlashAttribute("toastSuccess",
+          filterHintViewHelper.appendTo("Report created successfully", REPORT_FILTER));
     } else {
       reportService.update(form.getId(), form.getName(), form.getSql());
-      redirectAttributes.addFlashAttribute("toastSuccess", "Report updated successfully");
+      redirectAttributes.addFlashAttribute("toastSuccess",
+          filterHintViewHelper.appendTo("Report updated successfully", REPORT_FILTER));
     }
 
     return "redirect:/reporting/reports";

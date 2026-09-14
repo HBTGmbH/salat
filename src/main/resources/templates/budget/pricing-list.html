@@ -17,14 +17,14 @@
           <div class="col-md-6">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
             <!-- No submit button: the select filters on change (#952). -->
-            <select class="form-select tomselect" name="coSign" th:attr="data-value=${coSign}"
+            <select class="form-select tomselect" name="fCustomerOrderSign" th:attr="data-value=${fCustomerOrderSign}"
                     onchange="form.requestSubmit()">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="option : ${customerorderOptions}"
                       th:value="${option.sign}"
                       th:attr="data-subtext=${option.customerLabel}"
                       th:text="${option.label}"
-                      th:selected="${coSign != null and coSign == option.sign}"></option>
+                      th:selected="${fCustomerOrderSign != null and fCustomerOrderSign == option.sign}"></option>
             </select>
           </div>
           <div class="col-auto ms-auto" th:if="${isManager}">
@@ -39,16 +39,16 @@
             <label class="form-check form-switch">
               <!-- Prefixed: the plan list has a switch of the same meaning but a different subject,
                    and the UiState parameter mapping is global (#952). -->
-              <input class="form-check-input" type="checkbox" name="pricingShowInactive" value="true" th:checked="${showInactive}"/>
-              <input type="hidden" name="pricingShowInactive" value="false"/>
+              <input class="form-check-input" type="checkbox" name="fPricingShowInactive" value="true" th:checked="${showInactive}"/>
+              <input type="hidden" name="fPricingShowInactive" value="false"/>
               <span class="form-check-label" th:text="#{main.pricing.filter.showinactive}">Inaktive anzeigen</span>
             </label>
           </div>
           <div class="col-auto ms-2">
             <!-- The rate's own validity and its order's are two different things (#957). -->
             <label class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="pricingShowExpiredOrders" value="true" th:checked="${showExpiredOrders}"/>
-              <input type="hidden" name="pricingShowExpiredOrders" value="false"/>
+              <input class="form-check-input" type="checkbox" name="fPricingShowExpiredOrders" value="true" th:checked="${showExpiredOrders}"/>
+              <input type="hidden" name="fPricingShowExpiredOrders" value="false"/>
               <span class="form-check-label" th:text="#{main.pricing.filter.showexpiredorders}">Sätze abgelaufener Aufträge anzeigen</span>
             </label>
           </div>

@@ -123,7 +123,7 @@
               <span th:text="#{main.daily.nav.today.text}">Heute</span>
             </a>
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='list',month=${yearMonth.monthValue},year=${yearMonth.year})}">
+               th:href="@{/dailyreport/daily(mode='list',fMonth=${yearMonth.monthValue},fYear=${yearMonth.year})}">
               <i class="ti ti-calendar me-1"></i>
               <span th:text="#{main.daily.mode.list.text}">Monatsübersicht</span>
             </a>
@@ -620,13 +620,13 @@
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='list',month=${prevMonth},year=${prevYear})}">
+               th:href="@{/dailyreport/daily(mode='list',fMonth=${prevMonth},fYear=${prevYear})}">
               <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevmonth.text}">Vorheriger Monat</span>
             </a>
             <h3 class="mb-0"
                 th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}"></h3>
             <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='list',month=${nextMonth},year=${nextYear})}">
+               th:href="@{/dailyreport/daily(mode='list',fMonth=${nextMonth},fYear=${nextYear})}">
               <span th:text="#{main.daily.nav.nextmonth.text}">Nächster Monat</span><i class="ti ti-chevron-right ms-1"></i>
             </a>
           </div>
@@ -639,7 +639,7 @@
                    without them would land on the remembered month again (#923) */-->
             <a class="btn btn-sm btn-outline-primary"
                th:with="currentYearMonth=${@dateUtils.currentYearMonth}"
-               th:href="@{/dailyreport/daily(mode='list',month=${currentYearMonth.monthValue},year=${currentYearMonth.year})}">
+               th:href="@{/dailyreport/daily(mode='list',fMonth=${currentYearMonth.monthValue},fYear=${currentYearMonth.year})}">
               <span th:text="#{main.general.month.current}">Aktueller Monat</span>
             </a>
             <a class="btn btn-sm btn-outline-secondary"
@@ -666,7 +666,7 @@
             <!-- Day row -->
             <tr th:classappend="${day.isToday} ? 'daily-today' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : ''))">
               <td class="w-1 text-center align-top text-nowrap">
-                <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},employeeContractId=${selectedContractId})}"
+                <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${selectedContractId})}"
                    class="d-inline-block text-decoration-none text-center rounded px-2 py-1"
                    th:classappend="${day.isToday} ? 'bg-primary-lt' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                    th:title="#{main.daily.viewday.title}"
@@ -695,7 +695,7 @@
                   </th:block>
                   <!-- Add new timereport card -->
                   <a th:if="${listData.canCreateTimereport and !day.notWorked}"
-                     th:href="@{/dailyreport/timereports/new(date=${day.date},returnUrl='/dailyreport/daily?mode=list&month='+${yearMonth.monthValue}+'&year='+${yearMonth.year})}"
+                     th:href="@{/dailyreport/timereports/new(date=${day.date},returnUrl='/dailyreport/daily?mode=list&fMonth='+${yearMonth.monthValue}+'&fYear='+${yearMonth.year})}"
                      class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
                      style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
                     <i class="ti ti-plus" style="font-size:1.5rem"></i>

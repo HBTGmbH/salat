@@ -32,7 +32,7 @@ function toggleTheme(theme) {
 
 function selectContract(id) {
   const url = new URL(window.location.href);
-  url.searchParams.set('employeeContractId', String(id));
+  url.searchParams.set('fEmployeeContractId', String(id));
   location.href = url.toString();
 }
 

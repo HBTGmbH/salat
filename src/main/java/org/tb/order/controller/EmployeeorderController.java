@@ -6,6 +6,7 @@ import static org.tb.common.util.DateUtils.validateDate;
 import static org.tb.common.util.DurationUtils.validateDuration;
 import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ID;
 import static org.tb.order.controller.OrderUiStateKeyContributor.CUSTOMER_ORDER_ID;
+import static org.tb.order.controller.OrderUiStateKeyContributor.EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID;
 import static org.tb.order.controller.OrderUiStateKeyContributor.EMPLOYEEORDER_FILTER;
 import static org.tb.order.controller.OrderUiStateKeyContributor.SUBORDER_ID;
 
@@ -33,7 +34,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.customer.service.CustomerService;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
@@ -59,56 +60,56 @@ public class EmployeeorderController {
     private final SuborderService suborderService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final UiState uiState;
+    private final FilterHintViewHelper filterHintViewHelper;
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) Long eoEmployeeContractId,
-            @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) Long orderId,
-            @RequestParam(required = false) Long suborderId,
-            @RequestParam(required = false) String eoFilter,
-            @RequestParam(required = false) Boolean eoShowInvalid,
-            @RequestParam(required = false) Boolean eoShowActualHours,
-            @RequestParam(required = false) Boolean eoShowHidden,
+            @RequestParam(required = false) Long fEmployeeOrderEmployeeContractId,
+            @RequestParam(required = false) Long fCustomerId,
+            @RequestParam(required = false) Long fCustomerOrderId,
+            @RequestParam(required = false) Long fSuborderId,
+            @RequestParam(required = false) String fEmployeeOrderFilter,
+            @RequestParam(required = false) Boolean fEmployeeOrderShowInvalid,
+            @RequestParam(required = false) Boolean fEmployeeOrderShowActualHours,
+            @RequestParam(required = false) Boolean fEmployeeOrderShowHidden,
             HttpServletRequest request,
             Model model) {
         var employeeContracts = employeecontractService.getVisibleEmployeeContracts();
-        if (eoEmployeeContractId == null && employeeContracts.size() == 1) {
-            eoEmployeeContractId = employeeContracts.getFirst().getId();
+        if (fEmployeeOrderEmployeeContractId == null && employeeContracts.size() == 1) {
+            fEmployeeOrderEmployeeContractId = employeeContracts.getFirst().getId();
         }
-        var orders = customerorderService.getCustomerordersByFilters(eoShowInvalid, eoFilter, customerId, eoShowHidden);
+        var orders = customerorderService.getCustomerordersByFilters(fEmployeeOrderShowInvalid, fEmployeeOrderFilter, fCustomerId, fEmployeeOrderShowHidden);
 
-        var filterSet = (eoFilter != null && !eoFilter.isEmpty()) ||
-                        customerId != null ||
-                        eoEmployeeContractId != null ||
-                        orderId != null ||
-                        suborderId != null;
+        var filterSet = (fEmployeeOrderFilter != null && !fEmployeeOrderFilter.isEmpty()) ||
+                        fCustomerId != null ||
+                        fEmployeeOrderEmployeeContractId != null ||
+                        fCustomerOrderId != null ||
+                        fSuborderId != null;
 
         List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
             employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                eoShowInvalid, eoFilter, eoEmployeeContractId, customerId, orderId, suborderId, Boolean.TRUE.equals(eoShowActualHours), eoShowHidden);
+                fEmployeeOrderShowInvalid, fEmployeeOrderFilter, fEmployeeOrderEmployeeContractId, fCustomerId, fCustomerOrderId, fSuborderId, Boolean.TRUE.equals(fEmployeeOrderShowActualHours), fEmployeeOrderShowHidden);
         }
 
         List<Suborder> suborders = List.of();
-        if (orderId != null) {
-            suborders = suborderService.getSubordersByCustomerorderId(orderId);
+        if (fCustomerOrderId != null) {
+            suborders = suborderService.getSubordersByCustomerorderId(fCustomerOrderId);
         }
 
-        model.addAttribute("customerId", customerId);
+        model.addAttribute("fCustomerId", fCustomerId);
         model.addAttribute("employeecontracts", employeeContracts);
         model.addAttribute("orders", orders);
         model.addAttribute("suborders", suborders);
         model.addAttribute("employeeorders", employeeOrders);
-        model.addAttribute("eoEmployeeContractId", eoEmployeeContractId);
-        model.addAttribute("orderId", orderId);
-        model.addAttribute("suborderId", suborderId);
-        model.addAttribute("eoFilter", eoFilter);
-        model.addAttribute("eoShowInvalid", eoShowInvalid);
-        model.addAttribute("eoShowHidden", eoShowHidden);
-        model.addAttribute("eoShowActualHours", Boolean.TRUE.equals(eoShowActualHours));
-        addListModel(model, customerId);
+        model.addAttribute("fEmployeeOrderEmployeeContractId", fEmployeeOrderEmployeeContractId);
+        model.addAttribute("fCustomerOrderId", fCustomerOrderId);
+        model.addAttribute("fSuborderId", fSuborderId);
+        model.addAttribute("fEmployeeOrderFilter", fEmployeeOrderFilter);
+        model.addAttribute("fEmployeeOrderShowInvalid", fEmployeeOrderShowInvalid);
+        model.addAttribute("fEmployeeOrderShowHidden", fEmployeeOrderShowHidden);
+        model.addAttribute("fEmployeeOrderShowActualHours", Boolean.TRUE.equals(fEmployeeOrderShowActualHours));
+        addListModel(model, fCustomerId);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
         return htmxRequest ? "order/employee-order-list :: results" : "order/employee-order-list";
@@ -117,19 +118,19 @@ public class EmployeeorderController {
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/create")
     public String createForm(
-            @RequestParam(required = false) Long eoEmployeeContractId,
-            @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) Long orderId,
-            @RequestParam(required = false) Long suborderId,
+            @RequestParam(required = false) Long fEmployeeOrderEmployeeContractId,
+            @RequestParam(required = false) Long fCustomerId,
+            @RequestParam(required = false) Long fCustomerOrderId,
+            @RequestParam(required = false) Long fSuborderId,
             Model model) {
 
         var form = (EmployeeorderForm) model.asMap().get("prefillForm");
         if (form == null) {
             form = new EmployeeorderForm();
-            form.setEmployeeContractId(eoEmployeeContractId);
-            form.setCustomerId(customerId);
-            form.setOrderId(orderId);
-            form.setSuborderId(suborderId);
+            form.setEmployeeContractId(fEmployeeOrderEmployeeContractId);
+            form.setCustomerId(fCustomerId);
+            form.setOrderId(fCustomerOrderId);
+            form.setSuborderId(fSuborderId);
             form.setValidFrom(format(today()));
         }
 
@@ -270,20 +271,12 @@ public class EmployeeorderController {
             return "order/employee-order-form";
         }
 
-        if (isCreate) {
-            uiState.clearState(EMPLOYEEORDER_FILTER);
-            if (!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
-                uiState.clearState(CUSTOMER_ID);
-            }
-            if (!Objects.equals(form.getOrderId(), uiState.getLongValue(CUSTOMER_ORDER_ID))) {
-                uiState.clearState(CUSTOMER_ORDER_ID);
-            }
-            if (!Objects.equals(form.getSuborderId(), uiState.getLongValue(SUBORDER_ID))) {
-                uiState.clearState(SUBORDER_ID);
-            }
-        }
-        redirectAttributes.addFlashAttribute("toastSuccess",
-                messages.getMessage("form.employeeorder.message.stored", "Employee order saved successfully"));
+        // The filter stays as the user left it (ADR-0023); where it hides the saved employee
+        // order, the message says so instead of the list silently not showing it.
+        redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                messages.getMessage("form.employeeorder.message.stored", "Employee order saved successfully"),
+                EMPLOYEEORDER_FILTER, EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID, CUSTOMER_ID, CUSTOMER_ORDER_ID,
+                SUBORDER_ID));
         if (saveAndNew != null) {
             form.setId(null);
             redirectAttributes.addFlashAttribute("prefillForm", form);
@@ -310,16 +303,16 @@ public class EmployeeorderController {
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/adjust-dates")
     public String adjustDates(
-            @RequestParam(required = false, defaultValue = "-1") Long eoEmployeeContractId,
-            @RequestParam(required = false, defaultValue = "-1") Long orderId,
-            @RequestParam(required = false, defaultValue = "-1") Long suborderId,
+            @RequestParam(required = false, defaultValue = "-1") Long fEmployeeOrderEmployeeContractId,
+            @RequestParam(required = false, defaultValue = "-1") Long fCustomerOrderId,
+            @RequestParam(required = false, defaultValue = "-1") Long fSuborderId,
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean show,
             RedirectAttributes redirectAttributes) {
 
-        Long filterEmployeeContractId = eoEmployeeContractId == -1 ? null : eoEmployeeContractId;
-        Long filterOrderId = orderId == -1 ? null : orderId;
-        Long filterSuborderId = suborderId == -1 ? null : suborderId;
+        Long filterEmployeeContractId = fEmployeeOrderEmployeeContractId == -1 ? null : fEmployeeOrderEmployeeContractId;
+        Long filterOrderId = fCustomerOrderId == -1 ? null : fCustomerOrderId;
+        Long filterSuborderId = fSuborderId == -1 ? null : fSuborderId;
         var employeeOrders = employeeorderService.getEmployeeordersByFilters(show, filter, filterEmployeeContractId, filterOrderId, filterSuborderId, null);
         for (Employeeorder employeeorder : employeeOrders) {
             if (!employeeorder.getFitsToSuperiorObjects()) {

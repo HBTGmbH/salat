@@ -34,7 +34,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.customer.service.CustomerService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.OrderType;
@@ -55,21 +55,21 @@ public class SuborderController {
   private final CustomerService customerService;
   private final MessageSourceAccessor messages;
   private final ErrorCodeViewHelper errorCodeViewHelper;
-  private final UiState uiState;
+  private final FilterHintViewHelper filterHintViewHelper;
 
   @GetMapping
   public String list(
-      @RequestParam(required = false) String soFilter,
-      @RequestParam(required = false) Long customerOrderId,
-      @RequestParam(required = false) Long customerId,
-      @RequestParam(required = false) Boolean soShowInvalid,
-      @RequestParam(required = false) Boolean soShowActualHours,
-      @RequestParam(required = false) Boolean soShowHidden,
+      @RequestParam(required = false) String fSuborderFilter,
+      @RequestParam(required = false) Long fCustomerOrderId,
+      @RequestParam(required = false) Long fCustomerId,
+      @RequestParam(required = false) Boolean fSuborderShowInvalid,
+      @RequestParam(required = false) Boolean fSuborderShowActualHours,
+      @RequestParam(required = false) Boolean fSuborderShowHidden,
       HttpServletRequest request,
       Model model) {
-    var filterSet = (soFilter != null && !soFilter.isEmpty()) || customerId != null || customerOrderId != null;
-    var suborders = filterSet ? suborderService.getSubordersByFilters(soShowInvalid, soFilter, customerOrderId, customerId, soShowHidden) : List.<Suborder>of();
-    if (Boolean.TRUE.equals(soShowActualHours)) {
+    var filterSet = (fSuborderFilter != null && !fSuborderFilter.isEmpty()) || fCustomerId != null || fCustomerOrderId != null;
+    var suborders = filterSet ? suborderService.getSubordersByFilters(fSuborderShowInvalid, fSuborderFilter, fCustomerOrderId, fCustomerId, fSuborderShowHidden) : List.<Suborder>of();
+    if (Boolean.TRUE.equals(fSuborderShowActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {
         decorators.add(new SuborderViewDecorator(suborderService, so));
@@ -79,20 +79,20 @@ public class SuborderController {
       model.addAttribute("suborders", suborders);
     }
     var visibleCustomerOrders = customerorderService.getVisibleCustomerorders();
-    final var fcustomerId = customerId;
-    if (customerId != null && customerId > 0) {
+    final var selectedCustomerId = fCustomerId;
+    if (fCustomerId != null && fCustomerId > 0) {
       visibleCustomerOrders = visibleCustomerOrders.stream()
-          .filter(co -> co.getCustomer().getId().equals(fcustomerId))
+          .filter(co -> co.getCustomer().getId().equals(selectedCustomerId))
           .toList();
     }
-    model.addAttribute("customers", customerService.getSelectableCustomers(customerId));
+    model.addAttribute("customers", customerService.getSelectableCustomers(fCustomerId));
     model.addAttribute("visibleCustomerOrders", visibleCustomerOrders);
-    model.addAttribute("soFilter", soFilter);
-    model.addAttribute("customerId", customerId);
-    model.addAttribute("customerOrderId", customerOrderId);
-    model.addAttribute("soShowInvalid", soShowInvalid);
-    model.addAttribute("soShowHidden", soShowHidden);
-    model.addAttribute("soShowActualHours", Boolean.TRUE.equals(soShowActualHours));
+    model.addAttribute("fSuborderFilter", fSuborderFilter);
+    model.addAttribute("fCustomerId", fCustomerId);
+    model.addAttribute("fCustomerOrderId", fCustomerOrderId);
+    model.addAttribute("fSuborderShowInvalid", fSuborderShowInvalid);
+    model.addAttribute("fSuborderShowHidden", fSuborderShowHidden);
+    model.addAttribute("fSuborderShowActualHours", Boolean.TRUE.equals(fSuborderShowActualHours));
     model.addAttribute("section", "orders");
     model.addAttribute("subSection", "suborders");
     model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
@@ -105,8 +105,8 @@ public class SuborderController {
   @PreAuthorize("hasRole('MANAGER')")
   @GetMapping("/create")
   public String createForm(
-      @RequestParam(required = false) Long customerOrderId,
-      @RequestParam(required = false) Long customerId,
+      @RequestParam(required = false) Long fCustomerOrderId,
+      @RequestParam(required = false) Long fCustomerId,
       Model model) {
     var form = new SuborderForm();
     form.setInvoice(true);
@@ -116,9 +116,9 @@ public class SuborderController {
     form.setTrainingFlag(false);
     form.setHide(false);
     form.setOrderType(OrderType.STANDARD);
-    form.setCustomerId(customerId);
-    form.setCustomerorderId(customerOrderId);
-    form.setParentId(customerOrderId);
+    form.setCustomerId(fCustomerId);
+    form.setCustomerorderId(fCustomerOrderId);
+    form.setParentId(fCustomerOrderId);
     addFormModel(model, form, false, true);
     prefillValidity(form);
     return "order/sub-order-form";
@@ -182,19 +182,13 @@ public class SuborderController {
       return "order/sub-order-form";
     }
 
-    if (isCreate) {
-      uiState.clearState(SUBORDER_FILTER);
-      if(!Objects.equals(form.getCustomerId(), uiState.getLongValue(CUSTOMER_ID))) {
-        uiState.clearState(CUSTOMER_ID);
-      }
-      if(!Objects.equals(form.getCustomerorderId(), uiState.getLongValue(CUSTOMER_ORDER_ID))) {
-        uiState.clearState(CUSTOMER_ORDER_ID);
-      }
-    }
-    redirectAttributes.addFlashAttribute("toastSuccess",
-        messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"));
+    // The filter stays as the user left it (ADR-0023); where it hides the saved suborder, the
+    // message says so instead of the list silently not showing it.
+    redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+        messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
+        SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID));
     if (isCreate && customerorderId != null) {
-      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerOrderId=" + customerorderId);
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?fCustomerOrderId=" + customerorderId);
       redirectAttributes.addFlashAttribute("toastActionLabel",
           messages.getMessage("main.general.button.add.another.suborder.text", "Add Another Suborder"));
     }

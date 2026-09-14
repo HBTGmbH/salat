@@ -17,8 +17,8 @@ public class CustomerUiStateKeyContributor implements UiStateKeyContributor {
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
         return of(
-                "cFilter", CUSTOMER_FILTER,
-                "cShowHidden", CUSTOMER_SHOW_HIDDEN
+                "fCustomerFilter", CUSTOMER_FILTER,
+                "fCustomerShowHidden", CUSTOMER_SHOW_HIDDEN
         );
     }
 }

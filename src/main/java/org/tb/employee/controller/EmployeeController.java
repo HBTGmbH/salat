@@ -21,7 +21,7 @@ import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
-import org.tb.common.web.UiState;
+import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 
@@ -34,18 +34,18 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
-    private final UiState uiState;
+    private final FilterHintViewHelper filterHintViewHelper;
 
     @GetMapping
     public String list(
-            @RequestParam(required = false) String eFilter,
-            @RequestParam(required = false) Boolean eShowHidden,
+            @RequestParam(required = false) String fEmployeeFilter,
+            @RequestParam(required = false) Boolean fEmployeeShowHidden,
             Model model) {
-        var employees = employeeService.getEmployeesByFilter(eFilter, eShowHidden);
+        var employees = employeeService.getEmployeesByFilter(fEmployeeFilter, fEmployeeShowHidden);
         employees.sort(Comparator.comparing(Employee::getLastname).thenComparing(Employee::getFirstname));
         model.addAttribute("employees", employees);
-        model.addAttribute("eFilter", eFilter);
-        model.addAttribute("eShowHidden", eShowHidden);
+        model.addAttribute("fEmployeeFilter", fEmployeeFilter);
+        model.addAttribute("fEmployeeShowHidden", fEmployeeShowHidden);
         addListModel(model);
         return "employee/employee-list";
     }
@@ -129,11 +129,11 @@ public class EmployeeController {
             return "employee/employee-form";
         }
 
-        if (isCreate) {
-            uiState.clearState(EmployeeUiStateKeyContributor.EMPLOYEE_FILTER);
-        }
-        redirectAttributes.addFlashAttribute("toastSuccess",
-                messages.getMessage("form.employee.message.stored", "Employee saved successfully"));
+        // The filter stays as the user left it (ADR-0023); where it hides the saved employee, the
+        // message says so instead of the list silently not showing it.
+        redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+                messages.getMessage("form.employee.message.stored", "Employee saved successfully"),
+                EmployeeUiStateKeyContributor.EMPLOYEE_FILTER));
         return "redirect:/employees";
     }
 

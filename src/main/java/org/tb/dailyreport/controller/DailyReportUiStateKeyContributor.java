@@ -20,11 +20,11 @@ public class DailyReportUiStateKeyContributor implements UiStateKeyContributor {
     @Override
     public Map<String, UiStateKey> getParamToKeyMappings() {
         return of(
-            "employeeContractId", EMPLOYEE_CONTRACT_ID,
-            "accSupervisorId", ACCEPTANCE_SUPERVISOR_ID,
-            "accEmployeeContractId", ACCEPTANCE_EMPLOYEE_CONTRACT_ID,
-            "year", MATRIX_YEAR,
-            "month", MATRIX_MONTH
+            "fEmployeeContractId", EMPLOYEE_CONTRACT_ID,
+            "fAcceptanceSupervisorId", ACCEPTANCE_SUPERVISOR_ID,
+            "fAcceptanceEmployeeContractId", ACCEPTANCE_EMPLOYEE_CONTRACT_ID,
+            "fYear", MATRIX_YEAR,
+            "fMonth", MATRIX_MONTH
         );
     }
 }

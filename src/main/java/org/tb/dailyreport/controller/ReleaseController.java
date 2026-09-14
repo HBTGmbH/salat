@@ -37,9 +37,9 @@ public class ReleaseController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
 
     @GetMapping
-    public String show(@RequestParam(required = false) Long employeeContractId, Model model) {
+    public String show(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
 
-        var effectiveContractId = effectiveContractId(employeeContractId);
+        var effectiveContractId = effectiveContractId(fEmployeeContractId);
         var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
         var employee = contract.getEmployee();
 
@@ -56,10 +56,10 @@ public class ReleaseController {
     }
 
     @PostMapping
-    public String release(@RequestParam(required = false) Long employeeContractId,
+    public String release(@RequestParam(required = false) Long fEmployeeContractId,
                           @RequestParam(required = false) String selfReleaseDate,
                           RedirectAttributes redirectAttributes) {
-        var effectiveContractId = effectiveContractId(employeeContractId);
+        var effectiveContractId = effectiveContractId(fEmployeeContractId);
         var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
         if (contract == null) {
             return "redirect:/release";
@@ -74,9 +74,9 @@ public class ReleaseController {
         return "redirect:/release";
     }
 
-    private long effectiveContractId(Long employeeContractId) {
-        if (employeeContractId != null && employeeContractId > 0) {
-            return employeeContractId;
+    private long effectiveContractId(Long fEmployeeContractId) {
+        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+            return fEmployeeContractId;
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

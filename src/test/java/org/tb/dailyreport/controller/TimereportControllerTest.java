@@ -63,13 +63,13 @@ class TimereportControllerTest {
   void the_booked_contract_is_carried_over() {
     // a manager booking for someone else must not silently fall back to their own contract
     assertThat(nextBookingUrl(DATE, 42L, null))
-        .isEqualTo("/dailyreport/timereports/new?date=2026-06-18&employeeContractId=42");
+        .isEqualTo("/dailyreport/timereports/new?date=2026-06-18&fEmployeeContractId=42");
   }
 
   @Test
   void an_unset_contract_is_left_out_of_the_url() {
-    assertThat(nextBookingUrl(DATE, -1L, null)).doesNotContain("employeeContractId");
-    assertThat(nextBookingUrl(DATE, 0L, null)).doesNotContain("employeeContractId");
+    assertThat(nextBookingUrl(DATE, -1L, null)).doesNotContain("fEmployeeContractId");
+    assertThat(nextBookingUrl(DATE, 0L, null)).doesNotContain("fEmployeeContractId");
   }
 
   @Test
