@@ -154,6 +154,25 @@ public class AssignedBookingRepositoryTest {
     assertThat(totals.totalDuration()).isEqualTo(Duration.ofMinutes(60 + 150 + 45));
   }
 
+  /**
+   * Neither query names the soft delete: {@code Timereport} carries
+   * {@code @SQLRestriction("deleted = false")} and Hibernate puts it into both statements. Pinned
+   * here because nothing in the queries says so — a switch to a native query would drop the filter
+   * silently, and a deleted booking would reappear in the list <em>and</em> in the hours.
+   */
+  @Test
+  public void leaves_out_a_deleted_booking_in_the_list_and_in_the_figures() {
+    var kept = book(plan, DAY, "abc", suborderA, 1, 0, "");
+    var deleted = book(plan, DAY.plusDays(1), "abc", suborderA, 5, 0, "");
+    softDelete(deleted);
+
+    assertThat(newest(10)).extracting(AssignedBooking::id).containsExactly(kept);
+
+    var totals = assignmentRepository.findAssignedBookingTotals(plan.getId(), FROM, UNTIL);
+    assertThat(totals.bookings()).isEqualTo(1);
+    assertThat(totals.totalDuration()).isEqualTo(Duration.ofHours(1));
+  }
+
   /** An empty period yields no sum at all, not a zero — the record has to absorb that. */
   @Test
   public void reports_zero_for_a_plan_without_bookings() {
@@ -161,6 +180,16 @@ public class AssignedBookingRepositoryTest {
 
     assertThat(totals.bookings()).isZero();
     assertThat(totals.totalDuration()).isEqualTo(Duration.ZERO);
+  }
+
+  /** Written straight to the column: reading the booking back would already be filtered out. */
+  private void softDelete(long timereportId) {
+    entityManager.getEntityManager()
+        .createNativeQuery("update Timereport set deleted = true where id = :id")
+        .setParameter("id", timereportId)
+        .executeUpdate();
+    entityManager.flush();
+    entityManager.clear();
   }
 
   private java.util.List<AssignedBooking> newest(int limit) {
