@@ -224,10 +224,21 @@ public class EmployeeCostController {
 
     // --- the assignments of a category -----------------------------------------------------------
 
+    /**
+     * Both parameters only prefill, and both are optional (#964).
+     *
+     * <p>The category used to be mandatory, which made the form unreachable from anywhere but a
+     * category page. The "Mitarbeitende" card of a budget plan calls it for a person who has no
+     * assignment at all — that is the main case it exists for — and there is no category to name
+     * there. What is missing is filled in by hand; the validation on save is unchanged.
+     */
     @GetMapping("/assignments/create")
-    public String createAssignmentForm(@RequestParam("name") String name, Model model) {
+    public String createAssignmentForm(@RequestParam(required = false) String name,
+                                       @RequestParam(required = false) String employeeSign,
+                                       Model model) {
         var form = new EmployeeCostAssignmentForm();
-        form.setEmployeeCostName(name);
+        form.setEmployeeCostName(trimToNull(name));
+        form.setEmployeeSign(trimToNull(employeeSign));
         addAssignmentFormModel(model, form);
         return "budget/employee-cost-assignment-form";
     }

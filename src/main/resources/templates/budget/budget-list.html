@@ -57,6 +57,7 @@
           <th class="d-none d-md-table-cell" th:text="#{main.budget.field.customerorderSign}">Auftrag</th>
           <th class="d-none d-md-table-cell" th:text="#{main.budget.field.suborderSign}">Unterauftrag</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.budget.field.valid}">Gültig</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.budget.field.employees}">Mitarbeitende</th>
           <th class="w-1"></th>
           <th class="w-1" th:if="${isManager}"></th>
           <th class="w-1" th:if="${isManager}"></th>
@@ -64,10 +65,10 @@
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(budgets)}">
-          <td colspan="7" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          <td th:colspan="${isManager} ? 8 : 6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
         <tr th:each="b : ${budgets}" th:classappend="${b.active != true} ? 'table-secondary' : ''"
-            th:with="order=${orders.get(b.customerorderSign)},suborder=${suborders.get(b.suborderSign)}">
+            th:with="order=${orders.get(b.customerorderSign)},suborder=${suborders.get(b.suborderSign)},employees=${employeesByBudget.get(b.id)}">
           <td>
             <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a>
           </td>
@@ -89,6 +90,18 @@
             –
             <span th:if="${b.validUntil.year != 2999}" th:text="${#temporals.format(b.validUntil, 'dd.MM.yyyy')}"></span>
             <span th:unless="${b.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
+          </td>
+          <!--/* Who booked on this plan (#964), most hours first — signs only. No rates and no
+                 findings: the overview answers the question before those, and the detail page has
+                 the full card. A plan without bookings leaves the cell empty rather than showing a
+                 zero that would read like something went wrong. */-->
+          <td class="d-none d-md-table-cell">
+            <span th:each="e : ${employees.shown}" class="badge bg-secondary-lt me-1"
+                  th:title="#{main.budget.list.employees.sign.title(${e.employeeName}, ${e.hours})}"
+                  th:text="${e.employeeSign}"></span>
+            <span th:if="${employees.hasMore()}" class="badge bg-secondary-lt"
+                  th:title="#{main.budget.list.employees.more.title(${employees.more})}"
+                  th:text="'+' + ${employees.more}"></span>
           </td>
           <td>
             <a class="btn btn-outline-secondary btn-sm" th:href="@{/budget/{id}(id=${b.id})}">

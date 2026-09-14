@@ -54,8 +54,10 @@
       </div>
     </salat:inputs>
     <salat:buttons>
+      <!-- Called from a budget plan there is no category yet (#964), and a cancel carrying an empty
+           name would land on a category page that does not exist. -->
       <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}"
-                         th:cancelHref="@{/budget/employee-cost/category(name=${assignmentForm.employeeCostName})}" />
+                         th:cancelHref="${assignmentForm.employeeCostName != null} ? @{/budget/employee-cost/category(name=${assignmentForm.employeeCostName})} : @{/budget/employee-cost}" />
     </salat:buttons>
   </salat:form>
 
