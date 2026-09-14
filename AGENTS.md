@@ -541,6 +541,29 @@ Rules:
 - All service/DAO methods that populate dropdowns must exclude hidden records by default (apply `notHidden()` spec or equivalent).
 - The list management view exposes a “Show hidden” toggle so managers can still see and edit hidden records.
 
+**The one exception: the record a select already stores** (→ #1005). A select box that carries an
+already stored reference must offer the stored record even when it is hidden. Hiding declutters the
+choice of something *new*; it must never make an existing record uneditable, and it must never
+silently rewrite one. A select whose stored value is missing from its options cannot mark anything,
+so the browser preselects the first option — and that value is what a save writes back. That is how a
+hidden customer came to be displayed as a different customer, and how a hidden parent suborder moved
+its whole subtree to the top level.
+
+- Build such a list from a `getSelectable…(keep…)` method of the **owning** service —
+  `CustomerService.getSelectableCustomers(keepId)`,
+  `CustomerorderService.getSelectableCustomerorders(keepSign)`,
+  `SuborderService.getSelectableSubordersByCustomerorderId(id, keep…)`,
+  `EmployeeService.getSelectableEmployees(keepSign)`. Not an ad-hoc “add it back if absent” block in
+  the controller: the rule then lives in as many places as there are forms.
+- Where a stored value can be filtered out for reasons **other** than `hide` — expired validity,
+  authorization — a `getSelectable…` method is not enough, because it only knows `hide`. Those places
+  keep their own fallback (`CustomerorderController.addFormModel`,
+  `EmployeeorderController.addFormModel`); do not "unify" them away.
+- Mark such an entry with `${@hiddenMarkerViewHelper.suffix(x.hide)}` appended to the option text
+  (`common/viewhelper/HiddenMarkerViewHelper`, message key `main.general.hidden.suffix`). An entry
+  that is only in the list because the record stores it has to say so, otherwise the form claims it is
+  available for picking.
+
 ### Validity Ranges (Time-Bounded Entities)
 Many entities carry a validity range (`fromDate` / `untilDate`) that defines the period during which they are usable. An entity is *currently valid* when today's date falls within its range. Outside that range it is *expired* (or not yet active), and it is often unusable — e.g. you cannot book time on a customer order whose validity ended last month.
 

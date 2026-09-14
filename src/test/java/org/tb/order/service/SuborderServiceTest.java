@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -122,6 +123,32 @@ public class SuborderServiceTest {
     assertThat(selectableSigns("co/01")).containsExactly("co/01");
   }
 
+  /**
+   * The order forms address a suborder by id rather than by complete order sign (#1005). Same rule:
+   * the hidden one a record already stores stays in the list, because the parent select drops what
+   * it cannot show and the save then writes back whatever the browser preselected.
+   */
+  @Test
+  public void should_leave_out_hidden_suborders_when_addressed_by_id() {
+    givenOrderWithHiddenChild();
+
+    assertThat(selectableSignsById(null)).containsExactly("co/01");
+  }
+
+  @Test
+  public void should_keep_a_hidden_suborder_that_the_record_still_references_by_id() {
+    givenOrderWithHiddenChild();
+
+    assertThat(selectableSignsById(2L)).containsExactly("co/01", "co/01/02");
+  }
+
+  @Test
+  public void should_not_keep_a_hidden_suborder_that_is_not_the_referenced_one_by_id() {
+    givenOrderWithHiddenChild();
+
+    assertThat(selectableSignsById(1L)).containsExactly("co/01");
+  }
+
   /** Budget plans only live on direct children of the customer order (#905). */
   @Test
   public void should_recognise_a_direct_child_of_the_customer_order() {
@@ -143,6 +170,12 @@ public class SuborderServiceTest {
         .toList();
   }
 
+  private List<String> selectableSignsById(Long keepId) {
+    return suborderService.getSelectableSubordersByCustomerorderId(1L, keepId).stream()
+        .map(Suborder::getCompleteOrderSign)
+        .toList();
+  }
+
   private void givenOrderWithHiddenChild() {
     var customerorder = mock(Customerorder.class);
     when(customerorder.getSign()).thenReturn("co");
@@ -150,11 +183,13 @@ public class SuborderServiceTest {
     var parent = new Suborder();
     parent.setCustomerorder(customerorder);
     parent.setSign("01");
+    setField(parent, "id", 1L);
     var child = new Suborder();
     child.setCustomerorder(customerorder);
     child.setParentorder(parent);
     child.setSign("02");
     child.setHide(true);
+    setField(child, "id", 2L);
 
     when(suborderDAO.getSubordersByCustomerorderId(anyLong(), anyBoolean()))
         .thenReturn(List.of(parent, child));

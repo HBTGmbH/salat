@@ -85,7 +85,7 @@ public class SuborderController {
           .filter(co -> co.getCustomer().getId().equals(fcustomerId))
           .toList();
     }
-    model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
+    model.addAttribute("customers", customerService.getSelectableCustomers(customerId));
     model.addAttribute("visibleCustomerOrders", visibleCustomerOrders);
     model.addAttribute("soFilter", soFilter);
     model.addAttribute("customerId", customerId);
@@ -477,7 +477,7 @@ public class SuborderController {
       }
     }
 
-    var customers = customerService.getCustomersOrderedByShortName();
+    var customers = customerService.getSelectableCustomers(form.getCustomerId());
     model.addAttribute("customers", customers);
     if (form.getCustomerId() == null && !customers.isEmpty()) {
       form.setCustomerId(customers.getFirst().getId());
@@ -502,8 +502,11 @@ public class SuborderController {
       form.setParentId(form.getCustomerorderId());
     }
 
-    // Suborders of the current customer order for parent dropdown — exclude the suborder being edited
-    var parentSuborders = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId())
+    // Suborders of the current customer order for parent dropdown — exclude the suborder being
+    // edited, and keep the stored parent even when it is hidden: without it the guard below would
+    // drop the parent and the save would move the suborder to the top level (#1005)
+    var parentSuborders = suborderService
+        .getSelectableSubordersByCustomerorderId(form.getCustomerorderId(), form.getParentId())
         .stream()
         .filter(so -> !Objects.equals(so.getId(), form.getId()))
         .toList();

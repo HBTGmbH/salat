@@ -108,7 +108,7 @@ public class EmployeeorderController {
         model.addAttribute("eoShowInvalid", eoShowInvalid);
         model.addAttribute("eoShowHidden", eoShowHidden);
         model.addAttribute("eoShowActualHours", Boolean.TRUE.equals(eoShowActualHours));
-        addListModel(model);
+        addListModel(model, customerId);
         boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
         model.addAttribute("htmxRequest", htmxRequest);
         return htmxRequest ? "order/employee-order-list :: results" : "order/employee-order-list";
@@ -462,7 +462,7 @@ public class EmployeeorderController {
             }
         }
 
-        var customers = customerService.getCustomersOrderedByShortName();
+        var customers = customerService.getSelectableCustomers(form.getCustomerId());
         model.addAttribute("customers", customers);
         if (form.getCustomerId() == null && !customers.isEmpty()) {
             form.setCustomerId(customers.getFirst().getId());
@@ -533,8 +533,8 @@ public class EmployeeorderController {
         model.addAttribute("suborders", suborders);
     }
 
-    private void addListModel(Model model) {
-        model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
+    private void addListModel(Model model, Long customerId) {
+        model.addAttribute("customers", customerService.getSelectableCustomers(customerId));
         model.addAttribute("section", "orders");
         model.addAttribute("subSection", "employeeorders");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.employeeorders.text", "Employee Orders"));
