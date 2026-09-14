@@ -30,9 +30,12 @@ import org.tb.budget.domain.OrderBudgetAdjustmentData;
 import org.tb.budget.domain.OrderBudgetData;
 import org.tb.budget.domain.OrderBudgetScopeEntryData;
 import org.tb.budget.domain.ProgressMode;
+import org.tb.budget.service.BudgetEmployeeService;
 import org.tb.budget.service.OrderBudgetService;
 import org.tb.budget.service.TimereportBudgetAssignmentService;
 import org.tb.budget.viewhelper.AssignedTimereportViewHelper;
+import org.tb.budget.viewhelper.BudgetEmployeeSignsViewHelper;
+import org.tb.budget.viewhelper.BudgetEmployeesViewHelper;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
@@ -55,6 +58,7 @@ public class BudgetController {
 
     private final OrderBudgetService orderBudgetService;
     private final TimereportBudgetAssignmentService assignmentService;
+    private final BudgetEmployeeService budgetEmployeeService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
@@ -90,7 +94,21 @@ public class BudgetController {
         // Both maps are built once per page instead of one lookup per row.
         model.addAttribute("orders", ordersOf(budgets));
         model.addAttribute("suborders", subordersOf(budgets));
+        model.addAttribute("employeesByBudget", employeeSignsOf(budgets));
         return "budget/budget-list";
+    }
+
+    /**
+     * Who booked on each plan (#964) — one aggregate query for the whole page, not one per row.
+     * Asking {@code getAssignedBookings} per row would be two statements <em>and</em> the bookings
+     * of the plan's whole order every time, which is the pattern the budget dashboard broke on
+     * (→ {@code docs/performance-tips.md}).
+     */
+    private Map<Long, BudgetEmployeeSignsViewHelper> employeeSignsOf(List<OrderBudget> budgets) {
+        var byBudget = budgetEmployeeService.employeesOf(budgets);
+        return budgets.stream().collect(toMap(OrderBudget::getId,
+            budget -> BudgetEmployeeSignsViewHelper.from(byBudget.get(budget.getId())),
+            (first, second) -> first));
     }
 
     private Map<String, Customerorder> ordersOf(List<OrderBudget> budgets) {
@@ -237,18 +255,26 @@ public class BudgetController {
      *
      * <p>Sorting, capping and the figures of the header all come out of the database already shaped
      * (#997); nothing is counted or reordered here.
+     *
+     * <p>The "Mitarbeitende" card hangs on the same period (#964). It is resolved in one pass with
+     * the rates of the rendered rows, so the card and the rows cannot name different rates for the
+     * same work — and it reads the whole period rather than the capped list, which would understate
+     * the hours of exactly the plans that need attention.
      */
     private void addAssignedTimereports(OrderBudget budget, LocalDate from, LocalDate until, Model model) {
         var periodFrom = from != null ? from : budget.getValidFrom();
         var periodUntil = until != null ? until : budget.getValidUntil();
         var assigned = assignmentService.getAssignedBookings(
             budget.getId(), periodFrom, periodUntil, ASSIGNED_LIST_LIMIT);
+        var rates = budgetEmployeeService.resolve(budget, periodFrom, periodUntil, assigned.newest());
 
         model.addAttribute("assignedFrom", periodFrom);
         model.addAttribute("assignedUntil", periodUntil);
         model.addAttribute("assignedCount", assigned.count());
         model.addAttribute("assignedHours", DurationUtils.format(assigned.totalDuration()));
-        model.addAttribute("assignedTimereports", AssignedTimereportViewHelper.from(assigned.newest()));
+        model.addAttribute("assignedTimereports",
+            AssignedTimereportViewHelper.from(assigned.newest(), rates));
+        model.addAttribute("employees", BudgetEmployeesViewHelper.from(rates.employees()));
         model.addAttribute("assignedLimit", ASSIGNED_LIST_LIMIT);
         model.addAttribute("assignedTruncated", assigned.truncated());
         // Only the other active plans of the same order are possible targets: an inactive plan

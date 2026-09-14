@@ -180,6 +180,111 @@
     </div>
   </div>
 
+  <!--/* Who works on the plan and which rates apply to their work (#964). Same period as the
+         booking list below, but read over all of its bookings and not over the capped list. The
+         cost side is managers only, as in controlling; the condition is for whoever reaches the
+         page, because the order responsible does the budget tracking for it. */-->
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center">
+      <h3 class="card-title me-auto" th:text="#{main.budget.employees.title}">Mitarbeitende</h3>
+      <!--/* 31.12.2999 is how an open end is expressed throughout the module (→ OrderPricing);
+             printing the sentinel as a date is of no use to anybody. */-->
+      <span class="text-muted small">
+        <span th:text="${#temporals.format(assignedFrom, 'dd.MM.yyyy')}"></span>
+        –
+        <span th:if="${assignedUntil.year != 2999}"
+              th:text="${#temporals.format(assignedUntil, 'dd.MM.yyyy')}"></span>
+        <span th:unless="${assignedUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
+      </span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.budget.employees.field.employee}">Person</th>
+            <th class="text-end" th:text="#{main.budget.employees.field.hours}">Stunden</th>
+            <th class="text-end d-none d-md-table-cell" th:text="#{main.budget.employees.field.bookings}">Buchungen</th>
+            <th th:if="${employees.costsIncluded}" th:text="#{main.budget.employees.field.cost}">Kostensatz</th>
+            <th th:text="#{main.budget.employees.field.rate}">Kondition</th>
+            <th class="w-1" th:if="${isManager}"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${employees.isEmpty()}">
+            <td th:colspan="${4 + (employees.costsIncluded ? 1 : 0) + (isManager ? 1 : 0)}"
+                class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          </tr>
+          <tr th:each="e : ${employees.rows}">
+            <td>
+              <div th:text="${e.employeeSign}"></div>
+              <div class="small text-muted" th:text="${e.employeeName}"></div>
+            </td>
+            <td class="text-end" th:text="${e.hours}"></td>
+            <td class="text-end d-none d-md-table-cell" th:text="${e.bookings}"></td>
+            <!--/* Every category that applies, not one of them: which one it is hangs on suborder
+                   and date, so choosing would be a silent claim about the others. */-->
+            <td th:if="${employees.costsIncluded}">
+              <div th:each="c : ${e.costs}">
+                <span th:text="${c.name}"></span>
+                <span class="text-muted ms-1" th:text="#{main.budget.format.amount(${c.euroPerHour()})}"></span>
+              </div>
+              <span th:if="${e.missingCost}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.rate.cost.missing}">
+                <i class="icon ti ti-alert-triangle m-0 me-1"></i>
+                <span th:text="#{main.budget.rate.cost.missing.label}">keiner</span>
+              </span>
+            </td>
+            <!--/* 0,00 € is a rate like any other and carries no mark — only a resolution that
+                   found nothing does. Hours on a suborder that is not invoiceable are named
+                   apart and are not a missing condition. */-->
+            <td>
+              <div th:each="p : ${e.pricesEuroPerHour}" th:text="#{main.budget.format.amount(${p})}"></div>
+              <span th:if="${e.missingPrice}" class="badge bg-warning-lt"
+                    th:title="#{main.budget.rate.price.missing}">
+                <i class="icon ti ti-alert-triangle m-0 me-1"></i>
+                <span th:text="#{main.budget.rate.price.missing.label}">keine</span>
+              </span>
+              <span th:if="${e.notInvoiceable}" class="badge bg-blue-lt ms-1"
+                    th:title="#{main.budget.rate.notinvoiceable}">
+                <i class="icon ti ti-receipt-off m-0 me-1"></i>
+                <span th:text="#{main.budget.rate.notinvoiceable.label}">nicht fakt.</span>
+              </span>
+            </td>
+            <!--/* The card is the occasion to enter a missing rate, so it leads to both forms with
+                   the person filled in. Creating either takes a manager, hence the links do too. */-->
+            <td class="text-nowrap" th:if="${isManager}">
+              <a class="btn btn-outline-secondary btn-sm"
+                 th:href="@{/budget/employee-cost/assignments/create(employeeSign=${e.employeeSign})}"
+                 th:title="#{main.budget.employees.link.cost(${e.employeeSign})}">
+                <i class="icon ti ti-coin m-0"></i>
+              </a>
+              <a class="btn btn-outline-secondary btn-sm ms-1"
+                 th:href="@{/budget/pricing/create(coSign=${budget.customerorderSign},employeeSign=${e.employeeSign})}"
+                 th:title="#{main.budget.employees.link.rate(${e.employeeSign})}">
+                <i class="icon ti ti-receipt m-0"></i>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer" th:unless="${employees.isEmpty()}">
+      <div th:if="${employees.hasFindings()}" class="mb-1">
+        <span th:if="${employees.anyWithoutCost}" class="me-3 text-warning"
+              th:text="#{main.budget.employees.summary.withoutcost(${employees.hoursWithoutCost})}"></span>
+        <span th:if="${employees.anyWithoutPrice}" class="me-3 text-warning"
+              th:text="#{main.budget.employees.summary.withoutrate(${employees.hoursWithoutPrice})}"></span>
+        <span th:if="${employees.anyNotInvoiceable}" class="me-3 text-muted"
+              th:text="#{main.budget.employees.summary.notinvoiceable(${employees.hoursNotInvoiceable})}"></span>
+      </div>
+      <small class="text-muted" th:text="#{main.budget.employees.hint}">
+        Mehrere Einträge bedeuten mehrere greifende Sätze.
+      </small>
+    </div>
+  </div>
+
   <!-- Assigned bookings (#912) -->
   <div class="card mb-3">
     <div class="card-header d-flex align-items-center">
@@ -227,12 +332,17 @@
               <th th:text="#{main.budget.assignments.field.suborder}">Unterauftrag</th>
               <th th:text="#{main.budget.assignments.field.employee}">Kürzel</th>
               <th class="text-end" th:text="#{main.budget.assignments.field.duration}">Dauer</th>
+              <!--/* The rates that apply to this booking (#964) — the same resolution the card
+                     above summarises per person. No amounts: those stay in the controlling. */-->
+              <th th:if="${employees.costsIncluded}" th:text="#{main.budget.assignments.field.cost}">Kostensatz</th>
+              <th th:text="#{main.budget.assignments.field.rate}">Kondition</th>
               <th th:text="#{main.budget.assignments.field.task}">Buchungstext</th>
             </tr>
           </thead>
           <tbody>
             <tr th:if="${#lists.isEmpty(assignedTimereports)}">
-              <td th:colspan="${isManager} ? 6 : 5" class="text-center text-muted py-4"
+              <td th:colspan="${6 + (isManager ? 1 : 0) + (employees.costsIncluded ? 1 : 0)}"
+                  class="text-center text-muted py-4"
                   th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
             </tr>
             <tr th:each="tr : ${assignedTimereports}">
@@ -243,6 +353,35 @@
               <td th:text="${tr.suborderSign}"></td>
               <td th:text="${tr.employeeSign}"></td>
               <td class="text-end" th:text="${tr.duration}"></td>
+              <td th:if="${employees.costsIncluded}" class="text-nowrap">
+                <span th:if="${tr.rate.hasCost()}">
+                  <span th:text="${tr.rate.costName}"></span>
+                  <span class="text-muted ms-1" th:text="#{main.budget.format.amount(${tr.rate.costEuroPerHour()})}"></span>
+                </span>
+                <span th:if="${tr.rate.missingCost()}" class="badge bg-warning-lt"
+                      th:title="#{main.budget.rate.cost.missing}">
+                  <i class="icon ti ti-alert-triangle m-0 me-1"></i>
+                  <span th:text="#{main.budget.rate.cost.missing.label}">keiner</span>
+                </span>
+              </td>
+              <!--/* A suborder that is not invoiceable is never billed, whatever rate matches, so
+                     the cell says so instead of faulting a rate that would not take effect. */-->
+              <td class="text-nowrap">
+                <span th:if="${tr.rate.notInvoiceable()}" class="badge bg-blue-lt"
+                      th:title="#{main.budget.rate.notinvoiceable}">
+                  <i class="icon ti ti-receipt-off m-0 me-1"></i>
+                  <span th:text="#{main.budget.rate.notinvoiceable.label}">nicht fakt.</span>
+                </span>
+                <th:block th:unless="${tr.rate.notInvoiceable()}">
+                  <span th:if="${tr.rate.hasPrice()}"
+                        th:text="#{main.budget.format.amount(${tr.rate.priceEuroPerHour()})}"></span>
+                  <span th:if="${tr.rate.missingPrice()}" class="badge bg-warning-lt"
+                        th:title="#{main.budget.rate.price.missing}">
+                    <i class="icon ti ti-alert-triangle m-0 me-1"></i>
+                    <span th:text="#{main.budget.rate.price.missing.label}">keine</span>
+                  </span>
+                </th:block>
+              </td>
               <td th:text="${tr.taskDescription}"></td>
             </tr>
           </tbody>

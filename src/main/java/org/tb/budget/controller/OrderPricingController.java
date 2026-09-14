@@ -74,10 +74,20 @@ public class OrderPricingController {
         return "budget/pricing-list";
     }
 
+    /**
+     * Both parameters only prefill, and both are optional (#964). The "Mitarbeitende" card of a
+     * budget plan links here for a person whose work has no condition at all — order and person are
+     * known there, the rate and its validity are not.
+     */
     @Authorized(requiresManager = true)
     @GetMapping("/create")
-    public String createForm(Model model) {
-        addFormModel(model, new OrderPricingForm(), false);
+    public String createForm(@RequestParam(required = false) String coSign,
+                             @RequestParam(required = false) String employeeSign,
+                             Model model) {
+        var form = new OrderPricingForm();
+        form.setCustomerorderSign(trimToNull(coSign));
+        form.setEmployeeSign(trimToNull(employeeSign));
+        addFormModel(model, form, false);
         return "budget/pricing-form";
     }
 
