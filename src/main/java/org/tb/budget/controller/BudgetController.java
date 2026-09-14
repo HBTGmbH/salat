@@ -248,8 +248,9 @@ public class BudgetController {
         model.addAttribute("assignedHours", DurationUtils.format(assigned.stream()
             .map(TimereportDTO::getDuration)
             .reduce(Duration.ZERO, Duration::plus)));
+        // Youngest first, and capped only after sorting — see AssignedTimereportViewHelper (#997).
         model.addAttribute("assignedTimereports",
-            AssignedTimereportViewHelper.from(assigned.stream().limit(ASSIGNED_LIST_LIMIT).toList()));
+            AssignedTimereportViewHelper.newestFirst(assigned, ASSIGNED_LIST_LIMIT));
         model.addAttribute("assignedLimit", ASSIGNED_LIST_LIMIT);
         model.addAttribute("assignedTruncated", assigned.size() > ASSIGNED_LIST_LIMIT);
         // Only the other active plans of the same order are possible targets: an inactive plan
