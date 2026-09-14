@@ -56,14 +56,19 @@ an „Wartung 2026" arbeiten.
 
 ### Implementierung
 
-`FilterHintViewHelper` (`common/viewhelper/`) hängt den Hinweis an eine Meldung an, wenn einer der
-übergebenen Filterschlüssel einen nicht-leeren Wert hat:
+`FilterHintViewHelper` (`common/viewhelper/`) meldet den Erfolg und legt den Hinweis dazu, wenn
+einer der übergebenen Filterschlüssel einen nicht-leeren Wert hat:
 
 ```java
-redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+filterHintViewHelper.addSuccess(redirectAttributes,
     messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
-    SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID));
+    SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
 ```
+
+Der Hinweis reist als eigenes Flash-Attribut (`toastSuccessHint`), und der Toast in
+`layout/base.html` gibt ihm eine **eigene Zeile** unterhalb der Meldung, kleiner und mit
+Filtersymbol. Er sagt etwas über die Liste, nicht über das Speichern; angehängt an den gleichen
+Satz läse er sich wie ein Vorbehalt gegen das Gespeicherte.
 
 Übergeben werden nur die Filter, die einen Eintrag **ausschließen** können: Suchtext und getroffene
 Auswahl. Die Schalter „versteckte anzeigen" und „abgelaufene anzeigen" erweitern eine Liste nur und

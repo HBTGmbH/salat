@@ -129,17 +129,20 @@ public class OrderFlatRateController {
         try {
             if (form.isNew()) {
                 var id = orderFlatRateService.save(data);
-                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
-                    messages.getMessage("main.flatrate.message.created"), CUSTOMER_ORDER_SIGN));
                 // Instalments are the point of that rhythm and can only be entered once the
                 // definition exists, so go where they are maintained rather than back to the list.
+                // The filter hint belongs to the list and would be beside the point there.
                 if (form.getRhythm() == FlatRateRhythm.INSTALMENTS) {
+                    redirectAttributes.addFlashAttribute("toastSuccess",
+                        messages.getMessage("main.flatrate.message.created"));
                     return "redirect:/budget/flat-rate/" + id;
                 }
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.flatrate.message.created"), CUSTOMER_ORDER_SIGN);
             } else {
                 orderFlatRateService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
-                    messages.getMessage("main.flatrate.message.updated"), CUSTOMER_ORDER_SIGN));
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.flatrate.message.updated"), CUSTOMER_ORDER_SIGN);
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

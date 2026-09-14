@@ -273,10 +273,10 @@ public class EmployeeorderController {
 
         // The filter stays as the user left it (ADR-0023); where it hides the saved employee
         // order, the message says so instead of the list silently not showing it.
-        redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+        filterHintViewHelper.addSuccess(redirectAttributes,
                 messages.getMessage("form.employeeorder.message.stored", "Employee order saved successfully"),
                 EMPLOYEEORDER_FILTER, EMPLOYEEORDER_EMPLOYEE_CONTRACT_ID, CUSTOMER_ID, CUSTOMER_ORDER_ID,
-                SUBORDER_ID));
+                SUBORDER_ID);
         if (saveAndNew != null) {
             form.setId(null);
             redirectAttributes.addFlashAttribute("prefillForm", form);

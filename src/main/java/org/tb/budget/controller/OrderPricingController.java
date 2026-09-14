@@ -158,12 +158,12 @@ public class OrderPricingController {
         try {
             if (form.isNew()) {
                 orderPricingService.save(data);
-                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
-                    messages.getMessage("main.pricing.message.created"), CUSTOMER_ORDER_SIGN));
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.pricing.message.created"), CUSTOMER_ORDER_SIGN);
             } else {
                 orderPricingService.update(form.getId(), data);
-                redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
-                    messages.getMessage("main.pricing.message.updated"), CUSTOMER_ORDER_SIGN));
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.pricing.message.updated"), CUSTOMER_ORDER_SIGN);
             }
         } catch (ErrorCodeException ex) {
             model.addAttribute("formErrors",

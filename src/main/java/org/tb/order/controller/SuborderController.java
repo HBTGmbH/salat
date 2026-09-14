@@ -192,9 +192,9 @@ public class SuborderController {
 
     // The filter stays as the user left it (ADR-0023); where it hides the saved suborder, the
     // message says so instead of the list silently not showing it.
-    redirectAttributes.addFlashAttribute("toastSuccess", filterHintViewHelper.appendTo(
+    filterHintViewHelper.addSuccess(redirectAttributes,
         messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
-        SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID));
+        SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
     if (isCreate && customerorderId != null) {
       redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + customerorderId);
       redirectAttributes.addFlashAttribute("toastActionLabel",
