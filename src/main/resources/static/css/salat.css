@@ -291,3 +291,71 @@ body {
     min-width: 10rem;
   }
 }
+
+/* Resizable dialogue (#1013)
+ *
+ * From the large breakpoint upwards a dialogue marked `salat-resizable` can be dragged bigger by its
+ * bottom right corner. Below that the dialogue already spans the screen and there is nothing to
+ * gain, so the rules stay out of the way on small screens and on touch, where a drag handle of a few
+ * pixels is not a target anybody can hit.
+ *
+ * `resize` needs an `overflow` other than `visible` to take effect; `hidden` is the one that does
+ * not add a second pair of scrollbars around the content.
+ */
+/* The dialogue is what bounds the height, at every width — the content areas below only pass it on.
+ * Without this the innermost scroll area would have no bounded parent to scroll within and a list of
+ * a few hundred rows would make the dialogue as tall as its content.
+ */
+.salat-resizable .modal-content {
+  max-height: 85vh;
+}
+
+@media (min-width: 992px) {
+
+  /* The dialogue gives up deciding the width and only centres what is inside it. Left at its own
+   * width it would cap the content, and dragging sideways would do nothing at all: `.modal-content`
+   * is a flex item of `width: 100%` and cannot get wider than the box around it.
+   */
+  .salat-resizable .modal-dialog {
+    max-width: none;
+    width: auto;
+    justify-content: center;
+  }
+
+  .salat-resizable .modal-content {
+    resize: both;
+    overflow: hidden;
+    /* flex-basis auto, so the width dragging writes is the one that counts. */
+    flex: 0 0 auto;
+    width: 56rem;
+    height: 70vh;
+    min-width: 32rem;
+    min-height: 20rem;
+    /* Stay inside the window: dragged past it, the corner would be out of reach to drag back. */
+    max-width: 96vw;
+    max-height: 92vh;
+  }
+}
+
+/* The body and everything the fragment puts inside it pass the height on rather than adding their
+ * own scrollbar, so that dragging the dialogue taller shows more rows — which is the point of being
+ * able to drag it. `min-height: 0` on every level because a flex item otherwise refuses to shrink
+ * below its content and the innermost scroll area never gets a bounded height to scroll within.
+ */
+.salat-resizable .modal-body,
+.salat-fill-height {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.salat-fill-height {
+  flex: 1 1 auto;
+}
+
+.salat-scroll-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
