@@ -11,7 +11,12 @@ import static org.tb.common.exception.ErrorCode.JI_REPLICATION_PAGE_SIZE_INVALID
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_PASSWORD_REQUIRED;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
 
+import static java.util.Comparator.comparing;
+
+import java.text.Collator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,8 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.jira.domain.JiraApiFlavor;
+import org.tb.jira.domain.JiraFieldCatalog;
+import org.tb.jira.domain.JiraFieldOption;
 import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraReplicationConfigData;
 import org.tb.jira.domain.JiraReplicationConfigInfo;
@@ -47,8 +54,12 @@ import org.tb.jira.persistence.JiraReplicationConfigRepository;
 @Authorized(requiresManager = true)
 public class JiraReplicationConfigService {
 
+  /** The last segment of the JIRA plugin type key of a cascading select. */
+  private static final String CASCADING_SELECT = "cascadingselect";
+
   private final JiraReplicationConfigRepository configRepository;
   private final JiraReplicationService jiraReplicationService;
+  private final JiraSearchClients jiraSearchClients;
   private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
@@ -137,6 +148,75 @@ public class JiraReplicationConfigService {
       log.error("Manually started JIRA replication failed: id={}, name={}", id, config.getName(), ex);
       return JiraReplicationRunOutcome.failed(config.getName(), redacted(ex, config.getPassword()));
     }
+  }
+
+  /**
+   * The fields the JIRA instance behind this config knows (#1013), so the configuration can be
+   * picked rather than typed from memory.
+   *
+   * <p>Base URL and credentials come from the stored config, addressed by its id — never from the
+   * caller. A caller that could name the target would turn this into an authenticated HTTP client
+   * for any address the server can reach, which is a different capability from "maintain the
+   * replications". The stored password is read here and goes no further than the request.
+   *
+   * <p>Outside a transaction for the reason {@link #runNow} gives: a foreign system's response time
+   * must not hold a database connection.
+   */
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public JiraFieldCatalog getSelectableFields(long id) {
+    checkManager();
+    var config = load(id);
+    try {
+      var request = new JiraFieldsRequest(config.getBaseUrl(), config.getUsername(), config.getPassword());
+      var fields = jiraSearchClients.forFlavor(config.getApiFlavor()).listFields(request);
+      return JiraFieldCatalog.of(toOptions(fields));
+    } catch (Exception ex) {
+      log.error("Could not read the JIRA field catalogue: id={}, name={}", id, config.getName(), ex);
+      return JiraFieldCatalog.failed(redacted(ex, config.getPassword()));
+    }
+  }
+
+  /**
+   * Sorted by name, because that is what the picker is scanned by. A cascading select gets a second
+   * entry right behind it for its second level — the one case where a path is needed and the only
+   * one the catalogue can recognise on its own.
+   */
+  private static List<JiraFieldOption> toOptions(List<JiraField> fields) {
+    var options = new ArrayList<JiraFieldOption>();
+    // A Collator rather than String order: comparing code points would file "Änderungsdatum" behind
+    // "Zeiterfassung", which in a list somebody scans by name reads as broken. German because the
+    // application is (→ ADR-0010); a Collator is stateful, hence one per call.
+    var byName = Collator.getInstance(Locale.GERMAN);
+    fields.stream()
+        .filter(field -> field.getId() != null && !field.getId().isBlank())
+        .sorted(comparing(JiraReplicationConfigService::nameOf, byName))
+        .forEach(field -> {
+          var type = typeOf(field);
+          options.add(JiraFieldOption.of(field.getId(), nameOf(field), type));
+          if (CASCADING_SELECT.equals(type)) {
+            options.add(JiraFieldOption.secondLevelOf(
+                field.getId() + ".child.value", nameOf(field), type));
+          }
+        });
+    return options;
+  }
+
+  private static String nameOf(JiraField field) {
+    return isBlank(field.getName()) ? field.getId() : field.getName();
+  }
+
+  /**
+   * The value shape in JIRA's own words. {@code schema.custom} carries the full plugin type key and
+   * only its last segment says anything, {@code schema.type} covers the standard fields.
+   */
+  private static String typeOf(JiraField field) {
+    var schema = field.getSchema();
+    if (schema == null) return null;
+    if (!isBlank(schema.getCustom())) {
+      var separator = schema.getCustom().lastIndexOf(':');
+      return separator < 0 ? schema.getCustom() : schema.getCustom().substring(separator + 1);
+    }
+    return schema.getType();
   }
 
   private JiraReplicationConfig load(long id) {

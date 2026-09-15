@@ -91,6 +91,27 @@
         </div>
       </div>
 
+      <!--/* Only for a stored replication (#1013): the catalogue is fetched with the credentials of
+             the saved row, and the password field is never prefilled, so there is nothing to fetch
+             with before the first save. */-->
+      <div class="mb-3">
+        <button th:if="${isEdit}" type="button" class="btn btn-outline-primary"
+                data-bs-toggle="modal" data-bs-target="#fieldPickerModal"
+                th:hx-get="@{/jira/replications/{id}/fields(id=${replicationForm.id})}"
+                hx-target="#fieldPickerBody">
+          <i class="icon ti ti-list-search"></i>
+          <span th:text="#{main.jira.replication.fields.button}">Felder auswählen</span>
+        </button>
+        <button th:unless="${isEdit}" type="button" class="btn btn-outline-primary" disabled>
+          <i class="icon ti ti-list-search"></i>
+          <span th:text="#{main.jira.replication.fields.button}">Felder auswählen</span>
+        </button>
+        <div th:unless="${isEdit}" class="form-text"
+             th:text="#{main.jira.replication.fields.button.disabled.help}">
+          Erst speichern.
+        </div>
+      </div>
+
       <salat:checkboxSwitch th:field="*{enabled}" th:label="#{main.jira.replication.field.enabled}" />
 
       <!--/* The watermark is not a form field: a date entered by hand would skip every ticket
@@ -113,6 +134,32 @@
       <salat:formButtons th:saveLabel="#{main.button.label.save.text}" th:cancelHref="@{/jira/replications}" />
     </salat:buttons>
   </salat:form>
+
+  <!--/* The picker dialogue (#1013). The shell stays in the page, the body is fetched per opening
+         so a field added in JIRA in the meantime is there. */-->
+  <div th:if="${isEdit}" class="modal modal-blur fade" id="fieldPickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" th:text="#{main.jira.replication.fields.title}">JIRA-Felder auswählen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="fieldPickerBody">
+          <div class="text-center text-secondary py-4">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <span th:text="#{main.jira.replication.fields.loading}">Felder werden geladen …</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal"
+                  th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="fieldPickerApply" data-bs-dismiss="modal"
+                  onclick="salatFieldPickerApply()"
+                  th:text="#{main.jira.replication.fields.apply}">Übernehmen</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!--/* Its own form, outside the one above: resetting the watermark is an action on the stored
          record, not an unsaved edit of it. */-->

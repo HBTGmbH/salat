@@ -58,6 +58,20 @@ public class JiraReplicationConfigController {
     return "jira/replication-form";
   }
 
+  /**
+   * The field catalogue of one replication, as the body of the picker dialogue (#1013).
+   *
+   * <p>A read, hence {@code GET}, and only ever for a stored config: the id is the whole input, so
+   * nobody can point this at an address of their choosing. Deliberately not under {@code /api} or
+   * {@code /rest} — those are stateless filter chains for machine clients and do not accept a
+   * browser session.
+   */
+  @GetMapping("/{id}/fields")
+  public String fields(@PathVariable long id, Model model) {
+    model.addAttribute("fieldCatalog", jiraReplicationConfigService.getSelectableFields(id));
+    return "jira/replication-fields :: fieldPicker";
+  }
+
   @PostMapping("/store")
   @PreAuthorize("hasRole('MANAGER')")
   public String store(@ModelAttribute("replicationForm") JiraReplicationConfigForm form,
