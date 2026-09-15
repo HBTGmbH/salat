@@ -49,7 +49,9 @@
               th:text="#{main.jira.replication.fields.column.key}">Response-Schlüssel</th>
           <!--/* rem, not per cent: "Replizieren" is one word of some 84px, and a share of the width
                  squeezes the heading out of its cell on a narrow dialogue. */-->
-          <th class="d-none d-md-table-cell text-break" style="width: 7rem; white-space: normal"
+          <!--/* Wider than the two checkbox columns: it holds a value rather than a heading, and the
+                 shapes one actually picks by - cascadingselect, multicheckboxes - fit here whole. */-->
+          <th class="d-none d-md-table-cell text-break" style="width: 9rem; white-space: normal"
               th:text="#{main.jira.replication.fields.column.type}">Wertform</th>
           <th class="text-center text-break" style="width: 7rem; white-space: normal"
               th:text="#{main.jira.replication.fields.column.replicate}">Replizieren</th>
@@ -68,8 +70,13 @@
           <!--/* break-all rather than the usual word wrap: a response key is one long token without
                  a space to break at, and a path only offers dots. */-->
           <td><code style="word-break: break-all;" th:text="${option.key}">customfield_10123</code></td>
-          <td class="d-none d-md-table-cell text-break">
-            <span th:if="${option.type != null}" class="text-secondary" th:text="${option.type}">select</span>
+          <!--/* One line with an ellipsis, the whole value in the tooltip. A plugin type key such as
+                 jpo-custom-field-original-story-points fits into no width worth giving this column,
+                 and the value shape is a hint beside the field - it must not be what decides how
+                 tall a row is. */-->
+          <td class="d-none d-md-table-cell">
+            <span th:if="${option.type != null}" class="text-secondary d-block text-truncate"
+                  th:title="${option.type}" th:text="${option.type}">select</span>
           </td>
           <td class="text-center">
             <input type="checkbox" class="form-check-input field-picker-replicate"
