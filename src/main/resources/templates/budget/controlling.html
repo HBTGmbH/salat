@@ -13,15 +13,24 @@
   <div class="card mb-4">
     <div class="card-body">
       <form method="get" th:action="@{/budget/controlling}" th:object="${filter}" class="row g-2 align-items-end">
+        <!--
+          Only the submit brings this along, and only then is anything computed (#1009). The presence
+          of fCustomerOrderSign cannot say it: the UiState fallback puts a remembered order under
+          every request, and an unbounded evaluation is the most expensive thing the module does.
+        -->
+        <input type="hidden" name="evaluate" value="true"/>
         <div class="col-md-5">
           <label class="form-label" th:text="#{main.controlling.filter.customerorder}">Auftrag</label>
-          <select class="form-select tomselect" th:field="*{customerorderSign}">
+          <!-- The remembered order of the plan and the rate list (#952); a filter parameter carries
+               its own name rather than being bound to the form object (ADR-0022). -->
+          <select class="form-select tomselect" name="fCustomerOrderSign">
             <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag wählen ---</option>
             <option th:each="co : ${customerorders}"
                     th:value="${co.sign}"
                     th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
                     th:attr="data-subtext=${customerLabel}"
-                    th:text="|${co.sign} - ${co.shortdescription}|"></option>
+                    th:text="|${co.sign} - ${co.shortdescription}|"
+                    th:selected="${fCustomerOrderSign != null and fCustomerOrderSign == co.sign}"></option>
           </select>
         </div>
         <div class="col-md-2">

@@ -83,7 +83,9 @@ public class BudgetAlertService {
             .map(e -> e.getSalatUser().getId())
             .toList();
 
-        var controllingUrl = "/budget/controlling?customerorderSign=" + coSign;
+        // evaluate=true because the link is meant to show the evaluation, not just to preselect the
+        // order — merely opening the page computes nothing (#1009).
+        var controllingUrl = "/budget/controlling?fCustomerOrderSign=" + coSign + "&evaluate=true";
         var utilizationStr = String.format("%.1f", utilization);
         var thresholdStr = String.valueOf(threshold);
 

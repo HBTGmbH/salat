@@ -525,7 +525,12 @@ Entities are divided into two categories (→ ADR-0011):
   - The available switches are `requiresAuthentication` (default `true`), `requireUnrestricted`,
     `requiresBackoffice`, `requiresPeopleLead`, `requiresManager`, `requiresAdmin`, `permitAll`.
 - Write operations get `@PreAuthorize(“hasRole('MANAGER')”)` on the method
-- Session filter persistence: check `request.getParameterMap().containsKey(“filter”)` — store to session on explicit submit, read from session otherwise
+- Filter persistence goes through `UiState` (→ ADR-0022), not through the session and not through a
+  `containsKey` check on the request: the filter remembers a registered `f…` parameter and supplies
+  it again as a fallback, so a controller only declares `@RequestParam(required = false) String
+  fCustomerOrderSign`. Where a submit must be told apart from a mere page call — because it triggers
+  something expensive — that hangs on a hidden field of the form (`evaluate`), never on whether the
+  filter parameter is present: the fallback makes it present on every request (#1009)
 - Redirect-After-Post: successful writes return `”redirect:/...”` with `redirectAttributes.addFlashAttribute(“toastSuccess”, ...)`
 - Form validation errors: call the service inside `try/catch(ErrorCodeException)`, convert via `ErrorCodeViewHelper.toViewMessages(ex)`, add to model, and re-render the form view (do not redirect)
 - HTMX partial updates: use `th:hx-post`, `hx-swap=”none”`, `hx-include=”closest form”`, `hx-trigger=”change”` on select/input elements; detect `HX-Request` header in the controller and return `”view :: fragmentName”` for partial responses
