@@ -5,7 +5,7 @@
 <!--/* The body of the field picker (#1013), loaded into the dialogue by HTMX. Everything below the
        table is client side: which entries are ticked follows the two inputs of the form as they
        stand right now, not what was last saved. */-->
-<div th:fragment="fieldPicker" id="fieldPickerContent">
+<div th:fragment="fieldPicker" id="fieldPickerContent" class="salat-fill-height">
 
   <div th:if="${fieldCatalog.hasError()}" class="alert alert-danger mb-0"
        th:text="#{main.jira.replication.fields.error(${fieldCatalog.errorMessage})}">
@@ -17,7 +17,8 @@
     Keine Felder geliefert.
   </div>
 
-  <div th:if="${not fieldCatalog.hasError() and not #lists.isEmpty(fieldCatalog.options)}">
+  <div th:if="${not fieldCatalog.hasError() and not #lists.isEmpty(fieldCatalog.options)}"
+       class="salat-fill-height">
     <div class="mb-3">
       <input type="text" class="form-control" id="fieldPickerFilter" autocomplete="off"
              th:placeholder="#{main.jira.replication.fields.filter}" />
@@ -32,7 +33,9 @@
            hide it - which would put rows out of reach - the table is built so that nothing can
            overflow: fixed layout, the three narrow columns in rem, the two text columns taking what
            is left and wrapping inside it. */-->
-    <div class="border rounded" style="max-height: 55vh; overflow-y: auto;">
+    <!--/* No max-height of its own: the area takes the height the dialogue has, so dragging the
+           dialogue taller shows more rows. What bounds it is the dialogue. */-->
+    <div class="border rounded salat-scroll-area">
       <table class="table table-vcenter table-sm mb-0" style="table-layout: fixed; width: 100%;">
         <!--/* white-space on every heading: Tabler sets nowrap on a table head, so a compound such
                as "Response-Schlüssel" would run out of its cell on a narrow dialogue instead of

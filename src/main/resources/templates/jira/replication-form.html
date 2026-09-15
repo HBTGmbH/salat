@@ -136,8 +136,11 @@
   </salat:form>
 
   <!--/* The picker dialogue (#1013). The shell stays in the page, the body is fetched per opening
-         so a field added in JIRA in the meantime is there. */-->
-  <div th:if="${isEdit}" class="modal modal-blur fade" id="fieldPickerModal" tabindex="-1" aria-hidden="true">
+         so a field added in JIRA in the meantime is there. `salat-resizable` lets it be dragged
+         bigger from the large breakpoint upwards — with a few hundred fields to scan, how much of
+         the list is visible at once is the user's call, not ours. */-->
+  <div th:if="${isEdit}" class="modal modal-blur fade salat-resizable" id="fieldPickerModal"
+       tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
