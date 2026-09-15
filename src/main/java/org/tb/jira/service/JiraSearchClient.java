@@ -1,6 +1,7 @@
 package org.tb.jira.service;
 
 import java.util.Iterator;
+import java.util.List;
 import org.tb.jira.domain.JiraApiFlavor;
 
 /**
@@ -10,6 +11,12 @@ import org.tb.jira.domain.JiraApiFlavor;
 public interface JiraSearchClient {
 
   JiraApiFlavor flavor();
+
+  /**
+   * The fields this JIRA instance knows (#1013) — the catalogue the configuration picks from. One
+   * request, no paging: both flavours answer with the whole list.
+   */
+  List<JiraField> listFields(JiraFieldsRequest request);
 
   /**
    * Pages lazily through the whole result set. The returned iterator is single-pass and performs

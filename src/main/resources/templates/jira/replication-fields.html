@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* The body of the field picker (#1013), loaded into the dialogue by HTMX. Everything below the
+       table is client side: which entries are ticked follows the two inputs of the form as they
+       stand right now, not what was last saved. */-->
+<div th:fragment="fieldPicker" id="fieldPickerContent">
+
+  <div th:if="${fieldCatalog.hasError()}" class="alert alert-danger mb-0"
+       th:text="#{main.jira.replication.fields.error(${fieldCatalog.errorMessage})}">
+    Die Feldliste konnte nicht geladen werden.
+  </div>
+
+  <div th:if="${not fieldCatalog.hasError() and #lists.isEmpty(fieldCatalog.options)}"
+       class="alert alert-info mb-0" th:text="#{main.jira.replication.fields.empty}">
+    Keine Felder geliefert.
+  </div>
+
+  <div th:if="${not fieldCatalog.hasError() and not #lists.isEmpty(fieldCatalog.options)}">
+    <div class="mb-3">
+      <input type="text" class="form-control" id="fieldPickerFilter" autocomplete="off"
+             th:placeholder="#{main.jira.replication.fields.filter}" />
+    </div>
+
+    <div class="table-responsive" style="max-height: 55vh; overflow-y: auto;">
+      <table class="table table-vcenter table-sm card-table">
+        <thead class="sticky-top bg-white">
+        <tr>
+          <th th:text="#{main.jira.replication.fields.column.name}">Feld</th>
+          <th th:text="#{main.jira.replication.fields.column.key}">Response-Schlüssel</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.fields.column.type}">Wertform</th>
+          <th class="text-center" th:text="#{main.jira.replication.fields.column.replicate}">Replizieren</th>
+          <th class="text-center" th:text="#{main.jira.replication.fields.column.inherit}">Vererben</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="option : ${fieldCatalog.options}" class="field-picker-row"
+            th:attr="data-search=${#strings.toLowerCase(option.name + ' ' + option.key)}">
+          <td>
+            <span th:text="${option.name}">Kategorie</span>
+            <span th:if="${option.secondLevel}" class="badge bg-azure-lt ms-1"
+                  th:text="#{main.jira.replication.fields.secondlevel}">2. Ebene</span>
+          </td>
+          <td><code th:text="${option.key}">customfield_10123</code></td>
+          <td class="d-none d-md-table-cell">
+            <span th:if="${option.type != null}" class="text-secondary" th:text="${option.type}">select</span>
+          </td>
+          <td class="text-center">
+            <input type="checkbox" class="form-check-input field-picker-replicate"
+                   th:value="${option.key}" th:attr="aria-label=${option.key}" />
+          </td>
+          <td class="text-center">
+            <input type="checkbox" class="form-check-input field-picker-inherit"
+                   th:value="${option.key}" th:attr="aria-label=${option.key}" />
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="form-text mb-0" th:text="#{main.jira.replication.fields.hint}">
+      Von Hand eingetragene Pfade bleiben erhalten.
+    </p>
+  </div>
+
+  <script th:inline="none">
+    (function () {
+      const content = document.getElementById('fieldPickerContent');
+      if (!content) return;
+
+      const replicateBoxes = content.querySelectorAll('.field-picker-replicate');
+      const inheritBoxes = content.querySelectorAll('.field-picker-inherit');
+
+      const entriesOf = input => input.value.split(',').map(s => s.trim()).filter(Boolean);
+
+      // What the form holds right now decides what is ticked - not what was last saved. Someone who
+      // typed a field and has not saved yet must not see it unticked here.
+      const tick = (boxes, inputId) => {
+        const entries = entriesOf(document.getElementById(inputId));
+        boxes.forEach(box => box.checked = entries.includes(box.value));
+      };
+      tick(replicateBoxes, 'additionalFieldNames');
+      tick(inheritBoxes, 'inheritedFieldNames');
+
+      const filter = document.getElementById('fieldPickerFilter');
+      if (filter) {
+        filter.addEventListener('input', () => {
+          const term = filter.value.trim().toLowerCase();
+          content.querySelectorAll('.field-picker-row').forEach(row => {
+            row.hidden = term !== '' && !row.dataset.search.includes(term);
+          });
+        });
+      }
+
+      // Merging, not overwriting: an entry the catalogue does not know is something somebody typed -
+      // a path such as customfield_10200.child.value - and it stays. Only entries this dialogue
+      // offers are governed by its checkboxes.
+      const apply = (boxes, inputId) => {
+        const input = document.getElementById(inputId);
+        const offered = new Set(Array.from(boxes).map(box => box.value));
+        const ticked = Array.from(boxes).filter(box => box.checked).map(box => box.value);
+        const kept = entriesOf(input).filter(entry => !offered.has(entry));
+        input.value = Array.from(new Set(kept.concat(ticked))).join(', ');
+      };
+
+      // A function rather than a listener on the button in the footer: that button lives in the page,
+      // this body is swapped in again on every opening. A listener would pile up per opening and
+      // would keep working on the checkboxes of the run that registered it.
+      window.salatFieldPickerApply = function () {
+        apply(replicateBoxes, 'additionalFieldNames');
+        apply(inheritBoxes, 'inheritedFieldNames');
+      };
+    })();
+  </script>
+</div>
+
+</body>
+</html>
