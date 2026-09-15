@@ -50,7 +50,7 @@ class JiraReplicationConfigControllerTest {
     // The form is filled from the info record, which has none — so an edit cannot show the stored
     // token, and the empty field it starts with is what the service reads as "keep it".
     var info = new JiraReplicationConfigInfo(7L, "Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, 100, true, null);
+        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, null);
 
     var form = JiraReplicationConfigForm.of(info);
 

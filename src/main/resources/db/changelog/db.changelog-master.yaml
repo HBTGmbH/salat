@@ -2785,5 +2785,57 @@ databaseChangeLog:
                   name: ticket_reference
                   type: varchar(64)
 
+  - changeSet:
+      id: 76
+      author: kr
+      comment: Add additional_field_names and inherited_field_names to jira_replication_config - which extra JIRA fields a replication reads (#881)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: additional_field_names
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              # Comma separated response keys, the same shape as parent_field_names. Which business
+              # term a key stands for stays outside the module, in a customer specific view.
+              - column:
+                  name: additional_field_names
+                  type: varchar(1000)
+              - column:
+                  name: inherited_field_names
+                  type: varchar(1000)
+
+  - changeSet:
+      id: 77
+      author: kr
+      comment: Add custom_fields, custom_fields_effective and field_config_hash to jira_ticket - the replicated extra fields and their inherited values (#881)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_ticket
+                columnName: custom_fields
+      changes:
+        - addColumn:
+            tableName: jira_ticket
+            columns:
+              # Native json, not text: a json column cannot hold an empty string, and JSON_EXTRACT
+              # on an empty document aborts with ERROR 3141 and takes the whole ETL statement with
+              # it. NULL is answered with NULL and is therefore the safe empty state.
+              - column:
+                  name: custom_fields
+                  type: json
+              - column:
+                  name: custom_fields_effective
+                  type: json
+              # SHA-256 of the configured field lists: a ticket written under a different list is
+              # rewritten on the next run even though JIRA reports it as unchanged.
+              - column:
+                  name: field_config_hash
+                  type: varchar(64)
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

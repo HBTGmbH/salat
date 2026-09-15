@@ -47,6 +47,22 @@ public class JiraReplicationConfig extends AuditedEntity {
   @Column(name = "parent_field_names")
   private String parentFieldNames; // comma separated field names to look for parent key
 
+  /**
+   * Comma separated JIRA response keys (e.g. {@code customfield_10123}) to read in addition to the
+   * fixed field list and to store on the ticket (#881). Standard fields work like custom ones, and
+   * an entry may address a part of a field by a dotted path — see {@link JiraFieldConfig}.
+   */
+  @Column(name = "additional_field_names")
+  private String additionalFieldNames;
+
+  /**
+   * Comma separated response keys whose value is resolved along the parent chain (#881) — normally a
+   * subset of {@link #additionalFieldNames}, but a key named only here is requested as well rather
+   * than staying silently empty.
+   */
+  @Column(name = "inherited_field_names")
+  private String inheritedFieldNames;
+
   @Column(name = "page_size")
   private Integer pageSize;
 
