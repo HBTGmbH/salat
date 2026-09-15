@@ -25,19 +25,32 @@
 
     <!--/* Scrolls vertically only. No table-responsive and no card-table here: the first is
            overflow-x, the second pads the outer cells for the edge of a card that does not exist in
-           a dialogue - together they are a horizontal scrollbar waiting to happen. A fixed layout
-           plus wrapping keys makes the table unable to exceed the width in the first place. */-->
+           a dialogue.
+
+           overflow-x stays at its computed value on purpose: with overflow-y set, CSS turns a
+           visible overflow-x into auto, so a bar is possible whatever we write here. Rather than
+           hide it - which would put rows out of reach - the table is built so that nothing can
+           overflow: fixed layout, the three narrow columns in rem, the two text columns taking what
+           is left and wrapping inside it. */-->
     <div class="border rounded" style="max-height: 55vh; overflow-y: auto;">
       <table class="table table-vcenter table-sm mb-0" style="table-layout: fixed; width: 100%;">
+        <!--/* white-space on every heading: Tabler sets nowrap on a table head, so a compound such
+               as "Response-Schlüssel" would run out of its cell on a narrow dialogue instead of
+               breaking. It has to be per cell - an inherited value loses against that rule. */-->
         <thead class="sticky-top bg-body">
         <tr>
-          <th style="width: 40%" th:text="#{main.jira.replication.fields.column.name}">Feld</th>
-          <th style="width: 35%" th:text="#{main.jira.replication.fields.column.key}">Response-Schlüssel</th>
-          <th class="d-none d-md-table-cell" style="width: 13%"
+          <!--/* No width: the two text columns share whatever the fixed ones leave. */-->
+          <th class="text-break" style="white-space: normal"
+              th:text="#{main.jira.replication.fields.column.name}">Feld</th>
+          <th class="text-break" style="white-space: normal"
+              th:text="#{main.jira.replication.fields.column.key}">Response-Schlüssel</th>
+          <!--/* rem, not per cent: "Replizieren" is one word of some 84px, and a share of the width
+                 squeezes the heading out of its cell on a narrow dialogue. */-->
+          <th class="d-none d-md-table-cell text-break" style="width: 7rem; white-space: normal"
               th:text="#{main.jira.replication.fields.column.type}">Wertform</th>
-          <th class="text-center" style="width: 6%"
+          <th class="text-center text-break" style="width: 7rem; white-space: normal"
               th:text="#{main.jira.replication.fields.column.replicate}">Replizieren</th>
-          <th class="text-center" style="width: 6%"
+          <th class="text-center text-break" style="width: 7rem; white-space: normal"
               th:text="#{main.jira.replication.fields.column.inherit}">Vererben</th>
         </tr>
         </thead>
