@@ -9,6 +9,8 @@ package org.tb.jira.domain;
  *
  * @param password the new password, or {@code null}/blank to keep the stored one. The form never
  *     shows what is stored, so an empty field means "unchanged", not "clear it".
+ * @param additionalFieldNames comma separated JIRA response keys to replicate in addition (#881)
+ * @param inheritedFieldNames comma separated response keys resolved along the parent chain (#881)
  */
 public record JiraReplicationConfigData(
     String name,
@@ -19,6 +21,8 @@ public record JiraReplicationConfigData(
     String password,
     String jql,
     String parentFieldNames,
+    String additionalFieldNames,
+    String inheritedFieldNames,
     Integer pageSize,
     boolean enabled
 ) {

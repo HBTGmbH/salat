@@ -28,6 +28,8 @@ public class JiraReplicationConfigForm {
   private String password;
   private String jql;
   private String parentFieldNames;
+  private String additionalFieldNames;
+  private String inheritedFieldNames;
   private Integer pageSize;
 
   /** A new replication is switched on, otherwise creating it would have no visible effect. */
@@ -47,6 +49,8 @@ public class JiraReplicationConfigForm {
     form.setUsername(info.username());
     form.setJql(info.jql());
     form.setParentFieldNames(info.parentFieldNames());
+    form.setAdditionalFieldNames(info.additionalFieldNames());
+    form.setInheritedFieldNames(info.inheritedFieldNames());
     form.setPageSize(info.pageSize());
     form.setEnabled(info.enabled());
     return form;

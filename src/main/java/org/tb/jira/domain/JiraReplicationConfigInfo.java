@@ -21,6 +21,8 @@ public record JiraReplicationConfigInfo(
     String username,
     String jql,
     String parentFieldNames,
+    String additionalFieldNames,
+    String inheritedFieldNames,
     Integer pageSize,
     boolean enabled,
     LocalDateTime lastMaxUpdated
@@ -36,6 +38,8 @@ public record JiraReplicationConfigInfo(
         config.getUsername(),
         config.getJql(),
         config.getParentFieldNames(),
+        config.getAdditionalFieldNames(),
+        config.getInheritedFieldNames(),
         config.getPageSize(),
         Boolean.TRUE.equals(config.getEnabled()),
         config.getLastMaxUpdated()

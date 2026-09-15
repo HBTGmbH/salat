@@ -862,3 +862,20 @@ Rules:
 - Always guard with `preConditions: onFail: MARK_RAN` and a `columnExists` / `tableExists` check
 - Boolean columns: `type: bit(1)` (Hibernate expects `bit`; `boolean` or `tinyint` will fail schema validation)
 - `author` field: use the committer's initials (e.g. `author: kr`)
+
+### JSON Columns (→ ADR-0024)
+
+A column whose content is a set of values only the configuration knows is mapped as native `json`
+via `@JdbcTypeCode(SqlTypes.JSON)` on a `Map` attribute. So far exactly one place does this:
+`JiraTicket.customFields` / `customFieldsEffective` (#881).
+
+- **Reading a value out of the JSON is MySQL-specific and belongs in ETL/report SQL or in a view** —
+  never in a JPQL query or a repository method. H2 2.4 knows neither `JSON_VALUE` nor `JSON_EXTRACT`,
+  so such a query cannot be tested. The persistence model itself stays portable, and the round trip
+  is covered against H2 (`JiraTicketCustomFieldsTest`).
+- **The empty state is `NULL`, never `{}` and never an empty string.** A native `json` column cannot
+  hold an empty string at all, and `JSON_EXTRACT` on an empty document aborts with `ERROR 3141` —
+  taking the whole ETL statement with it. `JSON_EXTRACT(NULL, …)` answers `NULL`.
+- Where the stored document depends on a configured list, keep a hash of that list next to it and
+  rewrite the row when the hash differs. Build the hash from the **configured value** (trimmed,
+  sorted), not from the stored JSON: MySQL normalises JSON on write.

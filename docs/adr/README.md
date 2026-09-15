@@ -37,3 +37,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0021](0021-moduluebergreifender-lesezugriff.md) | Modulübergreifender Lesezugriff: Join erlaubt, Entities bleiben im Modul | Accepted | 2026-09-14 |
 | [0022](0022-praefix-f-fuer-uistate-parameter.md) | Präfix `f` für UiState-Parameter | Accepted | 2026-09-14 |
 | [0023](0023-speichern-aendert-den-filter-nicht.md) | Speichern ändert den Filter nicht | Accepted | 2026-09-14 |
+| [0024](0024-konfigurierbare-jira-felder-als-json-spalte.md) | Konfigurierbare Jira-Felder als JSON-Spalte | Accepted | 2026-09-15 |

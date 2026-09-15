@@ -1,7 +1,10 @@
 package org.tb.jira.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Timeout.ThreadMode.SEPARATE_THREAD;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.mock;
@@ -15,8 +18,12 @@ import static org.springframework.util.ReflectionUtils.setField;
 import static org.tb.jira.domain.JiraApiFlavor.CLOUD;
 import static org.tb.jira.domain.JiraApiFlavor.SERVER;
 
-import java.time.LocalDate;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +31,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -32,8 +41,10 @@ import org.springframework.web.client.RestClientException;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.test.FixedClock;
 import org.tb.common.util.DateTimeUtils;
+import org.tb.jira.domain.JiraFieldConfig;
 import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraTicket;
+import org.tb.jira.domain.ResolvedFieldValue;
 import org.tb.jira.persistence.JiraReplicationConfigRepository;
 import org.tb.jira.persistence.JiraTicketRepository;
 
@@ -174,11 +185,209 @@ class JiraReplicationServiceTest {
     assertEquals("MOCK-1", parent.getTopLevelKey());
   }
 
+  @Test
+  void testConfiguredFieldsAreRequestedAndStored() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setAdditionalFieldNames(" customfield_10123 , status ");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of(
+        "customfield_10123", Map.of("value", "Wartung"),
+        "status", Map.of("name", "In Arbeit")))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // a standard field is configured by its response key exactly like a custom one
+    assertThat(capturedRequest().fields()).contains("customfield_10123", "status");
+    assertThat(savedTicket().getCustomFields())
+        .containsEntry("customfield_10123", "Wartung")
+        .containsEntry("status", "In Arbeit");
+  }
+
+  @Test
+  void testAPathIsRequestedByItsHeadAndStoredUnderThePath() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setAdditionalFieldNames("customfield_10200,customfield_10200.child.value");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(Map.of(
+        "customfield_10200", Map.of("value", "Wartung", "child", Map.of("value", "Hotfix"))))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // JIRA only accepts top-level ids in its fields parameter, so both paths are one request key
+    assertThat(capturedRequest().fields()).containsOnlyOnce("customfield_10200");
+    assertThat(capturedRequest().fields()).doesNotContain("customfield_10200.child.value");
+    assertThat(savedTicket().getCustomFields())
+        .containsEntry("customfield_10200", "Wartung")
+        .containsEntry("customfield_10200.child.value", "Hotfix");
+  }
+
+  @Test
+  void testWithoutConfiguredFieldsNothingIsStored() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // no empty document either - JSON_EXTRACT on one aborts the statement around it
+    assertThat(savedTicket().getCustomFields()).isNull();
+    assertThat(savedTicket().getFieldConfigHash()).isNull();
+  }
+
+  @Test
+  void testInheritedValueComesFromTheNearestAncestorThatHasOne() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setInheritedFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var epic = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
+    var story = ticket("MOCK-2", "MOCK-1", Map.of());
+    var task = ticket("MOCK-3", "MOCK-2", Map.of());
+    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(epic, story, task));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(task.getCustomFieldsEffective())
+        .containsEntry("customfield_10123", new ResolvedFieldValue("Wartung", "MOCK-1"));
+    // from = null says "set on the ticket itself"
+    assertThat(epic.getCustomFieldsEffective())
+        .containsEntry("customfield_10123", new ResolvedFieldValue("Wartung", null));
+  }
+
+  @Test
+  void testOwnValueBeatsTheInheritedOne() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setInheritedFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var epic = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
+    var task = ticket("MOCK-2", "MOCK-1", Map.of("customfield_10123", "Migration"));
+    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(task.getCustomFieldsEffective())
+        .containsEntry("customfield_10123", new ResolvedFieldValue("Migration", null));
+  }
+
+  @Test
+  void testFieldWithoutAValueAnywhereInTheChainStaysAbsent() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setInheritedFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var epic = ticket("MOCK-1", null, Map.of());
+    var task = ticket("MOCK-2", "MOCK-1", Map.of());
+    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertNull(task.getCustomFieldsEffective());
+  }
+
+  @Test
+  @Timeout(value = 10, threadMode = SEPARATE_THREAD)
+  void testCycleInTheParentChainDoesNotHang() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setInheritedFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    // parent_field_names allows any field as the parent source, so a chain pointing back at itself
+    // is a shape the foreign system can hand over
+    var one = ticket("MOCK-1", "MOCK-2", Map.of("customfield_10123", "Wartung"));
+    var two = ticket("MOCK-2", "MOCK-1", Map.of());
+    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(one, two));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(two.getCustomFieldsEffective())
+        .containsEntry("customfield_10123", new ResolvedFieldValue("Wartung", "MOCK-1"));
+  }
+
+  @Test
+  void testChangedFieldListRewritesAnUnchangedTicket() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setAdditionalFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var stored = ticket("MOCK-1", null, Map.of());
+    stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
+    stored.setFieldConfigHash("the hash of an earlier field list");
+    when(ticketRepo.findByCustomerorderSignAndJiraId("MOCK_ORDER", 1001L))
+        .thenReturn(Optional.of(stored));
+    when(searchClient.search(any()))
+        .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // JIRA reports the ticket as unchanged - its `updated` has not moved - so this is the only
+    // point at which a newly configured field can reach an already replicated ticket
+    verify(ticketRepo, times(1)).save(stored);
+    assertThat(stored.getCustomFields()).containsEntry("customfield_10123", "Wartung");
+  }
+
+  @Test
+  void testUnchangedFieldListLeavesAnUnchangedTicketAlone() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setAdditionalFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var stored = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
+    stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
+    stored.setFieldConfigHash(JiraFieldConfig.from(config).hash());
+    when(ticketRepo.findByCustomerorderSignAndJiraId("MOCK_ORDER", 1001L))
+        .thenReturn(Optional.of(stored));
+    when(searchClient.search(any()))
+        .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    verify(ticketRepo, never()).save(any(JiraTicket.class));
+  }
+
+  @Test
+  void testFieldNoAnswerCarriedIsLogged() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setAdditionalFieldNames("customfield_10123,customfield_99999");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any()))
+        .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
+    var logged = captureWarnings();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // JIRA Server drops an unknown field id without a word, so never arriving is the only sign
+    assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+        .extracting(ILoggingEvent::getFormattedMessage)
+        .anyMatch(message -> message.contains("customfield_99999"))
+        // and the field that did arrive is not put up for suspicion
+        .noneMatch(message -> message.contains("customfield_10123"));
+  }
+
+  /** Collects what the service under test logs for the rest of the test method. */
+  private ListAppender<ILoggingEvent> captureWarnings() {
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    var logger = (Logger) LoggerFactory.getLogger(JiraReplicationService.class);
+    logger.addAppender(appender);
+    return appender;
+  }
+
+  private JiraTicket savedTicket() {
+    var ticket = ArgumentCaptor.forClass(JiraTicket.class);
+    verify(ticketRepo).save(ticket.capture());
+    return ticket.getValue();
+  }
+
   private static JiraTicket ticket(String key, String parentKey) {
     var ticket = new JiraTicket();
     ticket.setCustomerorderSign("MOCK_ORDER");
     ticket.setKey(key);
     ticket.setParentKey(parentKey);
+    return ticket;
+  }
+
+  private static JiraTicket ticket(String key, String parentKey, Map<String, String> customFields) {
+    var ticket = ticket(key, parentKey);
+    ticket.setCustomFields(customFields);
     return ticket;
   }
 
@@ -207,15 +416,26 @@ class JiraReplicationServiceTest {
   }
 
   private static JiraIssue mockIssue(LocalDateTime updated) {
+    return mockIssue(updated, Map.of());
+  }
+
+  /** An issue carrying the given fields on top of the ones every answer has. */
+  private static JiraIssue mockIssue(Map<String, Object> additionalFields) {
+    return mockIssue(LocalDateTime.of(2026, 6, 25, 15, 5, 0), additionalFields);
+  }
+
+  private static JiraIssue mockIssue(LocalDateTime updated, Map<String, Object> additionalFields) {
     JiraIssue issue = new JiraIssue();
     issue.setId("1001");
     issue.setKey("MOCK-1");
-    issue.setFields(Map.of(
+    var fields = new HashMap<String, Object>(Map.of(
         "summary", "Mock Summary",
         "updated", updated.toString(),
         "created", DateTimeUtils.now().toString(),
         "issuetype", Map.of("name", "Task")
     ));
+    fields.putAll(additionalFields);
+    issue.setFields(fields);
     return issue;
   }
 

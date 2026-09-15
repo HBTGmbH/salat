@@ -12,6 +12,7 @@ import static org.tb.common.exception.ErrorCode.JI_REPLICATION_PASSWORD_REQUIRED
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
 
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -151,8 +152,28 @@ public class JiraReplicationConfigService {
     config.setUsername(data.username().trim());
     config.setJql(data.jql().trim());
     config.setParentFieldNames(trimToNull(data.parentFieldNames()));
+    applyFieldNames(data, config);
     config.setPageSize(data.pageSize());
     config.setEnabled(data.enabled());
+  }
+
+  /**
+   * Changing the additional fields resets the watermark (#881). The replication rewrites a ticket
+   * whose field configuration has changed, but only if it gets to see it at all — and with the
+   * watermark in place the search keeps every already replicated ticket out, so the new fields would
+   * reach nothing but the tickets edited in JIRA afterwards. The field help says so.
+   */
+  private void applyFieldNames(JiraReplicationConfigData data, JiraReplicationConfig config) {
+    var additional = trimToNull(data.additionalFieldNames());
+    var inherited = trimToNull(data.inheritedFieldNames());
+    if (!Objects.equals(additional, config.getAdditionalFieldNames())
+        || !Objects.equals(inherited, config.getInheritedFieldNames())) {
+      log.info("Field configuration of JIRA replication {} changed, resetting the watermark so the "
+          + "already replicated tickets are fetched again", config.getName());
+      config.setLastMaxUpdated(null);
+    }
+    config.setAdditionalFieldNames(additional);
+    config.setInheritedFieldNames(inherited);
   }
 
   private void validate(JiraReplicationConfigData data) {

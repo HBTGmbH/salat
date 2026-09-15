@@ -72,6 +72,8 @@ public class JiraReplicationConfigController {
         form.getPassword(),
         form.getJql(),
         form.getParentFieldNames(),
+        form.getAdditionalFieldNames(),
+        form.getInheritedFieldNames(),
         form.getPageSize(),
         form.isEnabled()
     );

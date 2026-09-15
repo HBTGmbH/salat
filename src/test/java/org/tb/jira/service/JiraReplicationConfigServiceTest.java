@@ -177,7 +177,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_replication_without_a_jql_query_could_only_ever_fail() {
     var withoutJql = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, true);
+        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true);
 
     assertThatThrownBy(() -> classUnderTest.create(withoutJql))
         .isInstanceOf(InvalidDataException.class)
@@ -188,7 +188,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_base_url_without_a_scheme_is_rejected() {
     var badUrl = new JiraReplicationConfigData("Alpha", "ALPHA", "jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, true);
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true);
 
     assertThatThrownBy(() -> classUnderTest.create(badUrl))
         .isInstanceOf(InvalidDataException.class)
@@ -199,7 +199,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_page_size_of_zero_or_less_is_rejected() {
     var zeroPageSize = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, 0, true);
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true);
 
     assertThatThrownBy(() -> classUnderTest.create(zeroPageSize))
         .isInstanceOf(InvalidDataException.class)
@@ -211,7 +211,7 @@ class JiraReplicationConfigServiceTest {
   void a_missing_flavor_is_stored_as_server() {
     // What a row without an explicit flavor has always meant.
     classUnderTest.create(new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        null, "jira-user", "token", "project = ALPHA", null, null, true));
+        null, "jira-user", "token", "project = ALPHA", null, null, null, null, true));
 
     assertThat(saved().getApiFlavor()).isEqualTo(JiraApiFlavor.SERVER);
   }
@@ -255,6 +255,40 @@ class JiraReplicationConfigServiceTest {
     verifyNoInteractions(configRepository, jiraReplicationService);
   }
 
+  @Test
+  void changing_the_field_list_resets_the_watermark() {
+    // Otherwise the search keeps every already replicated ticket out and the newly configured
+    // fields reach nothing but the tickets edited in JIRA afterwards (#881).
+    var stored = existingConfig();
+    stored.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0));
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withFields("customfield_10123", "customfield_10123"));
+
+    assertThat(saved().getLastMaxUpdated()).isNull();
+    assertThat(saved().getAdditionalFieldNames()).isEqualTo("customfield_10123");
+    assertThat(saved().getInheritedFieldNames()).isEqualTo("customfield_10123");
+  }
+
+  @Test
+  void an_edit_that_leaves_the_field_list_alone_keeps_the_watermark() {
+    var watermark = LocalDateTime.of(2026, 6, 1, 8, 0);
+    var stored = existingConfig();
+    stored.setLastMaxUpdated(watermark);
+    stored.setAdditionalFieldNames("customfield_10123");
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withFields(" customfield_10123 ", null));
+
+    assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
+  }
+
+  private static JiraReplicationConfigData withFields(String additional, String inherited) {
+    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+        JiraApiFlavor.SERVER, "jira-user", null, "project = ALPHA", null, additional, inherited,
+        100, true);
+  }
+
   private JiraReplicationConfig existingConfig() {
     var config = new JiraReplicationConfig();
     config.setName("Alpha");
@@ -270,7 +304,7 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData data(String password) {
     return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, 100, true);
+        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true);
   }
 
   private JiraReplicationConfig saved() {

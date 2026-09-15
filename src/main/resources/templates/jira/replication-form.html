@@ -76,6 +76,21 @@
         </div>
       </div>
 
+      <div class="row">
+        <div class="col-md-6">
+          <salat:textInput th:field="*{additionalFieldNames}"
+                           th:label="#{main.jira.replication.field.additionalFieldNames}"
+                           maxlength="1000"
+                           th:helpText="#{main.jira.replication.field.additionalFieldNames.help}" />
+        </div>
+        <div class="col-md-6">
+          <salat:textInput th:field="*{inheritedFieldNames}"
+                           th:label="#{main.jira.replication.field.inheritedFieldNames}"
+                           maxlength="1000"
+                           th:helpText="#{main.jira.replication.field.inheritedFieldNames.help}" />
+        </div>
+      </div>
+
       <salat:checkboxSwitch th:field="*{enabled}" th:label="#{main.jira.replication.field.enabled}" />
 
       <!--/* The watermark is not a form field: a date entered by hand would skip every ticket
