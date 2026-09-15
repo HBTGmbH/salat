@@ -23,27 +23,36 @@
              th:placeholder="#{main.jira.replication.fields.filter}" />
     </div>
 
-    <div class="table-responsive" style="max-height: 55vh; overflow-y: auto;">
-      <table class="table table-vcenter table-sm card-table">
-        <thead class="sticky-top bg-white">
+    <!--/* Scrolls vertically only. No table-responsive and no card-table here: the first is
+           overflow-x, the second pads the outer cells for the edge of a card that does not exist in
+           a dialogue - together they are a horizontal scrollbar waiting to happen. A fixed layout
+           plus wrapping keys makes the table unable to exceed the width in the first place. */-->
+    <div class="border rounded" style="max-height: 55vh; overflow-y: auto;">
+      <table class="table table-vcenter table-sm mb-0" style="table-layout: fixed; width: 100%;">
+        <thead class="sticky-top bg-body">
         <tr>
-          <th th:text="#{main.jira.replication.fields.column.name}">Feld</th>
-          <th th:text="#{main.jira.replication.fields.column.key}">Response-Schlüssel</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.fields.column.type}">Wertform</th>
-          <th class="text-center" th:text="#{main.jira.replication.fields.column.replicate}">Replizieren</th>
-          <th class="text-center" th:text="#{main.jira.replication.fields.column.inherit}">Vererben</th>
+          <th style="width: 40%" th:text="#{main.jira.replication.fields.column.name}">Feld</th>
+          <th style="width: 35%" th:text="#{main.jira.replication.fields.column.key}">Response-Schlüssel</th>
+          <th class="d-none d-md-table-cell" style="width: 13%"
+              th:text="#{main.jira.replication.fields.column.type}">Wertform</th>
+          <th class="text-center" style="width: 6%"
+              th:text="#{main.jira.replication.fields.column.replicate}">Replizieren</th>
+          <th class="text-center" style="width: 6%"
+              th:text="#{main.jira.replication.fields.column.inherit}">Vererben</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="option : ${fieldCatalog.options}" class="field-picker-row"
             th:attr="data-search=${#strings.toLowerCase(option.name + ' ' + option.key)}">
-          <td>
+          <td class="text-break">
             <span th:text="${option.name}">Kategorie</span>
             <span th:if="${option.secondLevel}" class="badge bg-azure-lt ms-1"
                   th:text="#{main.jira.replication.fields.secondlevel}">2. Ebene</span>
           </td>
-          <td><code th:text="${option.key}">customfield_10123</code></td>
-          <td class="d-none d-md-table-cell">
+          <!--/* break-all rather than the usual word wrap: a response key is one long token without
+                 a space to break at, and a path only offers dots. */-->
+          <td><code style="word-break: break-all;" th:text="${option.key}">customfield_10123</code></td>
+          <td class="d-none d-md-table-cell text-break">
             <span th:if="${option.type != null}" class="text-secondary" th:text="${option.type}">select</span>
           </td>
           <td class="text-center">
