@@ -411,18 +411,19 @@ public class BudgetController {
         model.addAttribute("suborders",
             subordersOf(form.getCustomerorderSign(), form.getSuborderSign()));
         model.addAttribute("progressModes", ProgressMode.values());
-        // The mode in force for the selected order: overlaps within a mode are fine, mixing the two
-        // is what gets rejected (#914), so this is the constraint the person needs to see.
-        model.addAttribute("currentMode",
+        // The level in force for the selected order: overlaps within a level are fine, mixing two
+        // levels is what gets rejected (#914, #1004). Since the list offers the whole suborder tree,
+        // this is the only place the person sees which level the next plan has to match.
+        model.addAttribute("currentLevel",
             form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()
                 ? null
-                : orderBudgetService.currentMode(form.getCustomerorderSign()));
+                : orderBudgetService.currentLevel(form.getCustomerorderSign()));
     }
 
     /**
-     * The suborders of the selected customer order — empty while none is selected. The suborder the
-     * budget already references stays in the list even once it is hidden, so that editing does not
-     * drop it.
+     * The suborders of the selected customer order, at any depth (#1004) — empty while none is
+     * selected. The suborder the budget already references stays in the list even once it is hidden,
+     * so that editing does not drop it.
      */
     private List<Suborder> subordersOf(String customerorderSign, String keepSuborderSign) {
         if (trimToNull(customerorderSign) == null) {
@@ -430,7 +431,7 @@ public class BudgetController {
         }
         var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
         return customerorder == null ? List.of()
-            : suborderService.getSelectableFirstLevelSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
+            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
     }
 
 }

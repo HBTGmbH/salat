@@ -22,6 +22,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.BudgetLevel;
 import org.tb.budget.domain.BudgetMode;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetData;
@@ -34,8 +35,9 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.order.service.SuborderService;
 
 /**
- * At any point in time a customer order is budgeted either as a whole — by exactly one plan — or per
- * first level suborder, by at most one plan each, never both (#905). Only active plans conflict.
+ * All active plans of a customer order that are valid at the same time sit on the same level
+ * (#1004): either the order as a whole — level 0 — or one and the same suborder level. Overlaps
+ * within a level are allowed (#914); only active plans conflict.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class OrderBudgetServiceTest {
@@ -56,7 +58,6 @@ public class OrderBudgetServiceTest {
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     var suborderService = mock(SuborderService.class);
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
-    when(suborderService.isFirstLevelSuborder(anyString(), anyString())).thenReturn(true);
     budgetAuthorization = permissiveAuthorization();
     assignmentService = mock(TimereportBudgetAssignmentService.class);
     service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization,
@@ -110,7 +111,7 @@ public class OrderBudgetServiceTest {
    * {@code ErrorCodeViewHelper} formats into the text the user reads.
    */
   @Test
-  public void should_name_the_plan_that_blocks_a_mode_change() {
+  public void should_name_the_plan_that_blocks_a_level_change() {
     var blocking = plan(null, JAN, DEC);
     blocking.setName("Jahresbudget");
     givenExisting(blocking);
@@ -121,7 +122,7 @@ public class OrderBudgetServiceTest {
     assertThat(thrown.getMessages()).singleElement()
         .satisfies(message -> {
           assertThat(message.getErrorCode()).isEqualTo(ErrorCode.BU_BUDGET_LEVEL_MIXED);
-          assertThat(message.getArguments()).containsExactly("Jahresbudget", JAN, DEC);
+          assertThat(message.getArguments()).containsExactly("Jahresbudget", JAN, DEC, 1, 0);
         });
   }
 
@@ -211,18 +212,106 @@ public class OrderBudgetServiceTest {
     assertThatCode(() -> service.update(7L, data(null, JAN, DEC, true))).doesNotThrowAnyException();
   }
 
+  /** A suborder that does not belong to the chosen order is still rejected — at any depth. */
   @Test
-  public void should_reject_a_plan_on_a_deeper_suborder() {
+  public void should_reject_a_plan_on_a_suborder_of_another_order() {
     var suborderService = mock(SuborderService.class);
-    when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
-    when(suborderService.isFirstLevelSuborder("co", "co/01/02")).thenReturn(false);
+    when(suborderService.existsByCompleteOrderSign("co", "other/01/02")).thenReturn(false);
     service = new OrderBudgetService(orderBudgetRepository, suborderService, budgetAuthorization,
         assignmentService);
     givenExisting();
 
-    assertThatThrownBy(() -> service.create(data("co/01/02", JAN, DEC, true)))
+    assertThatThrownBy(() -> service.create(data("other/01/02", JAN, DEC, true)))
         .isInstanceOf(BusinessRuleException.class)
-        .hasMessageContaining(ErrorCode.BU_SUBORDER_NOT_FIRST_LEVEL.getCode());
+        .hasMessageContaining(ErrorCode.BU_SUBORDER_NOT_IN_ORDER.getCode());
+  }
+
+  // --- the level rule (#1004) --------------------------------------------------------------------
+
+  /** The confinement to the first suborder level is gone: any depth is a valid scope. */
+  @Test
+  public void should_accept_a_plan_on_a_deeper_suborder() {
+    givenExisting();
+
+    assertThatCode(() -> service.create(data("co/01/02", JAN, DEC, true))).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void should_accept_a_second_plan_on_the_same_deeper_level() {
+    givenExisting(plan("co/01/A", JAN, DEC));
+
+    assertThatCode(() -> service.create(data("co/02/B", JAN, DEC, true))).doesNotThrowAnyException();
+  }
+
+  /** Two plans of the same level in different branches are no overlap at all. */
+  @Test
+  public void should_accept_plans_of_the_same_level_in_different_branches() {
+    givenExisting(plan("co/01/A", JAN, DEC));
+
+    assertThatCode(() -> service.create(data("co/01/B", JAN, DEC, true))).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void should_reject_a_plan_on_a_level_other_than_the_one_in_force() {
+    givenExisting(plan("co/01", JAN, DEC));
+
+    assertThatThrownBy(() -> service.create(data("co/02/B", JAN, JUN, true)))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_BUDGET_LEVEL_MIXED.getCode());
+  }
+
+  @Test
+  public void should_reject_a_deeper_plan_next_to_an_order_wide_one() {
+    givenExisting(plan(null, JAN, DEC));
+
+    assertThatThrownBy(() -> service.create(data("co/01/A", JAN, JUN, true)))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_BUDGET_LEVEL_MIXED.getCode());
+  }
+
+  /** Changing the level stays possible as soon as the periods do not overlap. */
+  @Test
+  public void should_accept_another_level_in_a_period_the_existing_plan_does_not_cover() {
+    givenExisting(plan("co/01", JAN, JUN));
+
+    assertThatCode(() -> service.create(data("co/01/A", JUL, DEC, true))).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void should_ignore_an_inactive_plan_of_another_level() {
+    var archived = plan("co/01", JAN, DEC);
+    archived.setActive(false);
+    givenExisting(archived);
+
+    assertThatCode(() -> service.create(data("co/01/A", JAN, DEC, true))).doesNotThrowAnyException();
+  }
+
+  /** Activating a plan whose level no longer matches has to be refused, as a mode change was. */
+  @Test
+  public void should_reject_activating_a_plan_of_a_different_level() {
+    var stored = plan("co/01/A", JAN, JUN, 7L);
+    stored.setActive(false);
+    when(orderBudgetRepository.findById(7L)).thenReturn(Optional.of(stored));
+    givenExisting(stored, plan("co/01", JAN, DEC));
+
+    assertThatThrownBy(() -> service.setActive(7L, true))
+        .isInstanceOf(BusinessRuleException.class)
+        .hasMessageContaining(ErrorCode.BU_BUDGET_LEVEL_MIXED.getCode());
+  }
+
+  /** Both levels travel on the message: without them it says that something is mixed, not what. */
+  @Test
+  public void should_name_both_levels_of_a_conflict() {
+    var blocking = plan("co/01", JAN, DEC);
+    blocking.setName("Ebene 1");
+    givenExisting(blocking);
+
+    var thrown = catchThrowableOfType(BusinessRuleException.class,
+        () -> service.create(data("co/01/A", JAN, JUN, true)));
+
+    assertThat(thrown.getMessages()).singleElement()
+        .satisfies(message -> assertThat(message.getArguments())
+            .containsExactly("Ebene 1", JAN, DEC, 2, 1));
   }
 
   /**
@@ -261,33 +350,34 @@ public class OrderBudgetServiceTest {
    * intersecting inclusively, own id excluded. Stubbing a fixed list instead would hand the service
    * plans the query would never have returned, and the period rules would go untested.
    */
-  /** The mode in force today, for the badge in the list and the hint in the form (#914). */
+  /** The level in force today, for the hint in the form (#914, #1004). */
   @Test
   @FixedClock("2026-03-15T10:00:00")
-  public void should_report_the_mode_in_force_today() {
+  public void should_report_the_level_in_force_today() {
     when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
         .thenReturn(List.of(plan(null, JAN, DEC)));
 
-    assertThat(service.currentMode("co")).isEqualTo(BudgetMode.ORDER_WIDE);
+    assertThat(service.currentLevel("co")).isEqualTo(new BudgetLevel(BudgetMode.ORDER_WIDE, 0));
   }
 
+  /** The form has to name the level, not merely "per suborder" — that is what a plan must match. */
   @Test
   @FixedClock("2026-03-15T10:00:00")
-  public void should_report_the_suborder_mode_when_that_is_what_applies() {
+  public void should_report_the_suborder_level_when_that_is_what_applies() {
     when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
-        .thenReturn(List.of(plan("co/01", JAN, DEC)));
+        .thenReturn(List.of(plan("co/01/A", JAN, DEC)));
 
-    assertThat(service.currentMode("co")).isEqualTo(BudgetMode.PER_SUBORDER);
+    assertThat(service.currentLevel("co")).isEqualTo(new BudgetLevel(BudgetMode.PER_SUBORDER, 2));
   }
 
   /** A plan whose period has passed says nothing about today. */
   @Test
   @FixedClock("2026-09-15T10:00:00")
-  public void should_report_no_mode_when_no_active_plan_covers_today() {
+  public void should_report_no_level_when_no_active_plan_covers_today() {
     when(orderBudgetRepository.findByCustomerorderSignAndActive("co", Boolean.TRUE))
         .thenReturn(List.of(plan(null, JAN, JUN)));
 
-    assertThat(service.currentMode("co")).isEqualTo(BudgetMode.NONE);
+    assertThat(service.currentLevel("co")).isEqualTo(BudgetLevel.NONE);
   }
 
 

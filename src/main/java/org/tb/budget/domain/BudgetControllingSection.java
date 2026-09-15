@@ -15,6 +15,12 @@ import org.tb.common.LocalDateRange;
  */
 public record BudgetControllingSection(
     SectionKind kind,
+    /**
+     * The suborder level the plans of this section sit on: 0 for an order-wide section and for
+     * UNPLANNED, 1 for the direct suborders of the order, and so on (#1004). The header shows it, so
+     * that two sections of different levels are told apart by more than their period.
+     */
+    int level,
     /** The period of the plans in this section; {@code null} for UNPLANNED, where rows differ. */
     LocalDateRange period,
     List<String> budgetNames,

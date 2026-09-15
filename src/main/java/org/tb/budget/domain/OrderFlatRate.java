@@ -93,14 +93,6 @@ public class OrderFlatRate extends AuditedEntity {
     }
 
     /**
-     * The first suborder level this flat rate belongs to, or {@code null} when it is order-wide —
-     * the level budget plans live on, and therefore what decides which plan may hold it.
-     */
-    public String firstLevelSign() {
-        return BudgetScope.firstLevelSignOf(suborderSign);
-    }
-
-    /**
      * The amounts falling due between the two days, both boundaries included.
      *
      * <p>The span is what the caller is looking at, not the validity of the flat rate: the

@@ -51,11 +51,12 @@ public class BudgetResolverTest {
             .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
             .toList());
 
-    // CO/01 with CO/01/02 and CO/01/02/03 below it, plus the sibling CO/02.
+    // CO/01 with CO/01/02 and CO/01/02/03 below it, plus the siblings CO/02 and CO/01/04.
     when(suborderService.getSuborderById(1L)).thenReturn(firstLevel("CO", "01"));
     when(suborderService.getSuborderById(2L)).thenReturn(below(firstLevel("CO", "01"), "02"));
     when(suborderService.getSuborderById(3L)).thenReturn(firstLevel("CO", "02"));
     when(suborderService.getSuborderById(4L)).thenReturn(below(below(firstLevel("CO", "01"), "02"), "03"));
+    when(suborderService.getSuborderById(5L)).thenReturn(below(firstLevel("CO", "01"), "04"));
 
     resolver = new BudgetResolver(orderBudgetRepository, suborderService);
   }
@@ -71,7 +72,7 @@ public class BudgetResolverTest {
   }
 
   @Test
-  public void should_resolve_a_booking_to_the_plan_on_its_own_first_level_suborder() {
+  public void should_resolve_a_booking_to_the_plan_on_its_own_suborder() {
     givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
 
     assertThat(resolver.resolve(report(100L, "CO", 1L, MAR)).unique())
@@ -79,12 +80,12 @@ public class BudgetResolverTest {
   }
 
   /**
-   * Plans only live on the first suborder level while bookings happen further down. Reading the
-   * booking's own sign instead of its first level ancestor is the defect #931 fixed — here it would
-   * leave every booking below the first level unassigned.
+   * A plan covers its suborder and everything below it, so a booking further down still belongs to
+   * it. Comparing the booking's own sign for equality would leave every deeper booking unassigned —
+   * the defect #931 fixed.
    */
   @Test
-  public void should_resolve_a_booking_on_the_second_suborder_level_to_its_first_level_plan() {
+  public void should_resolve_a_booking_on_the_second_suborder_level_to_the_plan_above_it() {
     givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
 
     assertThat(resolver.resolve(report(100L, "CO", 2L, MAR)).unique())
@@ -92,7 +93,7 @@ public class BudgetResolverTest {
   }
 
   @Test
-  public void should_resolve_a_booking_on_the_third_suborder_level_to_its_first_level_plan() {
+  public void should_resolve_a_booking_on_the_third_suborder_level_to_the_plan_above_it() {
     givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
 
     assertThat(resolver.resolve(report(100L, "CO", 4L, MAR)).unique())
@@ -107,6 +108,32 @@ public class BudgetResolverTest {
 
     assertThat(resolution.isEmpty()).isTrue();
     assertThat(resolution.unique()).isEmpty();
+  }
+
+  /** A plan may now live on any level, and it then covers exactly its own subtree (#1004). */
+  @Test
+  public void should_resolve_a_booking_to_a_plan_on_a_deeper_suborder() {
+    givenPlan(7L, "CO", "CO/01/02", JAN, DEC, true);
+
+    assertThat(resolver.resolve(report(100L, "CO", 2L, MAR)).unique())
+        .map(AuditedEntity::getId).contains(7L);
+    assertThat(resolver.resolve(report(101L, "CO", 4L, MAR)).unique())
+        .map(AuditedEntity::getId).contains(7L);
+  }
+
+  @Test
+  public void should_not_resolve_a_booking_of_a_sibling_branch_to_a_deeper_plan() {
+    givenPlan(7L, "CO", "CO/01/02", JAN, DEC, true);
+
+    assertThat(resolver.resolve(report(100L, "CO", 5L, MAR)).isEmpty()).isTrue();
+  }
+
+  /** Coverage runs downwards: the suborder above the plan is outside it. */
+  @Test
+  public void should_not_resolve_a_booking_above_a_deeper_plan() {
+    givenPlan(7L, "CO", "CO/01/02", JAN, DEC, true);
+
+    assertThat(resolver.resolve(report(100L, "CO", 1L, MAR)).isEmpty()).isTrue();
   }
 
   @Test

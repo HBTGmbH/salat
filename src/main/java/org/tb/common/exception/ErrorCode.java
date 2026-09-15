@@ -117,8 +117,12 @@ public enum ErrorCode {
   // assignment of a booking was derived from (suborder, date) and would have been ambiguous. The
   // explicit assignment (#908) and the switched evaluation (#913) removed that reason, so the rule
   // is gone (#914). The number stays retired — codes are never reused or renumbered.
-  BU_BUDGET_LEVEL_MIXED("BU-0011", "a customer order is budgeted either as a whole or per suborder, not both at a time"),
-  BU_SUBORDER_NOT_FIRST_LEVEL("BU-0012", "order budgets are only allowed on first level suborders"),
+  BU_BUDGET_LEVEL_MIXED("BU-0011", "all plans of a customer order in force at the same time must sit on the same level"),
+  // BU-0012 was BU_SUBORDER_NOT_FIRST_LEVEL: plans were confined to the first suborder level (#905)
+  // because coverage was expressed through the booking's first level ancestor. Expressed as a
+  // subtree instead, any level works and the confinement is gone (#1004) — what is left is the rule
+  // that all plans in force at one time sit on the same level, which is BU-0011. The number stays
+  // retired — codes are never reused or renumbered.
   BU_ORDER_NOT_AUTHORIZED("BU-0013", "not authorized to see budget data of this customer order"),
   BU_EMPLOYEE_COST_HAS_ASSIGNMENTS("BU-0014", "employee cost cannot be deleted while assignments reference its name"),
   BU_BUDGET_INACTIVE("BU-0015", "time reports cannot be assigned to an inactive order budget"),

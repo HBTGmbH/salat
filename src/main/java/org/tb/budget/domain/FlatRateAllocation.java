@@ -34,7 +34,7 @@ public final class FlatRateAllocation {
         return TRUE.equals(plan.getActive())
             && !dueAmount.due().isBefore(plan.getValidFrom())
             && !dueAmount.due().isAfter(plan.getValidUntil())
-            && BudgetScope.covers(plan, flatRate.getCustomerorderSign(), flatRate.firstLevelSign());
+            && BudgetScope.covers(plan, flatRate.getCustomerorderSign(), flatRate.getSuborderSign());
     }
 
 }

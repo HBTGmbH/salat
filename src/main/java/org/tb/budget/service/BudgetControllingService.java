@@ -270,8 +270,9 @@ public class BudgetControllingService {
 
     /** One plan with the part of its validity that falls inside the evaluated period. */
     private record PlanPeriod(OrderBudget plan, LocalDateRange period) {
-        boolean orderWide() {
-            return isOrderWide(plan.getSuborderSign());
+        /** 0 for an order-wide plan, otherwise the suborder level it sits on (→ {@link BudgetScope}). */
+        int level() {
+            return BudgetScope.levelOf(plan.getSuborderSign());
         }
     }
 
@@ -295,41 +296,38 @@ public class BudgetControllingService {
             .sorted(Comparator
                 .comparing((PlanPeriod p) -> p.period().getFrom())
                 .thenComparing(p -> p.period().getUntil())
-                .thenComparing(PlanPeriod::orderWide)
+                // The level is a number, so it sorts naturally however many of them there are.
+                .thenComparing(PlanPeriod::level)
                 .thenComparing(p -> p.plan().getId(), Comparator.nullsLast(Comparator.naturalOrder())))
             .toList();
     }
 
     /**
      * Plans of the same level and the same period share one section, as they always have — the
-     * section total over them is the number a reader compares against the order. Only what fills the
-     * rows changed.
+     * section total over them is the number a reader compares against the order. Since all plans in
+     * force at one time sit on the same level (→ {@code OrderBudgetService}), the level only ever
+     * separates sections whose periods differ anyway; it is in the key so that a section stays one
+     * level even where two periods merely touch.
      */
     private List<List<PlanPeriod>> sectionGroups(List<PlanPeriod> plans) {
         Map<String, List<PlanPeriod>> grouped = new LinkedHashMap<>();
         for (var plan : plans) {
-            grouped.computeIfAbsent(plan.orderWide() + "|" + plan.period(), k -> new ArrayList<>()).add(plan);
+            grouped.computeIfAbsent(plan.level() + "|" + plan.period(), k -> new ArrayList<>()).add(plan);
         }
         return List.copyOf(grouped.values());
     }
 
-    /** Whether the plan's scope contains the suborder — where its planned hours come from. */
-    private static boolean covers(OrderBudget plan, Suborder suborder) {
-        return isOrderWide(plan.getSuborderSign())
-            || plan.getSuborderSign().equals(firstLevelSignOf(suborder));
-    }
-
     /**
-     * The complete order sign of the suborder's first level ancestor, or its own if it is one.
-     * Shared with the stored assignment via {@link BudgetScope}, so that the derived coverage here
-     * and the explicit assignment cannot resolve a scope differently (#931).
+     * Whether the plan's scope contains the suborder — where its planned hours come from. The plan
+     * covers its suborder and everything below it; the same rule that decides the assignment of a
+     * booking decides this, through {@link BudgetScope}, so the derived coverage here and the stored
+     * assignment cannot drift apart (#931).
+     *
+     * <p>The suborders come from the plan's own customer order, so the order part of the comparison
+     * holds by construction; what decides is the subtree.
      */
-    private static String firstLevelSignOf(Suborder suborder) {
-        return BudgetScope.firstLevelSignOf(suborder);
-    }
-
-    private static boolean isOrderWide(String suborderSign) {
-        return BudgetScope.isOrderWide(suborderSign);
+    private static boolean covers(OrderBudget plan, Suborder suborder) {
+        return BudgetScope.covers(plan, plan.getCustomerorderSign(), suborder.getCompleteOrderSign());
     }
 
     private BudgetControllingSection plannedSection(List<PlanPeriod> plans, List<Suborder> suborders,
@@ -338,7 +336,10 @@ public class BudgetControllingService {
                                                     AllocatedFlatRates flatRates, LocalDateRange window,
                                                     LocalDate today,
                                                     Set<LocalDate> holidays, boolean includeCosts) {
-        var orderWide = plans.get(0).orderWide();
+        // Every plan of a section sits on the same level, and level 0 is the order-wide one: such a
+        // plan is the whole section and therefore has no subtotal of its own.
+        var level = plans.get(0).level();
+        var orderWide = level == 0;
         var period = plans.get(0).period();
         // Collected first and turned into groups below: a group carries its plan's progress status,
         // and for an order-wide plan that status is judged against the section total, which does not
@@ -386,6 +387,7 @@ public class BudgetControllingService {
 
         return new BudgetControllingSection(
             orderWide ? SectionKind.ORDER_LEVEL : SectionKind.SUBORDER_LEVEL,
+            level,
             period,
             plans.stream().map(p -> p.plan().getName()).toList(),
             plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder()).orElse(null),
@@ -423,7 +425,7 @@ public class BudgetControllingService {
         }
         var total = aggregate(null, null, rows, null, includeCosts);
         // No plan, so no progress either — these bookings answer to nothing that could be behind.
-        return new BudgetControllingSection(SectionKind.UNPLANNED, null, List.of(), null, null,
+        return new BudgetControllingSection(SectionKind.UNPLANNED, 0, null, List.of(), null, null,
             List.of(new BudgetControllingGroup(null, null, null, rows, null, null, null)), total);
     }
 
