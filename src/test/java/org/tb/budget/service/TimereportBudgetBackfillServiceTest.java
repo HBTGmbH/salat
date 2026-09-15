@@ -131,12 +131,12 @@ public class TimereportBudgetBackfillServiceTest {
   }
 
   /**
-   * Plans live on the first suborder level only. Resolving the scope from the booking's own suborder
-   * — the defect #931 fixed — would leave every one of these as "no plan" and write that gap into
-   * the data for good.
+   * A plan covers its suborder and everything below it, while bookings happen anywhere in that
+   * subtree. Resolving the scope by comparing the booking's own sign for equality — the defect #931
+   * fixed — would leave every one of these as "no plan" and write that gap into the data for good.
    */
   @Test
-  public void should_assign_bookings_below_the_first_suborder_level_to_their_first_level_plan() {
+  public void should_assign_bookings_below_the_suborder_of_a_plan_to_that_plan() {
     givenPlan(7L, "CO", "CO/01", JAN, DEC, true);
     givenReport(100L, "CO", 1L, MAR, HOUR);
     givenReport(101L, "CO", 2L, MAR, HOUR);
@@ -147,6 +147,27 @@ public class TimereportBudgetBackfillServiceTest {
     assertThat(stored).hasSize(3);
     assertThat(order(result, "CO").assigned().bookings()).isEqualTo(3);
     assertThat(order(result, "CO").withoutPlan().bookings()).isZero();
+  }
+
+  /**
+   * The run is what makes a plan on a deeper level effective on existing bookings (#1004): such a
+   * plan covered nothing before, so its bookings are unassigned and nothing but this — or the next
+   * change to the booking — puts that right. It takes the subtree and stops at its edge.
+   */
+  @Test
+  public void should_assign_the_subtree_of_a_plan_on_a_deeper_suborder() {
+    givenPlan(7L, "CO", "CO/01/02", JAN, DEC, true);
+    givenReport(100L, "CO", 2L, MAR, HOUR);  // CO/01/02 itself
+    givenReport(101L, "CO", 4L, MAR, HOUR);  // CO/01/02/03, below it
+    givenReport(102L, "CO", 1L, MAR, HOUR);  // CO/01, above it
+    givenReport(103L, "CO", 3L, MAR, HOUR);  // CO/02, another branch
+
+    var result = service.backfill("CO");
+
+    assertThat(stored).extracting(TimereportBudgetAssignment::getTimereportId)
+        .containsExactlyInAnyOrder(100L, 101L);
+    assertThat(order(result, "CO").assigned().bookings()).isEqualTo(2);
+    assertThat(order(result, "CO").withoutPlan().bookings()).isEqualTo(2);
   }
 
   @Test
