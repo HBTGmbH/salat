@@ -24,6 +24,7 @@ import org.tb.jira.domain.JiraApiFlavor;
 public class JiraServerSearchClient extends AbstractJiraSearchClient {
 
   private static final String SEARCH_PATH = "rest/api/latest/search";
+  private static final String FIELDS_PATH = "rest/api/latest/field";
 
   public JiraServerSearchClient() {
     this(RestClient.builder());
@@ -42,6 +43,14 @@ public class JiraServerSearchClient extends AbstractJiraSearchClient {
   @Override
   public Iterator<JiraIssue> search(JiraSearchRequest request) {
     return new StartAtIterator(request);
+  }
+
+  @Override
+  public List<JiraField> listFields(JiraFieldsRequest request) {
+    log.info("JIRA server field catalogue: baseUrl={}", request.baseUrl());
+    var fields = fetchFields(request, FIELDS_PATH);
+    log.info("JIRA server field catalogue result: fields.size={}", fields.size());
+    return fields;
   }
 
   private class StartAtIterator extends PagedJiraIssueIterator {

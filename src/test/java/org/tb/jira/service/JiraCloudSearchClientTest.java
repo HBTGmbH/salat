@@ -112,6 +112,25 @@ class JiraCloudSearchClientTest {
     assertEquals(CLOUD, client.flavor());
   }
 
+  @Test
+  void testFieldCatalogueIsReadFromTheCloudEndpoint() {
+    // Cloud only removed the search endpoint; the field catalogue is still where it was
+    jira.expect(requestTo("https://mock.atlassian.net/rest/api/3/field"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, basicAuth(EMAIL, API_TOKEN)))
+        .andRespond(withSuccess("""
+            [{"id": "customfield_10123", "name": "Kategorie", "custom": true,
+              "schema": {"type": "option",
+                         "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select"}}]""",
+            MediaType.APPLICATION_JSON));
+
+    var fields = client.listFields(
+        new JiraFieldsRequest("https://mock.atlassian.net", EMAIL, API_TOKEN));
+
+    assertEquals(List.of("customfield_10123"), fields.stream().map(JiraField::getId).toList());
+    jira.verify();
+  }
+
   private static JiraSearchRequest request() {
     return new JiraSearchRequest("https://mock.atlassian.net", EMAIL, API_TOKEN,
         "project = MOCK", List.of("summary", "updated"), 2);

@@ -29,6 +29,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.jira.domain.JiraApiFlavor;
+import org.tb.jira.domain.JiraFieldOption;
 import org.tb.jira.domain.JiraReplicationConfig;
 import org.tb.jira.domain.JiraReplicationConfigData;
 import org.tb.jira.persistence.JiraReplicationConfigRepository;
@@ -51,6 +52,12 @@ class JiraReplicationConfigServiceTest {
 
   @Mock
   private JiraReplicationService jiraReplicationService;
+
+  @Mock
+  private JiraSearchClients jiraSearchClients;
+
+  @Mock
+  private JiraSearchClient jiraSearchClient;
 
   @Mock
   private AuthorizedUser authorizedUser;
@@ -251,8 +258,9 @@ class JiraReplicationConfigServiceTest {
     assertThatThrownBy(() -> classUnderTest.setEnabled(ID, true)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.resetWatermark(ID)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.runNow(ID)).isInstanceOf(AuthorizationException.class);
+    assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID)).isInstanceOf(AuthorizationException.class);
 
-    verifyNoInteractions(configRepository, jiraReplicationService);
+    verifyNoInteractions(configRepository, jiraReplicationService, jiraSearchClients);
   }
 
   @Test
@@ -281,6 +289,95 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.update(ID, withFields(" customfield_10123 ", null));
 
     assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
+  }
+
+  @Test
+  void the_field_catalogue_is_fetched_with_the_stored_credentials() {
+    // never with values from the form - otherwise a manager could point the server at any address
+    // it can reach and get the authenticated answer shown back
+    var stored = existingConfig();
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+    when(jiraSearchClients.forFlavor(JiraApiFlavor.SERVER)).thenReturn(jiraSearchClient);
+    when(jiraSearchClient.listFields(any())).thenReturn(List.of());
+
+    classUnderTest.getSelectableFields(ID);
+
+    var request = ArgumentCaptor.forClass(JiraFieldsRequest.class);
+    verify(jiraSearchClient).listFields(request.capture());
+    assertThat(request.getValue().baseUrl()).isEqualTo("https://jira.example.com");
+    assertThat(request.getValue().username()).isEqualTo("jira-user");
+    assertThat(request.getValue().password()).isEqualTo(STORED_PASSWORD);
+  }
+
+  @Test
+  void a_cascading_select_is_offered_with_its_second_level() {
+    givenCatalogue(
+        field("customfield_10200", "Kategorie", "com.atlassian…customfieldtypes:cascadingselect", null),
+        field("customfield_10123", "Abrechnung", "com.atlassian…customfieldtypes:select", null),
+        field("duedate", "Fälligkeitsdatum", null, "date"));
+
+    var catalogue = classUnderTest.getSelectableFields(ID);
+
+    // sorted by name, and the second level sits right behind the field it belongs to
+    assertThat(catalogue.options()).extracting(JiraFieldOption::key).containsExactly(
+        "customfield_10123", "duedate", "customfield_10200", "customfield_10200.child.value");
+    assertThat(catalogue.options()).extracting(JiraFieldOption::type).containsExactly(
+        "select", "date", "cascadingselect", "cascadingselect");
+    assertThat(catalogue.options().get(3).secondLevel()).isTrue();
+    assertThat(catalogue.hasError()).isFalse();
+  }
+
+  @Test
+  void an_umlaut_sorts_where_a_reader_looks_for_it() {
+    // comparing code points would file this behind "Zeiterfassung", which reads as broken in a list
+    // somebody scans by name
+    givenCatalogue(
+        field("customfield_10300", "Zeiterfassung", null, "string"),
+        field("customfield_10301", "Änderungsdatum", null, "date"));
+
+    assertThat(classUnderTest.getSelectableFields(ID).options())
+        .extracting(JiraFieldOption::name)
+        .containsExactly("Änderungsdatum", "Zeiterfassung");
+  }
+
+  @Test
+  void a_field_without_a_name_falls_back_to_its_key() {
+    givenCatalogue(field("customfield_10400", null, null, "string"));
+
+    assertThat(classUnderTest.getSelectableFields(ID).options())
+        .extracting(JiraFieldOption::name).containsExactly("customfield_10400");
+  }
+
+  @Test
+  void a_failed_catalogue_is_reported_back_without_the_password_in_it() {
+    var stored = existingConfig();
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+    when(jiraSearchClients.forFlavor(JiraApiFlavor.SERVER)).thenReturn(jiraSearchClient);
+    when(jiraSearchClient.listFields(any()))
+        .thenThrow(new IllegalStateException("401 for user:" + STORED_PASSWORD));
+
+    var catalogue = classUnderTest.getSelectableFields(ID);
+
+    assertThat(catalogue.hasError()).isTrue();
+    assertThat(catalogue.errorMessage()).doesNotContain(STORED_PASSWORD).contains("***");
+    assertThat(catalogue.options()).isEmpty();
+  }
+
+  private void givenCatalogue(JiraField... fields) {
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+    when(jiraSearchClients.forFlavor(JiraApiFlavor.SERVER)).thenReturn(jiraSearchClient);
+    when(jiraSearchClient.listFields(any())).thenReturn(List.of(fields));
+  }
+
+  private static JiraField field(String id, String name, String customType, String type) {
+    var field = new JiraField();
+    field.setId(id);
+    field.setName(name);
+    var schema = new JiraField.Schema();
+    schema.setCustom(customType);
+    schema.setType(type);
+    field.setSchema(schema);
+    return field;
   }
 
   private static JiraReplicationConfigData withFields(String additional, String inherited) {

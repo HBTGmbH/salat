@@ -2,6 +2,7 @@ package org.tb.jira.service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
@@ -33,6 +34,19 @@ abstract class AbstractJiraSearchClient implements JiraSearchClient {
 
   protected static String endpointUrl(String baseUrl, String path) {
     return (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + path;
+  }
+
+  /**
+   * The field catalogue at the given path (#1013). Both flavours answer a plain array, they only
+   * differ in where it lives, so the request itself is shared and each client passes its own path.
+   */
+  protected List<JiraField> fetchFields(JiraFieldsRequest request, String path) {
+    var fields = clientFor(request.username(), request.password())
+        .get()
+        .uri(endpointUrl(request.baseUrl(), path))
+        .retrieve()
+        .body(JiraField[].class);
+    return fields == null ? List.of() : List.of(fields);
   }
 
   private static String basicAuth(String username, String password) {

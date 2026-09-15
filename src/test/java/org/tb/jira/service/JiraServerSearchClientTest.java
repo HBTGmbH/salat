@@ -97,6 +97,40 @@ class JiraServerSearchClientTest {
     assertEquals(SERVER, client.flavor());
   }
 
+  @Test
+  void testFieldCatalogueIsReadFromTheServerEndpoint() {
+    jira.expect(requestTo("https://mock-jira.com/rest/api/latest/field"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, basicAuth("mockUser", "mockPassword")))
+        .andRespond(withSuccess("""
+            [
+              {"id": "summary", "name": "Summary", "custom": false, "schema": {"type": "string"}},
+              {"id": "customfield_10200", "name": "Kategorie", "custom": true,
+               "schema": {"type": "option-with-child", "customId": 10200,
+                          "custom": "com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect"}}
+            ]""", MediaType.APPLICATION_JSON));
+
+    var fields = client.listFields(new JiraFieldsRequest("https://mock-jira.com", "mockUser", "mockPassword"));
+
+    assertEquals(List.of("summary", "customfield_10200"), fields.stream().map(JiraField::getId).toList());
+    assertEquals("com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect",
+        fields.get(1).getSchema().getCustom());
+    jira.verify();
+  }
+
+  @Test
+  void testAFieldWithoutASchemaIsTolerated() {
+    // a few system fields come without one, and dereferencing it blindly would break the whole list
+    jira.expect(requestTo("https://mock-jira.com/rest/api/latest/field"))
+        .andRespond(withSuccess("""
+            [{"id": "thumbnail", "name": "Images", "custom": false}]""", MediaType.APPLICATION_JSON));
+
+    var fields = client.listFields(new JiraFieldsRequest("https://mock-jira.com", "mockUser", "mockPassword"));
+
+    assertEquals(1, fields.size());
+    assertEquals(null, fields.get(0).getSchema());
+  }
+
   private static JiraSearchRequest request() {
     return new JiraSearchRequest("https://mock-jira.com", "mockUser", "mockPassword",
         "project = MOCK", List.of("summary", "updated"), 2);

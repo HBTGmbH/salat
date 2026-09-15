@@ -30,6 +30,9 @@ public class JiraCloudSearchClient extends AbstractJiraSearchClient {
 
   private static final String SEARCH_PATH = "rest/api/3/search/jql";
 
+  /** Cloud only removed the search endpoint; the field catalogue is still where it was. */
+  private static final String FIELDS_PATH = "rest/api/3/field";
+
   public JiraCloudSearchClient() {
     this(RestClient.builder());
   }
@@ -47,6 +50,14 @@ public class JiraCloudSearchClient extends AbstractJiraSearchClient {
   @Override
   public Iterator<JiraIssue> search(JiraSearchRequest request) {
     return new NextPageTokenIterator(request);
+  }
+
+  @Override
+  public List<JiraField> listFields(JiraFieldsRequest request) {
+    log.info("JIRA cloud field catalogue: baseUrl={}", request.baseUrl());
+    var fields = fetchFields(request, FIELDS_PATH);
+    log.info("JIRA cloud field catalogue result: fields.size={}", fields.size());
+    return fields;
   }
 
   private class NextPageTokenIterator extends PagedJiraIssueIterator {
