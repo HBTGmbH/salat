@@ -5,75 +5,63 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import org.tb.order.domain.Customerorder;
-import org.tb.order.domain.Suborder;
 
 /**
- * Budget plans only live on first level suborders (#905), while bookings happen anywhere below.
- * The scope of a booking is therefore its first level ancestor — resolving its own suborder instead
- * would leave every deeper booking outside the plan that is supposed to hold it.
+ * A budget plan covers its suborder and everything below it (#1004). For the plans on the first
+ * suborder level that were the only allowed ones until then this says exactly what the old rule
+ * said, so no existing plan changes what it covers — that equivalence is what the first tests here
+ * pin down.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class BudgetScopeTest {
 
   @Test
-  public void a_first_level_suborder_is_its_own_scope() {
-    assertThat(BudgetScope.firstLevelSignOf(firstLevel())).isEqualTo("CO/01");
-  }
-
-  @Test
-  public void a_deeper_suborder_resolves_to_its_first_level_ancestor() {
-    assertThat(BudgetScope.firstLevelSignOf(below(firstLevel(), "02"))).isEqualTo("CO/01");
-  }
-
-  @Test
-  public void a_suborder_three_levels_down_resolves_to_the_same_ancestor() {
-    var deep = below(below(firstLevel(), "02"), "03");
-
-    assertThat(deep.getCompleteOrderSign()).isEqualTo("CO/01/02/03");
-    assertThat(BudgetScope.firstLevelSignOf(deep)).isEqualTo("CO/01");
-  }
-
-  /**
-   * The overload on the sign, for the scopes that are stored as a sign and never resolved to a
-   * suborder — a flat rate names its suborder that way (#972).
-   */
-  @Test
-  public void a_first_level_sign_is_its_own_scope() {
-    assertThat(BudgetScope.firstLevelSignOf("CO/01")).isEqualTo("CO/01");
-  }
-
-  @Test
-  public void a_deeper_sign_resolves_to_its_first_level_part() {
-    assertThat(BudgetScope.firstLevelSignOf("CO/01/02/03")).isEqualTo("CO/01");
-  }
-
-  /** An order-wide scope has no first level at all — that is what an order-wide plan covers. */
-  @Test
-  public void an_order_wide_sign_resolves_to_no_scope() {
-    assertThat(BudgetScope.firstLevelSignOf((String) null)).isNull();
-    assertThat(BudgetScope.firstLevelSignOf(" ")).isNull();
-  }
-
-  /** A bare customer order sign names no suborder, so it means the order as a whole. */
-  @Test
-  public void a_sign_without_a_suborder_part_resolves_to_no_scope() {
-    assertThat(BudgetScope.firstLevelSignOf("CO")).isNull();
-  }
-
-  @Test
-  public void a_suborder_plan_covers_a_booking_below_its_suborder() {
+  public void a_plan_covers_a_booking_on_its_own_suborder() {
     assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/01")).isTrue();
   }
 
   @Test
-  public void a_suborder_plan_does_not_cover_a_booking_under_another_suborder() {
+  public void a_plan_covers_a_booking_below_its_suborder() {
+    assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/01/D")).isTrue();
+    assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/01/D/E")).isTrue();
+  }
+
+  /** A plan on the second level covers its own subtree — the point of #1004. */
+  @Test
+  public void a_plan_on_a_deeper_suborder_covers_its_subtree() {
+    assertThat(BudgetScope.covers(plan("CO", "CO/01/A"), "CO", "CO/01/A")).isTrue();
+    assertThat(BudgetScope.covers(plan("CO", "CO/01/A"), "CO", "CO/01/A/1")).isTrue();
+  }
+
+  @Test
+  public void a_plan_on_a_deeper_suborder_does_not_cover_the_sibling_branch() {
+    assertThat(BudgetScope.covers(plan("CO", "CO/01/A"), "CO", "CO/01/B")).isFalse();
+  }
+
+  /** Coverage runs downwards only: what sits above the plan is outside it. */
+  @Test
+  public void a_plan_on_a_deeper_suborder_does_not_cover_the_level_above_it() {
+    assertThat(BudgetScope.covers(plan("CO", "CO/01/A"), "CO", "CO/01")).isFalse();
+  }
+
+  @Test
+  public void a_plan_does_not_cover_a_booking_under_another_suborder() {
     assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/02")).isFalse();
+  }
+
+  /**
+   * The trailing slash is the boundary, not decoration: without it a plan on {@code CO/01} would
+   * swallow the unrelated suborder {@code CO/010}.
+   */
+  @Test
+  public void the_comparison_only_matches_on_slash_boundaries() {
+    assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/010")).isFalse();
+    assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", "CO/010/A")).isFalse();
   }
 
   @Test
   public void an_order_wide_plan_covers_every_scope_of_its_order() {
-    assertThat(BudgetScope.covers(plan("CO", null), "CO", "CO/09")).isTrue();
+    assertThat(BudgetScope.covers(plan("CO", null), "CO", "CO/09/D")).isTrue();
     assertThat(BudgetScope.covers(plan("CO", ""), "CO", null)).isTrue();
   }
 
@@ -81,6 +69,12 @@ public class BudgetScopeTest {
   public void no_plan_covers_a_booking_of_another_customer_order() {
     assertThat(BudgetScope.covers(plan("CO", null), "OTHER", null)).isFalse();
     assertThat(BudgetScope.covers(plan("CO", "CO/01"), "OTHER", "CO/01")).isFalse();
+  }
+
+  /** A suborder plan needs a suborder to compare against — a booking without one is outside it. */
+  @Test
+  public void a_suborder_plan_covers_nothing_without_a_suborder() {
+    assertThat(BudgetScope.covers(plan("CO", "CO/01"), "CO", null)).isFalse();
   }
 
   @Test
@@ -91,21 +85,19 @@ public class BudgetScopeTest {
     assertThat(BudgetScope.isOrderWide("CO/01")).isFalse();
   }
 
-  private static Suborder firstLevel() {
-    var order = new Customerorder();
-    order.setSign("CO");
-    var suborder = new Suborder();
-    suborder.setSign("01");
-    suborder.setCustomerorder(order);
-    return suborder;
+  // --- the level, which is a validation rule rather than a coverage rule ------------------------
+
+  @Test
+  public void an_order_wide_scope_is_level_zero() {
+    assertThat(BudgetScope.levelOf(null)).isZero();
+    assertThat(BudgetScope.levelOf(" ")).isZero();
   }
 
-  private static Suborder below(Suborder parent, String sign) {
-    var suborder = new Suborder();
-    suborder.setSign(sign);
-    suborder.setCustomerorder(parent.getCustomerorder());
-    suborder.setParentorder(parent);
-    return suborder;
+  @Test
+  public void the_level_counts_the_slashes_of_the_complete_order_sign() {
+    assertThat(BudgetScope.levelOf("CO/01")).isEqualTo(1);
+    assertThat(BudgetScope.levelOf("CO/01/A")).isEqualTo(2);
+    assertThat(BudgetScope.levelOf("CO/01/A/1")).isEqualTo(3);
   }
 
   private static OrderBudget plan(String customerorderSign, String suborderSign) {

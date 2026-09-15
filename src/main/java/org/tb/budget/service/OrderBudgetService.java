@@ -8,7 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.auth.BudgetAuthorization;
-import org.tb.budget.domain.BudgetMode;
+import org.tb.budget.domain.BudgetLevel;
+import org.tb.budget.domain.BudgetScope;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
@@ -114,7 +115,7 @@ public class OrderBudgetService {
     @Authorized(requiresManager = true)
     public OrderBudget create(OrderBudgetData data) {
         // Checked before apply, which does not know the id that has to be excluded from the search.
-        checkModeNotMixed(data.customerorderSign(), data.suborderSign(),
+        checkLevelNotMixed(data.customerorderSign(), data.suborderSign(),
             data.validFrom(), data.validUntil(), data.active(), null);
         var budget = new OrderBudget();
         apply(budget, data);
@@ -133,7 +134,7 @@ public class OrderBudgetService {
      */
     @Authorized(requiresManager = true)
     public void update(long id, OrderBudgetData data) {
-        checkModeNotMixed(data.customerorderSign(), data.suborderSign(),
+        checkLevelNotMixed(data.customerorderSign(), data.suborderSign(),
             data.validFrom(), data.validUntil(), data.active(), id);
         var budget = getById(id);
         var coverageBefore = coverageOf(budget);
@@ -160,7 +161,7 @@ public class OrderBudgetService {
         var budget = getById(id);
         // Only active plans conflict, so activating one can create a conflict that saving it did not.
         if (active) {
-            checkModeNotMixed(budget.getCustomerorderSign(), budget.getSuborderSign(),
+            checkLevelNotMixed(budget.getCustomerorderSign(), budget.getSuborderSign(),
                 budget.getValidFrom(), budget.getValidUntil(), true, id);
         }
         budget.setActive(active);
@@ -227,8 +228,9 @@ public class OrderBudgetService {
     /**
      * The suborder dropdown lists the suborders of all customer orders, so a sign can be submitted
      * that does not exist below the chosen order. Such a budget would never match a suborder during
-     * controlling and would silently behave as if it did not exist, so reject it here. Budgets are
-     * furthermore only kept on first level suborders (#905).
+     * controlling and would silently behave as if it did not exist, so reject it here. Any depth is
+     * allowed since #1004 — which level a plan may sit on is decided by
+     * {@link #checkLevelNotMixed}, against the plans already in force.
      */
     private void checkSuborderBelongsToOrder(String customerorderSign, String suborderSign) {
         if (suborderSign == null) {
@@ -237,63 +239,61 @@ public class OrderBudgetService {
         if (!suborderService.existsByCompleteOrderSign(customerorderSign, suborderSign)) {
             throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_IN_ORDER);
         }
-        if (!suborderService.isFirstLevelSuborder(customerorderSign, suborderSign)) {
-            throw new BusinessRuleException(ErrorCode.BU_SUBORDER_NOT_FIRST_LEVEL);
-        }
     }
 
     /**
-     * At any point in time a customer order is budgeted either as a whole or per first level
-     * suborder, never both (#905). That is the one rule left, and it is a real one: the two modes
-     * answer different questions, and a period in which both applied would have no defined answer.
+     * All active plans of a customer order that are valid at the same time sit on the same level
+     * (#1004): either the order as a whole — level 0 — or one and the same suborder level. Two plans
+     * on different levels of one branch would cover the same booking, and "how much is budgeted
+     * here" would have no defined answer. The rule generalises the one from #905: back then the only
+     * levels were 0 and 1, and the check read {@code orderWide} against {@code orderWide}.
      *
-     * <p>Overlapping plans of the <em>same</em> mode are allowed since #914 — several plans on the
+     * <p>Overlapping plans of the <em>same</em> level are allowed since #914 — several plans on the
      * same suborder included. The ban existed only because a booking's plan was derived from
      * (suborder, date) and an overlap made that ambiguous; the explicit assignment (#908) and the
      * switched evaluation (#913) decide it instead. Businesswise the overlap is the normal case: a
-     * follow-up order starts before the running budget ends.
+     * follow-up order starts before the running budget ends. Two plans of the same level in
+     * different branches are no overlap at all.
      *
-     * <p>Switching mode stays possible as soon as the periods do not overlap — order-wide until the
-     * end of the year, per suborder from January.
+     * <p>Changing the level stays possible as soon as the periods do not overlap — order-wide until
+     * the end of the year, per suborder from January.
      *
      * <p>Only active plans take part; an inactive one is in no calculation and may stay on as an
      * archive. Activating one therefore has to check again.
      */
-    private void checkModeNotMixed(String customerorderSign, String suborderSign,
-                                   LocalDate validFrom, LocalDate validUntil,
-                                   boolean active, Long excludeId) {
+    private void checkLevelNotMixed(String customerorderSign, String suborderSign,
+                                    LocalDate validFrom, LocalDate validUntil,
+                                    boolean active, Long excludeId) {
         if (!active || validFrom == null || validUntil == null) {
             return;
         }
-        var orderWide = isOrderWide(suborderSign);
+        var level = BudgetScope.levelOf(suborderSign);
         for (var other : orderBudgetRepository.findActiveOverlapping(
                 customerorderSign, validFrom, validUntil, excludeId)) {
-            if (orderWide != isOrderWide(other.getSuborderSign())) {
+            var otherLevel = BudgetScope.levelOf(other.getSuborderSign());
+            if (level != otherLevel) {
                 // Naming the plan that stands in the way is the whole point of the message: the
-                // period to move is the one of that plan, not of the one being saved.
+                // period to move is the one of that plan, not of the one being saved. Both levels
+                // are named as well — without them the message says that something is mixed, but
+                // not what with what.
                 throw new BusinessRuleException(ErrorCode.BU_BUDGET_LEVEL_MIXED,
-                    other.getName(), other.getValidFrom(), other.getValidUntil());
+                    other.getName(), other.getValidFrom(), other.getValidUntil(), level, otherLevel);
             }
         }
     }
 
     /**
-     * Which mode the customer order is budgeted in today: as a whole, per first level suborder, or
-     * not at all. Well defined because mixing the two is what {@link #checkModeNotMixed} prevents.
+     * Which level the customer order is budgeted on today: as a whole, on a suborder level, or not
+     * at all. Well defined because mixing levels is what {@link #checkLevelNotMixed} prevents.
      */
     @Transactional(readOnly = true)
-    public BudgetMode currentMode(String customerorderSign) {
+    public BudgetLevel currentLevel(String customerorderSign) {
         var today = DateUtils.today();
         return getActiveByCustomerorderSign(customerorderSign).stream()
             .filter(b -> !today.isBefore(b.getValidFrom()) && !today.isAfter(b.getValidUntil()))
-            .map(b -> isOrderWide(b.getSuborderSign()) ? BudgetMode.ORDER_WIDE : BudgetMode.PER_SUBORDER)
+            .map(b -> BudgetLevel.of(b.getSuborderSign()))
             .findFirst()
-            .orElse(BudgetMode.NONE);
-    }
-
-    /** {@code null} and blank both mean "the whole customer order", as everywhere else. */
-    private static boolean isOrderWide(String suborderSign) {
-        return suborderSign == null || suborderSign.isBlank();
+            .orElse(BudgetLevel.NONE);
     }
 
 }

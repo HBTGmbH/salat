@@ -83,21 +83,25 @@ public class BudgetResolver {
     }
 
     /**
-     * The booking lies within the scope of the plan. Plans only live on the first suborder level
-     * while bookings happen anywhere below it, so the booking's first level ancestor decides — not
-     * its own suborder, which is the defect #931 fixed. An order-wide plan needs no suborder at all
-     * and therefore does not look one up.
+     * The booking lies within the scope of the plan: on the plan's suborder or anywhere below it
+     * (→ {@link BudgetScope}). An order-wide plan needs no suborder at all and therefore does not
+     * look one up; for every other plan it is exactly one lookup per booking.
      */
     public boolean coversScope(OrderBudget plan, TimereportDTO report) {
-        var firstLevelSign = BudgetScope.isOrderWide(plan.getSuborderSign())
+        var suborderSign = BudgetScope.isOrderWide(plan.getSuborderSign())
             ? null
-            : firstLevelSignOf(report);
-        return BudgetScope.covers(plan, report.getCustomerorderSign(), firstLevelSign);
+            : suborderSignOf(report);
+        return BudgetScope.covers(plan, report.getCustomerorderSign(), suborderSign);
     }
 
-    private String firstLevelSignOf(TimereportDTO report) {
+    /**
+     * The complete order sign of the booking's own suborder. Read from the suborder rather than from
+     * {@code TimereportDTO.completeOrderSign}: not every path that builds such a DTO fills that
+     * field, and a missing sign would silently leave the booking outside every plan.
+     */
+    private String suborderSignOf(TimereportDTO report) {
         var suborder = suborderService.getSuborderById(report.getSuborderId());
-        return suborder == null ? null : BudgetScope.firstLevelSignOf(suborder);
+        return suborder == null ? null : suborder.getCompleteOrderSign();
     }
 
 }

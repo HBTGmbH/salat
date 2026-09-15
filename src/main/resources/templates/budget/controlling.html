@@ -72,12 +72,19 @@
         <div th:if="${result.customerShortname() != null}"
              th:text="${result.customerName() == null ? result.customerShortname()
                         : result.customerShortname() + ' - ' + result.customerName()}">Kunde</div>
-        <div class="text-muted small">
+        <!--
+          Auf welcher Ebene die Pläne dieses Abschnitts liegen, gehört in die Überschrift (#1004):
+          zwei Abschnitte verschiedener Ebenen unterscheiden sich sonst nur im Zeitraum.
+        -->
+        <div class="text-muted small"
+             th:with="kindLabel=${section.level() > 0}
+                        ? #{main.controlling.section.SUBORDER_LEVEL(${section.level()})}
+                        : #{__${'main.controlling.section.' + section.kind().name()}__}">
           <span th:if="${not #lists.isEmpty(section.budgetNames())}"
                 th:text="${#strings.listJoin(section.budgetNames(), ', ')} + ' '"></span>
           <span th:text="${#lists.isEmpty(section.budgetNames())}
-                         ? #{${'main.controlling.section.' + section.kind().name()}}
-                         : '(' + #{${'main.controlling.section.' + section.kind().name()}} + ')'">Auftragsweites Budget</span>
+                         ? ${kindLabel}
+                         : '(' + ${kindLabel} + ')'">Auftragsweites Budget</span>
         </div>
         <div class="text-muted small" th:if="${section.hasPlanPeriod()}"
              th:text="|${#temporals.format(section.planFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.planUntil(), 'dd.MM.yyyy')}|">

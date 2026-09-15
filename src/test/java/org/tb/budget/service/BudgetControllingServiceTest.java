@@ -235,6 +235,76 @@ public class BudgetControllingServiceTest {
     assertThat(compute().sections()).filteredOn(s -> s.kind() == SectionKind.SUBORDER_LEVEL).hasSize(2);
   }
 
+  // --- plans on deeper suborder levels (#1004) --------------------------------------------------
+
+  /**
+   * Two plans on the second level form one section with a subtotal each — exactly what two plans on
+   * the first level do. The level decides which plans may stand next to each other, nothing else,
+   * and the section says which level it reports on so two of them are told apart.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_put_two_plans_of_the_second_level_into_one_section_with_a_subtotal_each() {
+    givenDeepSuborders();
+    givenBudgets(plan("A", "co/01/A", FROM, UNTIL, "1000"),
+        plan("B", "co/01/B", FROM, UNTIL, "500"));
+
+    var section = sectionOf(SectionKind.SUBORDER_LEVEL);
+
+    assertThat(section.level()).isEqualTo(2);
+    assertThat(section.groups()).hasSize(2);
+    assertThat(section.groups()).allMatch(group -> group.subtotal() != null);
+    assertThat(section.total().budgetEuro()).isEqualByComparingTo("1500");
+    assertThat(section.total().revenueEuro()).isEqualByComparingTo("2400.00");
+  }
+
+  /** A plan's rows span its whole subtree, not only the suborder it names. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_span_the_rows_of_a_plan_over_its_whole_subtree() {
+    givenDeepSuborders();
+    givenBudgets(plan("A", "co/01/A", FROM, UNTIL, "1000"));
+
+    var group = groupOf(sectionOf(SectionKind.SUBORDER_LEVEL), "co/01/A");
+
+    assertThat(group.rows()).extracting(BudgetControllingRow::sign)
+        .containsExactly("co/01/A", "co/01/A/1");
+    assertThat(group.subtotal().revenueEuro()).isEqualByComparingTo("1600.00");
+  }
+
+  /** The sibling branch is outside the subtree, so its booking answers to no plan. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_count_a_booking_of_a_sibling_branch_against_a_deeper_plan() {
+    givenDeepSuborders();
+    givenBudgets(plan("A", "co/01/A", FROM, UNTIL, "1000"));
+
+    assertThat(sectionOf(SectionKind.UNPLANNED).rows())
+        .extracting(BudgetControllingRow::sign).containsExactly("co/01/B");
+  }
+
+  /** An order-wide section stays what it was: level 0, one plan, no subtotal. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_an_order_wide_section_as_level_zero() {
+    givenBudgets(plan("whole year", null, FROM, UNTIL, "2000"));
+
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).level()).isZero();
+  }
+
+  /**
+   * co/01 with the branches co/01/A — itself carrying co/01/A/1 — and co/01/B, and eight hours
+   * booked on each of the three leaves.
+   */
+  private void givenDeepSuborders() {
+    var first = suborder("01", 'Y', 10L, null);
+    var branchA = suborder("A", 'Y', 30L, first);
+    var belowA = suborder("1", 'Y', 31L, branchA);
+    var branchB = suborder("B", 'Y', 32L, first);
+    givenSuborders(first, branchA, belowA, branchB);
+    givenReports(eightHoursOn(30L, IN_H1), eightHoursOn(31L, IN_H1), eightHoursOn(32L, IN_H2));
+  }
+
   /** An order-wide plan is the whole section, so its budget belongs on the total, not on a subtotal. */
   @Test
   @FixedClock("2026-06-15T10:00:00")

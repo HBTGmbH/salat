@@ -105,21 +105,23 @@ public class OrderFlatRateTest {
   }
 
   @Test
-  public void an_order_wide_flat_rate_has_no_first_level_scope() {
+  public void a_flat_rate_without_a_suborder_applies_to_the_whole_order() {
     var rate = flatRate(FlatRateRhythm.ONCE, JAN, JAN, "100");
 
     assertThat(rate.isOrderWide()).isTrue();
-    assertThat(rate.firstLevelSign()).isNull();
   }
 
-  /** A flat rate deep below the first level belongs to the level a plan can live on. */
+  /**
+   * A flat rate names its own suborder and nothing else (#1004); which plan may hold it follows from
+   * the subtree that plan covers (→ {@code FlatRateAllocationTest}).
+   */
   @Test
-  public void a_deep_flat_rate_resolves_to_its_first_level_scope() {
+  public void a_flat_rate_on_a_suborder_keeps_its_own_sign() {
     var rate = flatRate(FlatRateRhythm.ONCE, JAN, JAN, "100");
     rate.setSuborderSign("co/01/D");
 
     assertThat(rate.isOrderWide()).isFalse();
-    assertThat(rate.firstLevelSign()).isEqualTo("co/01");
+    assertThat(rate.getSuborderSign()).isEqualTo("co/01/D");
   }
 
   private static BigDecimal total(OrderFlatRate rate, LocalDate from, LocalDate until) {

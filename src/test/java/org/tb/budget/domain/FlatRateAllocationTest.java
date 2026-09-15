@@ -75,7 +75,18 @@ public class FlatRateAllocationTest {
     assertThat(FlatRateAllocation.uniquePlanFor(dueAmount("co/02", IN_H1), List.of(plan))).isEmpty();
   }
 
-  /** The order level is not below any first level suborder, so no suborder plan reaches it. */
+  /** A plan on any level holds what lies in its subtree, not only a first level one (#1004). */
+  @Test
+  public void a_plan_on_a_deeper_suborder_holds_the_flat_rates_of_its_subtree() {
+    var plan = plan("co/01/A", "co/01/A", JAN, DEC, true);
+
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount("co/01/A", IN_H1), List.of(plan))).contains(plan);
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount("co/01/A/1", IN_H1), List.of(plan))).contains(plan);
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount("co/01/B", IN_H1), List.of(plan))).isEmpty();
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount("co/01", IN_H1), List.of(plan))).isEmpty();
+  }
+
+  /** The order level lies above every suborder, so no suborder plan reaches it. */
   @Test
   public void a_suborder_plan_does_not_hold_an_order_wide_flat_rate() {
     var plan = plan("co/01", "co/01", JAN, DEC, true);

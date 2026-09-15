@@ -14,15 +14,21 @@
     <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
   </div>
 
-  <!-- Which mode applies to this order, and what that allows (#914) -->
+  <!--
+    Which level applies to this order, and what that allows (#914, #1004). The list below offers the
+    whole suborder tree, so whether a pick fits is decided by the saving — this badge is where the
+    person reads the level they have to match.
+  -->
   <div class="alert alert-info mb-3">
-    <div th:if="${currentMode != null}">
-      <strong th:text="#{main.budget.mode.current} + ': '">Aktuell geltender Modus</strong>
-      <span class="badge bg-blue-lt"
-            th:text="#{${'main.budget.mode.' + currentMode.name()}}">Modus</span>
+    <div th:if="${currentLevel != null}">
+      <strong th:text="#{main.budget.level.current} + ': '">Aktuell geltende Ebene</strong>
+      <span class="badge bg-blue-lt" th:if="${currentLevel.perSuborder()}"
+            th:text="#{main.budget.level.suborder(${currentLevel.level()})}">Unterauftragsebene 2</span>
+      <span class="badge bg-blue-lt" th:unless="${currentLevel.perSuborder()}"
+            th:text="#{${'main.budget.level.' + currentLevel.mode().name()}}">Auftragsweit</span>
     </div>
-    <div class="small" th:text="#{main.budget.mode.hint}">
-      Überlappende Pläne desselben Modus sind erlaubt.
+    <div class="small" th:text="#{main.budget.level.hint}">
+      Alle zeitgleich gültigen Pläne eines Auftrags liegen auf derselben Ebene.
     </div>
   </div>
 

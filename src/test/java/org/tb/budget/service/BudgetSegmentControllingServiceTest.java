@@ -294,7 +294,7 @@ public class BudgetSegmentControllingServiceTest {
   }
 
   private static BudgetControllingSection section(SectionKind kind, BudgetControllingRow total) {
-    return new BudgetControllingSection(kind, window(), List.of(), null, null,
+    return new BudgetControllingSection(kind, kind == SectionKind.ORDER_LEVEL ? 0 : 1, window(), List.of(), null, null,
         List.of(new BudgetControllingGroup(null, null, null, List.of(total), null, null, null)), total);
   }
 

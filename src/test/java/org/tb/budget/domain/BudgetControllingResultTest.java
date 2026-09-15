@@ -140,7 +140,7 @@ public class BudgetControllingResultTest {
 
   /** A section whose total is the given row — the detail rows do not matter for a sum over sections. */
   private static BudgetControllingSection section(SectionKind kind, BudgetControllingRow total) {
-    return new BudgetControllingSection(kind, YEAR, List.of(), null, null,
+    return new BudgetControllingSection(kind, kind == SectionKind.SUBORDER_LEVEL ? 1 : 0, YEAR, List.of(), null, null,
         List.of(new BudgetControllingGroup(null, null, null, List.of(total), null, null, null)), total);
   }
 

@@ -1,17 +1,28 @@
 package org.tb.budget.domain;
 
-import org.tb.order.domain.Suborder;
-
 /**
- * What a budget plan covers. A plan is either order-wide or lives on a first level suborder (#905),
- * while bookings happen anywhere below that level. A booking's scope therefore has to be compared
- * against its first level ancestor, not against its own suborder.
+ * What a budget plan covers. A plan is either order-wide or lives on a suborder of any depth
+ * (#1004), and it then covers that suborder <em>and everything below it</em> — bookings, flat rates
+ * and planned hours alike.
  *
- * <p>Both the stored assignment and the derived coverage in {@code BudgetControllingService} resolve
- * the scope through this class, so the two cannot drift apart while the derivation still exists
- * (it disappears with #913). Note the direction {@code withParents()} runs in: it returns the
- * suborder <em>itself</em> first and the ancestor last. Reading {@code get(0)} instead of
- * {@code getLast()} yields the booking's own sign, which is exactly the defect #931 fixed.
+ * <p>The comparison is a prefix comparison on the complete order sign, with no notion of a level in
+ * it: {@code AB1234/01} covers {@code AB1234/01/A}, and the appended slash is what keeps it from
+ * covering {@code AB1234/010}. For the plans on the first suborder level that used to be the only
+ * allowed ones this says exactly what the old rule said — "the booking's first level ancestor is the
+ * plan's suborder" and "the booking lies in the plan's subtree" coincide for level 1 — so the
+ * coverage of every existing plan is unchanged.
+ *
+ * <p>The stored assignment ({@code BudgetResolver}), the controlling
+ * ({@code BudgetControllingService}) and the flat rates ({@link FlatRateAllocation}) all resolve
+ * coverage through this class. Spelling it out a second time somewhere is what produced #931.
+ *
+ * <p><strong>The level is a validation rule, not a coverage rule.</strong> All active plans of a
+ * customer order that are valid at the same time have to sit on the same level (→
+ * {@code OrderBudgetService}); {@link #levelOf(String)} is what that check reads. What double
+ * counting technically requires is only "no plan lies in the subtree of another", which would allow
+ * {@code AB1234/01} next to {@code AB1234/02/B} because the two are disjoint. That weaker rule costs
+ * the same code and is deliberately not the one in force: equal levels are what guarantees a
+ * controlling section a flat, mutually comparable set of rows, and the rule fits in one sentence.
  */
 public final class BudgetScope {
 
@@ -24,40 +35,46 @@ public final class BudgetScope {
     }
 
     /**
-     * The complete order sign of the suborder's first level ancestor, or its own if it already is
-     * one. {@code withParents()} runs from the suborder up to the root, so the ancestor is its last
-     * element.
+     * Whether the plan covers something booked or agreed on the given customer order and suborder.
+     * The suborder is named by its complete order sign ({@code Suborder#getCompleteOrderSign()}); for
+     * an order-wide plan it is irrelevant and may be {@code null} — the caller then does not have to
+     * resolve the suborder at all.
      */
-    public static String firstLevelSignOf(Suborder suborder) {
-        return suborder.withParents().getLast().getCompleteOrderSign();
-    }
-
-    /**
-     * The first level part of a complete order sign, e.g. {@code 1612/01/D} → {@code 1612/01}.
-     * {@code null} for an order-wide scope and for a sign that names no suborder at all — both mean
-     * "the whole customer order", which is what an order-wide plan covers.
-     *
-     * <p>Works on the sign rather than on an entity, for the scopes that are stored as a sign and
-     * never resolved to a suborder: a flat rate names its suborder by complete order sign (#972).
-     */
-    public static String firstLevelSignOf(String completeOrderSign) {
-        if (isOrderWide(completeOrderSign)) {
-            return null;
-        }
-        var parts = completeOrderSign.split("/");
-        return parts.length < 2 ? null : parts[0] + "/" + parts[1];
-    }
-
-    /**
-     * Whether the plan covers a booking on the given customer order whose first level ancestor
-     * carries {@code firstLevelSign}. For an order-wide plan the sign is irrelevant and may be
-     * {@code null} — the caller then does not have to resolve the suborder at all.
-     */
-    public static boolean covers(OrderBudget plan, String customerorderSign, String firstLevelSign) {
+    public static boolean covers(OrderBudget plan, String customerorderSign, String suborderSign) {
         if (!plan.getCustomerorderSign().equals(customerorderSign)) {
             return false;
         }
-        return isOrderWide(plan.getSuborderSign()) || plan.getSuborderSign().equals(firstLevelSign);
+        return coversSign(plan.getSuborderSign(), suborderSign);
+    }
+
+    /**
+     * The subtree comparison itself: the plan's suborder, or anything below it. The trailing slash
+     * is not cosmetic, it is the boundary — without it {@code AB1234/010} would fall under
+     * {@code AB1234/01}. The same pattern decides the selection of the bulk assignment
+     * ({@code BulkAssignmentData.coversSuborder}).
+     */
+    private static boolean coversSign(String planSuborderSign, String suborderSign) {
+        if (isOrderWide(planSuborderSign)) {
+            return true;
+        }
+        return suborderSign != null
+            && (suborderSign.equals(planSuborderSign)
+                || suborderSign.startsWith(planSuborderSign + "/"));
+    }
+
+    /**
+     * Which level a scope sits on: 0 for an order-wide scope, 1 for a direct suborder of the customer
+     * order, 2 for its children and so on — the number of slashes in the complete order sign.
+     *
+     * <p>Levels are only ever compared within one customer order, so a customer order sign that
+     * contained a slash itself would shift both sides by the same amount and leave the comparison
+     * intact.
+     */
+    public static int levelOf(String suborderSign) {
+        if (isOrderWide(suborderSign)) {
+            return 0;
+        }
+        return (int) suborderSign.chars().filter(c -> c == '/').count();
     }
 
 }
