@@ -19,9 +19,10 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey DASHBOARD_RESPONSIBLE_ID = new UiStateKey("budgetDashboard.ResponsibleId");
 
     /**
-     * The customer order of the plan list and of the rate list — deliberately one key for both
-     * (#952). Whoever picks an order in one of the two lists finds it preselected in the other, the
-     * same way {@code orderId} and {@code customerOrderId} share a key in the order module.
+     * The customer order of the plan list, of the rate list and of the controlling filter —
+     * deliberately one key for all three (#952, #1009). Whoever picks an order in one of them finds
+     * it preselected in the others, the same way {@code orderId} and {@code customerOrderId} share a
+     * key in the order module.
      */
     public static final UiStateKey CUSTOMER_ORDER_SIGN = new UiStateKey("budget.CustomerorderSign");
 

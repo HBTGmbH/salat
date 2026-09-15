@@ -79,6 +79,13 @@ seitdem ausgeschrieben (`cFilter` → `fCustomerFilter`, `eoFilter` → `fEmploy
   ohnehin, und ein übergebener Parameter würde den Filter neu schreiben (→ ADR-0023).
 - Gemerkte Werte im Cookie bleiben erhalten: der Cookie-Schlüssel ist der Name des `UiStateKey`
   (`matrix.Month`), nicht der Parametername. Die Umbenennung berührt den Cookie nicht.
+- **„Abgeschickt oder nur aufgerufen" hängt an einem eigenen Merkmal**, nie am Vorhandensein eines
+  Filterparameters (#1009). Der Fallback legt jeden gemerkten Wert unter *jede* Anfrage, also ist
+  `getParameterMap().containsKey("f…")` wahr, sobald überhaupt etwas gemerkt ist — es sagt nichts
+  darüber, wer was verlangt hat. Wo ein Formular etwas Teures auslöst, trägt es ein verstecktes Feld,
+  das nur beim Absenden mitkommt: `<input type="hidden" name="evaluate" value="true">` im
+  Controlling-Filter. Das Merkmal ist selbst kein Filterwert und heißt deshalb nicht `f…`; die Links,
+  die zu einer ausgeführten Auswertung führen — Dashboard, Segmentliste, Alarm-Mail — setzen es mit.
 
 ### Consequences
 
@@ -88,8 +95,7 @@ seitdem ausgeschrieben (`cFilter` → `fCustomerFilter`, `eoFilter` → `fEmploy
 * Bad: URLs sind länger und weniger hübsch (`?fCustomerOrderId=42`)
 * Bad: bestehende Bookmarks mit alten Parameternamen verlieren ihre Auswahl — die Seite lädt, die
   Auswahl ist die zuletzt gemerkte
-* Neutral: `BudgetControllingController` führt seinen Auftrag weiterhin von Hand über `UiState`.
-  Der Grund ist jetzt ein anderer: Mit einem registrierten Mapping stünde der gemerkte Wert auch in
-  `getParameterMap()`, und die Unterscheidung „abgeschickt oder nur aufgerufen" — an der die teure
-  Auswertung hängt — wäre nicht mehr möglich. Das braucht ein eigenes Absende-Merkmal und ist als
-  #1009 festgehalten.
+* Good: kein Controller führt seinen Filterwert mehr von Hand über `UiState`. Die zuletzt
+  verbliebene Ausnahme, `BudgetControllingController`, liest ihren Auftrag seit #1009 über das
+  registrierte Mapping; die teure Auswertung hängt jetzt am Absende-Merkmal `evaluate` statt am
+  Vorhandensein des Parameters.
