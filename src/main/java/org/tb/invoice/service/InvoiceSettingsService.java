@@ -20,9 +20,6 @@ public class InvoiceSettingsService {
     repository.add(InvoiceSettings.builder()
       .name("NestorIT")
       .customCss("""
-          .hbt_claim {
-              display: none;
-          }
           .hbt_logo {
               height: 2.5cm;
           }
@@ -31,9 +28,9 @@ public class InvoiceSettingsService {
               background-image: linear-gradient(to right, #D5DC6D, #EDF1CC);
           }
           """)
+      // Diese Vorlage hat kein Claim-Bild; die Druckansicht laesst das <img> dann weg (#1023)
       .imageUrls(of(
-        LOGO, "/images/NestorIT-Logo.jpg",
-        CLAIM, "/images/disk.png"
+        LOGO, "/images/NestorIT-Logo.jpg"
       )).build()
     );
     repository.add(InvoiceSettings.builder()

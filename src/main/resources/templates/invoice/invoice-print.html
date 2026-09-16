@@ -19,7 +19,7 @@
     </form>
     <div>
       <img th:src="@{${logoUrl}}" class="hbt_logo" alt="Logo"/>
-      <img th:src="@{${claimUrl}}" class="hbt_claim" alt="Claim"/>
+      <img th:if="${claimUrl}" th:src="@{${claimUrl}}" class="hbt_claim" alt="Claim"/>
     </div>
     <table style="clear: both; float: left">
       <tr>
