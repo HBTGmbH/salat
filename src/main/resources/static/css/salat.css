@@ -19,23 +19,27 @@
    Eine Regelgruppe mit einem unbekannten Pseudo-Element wird vom Browser komplett
    verworfen, deshalb steht ::-moz-selection jeweils in einer eigenen Regel. */
 ::selection {
-  background-color: #066fd1; /* Tabler primary; 5,0:1 gegen #fff */
+  background-color: var(--tblr-primary); /* 5,0:1 gegen #fff */
   color: #fff;
 }
 
 ::-moz-selection {
-  background-color: #066fd1;
+  background-color: var(--tblr-primary);
   color: #fff;
 }
 
+/* Fuer den dunklen Modus haelt Tabler kein helles Blau bereit: --tblr-blue-200 ist
+   color-mix(... 20%, transparent) und wird auf dunklem Grund selbst dunkel. Die Aufhellung
+   mischt die Primaerfarbe deshalb selbst gegen Weiss - 40% treffen mit #9bc5ed praktisch den
+   Wert, der hier vorher als Literal stand. */
 [data-bs-theme="dark"] ::selection {
-  background-color: #9ec5fe; /* 8,8:1 gegen #16202e */
-  color: #16202e;
+  background-color: color-mix(in srgb, var(--tblr-primary) 40%, #fff); /* 8,1:1 gegen --tblr-dark */
+  color: var(--tblr-dark);
 }
 
 [data-bs-theme="dark"] ::-moz-selection {
-  background-color: #9ec5fe;
-  color: #16202e;
+  background-color: color-mix(in srgb, var(--tblr-primary) 40%, #fff);
+  color: var(--tblr-dark);
 }
 
 /* Die Markierung wird nicht mitgedruckt. Die Dark-Mode-Regeln oben sind
