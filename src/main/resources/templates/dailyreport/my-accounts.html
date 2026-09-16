@@ -437,10 +437,10 @@
           history.replaceState(null, '', e.target.getAttribute('href'));
         });
       });
-      if (window.location.hash) {
-        var initialTab = document.querySelector('#myAccountsTabs [href="' + window.location.hash + '"]');
-        if (initialTab) bootstrap.Tab.getOrCreateInstance(initialTab).show();
-      }
+      // Den Reiter aus dem Adress-Fragment zu oeffnen uebernimmt Tabler selbst
+      // (EnableActivationTabsFromLocationHash im Bundle). Die Zeile, die das hier von Hand tat,
+      // griff auf ein globales bootstrap-Objekt zu, das es nie gab - Tabler exportiert nur
+      // window.tabler -, und warf deshalb bei jedem Aufruf mit Fragment einen Fehler.
     })();
   </script>
 

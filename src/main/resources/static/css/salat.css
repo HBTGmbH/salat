@@ -11,7 +11,11 @@
 
 /* ===== Manuelle Textselektion =====
    An data-bs-theme gekoppelt, nicht an prefers-color-scheme: der Salat-Umschalter
-   ist maßgeblich, nicht das Theme des Betriebssystems.
+   ist maßgeblich, nicht das Theme des Betriebssystems. Seit Tabler 1.5 gilt das mit
+   einer Einschränkung: wer den Umschalter noch nie benutzt hat, bekommt zwar die
+   serverseitige Voreinstellung hell (data-bs-theme in base.html), Tablers Beobachter
+   auf prefers-color-scheme kippt sie aber, wenn das Betriebssystem bei offener Seite
+   wechselt. Ein Klick auf den Umschalter beendet das dauerhaft.
    Eine Regelgruppe mit einem unbekannten Pseudo-Element wird vom Browser komplett
    verworfen, deshalb steht ::-moz-selection jeweils in einer eigenen Regel. */
 ::selection {
@@ -122,11 +126,14 @@ body {
     transition: margin-left 0.25s ease;
   }
 
+  /* Mittig auf der Kante der ausgeklappten Sidebar: Tabler 1.5 gibt ihr 16rem, der Knopf ist 2rem
+     breit. Zu weit links liegt er hinter der Sidebar (z-index 200 gegen 1030) und ist nicht mehr
+     anklickbar. */
   #nav-toggle {
     display: flex;
     position: fixed;
     top: 1.25rem;
-    left: 14rem;
+    left: 15rem;
     z-index: 200;
     width: 2rem;
     height: 2rem;
@@ -191,9 +198,14 @@ body {
     transition: opacity 0.15s ease;
   }
 
-  body.nav-collapsed .navbar-nav .nav-link {
+  /* Mit #salat-nav, weil Tabler 1.5 dieselbe Eigenschaft ueber drei Klassen setzt
+     (.navbar-vertical.navbar-expand-md .navbar-nav .nav-link) und damit spezifischer waere.
+     0,5rem, weil die Liste in 1.5 zusaetzlich einen eigenen Innenabstand von 0,5rem mitbringt
+     (--tblr-sidebar-inset): 8px + 8px vor einem 24px breiten Icon ergeben in der 56px schmalen
+     Leiste genau die Mitte. */
+  body.nav-collapsed #salat-nav .navbar-nav .nav-link {
     justify-content: flex-start;
-    padding-left: 0.875rem;
+    padding-left: 0.5rem;
     padding-right: 0;
     transition: padding-left 0.25s ease;
   }

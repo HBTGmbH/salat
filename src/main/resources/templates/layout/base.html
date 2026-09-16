@@ -1,5 +1,12 @@
 <!DOCTYPE html>
-<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<!--/* data-bs-theme="light" setzt den Farbmodus, den Tabler bis 1.4 selbst als Voreinstellung
+       hatte; ab 1.5 steht dessen Voreinstellung auf "auto", also auf dem Theme des Betriebssystems.
+       Massgeblich ist in Salat aber der Umschalter in der Kopfzeile, und der wirkt weiterhin: der
+       Theme-Loader (Zeile darunter im Body) liest die gespeicherte Wahl vor dem serverseitigen
+       Attribut - URL-Parameter vor localStorage vor Attribut vor Voreinstellung. Weil das Attribut
+       schon im ersten Byte der Antwort steht, flackert nichts. */-->
+<html th:lang="${#locale.language}" data-bs-theme="light"
+      xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
