@@ -14,17 +14,6 @@ document.addEventListener('close.bs.alert', e => {
   e.target.addEventListener('closed.bs.alert', () => wrapper?.remove(), { once: true });
 });
 
-(function () {
-  if (window.innerWidth >= 768 && localStorage.getItem('salat-nav-collapsed') === 'true') {
-    document.body.classList.add('nav-collapsed');
-  }
-}());
-
-function toggleNav() {
-  const collapsed = document.body.classList.toggle('nav-collapsed');
-  localStorage.setItem('salat-nav-collapsed', String(collapsed));
-}
-
 function toggleTheme(theme) {
   localStorage.setItem('tabler-theme', theme);
   document.documentElement.setAttribute('data-bs-theme', theme);

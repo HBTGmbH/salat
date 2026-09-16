@@ -33,7 +33,7 @@ Drag&Drop-Interaktionen sind mit dem Stack nur mit erheblichem Aufwand umsetzbar
 | **Icon-Sets** | **zwei parallel**: Tabler Icons (`ti ti-*`, ~138 Verwendungen) und Bootstrap Icons (`bi bi-*`, ~71) |
 | **Schrift** | Inter Var (extern von `rsms.me`), Fallback System-Sans; `font-feature-settings: "cv03","cv04","cv11"` |
 | **Farben** | ausschließlich Tabler-Tokens (`--tblr-*`); keine eigene Marken-Palette |
-| **Projekt-CSS** | `static/css/salat.css` — 243 Zeilen, nur Token-Bridging (`--bs-*` → `--tblr-*`), TomSelect-Angleichung und die einklappbare Sidebar |
+| **Projekt-CSS** | `static/css/salat.css` — 181 Zeilen, nur Token-Bridging (`--bs-*` → `--tblr-*`), TomSelect-Angleichung, Textselektion und der vergrößerbare Dialog |
 | **Theme** | Light/Dark umschaltbar (Tabler-Theme-Script, Buttons in der Kopfzeile); Sidebar ist **immer** dunkel (`data-bs-theme="dark"`) |
 | **Druck** | Kopfzeile/Fußzeile via `d-print-none` ausgeblendet; eine dedizierte Druckansicht (`invoice/invoice-print.html`) |
 
@@ -46,27 +46,39 @@ Die Referenz ist der Tabler-Standard.
 ┌──────────┬──────────────────────────────────────────────┐
 │ Sidebar  │ page-header:  pretitle / page-title │ Aktionen│
 │ (dunkel) ├──────────────────────────────────────────────┤
-│ 14rem    │ page-body                                    │
-│ ⇄ 3.5rem │   Alerts (Toast-Bereich)                     │
+│ 16rem    │ page-body                                    │
+│ ⇄ 4rem   │   Alerts (Toast-Bereich)                     │
 │          │   container-fluid → layout:fragment="content" │
 │ Nutzer-  ├──────────────────────────────────────────────┤
-│ karte    │ footer: Links, Version, Server-Zeit          │
+│ block    │ footer: Links, Version, Server-Zeit          │
 └──────────┴──────────────────────────────────────────────┘
 ```
 
 - **Shell:** `templates/layout/base.html`, eingebunden per `layout:decorate` (Thymeleaf Layout Dialect).
-- **Sidebar:** vertikale Navbar mit 6 Bereichen (Buchungen, Mitarbeiter, Aufträge, Budget, Reports,
-  Backoffice), jeder als aufklappbares Dropdown. Sichtbarkeit rollenabhängig
+- **Sidebar:** vertikale Navbar mit 7 Bereichen (Buchungen, Mitarbeiter, Aufträge, Budget, Reports,
+  Backoffice, System), jeder als aufklappbares Dropdown. Sichtbarkeit rollenabhängig
   (`#authorization.expression(...)` bzw. ViewHelper-Bean).
-- **Einklappbar** über einen freistehenden Kreis-Button am Sidebar-Rand; im eingeklappten Zustand
-  öffnet Hover die Navigation temporär. Zustand in `body.nav-collapsed`, persistiert clientseitig.
+- **Faltbar** über einen Knopf in der Markenzone (`data-bs-toggle="sidebar-folded"`, Tabler 1.5).
+  Er erscheint, sobald die Maus auf der Sidebar liegt oder der Tastaturfokus hineinwandert. Tabler
+  setzt `data-bs-sidebar="folded-hover"` am `<html>`, merkt die Wahl unter
+  `localStorage['tabler-sidebar']` und stellt sie beim nächsten Laden vor dem ersten Bildaufbau
+  wieder her. Gefaltet ist die Leiste 4rem breit; Hover **und** Tastaturfokus klappen sie wieder auf,
+  wobei sie den Inhalt überlagert statt ihn zu schieben. Eigenes CSS oder JavaScript braucht das
+  nicht mehr.
+- **Aufgeklappte Sektion:** der Bereich der aktuellen Seite wird serverseitig geöffnet gerendert —
+  `show` am Menü **und** `aria-expanded` am Umschalter. Das Attribut ist keine Kür: Tabler findet die
+  offenen Bäume nur darüber und ließe ein Menü beim Falten sonst als Panel neben der Leiste stehen.
+  Gefaltet räumt Tabler es beim Laden weg, dort steht also nichts vorab offen.
 - **Aktive Markierung:** `section` / `subSection` werden pro Seite via `th:with` gesetzt und steuern
   `active`-Klassen.
 - **Kopfzeile:** `page-pretitle` (Bereich) + `page-title` (Seite), rechts ein `btn-list` mit
   Benachrichtigungsglocke, Einstellungen, Theme-Umschalter — sowie im Bereich *Buchungen* ein
   globaler Vertrags-Selektor (`globalEmployeeContractId`).
-- **Nutzerkarte** unten in der Sidebar: Gravatar, Name, Login-Kürzel, Rollen-Badge, Logout,
-  optional Benutzerwechsel (Impersonation) über ein Modal.
+- **Nutzerblock** in der `navbar-footer`-Zone der Sidebar: Bild und Name bleiben unten stehen,
+  während die Menüliste darüber scrollt. Alles Weitere — Gravatar-Link, Login-Kürzel, Rollen-Badge,
+  Benutzerwechsel (Impersonation) über ein Modal, Abmelden — liegt in einem nach oben klappenden
+  Menü. Unterhalb von `md` rückt der Block in die mobile Kopfzeile, dort bleibt nur das Bild und das
+  Menü klappt nach unten.
 
 **Seitentitel** kommen aus dem Model (`title`, `sectionTitle`, `pageTitle`); Browser-Titel ist
 immer `SALAT - <pageTitle>`.
@@ -509,9 +521,23 @@ text-muted small       Metainformation, zweite Zeile
 
 Ein einziges Muster: **Spalten ausblenden statt umbrechen.** Tabellenspalten tragen
 `d-none d-sm-table-cell` / `d-md-` / `d-lg-` und verschwinden von rechts nach links; die
-Flags-Spalte erst ab `lg`. Die Sidebar kollabiert unter `md` in einen Navbar-Toggler.
+Flags-Spalte erst ab `lg`. Die Sidebar kollabiert unter `md` in einen Navbar-Toggler; ab `md` lässt
+sie sich zur 4rem breiten Icon-Leiste falten.
 Es gibt keine dedizierten mobilen Layouts, keine Karten-Ansicht als Tabellen-Ersatz.
 Faktisch ist SALAT eine Desktop-Anwendung, die auf kleinen Displays benutzbar bleibt.
+
+### Reservierte URL-Parameter
+
+`tabler-theme.min.js` läuft auf **jeder** Seite und wertet dabei zehn Abfrageparameter aus:
+`theme`, `theme-base`, `theme-font`, `theme-primary`, `theme-radius`, `layout`, `navbar`,
+`navbar-position`, `navbar-theme` und `sidebar`. Jeder gefundene Wert landet dauerhaft in
+`localStorage` und als `data-bs-*` am `<html>`. Diese Namen sind also für Formular- und Filterfelder
+gesperrt — die `f`-Konvention aus ADR-0022 hält sie ohnehin auseinander.
+
+Eine Stolperfalle steckt in `navbar-position`: sobald jemand eine waagerechte Navbar als direktes
+Kind von `.page` einzieht, verschwindet die Sidebar kommentarlos, solange
+`data-bs-navbar-position="vertical"` fehlt. Solange nur das `<aside>` dort steht — wie heute —
+greift die Regel nicht, und das Attribut wird bewusst nicht gesetzt.
 
 ## 10. Sprache & Terminologie
 
@@ -606,8 +632,9 @@ Bewusst als Fragen formuliert — offene Punkte, kein beschlossenes Backlog.
     positive `tabindex` gelten allgemein als Anti-Pattern.
 23. **Kontrast** der `bg-*-lt`-Badges und von `text-muted` (die häufigste Textklasse) im
     Dark-Theme ist ungeprüft.
-24. **Sidebar öffnet im eingeklappten Zustand per Hover** — mit Tastatur oder Touch nicht
-    gleichwertig erreichbar.
+24. **Sidebar öffnet im gefalteten Zustand per Hover.** Für die Tastatur ist das seit Tabler 1.5
+    gelöst — die Faltregeln greifen `:has(:focus-visible)` mit ab, ein Tabulatorsprung in die Leiste
+    klappt sie auf. Für Touch bleibt es offen.
 
 **Struktur**
 25. **Die dichten Spezialansichten** (Matrixübersicht, Einzelübersicht, Soll-Ist-Controlling)
@@ -733,18 +760,12 @@ die Nutzerkarte `text-secondary`, alle Modul-Templates `text-muted`. Bootstrap 5
 zugunsten von `text-body-secondary` abgekündigt; die häufigste Textklasse der Anwendung steht damit
 auf einem veralteten Token.
 
-**W13. Der Body trägt eine Klasse aus dem Icon-Namensraum.**
-`base.html:14` setzt `<body class="bi-layout-sidebar">`. `bi-*` ist der Präfix der Bootstrap-Icons-
-Font, die Klasse erzeugt daher ein Pseudo-Element mit Ersatzglyphe — das
-`salat.css:38-40` per `.bi-layout-sidebar::before { display: none !important; }` wieder unterdrückt.
-Ein Workaround gegen einen Namenskonflikt, kein Layout-Feature; die Klasse hat sonst keine Funktion.
-
-**W14. Zwei Wege für Datumsfelder.**
+**W13. Zwei Wege für Datumsfelder.**
 `fragments/form-fields :: dateInput` (Auftragsformulare) und `salat:textInput type="date"`
 (Budget-Modul) erzeugen dasselbe Ergebnis. Der Dialekt hat kein eigenes `dateInput`-Tag, obwohl
 ADR-0005 die vollständige Ablösung der Fragmente vorsieht.
 
-**W15. Als `@deprecated` markierte Fragmente sind weiter im Einsatz.**
+**W14. Als `@deprecated` markierte Fragmente sind weiter im Einsatz.**
 `form-fields.html` markiert `textInput`, `textInputHelp`, `textareaInput`, `textareaInputHelp`,
 `selectInput`, `selectInputHelp` als veraltet mit dem Hinweis *„use … once templates are migrated"*
 bzw. *„will be merged into …"*. Die Zusammenführung ist nie erfolgt, und `sub-order-form`,
@@ -752,18 +773,18 @@ bzw. *„will be merged into …"*. Die Zusammenführung ist nie erfolgt, und `s
 die veralteten Varianten. Damit existieren für ein Textfeld drei Wege: Dialekt-Tag, aktuelles
 Fragment, deprecated Fragment.
 
-**W16. „New" und „Beta" folgen keiner erkennbaren Ordnung.**
+**W15. „New" und „Beta" folgen keiner erkennbaren Ordnung.**
 `/dailyreport/dashboard` und `/my-accounts` sind „New" (grün), `/dailyreport/timereports/new`,
 `/daily`, `/matrix`, `/csv` sind „Beta" (violett) — die neue Buchungsmaske ist also „Beta", das
 darauf aufbauende Dashboard „New". Ohne definierte Bedeutung lesen Nutzende die Farben als
 Reifegrad, was hier nicht zutrifft.
 
-**W17. Der Filter-Button ist dreifach unterschiedlich beschriftet.**
+**W16. Der Filter-Button ist dreifach unterschiedlich beschriftet.**
 `customer-list.html:16` nur Icon **ohne** `title`; `customer-order-list.html:52` und
 `sub-order-list.html:62` Icon mit englischem `title="Apply text filter"`; `reports-list.html:15`
 wieder ohne. Dasselbe Element, drei Zustände von Benennung.
 
-**W18. Prototypen-Platzhaltertexte wechseln die Sprache.**
+**W17. Prototypen-Platzhaltertexte wechseln die Sprache.**
 Die statischen Texte in `th:text`-Elementen (sichtbar nur beim Öffnen der Templates ohne Server,
 nicht in der laufenden Anwendung) sind in älteren Modulen englisch („No records found", „Short Name"),
 im Budget-Modul deutsch („Keine Einträge vorhanden"). Kosmetisch, aber ein Hinweis darauf, dass es
