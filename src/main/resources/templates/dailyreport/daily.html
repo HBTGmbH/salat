@@ -1071,13 +1071,8 @@
     setTimeout(function() { toastEl.remove(); }, 5000);
   });
 
-  // Tabler does not expose a global `bootstrap`, so this threw as soon as the day had a booking -
-  // and took every statement after it with it, the error toast above included (#825). The elements
-  // keep their `title`, so the browser still shows a native tooltip.
-  if (window.bootstrap) {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
-      new bootstrap.Tooltip(el);
-    });
-  }
+  // Tooltips baut Tabler beim Laden des Bundles selbst auf. Der Block, der das hier von Hand tat,
+  // war seit #825 mit `if (window.bootstrap)` stillgelegt - ein globales bootstrap-Objekt gibt es
+  // nicht, Tabler exportiert nur window.tabler - und lief deshalb nie.
 </script>
 </html>
