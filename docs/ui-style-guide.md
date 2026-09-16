@@ -446,6 +446,10 @@ beschrieben, Gewicht und Dämpfung von Text in [§8.1](#81-textgewicht--wann-fet
 
 ### 7.1 Kontrast — verbindlicher Maßstab
 
+Die Entscheidung und die verworfenen Alternativen stehen in
+[ADR-0025](adr/0025-wcag-aa-als-verbindlicher-kontrastmassstab.md); hier stehen die Werte und das
+Verfahren.
+
 **Maßstab: WCAG AA.** 4,5:1 für **jeden** Text, unabhängig von seiner Rolle — Fließtext,
 Sekundärangabe, Metazeile, Badge. 3:1 für reine Nicht-Text-Elemente (Rahmen, Zustandsflächen,
 Icons ohne begleitende Beschriftung, WCAG 1.4.11). Es gibt keine Kulanzstufe für „nur sekundär":
