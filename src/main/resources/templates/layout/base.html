@@ -25,7 +25,7 @@
   <link rel="stylesheet" th:href="@{/webjars/tom-select/dist/css/tom-select.bootstrap5.min.css}" />
   <link rel="stylesheet" th:href="@{/css/salat.css}"/>
 </head>
-<body class="bi-layout-sidebar">
+<body>
 <script th:src="@{/webjars/tabler__core/dist/js/tabler-theme.min.js}"></script>
 <div class="page">
   <!-- Sidebar -->
@@ -38,16 +38,114 @@
       </button>
       <h1 class="navbar-brand navbar-brand-autodark">
         <a th:href="@{/dailyreport/dashboard}">
-          <img th:src="@{/images/logo-salat-neu.png}" width="110" height="32" alt="SALAT" class="navbar-brand-image">
-          <span class="navbar-brand-text">SALAT</span>
+          <img th:src="@{/images/logo-salat-neu.png}" width="32" height="32" alt="SALAT" class="navbar-brand-image">
+          <!--/* nav-link-title statt einer eigenen Klasse: Tabler blendet jeden .nav-link-title in
+                 der gefalteten Sidebar selbst aus und beim Aufklappen wieder ein. */-->
+          <span class="nav-link-title">SALAT</span>
         </a>
+        <!--/* Faltet die Sidebar zur Icon-Leiste. Tabler setzt dafuer data-bs-sidebar am <html>,
+               merkt die Wahl unter localStorage['tabler-sidebar'] und stellt sie beim naechsten
+               Laden vor dem ersten Bildaufbau wieder her - das erledigt tabler-theme.min.js, das
+               direkt hinter <body> steht. Erst ab md, darunter ist die Sidebar das mobile Menue.
+               Der Knopf benennt die Handlung und nicht den Zustand, weil Tabler aria-pressed auf
+               den Faltzustand setzt (true = eingeklappt). */-->
+        <button type="button" class="btn btn-action btn-sm d-none d-md-inline-flex"
+                data-bs-toggle="sidebar-folded" aria-pressed="false"
+                th:aria-label="#{main.general.nav.fold.title}"
+                th:title="#{main.general.nav.fold.title}">
+          <i class="ti ti-layout-sidebar-left-collapse"></i>
+        </button>
       </h1>
+
+      <!--/* Der Benutzerblock ist Geschwister der Navigation und nicht Teil von ihr: nur dann zieht
+             Tabler ihn mit order und margin-top nach unten, waehrend die Menueliste darueber
+             scrollt. Im Markup steht er deshalb VOR der Navigation - unterhalb von md bilden
+             Hamburger, Wortmarke und dieser Block gemeinsam die mobile Kopfzeile, in der dann nur
+             das Bild uebrig bleibt und das Menue nach unten aufklappt. */-->
+      <div class="navbar-footer">
+        <ul class="navbar-nav">
+          <li class="nav-item dropup">
+            <a href="#" class="nav-link" data-bs-toggle="dropdown" role="button" aria-expanded="false"
+               th:aria-label="#{main.general.loggedinas.text}">
+              <img class="avatar avatar-sm rounded" alt=""
+                   th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
+                   th:src="${url}"/>
+              <span class="nav-link-title">
+                <span th:text="${@authorizedEmployee.name}">Max Mustermann</span>
+                <span class="d-block small text-secondary" th:text="${@authorizedUser.loginSign}">kr</span>
+              </span>
+            </a>
+            <div class="dropdown-menu">
+              <h6 class="dropdown-header" th:text="#{main.general.loggedinas.text}">Angemeldet als</h6>
+              <div class="dropdown-item-text d-flex align-items-center gap-3">
+                <!--/* id und data-Attribute unveraendert: die Probe am Seitenende sucht genau
+                       diesen Link und tauscht Titel und Ziel, wenn zur Adresse kein Gravatar
+                       hinterlegt ist. Ein <a> im <a> waere ungueltig, deshalb bleibt der Link hier
+                       im Menue und wandert nicht auf den Ausloeser darueber. */-->
+                <a th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
+                   href="https://gravatar.com"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   id="gravatar-sidebar-link"
+                   th:title="#{main.gravatar.link.manage}"
+                   th:data-title-register="#{main.gravatar.link.register}"
+                   th:data-check-url="${checkUrl}">
+                  <img class="avatar avatar-md rounded"
+                       th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
+                       th:src="${url}" alt="User avatar"/>
+                </a>
+                <div>
+                  <div th:text="${@authorizedEmployee.name}">Max Mustermann</div>
+                  <div class="text-secondary small d-flex align-items-center gap-1">
+                    <span th:text="${@authorizedUser.loginSign}">kr</span>
+                    <span th:if="${@authorizedUser.impersonateLoginSign ne null}"
+                          th:text="#{main.general.impersonation.actsas.text(${@authorizedUser.impersonateLoginSign})}">acts as mm</span>
+                  </div>
+                  <span class="badge bg-purple-lt mt-1"
+                        th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>
+                </div>
+              </div>
+              <th:block th:if="${@loginSwitchViewHelper.visible and @authorizedUser.impersonateLoginSign == null}">
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item"
+                        data-bs-toggle="modal" data-bs-target="#loginSwitchModal">
+                  <i class="ti ti-switch-2 dropdown-item-icon"></i>
+                  <span th:text="#{main.general.loginswitch.title}">Benutzer wechseln</span>
+                </button>
+              </th:block>
+              <th:block th:if="${@authorizedUser.impersonateLoginSign != null}">
+                <div class="dropdown-divider"></div>
+                <form th:action="@{/auth/exit-impersonation}" method="post">
+                  <button type="submit" class="dropdown-item text-danger">
+                    <i class="ti ti-x dropdown-item-icon"></i>
+                    <span th:text="#{main.general.loginswitch.exit.title}">Benutzer-Wechsel beenden</span>
+                  </button>
+                </form>
+              </th:block>
+              <th:block th:if="${@salatProperties.auth.logout.enabled}">
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" th:with="url=${@salatProperties.auth.logout.logoutUrl}" th:href="${url}">
+                  <i class="ti ti-logout dropdown-item-icon"></i>
+                  <span th:text="#{main.general.logout.text}">Abmelden</span>
+                </a>
+              </th:block>
+            </div>
+          </li>
+        </ul>
+      </div>
+
       <div class="collapse navbar-collapse" id="sidebar-menu">
         <ul class="navbar-nav pt-lg-3">
           <!-- Timereports -->
           <li class="nav-item dropdown" th:classappend="${section == 'dailyreport'} ? 'active' : ''">
+            <!--/* aria-expanded muss den serverseitig aufgeklappten Zustand mittragen, sonst
+                   bleibt beim Einklappen ein Menue stehen: Tabler sucht die offenen Baeume ueber
+                   [data-bs-toggle="dropdown"][aria-expanded="true"] und findet sonst nichts, und
+                   gefaltet ist so ein Menue ein Panel neben der schmalen Leiste. Die
+                   show-Klasse am Menue allein reicht dafuer nicht. */-->
             <a class="nav-link dropdown-toggle" href="#navbar-timereports" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'dailyreport'}">
               <i class="nav-link-icon bi bi-clock"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.timereports.text}">Buchungen</span>
             </a>
@@ -97,7 +195,8 @@
           <!-- Employees (only for non-restricted users) -->
           <li class="nav-item dropdown" th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}" th:classappend="${section == 'employees'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-employees" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'employees'}">
               <i class="nav-link-icon bi bi-people"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.employees.text}">Mitarbeiter</span>
             </a>
@@ -121,8 +220,9 @@
 
           <!-- Orders (only for non-restricted users) -->
           <li class="nav-item dropdown" th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}" th:classappend="${section == 'orders'} ? 'active' : ''">
-            <a class="nav-link dropdown-toggle " href="#navbar-orders" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+            <a class="nav-link dropdown-toggle" href="#navbar-orders" data-bs-toggle="dropdown"
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'orders'}">
               <i class="nav-link-icon bi bi-briefcase"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.orders.text}">Aufträge</span>
             </a>
@@ -159,7 +259,8 @@
               th:if="${@budgetMenuViewHelper.isBudgetMenuAvailable()}"
               th:classappend="${section == 'budget'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-budget" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'budget'}">
               <i class="nav-link-icon bi bi-calculator"></i>
               <span class="nav-link-title">
                 <span th:text="#{main.general.mainmenu.budget.text}">Budget</span>
@@ -240,7 +341,8 @@
               th:if="${(#authorization.expression('hasRole(''MANAGER'')')) or (@reportAuthViewHelper != null and @reportAuthViewHelper.isReportMenuAvailable())}"
               th:classappend="${section == 'reports'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-reports" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'reports'}">
               <i class="nav-link-icon bi bi-bar-chart"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.reporting.text}">Reports</span>
             </a>
@@ -267,7 +369,8 @@
               th:if="${#authorization.expression('hasAnyRole(''BACKOFFICE'',''MANAGER'')')}"
               th:classappend="${section == 'backoffice'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-backoffice" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'backoffice'}">
               <i class="nav-link-icon bi bi-building"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.backoffice.text}">Backoffice</span>
             </a>
@@ -308,7 +411,8 @@
               th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
               th:classappend="${section == 'systemsettings'} ? 'active' : ''">
             <a class="nav-link dropdown-toggle" href="#navbar-systemsettings" data-bs-toggle="dropdown"
-               data-bs-auto-close="false" role="button">
+               data-bs-auto-close="false" role="button"
+               th:attr="aria-expanded=${section == 'systemsettings'}">
               <i class="nav-link-icon bi bi-gear"></i>
               <!-- The marker sits on the section, not on the single entry inside it: the whole area
                    is what is new here. -->
@@ -331,64 +435,9 @@
           </li>
 
         </ul>
-
-        <div class="card border-0">
-          <div class="card-body p-4 text-center">
-            <p class="text-secondary" th:text="#{main.general.loggedinas.text}">Angemeldet als</p>
-            <a th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
-               href="https://gravatar.com"
-               target="_blank"
-               rel="noopener noreferrer"
-               id="gravatar-sidebar-link"
-               th:title="#{main.gravatar.link.manage}"
-               th:data-title-register="#{main.gravatar.link.register}"
-               th:data-check-url="${checkUrl}">
-              <img class="avatar avatar-xl mb-3 rounded" th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}" th:src="${url}" alt="User avatar"/>
-            </a>
-            <h3 class="m-0 mb-1" th:text="${@authorizedEmployee.name}">Max Mustermann</h3>
-            <div class="text-secondary d-inline-flex align-items-center justify-content-center gap-1">
-              <span th:text="${@authorizedUser.loginSign}">kr</span>
-              <span th:if="${@authorizedUser.impersonateLoginSign ne null}"
-                    th:text="#{main.general.impersonation.actsas.text(${@authorizedUser.impersonateLoginSign})}">acts as mm</span>
-              <button type="button"
-                      class="btn btn-icon btn-ghost-secondary btn-sm p-0"
-                      style="width: 1.25rem; height: 1.25rem;"
-                      th:if="${@loginSwitchViewHelper.visible and @authorizedUser.impersonateLoginSign == null}"
-                      data-bs-toggle="modal"
-                      data-bs-target="#loginSwitchModal"
-                      th:title="#{main.general.loginswitch.title}">
-                <i class="ti ti-switch-2" style="font-size: 0.8rem;"></i>
-              </button>
-              <form th:if="${@authorizedUser.impersonateLoginSign != null}"
-                    th:action="@{/auth/exit-impersonation}"
-                    method="post"
-                    style="display: inline;">
-                <button type="submit"
-                        class="btn btn-icon btn-ghost-danger btn-sm p-0"
-                        style="width: 1.25rem; height: 1.25rem;"
-                        th:title="#{main.general.loginswitch.exit.title}">
-                  <i class="ti ti-x" style="font-size: 0.8rem;"></i>
-                </button>
-              </form>
-            </div>
-            <div class="mt-3">
-              <span class="badge bg-purple-lt" th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>
-            </div>
-          </div>
-          <div class="d-flex" th:if="${@salatProperties.auth.logout.enabled}">
-            <a th:with="url=${@salatProperties.auth.logout.logoutUrl}" th:href="${url}" class="card-btn">
-              <i class="ti ti-logout" style="margin-right: 0.5em"></i>
-              <span th:text="#{main.general.logout.text}">Abmelden</span>
-            </a>
-          </div>
-        </div>
-
       </div>
     </div>
   </aside>
-  <button id="nav-toggle" type="button" onclick="toggleNav()" th:title="#{main.general.nav.toggle.title}">
-    <i class="ti ti-chevrons-left" id="nav-toggle-icon"></i>
-  </button>
 
   <!-- Page content -->
   <div class="page-wrapper">
