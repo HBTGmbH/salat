@@ -53,6 +53,31 @@ See also README.md
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
 
+## Farben und Kontrast (→ #1022)
+
+Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene
+Marken-Palette. Ein Literal im Stylesheet oder in einem Template ist ein Fehler, solange es nicht
+in der Ausnahmeliste von [`docs/ui-style-guide.md` §7.1](docs/ui-style-guide.md) steht — dort sind
+die drei verbliebenen benannt und begründet.
+
+Wo ein Wert zur Laufzeit gebraucht wird (Diagramme), wird das Token gelesen statt abgeschrieben:
+`--tblr-<name>` vom `body`, wie es `tabler.tabler.getColor` tut. **Modusabhängige Tokens taugen
+dafür nicht** — `--tblr-body-color` löst zu `light-dark(#374151, #e5e7eb)` auf, was keine
+Diagrammbibliothek parst; der aufgelöste Wert steht in der berechneten Textfarbe des `body`.
+
+**Der verbindliche Kontrastmaßstab ist WCAG AA: 4,5:1 für jeden Text**, unabhängig von seiner
+Rolle, in **beiden** Farbmodi; 3:1 für reine Nicht-Text-Elemente. Es gibt keine Kulanzstufe für
+Sekundärtext. Die Sidebar ist immer dunkel (`data-bs-theme="dark"`) — Textfarben darin sind auch im
+hellen Modus gegen `#1f2937` zu prüfen.
+
+Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Korrekturen in
+`salat.css` stehen im Style Guide. Zwei Fallstricke, die eine naive Prüfung verfehlt:
+
+- Chrome gibt `color-mix()` als `color(srgb …)` zurück — ohne Auflösung über ein Canvas liefert die
+  Auswertung Unsinn.
+- `bg-*-lt` setzt nicht nur den Hintergrund, sondern auch die **Textfarbe**. Eine getönte Fläche
+  ohne eigenes `text-*` ist deshalb trotzdem eingefärbt.
+
 ## Legacy URL Redirects
 
 When a URL changes (controller rename, module move, path restructuring), register a permanent redirect in `org.tb.common.configuration.LegacyUrlRedirectConfig` so that bookmarks, history, and external links continue to work.
@@ -207,6 +232,8 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] Leaf-level form components use the `salat:` custom dialect; layout/structural reuse uses fragments
 - [ ] Bootstrap 5 + Tabler components for layout and widgets
 - [ ] CSRF protection relies solely on `th:action="@{...}"` — no explicit `_csrf` hidden input
+- [ ] No hard-coded colour value — every colour derives from a `--tblr-*` token (→ Farben und Kontrast)
+- [ ] New text colour measured in both colour modes and at or above 4,5:1 (→ Farben und Kontrast)
 
 ### Internationalisation (if new keys added)
 - [ ] Keys added to both `MessageResources.properties` (German) and `MessageResources_en.properties` (English)
