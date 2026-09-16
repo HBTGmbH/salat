@@ -32,8 +32,8 @@ Drag&Drop-Interaktionen sind mit dem Stack nur mit erheblichem Aufwand umsetzbar
 | **Design-System** | [Tabler](https://tabler.io) auf Bootstrap 5 — via WebJars, unverändert eingebunden |
 | **Icon-Sets** | **zwei parallel**: Tabler Icons (`ti ti-*`, ~138 Verwendungen) und Bootstrap Icons (`bi bi-*`, ~71) |
 | **Schrift** | Inter Var (extern von `rsms.me`), Fallback System-Sans; `font-feature-settings: "cv03","cv04","cv11"` |
-| **Farben** | ausschließlich Tabler-Tokens (`--tblr-*`); keine eigene Marken-Palette |
-| **Projekt-CSS** | `static/css/salat.css` — 181 Zeilen, nur Token-Bridging (`--bs-*` → `--tblr-*`), TomSelect-Angleichung, Textselektion und der vergrößerbare Dialog |
+| **Farben** | ausschließlich Tabler-Tokens (`--tblr-*`); keine eigene Marken-Palette. Die verbliebenen Literale sind in [§7.1](#71-kontrast--verbindlicher-maßstab) benannt |
+| **Projekt-CSS** | `static/css/salat.css` — Token-Bridging (`--bs-*` → `--tblr-*`), TomSelect-Angleichung, Textselektion, die Kontrastkorrekturen aus [§7.1](#71-kontrast--verbindlicher-maßstab) und der vergrößerbare Dialog |
 | **Theme** | Light/Dark umschaltbar (Tabler-Theme-Script, Buttons in der Kopfzeile); Sidebar ist **immer** dunkel (`data-bs-theme="dark"`) |
 | **Druck** | Kopfzeile/Fußzeile via `d-print-none` ausgeblendet; eine dedizierte Druckansicht (`invoice/invoice-print.html`) |
 
@@ -444,6 +444,110 @@ Die Farbwahl bei Buttons ist ausführlich in [§5.2 Farblogik der Buttons](#farb
 beschrieben, Gewicht und Dämpfung von Text in [§8.1](#81-textgewicht--wann-fettdruck) und
 [§8.2](#82-sekundärtext--wann-text-muted-wann-small).
 
+### 7.1 Kontrast — verbindlicher Maßstab
+
+**Maßstab: WCAG AA.** 4,5:1 für **jeden** Text, unabhängig von seiner Rolle — Fließtext,
+Sekundärangabe, Metazeile, Badge. 3:1 für reine Nicht-Text-Elemente (Rahmen, Zustandsflächen,
+Icons ohne begleitende Beschriftung, WCAG 1.4.11). Es gibt keine Kulanzstufe für „nur sekundär":
+eine Angabe, die zu unwichtig für lesbaren Kontrast wäre, gehört nicht auf die Seite.
+
+Der Maßstab gilt in **beiden Farbmodi**. Die Sidebar trägt `data-bs-theme="dark"` und ist damit
+immer dunkel — Textfarben darin sind auch im hellen Modus gegen `#1f2937` zu prüfen, nicht gegen
+Weiß.
+
+#### Messverfahren
+
+Die Werte unten sind gemessen, nicht geschätzt: eine eigenständige Seite bindet die echten
+Tabler-Stylesheets plus `salat.css` ein, jede Probe steht in der Struktur, in der sie in der
+Anwendung vorkommt (Karte, Seitenfläche, Fußzeile, Sidebar). Aufgelöst werden die Farben über ein
+Canvas — nötig, weil Chrome `color-mix()` als `color(srgb …)` zurückgibt und eine naive Auswertung
+dabei Unsinn liefert. Je Probe wird der Hintergrund aus allen Schichten bis zum nächsten deckenden
+Elternelement zusammengesetzt, teiltransparente Vordergrundfarben werden darüber komponiert.
+
+Maßgeblich ist je Modus der **ungünstigste** Untergrund: hell die Seitenfläche `#f9fafb`, dunkel
+die Karte `#1f2937`.
+
+#### Gemessene Werte (Tabler 1.5)
+
+Der Befund stammt nicht vom Sprung auf Tabler 1.5 — 1.4 und 1.5 messen im Dunkelmodus identisch.
+Im hellen Modus hat 1.5 genau eine Verschlechterung gebracht: `.text-body-tertiary` fiel von
+3,05:1 auf 1,99:1.
+
+| Probe | hell vorher | hell nachher | dunkel vorher | dunkel nachher |
+|---|---|---|---|---|
+| Standardtext auf Karte | 10,31 | unverändert | 11,86 | unverändert |
+| `.text-muted` (267×) | 4,83 | 4,83 | **3,04** ✘ | 5,78 |
+| `.text-secondary` (31×) | 4,83 | unverändert | 5,78 | unverändert |
+| `.text-body-secondary` | **3,00** ✘ | 4,83 | 7,32 | 5,78 |
+| `.text-body-tertiary` (Fußzeile) | **1,99** ✘ | 4,83 | **4,13** ✘ | 5,78 |
+| Sidebar-Link | 7,97 | unverändert | 7,97 | unverändert |
+| `bg-*-lt` (18 Tönungen) | **1,97–4,35** ✘ *(alle)* | 8,90–9,53 | **2,68**–5,78 *(13 von 18 ✘)* | 9,90–11,09 |
+| `text-*` (semantisch) | **2,13**–5,00 | 4,83–6,61 | **2,94**–6,88 | 4,80–9,34 |
+| Sponsor-Herz Fußzeile | 9,58 | 6,33 | **1,77** ✘ | 5,80 |
+
+Nach der Änderung liegt keine der 86 gemessenen Kombinationen unter 4,5:1; das Minimum ist hell
+4,63:1 und dunkel 4,80:1.
+
+#### Warum `.text-muted` betroffen war
+
+Die Ursache ist eine Token-Verwechslung in Tabler selbst: `.text-muted` zeigt auf `--tblr-muted`
+(`#6b7280`, eine Tabler-*Themefarbe*), nicht auf ein modusabhängiges Token. Der Wert ist deshalb in
+beiden Farbmodi derselbe und wird für Dunkel nie neu gesetzt — auf Weiß ergibt er 4,83:1, auf
+Dunkelgrau 3,04:1. `--tblr-muted` global umzubiegen scheidet aus: die Variable hängt an 42 weiteren
+Stellen im Tabler-CSS, unter anderem an `.bg-muted` und den List-Group-Tokens.
+
+Die Korrektur hängt die Klasse stattdessen an `--tblr-secondary`, das den Moduswechsel mitmacht.
+`.text-muted` und `.text-secondary` sind damit deckungsgleich — was [§8.2](#82-sekundärtext--wann-text-muted-wann-small)
+ohnehin als ihre gemeinsame Bedeutung beschreibt (→ W12). Die 267 Templatestellen bleiben
+unberührt. Der größere Weg — Migration auf `text-body-secondary` — wurde **verworfen**: gemessen
+verschlechtert er den hellen Modus (4,83:1 → 3,00:1) und tauscht damit ein Problem gegen ein anderes.
+
+#### Warum die getönten Flächen betroffen waren
+
+`bg-*-lt` setzt in Tabler nicht nur den Hintergrund, sondern auch den Text auf den vollen Farbton.
+Auf der 10-%-Tönung erreicht der im hellen Modus in **keiner** der 18 Tönungen 4,5:1. Die Tönung
+bleibt Bedeutungsträgerin, der Text bekommt die normale Textfarbe.
+
+Die Regel gilt für jede getönte Fläche, nicht nur für Badges: dieselbe Klasse trägt die Wochenend-
+und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards und die Avatare.
+Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` ist auf hellem Grund *heller* als der
+Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen (1,04:1–1,11:1).
+
+#### Wo Farbe erhalten bleibt
+
+Die semantischen `text-*`-Utilities behalten ihren Farbton, werden aber gegen `--tblr-body-color`
+gemischt. Die Mischung dreht sich mit dem Farbmodus von selbst: hell wird der Ton abgedunkelt,
+dunkel aufgehellt. Der Anteil ist je Farbton der größte, der in beiden Modi noch 4,8:1 erreicht —
+so viel Farbe wie möglich bei eingehaltenem Maßstab.
+
+| Farbton | Anteil | hell | dunkel |
+|---|---|---|---|
+| `primary`, `blue` | 65 % | 6,26 | 4,86 |
+| `danger`, `red` | 65 % | 6,33 | 4,80 |
+| `purple` | 65 % | 6,29 | 4,87 |
+| `indigo` | 65 % | 6,21 | 4,96 |
+| `orange` | 60 % | 4,86 | 6,64 |
+| `azure`, `info` | 55 % | 4,94 | 7,29 |
+| `teal` | 55 % | 5,04 | 7,04 |
+| `success`, `green` | 50 % | 4,99 | 7,88 |
+| `warning`, `yellow` | 40 % | 5,09 | 9,34 |
+
+**Ein neuer Farbton braucht einen eigenen, gemessenen Eintrag in `salat.css`** — ohne ihn gilt
+Tablers Grundton, und der fällt durch.
+
+#### Verbliebene Literale
+
+Die Regel „ausschließlich Tabler-Tokens" ([§2](#2-design-fundament)) gilt; diese Ausnahmen sind
+benannt und begründet:
+
+| Ort | Literal | Begründung |
+|---|---|---|
+| `salat.css`, `::selection` | `#fff` | Mischpartner zum Aufhellen der Primärfarbe. Für den dunklen Modus hält Tabler kein helles Blau bereit: `--tblr-blue-200` ist `color-mix(… 20%, transparent)` und wird auf dunklem Grund selbst dunkel |
+| `matrix.html`, Popover-Schatten | `rgba(0,0,0,…)`, `rgba(255,255,255,…)` | Für Schattenfarben gibt es in Tabler kein Token |
+| `static/style/invoiceprint.css` | `1px solid black` | Reines Druck-Stylesheet, kein Bildschirmkontrast |
+
+Serverseitig (Java) gibt es keine Farbwerte.
+
 ## 8. Typografie & Abstände
 
 - Nur Tabler-Skala: `page-title` (h2) für Seiten, `card-title` (h3) für Karten,
@@ -630,8 +734,11 @@ Bewusst als Fragen formuliert — offene Punkte, kein beschlossenes Backlog.
 22. **`applyFormTabOrder` setzt positive `tabindex`-Werte** (1..n) auf alle fokussierbaren
     Elemente in `.page-body`. Sollte gegen die natürliche DOM-Reihenfolge geprüft werden —
     positive `tabindex` gelten allgemein als Anti-Pattern.
-23. **Kontrast** der `bg-*-lt`-Badges und von `text-muted` (die häufigste Textklasse) im
-    Dark-Theme ist ungeprüft.
+23. ~~**Kontrast** der `bg-*-lt`-Badges und von `text-muted` (die häufigste Textklasse) im
+    Dark-Theme ist ungeprüft.~~ **Beantwortet (#1022).** Gemessen, nicht geschätzt: `text-muted`
+    lag im Dunkelmodus bei 3,04:1, die `bg-*-lt`-Tönungen im **hellen** Modus durchweg unter 4,5:1
+    (1,97:1 bis 4,35:1) — dort also schlechter als im dunklen. Maßstab, Messverfahren, alle Werte
+    und die Korrekturen stehen in [§7.1](#71-kontrast--verbindlicher-maßstab).
 24. **Sidebar öffnet im gefalteten Zustand per Hover.** Für die Tastatur ist das seit Tabler 1.5
     gelöst — die Faltregeln greifen `:has(:focus-visible)` mit ab, ein Tabulatorsprung in die Leiste
     klappt sie auf. Für Touch bleibt es offen.
@@ -755,10 +862,16 @@ Screenreadern unterschiedlich angekündigt. Da der zentrale Baustein betroffen i
 Stelle behebbar.
 
 **W12. `text-muted` und `text-secondary` werden gleichbedeutend eingesetzt.**
-222× `text-muted` in Templates, 25× `text-secondary` — `base.html` selbst nutzt für Alert-Texte und
+267× `text-muted` in Templates, 31× `text-secondary` — `base.html` selbst nutzt für Alert-Texte und
 die Nutzerkarte `text-secondary`, alle Modul-Templates `text-muted`. Bootstrap 5.3 hat `text-muted`
 zugunsten von `text-body-secondary` abgekündigt; die häufigste Textklasse der Anwendung steht damit
 auf einem veralteten Token.
+
+*Aufgelöst durch Angleichung statt Migration (#1022):* `salat.css` hängt `.text-muted` an dasselbe
+Token wie `.text-secondary`, beide ergeben nun exakt denselben Wert. Die Migration auf
+`text-body-secondary` wurde verworfen — sie hätte den hellen Modus von 4,83:1 auf 3,00:1
+verschlechtert (→ [§7.1](#71-kontrast--verbindlicher-maßstab)). Die Klasse bleibt in den Templates
+stehen; dass sie in Bootstrap abgekündigt ist, bleibt offen.
 
 **W13. Zwei Wege für Datumsfelder.**
 `fragments/form-fields :: dateInput` (Auftragsformulare) und `salat:textInput type="date"`
