@@ -60,22 +60,24 @@
     background-color: rgba(var(--tblr-primary-rgb), 0.28) !important;
   }
   .matrix-today {
-    border-left: 2px solid red !important;
-    border-right: 2px solid red !important;
+    border-left: 2px solid var(--tblr-red) !important;
+    border-right: 2px solid var(--tblr-red) !important;
   }
+  /* Das Zebra mischt gegen die Textfarbe statt gegen Schwarz bzw. Weiss und dreht sich damit mit
+     dem Farbmodus von selbst - eine Regel statt zweier. Ergebnis hell #f7f8f8, dunkel #27303e. */
   .matrix-row-even td:not([class*="bg-"]) {
-    background-color: rgba(0, 0, 0, 0.025);
-  }
-  [data-bs-theme="dark"] .matrix-row-even td:not([class*="bg-"]) {
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: color-mix(in srgb, var(--tblr-body-color) 4%, transparent);
   }
   .matrix-detail-popover.popover {
     border: none;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
     max-width: 360px;
   }
+  /* Die Glasflaeche leitet sich aus der Kartenflaeche her und folgt damit dem Farbmodus; die
+     Pfeilfarbe nimmt dieselbe Mischung. Die Schattenwerte bleiben rgba - dafuer gibt es in Tabler
+     kein Token. */
   .matrix-detail-popover .popover-body {
-    background: rgba(255, 255, 255, 0.82);
+    background: color-mix(in srgb, var(--tblr-bg-surface) 85%, transparent);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-radius: 6px;
@@ -85,14 +87,8 @@
   [data-bs-theme="dark"] .matrix-detail-popover.popover {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.18);
   }
-  [data-bs-theme="dark"] .matrix-detail-popover .popover-body {
-    background: rgba(28, 32, 44, 0.85);
-  }
   .matrix-detail-popover .popover-arrow::after {
-    border-top-color: rgba(255, 255, 255, 0.82);
-  }
-  [data-bs-theme="dark"] .matrix-detail-popover .popover-arrow::after {
-    border-top-color: rgba(28, 32, 44, 0.85);
+    border-top-color: color-mix(in srgb, var(--tblr-bg-surface) 85%, transparent);
   }
 </style>
 

@@ -390,12 +390,23 @@
       const trainingChartLabels = [[${trainingChartLabels}]];
       const trainingChartHours = [[${trainingChartHours}]];
 
+      /* Die Diagrammfarben kommen aus den Tabler-Tokens statt als Literale aus dem JavaScript
+         (#1022). Gelesen wird wie in tabler.tabler.getColor die Variable --tblr-<name> vom Body;
+         der Bundle-Aufruf selbst scheidet aus, weil tabler.min.js erst am Ende von base.html
+         steht und dieses Skript davor laeuft.
+         Die Schriftfarbe kommt nicht aus einem Token: --tblr-body-color ist modusabhaengig und
+         loest zu "light-dark(#374151, #e5e7eb)" auf, was Plotly nicht parsen kann. Die berechnete
+         Textfarbe des Bodys ist derselbe Wert, nur schon aufgeloest. Ohne diese Angabe blieben
+         Achsen und Legende im Plotly-Grau. */
+      const tblrColor = (name) => getComputedStyle(document.body).getPropertyValue('--tblr-' + name).trim();
+      const chartFontColor = () => getComputedStyle(document.body).color;
+
       const layout = {
         responsive: true,
         margin: { t: 10, r: 10, b: 40, l: 50 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        font: { family: 'inherit' },
+        font: { family: 'inherit', color: chartFontColor() },
         legend: { orientation: 'h', y: -0.2 },
         barmode: 'group'
       };
@@ -404,8 +415,8 @@
       // Working time chart
       if (document.getElementById('workingTimeChart')) {
         Plotly.newPlot('workingTimeChart', [
-          { name: /*[[#{main.my.accounts.working.chart.actual}]]*/ 'Ist', x: chartLabels, y: chartActual, type: 'bar', marker: { color: '#206bc4' } },
-          { name: /*[[#{main.my.accounts.working.chart.target}]]*/ 'Soll', x: chartLabels, y: chartTarget, type: 'bar', marker: { color: '#a8b5c5' } }
+          { name: /*[[#{main.my.accounts.working.chart.actual}]]*/ 'Ist', x: chartLabels, y: chartActual, type: 'bar', marker: { color: tblrColor('primary') } },
+          { name: /*[[#{main.my.accounts.working.chart.target}]]*/ 'Soll', x: chartLabels, y: chartTarget, type: 'bar', marker: { color: tblrColor('gray-400') } }
         ], layout, config);
         document.getElementById('tab-working-time-button').addEventListener('shown.bs.tab', function() {
           Plotly.Plots.resize('workingTimeChart');
@@ -415,7 +426,7 @@
       // Vacation monthly chart
       if (document.getElementById('vacationChart') && vacationMonthLabels.length > 0) {
         Plotly.newPlot('vacationChart', [
-          { name: /*[[#{main.my.accounts.vacation.days}]]*/ 'Tage', x: vacationMonthLabels, y: vacationMonthDays, type: 'bar', marker: { color: '#2fb344' } }
+          { name: /*[[#{main.my.accounts.vacation.days}]]*/ 'Tage', x: vacationMonthLabels, y: vacationMonthDays, type: 'bar', marker: { color: tblrColor('green') } }
         ], layout, config);
         document.getElementById('tab-vacation-button').addEventListener('shown.bs.tab', function() {
           Plotly.Plots.resize('vacationChart');
@@ -425,12 +436,23 @@
       // Training monthly chart
       if (document.getElementById('trainingChart') && trainingChartLabels.length > 0) {
         Plotly.newPlot('trainingChart', [
-          { name: /*[[#{main.my.accounts.training.booking.hours}]]*/ 'Stunden', x: trainingChartLabels, y: trainingChartHours, type: 'bar', marker: { color: '#ae3ec9' } }
+          { name: /*[[#{main.my.accounts.training.booking.hours}]]*/ 'Stunden', x: trainingChartLabels, y: trainingChartHours, type: 'bar', marker: { color: tblrColor('purple') } }
         ], layout, config);
         document.getElementById('tab-training-button').addEventListener('shown.bs.tab', function() {
           Plotly.Plots.resize('trainingChart');
         });
       }
+      /* Der Umschalter wechselt den Farbmodus ohne Neuladen (toggleTheme in salat.js setzt nur
+         data-bs-theme). Die Farbtoene der Balken sind modusunabhaengig, die Schriftfarbe von
+         Achsen und Legende ist es nicht - sie wird deshalb beim Wechsel nachgezogen. */
+      new MutationObserver(function() {
+        const color = chartFontColor();
+        ['workingTimeChart', 'vacationChart', 'trainingChart'].forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el && el.data) Plotly.relayout(el, { 'font.color': color });
+        });
+      }).observe(document.documentElement, { attributeFilter: ['data-bs-theme'] });
+
       // Sync URL hash with active tab
       document.querySelectorAll('#myAccountsTabs [data-bs-toggle="tab"]').forEach(function(tab) {
         tab.addEventListener('shown.bs.tab', function(e) {
