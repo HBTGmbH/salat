@@ -53,7 +53,7 @@ See also README.md
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
 
-## Farben und Kontrast (→ #1022)
+## Farben und Kontrast (→ ADR-0025)
 
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene
 Marken-Palette. Ein Literal im Stylesheet oder in einem Template ist ein Fehler, solange es nicht
