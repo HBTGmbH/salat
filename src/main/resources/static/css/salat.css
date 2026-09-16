@@ -58,6 +58,115 @@
   }
 }
 
+/* ===== Textkontrast: WCAG AA (4,5:1) fuer jeden Text =====
+   Alle Werte in diesem Block sind im Browser gegen die echten Tabler-Stylesheets gemessen, nicht
+   geschaetzt; das Verfahren und die Messtabellen stehen in docs/ui-style-guide.md (#1022).
+   Massgeblich ist je Modus der unguenstigste Untergrund: hell die Seitenflaeche (#f9fafb),
+   dunkel die Karte (#1f2937). Die Sidebar traegt data-bs-theme="dark" und ist damit immer
+   dunkel - weil jede Regel hier ueber --tblr-* aufloest, gilt in ihr automatisch die dunkle
+   Variante, auch im hellen Modus. */
+
+/* .text-muted zeigt in Tabler auf --tblr-muted (#6b7280, eine Themefarbe) statt auf ein
+   modusabhaengiges Token. Der Wert ist deshalb in beiden Farbmodi derselbe und wird fuer Dunkel
+   nie neu gesetzt: hell 4,83:1, dunkel nur 3,04:1. --tblr-muted global umzubiegen scheidet aus,
+   die Variable haengt an 42 weiteren Stellen im Tabler-CSS. Stattdessen zeigt die Klasse hier auf
+   --tblr-secondary, das den Moduswechsel mitmacht: hell bleibt es bei #6b7280 und 4,83:1, dunkel
+   wird daraus #9ca3af und 5,78:1. Damit sind .text-muted und .text-secondary deckungsgleich -
+   was der Style Guide ohnehin als ihre gemeinsame Bedeutung beschreibt. */
+.text-muted {
+  color: var(--tblr-secondary) !important;
+}
+
+/* Dasselbe fuer die Fussleiste: --tblr-tertiary-color ist mit 50% Deckung gemischt und erreicht
+   hell nur 1,99:1 - der schlechteste Wert im ganzen Satz. --tblr-secondary-color hinter
+   .text-body-secondary ist mit 75% gemischt und kommt hell auf 3,00:1. Beide landen damit auf
+   demselben Ton wie .text-muted und .text-secondary: hell 4,83:1, dunkel 5,78:1. */
+.text-body-secondary,
+.text-body-tertiary {
+  color: var(--tblr-secondary) !important;
+}
+
+/* Die semantischen Textfarben treffen den vollen Farbton und liegen damit je nach Modus zu hell
+   oder zu dunkel. Die Mischung gegen --tblr-body-color dreht sich mit dem Farbmodus von selbst:
+   hell wird der Ton abgedunkelt, dunkel aufgehellt. Der Anteil ist je Farbton der groesste, der in
+   beiden Modi noch 4,8:1 erreicht - also so viel Farbe wie moeglich bei eingehaltenem Massstab.
+   Ein neuer Farbton braucht hier einen eigenen, gemessenen Eintrag. */
+.text-primary,
+.text-blue {
+  color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color)) !important; /* hell 6,26:1 - dunkel 4,86:1 */
+}
+
+.text-danger,
+.text-red {
+  color: color-mix(in srgb, var(--tblr-danger) 65%, var(--tblr-body-color)) !important; /* hell 6,33:1 - dunkel 4,80:1 */
+}
+
+.text-success,
+.text-green {
+  color: color-mix(in srgb, var(--tblr-success) 50%, var(--tblr-body-color)) !important; /* hell 4,99:1 - dunkel 7,88:1 */
+}
+
+.text-warning,
+.text-yellow {
+  color: color-mix(in srgb, var(--tblr-warning) 40%, var(--tblr-body-color)) !important; /* hell 5,09:1 - dunkel 9,34:1 */
+}
+
+/* --tblr-info traegt denselben Wert wie --tblr-azure und teilt deshalb den Anteil. */
+.text-azure,
+.text-info {
+  color: color-mix(in srgb, var(--tblr-azure) 55%, var(--tblr-body-color)) !important; /* hell 4,94:1 - dunkel 7,29:1 */
+}
+
+.text-teal {
+  color: color-mix(in srgb, var(--tblr-teal) 55%, var(--tblr-body-color)) !important; /* hell 5,04:1 - dunkel 7,04:1 */
+}
+
+.text-orange {
+  color: color-mix(in srgb, var(--tblr-orange) 60%, var(--tblr-body-color)) !important; /* hell 4,86:1 - dunkel 6,64:1 */
+}
+
+.text-purple {
+  color: color-mix(in srgb, var(--tblr-purple) 65%, var(--tblr-body-color)) !important; /* hell 6,29:1 - dunkel 4,87:1 */
+}
+
+.text-indigo {
+  color: color-mix(in srgb, var(--tblr-indigo) 65%, var(--tblr-body-color)) !important; /* hell 6,21:1 - dunkel 4,96:1 */
+}
+
+/* Getoente Flaechen: bg-*-lt setzt in Tabler nicht nur den Hintergrund, sondern auch den Text auf
+   den vollen Farbton. Auf der 10%-Toenung erreicht der nirgends 4,5:1 - hell keine einzige der 18
+   Toenungen (1,97:1 bis 4,35:1), dunkel fuenf von 18. Die Toenung bleibt Bedeutungstraegerin, der
+   Text bekommt die normale Textfarbe und liegt damit in beiden Modi ueber 8,9:1.
+   Die Regel gilt fuer jede getoente Flaeche, nicht nur fuer Badges: dieselbe Klasse traegt die
+   Wochenend- und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards und die
+   Avatare.
+   Sie steht bewusst NACH den text-*-Regeln oben: eine getoente Flaeche traegt oft zusaetzlich das
+   passende Utility (bg-danger-lt text-danger), beide Selektoren sind gleich spezifisch und beide
+   !important - dann entscheidet die Reihenfolge. Der gemischte Farbton kaeme auf der Toenung
+   dunkel nur auf 4,45:1 bis 4,51:1 und traegt neben ihr keine eigene Aussage.
+   Die Liste ist ausgeschrieben statt ueber [class*="-lt"] gefasst: so ist nachlesbar, welche
+   Toenungen gemeint sind, und keine fremde Klasse auf -lt geraet versehentlich hinein. */
+.bg-primary-lt,
+.bg-secondary-lt,
+.bg-success-lt,
+.bg-warning-lt,
+.bg-danger-lt,
+.bg-info-lt,
+.bg-blue-lt,
+.bg-azure-lt,
+.bg-indigo-lt,
+.bg-purple-lt,
+.bg-pink-lt,
+.bg-red-lt,
+.bg-orange-lt,
+.bg-yellow-lt,
+.bg-lime-lt,
+.bg-green-lt,
+.bg-teal-lt,
+.bg-cyan-lt {
+  color: var(--tblr-body-color) !important;
+}
+
 .ts-control, .ts-dropdown-content {
   color: var(--tblr-body-color);
 }
