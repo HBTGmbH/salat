@@ -133,15 +133,6 @@ public class GlobalConstants {
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;
 
-    // pathstrings and iconstrings
-    public static final String ICONPATH = "/images/";
-    public static final String CLOSEICON = "plus_circle.gif";
-    public static final String OPENICON = "minus_circle.gif";
-    public static final String DELETEICON = "Delete.gif";
-    public static final String EDITICON = "Edit.gif";
-    public static final String NOTALLOWED = "verbot.gif";
-    public static final String PARENTICON = "Smily_Krone.gif";
-
     public static final long MINUTES_PER_HOUR = 60;
     public static final long HOURS_PER_DAY = 24;
     public static final long MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY;
