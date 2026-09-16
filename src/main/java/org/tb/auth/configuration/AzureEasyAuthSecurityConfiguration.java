@@ -51,8 +51,10 @@ public class AzureEasyAuthSecurityConfiguration {
 
   private static final String[] UNAUTHENTICATED_URL_PATTERNS = {
       "/*.png",
-      "/images/**",
-      "/style/**",
+      // Nur die Wortmarke: layout/base rendert sie, und die Fehlerseite dekoriert dieses Layout,
+      // also auch fuer noch nicht angemeldete Aufrufer. Die uebrigen Bilder und /style/** braucht
+      // allein die Rechnungs-Druckansicht, die hinter der Anmeldung liegt (#1023).
+      "/images/logo-salat-neu.png",
       "/js/**",
       "/webjars/**",
       "/favicon.ico",
