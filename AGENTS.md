@@ -77,6 +77,13 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   Auswertung Unsinn.
 - `bg-*-lt` setzt nicht nur den Hintergrund, sondern auch die **Textfarbe**. Eine getönte Fläche
   ohne eigenes `text-*` ist deshalb trotzdem eingefärbt.
+- **Eingebundene Fremd-Stylesheets bringen eigene Paletten mit** und codieren sie hart. Sie liegen
+  in WebJars und fallen bei einer Suche über `src/` nicht auf. TomSelect ist der bekannte Fall
+  (`salat.css` fängt es ab); ein neu eingebundenes Stylesheet ist erst fertig eingebunden, wenn
+  seine Farben gegen **beide** Farbmodi geprüft sind.
+- Ein ersetztes Bedienelement bringt auch eigene **Maße** mit. TomSelect rechnet mit Zeilenhöhe
+  `1.5`, Bootstrap hier mit `1.4285` — ohne Angleichung springt die Feldhöhe, sobald das Element
+  übernommen wird.
 
 ## Legacy URL Redirects
 

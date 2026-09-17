@@ -167,7 +167,21 @@
   color: var(--tblr-body-color) !important;
 }
 
-.ts-control, .ts-dropdown-content {
+/* ===== TomSelect an Tokens und Massstab angleichen =====
+   TomSelect bringt eine eigene Palette mit und codiert sie hart - unter anderem
+   `.ts-control, .ts-control input, .ts-dropdown { color: #343a40 }`. Der Wert kennt keinen
+   Farbmodus, deshalb sind alle Angaben hier Herleitungen aus --tblr-*. Messwerte wie ueberall in
+   dieser Datei: hell gegen die Seitenflaeche, dunkel gegen die Karte. */
+
+/* Getippter Text landet in .ts-control > input, nicht in .ts-control. Aufgefangen war bisher nur
+   Letzteres - deshalb war Text im Dunkelmodus waehrend der Eingabe mit 1,54:1 praktisch unsichtbar
+   und wurde erst lesbar, sobald die Auswahl stand und der Wert wieder in .ts-control gerendert
+   wurde. Bei den Auswahlfeldern faellt es nicht auf, weil das dropdown_input-Plugin die Eingabe in
+   das Dropdown verlegt. Die Dropdown-Wurzel traegt denselben Literalwert. */
+.ts-control,
+.ts-control input,
+.ts-dropdown,
+.ts-dropdown-content {
   color: var(--tblr-body-color);
 }
 
@@ -175,11 +189,51 @@
   color: var(--tblr-primary)
 }
 
+/* Die gedaempften Teile des Dropdowns: Gruppenkopf, die Zeile "verwenden, was getippt wurde"
+   (data-create-label) und der Platzhalter. Alle drei waren Literale und fielen je nach Modus
+   durch - die Create-Zeile mit 1,21:1 im Dunkeln am deutlichsten. Sie landen auf demselben Ton
+   wie .text-muted: hell 4,83:1, dunkel 5,78:1. opacity, weil TomSelect den Platzhalter sonst
+   zusaetzlich abdunkelt. */
+.ts-dropdown .optgroup-header,
+.ts-dropdown .create,
+.ts-control input::placeholder {
+  color: var(--tblr-secondary);
+  opacity: 1;
+}
+
+/* Die Trefferhervorhebung war ein festes Gelb mit 40% Deckung und kam im Dunkelmodus auf 4,32:1.
+   Aus dem Token gemischt traegt sie in beiden Modi: hell 7,62:1, dunkel 7,02:1. */
+.ts-dropdown [data-selectable] .highlight {
+  background: color-mix(in srgb, var(--tblr-yellow) 35%, transparent);
+}
+
+/* Die Chips der Mehrfachauswahl waren ein festes Hellgrau mit dunkler Schrift - in sich lesbar,
+   aber modusblind und im Dunkelmodus ein greller Fleck. Aus der Textfarbe gemischt heben sie sich
+   in beiden Modi vom Feld ab: hell 8,01:1, dunkel 9,71:1. */
+.ts-wrapper.multi .ts-control > div {
+  background: color-mix(in srgb, var(--tblr-body-color) 15%, transparent);
+  border-color: var(--tblr-border-color);
+  color: var(--tblr-body-color);
+}
+
+/* TomSelect ersetzt das Feld durch eigenes Markup und bringt dabei eigene Masse mit: Innenabstand
+   .375rem und Zeilenhoehe 1,5, waehrend Bootstrap hier 1,4285 rechnet. Sichtbar wurde das als
+   Sprung der Feldhoehe, sobald TomSelect ein Feld uebernimmt - das Textfeld schrumpfte von 40px
+   auf 35px, das Auswahlfeld wuchs auf 41px. Der Innenabstand war bisher nur fuer die
+   Auswahl-Variante korrigiert; ein <input> bekommt von TomSelect aber .form-control statt
+   .form-select an den Wrapper und fiel deshalb durch die Regel. Beide Varianten bekommen jetzt
+   denselben Innenabstand und die Zeilenhoehe des umgebenden Feldes - damit sind sie exakt so hoch
+   wie ein unveraendertes .form-control. */
+.ts-wrapper.form-control .ts-control,
 .ts-wrapper.form-select .ts-control {
   padding-top: .5625rem;
   padding-bottom: .5625rem;
+  line-height: inherit;
 }
 
+/* Die Chips bringen eigene Aussenabstaende mit; ohne die Gegenrechnung waere die
+   Mehrfachauswahl hoeher als ein einzeiliges Feld. */
+.ts-wrapper.form-control.multi .ts-control,
 .ts-wrapper.form-select.multi .ts-control {
   padding-top: calc(.5625rem - 2.5px);
   padding-bottom: calc(.5625rem - 2.5px);

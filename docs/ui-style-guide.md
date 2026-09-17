@@ -517,6 +517,53 @@ und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards un
 Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` ist auf hellem Grund *heller* als der
 Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen (1,04:1–1,11:1).
 
+#### Fremd-Stylesheets bringen eigene Paletten mit
+
+Tabler ist nicht das einzige eingebundene Stylesheet. **TomSelect** bringt eine eigene Palette mit
+und codiert sie hart — `.ts-control, .ts-control input, .ts-dropdown { color: #343a40 }` und weitere.
+Diese Werte kennen keinen Farbmodus, und weil sie in einem WebJar liegen, fallen sie bei einer
+Suche über `src/` nicht auf.
+
+Der auffälligste Fall: **getippter Text landet in `.ts-control > input`, nicht in `.ts-control`.**
+Aufgefangen war nur Letzteres, weshalb Text im Dunkelmodus während der Eingabe bei 1,54:1 lag und
+erst lesbar wurde, sobald die Auswahl stand und der Wert wieder in `.ts-control` gerendert wurde. Bei
+den Auswahlfeldern fällt es nicht auf, weil das `dropdown_input`-Plugin die Eingabe ins Dropdown
+verlegt — nur das freie Textfeld (→ [AGENTS.md, Freitextfeld mit Vorschlägen](../AGENTS.md)) tippt
+direkt in `.ts-control > input`.
+
+| Element | hell vorher | hell nachher | dunkel vorher | dunkel nachher |
+|---|---|---|---|---|
+| Eingabe im Textfeld | 11,51 | 10,31 | **1,54** ✘ | 14,33 |
+| Dropdown-Wurzel | 11,01 | 9,86 | **1,54** ✘ | 14,33 |
+| „Übernehmen"-Zeile | **2,73** ✘ | 4,63 | **1,21** ✘ | 6,99 |
+| Gruppenkopf | **4,49** ✘ | 4,63 | **3,78** ✘ | 6,99 |
+| Platzhalter | **2,24** ✘ | 4,83 | 7,93 | 6,99 |
+| Trefferhervorhebung | 9,19 | 7,62 | **4,32** ✘ | 7,02 |
+| Chip der Mehrfachauswahl | 10,01 | 7,69 | 10,01 | 9,71 |
+
+Der Chip war kontrastseitig in Ordnung, aber ein festes Hellgrau — im Dunkelmodus ein greller Fleck.
+Er ist jetzt ebenfalls aus einem Token gemischt.
+
+**Merksatz:** Ein neu eingebundenes Fremd-Stylesheet ist erst dann fertig eingebunden, wenn seine
+Farbwerte gegen beide Farbmodi geprüft sind. Ein Blick in `src/` reicht dafür nicht.
+
+#### Feldhöhe bei ersetzten Bedienelementen
+
+TomSelect ersetzt das Feld durch eigenes Markup und bringt dabei eigene Maße mit: Innenabstand
+`.375rem` und Zeilenhöhe `1.5`, während Bootstrap hier `1.4285` rechnet. Sichtbar wurde das als
+Sprung der Feldhöhe, sobald TomSelect ein Feld übernahm.
+
+| Feld | vorher | nachher |
+|---|---|---|
+| `input.form-control` (Referenz) | 40 px | 40 px |
+| TomSelect auf `<input>` | **35 px** | 40 px |
+| TomSelect auf `<select>` | **41 px** | 40 px |
+| TomSelect Mehrfachauswahl | — | 40 px |
+
+Der Innenabstand war nur für die Auswahl-Variante korrigiert; ein `<input>` bekommt von TomSelect
+`.form-control` statt `.form-select` an den Wrapper und fiel deshalb durch die Regel. Beide
+Varianten übernehmen jetzt zusätzlich die Zeilenhöhe des umgebenden Feldes.
+
 #### Wo Farbe erhalten bleibt
 
 Die semantischen `text-*`-Utilities behalten ihren Farbton, werden aber gegen `--tblr-body-color`
