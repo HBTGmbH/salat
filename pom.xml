@@ -39,7 +39,7 @@
     <webjars-jquery.version>4.0.0</webjars-jquery.version>
     <webjars-locator-lite.version>1.1.4</webjars-locator-lite.version>
     <webjars-plotly.version>4.0.0</webjars-plotly.version>
-    <webjars-tabler-io-core.version>1.5.0</webjars-tabler-io-core.version>
+    <webjars-tabler-io-core.version>1.5.1</webjars-tabler-io-core.version>
     <webjars-tabler-io-icons.version>3.35.0</webjars-tabler-io-icons.version>
     <webjars-htmx.version>4.0.0</webjars-htmx.version>
     <webjars-tomselect.version>2.6.2</webjars-tomselect.version>
