@@ -547,6 +547,48 @@ Er ist jetzt ebenfalls aus einem Token gemischt.
 **Merksatz:** Ein neu eingebundenes Fremd-Stylesheet ist erst dann fertig eingebunden, wenn seine
 Farbwerte gegen beide Farbmodi geprüft sind. Ein Blick in `src/` reicht dafür nicht.
 
+#### Buttons: die Textfarbe muss der Füllung folgen
+
+Tabler färbt den Text **jeder** gefüllten Variante über `--tblr-<farbe>-fg`, und das ist für alle
+dieselbe Fastweiß-Farbe (`--tblr-light`). Wie hell die Füllung darunter ist, spielt dabei keine
+Rolle — auf Grün ergab das 2,63:1, auf Gelb 2,04:1, in **beiden** Farbmodi. Im Dunkelmodus hellt
+Tabler zusätzlich die Sekundärfüllung von `#6b7280` auf `#9ca3af` auf, lässt den Text aber weiß:
+das war der gemeldete Abbrechen-Button mit 2,43:1.
+
+| Variante | hell vorher | hell nachher | dunkel vorher | dunkel nachher |
+|---|---|---|---|---|
+| `btn-secondary` (12×) | 4,63 | 4,63 | **2,43** ✘ | 5,78 |
+| `btn-success` (23×) | **2,63** ✘ | 5,35 | **2,63** ✘ | 5,35 |
+| `btn-warning` | **2,04** ✘ | 6,88 | **2,04** ✘ | 6,88 |
+| `btn-danger` | **4,46** ✘ | 4,66 | **4,46** ✘ | 4,66 |
+| `btn-outline-primary` (29×) | 5,00 | 6,54 | **2,94** ✘ | 4,86 |
+| `btn-outline-danger` (19×) | 4,66 | 6,61 | **3,15** ✘ | 4,80 |
+| `btn-outline-success` | **2,74** ✘ | 5,22 | 5,35 | 7,88 |
+| `btn-outline-warning` | **2,13** ✘ | 5,32 | 6,88 | 9,34 |
+| `btn-ghost-warning` | **2,13** ✘ | 5,32 | 6,88 | 9,34 |
+| `btn-link` | **4,13** ✘ | 6,54 | **3,55** ✘ | 4,86 |
+
+Drei Dinge sind dabei zu wissen:
+
+- **`--tblr-<farbe>-fg` ist der richtige Hebel.** Die Variable färbt die gefüllte Variante, deren
+  Hover- und Aktivzustand und die gefüllte Hover-Fläche der Outline- und Ghost-Varianten — eine
+  Stelle statt vieler. Outline und Ghost im Ruhezustand brauchen zusätzlich dieselbe Mischung wie
+  die `text-*`-Utilities, mit denselben Anteilen.
+- **`btn-link` lässt sich nicht über die Variable korrigieren.** Tabler setzt `--tblr-btn-color`
+  zwar auf `--tblr-link-color`, überschreibt die Farbe im selben Stylesheet aber mit einem festen
+  `color: rgb(7, 124, 234)`. Ein gewöhnlicher Link löst aus demselben Token korrekt auf (5,00:1 /
+  5,87:1) — nur der Button nicht. Hier muss `color` direkt gesetzt werden.
+- **Tablers Hover-Füllung heißt `-darken`, mischt aber mit 20 % Transparenz gegen den Untergrund.**
+  Auf hellem Grund hellt sie damit auf, auf dunklem dunkelt sie ab — jeweils in die Richtung, in der
+  der Text verliert. Hell fielen `btn-primary`, `btn-secondary` und `btn-danger` im Hover auf
+  3,39:1, 3,14:1 und 3,51:1; dunkel `btn-secondary` auf 4,24:1 und `btn-success` auf 3,93:1. Die
+  Korrektur dreht die Richtung je Modus um. **Ein Ruhezustand über 4,5:1 sagt nichts über den
+  Hover** — beide sind zu messen.
+
+Nach der Änderung liegt keine Variante in keinem der beiden Modi unter 4,5:1, weder im Ruhe- noch im
+Hover-Zustand, weder auf der Karte noch in der stets dunklen Sidebar; Minimum hell 4,63:1, dunkel
+4,66:1.
+
 #### Feldhöhe bei ersetzten Bedienelementen
 
 TomSelect ersetzt das Feld durch eigenes Markup und bringt dabei eigene Maße mit: Innenabstand
