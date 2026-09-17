@@ -167,6 +167,109 @@
   color: var(--tblr-body-color) !important;
 }
 
+/* ===== Buttons: die Textfarbe folgt der Fuellung =====
+   Tabler faerbt den Text jeder gefuellten Variante ueber --tblr-<farbe>-fg, und das ist fuer alle
+   Varianten dasselbe Fastweiss (--tblr-light). Wie hell die Fuellung darunter ist, spielt dabei
+   keine Rolle - auf Gruen ergab das 2,63:1, auf Gelb 2,04:1, und zwar in beiden Farbmodi.
+   Im Dunkelmodus hellt Tabler zusaetzlich die Sekundaerfuellung von #6b7280 auf #9ca3af auf, laesst
+   den Text aber weiss: das war der gemeldete Abbrechen-Button mit 2,43:1.
+   Die Variable sitzt an der richtigen Stelle, um das an einer Stelle zu loesen - sie faerbt die
+   gefuellte Variante, deren Hover- und Aktivzustand und die gefuellte Hover-Flaeche der Outline-
+   und Ghost-Varianten. */
+:root,
+[data-bs-theme="light"],
+[data-bs-theme="dark"] {
+  --tblr-success-fg: var(--tblr-dark); /* auf #2fb344: 5,35:1 statt 2,63:1 */
+  --tblr-warning-fg: var(--tblr-dark); /* auf #f59f00: 6,88:1 statt 2,04:1 */
+  --tblr-danger-fg: var(--tblr-white); /* auf #d63939: 4,67:1 statt 4,46:1 - reines Weiss statt --tblr-light reicht */
+}
+
+/* Die Sekundaerfuellung wechselt mit dem Farbmodus, ihre Textfarbe muss das deshalb auch:
+   hell #6b7280 traegt hellen Text (4,63:1), dunkel #9ca3af braucht dunklen (5,78:1).
+   Der Block steht nach dem obigen, damit er dort gewinnt, wo beide Selektoren dasselbe Element
+   treffen - und er greift auch in der Sidebar, die data-bs-theme="dark" traegt. */
+[data-bs-theme="dark"] {
+  --tblr-secondary-fg: var(--tblr-dark);
+}
+
+/* Tablers Hover-Fuellung heisst -darken, mischt den Farbton aber mit 20% Transparenz gegen den
+   Untergrund - auf hellem Grund hellt sie damit auf und auf dunklem dunkelt sie ab, also jeweils
+   genau in die Richtung, in der der Text verliert. Deshalb die beiden folgenden Bloecke.
+
+   Hell: die Varianten mit hellem Text (Primaer, Sekundaer, Gefahr) wurden im Hover heller und
+   fielen auf 3,39:1, 3,14:1 und 3,51:1 - sie dunkeln jetzt ab. Gruen und Gelb tragen dunklen Text,
+   fuer sie ist Tablers Aufhellen richtig und sie bleiben unangetastet. */
+[data-bs-theme="light"] .btn-primary {
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-primary) 85%, #000); /* 6,18:1 statt 3,39:1 */
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-primary) 85%, #000);
+}
+
+[data-bs-theme="light"] .btn-secondary {
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #000); /* 5,95:1 statt 3,14:1 */
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #000);
+}
+
+[data-bs-theme="light"] .btn-danger {
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-danger) 85%, #000); /* 6,08:1 statt 3,51:1 */
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-danger) 85%, #000);
+}
+
+/* Dunkel: hier ist es umgekehrt. Sekundaer und Gruen tragen nach den Regeln oben dunklen Text und
+   fielen im Hover auf 4,24:1 bzw. 3,93:1 - sie hellen jetzt auf, was im Dunkelmodus ohnehin die
+   erwartete Richtung ist. Primaer und Gefahr behalten hellen Text, fuer sie passt Tablers
+   Abdunkeln.
+   Dieser Block steht bewusst nach dem hellen: in der Sidebar, die immer data-bs-theme="dark"
+   traegt, treffen beide Selektoren gleich stark, und dann entscheidet die Reihenfolge. */
+[data-bs-theme="dark"] .btn-secondary {
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #fff); /* 6,81:1 statt 4,24:1 */
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #fff);
+}
+
+[data-bs-theme="dark"] .btn-success {
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff); /* 6,19:1 statt 3,93:1 */
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff);
+}
+
+/* Outline- und Ghost-Varianten tragen den vollen Farbton als Text auf der Seitenflaeche und haben
+   damit dasselbe Problem wie die text-*-Utilities weiter oben - je nach Modus zu hell oder zu
+   dunkel. Sie bekommen deshalb dieselbe Mischung und dieselben Anteile; der Rahmen nimmt sie mit,
+   weil er als Umriss des Bedienelements 3:1 tragen muss und der reine Farbton dunkel nur auf
+   2,94:1 kam. Secondary fehlt bewusst: --tblr-secondary wechselt bereits mit dem Farbmodus und
+   liegt in beiden bei 4,83:1 bzw. 5,78:1. */
+.btn-outline-primary,
+.btn-ghost-primary {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color)); /* hell 6,26:1 - dunkel 4,86:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color));
+}
+
+.btn-outline-danger,
+.btn-ghost-danger {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-danger) 65%, var(--tblr-body-color)); /* hell 6,33:1 - dunkel 4,80:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-danger) 65%, var(--tblr-body-color));
+}
+
+.btn-outline-success,
+.btn-ghost-success {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-success) 50%, var(--tblr-body-color)); /* hell 4,99:1 - dunkel 7,88:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-success) 50%, var(--tblr-body-color));
+}
+
+.btn-outline-warning,
+.btn-ghost-warning {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 40%, var(--tblr-body-color)); /* hell 5,09:1 - dunkel 9,34:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-warning) 40%, var(--tblr-body-color));
+}
+
+/* btn-link setzt --tblr-btn-color zwar auf --tblr-link-color, wird aber im selben Stylesheet von
+   einer zweiten Regel mit einem festen `color: rgb(7, 124, 234)` ueberschrieben. Deshalb half hier
+   nur das Setzen der Variable nicht - der Button blieb bei 4,13:1 hell und 3,55:1 dunkel, waehrend
+   ein gewoehnlicher Link aus demselben Token korrekt 5,00:1 bzw. 5,87:1 aufloest. Die Farbe wird
+   deshalb direkt gesetzt, die Variable der Vollstaendigkeit halber mit. */
+.btn-link {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color));
+  color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color)); /* hell 6,26:1 - dunkel 4,86:1 */
+}
+
 /* ===== TomSelect an Tokens und Massstab angleichen =====
    TomSelect bringt eine eigene Palette mit und codiert sie hart - unter anderem
    `.ts-control, .ts-control input, .ts-dropdown { color: #343a40 }`. Der Wert kennt keinen

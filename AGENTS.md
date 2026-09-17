@@ -84,6 +84,15 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
 - Ein ersetztes Bedienelement bringt auch eigene **Maße** mit. TomSelect rechnet mit Zeilenhöhe
   `1.5`, Bootstrap hier mit `1.4285` — ohne Angleichung springt die Feldhöhe, sobald das Element
   übernommen wird.
+- **Ein geprüfter Ruhezustand sagt nichts über den Hover.** Tablers Hover-Füllung heißt `-darken`,
+  mischt aber mit 20 % Transparenz gegen den Untergrund: auf hellem Grund hellt sie auf, auf
+  dunklem dunkelt sie ab — jeweils in die Richtung, in der der Text verliert. Beide Zustände
+  messen.
+- **Bei Buttons entscheidet die Füllung über die Textfarbe.** Tabler nimmt für jede gefüllte
+  Variante dasselbe Fastweiß (`--tblr-<farbe>-fg`), unabhängig davon, wie hell die Füllung ist.
+  Die Variable ist der richtige Hebel — sie färbt auch Hover, Aktiv und die gefüllte Hover-Fläche
+  der Outline-Varianten. Ausnahme `btn-link`: dort überschreibt ein Literal die Variable, `color`
+  muss direkt gesetzt werden.
 
 ## Legacy URL Redirects
 
