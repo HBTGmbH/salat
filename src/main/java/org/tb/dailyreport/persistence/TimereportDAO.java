@@ -450,16 +450,20 @@ public class TimereportDAO {
         }
     }
 
-    public List<String> getRecentCommentsByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
+    /**
+     * The last bookings on this suborder, reduced to what a new booking can take over: comment and
+     * ticket reference (#1029). Distinct over the pair, so the same comment booked against two
+     * tickets is offered twice - the reference is what tells the two apart.
+     */
+    public List<RecentBooking> getRecentBookingsByEmployeeContractIdAndSuborderId(long employeecontractId, long suborderId) {
         return timereportRepository.findAll(
             where(matchesEmployeecontractId(employeecontractId))
                 .and(matchesSuborderId(suborderId))
                 .and(notDeleted())
                 .and(orderedByCreatedDesc())
         ).stream()
-            .map(Timereport::getTaskdescription)
-            .filter(s -> s != null && !s.isBlank())
-            .map(String::strip)
+            .filter(tr -> tr.getTaskdescription() != null && !tr.getTaskdescription().isBlank())
+            .map(tr -> new RecentBooking(tr.getTaskdescription().strip(), tr.getTicketReference()))
             .distinct()
             .limit(5)
             .collect(Collectors.toList());

@@ -816,7 +816,11 @@
       <div class="modal-body">
         <div class="modal-title" th:text="#{main.daily.favourites.delete.modal.title}">Favorit löschen?</div>
         <div id="deleteFavouriteModalComment" class="fw-medium mt-1"></div>
-        <div id="deleteFavouriteModalLabel" class="text-muted small mt-1"></div>
+        <div class="d-flex align-items-center gap-2 mt-1">
+          <span id="deleteFavouriteModalLabel" class="text-muted small"></span>
+          <!-- two favourites can now differ in their ticket alone (#1029), so the dialog names it -->
+          <span id="deleteFavouriteModalTicket" class="badge bg-secondary-lt d-none"></span>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal"
@@ -845,6 +849,9 @@
     comment.textContent = btn.dataset.favComment || '';
     comment.classList.toggle('d-none', !btn.dataset.favComment);
     document.getElementById('deleteFavouriteModalLabel').textContent = btn.dataset.favLabel || '';
+    var ticket = document.getElementById('deleteFavouriteModalTicket');
+    ticket.textContent = btn.dataset.favTicket || '';
+    ticket.classList.toggle('d-none', !btn.dataset.favTicket);
   }
 
   function openShareModal(btn) {
@@ -996,14 +1003,25 @@
   their comment, so that is the main line; without one the order has to carry the entry. Used by
   the dropdown, by the sidebar panel and by its OOB refresh. Both lines truncate - a comment is a
   text column in the database and may be long or span several lines.
+  The ticket reference the favourite carries (#1029) sits on the secondary line, in the same badge
+  the booking itself wears in the list: without it two favourites on the same suborder do not say
+  which ticket each of them means.
 -->
 <div th:fragment="favoriteLines(fav)" class="flex-fill overflow-hidden"
      th:with="hasComment=${fav.comment != null and !fav.comment.isEmpty()}">
   <div th:if="${hasComment}" class="fw-medium text-truncate"
        th:title="${fav.comment}" th:text="${fav.comment}"></div>
-  <div class="text-truncate"
-       th:classappend="${hasComment} ? 'text-muted small mt-1' : 'fw-medium'"
-       th:title="${fav.label}" th:text="${fav.label}"></div>
+  <div class="d-flex align-items-center gap-2 overflow-hidden"
+       th:classappend="${hasComment} ? 'mt-1' : ''">
+    <span class="text-truncate"
+          th:classappend="${hasComment} ? 'text-muted small' : 'fw-medium'"
+          th:title="${fav.label}" th:text="${fav.label}"></span>
+    <span th:if="${not #strings.isEmpty(fav.ticketReference)}"
+          class="badge bg-secondary-lt flex-shrink-0 d-inline-block text-truncate"
+          style="max-width:120px"
+          th:title="#{main.daily.timereport.ticketreference.title}"
+          th:text="${fav.ticketReference}"></span>
+  </div>
 </div>
 
 <!--
@@ -1015,7 +1033,7 @@
 <div th:fragment="favoriteDeleteButton(fav)" class="d-flex align-items-center">
   <button type="button" class="btn btn-ghost-danger btn-sm py-2 pe-2"
           th:title="#{main.daily.favourites.delete.title}"
-          th:attr="data-fav-id=${fav.id},data-fav-comment=${fav.shortComment},data-fav-label=${fav.label}"
+          th:attr="data-fav-id=${fav.id},data-fav-comment=${fav.shortComment},data-fav-label=${fav.label},data-fav-ticket=${fav.ticketReference}"
           onclick="openDeleteFavouriteModal(this)"
           data-bs-toggle="modal" data-bs-target="#deleteFavouriteModal">
     <i class="icon ti ti-trash m-0"></i>

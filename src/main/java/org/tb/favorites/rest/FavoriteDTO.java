@@ -31,4 +31,7 @@ public class FavoriteDTO implements Serializable {
 
   @Schema(description = "Kommentar zur Zeitbuchung", example = "API-4511 Entwicklung neuer Features", maxLength = 255)
   private String comment;
+
+  @Schema(description = "Referenz auf ein externes Ticket, optional", example = "PROJ-123", maxLength = 64)
+  private String ticketReference;
 }

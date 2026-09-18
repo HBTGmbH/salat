@@ -92,6 +92,7 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.RecentBooking;
 import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -213,8 +214,13 @@ public class TimereportService {
     checkAndSaveTimereports(Collections.singletonList(timereport), force);
   }
 
-  /** Empty input and a blank one both mean "no reference"; anything longer than the column is rejected. */
-  static String normalizeTicketReference(String ticketReference) {
+  /**
+   * Empty input and a blank one both mean "no reference"; anything longer than the column is rejected.
+   *
+   * <p>Public because a favourite stores the same reference and has to store it under the same rule
+   * (#1029) — written a second time next to the form, the two would drift apart.
+   */
+  public static String normalizeTicketReference(String ticketReference) {
     if (ticketReference == null || ticketReference.isBlank()) {
       return null;
     }
@@ -869,8 +875,8 @@ public class TimereportService {
   }
 
   @Transactional(readOnly = true)
-  public List<String> getRecentComments(long employeeContractId, long suborderId) {
-    return timereportDAO.getRecentCommentsByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
+  public List<RecentBooking> getRecentBookings(long employeeContractId, long suborderId) {
+    return timereportDAO.getRecentBookingsByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
   }
 
   @Transactional(readOnly = true)

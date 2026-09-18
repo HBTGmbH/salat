@@ -2837,5 +2837,25 @@ databaseChangeLog:
                   name: field_config_hash
                   type: varchar(64)
 
+  - changeSet:
+      id: 78
+      author: kr
+      comment: Add ticket_reference to favorite - a favourite carries the ticket reference of the booking it was made from (#1029)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: favorite
+                columnName: ticket_reference
+      changes:
+        - addColumn:
+            tableName: favorite
+            columns:
+              # Same length as on timereport: what a favourite hands back must fit the column it is
+              # written into. Nullable - a favourite from before this change has no reference.
+              - column:
+                  name: ticket_reference
+                  type: varchar(64)
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

@@ -39,7 +39,7 @@ class FavoriteViewTest {
   }
 
   private static FavoriteView favourite(String label, String comment) {
-    return new FavoriteView(1L, label, comment, Duration.ofMinutes(75));
+    return new FavoriteView(1L, label, comment, null, Duration.ofMinutes(75));
   }
 
 }
