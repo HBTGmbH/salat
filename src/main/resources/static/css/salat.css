@@ -63,8 +63,9 @@
    geschaetzt; das Verfahren und die Messtabellen stehen in docs/ui-style-guide.md (#1022).
    Massgeblich ist je Modus der unguenstigste Untergrund: hell die Seitenflaeche (#f9fafb),
    dunkel die Karte (#1f2937). Die Sidebar traegt data-bs-theme="dark" und ist damit immer
-   dunkel - weil jede Regel hier ueber --tblr-* aufloest, gilt in ihr automatisch die dunkle
-   Variante, auch im hellen Modus. */
+   dunkel: wo eine Regel ueber ein modusabhaengiges --tblr-* aufloest, gilt in ihr automatisch die
+   dunkle Variante, auch im hellen Modus; wo sie je Modus getrennt steht, greift der
+   Nachfahrenselektor. */
 
 /* .text-muted zeigt in Tabler auf --tblr-muted (#6b7280, eine Themefarbe) statt auf ein
    modusabhaengiges Token. Der Wert ist deshalb in beiden Farbmodi derselbe und wird fuer Dunkel
@@ -87,50 +88,112 @@
 }
 
 /* Die semantischen Textfarben treffen den vollen Farbton und liegen damit je nach Modus zu hell
-   oder zu dunkel. Die Mischung gegen --tblr-body-color dreht sich mit dem Farbmodus von selbst:
-   hell wird der Ton abgedunkelt, dunkel aufgehellt. Der Anteil ist je Farbton der groesste, der in
-   beiden Modi noch 4,8:1 erreicht - also so viel Farbe wie moeglich bei eingehaltenem Massstab.
-   Ein neuer Farbton braucht hier einen eigenen, gemessenen Eintrag. */
+   oder zu dunkel. Gemischt wird deshalb - aber gegen Schwarz und Weiss, nicht gegen
+   --tblr-body-color (#1043).
+   Zwei Gruende. Erstens der Farbton: --tblr-body-color ist im hellen Modus #374151, ein Blaugrau.
+   Die Mischung dagegen dunkelt nicht nur ab, sie entsaettigt und zieht ins Blau - aus dem Ocker
+   von warning wurde als Text ein Graubraun (#836731), waehrend dieselbe Farbe als Badge ein
+   gesaettigtes Ocker ist (#935f00). Schwarz und Weiss dunkeln bzw. hellen nur auf und lassen den
+   Farbton stehen.
+   Zweitens der Anteil: eine Mischung gegen --tblr-body-color dreht sich mit dem Modus von selbst,
+   und genau deshalb musste ein Anteil fuer beide Modi taugen - jeder Ton war am schlechteren Modus
+   festgemacht. danger hing an Dunkel (4,80:1) und war hell auf 65% gedeckelt, warning umgekehrt an
+   Hell (5,09:1) und dunkel auf 40%. Je Modus eine eigene Regel laesst jeden Ton an seine eigene
+   Grenze gehen: dunkel tragen success, warning, azure und orange jetzt die volle Farbe.
+   Im hellen Modus ist der Anteil derselbe wie bei der Badge-Fuellung weiter unten, der Text traegt
+   dort also genau den Ton der Badge. Das ist keine Koinzidenz, sondern rechnet sich: wer weisse
+   Schrift auf einem Ton mit 4,8:1 haelt, hat einen Ton um 0,17 relativer Leuchtdichte - und der
+   ergibt auf der Seitenflaeche wieder rund 4,6:1. Die beiden Bloecke gehoeren damit zusammen: wer
+   hier einen Anteil aendert, aendert den der Badge mit.
+   Der Dunkelmodus-Zweig steht in :where(), traegt also keine eigene Spezifitaet. Sonst schluege er
+   die bg-*-lt-Regel darunter, und die Fehlerzellen der Matrix (bg-danger-lt text-danger) und die
+   Avatare (bg-azure-lt text-azure) bekaemen den Farbton auf der Toenung zurueck - dort, wo #1022
+   nur 4,45:1 bis 4,51:1 gemessen hat. Mit :where() entscheidet weiter die Reihenfolge.
+   Alle Werte gemessen, hell gegen die Seitenflaeche, dunkel gegen die Karte; ein neuer Farbton
+   braucht hier einen eigenen, gemessenen Eintrag. */
 .text-primary,
 .text-blue {
-  color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color)) !important; /* hell 6,26:1 - dunkel 4,86:1 */
+  color: var(--tblr-primary) !important; /* hell 4,78:1 - volle Farbe */
 }
 
 .text-danger,
 .text-red {
-  color: color-mix(in srgb, var(--tblr-danger) 65%, var(--tblr-body-color)) !important; /* hell 6,33:1 - dunkel 4,80:1 */
+  color: color-mix(in srgb, var(--tblr-danger) 95%, var(--tblr-black)) !important; /* hell 4,88:1 */
 }
 
 .text-success,
 .text-green {
-  color: color-mix(in srgb, var(--tblr-success) 50%, var(--tblr-body-color)) !important; /* hell 4,99:1 - dunkel 7,88:1 */
+  color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)) !important; /* hell 4,97:1 */
 }
 
 .text-warning,
 .text-yellow {
-  color: color-mix(in srgb, var(--tblr-warning) 40%, var(--tblr-body-color)) !important; /* hell 5,09:1 - dunkel 9,34:1 */
+  color: color-mix(in srgb, var(--tblr-warning) 60%, var(--tblr-black)) !important; /* hell 5,18:1 */
 }
 
 /* --tblr-info traegt denselben Wert wie --tblr-azure und teilt deshalb den Anteil. */
 .text-azure,
 .text-info {
-  color: color-mix(in srgb, var(--tblr-azure) 55%, var(--tblr-body-color)) !important; /* hell 4,94:1 - dunkel 7,29:1 */
+  color: color-mix(in srgb, var(--tblr-azure) 75%, var(--tblr-black)) !important; /* hell 4,83:1 */
 }
 
 .text-teal {
-  color: color-mix(in srgb, var(--tblr-teal) 55%, var(--tblr-body-color)) !important; /* hell 5,04:1 - dunkel 7,04:1 */
+  color: color-mix(in srgb, var(--tblr-teal) 75%, var(--tblr-black)) !important; /* hell 4,97:1 */
 }
 
 .text-orange {
-  color: color-mix(in srgb, var(--tblr-orange) 60%, var(--tblr-body-color)) !important; /* hell 4,86:1 - dunkel 6,64:1 */
+  color: color-mix(in srgb, var(--tblr-orange) 75%, var(--tblr-black)) !important; /* hell 4,87:1 */
 }
 
 .text-purple {
-  color: color-mix(in srgb, var(--tblr-purple) 65%, var(--tblr-body-color)) !important; /* hell 6,29:1 - dunkel 4,87:1 */
+  color: var(--tblr-purple) !important; /* hell 4,64:1 - volle Farbe */
 }
 
 .text-indigo {
-  color: color-mix(in srgb, var(--tblr-indigo) 65%, var(--tblr-body-color)) !important; /* hell 6,21:1 - dunkel 4,96:1 */
+  color: var(--tblr-indigo) !important; /* hell 4,77:1 - volle Farbe */
+}
+
+/* Dunkel wird in die andere Richtung gemischt. Die Sidebar traegt data-bs-theme="dark" und ist
+   damit auch im hellen Modus dunkel - der Nachfahrenselektor greift dort von selbst. */
+:where([data-bs-theme="dark"]) .text-primary,
+:where([data-bs-theme="dark"]) .text-blue {
+  color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)) !important; /* dunkel 4,92:1 */
+}
+
+:where([data-bs-theme="dark"]) .text-danger,
+:where([data-bs-theme="dark"]) .text-red {
+  color: color-mix(in srgb, var(--tblr-danger) 70%, var(--tblr-white)) !important; /* dunkel 4,88:1 */
+}
+
+:where([data-bs-theme="dark"]) .text-success,
+:where([data-bs-theme="dark"]) .text-green {
+  color: var(--tblr-success) !important; /* dunkel 5,35:1 - volle Farbe */
+}
+
+:where([data-bs-theme="dark"]) .text-warning,
+:where([data-bs-theme="dark"]) .text-yellow {
+  color: var(--tblr-warning) !important; /* dunkel 6,88:1 - volle Farbe */
+}
+
+:where([data-bs-theme="dark"]) .text-azure,
+:where([data-bs-theme="dark"]) .text-info {
+  color: var(--tblr-azure) !important; /* dunkel 4,81:1 - volle Farbe */
+}
+
+:where([data-bs-theme="dark"]) .text-teal {
+  color: color-mix(in srgb, var(--tblr-teal) 95%, var(--tblr-white)) !important; /* dunkel 4,96:1 */
+}
+
+:where([data-bs-theme="dark"]) .text-orange {
+  color: var(--tblr-orange) !important; /* dunkel 4,82:1 - volle Farbe */
+}
+
+:where([data-bs-theme="dark"]) .text-purple {
+  color: color-mix(in srgb, var(--tblr-purple) 70%, var(--tblr-white)) !important; /* dunkel 4,96:1 */
+}
+
+:where([data-bs-theme="dark"]) .text-indigo {
+  color: color-mix(in srgb, var(--tblr-indigo) 70%, var(--tblr-white)) !important; /* dunkel 5,05:1 */
 }
 
 /* Getoente Flaechen: bg-*-lt setzt in Tabler nicht nur den Hintergrund, sondern auch den Text auf
@@ -351,29 +414,61 @@
    dunkel. Sie bekommen deshalb dieselbe Mischung und dieselben Anteile; der Rahmen nimmt sie mit,
    weil er als Umriss des Bedienelements 3:1 tragen muss und der reine Farbton dunkel nur auf
    2,94:1 kam. Secondary fehlt bewusst: --tblr-secondary wechselt bereits mit dem Farbmodus und
-   liegt in beiden bei 4,83:1 bzw. 5,78:1. */
+   liegt in beiden bei 4,83:1 bzw. 5,78:1.
+   Die Aufschrift eines Ghost- oder Outline-Buttons ist farbiger Text, deshalb folgt sie den
+   Anteilen von oben mit - je Modus getrennt (#1043). Bliebe sie bei der alten Mischung, stuenden
+   auf einer Seite zwei verschiedene Rottoene fuer dieselbe Aussage: die Zahl im Utility und die
+   Aufschrift des Knopfes daneben.
+   Hover und Aktivzustand kommen aus --tblr-btn-hover-bg/-fg und sind hier nicht beruehrt; sie
+   stehen unveraendert so, wie #1022 sie gemessen hat.
+   Der helle Zweig steht ohne Modusbedingung: faellt data-bs-theme einmal aus, gilt er weiter. Der
+   dunkle ist spezifischer und gewinnt deshalb, wo er greift - auch in der Sidebar. */
 .btn-outline-primary,
 .btn-ghost-primary {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color)); /* hell 6,26:1 - dunkel 4,86:1 */
-  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color));
+  --tblr-btn-color: var(--tblr-primary); /* hell 4,78:1, Rahmen 4,78:1 */
+  --tblr-btn-border-color: var(--tblr-primary);
 }
 
 .btn-outline-danger,
 .btn-ghost-danger {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-danger) 65%, var(--tblr-body-color)); /* hell 6,33:1 - dunkel 4,80:1 */
-  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-danger) 65%, var(--tblr-body-color));
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-danger) 95%, var(--tblr-black)); /* hell 4,88:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-danger) 95%, var(--tblr-black));
 }
 
 .btn-outline-success,
 .btn-ghost-success {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-success) 50%, var(--tblr-body-color)); /* hell 4,99:1 - dunkel 7,88:1 */
-  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-success) 50%, var(--tblr-body-color));
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)); /* hell 4,97:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black));
 }
 
 .btn-outline-warning,
 .btn-ghost-warning {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 40%, var(--tblr-body-color)); /* hell 5,09:1 - dunkel 9,34:1 */
-  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-warning) 40%, var(--tblr-body-color));
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 60%, var(--tblr-black)); /* hell 5,18:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-warning) 60%, var(--tblr-black));
+}
+
+[data-bs-theme="dark"] .btn-outline-primary,
+[data-bs-theme="dark"] .btn-ghost-primary {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)); /* dunkel 4,92:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white));
+}
+
+[data-bs-theme="dark"] .btn-outline-danger,
+[data-bs-theme="dark"] .btn-ghost-danger {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-danger) 70%, var(--tblr-white)); /* dunkel 4,88:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-danger) 70%, var(--tblr-white));
+}
+
+[data-bs-theme="dark"] .btn-outline-success,
+[data-bs-theme="dark"] .btn-ghost-success {
+  --tblr-btn-color: var(--tblr-success); /* dunkel 5,35:1 - volle Farbe */
+  --tblr-btn-border-color: var(--tblr-success);
+}
+
+[data-bs-theme="dark"] .btn-outline-warning,
+[data-bs-theme="dark"] .btn-ghost-warning {
+  --tblr-btn-color: var(--tblr-warning); /* dunkel 6,88:1 - volle Farbe */
+  --tblr-btn-border-color: var(--tblr-warning);
 }
 
 /* btn-link setzt --tblr-btn-color zwar auf --tblr-link-color, wird aber im selben Stylesheet von
@@ -382,8 +477,13 @@
    ein gewoehnlicher Link aus demselben Token korrekt 5,00:1 bzw. 5,87:1 aufloest. Die Farbe wird
    deshalb direkt gesetzt, die Variable der Vollstaendigkeit halber mit. */
 .btn-link {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color));
-  color: color-mix(in srgb, var(--tblr-primary) 65%, var(--tblr-body-color)); /* hell 6,26:1 - dunkel 4,86:1 */
+  --tblr-btn-color: var(--tblr-primary);
+  color: var(--tblr-primary); /* hell 4,78:1 */
+}
+
+[data-bs-theme="dark"] .btn-link {
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white));
+  color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)); /* dunkel 4,92:1 */
 }
 
 /* ===== TomSelect an Tokens und Massstab angleichen =====

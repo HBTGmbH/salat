@@ -519,6 +519,10 @@ Im hellen Modus hat 1.5 genau eine Verschlechterung gebracht: `.text-body-tertia
 Nach der Änderung liegt keine der 86 gemessenen Kombinationen unter 4,5:1; das Minimum ist hell
 4,63:1 und dunkel 4,80:1.
 
+Die Zeile `text-*` gibt den Stand von #1022 wieder; die Mischung wurde mit #1043 auf Schwarz und
+Weiß umgestellt, die geltenden Werte stehen unter
+[Wo Farbe erhalten bleibt](#wo-farbe-erhalten-bleibt).
+
 #### Warum `.text-muted` betroffen war
 
 Die Ursache ist eine Token-Verwechslung in Tabler selbst: `.text-muted` zeigt auf `--tblr-muted`
@@ -554,7 +558,9 @@ Schrift** (#1039).
 Die helle Schrift gibt dabei die Richtung vor, nicht umgekehrt: Auf Tablers Grundtönen trägt sie nur
 dort, wo der Ton dunkel genug ist — auf `--tblr-success` (`#2fb344`) wären es 2,63:1. Jeder Ton wird
 deshalb so weit gegen Schwarz gemischt, dass 4,8:1 stehen, und keinen Schritt weiter. Das ist
-derselbe Grundsatz wie bei den `text-*`-Utilities, nur in die andere Richtung gemischt:
+derselbe Grundsatz wie bei den `text-*`-Utilities — und seit #1043 im hellen Modus auch derselbe
+Anteil, der farbige Text trägt dort genau diesen Ton
+([Wo Farbe erhalten bleibt](#wo-farbe-erhalten-bleibt)):
 
 | Farbanteil | Farbtöne | Kontrast |
 |---|---|---|
@@ -686,25 +692,64 @@ Varianten übernehmen jetzt zusätzlich die Zeilenhöhe des umgebenden Feldes.
 
 #### Wo Farbe erhalten bleibt
 
-Die semantischen `text-*`-Utilities behalten ihren Farbton, werden aber gegen `--tblr-body-color`
-gemischt. Die Mischung dreht sich mit dem Farbmodus von selbst: hell wird der Ton abgedunkelt,
-dunkel aufgehellt. Der Anteil ist je Farbton der größte, der in beiden Modi noch 4,8:1 erreicht —
-so viel Farbe wie möglich bei eingehaltenem Maßstab.
+Die semantischen `text-*`-Utilities behalten ihren Farbton und werden **gegen Schwarz bzw. Weiß**
+gemischt — hell abgedunkelt, dunkel aufgehellt, je Modus mit eigenem Anteil (#1043). Im hellen Modus
+ist der Anteil derselbe wie bei der Badge-Füllung: **ein farbiger Text trägt dort genau den Ton der
+Badge desselben Namens.**
 
-| Farbton | Anteil | hell | dunkel |
-|---|---|---|---|
-| `primary`, `blue` | 65 % | 6,26 | 4,86 |
-| `danger`, `red` | 65 % | 6,33 | 4,80 |
-| `purple` | 65 % | 6,29 | 4,87 |
-| `indigo` | 65 % | 6,21 | 4,96 |
-| `orange` | 60 % | 4,86 | 6,64 |
-| `azure`, `info` | 55 % | 4,94 | 7,29 |
-| `teal` | 55 % | 5,04 | 7,04 |
-| `success`, `green` | 50 % | 4,99 | 7,88 |
-| `warning`, `yellow` | 40 % | 5,09 | 9,34 |
+| Farbton | hell: Anteil gegen Schwarz | Ton | hell | dunkel: Anteil gegen Weiß | Ton | dunkel |
+|---|---|---|---|---|---|---|
+| `primary`, `blue` | 100 % | `#066fd1` | 4,78 | 70 % | `#519adf` | 4,92 |
+| `danger`, `red` | 95 % | `#cb3636` | 4,88 | 70 % | `#e27474` | 4,88 |
+| `purple` | 100 % | `#ae3ec9` | 4,64 | 70 % | `#c678d9` | 4,96 |
+| `indigo` | 100 % | `#4263eb` | 4,77 | 70 % | `#7b92f1` | 5,05 |
+| `orange` | 75 % | `#b94d05` | 4,87 | 100 % | `#f76707` | 4,82 |
+| `azure`, `info` | 75 % | `#3273a9` | 4,83 | 100 % | `#4299e1` | 4,81 |
+| `teal` | 75 % | `#097c5a` | 4,97 | 95 % | `#18aa7f` | 4,96 |
+| `success`, `green` | 70 % | `#217d30` | 4,97 | 100 % | `#2fb344` | 5,35 |
+| `warning`, `yellow` | 60 % | `#935f00` | 5,18 | 100 % | `#f59f00` | 6,88 |
 
-**Ein neuer Farbton braucht einen eigenen, gemessenen Eintrag in `salat.css`** — ohne ihn gilt
-Tablers Grundton, und der fällt durch.
+Vorher wurde gegen `--tblr-body-color` gemischt, mit **einem** Anteil für beide Modi. Beides hat
+Farbe gekostet:
+
+- **Der Mischpartner war ein Blaugrau** (`#374151` im hellen Modus). Die Mischung dagegen dunkelt
+  nicht nur ab, sie entsättigt und zieht ins Blau: `warning` wurde als Text zu `#836731`, einem
+  Graubraun, während dieselbe Farbe als Badge ein gesättigtes `#935f00` ist. Zwei Töne für dieselbe
+  Aussage, nebeneinander im Bild — auf dem Dashboard steht die Ampelzahl direkt neben der Badge.
+- **Ein Anteil für beide Modi heißt: jeder Ton hängt an seinem schlechteren Modus.** `danger` hing
+  an Dunkel (4,80:1) und war hell auf 65 % gedeckelt, `warning` umgekehrt an Hell (5,09:1) und
+  dunkel auf 40 %. Je Modus eine eigene Regel lässt jeden Ton an seine eigene Grenze: dunkel tragen
+  `success`, `warning`, `azure` und `orange` jetzt die volle Farbe, hell alle bis auf `warning` und
+  `success` mindestens 75 %.
+
+Dass der Badge-Ton als Textfarbe trägt, ist kein Zufall, sondern rechnet sich: Wer weiße Schrift auf
+einem Ton mit 4,8:1 hält, hat einen Ton mit einer relativen Leuchtdichte um 0,17 — und der ergibt auf
+der Seitenfläche wieder rund 4,6:1. Die beiden Blöcke in `salat.css` gehören damit zusammen: **wer
+einen Anteil ändert, ändert den der Badge mit.**
+
+**Im dunklen Modus ist derselbe Hex-Wert ausgeschlossen.** Die Badge-Füllung ist modusunabhängig
+dunkel und trägt helle Schrift; ein Text auf der dunklen Karte muss umgekehrt hell sein. Erreichbar
+ist dort derselbe Farbton bei gleicher Sättigung, nicht derselbe Wert.
+
+**Die Aufschrift eines Outline- oder Ghost-Buttons ist farbiger Text** und folgt denselben Anteilen
+([§7.1](#buttons-die-textfarbe-muss-der-füllung-folgen)) — sonst stünden auf einer Seite zwei Rottöne
+für dieselbe Aussage, einer im Utility und einer auf dem Knopf daneben. Der Rahmen nimmt die Mischung
+mit (3:1 als Nicht-Text-Element, gemessen 4,78–6,88); Hover und Aktivzustand kommen aus
+`--tblr-btn-hover-bg`/`-fg` und sind unberührt.
+
+**Der Dunkelmodus-Zweig der `text-*`-Regeln steht in `:where()`** und trägt damit keine eigene
+Spezifität. Sonst schlüge er die `bg-*-lt`-Regel, die danach steht — und die Fehlerzellen der Matrix
+(`bg-danger-lt text-danger`) und die Avatare (`bg-azure-lt text-azure`) bekämen den Farbton auf der
+Tönung zurück, wo nur 4,45:1 bis 4,51:1 stehen. Mit `:where()` entscheidet weiter die Reihenfolge;
+nachgemessen liegen die getönten Flächen bei 8,56:1 bis 11,06:1, tragen also unverändert die normale
+Textfarbe.
+
+Gemessen wurden 14 Textklassen, 11 Buttonvarianten und 12 Tönungsproben (Fläche und Badge) über
+Seitenfläche, Karte und die stets dunkle Sidebar in beiden Farbmodi — **222 Kombinationen, keine
+unter 4,5:1**; Minimum hell 4,64:1 (`purple`), dunkel 4,81:1 (`azure`).
+
+**Ein neuer Farbton braucht einen eigenen, gemessenen Eintrag in `salat.css`** — und zwar zwei, einen
+je Modus. Ohne ihn gilt Tablers Grundton, und der fällt durch.
 
 #### Verbliebene Literale
 
