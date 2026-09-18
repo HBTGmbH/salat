@@ -71,10 +71,15 @@ Sekundärtext. Die Sidebar ist immer dunkel (`data-bs-theme="dark"`) — Textfar
 hellen Modus gegen `#1f2937` zu prüfen.
 
 Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Korrekturen in
-`salat.css` stehen im Style Guide. Zwei Fallstricke, die eine naive Prüfung verfehlt:
+`salat.css` stehen im Style Guide. Fallstricke, die eine naive Prüfung verfehlt:
 
 - Chrome gibt `color-mix()` als `color(srgb …)` zurück — ohne Auflösung über ein Canvas liefert die
   Auswertung Unsinn.
+- **Wer den Farbmodus zur Laufzeit umschaltet, misst zu früh.** Tabler animiert die Farbe eines
+  `.btn`; direkt nach dem Setzen von `data-bs-theme` trägt es noch die Farbe des alten Modus
+  (`btn-link` dunkel: sofort 2,24:1, ausgeklungen 4,9:1). Chrome gibt einen interpolierenden Wert
+  als `oklab(…)` zurück statt als `color(srgb …)`. Nach dem Moduswechsel warten und Sofort- gegen
+  Nachmessung vergleichen.
 - `bg-*-lt` setzt nicht nur den Hintergrund, sondern auch die **Textfarbe**. Eine getönte Fläche
   ohne eigenes `text-*` ist deshalb trotzdem eingefärbt.
 - **Eingebundene Fremd-Stylesheets bringen eigene Paletten mit** und codieren sie hart. Sie liegen
