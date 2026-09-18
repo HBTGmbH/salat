@@ -3,6 +3,11 @@
 Date: 2026-06-10
 Status: Accepted
 
+> **Nachtrag 2026-09-18:** Die Regel gilt inzwischen ausnahmslos. Die beiden 2026-06-10 noch
+> notierten Ausnahmen sind entfallen — `AuthorizedUser` und `AuthorizedEmployee` sind
+> `@RequestScope`, und im gesamten `src/main/java` kommt `HttpSession` nicht mehr vor. Die
+> Entscheidung selbst ist unverändert; nur die Ausnahmetabelle wurde ersetzt.
+
 ## Context and Problem Statement
 
 Die Legacy-Struts-Schicht nutzt `HttpSession` ausgiebig als zentralen Zustandsspeicher: selektierter Mitarbeitervertrag, aktuelle Filter, Formulardaten, Navigationszustand. Dieses Pattern ist schwer testbar, verhindert horizontales Skalieren und macht den Kontrollfluss undurchsichtig.
@@ -34,18 +39,25 @@ Chosen: **Option C**, weil ein vollständiges Verbot die schrittweise Migration 
 - Die konkrete Implementierung dieses Mechanismus ist in ADR-0014 beschrieben (`UiState`-Bean + `UiStateFilter`).
 - Konsequenz für Verlinkung von neuen auf Legacy-Screens: der Zielzustand muss als URL-Parameter mitgeliefert werden, auch wenn die Legacy-Action ihn danach in die Session schreibt.
 
-**Erlaubte Ausnahmen (müssen am Ort der Ausnahme dokumentiert werden):**
+**Sicherheits- und Identitätszustand (ursprünglich als Ausnahme geführt):**
 
-| Bean | Warum erlaubt |
-|---|---|
-| `AuthorizedUser` (`auth/domain/AuthorizedUser.java`) | Identitäts- und Rollendaten des eingeloggten Nutzers. Session-Scope ist hier korrekt — es handelt sich um Sicherheits-State, nicht UI-State. Die Impersonation (`impersonate(SalatUser)`) ist ebenfalls erlaubt: sie ist ein Identitätswechsel für Support-Zwecke, kein UI-Selektionszustand. |
-| `AuthorizedEmployee` (`employee/domain/AuthorizedEmployee.java`) | Analoges Sicherheitsobjekt für den eingeloggten Mitarbeiter (Name, ID). Session-Scope aus dem gleichen Grund wie `AuthorizedUser`. |
+Die ADR erlaubte 2026-06-10 zwei session-scoped Beans, weil Identität kein UI-Zustand ist. Diese
+Ausnahme wird nicht mehr gebraucht — beide Beans sind inzwischen **request-scoped**:
 
-Weitere Ausnahmen sind grundsätzlich möglich, müssen aber mit einem Kommentar `// ADR-0013: Ausnahme — [Begründung]` am Ort der `HttpSession`-Nutzung dokumentiert werden.
+| Bean | Heutiger Scope | Woher der Zustand kommt |
+|---|---|---|
+| `AuthorizedUser` (`auth/domain/AuthorizedUser.java`) | `@RequestScope` | liest pro Request aus dem `SecurityContext`; der vertretene Login-Sign bei Impersonation steht im `UiState` (→ ADR-0014), nicht im Bean. Einzige Ausnahme ist der Job-Modus (`initForJob()`), weil ein Scheduler keinen `SecurityContext` hat. |
+| `AuthorizedEmployee` (`employee/domain/AuthorizedEmployee.java`) | `@Scope(SCOPE_REQUEST)` | wird pro Request über `login(Employee)` befüllt |
+
+Damit gilt die Regel im Anwendungscode ausnahmslos: `HttpSession` kommt in `src/main/java` nicht
+vor. Sollte je eine Ausnahme nötig werden, ist sie mit dem Kommentar
+`// ADR-0013: Ausnahme — [Begründung]` am Ort der `HttpSession`-Nutzung zu dokumentieren.
 
 ### Consequences
 
 * Good: neue Controller sind einfach unit-testbar (kein `MockHttpSession` notwendig)
 * Good: Requests sind idempotent und bookmarkbar
 * Good: tab-safe — mehrere Browser-Tabs können unterschiedliche Filtereinstellungen haben
+* Good: die Anwendungsinstanz ist austauschbar — in den deployten Umgebungen hält EasyAuth die
+  Sitzung (→ ADR-0026), sodass Skalieren keine Sitzungsaffinität braucht
 * Bad: mehr URL-Parameter, längere URLs bei komplexen Filtern

@@ -859,7 +859,7 @@ try {
 Two stacked layers provide defence in depth:
 - **HTTP boundary** (`@PreAuthorize` on controller): enforced by Spring Security before the method runs
 - **Service boundary** (`@Authorized` + runtime guard): enforced inside the service regardless of caller
-- `AuthorizedUser` (session-scoped bean, `auth/domain/AuthorizedUser.java`): exposes `isManager()`, `isAdmin()`, `isBackoffice()`, `isRestricted()`, and the current login sign
+- `AuthorizedUser` (**request-scoped** bean, `auth/domain/AuthorizedUser.java`): exposes `isManager()`, `isAdmin()`, `isPeopleLead()`, `isBackoffice()`, `isRestricted()`, and the current login sign. It holds no state of its own — it reads the `SecurityContext` per request. A scheduled job has no `SecurityContext`, so it must call `authorizedUser.initForJob()` first (→ ADR-0006).
 - Spring Security roles: `USER`, `RESTRICTED`, `BACKOFFICE`, `PEOPLE_LEAD`, `MANAGER`, `ADMIN`; `manager` role includes admins; `backoffice` includes managers and admins; `people_lead` includes managers and admins
 - Role semantics (derived from `SalatUser.status` at login):
   - `USER` — base role granted to every authenticated user = every employee

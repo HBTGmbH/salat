@@ -39,3 +39,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0023](0023-speichern-aendert-den-filter-nicht.md) | Speichern ändert den Filter nicht | Accepted | 2026-09-14 |
 | [0024](0024-konfigurierbare-jira-felder-als-json-spalte.md) | Konfigurierbare Jira-Felder als JSON-Spalte | Accepted | 2026-09-15 |
 | [0025](0025-wcag-aa-als-verbindlicher-kontrastmassstab.md) | WCAG AA als verbindlicher Kontrastmaßstab, Farben nur aus Tabler-Tokens | Accepted | 2026-09-16 |
+| [0026](0026-azure-web-app-mit-easyauth-als-authentifizierungsproxy.md) | Betrieb als Azure Web App, Authentifizierung durch Azure EasyAuth | Accepted | 2026-09-18 |

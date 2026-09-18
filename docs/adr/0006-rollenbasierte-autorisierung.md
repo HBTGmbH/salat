@@ -3,6 +3,11 @@
 Date: 2026-05-24
 Status: Accepted
 
+> **Nachtrag 2026-09-18:** Die beschreibenden Abschnitte wurden an den Code angeglichen. Geändert
+> hat sich seit 2026-05-24: `AuthorizedUser` ist `@RequestScope` statt session-scoped, es gibt die
+> Rolle `PEOPLE_LEAD` mit eigenem Fehlercode `AA-0006`, und alle Filter-Chains sind `STATELESS`.
+> Die Entscheidung selbst — zwei gestapelte Durchsetzungsebenen — steht unverändert.
+
 ## Context and Problem Statement
 
 Die Anwendung verwaltet sensible Daten (Zeitberichte, Verträge, Rechnungen) und muss sicherstellen, dass Benutzer nur auf die für ihre Rolle erlaubten Operationen zugreifen können. Es gibt klar unterscheidbare Rollen mit hierarchischen Rechten. Die Herausforderung: Wie werden diese Rechte zuverlässig durchgesetzt — auch wenn ein Controller-Aufruf umgangen wird oder ein Service direkt aus einem Job oder einem anderen Service aufgerufen wird?
@@ -39,7 +44,11 @@ ma   ──→ USER                                                (Mitarbeitend
 restricted → RESTRICTED                                      (Extern/Praktikum)
 ```
 
-Scheduled Jobs laufen mit synthetischen Rechten: `manager = true`, `backoffice = true`, `loginSign = "SYSTEM"`.
+Scheduled Jobs laufen mit synthetischen Rechten: `manager = true`, `peopleLead = true`,
+`backoffice = true`, `admin = false`, `loginSign = "SYSTEM"`. Diese Rechte entstehen nicht von
+selbst — der Job muss `authorizedUser.initForJob()` aufrufen. Ohne diesen Aufruf gibt es in einem
+asynchronen Kontext keinen `SecurityContext` und damit keine Authentifizierung
+(`ScheduledReportJobScheduler`, `BudgetAlertScheduler` zeigen das Muster).
 
 ---
 
@@ -63,13 +72,15 @@ public String store(...) { ... }
 public class InvoiceController { ... }
 ```
 
-Spring Authorities: `ROLE_USER`, `ROLE_RESTRICTED`, `ROLE_BACKOFFICE`, `ROLE_MANAGER`, `ROLE_ADMIN`.
+Spring Authorities: `ROLE_USER`, `ROLE_RESTRICTED`, `ROLE_BACKOFFICE`, `ROLE_PEOPLE_LEAD`,
+`ROLE_MANAGER`, `ROLE_ADMIN`. Gebildet werden sie in `EmployeeStatusAuthorities.from(status)`,
+kumulativ entlang der Hierarchie oben.
 
 ---
 
 ## Ebene 2: Service-Boundary (`@Authorized` + AOP)
 
-Die Annotation `@Authorized` (`auth/domain/Authorized.java`) markiert Services oder einzelne Methoden. `AuthorizationAspect` (`auth/service/AuthorizationAspect.java`) interceptiert alle so markierten Methoden via AOP und prüft den `AuthorizedUser`-Bean (Session-scoped).
+Die Annotation `@Authorized` (`auth/domain/Authorized.java`) markiert Services oder einzelne Methoden. `AuthorizationAspect` (`auth/service/AuthorizationAspect.java`) interceptiert alle so markierten Methoden via AOP und prüft den `AuthorizedUser`-Bean (request-scoped).
 
 ```java
 @Authorized                          // Klasse: Authentifizierung erforderlich
@@ -90,11 +101,21 @@ permitAll?           → sofort durchlassen
 requiresAuthentication && !authenticated → AA-0001
 requireUnrestricted  && restricted       → AA-0002
 requiresBackoffice   && !backoffice      → AA-0003
+requiresPeopleLead   && !peopleLead      → AA-0006
 requiresManager      && !manager         → AA-0004
 requiresAdmin        && !admin           → AA-0005
 ```
 
-`AuthorizedUser` (`auth/domain/AuthorizedUser.java`) ist ein session-scoped Bean, das nach dem Login befüllt wird und `isManager()`, `isAdmin()`, `isBackoffice()`, `isRestricted()` sowie den effektiven Login-Sign (inkl. Impersonation) bereitstellt.
+Methodenannotation ersetzt Klassenannotation vollständig, sie ergänzt sie nicht: steht an der
+Methode ein `@Authorized`, wird die Klassenannotation gar nicht mehr gelesen.
+
+`AuthorizedUser` (`auth/domain/AuthorizedUser.java`) ist ein **request-scoped** Bean. Es hält
+keinen eigenen Zustand, sondern liest pro Request aus dem `SecurityContext` und stellt
+`isManager()`, `isAdmin()`, `isPeopleLead()`, `isBackoffice()`, `isRestricted()` sowie den
+effektiven Login-Sign bereit. Die Impersonation ist kein Bean-Zustand: der vertretene Login-Sign
+steht im `UiState` (→ ADR-0014, Keys in `AuthUiStateKeyContributor`) und wird bei jeder Abfrage
+dort nachgeschlagen. Der einzige Fall mit eigenem Zustand ist der Job-Modus (`initForJob()`), weil
+es dort keinen `SecurityContext` gibt.
 
 ---
 
@@ -125,6 +146,7 @@ Alle Autorisierungsfehler werfen `AuthorizationException` (Subklasse von `ErrorC
 | AA-0003 | Backoffice-Rolle erforderlich |
 | AA-0004 | Manager-Rolle erforderlich |
 | AA-0005 | Admin-Rolle erforderlich |
+| AA-0006 | People-Lead-Rolle erforderlich |
 | AA-9999 | Generisch nicht autorisiert |
 
 ---
@@ -134,9 +156,14 @@ Alle Autorisierungsfehler werfen `AuthorizationException` (Subklasse von `ErrorC
 Zwei Profile mit identischer Rollenlogik, aber unterschiedlicher Authentifizierung:
 
 * **`local`** (`LocalDevSecurityConfiguration`): Pre-Authenticated Filter mit `login-name`-Parameter
-* **`production` / `staging`** (`AzureEasyAuthSecurityConfiguration`): JWT/OAuth2 via Azure EasyAuth
+* **`production` / `staging` / `localeasyauth`** (`AzureEasyAuthSecurityConfiguration`): JWT/OAuth2
+  via Azure EasyAuth — warum die Authentifizierung dort und nicht in der Anwendung liegt, steht in
+  ADR-0026
 
-Beide Konfigurationen bestehen aus drei `SecurityFilterChain`-Beans (statische Ressourcen / REST-API stateless / Web-UI session-basiert).
+Beide Konfigurationen bestehen aus drei `SecurityFilterChain`-Beans (statische Ressourcen /
+REST-API / Web-UI). **Alle drei sind `STATELESS`**, auch die der Web-UI; es gibt keine
+sitzungsbasierte Chain. Die Sitzung hält in den deployten Umgebungen EasyAuth, lokal ersetzt der
+`login-name`-Parameter sie.
 
 ---
 
@@ -144,7 +171,8 @@ Beide Konfigurationen bestehen aus drei `SecurityFilterChain`-Beans (statische R
 
 | Klasse | Paket | Rolle |
 |--------|-------|-------|
-| `AuthorizedUser` | `auth/domain` | Session-scoped Bean, zentrale Berechtigungsquelle |
+| `AuthorizedUser` | `auth/domain` | Request-scoped Bean, zentrale Berechtigungsquelle |
+| `EmployeeStatusAuthorities` | `auth/domain` | Abbildung `loginStatus` → Spring-Authorities |
 | `Authorized` | `auth/domain` | Service-Layer-Annotation |
 | `AuthorizationAspect` | `auth/service` | AOP-Enforcement für `@Authorized` |
 | `AuthorizationRule` | `auth/domain` | JPA-Entity für datenbankgestützte Feinregeln |
