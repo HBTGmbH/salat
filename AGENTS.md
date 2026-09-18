@@ -97,6 +97,14 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   mischt aber mit 20 % Transparenz gegen den Untergrund: auf hellem Grund hellt sie auf, auf
   dunklem dunkelt sie ab — jeweils in die Richtung, in der der Text verliert. Beide Zustände
   messen.
+- **Ein Farbwert, den es zweimal gibt, driftet.** Die Füllung einer Badge und die semantische
+  Textfarbe desselben Namens sind im hellen Modus **derselbe Ton** (`text-danger` = Füllung von
+  `.badge.bg-danger-lt` = `#cb3636`, #1043). Wer einen Anteil ändert, ändert beide; sonst stehen
+  zwei Rottöne für dieselbe Aussage nebeneinander im Bild.
+- **Eine modusabhängige Textregel gehört in `:where()`.** `[data-bs-theme="dark"] .text-danger`
+  wäre spezifischer als `.bg-danger-lt` und holte den Farbton auf die getönte Fläche zurück — genau
+  dorthin, wo er nur 4,45:1 erreicht. Mit `:where()` bleibt die Spezifität gleich und die
+  Reihenfolge entscheidet weiter, wie #1022 es eingerichtet hat.
 - **Bei Buttons entscheidet die Füllung über die Textfarbe.** Tabler nimmt für jede gefüllte
   Variante dasselbe Fastweiß (`--tblr-<farbe>-fg`), unabhängig davon, wie hell die Füllung ist.
   Die Variable ist der richtige Hebel — sie färbt auch Hover, Aktiv und die gefüllte Hover-Fläche
