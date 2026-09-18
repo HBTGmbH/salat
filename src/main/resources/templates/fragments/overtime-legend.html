@@ -5,7 +5,12 @@
 <!--/* Legende der Ampelskala einer Ueberstundenzelle (#1030).
        Jede Zelle uebergibt ihre eigene OvertimeScale - die Grenzen stehen nur dort, hier kommen sie
        als Argumente in den Text. Die Toenungen spiegeln OvertimeScale.colorClass; ihre Textfarbe
-       kommt aus salat.css (getoente Flaeche + normale Textfarbe, gemessen in beiden Farbmodi). */-->
+       kommt aus salat.css (getoente Flaeche + normale Textfarbe, gemessen in beiden Farbmodi).
+
+       Ein Fragment und kein salat:-Tag: der Dialect traegt die modulunabhaengigen Formular-
+       bausteine, diese Legende gehoert zu genau zwei Zellen eines Dashboards. ADR-0005 will
+       langfristig alle Fragmente im Dialect sehen - die Migration steht aus (Style-Guide W7), und
+       sie mit einem Prozessor fuer eine einzelne Ansicht zu beginnen, waere die falsche Richtung. */-->
 <div th:fragment="overtimeLegend(scale)" class="small mt-2">
   <div class="text-muted" th:text="#{main.welcome.overtime.legend.text}">Minus- und Überstunden zählen gleich</div>
   <div class="d-flex align-items-baseline gap-2 mt-1">
