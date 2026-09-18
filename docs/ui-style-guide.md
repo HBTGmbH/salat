@@ -471,6 +471,23 @@ Elternelement zusammengesetzt, teiltransparente Vordergrundfarben werden darübe
 Maßgeblich ist je Modus der **ungünstigste** Untergrund: hell die Seitenfläche `#f9fafb`, dunkel
 die Karte `#1f2937`.
 
+**Wer den Farbmodus zur Laufzeit umschaltet, darf nicht sofort messen.** Tabler animiert die Farbe
+eines `.btn`; unmittelbar nach dem Setzen von `data-bs-theme` steht das Element mitten in der
+Interpolation und trägt noch die Farbe des alten Modus. Gemessen an `btn-link` auf einer Karte im
+Dunkelmodus: sofort 2,24:1, nach dem Ausklingen 4,9:1 — und der zweite Wert ist der richtige, er
+deckt sich mit der Tabelle unten. Die Sofortmessung meldet also einen Kontrastfehler, den es nicht
+gibt.
+
+Erkennbar ist der Zustand an der Ausgabeform: Chrome gibt einen **interpolierenden** Wert als
+`oklab(…)` zurück, einen fertigen als `color(srgb …)`. Wo das auffällt, hilft keine Spezifität —
+eine Gegenprobe mit `!important` liefert denselben Endwert.
+
+Daraus das Verfahren: nach jedem Moduswechsel eine Sekunde warten und Sofort- gegen Nachmessung
+vergleichen. Sind beide gleich, hängt am Element kein Übergang — das ist bei reinem Text und
+getönten Badges der Fall, deren Werte damit sofort stehen. Weichen sie ab, zählt allein der Wert
+nach dem Ausklingen. Eine eigenständige Messseite, die den Modus fest verdrahtet statt ihn zu
+schalten, kennt das Problem nicht; es trifft die Messung **in der laufenden Anwendung**.
+
 #### Gemessene Werte (Tabler 1.5)
 
 Der Befund stammt nicht vom Sprung auf Tabler 1.5 — 1.4 und 1.5 messen im Dunkelmodus identisch.
