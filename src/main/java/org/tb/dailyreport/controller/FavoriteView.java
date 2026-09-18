@@ -2,7 +2,13 @@ package org.tb.dailyreport.controller;
 
 import java.time.Duration;
 
-record FavoriteView(Long id, String label, String comment, Duration duration) {
+/**
+ * A favourite as the list offers it. {@code ticketReference} is the reference the booking behind it
+ * carried (#1029) — two favourites on the same suborder with the same comment differ only in it, so
+ * the list has to show it.
+ */
+record FavoriteView(Long id, String label, String comment, String ticketReference,
+    Duration duration) {
 
   private static final int SHORT_COMMENT_MAX_LENGTH = 60;
 

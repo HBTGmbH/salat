@@ -311,8 +311,10 @@ public class DailyController {
             var fav = favoriteService.getFavorite(favoriteId).orElseThrow();
             var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
             workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
+            // the overload with the reference (#1029): without it the favourite would hand back
+            // everything but the ticket it was made for
             timereportService.createTimereports(ecId, fav.getEmployeeorderId(), date,
-                fav.getComment(), false, fav.getHours(), fav.getMinutes(), 1);
+                fav.getComment(), fav.getTicketReference(), false, fav.getHours(), fav.getMinutes(), 1);
         } catch (ErrorCodeException ex) {
             String err = errorCodeViewHelper.toViewMessages(ex).stream()
                 .map(Object::toString).findFirst().orElse("Error");
@@ -379,7 +381,7 @@ public class DailyController {
         if (eo == null) return null;
         String label = eo.getSuborder().getCompleteOrderSignAndDescription();
         Duration duration = Duration.ofHours(f.getHours()).plusMinutes(f.getMinutes());
-        return new FavoriteView(f.getId(), label, f.getComment(), duration);
+        return new FavoriteView(f.getId(), label, f.getComment(), f.getTicketReference(), duration);
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {

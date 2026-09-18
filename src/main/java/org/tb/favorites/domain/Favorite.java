@@ -1,6 +1,7 @@
 package org.tb.favorites.domain;
 
 import static lombok.AccessLevel.PRIVATE;
+import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +45,16 @@ public class Favorite implements Persistable<Long> {
   @Lob
   @Column(columnDefinition = "text")
   private String comment;
+
+  /**
+   * The ticket reference of the booking this favourite was made from (#1029). Applying the
+   * favourite writes it back; a favourite from before this existed has none and produces a booking
+   * without one.
+   */
+  // explicit name: the physical naming strategy keeps the attribute name as it is, and the column
+  // is spelled the way it is on timereport
+  @Column(name = "ticket_reference", length = TICKET_REFERENCE_MAX_LENGTH)
+  private String ticketReference;
 
   @Override
   public boolean isNew() {

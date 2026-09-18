@@ -7,6 +7,7 @@ import static org.tb.common.util.DateUtils.today;
 import static org.tb.common.util.DurationUtils.parseFlexibleMinutes;
 import static org.tb.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 import static org.tb.dailyreport.preferences.DurationInputMode.BEGIN_END;
+import static org.tb.dailyreport.service.TimereportService.normalizeTicketReference;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -34,6 +35,7 @@ import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateTimeUtils;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.dailyreport.domain.RecentBooking;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
@@ -201,7 +203,7 @@ public class TimereportController {
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
         model.addAttribute("selectedOrderSign", orderSignOf(suborders, form.getSuborderId()));
-        model.addAttribute("recentComments", loadRecentComments(fEmployeeContractId, form));
+        model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
                 timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date));
@@ -225,7 +227,7 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
-        model.addAttribute("recentComments", loadRecentComments(fEmployeeContractId, form));
+        model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
         return "dailyreport/timereport-form :: sidebarFragment";
     }
 
@@ -391,13 +393,8 @@ public class TimereportController {
             }
 
             if (form.isSaveAsFavorite()) {
-                var fav = Favorite.builder()
-                    .employeeorderId(employeeOrderId)
-                    .hours(valueOf(durationHours).intValueExact())
-                    .minutes(valueOf(durationMinutes).intValueExact())
-                    .comment(form.getComment())
-                    .build();
-                favoriteService.addFavorite(fav);
+                favoriteService.addFavorite(
+                    favoriteFrom(employeeOrderId, durationHours, durationMinutes, form));
             }
 
             // Handle sharing (in edit and create modes)
@@ -465,7 +462,7 @@ public class TimereportController {
         model.addAttribute("isEdit", isEdit);
         var todaysBookings = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
         model.addAttribute("todaysBookings", todaysBookings);
-        model.addAttribute("recentComments", loadRecentComments(fEmployeeContractId, form));
+        model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
         if (!isEdit && date != null && date.equals(today())) {
             var workingday = workingdayService.getWorkingday(ecId, date);
             // A day marked as not worked has no starting point. The suppression hangs on the type,
@@ -512,11 +509,27 @@ public class TimereportController {
                 : "main.timereport.form.title.create"));
     }
 
-    private List<String> loadRecentComments(Long fEmployeeContractId, TimereportForm form) {
+    /**
+     * The favourite a booking is saved as (#834), with the ticket reference of that booking (#1029).
+     * The reference goes through the same normalisation as the booking itself, so a favourite can
+     * never hold something the booking would have rejected.
+     */
+    static Favorite favoriteFrom(long employeeOrderId, long durationHours, long durationMinutes,
+            TimereportForm form) {
+        return Favorite.builder()
+            .employeeorderId(employeeOrderId)
+            .hours(valueOf(durationHours).intValueExact())
+            .minutes(valueOf(durationMinutes).intValueExact())
+            .comment(form.getComment())
+            .ticketReference(normalizeTicketReference(form.getTicketReference()))
+            .build();
+    }
+
+    private List<RecentBooking> loadRecentBookings(Long fEmployeeContractId, TimereportForm form) {
         if (form.getSuborderId() != null) {
             long ecId = effectiveContractId(fEmployeeContractId);
             if (ecId > 0) {
-                return timereportService.getRecentComments(ecId, form.getSuborderId());
+                return timereportService.getRecentBookings(ecId, form.getSuborderId());
             }
         }
         return List.of();

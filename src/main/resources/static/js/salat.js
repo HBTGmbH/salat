@@ -54,9 +54,6 @@ const tomSelectConfig = (el) => {
     const contextField = el.dataset.remoteContextField || null;
     const contextParam = el.dataset.remoteContextParam || null;
     const fillTarget = el.dataset.fillTarget || null;
-    // what this field last wrote into the target. As long as the target still holds exactly that,
-    // nobody has taken the text over as their own, so a later pick may replace it.
-    let ownFill = null;
     const createLabel = el.dataset.createLabel || '';
     const context = () => (contextField ? (document.querySelector(contextField)?.value || '') : '');
 
@@ -106,10 +103,12 @@ const tomSelectConfig = (el) => {
         const filled = value + ' - ' + summary;
         const current = target.value.trim();
         // what somebody typed is theirs and stays; an empty field and one still holding what the
-        // previously picked entry wrote follow the new pick
-        if (current && current !== ownFill) return;
+        // previously picked entry wrote follow the new pick. The mark sits on the target rather
+        // than in this closure so that anything else writing the field can hand the text over as
+        // the user's own by deleting it (#1029: the recent bookings card does exactly that).
+        if (current && current !== target.salatAutoFilled) return;
         target.value = filled;
-        ownFill = filled;
+        target.salatAutoFilled = filled;
         target.dispatchEvent(new Event('input', { bubbles: true }));
         target.dispatchEvent(new Event('change', { bubbles: true }));
       },

@@ -313,19 +313,26 @@
           </div>
         </div>
 
-        <!-- Recent comments -->
-        <div class="card" th:if="${timereportForm.suborderId != null and not #lists.isEmpty(recentComments)}">
+        <!-- Recent comments. Each entry brings the ticket reference of the booking its comment
+             comes from (#1029) - on the same suborder that is as a rule exactly the fitting one.
+             The reference is the subtext, the same shape the ticket field gives its suggestions:
+             with the pair, the same comment can appear twice and only the reference tells the two
+             entries apart. -->
+        <div class="card" th:if="${timereportForm.suborderId != null and not #lists.isEmpty(recentBookings)}">
           <div class="card-header">
             <h3 class="card-title" th:text="#{main.timereport.sidebar.recentcomments.title}">Letzte Kommentare</h3>
           </div>
           <div class="list-group list-group-flush">
             <button type="button"
                     class="list-group-item list-group-item-action text-start py-2 px-3"
-                    style="white-space: pre-wrap"
-                    th:each="c : ${recentComments}"
-                    th:attr="data-comment=${c}"
-                    onclick="fillComment(this.dataset.comment)"
-                    th:text="${c}"></button>
+                    th:each="rb : ${recentBookings}"
+                    th:attr="data-comment=${rb.comment},data-ticket=${rb.ticketReference}"
+                    onclick="applyRecentBooking(this)">
+              <span style="white-space: pre-wrap" th:text="${rb.comment}"></span>
+              <small th:if="${not #strings.isEmpty(rb.ticketReference)}"
+                     class="d-block text-muted text-truncate mt-1"
+                     th:text="${rb.ticketReference}"></small>
+            </button>
           </div>
           <div class="card-footer text-muted small" th:text="#{main.timereport.sidebar.recentcomments.hint}"></div>
         </div>
@@ -368,9 +375,31 @@
       e.preventDefault();
       document.getElementById('serialSection').classList.toggle('d-none');
     }
-    function fillComment(text) {
+    // #1029: an entry of the recent comments card carries the ticket reference of the booking its
+    // comment comes from and fills both fields. The comment is overwritten unconditionally, as it
+    // always was. An entry without a reference leaves the ticket field alone - emptying it would
+    // discard a ticket just chosen without being asked to.
+    function applyRecentBooking(btn) {
       var ta = document.querySelector('textarea[name="comment"]');
-      if (ta) ta.value = text;
+      if (ta) {
+        ta.value = btn.dataset.comment || '';
+        // the text is the user's from here on: the ticket field must not overwrite it when a
+        // suggestion is picked afterwards (salat.js, data-fill-target)
+        delete ta.salatAutoFilled;
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      var ticket = btn.dataset.ticket;
+      if (!ticket) return;
+      var field = document.getElementById('ticketReference');
+      if (!field) return;
+      // TomSelect ignores a value that is not one of its options, so the reference is added as one
+      // before it is selected; writing field.value alone would leave the widget empty
+      if (field.tomselect) {
+        field.tomselect.addOption({ value: ticket });
+        field.tomselect.addItem(ticket, true);
+      } else {
+        field.value = ticket;
+      }
     }
     function updateCommentRequired() {
       var sel = document.getElementById('suborderId');
