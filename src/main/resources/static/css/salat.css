@@ -167,6 +167,122 @@
   color: var(--tblr-body-color) !important;
 }
 
+/* ===== Badges: gefuellt, mit heller Schrift =====
+   Die Regel oben nimmt der getoenten Flaeche die Textfarbe - damit steckt das Farbsignal einer
+   Badge allein in ihrer Flaeche, und Tablers 10%-Toenung ist dafuer zu wenig: in einer Flags-Spalte
+   mit mehreren Badges nebeneinander ist nicht mehr abzulesen, welche Farbe welche ist (#1039).
+   Badges tragen deshalb die volle Farbe mit weisser Schrift.
+   Weisse Schrift gibt die Richtung vor, nicht umgekehrt: auf Tablers Grundtoenen traegt sie nur
+   dort, wo der Ton dunkel genug ist (auf #2fb344 waeren es 2,63:1). Jeder Ton wird deshalb so weit
+   gegen Schwarz gemischt, dass 4,8:1 stehen - und keinen Schritt weiter, damit so viel Farbe wie
+   moeglich bleibt. Das ist derselbe Grundsatz wie bei den text-*-Utilities oben, nur in die andere
+   Richtung gemischt. Die dunklen Toene bleiben dabei unveraendert.
+   Die Regel gilt nur fuer .badge, nicht fuer bg-*-lt allgemein: dieselbe Klasse faerbt ganze
+   Tabellenzeilen, die Wochenend- und Feiertagsspalten der Matrix, die ungelesenen Meldungen des
+   Glocken-Dropdowns, die Kacheln des Dashboards und die Avatare - die bleiben getoent.
+   Die hoehere Spezifitaet ist noetig, weil Tablers eigene Regeln !important tragen.
+   Alle Werte sind das Minimum ueber Seitenflaeche, Karte, Tabellenzeile (auch gestreift und
+   table-active) und Sidebar, in beiden Farbmodi. */
+.badge.bg-primary-lt,
+.badge.bg-secondary-lt,
+.badge.bg-success-lt,
+.badge.bg-warning-lt,
+.badge.bg-danger-lt,
+.badge.bg-info-lt,
+.badge.bg-blue-lt,
+.badge.bg-azure-lt,
+.badge.bg-indigo-lt,
+.badge.bg-purple-lt,
+.badge.bg-pink-lt,
+.badge.bg-red-lt,
+.badge.bg-orange-lt,
+.badge.bg-yellow-lt,
+.badge.bg-lime-lt,
+.badge.bg-green-lt,
+.badge.bg-teal-lt,
+.badge.bg-cyan-lt {
+  color: var(--tblr-white) !important;
+}
+
+.badge.bg-primary-lt {
+  background-color: var(--tblr-primary) !important;
+}
+
+.badge.bg-blue-lt {
+  background-color: var(--tblr-blue) !important;
+}
+
+.badge.bg-indigo-lt {
+  background-color: var(--tblr-indigo) !important;
+}
+
+.badge.bg-purple-lt {
+  background-color: var(--tblr-purple) !important;
+}
+
+.badge.bg-danger-lt {
+  background-color: color-mix(in srgb, var(--tblr-danger) 95%, #000) !important;
+}
+
+.badge.bg-red-lt {
+  background-color: color-mix(in srgb, var(--tblr-red) 95%, #000) !important;
+}
+
+.badge.bg-pink-lt {
+  background-color: color-mix(in srgb, var(--tblr-pink) 95%, #000) !important;
+}
+
+.badge.bg-info-lt {
+  background-color: color-mix(in srgb, var(--tblr-info) 75%, #000) !important;
+}
+
+.badge.bg-azure-lt {
+  background-color: color-mix(in srgb, var(--tblr-azure) 75%, #000) !important;
+}
+
+.badge.bg-orange-lt {
+  background-color: color-mix(in srgb, var(--tblr-orange) 75%, #000) !important;
+}
+
+.badge.bg-teal-lt {
+  background-color: color-mix(in srgb, var(--tblr-teal) 75%, #000) !important;
+}
+
+.badge.bg-cyan-lt {
+  background-color: color-mix(in srgb, var(--tblr-cyan) 75%, #000) !important;
+}
+
+.badge.bg-success-lt {
+  background-color: color-mix(in srgb, var(--tblr-success) 70%, #000) !important;
+}
+
+.badge.bg-green-lt {
+  background-color: color-mix(in srgb, var(--tblr-green) 70%, #000) !important;
+}
+
+.badge.bg-lime-lt {
+  background-color: color-mix(in srgb, var(--tblr-lime) 65%, #000) !important;
+}
+
+.badge.bg-warning-lt {
+  background-color: color-mix(in srgb, var(--tblr-warning) 60%, #000) !important;
+}
+
+.badge.bg-yellow-lt {
+  background-color: color-mix(in srgb, var(--tblr-yellow) 60%, #000) !important;
+}
+
+/* Grau ist der einzige Ton, dessen Fuellung sich mit dem Modus aendert: Tabler hellt die
+   Sekundaerfuellung im Dunkelmodus von #6b7280 auf #9ca3af auf. Hell traegt sie weisse Schrift
+   unveraendert, dunkel muss sie dafuer erst abgedunkelt werden. */
+.badge.bg-secondary-lt {
+  background-color: var(--tblr-secondary) !important;
+}
+
+[data-bs-theme="dark"] .badge.bg-secondary-lt {
+  background-color: color-mix(in srgb, var(--tblr-secondary) 70%, #000) !important;
+}
+
 /* ===== Buttons: die Textfarbe folgt der Fuellung =====
    Tabler faerbt den Text jeder gefuellten Variante ueber --tblr-<farbe>-fg, und das ist fuer alle
    Varianten dasselbe Fastweiss (--tblr-light). Wie hell die Fuellung darunter ist, spielt dabei

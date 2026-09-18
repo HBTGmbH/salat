@@ -82,6 +82,10 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   Nachmessung vergleichen.
 - `bg-*-lt` setzt nicht nur den Hintergrund, sondern auch die **Textfarbe**. Eine getönte Fläche
   ohne eigenes `text-*` ist deshalb trotzdem eingefärbt.
+- **In Tabellen steckt die Tönung der Zeile im Innenschatten, nicht im Hintergrund.** Streifung und
+  `table-active` setzen `box-shadow: inset 0 0 0 9999px …`; die Zelle meldet `background-color:
+  rgba(0, 0, 0, 0)`. Wer die Schichten nur über `background-color` zusammensetzt, misst gegen den
+  falschen Untergrund — und dort sitzt regelmäßig die ungünstigste Probe.
 - **Eingebundene Fremd-Stylesheets bringen eigene Paletten mit** und codieren sie hart. Sie liegen
   in WebJars und fallen bei einer Suche über `src/` nicht auf. TomSelect ist der bekannte Fall
   (`salat.css` fängt es ab); ein neu eingebundenes Stylesheet ist erst fertig eingebunden, wenn
