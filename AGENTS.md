@@ -369,6 +369,22 @@ The rule of thumb: spend the review time where wrong results come from, not wher
 <a th:href="@{${@salatProperties.docsUrl}}">...</a>
 ```
 
+**Dasselbe gilt für die Parameter einer Nachricht.** `#{key(${@bean.wert})}` wertet Thymeleaf im
+eingeschränkten Kontext aus und bricht die Seite mit *„Instantiation of new objects and access to
+static classes or parameters is forbidden in this context"* ab — ein Fehler, der erst auftritt, wenn
+die Stelle überhaupt gerendert wird (die Impersonations-Zeile in `layout/base.html` trug ihn
+unbemerkt bis #1033). Der **Schlüssel** einer Nachricht darf die Bohne lesen, der Parameter nicht;
+also erst mit `th:with` binden:
+
+```html
+<!-- correct -->
+<span th:with="actsAs=${@authorizedUser.impersonateLoginSign}"
+      th:text="#{main.general.impersonation.actsas.text(${actsAs})}">...</span>
+
+<!-- fails at render time: @beanName as a message parameter -->
+<span th:text="#{main.general.impersonation.actsas.text(${@authorizedUser.impersonateLoginSign})}">...</span>
+```
+
 ## TomSelect Dropdowns
 
 All `<select>` elements use [TomSelect](https://tom-select.github.io/) for search-as-you-type behaviour. Initialisation is handled centrally in `layout/base.html` via a `querySelectorAll` on page load and again on `htmx:after:swap` (so OOB-swapped selects are picked up automatically).
