@@ -108,6 +108,7 @@
                   th:text="${overtime}">0:00</span>
           </div>
           <div class="text-muted small mt-2" th:text="#{main.welcome.total.text}">gesamt</div>
+          <div th:replace="~{fragments/overtime-legend :: overtimeLegend(${overtimeScale})}"></div>
         </div>
       </div>
     </div>
@@ -131,6 +132,7 @@
                   th:text="${monthlyOvertime}">0:00</span>
           </div>
           <div class="text-muted small mt-2" th:text="${overtimeMonth}">2026-05</div>
+          <div th:replace="~{fragments/overtime-legend :: overtimeLegend(${monthlyOvertimeScale})}"></div>
         </div>
       </div>
     </div>

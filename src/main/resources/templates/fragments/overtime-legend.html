@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Legende der Ampelskala einer Ueberstundenzelle (#1030).
+       Jede Zelle uebergibt ihre eigene OvertimeScale - die Grenzen stehen nur dort, hier kommen sie
+       als Argumente in den Text. Die Toenungen spiegeln OvertimeScale.colorClass; ihre Textfarbe
+       kommt aus salat.css (getoente Flaeche + normale Textfarbe, gemessen in beiden Farbmodi). */-->
+<div th:fragment="overtimeLegend(scale)" class="small mt-2">
+  <div class="text-muted" th:text="#{main.welcome.overtime.legend.text}">Minus- und Überstunden zählen gleich</div>
+  <div class="d-flex align-items-baseline gap-2 mt-1">
+    <span class="badge bg-success-lt flex-shrink-0" th:text="#{main.welcome.overtime.legend.ok.text}">in Ordnung</span>
+    <span class="text-muted"
+          th:text="#{main.welcome.overtime.legend.ok.range(${scale.warningBelowLabel},${scale.warningAboveLabel})}">-20 bis +40 h</span>
+  </div>
+  <div class="d-flex align-items-baseline gap-2 mt-1">
+    <span class="badge bg-warning-lt flex-shrink-0" th:text="#{main.welcome.overtime.legend.warning.text}">Vorsicht</span>
+    <span class="text-muted"
+          th:text="#{main.welcome.overtime.legend.warning.range(${scale.dangerBelowLabel},${scale.warningBelowLabel},${scale.warningAboveLabel},${scale.dangerAboveLabel})}">-40 bis -20 h und +40 bis +80 h</span>
+  </div>
+  <div class="d-flex align-items-baseline gap-2 mt-1">
+    <span class="badge bg-danger-lt flex-shrink-0" th:text="#{main.welcome.overtime.legend.danger.text}">Abweichung zu groß</span>
+    <span class="text-muted"
+          th:text="#{main.welcome.overtime.legend.danger.range(${scale.dangerBelowLabel},${scale.dangerAboveLabel})}">unter -40 h oder über +80 h</span>
+  </div>
+</div>
+
+</body>
+</html>

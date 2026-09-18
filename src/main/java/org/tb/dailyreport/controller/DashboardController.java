@@ -27,6 +27,7 @@ import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.viewhelper.OvertimeScale;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.TimereportService;
@@ -97,9 +98,11 @@ public class DashboardController {
         model.addAttribute("overtime", overtime);
         model.addAttribute("overtimeIsNegative", overtimeIsNegative);
         model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus));
+        model.addAttribute("overtimeScale", OvertimeScale.TOTAL);
         model.addAttribute("monthlyOvertime", monthlyOvertime);
         model.addAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
         model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus));
+        model.addAttribute("monthlyOvertimeScale", OvertimeScale.CURRENT_MONTH);
         model.addAttribute("overtimeMonth", overtimeMonth);
         model.addAttribute("vacations", vacations);
 
@@ -219,26 +222,21 @@ public class DashboardController {
                 .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
     }
 
-    private String overtimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
-        return overtimeStatus.map(status -> {
-            if (status.getTotal() == null) return "success";
-            long hours = status.getTotal().getDuration().toHours();
-            long signedHours = status.getTotal().isNegative() ? -hours : hours;
-            if (signedHours > 80 || signedHours < -40) return "danger";
-            if (signedHours > 40 || signedHours < -20) return "warning";
-            return "success";
-        }).orElse("success");
+    /* Die Dauer ist bereits vorzeichenbehaftet (OvertimeService.toStatusInfo); isNegative daneben ist
+       nur die Pfeilrichtung. Wer es hier ein zweites Mal anwendet, prueft bei Minusstunden die
+       positive Seite der Skala - genau die Richtung, in der die Warnung gebraucht wird (#1030). */
+    static String overtimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
+        return overtimeStatus
+            .map(OvertimeStatus::getTotal)
+            .map(info -> OvertimeScale.TOTAL.colorClass(info.getDuration()))
+            .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 
-    private String monthlyOvertimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
-        return overtimeStatus.map(status -> {
-            if (status.getCurrentMonth() == null) return "success";
-            long hours = status.getCurrentMonth().getDuration().toHours();
-            long signedHours = status.getTotal().isNegative() ? -hours : hours;
-            if (signedHours > 30 || signedHours < -30) return "danger";
-            if (signedHours > 15 || signedHours < -15) return "warning";
-            return "success";
-        }).orElse("success");
+    static String monthlyOvertimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
+        return overtimeStatus
+            .map(OvertimeStatus::getCurrentMonth)
+            .map(info -> OvertimeScale.CURRENT_MONTH.colorClass(info.getDuration()))
+            .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 
 }
