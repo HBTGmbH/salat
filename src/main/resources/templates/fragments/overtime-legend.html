@@ -7,11 +7,16 @@
        als Argumente in den Text. Die Toenungen spiegeln OvertimeScale.colorClass; ihre Textfarbe
        kommt aus salat.css (getoente Flaeche + normale Textfarbe, gemessen in beiden Farbmodi).
 
+       Der Block ist der Inhalt eines Popovers und traegt deshalb keinen eigenen Aussenabstand: die
+       Karte soll durch die Erklaerung nicht hoeher werden, der Wert bleibt ihr auffaelligstes
+       Element. Gebaut wird das Popover in dashboard.html, wie die Matrix es mit ihren Tagesdetails
+       tut.
+
        Ein Fragment und kein salat:-Tag: der Dialect traegt die modulunabhaengigen Formular-
        bausteine, diese Legende gehoert zu genau zwei Zellen eines Dashboards. ADR-0005 will
        langfristig alle Fragmente im Dialect sehen - die Migration steht aus (Style-Guide W7), und
        sie mit einem Prozessor fuer eine einzelne Ansicht zu beginnen, waere die falsche Richtung. */-->
-<div th:fragment="overtimeLegend(scale)" class="small mt-2">
+<div th:fragment="overtimeLegend(scale)" class="small">
   <div class="text-muted" th:text="#{main.welcome.overtime.legend.text}">Minus- und Überstunden zählen gleich</div>
   <div class="d-flex align-items-baseline gap-2 mt-1">
     <span class="badge bg-success-lt flex-shrink-0" th:text="#{main.welcome.overtime.legend.ok.text}">in Ordnung</span>
