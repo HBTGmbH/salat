@@ -338,8 +338,10 @@ Optionen können über `data-subtext` eine zweite Zeile anzeigen (z. B. Vertrags
 
 ### 5.4 Badges & Flags-Spalte
 Boolesche Zustände in Listen stehen gesammelt in einer **Flags-Spalte**
-(`d-none d-lg-table-cell`), nie inline neben dem Namen. Jedes Flag ist eine Badge in gedeckter
-Tabler-Tönung (`bg-*-lt`) mit Icon und `title`-Tooltip:
+(`d-none d-lg-table-cell`), nie inline neben dem Namen. Jedes Flag ist eine Badge mit Icon und
+`title`-Tooltip. Die Klassen heißen weiterhin `bg-*-lt`, Badges sind aber **gefüllt und tragen helle
+Schrift** statt der Tönung — ihr Farbsignal steckt seit der Kontrastkorrektur allein in der Fläche
+([§7.1](#badges-gefüllt-statt-getönt)); großflächige getönte Bereiche bleiben getönt:
 
 | Flag | Farbe | Icon |
 |---|---|---|
@@ -436,7 +438,8 @@ ohne Format-Hinweis.
 | `purple` | Rollen-Badge, Schulung, „Beta"-Markierung |
 | `azure` / `blue` | informative Kennzeichnung in Listen |
 
-`bg-*-lt` (light tint) für Badges/Flächen, `text-*` für Zahlen und Fließtext-Akzente,
+`bg-*-lt` für Badges und getönte Flächen — an einer Badge färbt die Klasse allerdings voll, nicht
+getönt ([§7.1](#badges-gefüllt-statt-getönt)). `text-*` für Zahlen und Fließtext-Akzente,
 `btn-*` gefüllt für Primäraktionen, `btn-outline-*` für Zeilenaktionen.
 Häufigste Utility überhaupt: `text-muted` (222×) für sekundären Text.
 
@@ -470,6 +473,13 @@ Elternelement zusammengesetzt, teiltransparente Vordergrundfarben werden darübe
 
 Maßgeblich ist je Modus der **ungünstigste** Untergrund: hell die Seitenfläche `#f9fafb`, dunkel
 die Karte `#1f2937`.
+
+**In Tabellen liegt die Tönung der Zeile nicht im Hintergrund.** Streifung und `table-active`
+setzen in Bootstrap 5.3 keinen `background-color`, sondern einen deckenden Innenschatten
+(`box-shadow: inset 0 0 0 9999px var(--bs-table-bg-type)`); die Zelle selbst meldet
+`rgba(0, 0, 0, 0)`. Wer beim Zusammensetzen der Schichten nur `background-color` liest, misst eine
+Badge in einer Tabellenzeile gegen den falschen Untergrund — und übersieht dabei ausgerechnet die
+ungünstigste Probe (#1039).
 
 **Wer den Farbmodus zur Laufzeit umschaltet, darf nicht sofort messen.** Tabler animiert die Farbe
 eines `.btn`; unmittelbar nach dem Setzen von `data-bs-theme` steht das Element mitten in der
@@ -533,6 +543,57 @@ Die Regel gilt für jede getönte Fläche, nicht nur für Badges: dieselbe Klass
 und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards und die Avatare.
 Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` ist auf hellem Grund *heller* als der
 Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen (1,04:1–1,11:1).
+
+#### Badges: gefüllt statt getönt
+
+Aus normalfarbigem Text folgt: Was eine Badge farblich aussagt, steckt vollständig in ihrer Fläche —
+und Tablers 10 % sind dafür zu wenig. In einer Flags-Spalte mit mehreren Badges nebeneinander ist
+nicht mehr abzulesen, welche Farbe welche ist. Badges tragen deshalb die **volle Farbe mit heller
+Schrift** (#1039).
+
+Die helle Schrift gibt dabei die Richtung vor, nicht umgekehrt: Auf Tablers Grundtönen trägt sie nur
+dort, wo der Ton dunkel genug ist — auf `--tblr-success` (`#2fb344`) wären es 2,63:1. Jeder Ton wird
+deshalb so weit gegen Schwarz gemischt, dass 4,8:1 stehen, und keinen Schritt weiter. Das ist
+derselbe Grundsatz wie bei den `text-*`-Utilities, nur in die andere Richtung gemischt:
+
+| Farbanteil | Farbtöne | Kontrast |
+|---|---|---|
+| 100 % (unverändert) | `primary`, `blue`, `indigo`, `purple` | 4,85–5,00 |
+| 95 % | `danger`, `red`, `pink` | 5,05–5,10 |
+| 75 % | `info`, `azure`, `orange`, `teal`, `cyan` | 5,03–5,20 |
+| 70 % | `success`, `green` | 5,20 |
+| 65 % | `lime` | 5,26 |
+| 60 % | `warning`, `yellow` | 5,42 |
+
+`secondary` ist der einzige Ton mit zwei Werten: Tabler hellt die Sekundärfüllung im Dunkelmodus von
+`#6b7280` auf `#9ca3af` auf. Hell trägt sie helle Schrift unverändert (4,83:1), dunkel muss sie dafür
+erst auf 70 % abgedunkelt werden (4,84:1).
+
+Gemessen wurden 18 Farbtöne × zwei Farbmodi × Seitenfläche, Karte, Tabellenzeile (gerade, ungerade,
+`table-active`) und Sidebar, mit Text und nur mit Icon. **Alle Werte liegen zwischen 4,83:1 und
+5,42:1** — eng beieinander, weil jeder Ton an seiner eigenen Grenze sitzt.
+
+Verworfen wurde die naheliegende Zwischenstufe, die Tönung bloß kräftiger zu ziehen: Eine getönte
+Fläche trägt die normale Textfarbe und ist damit bei 40 % ausgereizt (bei 45 % fällt `warning` auf
+einer `table-active`-Zeile im Dunkelmodus auf 4,60:1, bei 50 % auf 4,21:1). Die volle Füllung bekommt
+dagegen ihre eigene Textfarbe und ist damit nicht nur kräftiger, sondern auch frei in der Wahl.
+
+**Nur `.badge` ist gemeint**, nicht `bg-*-lt` allgemein: dieselbe Klasse färbt ganze Tabellenzeilen,
+die Wochenend- und Feiertagsspalten der Matrix, die ungelesenen Meldungen des Glocken-Dropdowns, die
+Kacheln des Dashboards und die Avatare. Die bleiben getönt — eine ganze Tabellenzeile in voller Farbe
+wäre eine andere Änderung. Die höhere Spezifität von `.badge.bg-*-lt` ist zugleich nötig, weil
+Tablers eigene Regel `!important` trägt.
+
+Die klickbare `hide`-Badge ([§5.4](#54-badges--flags-spalte)) bleibt im Hover unverändert: weder
+Tabler noch `salat.css` bringen eine `:hover`-Regel mit, die den Button (`border-0 bg-transparent`)
+oder die Badge darin trifft — geprüft über alle geladenen Stylesheets und am gehoverten Element
+nachgemessen (5,10:1 in Ruhe wie im Hover).
+
+**Für diese Prüfung muss die Messseite über HTTP ausgeliefert werden.** Bei einem Aufruf über
+`file://` sperrt Chrome den Zugriff auf `cssRules` der verlinkten Stylesheets: `document.styleSheets`
+listet sie zwar, der Zugriff wirft, und eine Prüfung, die das stillschweigend überspringt, sieht nur
+noch den Inline-Block der Seite — im konkreten Fall 1 von 3 Stylesheets und damit weder Tabler noch
+`salat.css`. Über `http://127.0.0.1` sind es 3 von 3.
 
 #### Fremd-Stylesheets bringen eigene Paletten mit
 
