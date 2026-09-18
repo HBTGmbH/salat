@@ -65,14 +65,36 @@
       <div class="navbar-footer">
         <ul class="navbar-nav">
           <li class="nav-item dropup">
+            <!--/* Die zweite Zeile nennt die Rolle und nicht das Kuerzel: wer angemeldet ist, weiss
+                   seinen Namen, die Rolle dagegen erklaert das Menue darueber. Das Kuerzel steht
+                   weiter im aufgeklappten Menue. Dieselbe Badge wie dort, damit zugeklappt und
+                   aufgeklappt dieselbe Aussage dieselbe Gestalt hat.
+                   nav-link-badge ist Pflicht: Tabler macht aus jeder .badge in einem .nav-link
+                   einen absolut gesetzten Eckpunkt und schoebe sie damit ueber den Rand der
+                   Sidebar (siehe salat.css). Beides steht im nav-link-title, der in der gefalteten
+                   Sidebar auf Breite 0 geht und unterhalb von md ganz verschwindet - dort bleibt
+                   wie bisher nur das Bild.
+                   Bei uebernommenem Benutzer zeigen Name und Rolle die fremde Person; die zweite
+                   Badge ist der Hinweis darauf, der sonst mit dem eigenen Kuerzel verschwaende. */-->
             <a href="#" class="nav-link" data-bs-toggle="dropdown" role="button" aria-expanded="false"
-               th:aria-label="#{main.general.loggedinas.text}">
+               th:with="userName=${@authorizedEmployee.name},
+                        roleLabel=#{${'main.employee.status.' + @authorizedUser.loginStatus}},
+                        actsAs=${@authorizedUser.impersonateLoginSign}"
+               th:aria-label="${actsAs == null}
+                        ? #{main.general.loggedinas.aria(${userName},${roleLabel})}
+                        : #{main.general.impersonation.aria(${userName},${roleLabel})}">
               <img class="avatar avatar-sm rounded" alt=""
                    th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
                    th:src="${url}"/>
               <span class="nav-link-title">
-                <span th:text="${@authorizedEmployee.name}">Max Mustermann</span>
-                <span class="d-block small text-secondary" th:text="${@authorizedUser.loginSign}">kr</span>
+                <span th:text="${userName}">Max Mustermann</span>
+                <span class="d-block">
+                  <span class="badge bg-purple-lt nav-link-badge" th:text="${roleLabel}">Administration</span>
+                  <span th:if="${actsAs != null}" class="badge bg-orange-lt nav-link-badge ms-1"
+                        th:title="#{main.general.impersonation.actsas.text(${actsAs})}">
+                    <i class="ti ti-switch-2"></i>
+                  </span>
+                </span>
               </span>
             </a>
             <div class="dropdown-menu">
@@ -96,10 +118,16 @@
                 </a>
                 <div>
                   <div th:text="${@authorizedEmployee.name}">Max Mustermann</div>
-                  <div class="text-secondary small d-flex align-items-center gap-1">
+                  <!--/* Das Kuerzel bleibt hier stehen - im Ausloeser darueber steht seit #1033 die
+                         Rolle an seiner Stelle.
+                         actsAs kommt aus th:with und nicht direkt aus ${@authorizedUser...}: eine
+                         Bohne als Parameter einer Nachricht wertet Thymeleaf im eingeschraenkten
+                         Kontext aus und bricht die Seite ab. */-->
+                  <div class="text-secondary small d-flex align-items-center gap-1"
+                       th:with="actsAs=${@authorizedUser.impersonateLoginSign}">
                     <span th:text="${@authorizedUser.loginSign}">kr</span>
-                    <span th:if="${@authorizedUser.impersonateLoginSign ne null}"
-                          th:text="#{main.general.impersonation.actsas.text(${@authorizedUser.impersonateLoginSign})}">acts as mm</span>
+                    <span th:if="${actsAs ne null}"
+                          th:text="#{main.general.impersonation.actsas.text(${actsAs})}">acts as mm</span>
                   </div>
                   <span class="badge bg-purple-lt mt-1"
                         th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>

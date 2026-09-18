@@ -74,11 +74,19 @@ Die Referenz ist der Tabler-Standard.
 - **Kopfzeile:** `page-pretitle` (Bereich) + `page-title` (Seite), rechts ein `btn-list` mit
   Benachrichtigungsglocke, Einstellungen, Theme-Umschalter — sowie im Bereich *Buchungen* ein
   globaler Vertrags-Selektor (`globalEmployeeContractId`).
-- **Nutzerblock** in der `navbar-footer`-Zone der Sidebar: Bild und Name bleiben unten stehen,
-  während die Menüliste darüber scrollt. Alles Weitere — Gravatar-Link, Login-Kürzel, Rollen-Badge,
-  Benutzerwechsel (Impersonation) über ein Modal, Abmelden — liegt in einem nach oben klappenden
-  Menü. Unterhalb von `md` rückt der Block in die mobile Kopfzeile, dort bleibt nur das Bild und das
-  Menü klappt nach unten.
+- **Nutzerblock** in der `navbar-footer`-Zone der Sidebar: Bild, Name und darunter das Rollen-Badge
+  bleiben unten stehen, während die Menüliste darüber scrollt. Alles Weitere — Gravatar-Link,
+  Login-Kürzel, dasselbe Rollen-Badge, Benutzerwechsel (Impersonation) über ein Modal, Abmelden —
+  liegt in einem nach oben klappenden Menü. Unterhalb von `md` rückt der Block in die mobile
+  Kopfzeile, dort bleibt nur das Bild und das Menü klappt nach unten.
+  - Das Badge steht im `nav-link-title` und trägt deshalb `nav-link-badge`: ohne diese Klasse macht
+    Tabler aus jedem `.badge` in einem `.nav-link` einen absolut gesetzten Eckpunkt und schöbe es
+    über den Rand der Sidebar ([§7.1](#71-kontrast--verbindlicher-maßstab) misst die Farbe,
+    `salat.css` hält die Position). Im `nav-link-title` klappt es mit der Sidebar ein und
+    verschwindet unterhalb von `md` mitsamt dem Namen.
+  - Läuft ein **Benutzerwechsel**, zeigen Bild, Name und Rolle die übernommene Person. Ein zweites
+    Badge (`bg-orange-lt`, `ti ti-switch-2`) sagt das schon am zugeklappten Auslöser — vorher war
+    der einzige Hinweis dort das eigene Kürzel neben dem fremden Namen (#1033).
 
 **Seitentitel** kommen aus dem Model (`title`, `sectionTitle`, `pageTitle`); Browser-Titel ist
 immer `SALAT - <pageTitle>`.

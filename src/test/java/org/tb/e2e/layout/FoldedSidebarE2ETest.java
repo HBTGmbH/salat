@@ -1,6 +1,7 @@
 package org.tb.e2e.layout;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.microsoft.playwright.Locator;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -79,6 +80,55 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
 
       footer.locator("[data-bs-toggle='dropdown']").click();
       assertThat(footer.locator(".dropdown-menu")).isVisible();
+    });
+  }
+
+  /**
+   * The trigger names the role instead of the sign (#1033). The sign stays in the open menu, where
+   * it has always been the second time it appeared.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_trigger_shows_the_role_badge_and_the_menu_keeps_the_sign(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      Locator footer = page.locator("#salat-nav .navbar-footer");
+      Locator badge = footer.locator(".nav-link-title .badge");
+      assertThat(badge).hasText("Mitarbeitender");
+      assertThat(footer.locator(".nav-link-title")).not().containsText(E2ETestData.EMPLOYEE_MA_SIGN);
+
+      // Tabler positions every .badge inside a nav link absolutely as a corner dot and would push
+      // a text badge past the sidebar edge; .nav-link-badge keeps it in the flow (salat.css)
+      assertEquals("static", badge.evaluate("el => getComputedStyle(el).position"));
+      assertEquals(true, badge.evaluate(
+          "el => el.getBoundingClientRect().right <= el.closest('.navbar').getBoundingClientRect().right"));
+
+      footer.locator("[data-bs-toggle='dropdown']").click();
+      assertThat(footer.locator(".dropdown-menu")).containsText(E2ETestData.EMPLOYEE_MA_SIGN);
+    });
+  }
+
+  /**
+   * Folded, the user block is reduced to the picture - the role badge rides along with the
+   * {@code nav-link-title} that Tabler collapses, so it must not stand next to the rail.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_folded_sidebar_leaves_only_the_picture_in_the_user_block(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard?sidebar=folded", page -> {
+      Locator footer = page.locator("#salat-nav .navbar-footer");
+      // the menu below carries a second avatar, so name the one on the trigger
+      assertThat(footer.locator(".nav-link > img.avatar")).isVisible();
+      assertThat(footer.locator(".nav-link-title")).not().isVisible();
+
+      // The badge keeps its own box and Playwright would call it visible - Tabler folds the title
+      // around it to width 0 and clips it. So ask the page what is painted where the badge sits:
+      // nothing of it is, and nothing of it reaches the rail.
+      assertEquals(false, footer.locator(".nav-link-title .badge").evaluate("""
+          el => {
+            const box = el.getBoundingClientRect();
+            const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+            return el === hit || el.contains(hit);
+          }"""));
     });
   }
 }
