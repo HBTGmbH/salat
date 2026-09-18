@@ -23,6 +23,7 @@ import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.OvertimeStatus;
+import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.dailyreport.service.OvertimeService;
@@ -80,30 +81,7 @@ public class DashboardController {
         model.addAttribute("releaseColorClass", employeecontract.getReleaseWarning() ? "danger" : "success");
         model.addAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
         model.addAttribute("acceptanceColorClass", employeecontract.getAcceptanceWarning() ? "danger" : "success");
-        String overtime = "";
-        boolean overtimeIsNegative = false;
-        String monthlyOvertime = "0:00";
-        boolean monthlyOvertimeIsNegative = false;
-        String overtimeMonth = DateUtils.format(today(), "yyyy-MM");
-        if (overtimeStatus.isPresent()) {
-            var status = overtimeStatus.get();
-            overtime = DurationUtils.format(status.getTotal().getDuration());
-            overtimeIsNegative = status.getTotal().isNegative();
-            if (status.getCurrentMonth() != null) {
-                monthlyOvertime = DurationUtils.format(status.getCurrentMonth().getDuration());
-                monthlyOvertimeIsNegative = status.getCurrentMonth().isNegative();
-                overtimeMonth = DateUtils.format(status.getCurrentMonth().getBegin(), "yyyy-MM");
-            }
-        }
-        model.addAttribute("overtime", overtime);
-        model.addAttribute("overtimeIsNegative", overtimeIsNegative);
-        model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus));
-        model.addAttribute("overtimeScale", OvertimeScale.TOTAL);
-        model.addAttribute("monthlyOvertime", monthlyOvertime);
-        model.addAttribute("monthlyOvertimeIsNegative", monthlyOvertimeIsNegative);
-        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus));
-        model.addAttribute("monthlyOvertimeScale", OvertimeScale.CURRENT_MONTH);
-        model.addAttribute("overtimeMonth", overtimeMonth);
+        addOvertimeAttributes(model, overtimeStatus);
         model.addAttribute("vacations", vacations);
 
         calculateEmployeeInfo(model, employeecontract);
@@ -220,6 +198,26 @@ public class DashboardController {
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
                 .orElseThrow(() -> new IllegalStateException("No current contract for login employee"));
+    }
+
+    /* Ein Saldo, den es nicht gibt, bleibt ein leeres Feld - an ihm haengt die Sichtbarkeit der
+       Zelle. Ein vorbelegtes "0:00" machte "kein Wert" von "Wert ist null" ununterscheidbar, sobald
+       es im Modell stand, und die Monatszelle hing an der Monatsbezeichnung, die als Beschriftung
+       nie leer ist: ohne Sollstunden oder mit einem Vertrag, der den laufenden Monat nicht
+       beruehrt, behauptete sie damit einen Monatssaldo (#1031). Ein echtes 0:00 ist formatiert und
+       deshalb weiterhin da. */
+    static void addOvertimeAttributes(Model model, Optional<OvertimeStatus> overtimeStatus) {
+        var total = overtimeStatus.map(OvertimeStatus::getTotal);
+        var currentMonth = overtimeStatus.map(OvertimeStatus::getCurrentMonth);
+        model.addAttribute("overtime", total.map(info -> DurationUtils.format(info.getDuration())).orElse(""));
+        model.addAttribute("overtimeIsNegative", total.map(OvertimeStatusInfo::isNegative).orElse(false));
+        model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus));
+        model.addAttribute("overtimeScale", OvertimeScale.TOTAL);
+        model.addAttribute("monthlyOvertime", currentMonth.map(info -> DurationUtils.format(info.getDuration())).orElse(""));
+        model.addAttribute("monthlyOvertimeIsNegative", currentMonth.map(OvertimeStatusInfo::isNegative).orElse(false));
+        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus));
+        model.addAttribute("monthlyOvertimeScale", OvertimeScale.CURRENT_MONTH);
+        model.addAttribute("overtimeMonth", currentMonth.map(info -> DateUtils.format(info.getBegin(), "yyyy-MM")).orElse(""));
     }
 
     /* Die Dauer ist bereits vorzeichenbehaftet (OvertimeService.toStatusInfo); isNegative daneben ist

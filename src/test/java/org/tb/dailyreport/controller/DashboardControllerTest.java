@@ -3,8 +3,10 @@ package org.tb.dailyreport.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.ui.ExtendedModelMap;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 
@@ -57,6 +59,51 @@ public class DashboardControllerTest {
     status.setTotal(info(-50));
 
     assertThat(DashboardController.monthlyOvertimeColorClass(Optional.of(status))).isEqualTo("success");
+  }
+
+  /* Ohne taegliche Sollarbeitszeit gibt es keine Abweichung vom Soll und damit keinen Saldo -
+     OvertimeService.calculateOvertime steigt mit einem leeren Optional aus. Beide Felder bleiben
+     leer, denn an ihnen haengt die Sichtbarkeit der beiden Zellen (#1031). */
+  @Test
+  void a_contract_without_target_hours_fills_neither_overtime_field() {
+    var model = new ExtendedModelMap();
+
+    DashboardController.addOvertimeAttributes(model, Optional.empty());
+
+    assertThat(model.getAttribute("overtime")).isEqualTo("");
+    assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("");
+    assertThat(model.getAttribute("overtimeMonth")).isEqualTo("");
+  }
+
+  /* Der Vertrag beruehrt den laufenden Monat nicht: OvertimeService setzt currentMonth dann nicht.
+     Der Gesamtsaldo steht trotzdem, die Monatszelle faellt weg. */
+  @Test
+  void a_status_without_a_current_month_fills_only_the_total() {
+    var status = new OvertimeStatus();
+    status.setTotal(info(-50));
+    var model = new ExtendedModelMap();
+
+    DashboardController.addOvertimeAttributes(model, Optional.of(status));
+
+    assertThat(model.getAttribute("overtime")).isEqualTo("-50:00");
+    assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("");
+    assertThat(model.getAttribute("overtimeMonth")).isEqualTo("");
+  }
+
+  /* Ein ausgerechnetes 0:00 ist ein Wert und bleibt sichtbar: die Unterscheidung ist "kein Wert"
+     gegen "Wert ist null", nicht "Text ist 0:00". */
+  @Test
+  void a_month_that_really_is_balanced_keeps_its_cell() {
+    var status = new OvertimeStatus();
+    status.setTotal(info(0));
+    status.setCurrentMonth(info(0));
+    status.getCurrentMonth().setBegin(LocalDate.parse("2026-09-01"));
+    var model = new ExtendedModelMap();
+
+    DashboardController.addOvertimeAttributes(model, Optional.of(status));
+
+    assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("0:00");
+    assertThat(model.getAttribute("overtimeMonth")).isEqualTo("2026-09");
   }
 
   private static Optional<OvertimeStatus> status(long totalHours, long monthHours) {
