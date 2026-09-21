@@ -1,10 +1,6 @@
 package org.tb.reporting.controller;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
 import static java.util.Set.of;
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 import static org.tb.reporting.controller.ReportingUiStateKeyContributor.REPORT_FILTER;
 
@@ -19,8 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.MatchResult;
-import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -38,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.AccessLevel;
-import org.tb.common.util.DateTimeUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.reporting.auth.ReportAuthorization;
@@ -46,6 +39,8 @@ import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportParameter;
 import org.tb.reporting.domain.ReportResult;
 import org.tb.reporting.service.ExcelExportService;
+import org.tb.reporting.service.ReportFileNames;
+import org.tb.reporting.service.ReportParameters;
 import org.tb.reporting.service.ReportService;
 
 @Slf4j
@@ -161,8 +156,8 @@ public class ReportController {
     var rd = reportService.getReportDefinition(id);
     if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
 
-    var parametersFromRequest = nonEmpty(getParametersFromRequest(allParams, rd.getSql()));
-    var missingParameters = getMissingParameters(parametersFromRequest, rd.getSql());
+    var parametersFromRequest = ReportParameters.nonEmpty(ReportParameters.fromRequest(allParams, rd.getSql()));
+    var missingParameters = ReportParameters.missing(parametersFromRequest, rd.getSql());
 
     if (!missingParameters.isEmpty()) {
       var paramForm = new ExecuteForm();
@@ -201,10 +196,10 @@ public class ReportController {
                      HttpServletResponse response) throws IOException {
     var rd = reportService.getReportDefinition(id);
     if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
-    var parameters = nonEmpty(getParametersFromRequest(allParams, rd.getSql()));
+    var parameters = ReportParameters.nonEmpty(ReportParameters.fromRequest(allParams, rd.getSql()));
     var reportResult = reportService.execute(id, parameters);
     var bytes = excelExportService.exportToExcel(reportResult);
-    var fileName = createFileName(rd, reportResult.getParameters());
+    var fileName = ReportFileNames.create(rd, reportResult.getParameters(), "xlsx");
     response.setHeader("Content-disposition", "attachment; filename=" + fileName);
     response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     response.setContentLength(bytes.length);
@@ -217,7 +212,7 @@ public class ReportController {
       return "";
     }
     var result = new StringBuilder();
-    for (ReportParameter parameter : nonEmpty(parameters)) {
+    for (ReportParameter parameter : ReportParameters.nonEmpty(parameters)) {
       if (parameter.getValue() != null && !parameter.getValue().isBlank()) {
         result.append("&").append(parameter.getName()).append("=");
         if (!"string".equals(parameter.getType())) {
@@ -227,69 +222,6 @@ public class ReportController {
       }
     }
     return result.toString();
-  }
-
-  @VisibleForTesting
-  static String createFileName(ReportDefinition reportDefinition, List<ReportParameter> parameters) {
-    var dateTime = DateTimeUtils.now().truncatedTo(SECONDS).toString();
-    var fileName = "report-" + reportDefinition.getName() + "-" + toString(parameters) + "-" + dateTime + ".xlsx";
-    return normalizeToFileName(fileName);
-  }
-
-  private static String normalizeToFileName(String fileName) {
-    // may produce long ___ sequences
-    System.out.println(fileName);
-    var withoutSpecialChars = fileName.replaceAll("[^a-zA-Z0-9-_,\\.\\[\\]]", "_").trim();
-    // reduce ___ sequences to _
-    String result;
-    String reduced = withoutSpecialChars;
-    do {
-      result = reduced;
-      reduced = result.replace("__", "_");
-    } while (reduced.length() != result.length());
-    result = result.replace("-_", "-").replace("_-", "-").replace(",_", "-");
-    return result;
-  }
-
-  private static String toString(List<ReportParameter> parameters) {
-    return parameters.stream().map(ReportParameter::getValue).toList().toString();
-  }
-
-  static List<ReportParameter> nonEmpty(List<ReportParameter> parameters) {
-    return parameters.stream().filter(p -> p.getName() != null && !p.getName().isBlank()).toList();
-  }
-
-  private static ReportParameter toReportParameter(String key, String value) {
-    if (value.indexOf(',') > 0) {
-      var parts = value.split(",", 2);
-      return ReportParameter.builder().name(key).type(parts[0].trim()).value(parts[1].trim()).build();
-    }
-    return ReportParameter.builder().name(key).type("string").value(value.trim()).build();
-  }
-
-  static List<ReportParameter> getParametersFromRequest(Map<String, String> params, String query) {
-    if (query == null) {
-      return emptyList();
-    }
-
-    return params.entrySet().stream()
-        .filter(e -> query.contains(":" + e.getKey()))
-        .map(e -> toReportParameter(e.getKey(), e.getValue()))
-        .toList();
-  }
-
-  static java.util.Set<String> getMissingParameters(List<ReportParameter> parameters, String query) {
-    if (query == null){
-      return emptySet();
-    }
-    var parameterNames = parameters.stream().map(ReportParameter::getName).toList();
-    return Pattern.compile(":\\w+")
-        .matcher(query)
-        .results()
-        .map(MatchResult::group)
-        .map(qp -> qp.substring(1))
-        .filter(not(parameterNames::contains))
-        .collect(toSet());
   }
 
   // Form classes

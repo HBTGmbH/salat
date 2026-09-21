@@ -3,12 +3,15 @@ package org.tb.reporting.service;
 import static org.tb.auth.domain.AccessLevel.DELETE;
 import static org.tb.auth.domain.AccessLevel.EXECUTE;
 import static org.tb.auth.domain.AccessLevel.WRITE;
-import static org.tb.common.util.DateUtils.today;
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_EXECUTION_FAILED;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_NAME_AMBIGUOUS;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSING;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.sql.DataSource;
@@ -23,6 +26,9 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.reporting.auth.ReportAuthorization;
 import org.tb.reporting.domain.ReportDefinition;
@@ -79,6 +85,48 @@ public class ReportService {
         .orElse(null);
   }
 
+  /**
+   * Liefert den Report mit genau diesem Namen. Anders als {@link #getReportDefinition(long)} sagt
+   * diese Methode, warum es kein Ergebnis gibt: ein API-Aufrufer soll einen Tippfehler im Namen von
+   * einer fehlenden Berechtigung unterscheiden können.
+   *
+   * <p>Bei mehreren Reports gleichen Namens wird keiner ausgeführt. Einen davon zu nehmen wäre ein
+   * stilles falsches Ergebnis, und welcher es wäre, entschiede die Reihenfolge der Datenbank.
+   */
+  public ReportDefinition getReportDefinitionByName(String name) {
+    var matches = reportDefinitionRepository.findAllByName(name);
+    if (matches.size() > 1) {
+      throw new BusinessRuleException(RP_REPORT_NAME_AMBIGUOUS, name, matches.size());
+    }
+    var report = matches.stream().findFirst()
+        .orElseThrow(() -> new InvalidDataException(RP_REPORT_NOT_FOUND, name));
+    if (!reportAuthorization.isAuthorized(report, EXECUTE)) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
+    return report;
+  }
+
+  /**
+   * Führt einen Report aus und macht aus jedem Fehlschlag eine Ausnahme. {@link #execute(Long, List)}
+   * liefert einen Fehler als Teil des Ergebnisses, weil die Ergebnisansicht ihn anzeigt und das
+   * fehlgeschlagene SQL dazu — für einen Aufrufer ohne Bildschirm ist ein Ergebnis mit
+   * {@code error = true} dagegen nicht von einem leeren Report zu unterscheiden.
+   */
+  public ReportResult executeChecked(ReportDefinition reportDefinition, List<ReportParameter> parameters) {
+    var missing = ReportParameters.missing(parameters, reportDefinition.getSql());
+    if (!missing.isEmpty()) {
+      throw new InvalidDataException(RP_REPORT_PARAMETERS_MISSING, String.join(", ", new TreeSet<>(missing)));
+    }
+    var result = execute(reportDefinition.getId(), parameters);
+    if (result.isError()) {
+      var errorInfo = result.getErrorInfo();
+      log.warn("Report {} could not be executed: {}", reportDefinition.getName(),
+          errorInfo != null ? errorInfo.getErrorMessage() : null);
+      throw new BusinessRuleException(RP_REPORT_EXECUTION_FAILED, reportDefinition.getName());
+    }
+    return result;
+  }
+
   public ReportDefinition create(String name, String sql) {
     if(!reportAuthorization.isAuthorizedForAnyReportDefinition(WRITE)) {
       return null;
@@ -120,7 +168,7 @@ public class ReportService {
 
     try {
       final var rowset = new NamedParameterJdbcTemplate(dataSource)
-          .queryForRowSet(resolvedSql, getParameterMap(parameters));
+          .queryForRowSet(resolvedSql, ReportParameters.toParameterMap(parameters));
 
       // get and create headers
       var columnCount = rowset.getMetaData().getColumnCount();
@@ -167,35 +215,6 @@ public class ReportService {
           .sql(resolvedSql) // the view offers "Show failing SQL", so the statement has to come along
           .build();
     }
-  }
-
-  private static Map<String, Object> getParameterMap(List<ReportParameter> parameters) {
-    var result = new HashMap<String, Object>();
-    for (ReportParameter parameter : nonEmpty(parameters)) {
-      var name = parameter.getName();
-      var value = parameter.getValue();
-      if(value == null || value.isBlank()) value = "";
-      value = value.replace('*','%'); // make it SQL compatible
-      switch (parameter.getType()) {
-        case "date" -> {
-          if(value.equals("TODAY") || value.equals("HEUTE")) {
-            result.put(name, today());
-          } else {
-            if(value.isBlank()) {
-              result.put(name, null);
-            } else {
-              result.put(name, DateUtils.parse(value));
-            }
-          }
-        }
-        default -> result.put(name, value);
-      }
-    }
-    return result;
-  }
-
-  private static List<ReportParameter> nonEmpty(List<ReportParameter> parameters) {
-    return parameters.stream().filter(p -> p.getName() != null && !p.getName().isBlank()).toList();
   }
 
 }
