@@ -955,3 +955,39 @@ via `@JdbcTypeCode(SqlTypes.JSON)` on a `Map` attribute. So far exactly one plac
 - Where the stored document depends on a configured list, keep a hash of that list next to it and
   rewrite the row when the hash differs. Build the hash from the **configured value** (trimmed,
   sorted), not from the stored JSON: MySQL normalises JSON on write.
+
+### CSV über einen `HttpMessageConverter`
+
+Eine Schnittstelle, die dieselben Daten als JSON **und** als CSV anbietet, überlässt die Wahl dem
+`Accept`-Header und stellt das Format nicht über einen Parameter ein. Die Methode nennt beides in
+`produces`, **JSON zuerst** — diese Reihenfolge entscheidet, was ein Aufrufer mit `*/*` bekommt.
+Eigene Konverter-Bohnen stellt Spring Boot vor die mitgelieferten, ohne die Angabe in `produces`
+gewinnt also CSV.
+
+Zwei Stellen, die ein direkt umgesetztes `HttpMessageConverter` nicht geschenkt bekommt — beide
+stecken in `AbstractHttpMessageConverter`, das die Konverter hier nicht erweitern:
+
+- **`canWrite` muss die Klasse mitprüfen**, nicht nur den Medientyp. Sonst kollidieren zwei
+  CSV-Konverter, und genau dafür tragen die Konverter im Modul `dailyreport` die Suffixe
+  `text/csv+dailyreport` und `text/csv+dailyworkingreport`. Wer die Klasse prüft
+  (`ReportDataCsvConverter`), darf `text/csv` führen — der bessere Typ für einen fremden Aufrufer.
+- **`write` muss den Content-Type selbst setzen**, und zwar **vor** `getBody()`: eine
+  Servlet-Antwort schreibt ihre Kopfzeilen, sobald der Strom offen ist. Ohne das trägt die Antwort
+  keinen Content-Type — im `dailyreport`-Modul setzt ihn deshalb jeder Aufrufer von Hand.
+
+Für eine bean-basierte `MappingStrategy` von opencsv braucht es eine Klasse mit festen Feldern. Wo
+die Spalten erst zur Laufzeit feststehen (Reportergebnisse), wird über die Spaltenliste geschrieben.
+
+### Reserviert in den Parametern einer REST-Schnittstelle
+
+Eine Methode, die freie Anfrageparameter durchreicht (`@RequestParam Map<String, String>`), reicht
+nur das durch, was der Aufrufer geschickt hat: **`UiStateFilter` lässt `/api/**` und `/rest/**`
+aus** (`shouldNotFilter`). Der gemerkte Zustand gehört der Oberfläche; in einer zustandslosen Kette
+für maschinelle Aufrufer hätte ein Wert aus dem Cookie dieselbe Anfrage aus einem Browser anders
+beantwortet als aus einem Skript. Die Ausnahme gilt für alle REST-Endpunkte, nicht nur für die, die
+freie Parameter annehmen — deshalb steht sie im Filter und nicht in einem Endpunkt.
+
+Zu reservieren bleiben nur die **eigenen Parameter der Methode**: trägt die Anfrage den Namen der
+Ressource (`?report=Stundenliste`), darf dieser Name nicht zusätzlich als fachlicher Parameter
+gelten. Er wird ausgefiltert, statt sich auf Nichtkollision zu verlassen — ein stiller falscher Wert
+ist schlimmer als ein fehlender, den die Antwort benennt.
