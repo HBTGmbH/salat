@@ -26,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.BudgetEmployeeSign;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustmentData;
 import org.tb.budget.domain.OrderBudgetData;
@@ -35,7 +36,6 @@ import org.tb.budget.service.BudgetEmployeeService;
 import org.tb.budget.service.OrderBudgetService;
 import org.tb.budget.service.TimereportBudgetAssignmentService;
 import org.tb.budget.viewhelper.AssignedTimereportViewHelper;
-import org.tb.budget.viewhelper.BudgetEmployeeSignsViewHelper;
 import org.tb.budget.viewhelper.BudgetEmployeesViewHelper;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DurationUtils;
@@ -107,10 +107,22 @@ public class BudgetController {
      * of the plan's whole order every time, which is the pattern the budget dashboard broke on
      * (→ {@code docs/performance-tips.md}).
      */
-    private Map<Long, BudgetEmployeeSignsViewHelper> employeeSignsOf(List<OrderBudget> budgets) {
-        var byBudget = budgetEmployeeService.employeesOf(budgets);
+    private Map<Long, List<BudgetEmployeeSign>> employeeSignsOf(List<OrderBudget> budgets) {
+        return signsByBudget(budgets, budgetEmployeeService.employeesOf(budgets));
+    }
+
+    /**
+     * Every plan of the page gets an entry, the ones without a booking an empty list (#1047): the
+     * aggregate holds only plans somebody booked on, and the cell must not run onto a {@code null}.
+     *
+     * <p>The signs are handed on in the order the query delivered them — alphabetical by sign
+     * ({@code BudgetEmployeeQueryTest}) — and complete: the column lists everybody, however many
+     * that is, and lets the badges wrap inside the cell instead.
+     */
+    static Map<Long, List<BudgetEmployeeSign>> signsByBudget(
+        List<OrderBudget> budgets, Map<Long, List<BudgetEmployeeSign>> byBudget) {
         return budgets.stream().collect(toMap(OrderBudget::getId,
-            budget -> BudgetEmployeeSignsViewHelper.from(byBudget.get(budget.getId())),
+            budget -> byBudget.getOrDefault(budget.getId(), List.of()),
             (first, second) -> first));
     }
 
