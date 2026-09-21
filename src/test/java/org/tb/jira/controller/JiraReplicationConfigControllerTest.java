@@ -49,14 +49,59 @@ class JiraReplicationConfigControllerTest {
   void an_edit_form_starts_without_a_password() {
     // The form is filled from the info record, which has none — so an edit cannot show the stored
     // token, and the empty field it starts with is what the service reads as "keep it".
-    var info = new JiraReplicationConfigInfo(7L, "Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, null);
-
-    var form = JiraReplicationConfigForm.of(info);
+    var form = JiraReplicationConfigForm.of(info("ALPHA"), "ALPHA");
 
     assertThat(form.getPassword()).isNull();
     assertThat(form.getUsername()).isEqualTo("jira-user");
     assertThat(form.isNew()).isFalse();
+  }
+
+  @Test
+  void an_order_wide_scope_opens_the_form_with_no_suborder_chosen() {
+    var form = JiraReplicationConfigForm.of(info("ALPHA"), "ALPHA");
+
+    assertThat(form.getCustomerorderSign()).isEqualTo("ALPHA");
+    assertThat(form.getSuborderSign()).isNull();
+    assertThat(form.getScopeSign()).isEqualTo("ALPHA");
+  }
+
+  @Test
+  void a_suborder_scope_keeps_the_full_path_and_names_its_order() {
+    // the select offers the fully qualified sign as its option value, and the order beside it is
+    // what the list of suborders is loaded for
+    var form = JiraReplicationConfigForm.of(info("ALPHA/A/01"), "ALPHA");
+
+    assertThat(form.getCustomerorderSign()).isEqualTo("ALPHA");
+    assertThat(form.getSuborderSign()).isEqualTo("ALPHA/A/01");
+    assertThat(form.getScopeSign()).isEqualTo("ALPHA/A/01");
+  }
+
+  @Test
+  void an_order_sign_with_a_slash_in_it_stays_order_wide() {
+    // "0283/03.20" is one order, not an order plus a suborder — splitting the scope at its first
+    // slash would open the form on the order "0283" and move the replication there on the next save
+    var form = JiraReplicationConfigForm.of(info("0283/03.20"), "0283/03.20");
+
+    assertThat(form.getCustomerorderSign()).isEqualTo("0283/03.20");
+    assertThat(form.getSuborderSign()).isNull();
+    assertThat(form.getScopeSign()).isEqualTo("0283/03.20");
+  }
+
+  @Test
+  void a_suborder_below_an_order_whose_sign_has_a_slash_keeps_both_apart() {
+    var form = JiraReplicationConfigForm.of(info("0283/03.20/F&E/01"), "0283/03.20");
+
+    assertThat(form.getCustomerorderSign()).isEqualTo("0283/03.20");
+    assertThat(form.getSuborderSign()).isEqualTo("0283/03.20/F&E/01");
+  }
+
+  @Test
+  void clearing_the_suborder_puts_the_replication_back_on_the_whole_order() {
+    var form = JiraReplicationConfigForm.of(info("ALPHA/A/01"), "ALPHA");
+
+    form.setSuborderSign("");
+
+    assertThat(form.getScopeSign()).isEqualTo("ALPHA");
   }
 
   @Test
@@ -67,6 +112,11 @@ class JiraReplicationConfigControllerTest {
     assertThat(form.isEnabled()).isTrue();
     assertThat(form.getApiFlavor()).isEqualTo(JiraApiFlavor.SERVER);
     assertThat(form.getPassword()).isNull();
+  }
+
+  private static JiraReplicationConfigInfo info(String scopeSign) {
+    return new JiraReplicationConfigInfo(7L, "Alpha", scopeSign, "https://jira.example.com",
+        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, null);
   }
 
   private static String guardOf(Method method) {

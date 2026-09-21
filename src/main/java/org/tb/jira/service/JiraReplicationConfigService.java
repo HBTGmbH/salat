@@ -6,9 +6,10 @@ import static org.tb.common.exception.ErrorCode.JI_REPLICATION_BASE_URL_REQUIRED
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_JQL_REQUIRED;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_NAME_REQUIRED;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_NOT_FOUND;
-import static org.tb.common.exception.ErrorCode.JI_REPLICATION_ORDER_SIGN_REQUIRED;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_PAGE_SIZE_INVALID;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_PASSWORD_REQUIRED;
+import static org.tb.common.exception.ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.JI_REPLICATION_SCOPE_REQUIRED;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
 
 import static java.util.Comparator.comparing;
@@ -36,6 +37,8 @@ import org.tb.jira.domain.JiraReplicationConfigData;
 import org.tb.jira.domain.JiraReplicationConfigInfo;
 import org.tb.jira.domain.JiraReplicationRunOutcome;
 import org.tb.jira.persistence.JiraReplicationConfigRepository;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Maintains the replication configs that used to be edited by hand via SQL (#984).
@@ -60,6 +63,8 @@ public class JiraReplicationConfigService {
   private final JiraReplicationConfigRepository configRepository;
   private final JiraReplicationService jiraReplicationService;
   private final JiraSearchClients jiraSearchClients;
+  private final CustomerorderService customerorderService;
+  private final SuborderService suborderService;
   private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
@@ -103,9 +108,9 @@ public class JiraReplicationConfigService {
 
   public void delete(long id) {
     checkManager();
-    // The tickets already replicated under this order sign stay: jira_ticket hangs off
-    // customerorder_sign, not off the config, and the rows are not wrong — only no longer kept up to
-    // date. The confirmation before deleting says so.
+    // The tickets already replicated in this scope stay: jira_ticket hangs off scope_sign, not off
+    // the config, and the rows are not wrong — only no longer kept up to date. The confirmation
+    // before deleting says so.
     configRepository.delete(load(id));
   }
 
@@ -226,7 +231,7 @@ public class JiraReplicationConfigService {
 
   private void apply(JiraReplicationConfigData data, JiraReplicationConfig config) {
     config.setName(data.name().trim());
-    config.setCustomerorderSign(data.customerorderSign().trim());
+    applyScope(data, config);
     config.setBaseUrl(data.baseUrl().trim());
     config.setApiFlavor(data.apiFlavor() != null ? data.apiFlavor() : JiraApiFlavor.SERVER);
     config.setUsername(data.username().trim());
@@ -235,6 +240,23 @@ public class JiraReplicationConfigService {
     applyFieldNames(data, config);
     config.setPageSize(data.pageSize());
     config.setEnabled(data.enabled());
+  }
+
+  /**
+   * Moving a replication to another scope resets the watermark (#1025), for the reason
+   * {@link #applyFieldNames} gives: the new scope has no tickets of its own yet, and with the
+   * watermark in place the search would only ever find what JIRA has touched since. The tickets
+   * already replicated stay where they are — under the old scope, no longer kept up to date, just as
+   * they stay when the config is deleted. The field help says so.
+   */
+  private void applyScope(JiraReplicationConfigData data, JiraReplicationConfig config) {
+    var scopeSign = data.scopeSign().trim();
+    if (!Objects.equals(scopeSign, config.getScopeSign())) {
+      log.info("Scope of JIRA replication {} changed from {} to {}, resetting the watermark so the "
+          + "tickets of the new scope are fetched", config.getName(), config.getScopeSign(), scopeSign);
+      config.setLastMaxUpdated(null);
+    }
+    config.setScopeSign(scopeSign);
   }
 
   /**
@@ -258,11 +280,12 @@ public class JiraReplicationConfigService {
 
   private void validate(JiraReplicationConfigData data) {
     requireText(data.name(), JI_REPLICATION_NAME_REQUIRED);
-    requireText(data.customerorderSign(), JI_REPLICATION_ORDER_SIGN_REQUIRED);
+    requireText(data.scopeSign(), JI_REPLICATION_SCOPE_REQUIRED);
     requireText(data.baseUrl(), JI_REPLICATION_BASE_URL_REQUIRED);
     requireText(data.username(), JI_REPLICATION_USERNAME_REQUIRED);
     // The replication insists on a JQL query, so a config without one can only ever fail.
     requireText(data.jql(), JI_REPLICATION_JQL_REQUIRED);
+    checkScopeExists(data.scopeSign().trim());
 
     var baseUrl = data.baseUrl().trim().toLowerCase();
     if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
@@ -270,6 +293,50 @@ public class JiraReplicationConfigService {
     }
     if (data.pageSize() != null && data.pageSize() <= 0) {
       throw new InvalidDataException(JI_REPLICATION_PAGE_SIZE_INVALID);
+    }
+  }
+
+  /**
+   * Which customer order a stored scope sits under (#1025) — the order itself when the replication
+   * is order-wide, the order of the suborder otherwise. The edit form needs it to load the suborders
+   * to choose from.
+   *
+   * <p>Deliberately asked rather than parsed. Splitting the scope at its first slash looks obvious
+   * and is wrong: an order sign may contain a slash itself, so {@code 0283/03.20/F&E/01} would be
+   * read as the order {@code 0283}, the form would open on a different order with nothing
+   * preselected, and saving it again would silently move the replication there.
+   *
+   * <p>An order sign wins over a suborder path that reads the same. Every row written before #1025
+   * carries an order sign and must keep meaning "the whole order"; a collision the other way can
+   * only arise from an order deliberately named like a path.
+   */
+  @Transactional(readOnly = true)
+  public String customerorderSignOf(String scopeSign) {
+    checkManager();
+    if (isBlank(scopeSign) || customerorderService.getCustomerorderBySign(scopeSign) != null) {
+      return scopeSign;
+    }
+    var suborder = suborderService.getSuborderByCompleteOrderSign(scopeSign);
+    return suborder != null ? suborder.getCustomerorder().getSign() : scopeSign;
+  }
+
+  /**
+   * A scope nobody can book on is a replication nobody reads (#1025): the suggestions resolve the
+   * branch of the chosen suborder upwards, so a sign that is in no branch never matches anything.
+   * The form picks the scope rather than letting it be typed, so this catches a post that bypasses
+   * the select and a record whose order was renamed in between.
+   *
+   * <p>Both readings are tried, and the shape of the sign decides nothing — an order-wide scope on
+   * the order {@code 0283/03.20} carries a slash without being a suborder path.
+   *
+   * <p>Hidden and expired records count as existing. {@code hide} declutters the pickers of the
+   * order module; it says nothing about whether work is still being booked, and an expired order is
+   * exactly the one whose tickets are still being looked at while the last bookings are corrected.
+   */
+  private void checkScopeExists(String scopeSign) {
+    if (customerorderService.getCustomerorderBySign(scopeSign) == null
+        && !suborderService.existsSuborderWithCompleteOrderSign(scopeSign)) {
+      throw new InvalidDataException(JI_REPLICATION_SCOPE_NOT_FOUND);
     }
   }
 

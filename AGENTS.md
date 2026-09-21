@@ -424,7 +424,7 @@ well as selects. What the user types always wins; the list is a convenience.
 | Attribute | Purpose |
 |---|---|
 | `data-remote-url` | endpoint queried on every keystroke; gets `q` plus the context parameter, answers with JSON `[{key, summary}]` |
-| `data-remote-context-field` | CSS selector of the field whose value scopes the search (e.g. the order behind the selected suborder) |
+| `data-remote-context-field` | CSS selector of the field whose value scopes the search. **Point it at the select the user operates and send its id**, not at a hidden field carrying a derived value: the ticket suggestions read `#suborderId` and let the server resolve the order branch from it (#1025). A hidden mirror has to be kept in step by hand — through the change event and through every HTMX swap that re-renders the select — and it hands the endpoint a scope the browser chose |
 | `data-remote-context-param` | name of the request parameter that carries that value |
 | `data-fill-target` | CSS selector of a field that gets the chosen entry as `key - summary` — **only while it is untouched**: empty, or still holding exactly what an earlier pick wrote there. A text somebody typed is theirs and is never overwritten, not even on the next pick. An entry without a `summary` is text somebody typed rather than one of the offered rows, and fills nothing |
 | `data-create-label` | prefix of the "use what I typed" row; pass an `#{...}` message |
@@ -502,7 +502,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 | `etl` | Data integration / extract-transform-load |
 | `favorites` | User favorites for quick access |
 | `invoice` | Invoice generation and settings |
-| `jira` | Jira integration and replication |
+| `jira` | Jira integration and replication; may import `order` — a replication is scoped to a place in the order tree (#1025) |
 | `notification` | Notifications |
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |

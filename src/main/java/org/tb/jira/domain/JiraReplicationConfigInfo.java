@@ -9,13 +9,15 @@ import java.time.LocalDateTime;
  * and the form work on it instead of on the entity, so the stored token has no way of reaching a
  * template, a log line or an error message by accident.
  *
+ * @param scopeSign where the replication applies (#1025) — a customer order sign for the whole
+ *     order, or the fully qualified sign of one suborder, {@code AUFTRAG/01/02}
  * @param lastMaxUpdated the watermark the replication has reached — the one field that tells whether
  *     a replication is still running at all
  */
 public record JiraReplicationConfigInfo(
     Long id,
     String name,
-    String customerorderSign,
+    String scopeSign,
     String baseUrl,
     JiraApiFlavor apiFlavor,
     String username,
@@ -32,7 +34,7 @@ public record JiraReplicationConfigInfo(
     return new JiraReplicationConfigInfo(
         config.getId(),
         config.getName(),
-        config.getCustomerorderSign(),
+        config.getScopeSign(),
         config.getBaseUrl(),
         config.getApiFlavor(),
         config.getUsername(),

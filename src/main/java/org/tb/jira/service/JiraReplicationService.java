@@ -52,9 +52,9 @@ public class JiraReplicationService {
     int pageSize = cfg.getPageSize() != null && cfg.getPageSize() > 0 ? cfg.getPageSize() : 100;
     var fieldConfig = JiraFieldConfig.from(cfg);
 
-    log.info("Starting JIRA replication: id={}, name={}, customerorderSign={}, apiFlavor={}, "
+    log.info("Starting JIRA replication: id={}, name={}, scopeSign={}, apiFlavor={}, "
             + "pageSize={}, additionalFields={}, inheritedFields={}",
-        cfg.getId(), cfg.getName(), cfg.getCustomerorderSign(), cfg.getApiFlavor(), pageSize,
+        cfg.getId(), cfg.getName(), cfg.getScopeSign(), cfg.getApiFlavor(), pageSize,
         fieldConfig.fieldPaths(), fieldConfig.inheritedFieldPaths());
 
     // Note: We do not modify JQL per requirement. We filter during upsert by updated timestamp.
@@ -113,18 +113,19 @@ public class JiraReplicationService {
   }
 
   /**
-   * Walks the parent chains within one customer order, once per ticket: it writes the top-level key
-   * and resolves the inherited fields (#881) in the same pass. Scoped, not global: an issue key is
-   * only unique per customer order — two JIRA instances can hand out the same key — and a parent
-   * chain never crosses that boundary anyway.
+   * Walks the parent chains within the scope of this replication, once per ticket: it writes the
+   * top-level key and resolves the inherited fields (#881) in the same pass. Scoped, not global: an
+   * issue key is only unique per scope — two JIRA instances can hand out the same key — and a parent
+   * chain never crosses that boundary anyway. Since #1025 a scope can be one suborder rather than a
+   * whole order, and the chain stops at that boundary just as it used to stop at the order's.
    *
    * <p>Every ticket is resolved again on every run, not just the ones the run touched. That is what
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
    */
   private void resolveParentChains(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig) {
-    var customerorderSign = cfg.getCustomerorderSign();
-    var ticketsByKey = ticketRepo.findByCustomerorderSign(customerorderSign).stream()
+    var scopeSign = cfg.getScopeSign();
+    var ticketsByKey = ticketRepo.findByScopeSign(scopeSign).stream()
         .collect(Collectors.toMap(JiraTicket::getKey, identity()));
     var updatedChildren = new LinkedList<JiraTicket>();
 
@@ -153,8 +154,8 @@ public class JiraReplicationService {
       updatedChildren.add(ticket);
     }
 
-    log.info("Resolved parent chains for {} changed tickets of customer order {}",
-        updatedChildren.size(), customerorderSign);
+    log.info("Resolved parent chains for {} changed tickets of scope {}",
+        updatedChildren.size(), scopeSign);
     ticketRepo.saveAll(updatedChildren);
   }
 
@@ -230,7 +231,7 @@ public class JiraReplicationService {
   private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, JiraIssue issue) {
     long jiraId = Long.parseLong(issue.getId());
 
-    var existing = ticketRepo.findByCustomerorderSignAndJiraId(cfg.getCustomerorderSign(), jiraId).orElse(null);
+    var existing = ticketRepo.findByScopeSignAndJiraId(cfg.getScopeSign(), jiraId).orElse(null);
     var fields = issue.getFields();
     var updatedTs = toDateTime(getString(fields, "updated"));
 
@@ -246,7 +247,7 @@ public class JiraReplicationService {
     }
 
     var t = existing != null ? existing : new JiraTicket();
-    t.setCustomerorderSign(cfg.getCustomerorderSign());
+    t.setScopeSign(cfg.getScopeSign());
     t.setJiraId(jiraId);
     t.setKey(issue.getKey());
     t.setSummary(safe(getString(fields, "summary"), 1024));

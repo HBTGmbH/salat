@@ -2857,5 +2857,54 @@ databaseChangeLog:
                   name: ticket_reference
                   type: varchar(64)
 
+  - changeSet:
+      id: 79
+      author: kr
+      comment: Rename jira_replication_config.customerorder_sign to scope_sign - a replication is scoped to an order or to one suborder of it (#1025)
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: jira_replication_config
+            columnName: customerorder_sign
+      changes:
+        # The column keeps its shape and its content: an existing row carries an order sign, and
+        # that is exactly what "the whole order" means under the new reading. A suborder scope is
+        # the fully qualified sign, AUFTRAG/01/02, which fits the same varchar(255) - the segments
+        # are capped at 16 characters each.
+        - renameColumn:
+            tableName: jira_replication_config
+            oldColumnName: customerorder_sign
+            newColumnName: scope_sign
+            columnDataType: varchar(255)
+        # MySQL's CHANGE COLUMN rebuilds the definition from what it is given, so the nullability
+        # has to be stated again - the same trap changeset 71 ran into with modifyDataType.
+        - addNotNullConstraint:
+            tableName: jira_replication_config
+            columnName: scope_sign
+            columnDataType: varchar(255)
+
+  - changeSet:
+      id: 80
+      author: kr
+      comment: Rename jira_ticket.customerorder_sign to scope_sign - a ticket belongs to the scope of the replication that fetched it (#1025)
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: jira_ticket
+            columnName: customerorder_sign
+      changes:
+        # The two unique constraints (uq_jira_ticket_co_jiraid, uq_jira_ticket_co_issue_key) and
+        # the index idx_jira_ticket_co_updated follow the column and stay in force unchanged; only
+        # their names still read "co", which is what the column used to be called.
+        - renameColumn:
+            tableName: jira_ticket
+            oldColumnName: customerorder_sign
+            newColumnName: scope_sign
+            columnDataType: varchar(255)
+        - addNotNullConstraint:
+            tableName: jira_ticket
+            columnName: scope_sign
+            columnDataType: varchar(255)
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

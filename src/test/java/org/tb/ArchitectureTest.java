@@ -200,15 +200,23 @@ public class ArchitectureTest {
           "org.tb.common.", "org.tb.auth.", "org.tb.employee.", "org.tb.error."));
 
   /**
-   * jira replicates tickets against a remote API. It touches no domain module — the tickets it
-   * stores are referenced by their key, and whoever needs them reads them from here.
+   * jira replicates tickets against a remote API, and since #1025 the scope of a replication is a
+   * place in the order tree — either a whole customer order or one suborder at any depth. A module
+   * that administers that scope without knowing the tree can neither offer it, nor check it, nor
+   * follow it upwards for the suggestions of a booking, so the edge to order is what the capability
+   * is made of rather than a shortcut.
+   *
+   * <p>The edge is free of cycles: the transitive hull of order is {common, auth, customer,
+   * employee, settings, notification}, none of which imports jira, and jira is imported by no module
+   * at all — {@link #beFreeOfCycles} covers that for good. jira still hangs its tickets off signs
+   * rather than off foreign ids, so the storage form stays independent of the order tables.
    */
   @ArchTest
-  static final ArchRule jiraShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+  static final ArchRule jiraShouldAccessCommonAuthOrderOnly = priority(HIGH).noClasses().that()
       .resideInAPackage("org.tb.jira..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "jira must only import common, auth",
-          "org.tb.common.", "org.tb.auth.", "org.tb.jira."));
+          "jira must only import common, auth, order",
+          "org.tb.common.", "org.tb.auth.", "org.tb.order.", "org.tb.jira."));
 
   /**
    * reporting runs report definitions as SQL and renders the result generically, so it needs no

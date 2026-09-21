@@ -17,8 +17,12 @@ import org.tb.jira.persistence.JiraTicketRepository;
 
 /**
  * The optional ticket reference on a booking (#982): free text, with the tickets replicated for the
- * selected order offered while typing. Picking one stores its number and writes number and title
- * into an untouched comment - a comment somebody typed themselves stays as it is.
+ * branch of the selected suborder offered while typing (#1025). Picking one stores its number and
+ * writes number and title into an untouched comment - a comment somebody typed themselves stays as
+ * it is.
+ *
+ * <p>The tickets here are seeded order-wide, so what they exercise is the top of the branch: the
+ * suborder that is booked on carries no replication of its own and still gets them offered.
  *
  * <p>Books on a day of its own, as every E2E class does - the bookings are never cleaned up.
  */
@@ -40,7 +44,7 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
 
   @BeforeAll
   void seedReplicatedTickets() {
-    if (!jiraTicketRepository.findByCustomerorderSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN).isEmpty()) {
+    if (!jiraTicketRepository.findByScopeSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN).isEmpty()) {
       return;
     }
     saveTicket(4711L, TICKET_KEY, TICKET_SUMMARY);
@@ -49,7 +53,7 @@ class TicketReferenceE2ETest extends PlaywrightE2ETestBase {
 
   private void saveTicket(long jiraId, String key, String summary) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
+    ticket.setScopeSign(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
     ticket.setJiraId(jiraId);
     ticket.setKey(key);
     ticket.setSummary(summary);

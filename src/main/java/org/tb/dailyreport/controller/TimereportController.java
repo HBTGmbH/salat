@@ -202,7 +202,6 @@ public class TimereportController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
-        model.addAttribute("selectedOrderSign", orderSignOf(suborders, form.getSuborderId()));
         model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
         if (ecId > 0 && date != null) {
             model.addAttribute("todaysBookings",
@@ -458,7 +457,6 @@ public class TimereportController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
-        model.addAttribute("selectedOrderSign", orderSignOf(suborders, form.getSuborderId()));
         model.addAttribute("isEdit", isEdit);
         var todaysBookings = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
         model.addAttribute("todaysBookings", todaysBookings);
@@ -550,25 +548,10 @@ public class TimereportController {
                         : s.completeOrderSign();
                     var subtext = order.getSign() + " · " + order.getShortdescription()
                         + " · " + order.getCustomer().getShortname();
-                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary(), s.trainingFlag(),
-                        order.getSign());
+                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary(),
+                        s.trainingFlag());
                 }))
             .toList();
-    }
-
-    /**
-     * Sign of the customer order the selected suborder belongs to; empty when nothing is selected.
-     * The booking form looks the ticket suggestions up for it (#982).
-     */
-    static String orderSignOf(List<SuborderOption> suborders, Long suborderId) {
-        if (suborderId == null) {
-            return "";
-        }
-        return suborders.stream()
-            .filter(s -> suborderId.equals(s.id()))
-            .findFirst()
-            .map(SuborderOption::customerorderSign)
-            .orElse("");
     }
 
     /** Default state of the training switch for a suborder; false when nothing is preselected. */

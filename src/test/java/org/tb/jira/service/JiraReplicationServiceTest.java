@@ -168,13 +168,52 @@ class JiraReplicationServiceTest {
   }
 
   @Test
+  void testARunReadsAndWritesOnlyTicketsOfItsOwnScope() {
+    // Two replications on the same order but with different scopes are independent (#1025). The
+    // separation costs the run nothing: every ticket access already keys on exactly one sign, and
+    // that sign is now the scope rather than the order.
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setScopeSign("MOCK_ORDER/A/01");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertEquals("MOCK_ORDER/A/01", savedTicket().getScopeSign());
+    verify(ticketRepo).findByScopeSignAndJiraId("MOCK_ORDER/A/01", 1001L);
+    verify(ticketRepo).findByScopeSign("MOCK_ORDER/A/01");
+    verify(ticketRepo, never()).findByScopeSign("MOCK_ORDER");
+  }
+
+  @Test
+  void testParentChainsAreNotResolvedAcrossScopeBoundaries() {
+    // The chain is walked over the tickets of this scope alone, so a parent replicated by another
+    // replication of the same order is not reached and no field is inherited across the boundary.
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setScopeSign("MOCK_ORDER/A/01");
+    config.setAdditionalFieldNames("customfield_10123");
+    config.setInheritedFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+    var child = ticket("MOCK-2", "MOCK-1");
+    child.setScopeSign("MOCK_ORDER/A/01");
+    // the parent lives in the order-wide scope and is therefore invisible to this run
+    when(ticketRepo.findByScopeSign("MOCK_ORDER/A/01")).thenReturn(List.of(child));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertEquals("MOCK-2", child.getTopLevelKey());
+    assertNull(child.getCustomFieldsEffective());
+  }
+
+  @Test
   void testTopLevelKeysAreResolvedWithinTheCustomerOrderOnly() {
     JiraReplicationConfig config = createMockReplicationConfig();
     when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
     when(searchClient.search(any())).thenReturn(issues());
     var parent = ticket("MOCK-1", null);
     var child = ticket("MOCK-2", "MOCK-1");
-    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(parent, child));
+    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(parent, child));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -243,7 +282,7 @@ class JiraReplicationServiceTest {
     var epic = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     var story = ticket("MOCK-2", "MOCK-1", Map.of());
     var task = ticket("MOCK-3", "MOCK-2", Map.of());
-    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(epic, story, task));
+    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(epic, story, task));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -262,7 +301,7 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues());
     var epic = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     var task = ticket("MOCK-2", "MOCK-1", Map.of("customfield_10123", "Migration"));
-    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
+    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -278,7 +317,7 @@ class JiraReplicationServiceTest {
     when(searchClient.search(any())).thenReturn(issues());
     var epic = ticket("MOCK-1", null, Map.of());
     var task = ticket("MOCK-2", "MOCK-1", Map.of());
-    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
+    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(epic, task));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -296,7 +335,7 @@ class JiraReplicationServiceTest {
     // is a shape the foreign system can hand over
     var one = ticket("MOCK-1", "MOCK-2", Map.of("customfield_10123", "Wartung"));
     var two = ticket("MOCK-2", "MOCK-1", Map.of());
-    when(ticketRepo.findByCustomerorderSign("MOCK_ORDER")).thenReturn(List.of(one, two));
+    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenReturn(List.of(one, two));
 
     jiraReplicationService.runReplication(config.getId());
 
@@ -312,7 +351,7 @@ class JiraReplicationServiceTest {
     var stored = ticket("MOCK-1", null, Map.of());
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash("the hash of an earlier field list");
-    when(ticketRepo.findByCustomerorderSignAndJiraId("MOCK_ORDER", 1001L))
+    when(ticketRepo.findByScopeSignAndJiraId("MOCK_ORDER", 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
         .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
@@ -333,7 +372,7 @@ class JiraReplicationServiceTest {
     var stored = ticket("MOCK-1", null, Map.of("customfield_10123", "Wartung"));
     stored.setUpdatedTs(LocalDateTime.of(2026, 6, 25, 15, 5, 0));
     stored.setFieldConfigHash(JiraFieldConfig.from(config).hash());
-    when(ticketRepo.findByCustomerorderSignAndJiraId("MOCK_ORDER", 1001L))
+    when(ticketRepo.findByScopeSignAndJiraId("MOCK_ORDER", 1001L))
         .thenReturn(Optional.of(stored));
     when(searchClient.search(any()))
         .thenReturn(issues(mockIssue(Map.of("customfield_10123", "Wartung"))));
@@ -379,7 +418,7 @@ class JiraReplicationServiceTest {
 
   private static JiraTicket ticket(String key, String parentKey) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderSign("MOCK_ORDER");
+    ticket.setScopeSign("MOCK_ORDER");
     ticket.setKey(key);
     ticket.setParentKey(parentKey);
     return ticket;
@@ -407,7 +446,7 @@ class JiraReplicationServiceTest {
     config.setPassword("mockPassword");
     config.setJql("project = MOCK");
     config.setPageSize(50);
-    config.setCustomerorderSign("MOCK_ORDER");
+    config.setScopeSign("MOCK_ORDER");
     return config;
   }
 

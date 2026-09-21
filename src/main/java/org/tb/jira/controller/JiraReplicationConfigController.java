@@ -1,5 +1,6 @@
 package org.tb.jira.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -19,6 +20,9 @@ import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.jira.domain.JiraApiFlavor;
 import org.tb.jira.domain.JiraReplicationConfigData;
 import org.tb.jira.service.JiraReplicationConfigService;
+import org.tb.order.domain.Suborder;
+import org.tb.order.service.CustomerorderService;
+import org.tb.order.service.SuborderService;
 
 /**
  * Maintains the JIRA replications (#984) — the rows that used to be edited by hand via SQL.
@@ -35,6 +39,8 @@ import org.tb.jira.service.JiraReplicationConfigService;
 public class JiraReplicationConfigController {
 
   private final JiraReplicationConfigService jiraReplicationConfigService;
+  private final CustomerorderService customerorderService;
+  private final SuborderService suborderService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final MessageSourceAccessor messages;
 
@@ -53,7 +59,8 @@ public class JiraReplicationConfigController {
   @GetMapping("/{id}/edit")
   public String editForm(@PathVariable long id, Model model) {
     var info = jiraReplicationConfigService.getById(id);
-    addFormModel(model, JiraReplicationConfigForm.of(info));
+    addFormModel(model, JiraReplicationConfigForm.of(info,
+        jiraReplicationConfigService.customerorderSignOf(info.scopeSign())));
     model.addAttribute("lastMaxUpdated", info.lastMaxUpdated());
     return "jira/replication-form";
   }
@@ -79,7 +86,7 @@ public class JiraReplicationConfigController {
                       RedirectAttributes redirectAttributes) {
     var data = new JiraReplicationConfigData(
         form.getName(),
-        form.getCustomerorderSign(),
+        form.getScopeSign(),
         form.getBaseUrl(),
         form.getApiFlavor(),
         form.getUsername(),
@@ -175,10 +182,45 @@ public class JiraReplicationConfigController {
     return "redirect:/jira/replications";
   }
 
+  /**
+   * Refills the suborder select when the customer order changes (#1025). Offering the suborders of
+   * every order would be a list of several thousand entries, and the scope of a replication is
+   * always a place below one order.
+   */
+  @PostMapping("/suborders")
+  @PreAuthorize("hasRole('MANAGER')")
+  public String suborders(@ModelAttribute("replicationForm") JiraReplicationConfigForm form,
+                          Model model, HttpServletRequest request) {
+    form.setSuborderSign(null); // the previous pick belongs to the order that was just replaced
+    addFormModel(model, form);
+    model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
+    model.addAttribute("subordersChanged", true);
+    return "jira/replication-form";
+  }
+
   private void addFormModel(Model model, JiraReplicationConfigForm form) {
     model.addAttribute("replicationForm", form);
     model.addAttribute("apiFlavors", JiraApiFlavor.values());
     model.addAttribute("isEdit", !form.isNew());
+    model.addAttribute("customerorders",
+        customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
+    model.addAttribute("suborders", subordersOf(form));
+  }
+
+  /**
+   * The suborders of the selected order, at any depth — empty while none is selected. The suborder
+   * a replication already points at stays in the list once it is hidden, so that an edit cannot drop
+   * the scope and silently write back whatever the browser preselected instead (→ AGENTS.md, #1005).
+   */
+  private List<Suborder> subordersOf(JiraReplicationConfigForm form) {
+    var sign = form.getCustomerorderSign();
+    if (sign == null || sign.isBlank()) {
+      return List.of();
+    }
+    var customerorder = customerorderService.getCustomerorderBySign(sign);
+    return customerorder == null ? List.of()
+        : suborderService.getSelectableSubordersByCustomerorderId(
+            customerorder.getId(), form.getSuborderSign());
   }
 
   private List<String> toMessages(ErrorCodeException ex) {

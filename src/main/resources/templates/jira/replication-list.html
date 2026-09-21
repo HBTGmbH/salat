@@ -33,7 +33,9 @@
       <thead>
         <tr>
           <th th:text="#{main.jira.replication.field.name}">Name</th>
-          <th th:text="#{main.jira.replication.field.customerorderSign}">Auftragskürzel</th>
+          <!--/* Several replications on one order are the point of #1025; the scope is what tells
+                 them apart. */-->
+          <th th:text="#{main.jira.replication.field.scopeSign}">Geltungsbereich</th>
           <th th:text="#{main.jira.replication.field.baseUrl}">Basis-URL</th>
           <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.apiFlavor}">API-Variante</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Merkmale</th>
@@ -53,7 +55,7 @@
           <td>
             <a th:href="@{/jira/replications/{id}/edit(id=${replication.id})}" th:text="${replication.name}">Name</a>
           </td>
-          <td th:text="${replication.customerorderSign}">ALPHA</td>
+          <td class="text-nowrap font-monospace small" th:text="${replication.scopeSign}">ALPHA/01</td>
           <td class="text-break small" th:text="${replication.baseUrl}">https://jira.example.com</td>
           <td class="d-none d-md-table-cell" th:text="#{${replication.apiFlavor.label}}">Server</td>
           <td class="d-none d-lg-table-cell">

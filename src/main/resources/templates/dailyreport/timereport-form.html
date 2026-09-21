@@ -153,27 +153,26 @@
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
                         th:text="${s.label}"
-                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-order-sign=${s.customerorderSign}"
+                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
-              <!-- Sign of the customer order behind the selected suborder: the ticket suggestions are
-                   looked up for it (#982). Sits inside this fragment so an HTMX refresh of the
-                   suborders brings it along; updateTicketOrderSign() keeps it in step on change. -->
-              <input type="hidden" id="ticketOrderSign" disabled th:value="${selectedOrderSign}"/>
             </div>
 
             <!-- Ticket reference (#982): free text, with suggestions from the tickets replicated for
-                 the selected order. Stored is the number alone. Sits above the comment: picking a
-                 ticket writes its title into an untouched comment, so it is read before it. -->
+                 the branch of the selected suborder (#1025) — the suborder itself, its parents and
+                 the order-wide replication. Stored is the number alone. Sits above the comment:
+                 picking a ticket writes its title into an untouched comment, so it is read before
+                 it. The select itself is the context: the endpoint takes the id and resolves the
+                 branch on the server, so no sign travels through the browser. -->
             <div class="mb-3">
               <label class="form-label" for="ticketReference"
                      th:text="#{main.timereport.form.ticketreference.label}">Ticket</label>
               <input type="text" class="form-control tomselect" id="ticketReference"
                      th:field="*{ticketReference}" maxlength="64"
                      data-remote-url="/jira/tickets/suggestions"
-                     data-remote-context-field="#ticketOrderSign"
-                     data-remote-context-param="orderSign"
+                     data-remote-context-field="#suborderId"
+                     data-remote-context-param="suborderId"
                      data-fill-target="#commentField"
                      th:attr="data-create-label=#{main.timereport.form.ticketreference.create},
                               placeholder=#{main.timereport.form.ticketreference.placeholder}"/>
@@ -427,14 +426,11 @@
       var opt = sel.options[sel.selectedIndex];
       if (opt && opt.dataset.training === 'true') box.checked = true;
     }
-    // #982: the ticket suggestions belong to the customer order of the selected suborder. The
-    // entered reference is deliberately left alone - it is free text and may well fit the new order.
-    function updateTicketOrderSign() {
-      var sel = document.getElementById('suborderId');
-      var field = document.getElementById('ticketOrderSign');
-      if (!sel || !field) return;
-      var opt = sel.options[sel.selectedIndex];
-      field.value = (opt && opt.dataset.orderSign) || '';
+    // #982/#1025: the suggestions belong to the branch of the selected suborder, and the select
+    // itself is what the remote field reads as its context - so there is nothing to keep in step,
+    // only the loaded list to throw away. The entered reference is deliberately left alone: it is
+    // free text and may well fit the new suborder.
+    function clearTicketSuggestions() {
       document.getElementById('ticketReference')?.tomselect?.clearOptions();
     }
     document.addEventListener('DOMContentLoaded', function() {
@@ -442,7 +438,7 @@
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
         sel.addEventListener('change', applySuborderTrainingDefault);
-        sel.addEventListener('change', updateTicketOrderSign);
+        sel.addEventListener('change', clearTicketSuggestions);
       }
       updateCommentRequired();
     });
@@ -451,7 +447,7 @@
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
         sel.addEventListener('change', applySuborderTrainingDefault);
-        sel.addEventListener('change', updateTicketOrderSign);
+        sel.addEventListener('change', clearTicketSuggestions);
       }
       updateCommentRequired();
     });

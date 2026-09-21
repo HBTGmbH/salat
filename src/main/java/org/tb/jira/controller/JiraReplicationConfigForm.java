@@ -8,9 +8,12 @@ import org.tb.jira.domain.JiraReplicationConfigInfo;
 /**
  * The form behind the replication config page (#984).
  *
- * <p>{@link #password} is only ever filled by the user. {@link #of(JiraReplicationConfigInfo)}
- * cannot fill it — the info record it maps from does not carry one — so an edit starts with an empty
- * field, which the service reads as "keep the stored password".
+ * <p>{@link #password} is only ever filled by the user. {@link #of} cannot fill it — the info record
+ * it maps from does not carry one — so an edit starts with an empty field, which the service reads
+ * as "keep the stored password".
+ *
+ * <p>The scope is stored as one sign but edited as two fields (#1025): an order to pick the
+ * suborders from, and the suborder itself, which stays empty for an order-wide replication.
  */
 @Getter
 @Setter
@@ -18,7 +21,17 @@ public class JiraReplicationConfigForm {
 
   private Long id;
   private String name;
+
+  /** Sign of the customer order — on its own already a complete, order-wide scope. */
   private String customerorderSign;
+
+  /**
+   * Fully qualified sign of the chosen suborder, {@code AUFTRAG/01/02}; empty for the whole order.
+   * The suborder sign alone would not do: {@code AUFTRAG/A/01} and {@code AUFTRAG/B/01} may both
+   * exist, so what identifies the scope is the path, not the last segment.
+   */
+  private String suborderSign;
+
   private String baseUrl;
 
   /** Preselected as Server: that is what a config without an explicit flavor has always meant. */
@@ -39,11 +52,22 @@ public class JiraReplicationConfigForm {
     return id == null;
   }
 
-  public static JiraReplicationConfigForm of(JiraReplicationConfigInfo info) {
+  /** What the two fields amount to: the suborder if one is chosen, the order itself otherwise. */
+  public String getScopeSign() {
+    return suborderSign == null || suborderSign.isBlank() ? customerorderSign : suborderSign;
+  }
+
+  /**
+   * @param customerorderSign the order the stored scope sits under, as
+   *     {@code JiraReplicationConfigService.customerorderSignOf} resolved it. Passed in rather than
+   *     derived here: telling an order-wide scope from a suborder path takes a look at the order
+   *     tree, because an order sign may contain a slash itself.
+   */
+  public static JiraReplicationConfigForm of(JiraReplicationConfigInfo info, String customerorderSign) {
     var form = new JiraReplicationConfigForm();
     form.setId(info.id());
     form.setName(info.name());
-    form.setCustomerorderSign(info.customerorderSign());
+    form.applyScope(info.scopeSign(), customerorderSign);
     form.setBaseUrl(info.baseUrl());
     form.setApiFlavor(info.apiFlavor());
     form.setUsername(info.username());
@@ -54,5 +78,15 @@ public class JiraReplicationConfigForm {
     form.setPageSize(info.pageSize());
     form.setEnabled(info.enabled());
     return form;
+  }
+
+  /**
+   * Puts a stored scope into the two fields. A scope equal to the order is order-wide and leaves
+   * the suborder empty; anything else is the fully qualified sign the suborder select offers as its
+   * option values, and is kept whole.
+   */
+  private void applyScope(String scopeSign, String customerorderSign) {
+    this.customerorderSign = customerorderSign;
+    this.suborderSign = scopeSign == null || scopeSign.equals(customerorderSign) ? null : scopeSign;
   }
 }

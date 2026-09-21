@@ -83,7 +83,7 @@ class JiraTicketCustomFieldsTest {
 
   private Long save(Consumer<JiraTicket> fill) {
     var ticket = new JiraTicket();
-    ticket.setCustomerorderSign("ALPHA");
+    ticket.setScopeSign("ALPHA");
     ticket.setJiraId(1L);
     ticket.setKey("ALPHA-1");
     ticket.setFieldConfigHash("0123456789abcdef");
