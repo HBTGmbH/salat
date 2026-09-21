@@ -155,6 +155,12 @@ public enum ErrorCode {
   JI_REPLICATION_PAGE_SIZE_INVALID("JI-0009", "the page size must be a positive number"),
   JI_REPLICATION_SCOPE_NOT_FOUND("JI-0010", "the scope of a jira replication must be an existing customer order or suborder"),
 
+  RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
+  RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),
+  RP_REPORT_PARAMETERS_MISSING("RP-0003", "the report needs parameters that were not given"),
+  RP_REPORT_PARAMETER_INVALID("RP-0004", "a report parameter cannot be interpreted as its type"),
+  RP_REPORT_EXECUTION_FAILED("RP-0005", "the report could not be executed"),
+
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
   ;
