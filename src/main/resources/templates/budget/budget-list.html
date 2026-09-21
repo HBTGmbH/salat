@@ -57,7 +57,10 @@
           <th class="d-none d-md-table-cell" th:text="#{main.budget.field.customerorderSign}">Auftrag</th>
           <th class="d-none d-md-table-cell" th:text="#{main.budget.field.suborderSign}">Unterauftrag</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.budget.field.valid}">Gültig</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.budget.field.employees}">Mitarbeitende</th>
+          <!--/* Bounded so the signs wrap early enough (#1047): without a limit the auto layout
+                 widens the column until a plan with many bookings pushes the other columns out of
+                 the table, which is horizontal scrolling instead of a taller row. */-->
+          <th class="d-none d-md-table-cell w-25" th:text="#{main.budget.field.employees}">Mitarbeitende</th>
           <th class="w-1"></th>
           <th class="w-1" th:if="${isManager}"></th>
           <th class="w-1" th:if="${isManager}"></th>
@@ -91,17 +94,19 @@
             <span th:if="${b.validUntil.year != 2999}" th:text="${#temporals.format(b.validUntil, 'dd.MM.yyyy')}"></span>
             <span th:unless="${b.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
           </td>
-          <!--/* Who booked on this plan (#964), alphabetically — signs only. No hours, no rates and
-                 no findings: the overview answers the question before those, and the detail page has
-                 the full card. A plan without bookings leaves the cell empty rather than showing a
-                 zero that would read like something went wrong. */-->
+          <!--/* Who booked on this plan (#964), alphabetically — signs only, but all of them
+                 (#1047). No hours, no rates and no findings: the overview answers the question
+                 before those, and the detail page has the full card. Who all books on a plan is
+                 what the overview is opened for, so the badges wrap inside the cell rather than
+                 being cut off; the column is bounded in the header, so the row grows downwards and
+                 the table does not grow sideways. A plan without bookings leaves the cell empty
+                 rather than showing a zero that would read like something went wrong. */-->
           <td class="d-none d-md-table-cell">
-            <span th:each="e : ${employees.shown}" class="badge bg-secondary-lt me-1"
-                  th:title="${e.employeeName}"
-                  th:text="${e.employeeSign}"></span>
-            <span th:if="${employees.hasMore()}" class="badge bg-secondary-lt"
-                  th:title="#{main.budget.list.employees.more.title(${employees.more})}"
-                  th:text="'+' + ${employees.more}"></span>
+            <div class="d-flex flex-wrap gap-1">
+              <span th:each="e : ${employees}" class="badge bg-secondary-lt"
+                    th:title="${e.employeeName}"
+                    th:text="${e.employeeSign}"></span>
+            </div>
           </td>
           <td>
             <a class="btn btn-outline-secondary btn-sm" th:href="@{/budget/{id}(id=${b.id})}">
