@@ -9,12 +9,14 @@ package org.tb.jira.domain;
  *
  * @param password the new password, or {@code null}/blank to keep the stored one. The form never
  *     shows what is stored, so an empty field means "unchanged", not "clear it".
+ * @param scopeSign where the replication applies (#1025) — a customer order sign for the whole
+ *     order, or the fully qualified sign of one suborder, {@code AUFTRAG/01/02}
  * @param additionalFieldNames comma separated JIRA response keys to replicate in addition (#881)
  * @param inheritedFieldNames comma separated response keys resolved along the parent chain (#881)
  */
 public record JiraReplicationConfigData(
     String name,
-    String customerorderSign,
+    String scopeSign,
     String baseUrl,
     JiraApiFlavor apiFlavor,
     String username,

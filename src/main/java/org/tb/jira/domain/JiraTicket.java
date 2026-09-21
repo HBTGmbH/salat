@@ -19,8 +19,9 @@ import org.tb.common.domain.AuditedEntity;
 @NoArgsConstructor
 public class JiraTicket extends AuditedEntity {
 
-  @Column(name = "customerorder_sign", nullable = false)
-  private String customerorderSign;
+  /** The scope of the replication that fetched this ticket — see {@code JiraReplicationConfig}. */
+  @Column(name = "scope_sign", nullable = false)
+  private String scopeSign;
 
   @Column(name = "jira_id", nullable = false)
   private Long jiraId;

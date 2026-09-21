@@ -20,8 +20,18 @@ import org.tb.common.domain.AuditedEntity;
 @NoArgsConstructor
 public class JiraReplicationConfig extends AuditedEntity {
 
-  @Column(name = "customerorder_sign", nullable = false)
-  private String customerorderSign;
+  /**
+   * Where this replication applies (#1025): either a customer order sign for the whole order, or
+   * the fully qualified sign of one suborder at any depth, {@code AUFTRAG/01/02}, as
+   * {@code Suborder.getCompleteOrderSign()} builds it. A row written before #1025 carries an order
+   * sign and therefore means "the whole order" without anything to migrate.
+   *
+   * <p>Deliberately a sign rather than a foreign key: the tickets outlive the config (see
+   * {@code JiraReplicationConfigService.delete}) and the suborder sign alone would not be unique —
+   * {@code AUFTRAG/A/01} and {@code AUFTRAG/B/01} may both exist.
+   */
+  @Column(name = "scope_sign", nullable = false)
+  private String scopeSign;
 
   @Column(name = "name", nullable = false)
   private String name;

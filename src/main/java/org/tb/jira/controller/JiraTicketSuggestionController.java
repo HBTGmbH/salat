@@ -21,6 +21,10 @@ import org.tb.jira.service.JiraTicketSuggestionService;
  *
  * <p>Deliberately not under {@code /api}: that path is a stateless filter chain for machine clients
  * and does not accept the session of a logged-in browser.
+ *
+ * <p>Since #1025 the request names the suborder being booked on rather than an order sign, and the
+ * service derives the scopes of the whole branch from it. Nothing the browser sends is used as a
+ * scope any more.
  */
 @Controller
 @RequestMapping("/jira/tickets")
@@ -35,9 +39,9 @@ public class JiraTicketSuggestionController {
   @GetMapping("/suggestions")
   @PreAuthorize("isAuthenticated()")
   @ResponseBody
-  public List<JiraTicketSuggestion> suggestions(@RequestParam(required = false) String orderSign,
+  public List<JiraTicketSuggestion> suggestions(@RequestParam(required = false) Long suborderId,
       @RequestParam(required = false) String q) {
-    return jiraTicketSuggestionService.search(orderSign, q);
+    return jiraTicketSuggestionService.search(suborderId, q);
   }
 
 }

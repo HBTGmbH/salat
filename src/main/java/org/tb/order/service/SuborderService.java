@@ -375,8 +375,20 @@ public class SuborderService {
    * it happens on a manager's write, and the forms of those records load the same list anyway.
    */
   public boolean existsSuborderWithCompleteOrderSign(String completeOrderSign) {
+    return getSuborderByCompleteOrderSign(completeOrderSign) != null;
+  }
+
+  /**
+   * The suborder carrying exactly this complete order sign, or {@code null} (#1025). A record that
+   * stores such a sign cannot get back to the customer order behind it by splitting the string: an
+   * order sign may contain a slash itself, so the first segment of {@code 0283/03.20/F&E/01} is not
+   * the order. Asking here is exact where parsing only guesses.
+   */
+  public Suborder getSuborderByCompleteOrderSign(String completeOrderSign) {
     return suborderDAO.getSuborders(false).stream()
-        .anyMatch(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()));
+        .filter(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()))
+        .findFirst()
+        .orElse(null);
   }
 
   public boolean existsSuborderMatching(String customerorderSign, String pattern) {

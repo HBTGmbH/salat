@@ -17,17 +17,31 @@
 
   <salat:form th:action="@{/jira/replications/store}" th:object="${replicationForm}" th:id-property="*{id}">
     <salat:inputs>
+      <salat:textInput th:field="*{name}" th:label="#{main.jira.replication.field.name}"
+                       required="true" maxlength="255" />
+
       <div class="row">
         <div class="col-md-6">
-          <salat:textInput th:field="*{name}" th:label="#{main.jira.replication.field.name}"
-                           required="true" maxlength="255" />
+          <!-- Plain select rather than salat:select, which does not forward the hx-* attributes. -->
+          <div class="mb-3">
+            <label class="form-label required" for="customerorderSign"
+                   th:text="#{main.jira.replication.field.customerorderSign}">Auftrag</label>
+            <select class="form-select tomselect" th:field="*{customerorderSign}"
+                    th:hx-post="@{/jira/replications/suborders}"
+                    hx-swap="none"
+                    hx-include="closest form"
+                    hx-trigger="change">
+              <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
+              <option th:each="co : ${customerorders}"
+                      th:value="${co.sign}"
+                      th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
+                      th:attr="data-subtext=${customerLabel}"
+                      th:text="|${co.sign} - ${co.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
+            </select>
+          </div>
         </div>
         <div class="col-md-6">
-          <!-- Free text, no select: jira knows no orders (ArchitectureTest), and a sign whose order
-               is gone has to stay visible and correctable rather than drop out of a list. -->
-          <salat:textInput th:field="*{customerorderSign}" th:label="#{main.jira.replication.field.customerorderSign}"
-                           required="true" maxlength="255"
-                           th:helpText="#{main.jira.replication.field.customerorderSign.help}" />
+          <div th:replace="~{jira/replication-form :: scopeSuborderSelect(${suborders}, ${replicationForm.suborderSign}, null)}"></div>
         </div>
       </div>
 
@@ -135,6 +149,12 @@
     </salat:buttons>
   </salat:form>
 
+  <!--/* HTMX OOB update: the suborders of the chosen order (#1025). */-->
+  <div th:if="${htmxRequest}">
+    <div th:replace="~{jira/replication-form :: scopeSuborderSelect(
+            ${suborders}, ${replicationForm.suborderSign}, ${subordersChanged})}"></div>
+  </div>
+
   <!--/* The picker dialogue (#1013). The shell stays in the page, the body is fetched per opening
          so a field added in JIRA in the meantime is there. `salat-resizable` lets it be dragged
          bigger from the large breakpoint upwards — with a few hundred fields to scan, how much of
@@ -176,4 +196,32 @@
   </form>
 
 </main>
+
+<!--/*
+  The scope below the chosen order (#1025). Rendered twice: inline in the form, and again as an
+  out-of-band swap when the order changes — that is what the oob parameter is for. It uses
+  name/th:selected rather than th:field because the out-of-band copy sits outside the form and has
+  no th:object to bind against.
+
+  The option value is the fully qualified sign, AUFTRAG/01/02: the suborder sign on its own is not
+  unique, AUFTRAG/A/01 and AUFTRAG/B/01 may both exist.
+*/-->
+<div th:fragment="scopeSuborderSelect(suborders, selectedSign, oob)" class="mb-3"
+     id="replicationSuborderSelect" th:attr="hx-swap-oob=${oob}">
+  <label class="form-label" for="suborderSign"
+         th:text="#{main.jira.replication.field.suborderSign}">Unterauftrag</label>
+  <select class="form-select tomselect" id="suborderSign" name="suborderSign"
+          th:disabled="${#lists.isEmpty(suborders)}">
+    <option value="" th:text="#{main.jira.replication.field.suborderSign.wholeorder}">--- Ganzer Auftrag ---</option>
+    <!--/* A hidden suborder only appears when the replication already points at it; say so. */-->
+    <option th:each="so : ${suborders}"
+            th:value="${so.completeOrderSign}"
+            th:selected="${selectedSign != null and selectedSign == so.completeOrderSign}"
+            th:text="|${so.completeOrderSign} - ${so.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
+  </select>
+  <div class="form-text" th:text="#{main.jira.replication.field.suborderSign.help}">
+    Ohne Unterauftrag gilt die Replikation für den ganzen Auftrag.
+  </div>
+</div>
+
 </html>

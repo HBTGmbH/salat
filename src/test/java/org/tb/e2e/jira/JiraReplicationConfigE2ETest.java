@@ -20,6 +20,10 @@ import org.tb.e2e.PlaywrightE2ETestBase;
  * produces, and each of those is a separate place it could leak from. The second is the boundary —
  * these pages carry the credentials of a foreign system, so a backoffice or a people lead must not
  * reach them by knowing the URL either.
+ *
+ * <p>The third is the scope picker (#1025): choosing the order fills the suborder select through an
+ * out-of-band swap, so only a browser can show that the two selects really produce the one sign the
+ * list then displays.
  */
 class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
@@ -28,6 +32,10 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
   private static final String PASSWORD = "e2e-secret-token";
   private static final String REPLACEMENT_PASSWORD = "e2e-replaced-token";
+
+  /** The fully qualified sign of the suborder the scope is narrowed to (#1025). */
+  private static final String SUBORDER_SCOPE =
+      E2ETestData.CUSTOMERORDER_CONTOSO_SIGN + "/" + E2ETestData.SUBORDER_ALPHA_DEV_SIGN;
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
@@ -43,10 +51,10 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
       assertThat(page.locator("h2.page-title")).containsText("JIRA-Replikationen");
 
-      // --- create -----------------------------------------------------------------------------
+      // --- create: scoped to the whole order, which is what an empty suborder means -----------
       page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Neue Replikation")).click();
       page.locator("#name").fill(name);
-      page.locator("#customerorderSign").fill(E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
+      selectTomSelectOption(page, "customerorderSign", E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
       page.locator("#baseUrl").fill(UNREACHABLE_BASE_URL);
       page.locator("#username").fill("e2e-user");
       page.locator("#password").fill(PASSWORD);
@@ -65,8 +73,12 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("#password")).hasValue("");
       assertPageIsFreeOf(page, PASSWORD);
       page.locator("#name").fill(renamed);
+      // narrow the scope to one suborder (#1025) — the picked entry is the fully qualified sign,
+      // and the suborders only appear once the chosen order has filled the select
+      selectTomSelectOption(page, "suborderSign", SUBORDER_SCOPE);
       save(page);
       assertThat(rowOf(page, renamed)).isVisible();
+      assertThat(rowOf(page, renamed)).containsText(SUBORDER_SCOPE);
 
       // --- run now: the failure comes back, with the stored password taken out of it -----------
       rowOf(page, renamed).locator("form[data-run-form] button").click();
