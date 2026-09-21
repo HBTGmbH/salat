@@ -46,6 +46,15 @@ public class UiStateFilter extends OncePerRequestFilter {
         "/**/*.woff", "/**/*.woff2", "/**/*.ttf", "/**/*.eot",
         "/**/*.map", "/**/*.webp");
 
+    /**
+     * Der gemerkte Zustand gehört der Oberfläche. Die REST-Pfade laufen in einer zustandslosen
+     * Filterkette für maschinelle Aufrufer; ein Parameter, den sie nicht selbst geschickt haben,
+     * hat dort nichts zu suchen. Ohne diese Ausnahme bekäme eine Schnittstelle, die freie
+     * Anfrageparameter durchreicht, aus einem Browser-Aufruf Werte aus dem Cookie und aus einem
+     * Skript keine — dieselbe Anfrage mit zwei Ergebnissen (#1035).
+     */
+    private static final List<String> STATELESS_PATTERNS = List.of("/api/**", "/rest/**");
+
     private final UiState uiState;
     private final UiStateKeyRegistry uiStateKeyRegistry;
     private final LoginSignProvider loginSignProvider;
@@ -65,7 +74,8 @@ public class UiStateFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return STATIC_PATTERNS.stream().anyMatch(p -> ANT.match(p, path));
+        return STATIC_PATTERNS.stream().anyMatch(p -> ANT.match(p, path))
+            || STATELESS_PATTERNS.stream().anyMatch(p -> ANT.match(p, path));
     }
 
     @Override
