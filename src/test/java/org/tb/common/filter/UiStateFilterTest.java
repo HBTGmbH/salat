@@ -11,7 +11,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -173,6 +172,39 @@ class UiStateFilterTest {
             seenParam[0] = ((HttpServletRequest) chainReq).getParameter(PARAM));
 
         assertThat(seenParam[0]).isEqualTo("42");
+    }
+
+    @Test
+    void restPathsGetNoFallbackParameters() throws Exception {
+        // A machine caller sees only what it sent itself: a remembered value from the cookie would
+        // make the same request answer differently from a browser than from a script (#1035).
+        for (String path : List.of("/api/reports/execute", "/rest/reports/execute")) {
+            when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+            MockHttpServletRequest req = new MockHttpServletRequest("GET", path);
+            req.setServletPath(path);
+            req.setCookies(new Cookie(COOKIE_NAME, encode("_ls=alice&contract=42")));
+            MockHttpServletResponse res = new MockHttpServletResponse();
+
+            var seenParam = new String[1];
+            filter.doFilter(req, res, (chainReq, chainRes) ->
+                seenParam[0] = ((HttpServletRequest) chainReq).getParameter(PARAM));
+
+            assertThat(seenParam[0]).as(path).isNull();
+        }
+    }
+
+    @Test
+    void restPathsGetNoUiStateCookie() throws Exception {
+        when(loginSignProvider.getEffectiveLoginSign()).thenReturn("alice");
+
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/reports/execute");
+        req.setServletPath("/api/reports/execute");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(req, res, (chainReq, chainRes) -> uiState.setValue(KEY, "77"));
+
+        assertThat(res.getCookie(COOKIE_NAME)).isNull();
     }
 
     @Test
