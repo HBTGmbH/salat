@@ -58,6 +58,8 @@ funktioniert:
   Verteidigung — mit einem Header-Vertrauensmodell, das ohne den Proxy davor nicht mehr trägt.
 * **Token store: Enabled** erzeugt überhaupt erst den Header `x-ms-token-aad-id-token`. Ohne ihn
   hat der `JwtDecoder` nichts zu prüfen und jeder Request scheitert.
+* **HTTP 302 Found** beschreibt nur den HTML-Fall. Was ein Aufrufer ohne Anmeldung tatsächlich
+  zurückbekommt, entscheidet EasyAuth anhand des `Accept`-Headers — siehe *Consequences*.
 
 ### Aufgabenteilung
 
@@ -94,7 +96,16 @@ benutzen, das EasyAuth unterstützt.** Praktisch sind das zwei:
 2. ein Entra-ID-Bearer-Token für den API-Scope, etwa über den Device-Code-Flow.
 
 Beides ist in `AzureEasyAuthOpenApiConfiguration` als Security Scheme hinterlegt und damit in der
-API-Dokumentation sichtbar. Was es ausdrücklich **nicht** gibt: eigene API-Keys, Basic Auth,
+API-Dokumentation sichtbar.
+
+Der zweite Weg hängt an einer Eigenschaft der Plattform, die man ihm nicht ansieht: der
+`JwtDecoder` gleicht den `oid`-Claim gegen `x-ms-client-principal-id` ab, und dieser Header ist
+eine Zutat von EasyAuth. Ein Bearer-Token allein genügt also nur, solange der Proxy den Header
+auch für token-authentifizierte Requests setzt und mit derselben Objekt-ID füllt. Am 2026-09-19
+gegen Produktion nachgemessen — Device-Code-Flow, Access Token für
+`api://<client-id>/user_impersonation`, `GET /api/favorite` und `GET /rest/favorite` je 200. Fiele
+der Header weg, bräche jeder Aufruf außerhalb des Browsers, erkennbar am Log `oid claim in jwt
+does not match easy auth header`. Was es ausdrücklich **nicht** gibt: eigene API-Keys, Basic Auth,
 technische Benutzer mit selbstvergebenen Tokens. Ein Integrationswunsch, der keine
 Entra-ID-Identität beschaffen kann, ist damit nicht bedienbar — das ist der Preis der
 Entscheidung, nicht ein Versehen.
@@ -108,12 +119,21 @@ Entscheidung, nicht ein Versehen.
 * Good: die Anwendung bleibt zustandslos (`STATELESS` in allen Filter-Chains, `AuthorizedUser`
   ist `@RequestScope`). Die Sitzung liegt im Proxy, nicht in der Instanz — Skalieren braucht
   keine Sitzungsaffinität.
-* Bad: **abgelaufene Sitzungen antworten mit 302 statt 401.** Ein HTMX- oder `fetch`-Aufruf
-  bekommt dann keine Fehlermeldung, sondern eine Weiterleitung zu `login.microsoftonline.com`,
-  die der Browser entweder an CORS scheitern lässt oder — schlimmer — als Anmeldeseite in ein
-  Fragment rendert. Wer eine Teilaktualisierung baut, muss mit diesem Fall rechnen; die
-  Alternative *Return HTTP 401 Unauthorized* ist es nicht wert, weil sie den normalen
-  Erstaufruf der UI kaputtmacht.
+* Neutral: **was ein nicht angemeldeter Aufruf zurückbekommt, hängt vom `Accept`-Header ab.**
+  Die Einstellung *HTTP 302 Found* gilt nicht pauschal; EasyAuth verhandelt. Gemessen gegen
+  Produktion am 2026-09-19:
+
+  | Anfrage ohne Anmeldung | Antwort |
+  |---|---|
+  | `Accept: text/html` | 302 auf `login.windows.net/<tenant>/oauth2/…` |
+  | `Accept: application/json`, `*/*` oder kein `Accept` | 401 mit `WWW-Authenticate: Bearer realm="salat.hbt.de" authorization_uri=…` |
+
+  Für Aufrufer der REST-API ist das genau das richtige Verhalten: ein verwertbarer Fehler mit
+  Challenge statt einer Weiterleitung. Auch ein HTMX-Aufruf sendet `Accept: */*` und bekommt
+  deshalb 401 — wer eine Teilaktualisierung baut, muss diesen Status behandeln, nicht eine in ein
+  Fragment gerenderte Anmeldeseite. Ungeprüft ist `hx-boost`: eine Volldokument-Navigation sendet
+  `text/html` und dürfte damit in den Redirect laufen. All das ist Plattformverhalten, nicht
+  Konfiguration — es kann sich mit App Service ändern, ohne dass hier jemand etwas umstellt.
 * Bad: die Anwendung ist an App Service gebunden. Ein Umzug auf eine andere Plattform bedeutet
   nicht „Container woanders starten", sondern die Authentifizierung neu bauen — Option B oder C
   nachträglich.
