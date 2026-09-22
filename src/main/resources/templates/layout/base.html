@@ -27,6 +27,11 @@
 </head>
 <body>
 <script th:src="@{/webjars/tabler__core/dist/js/tabler-theme.min.js}"></script>
+<!--/* Sprunglink (#1064): das erste fokussierbare Element der Seite, damit die Navigation mit der
+       Tastatur uebersprungen werden kann. Er steht hier statt in .page, weil er vor allem anderen
+       erreichbar sein muss - auch vor der Sidebar, die im DOM als erstes kommt. */-->
+<a class="skip-link visually-hidden-focusable btn btn-primary position-fixed top-0 start-0 m-2"
+   href="#page-content" th:text="#{main.general.skiptocontent.text}">Zum Inhalt springen</a>
 <div class="page">
   <!-- Sidebar -->
   <aside class="navbar navbar-vertical navbar-expand-md" data-bs-theme="dark" id="salat-nav">
@@ -537,7 +542,7 @@
         </div>
       </div>
     </header>
-    <div class="page-body">
+    <div class="page-body" id="page-content" tabindex="-1">
       <div class="container-fluid my-4" th:if="${not #strings.isEmpty(toastSuccess)}">
         <div class="alert alert-success alert-dismissible align-items-start gap-3" role="alert">
           <div class="icon">

@@ -852,9 +852,22 @@
   // save on its way out, and two saves must not overlap (#830).
   var workingdaySaveInFlight = false;
 
+  // What the working day carries on the server: what was rendered into the field, and from then on
+  // what was last sent. The form itself is not swapped after a save, so the field has to remember
+  // it (renderWorkingdayForm).
+  function savedValueOf(field) {
+    return field.dataset.savedValue !== undefined ? field.dataset.savedValue : field.defaultValue;
+  }
+
   function saveTime(event) {
     if (workingdaySaveInFlight) return;
-    if (event && event.target && !event.target.isConnected) return;
+    var field = event && event.target;
+    if (field && !field.isConnected) return;
+    // Losing the focus is no reason to save an unchanged value. Since #1064 the field can already
+    // hold the focus when the page opens, and the first click anywhere else would otherwise post
+    // the working day and swap the booking list away under that very click.
+    if (field && field.value === savedValueOf(field)) return;
+    if (field) field.dataset.savedValue = field.value;
     workingdaySaveInFlight = true;
     htmx.trigger('#workingday-form', 'submit');
   }

@@ -52,6 +52,13 @@ See also README.md
   - **Prefer the `salat:` custom dialect** for reusable form and table components over raw `th:replace` fragment calls. The dialect provides cleaner, attribute-based tags that are easier to read and IDE-friendly.
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
+  - **Die Tab-Reihenfolge ist die Reihenfolge des Dokuments** (#1064). Kein positiver `tabindex`,
+    im Markup so wenig wie aus JavaScript; erlaubt ist allein `-1` für ein Ziel, das nur gezielt
+    angesprungen wird. Wo der Einstieg liegt, entscheidet nicht die Reihenfolge, sondern
+    `focusEntryField()` in `salat.js`: beim Laden das erste Feld des ersten Formulars in
+    `.page-body` — bei einer Liste das erste Feld des Filters. An der Navigation vorbei führt der
+    Sprunglink in `layout/base.html`. Einzelheiten in [`docs/ui-style-guide.md`
+    §3.1](docs/ui-style-guide.md).
   - **A rationale belongs in a parser comment `<!--/* … */-->`** (#1056). Thymeleaf removes that form
     while parsing, so it never reaches the browser; a plain `<!-- … -->` is passed through unchanged
     and stands in the source of the delivered page. A comment that explains *why* something is built
@@ -319,6 +326,7 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] Bootstrap 5 + Tabler components for layout and widgets
 - [ ] CSRF protection relies solely on `th:action="@{...}"` — no explicit `_csrf` hidden input
 - [ ] Comments stating a rationale use the parser form `<!--/* … */-->`; only section markers stay `<!-- … -->` (→ Controller and View Guidelines)
+- [ ] Kein positiver `tabindex`; die Bedienelemente stehen im Markup in der Reihenfolge, in der sie bedient werden (→ Controller and View Guidelines)
 - [ ] No hard-coded colour value — every colour derives from a `--tblr-*` token (→ Farben und Kontrast)
 - [ ] New text colour measured in both colour modes and at or above 4,5:1 (→ Farben und Kontrast)
 
