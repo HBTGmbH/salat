@@ -30,25 +30,48 @@ import org.tb.common.util.SqlLikePattern;
  * "any employee" — the report prefix-matches it too, but stored signs exist that are a prefix of a
  * different employee's sign, so copying that would attach rates to the wrong people.
  *
+ * <p>A rate may also be bound to a budget plan (#1065). Such a rate applies only to bookings
+ * assigned to that plan; every other booking falls back to the plan-less rate, exactly as work by
+ * somebody without their own rate falls back to the employee-agnostic one. The plan is therefore
+ * both a filter and a rank, and it has to be both: as a filter alone it would let a foreign plan's
+ * rate win, as a rank alone it would price every booking with it.
+ *
  * <p>Several patterns can cover the same suborder, so matches are ranked: employee-specific before
- * employee-agnostic, then the longest (most specific) pattern, then the lowest id. The last of those
- * reproduces the {@code get(0)} of the repository queries this class replaced, which mattered when
- * validity ranges overlap — {@code OrderPricingService.checkNoOverlap} rejects that for identical
- * patterns, but deliberately allows a specific pattern to be layered over a general one.
+ * employee-agnostic, then plan-bound before plan-less, then the longest (most specific) pattern,
+ * then the lowest id. The last of those reproduces the {@code get(0)} of the repository queries this
+ * class replaced, which mattered when validity ranges overlap —
+ * {@code OrderPricingService.checkNoOverlap} rejects that for identical patterns, but deliberately
+ * allows a specific pattern to be layered over a general one.
+ *
+ * <p>The plan sits <em>below</em> the employee and <em>above</em> the pattern, and that position is
+ * the one insertion that leaves every existing figure alone: all stored rates are plan-less, so they
+ * rank equal on the new step and keep their order among themselves. Swapping the first two steps
+ * would reprice history.
+ *
+ * <p><strong>A second formulation of this rule lives in the user interface</strong> — the help text
+ * of the rate form (message key {@code main.pricing.help.selection.*}). Changing
+ * {@link #bySpecificity()} means changing that text too, or the form explains a rule the
+ * application no longer follows.
  */
 public final class OrderPricingLookup {
 
-    /** A pricing row with its pattern compiled once, rather than per time report. */
-    private record Candidate(OrderPricing pricing, SqlLikePattern suborderPattern) {
+    /**
+     * A pricing row with its pattern compiled once, rather than per time report. The plan id is read
+     * once here as well — off the lazy proxy, which does not load the plan.
+     */
+    private record Candidate(OrderPricing pricing, SqlLikePattern suborderPattern, Long orderBudgetId) {
 
-        boolean covers(String suborderSignWithSlash, String employeeSign) {
+        boolean covers(String suborderSignWithSlash, String employeeSign, Long bookingPlanId) {
             var ownEmployee = pricing.getEmployeeSign();
             return (ownEmployee == null || ownEmployee.equals(employeeSign))
+                // A plan-bound rate is for its own plan only; a plan-less one takes any booking.
+                && (orderBudgetId == null || orderBudgetId.equals(bookingPlanId))
                 && suborderPattern.matches(suborderSignWithSlash);
         }
     }
 
-    private record MemoKey(String customerorderSign, String suborderSign, String employeeSign) {}
+    private record MemoKey(String customerorderSign, String suborderSign, String employeeSign,
+                           Long orderBudgetId) {}
 
     private final Map<String, List<Candidate>> byCustomerorderSign;
     private final Map<MemoKey, List<OrderPricing>> covering = new HashMap<>();
@@ -63,22 +86,37 @@ public final class OrderPricingLookup {
         for (var pricing : pricings) {
             byCustomerorderSign
                 .computeIfAbsent(pricing.getCustomerorderSign(), k -> new ArrayList<>())
-                .add(new Candidate(pricing, SqlLikePattern.startingWith(pricing.getSuborderSign())));
+                .add(new Candidate(pricing, SqlLikePattern.startingWith(pricing.getSuborderSign()),
+                    pricing.getOrderBudgetId()));
         }
         byCustomerorderSign.values().forEach(candidates -> candidates.sort(bySpecificity()));
         return new OrderPricingLookup(byCustomerorderSign);
     }
 
+    /**
+     * The whole rule, in the order its steps apply. Each {@code false} sorts first, so "has an
+     * employee" and "has a plan" come before the ones that have none.
+     */
     private static Comparator<Candidate> bySpecificity() {
         return Comparator
             .comparing((Candidate c) -> c.pricing().getEmployeeSign() == null)
+            .thenComparing(c -> c.orderBudgetId() == null)
             .thenComparing(c -> c.suborderPattern().length(), Comparator.reverseOrder())
             .thenComparing(c -> c.pricing().getId(), Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
+    /**
+     * The rate that applies to that work on that day.
+     *
+     * @param orderBudgetId the plan the booking is assigned to, or {@code null} for a booking that
+     *                      belongs to none. It is read from the stored assignment (#913), never
+     *                      derived: deriving it here would resolve a rate against a plan nobody
+     *                      picked.
+     */
     public Optional<OrderPricing> findEffectiveRate(String customerorderSign, String suborderSign,
-                                                    String employeeSign, LocalDate date) {
-        return covering(customerorderSign, suborderSign, employeeSign).stream()
+                                                    String employeeSign, Long orderBudgetId,
+                                                    LocalDate date) {
+        return covering(customerorderSign, suborderSign, employeeSign, orderBudgetId).stream()
             .filter(p -> !p.getValidFrom().isAfter(date) && !p.getValidUntil().isBefore(date))
             .findFirst();
     }
@@ -121,15 +159,19 @@ public final class OrderPricingLookup {
     }
 
     /**
-     * The pricings covering this suborder and employee, most specific first. Memoized because the
-     * date is the only part that varies per time report, and there are far fewer distinct
-     * suborder/employee pairs than time reports.
+     * The pricings covering this suborder, employee and plan, most specific first. Memoized because
+     * the date is the only part that varies per time report, and there are far fewer distinct
+     * suborder/employee/plan combinations than time reports — the plan adds a dimension to the key
+     * but not an order of magnitude, since a booking of an order belongs to one of a handful of
+     * plans.
      */
-    private List<OrderPricing> covering(String customerorderSign, String suborderSign, String employeeSign) {
-        return covering.computeIfAbsent(new MemoKey(customerorderSign, suborderSign, employeeSign), key -> {
+    private List<OrderPricing> covering(String customerorderSign, String suborderSign,
+                                        String employeeSign, Long orderBudgetId) {
+        var memoKey = new MemoKey(customerorderSign, suborderSign, employeeSign, orderBudgetId);
+        return covering.computeIfAbsent(memoKey, key -> {
             var withSlash = withTrailingSlash(key.suborderSign());
             return byCustomerorderSign.getOrDefault(key.customerorderSign(), List.of()).stream()
-                .filter(c -> c.covers(withSlash, key.employeeSign()))
+                .filter(c -> c.covers(withSlash, key.employeeSign(), key.orderBudgetId()))
                 .map(Candidate::pricing)
                 .toList();
         });

@@ -777,3 +777,37 @@ body:not(.salat-confirm-ready) [data-confirm] button[type="submit"],
 body:not(.salat-confirm-ready) button[data-confirm] {
   display: none;
 }
+
+/* ===== Erklaerung hinter einem Info-Icon (#1065) =====
+   Der Ausloeser darf die Zeile seiner Beschriftung nicht dehnen - sonst waere das Formular durch
+   die Erklaerung genau so viel hoeher, wie das Popover einsparen soll. Tabler gibt jedem .btn
+   2,5rem Mindesthoehe, ein blanker <button> bringt Rahmen und Flaeche des Browsers mit; beides ist
+   hier abgeraeumt. Die Beruehrflaeche kommt ueber den Innenabstand, den der negative Aussenabstand
+   wieder aus dem Layout nimmt: mindestens 24px Ziel bei 16px Platzbedarf.
+   Farben aus den bestehenden Tokens, alle vier Zustaende auf der Karte gemessen (ADR-0025), wo der
+   Ausloeser sitzt: im Ruhezustand --tblr-secondary, der Ton von .text-muted (#6b7280 auf #ffffff
+   4,67:1 / #9ca3af auf #1f2937 5,71:1), im Hover und bei Tastaturfokus die volle Textfarbe
+   (#374151 10,26:1 / #e5e7eb 11,72:1). Dieselben Tokens traegt das Einzelstueck in dashboard.html
+   (#1030), dort gegen die Seitenflaeche gemessen und deshalb mit leicht anderen Zahlen.
+   Kein !important noetig, anders als dort: der Ausloeser traegt keine .text-muted-Klasse. */
+.info-popover-toggle {
+  background: none;
+  border: 0;
+  line-height: 1;
+  padding: 0.375rem;
+  margin: -0.375rem;
+  cursor: pointer;
+  color: var(--tblr-secondary);
+}
+
+.info-popover-toggle:hover,
+.info-popover-toggle:focus-visible {
+  color: var(--tblr-body-color);
+}
+
+/* Bootstrap deckelt jedes Popover bei 276px - eine nummerierte Liste braucht mehr, sonst steht
+   jede Stufe auf drei Zeilen. Auf einem schmalen Geraet gewinnt die Fensterbreite, damit nichts
+   seitlich hinauslaeuft. */
+.info-popover {
+  max-width: min(24rem, calc(100vw - 2rem));
+}

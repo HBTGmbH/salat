@@ -16,6 +16,10 @@ public class OrderPricingForm {
     private String customerorderSign;
     private String suborderSign;
     private String employeeSign;
+
+    /** Optional (#1065): without it the rate applies whatever plan a booking belongs to. */
+    private Long orderBudgetId;
+
     private String description;
     @NumberFormat(style = Style.NUMBER)
     private BigDecimal priceEuro;

@@ -145,6 +145,11 @@ public enum ErrorCode {
   BU_FLAT_RATE_NOT_BILLED_IN_INSTALMENTS("BU-0025", "instalments only exist on a flat rate billed in instalments"),
   BU_FLAT_RATE_INSTALMENT_OUTSIDE_PERIOD("BU-0026", "the instalment date lies outside the validity of the flat rate"),
   BU_FLAT_RATE_AMOUNT_REQUIRED("BU-0027", "a flat rate billed once or monthly needs an amount"),
+  // #1065: a rate or a flat rate may name the budget plan it applies to. A plan that cannot ever
+  // meet the record is refused when written, not merely left out of the select — the pairing would
+  // otherwise earn nothing and look complete while doing so (→ OrderBudgetBinding).
+  BU_BUDGET_SCOPE_DISJOINT("BU-0028", "the budget plan belongs to another customer order or its scope does not intersect"),
+  BU_BUDGET_PERIOD_DISJOINT("BU-0029", "the validity of the budget plan does not overlap the validity of the record"),
 
   JI_REPLICATION_NOT_FOUND("JI-0001", "jira replication config not found"),
   JI_REPLICATION_NAME_REQUIRED("JI-0002", "a jira replication needs a name"),

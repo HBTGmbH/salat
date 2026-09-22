@@ -109,7 +109,8 @@ public class BudgetControllingService {
 
         // Every report is priced exactly once here. Sections then only filter and add, which matters
         // because the same report is looked at by every section it could fall into.
-        var scored = scoreReports(suborders, timereports, customerorderSign, pricingLookup, costLookup, from);
+        var scored = scoreReports(suborders, timereports, customerorderSign, planOfBooking,
+            pricingLookup, costLookup, from);
 
         // Flat rates over the same span, allocated to a plan by due date and scope (#972). Judged
         // against the active plans of the order rather than against the evaluated ones, so that the
@@ -149,8 +150,14 @@ public class BudgetControllingService {
     private record ScoredReport(long timereportId, LocalDate day, Duration duration,
                                 BigDecimal revenue, BigDecimal cost, boolean beforeWindow) {}
 
+    /**
+     * Prices every report exactly once — with the plan it is assigned to, because a rate may be
+     * bound to a plan (#1065). The assignment is the stored one; it is already loaded here and
+     * costs no query of its own.
+     */
     private Map<Long, List<ScoredReport>> scoreReports(List<Suborder> suborders, List<TimereportDTO> timereports,
-                                                       String customerorderSign, OrderPricingLookup pricingLookup,
+                                                       String customerorderSign, Map<Long, Long> planOfBooking,
+                                                       OrderPricingLookup pricingLookup,
                                                        EmployeeCostLookup costLookup, LocalDate windowStart) {
         Map<Long, List<TimereportDTO>> bySuborder = timereports.stream()
             .collect(Collectors.groupingBy(TimereportDTO::getSuborderId));
@@ -162,7 +169,9 @@ public class BudgetControllingService {
             scored.put(suborder.getId(), bySuborder.getOrDefault(suborder.getId(), List.<TimereportDTO>of()).stream()
                 .map(r -> new ScoredReport(r.getId(), r.getReferenceday(), r.getDuration(),
                     // Work on a suborder that is not invoiceable is never billed, whatever rate matches.
-                    invoiceable ? rateOf(r, customerorderSign, soSign, pricingLookup) : BigDecimal.ZERO,
+                    invoiceable
+                        ? rateOf(r, customerorderSign, soSign, planOfBooking.get(r.getId()), pricingLookup)
+                        : BigDecimal.ZERO,
                     // Costs accrue whether or not the work is billed.
                     costLookup == null ? BigDecimal.ZERO : costOf(r, soSign, suborder.getEffectiveOrderType(), costLookup),
                     r.getReferenceday().isBefore(windowStart)))
@@ -171,9 +180,10 @@ public class BudgetControllingService {
         return scored;
     }
 
-    private static BigDecimal rateOf(TimereportDTO report, String coSign, String soSign, OrderPricingLookup lookup) {
+    private static BigDecimal rateOf(TimereportDTO report, String coSign, String soSign, Long planId,
+                                     OrderPricingLookup lookup) {
         var hours = minutesToHours(report.getDuration().toMinutes());
-        return lookup.findEffectiveRate(coSign, soSign, report.getEmployeeSign(), report.getReferenceday())
+        return lookup.findEffectiveRate(coSign, soSign, report.getEmployeeSign(), planId, report.getReferenceday())
             .map(p -> hours.multiply(new BigDecimal(p.getPriceCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }
@@ -642,7 +652,9 @@ public class BudgetControllingService {
                 // counts towards this plan.
                 if (budget.getId().equals(orderData.planOfBooking().get(report.getId()))
                     && !report.getReferenceday().isAfter(until)) {
-                    revenue = revenue.add(rateOf(report, coSign, soCompleteSign, pricingLookup));
+                    // The booking belongs to this plan, so this plan is what a plan-bound rate is
+                    // resolved against (#1065).
+                    revenue = revenue.add(rateOf(report, coSign, soCompleteSign, budget.getId(), pricingLookup));
                 }
             }
         }

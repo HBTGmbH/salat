@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,11 +20,14 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.FlatRateRhythm;
+import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderFlatRate;
 import org.tb.budget.domain.OrderFlatRateData;
 import org.tb.budget.domain.OrderFlatRateInstalmentData;
 import org.tb.budget.domain.OrderFlatRateRow;
+import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.OrderFlatRateRepository;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.BusinessRuleException;
@@ -50,10 +53,13 @@ public class OrderFlatRateServiceTest {
   private static final LocalDate TODAY = LocalDate.of(2026, 6, 25);
   private static final LocalDate YESTERDAY = TODAY.minusDays(1);
   private static final LocalDate TOMORROW = TODAY.plusDays(1);
+  private static final LocalDate DEC = LocalDate.of(2026, 12, 31);
 
   private OrderFlatRateRepository repository;
   private CustomerorderService customerorderService;
   private SuborderService suborderService;
+  private OrderBudgetRepository orderBudgetRepository;
+  private BudgetAuthorization budgetAuthorization;
   private OrderFlatRateService service;
 
   @BeforeEach
@@ -72,7 +78,12 @@ public class OrderFlatRateServiceTest {
     when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
     suborderService = mock(SuborderService.class);
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(true);
-    service = new OrderFlatRateService(repository, suborderService, customerorderService);
+    orderBudgetRepository = mock(OrderBudgetRepository.class);
+    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of());
+    budgetAuthorization = mock(BudgetAuthorization.class);
+    when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
+    service = new OrderFlatRateService(repository, orderBudgetRepository, suborderService,
+        customerorderService, budgetAuthorization);
   }
 
   // --- writing ---------------------------------------------------------------------------------
@@ -132,7 +143,7 @@ public class OrderFlatRateServiceTest {
   @Test
   public void refuses_a_suborder_that_does_not_belong_to_the_order() {
     when(suborderService.existsByCompleteOrderSign(anyString(), anyString())).thenReturn(false);
-    var data = new OrderFlatRateData("co", "other/01", null, FlatRateRhythm.ONCE,
+    var data = new OrderFlatRateData("co", "other/01", null, null, FlatRateRhythm.ONCE,
         new BigDecimal("1000"), TODAY, TODAY);
 
     assertThatThrownBy(() -> service.save(data))
@@ -289,7 +300,7 @@ public class OrderFlatRateServiceTest {
   }
 
   private static OrderFlatRateData data(FlatRateRhythm rhythm, LocalDate from, LocalDate until, String amount) {
-    return new OrderFlatRateData("co", null, "description", rhythm,
+    return new OrderFlatRateData("co", null, null, "description", rhythm,
         amount == null ? null : new BigDecimal(amount), from, until);
   }
 
@@ -321,6 +332,107 @@ public class OrderFlatRateServiceTest {
     } catch (ReflectiveOperationException e) {
       throw new IllegalStateException("cannot assign an id to the test record", e);
     }
+  }
+
+  // --- which budget plans a flat rate may be booked against (#1065) -----------------------------
+
+  /**
+   * The suborder is a concrete sign here, not a pattern, so the scope check is the plan's coverage
+   * on its own — and that is the only thing that differs from the hourly rate next door.
+   */
+  @Test
+  public void offers_a_plan_that_covers_the_suborder_of_the_flat_rate() {
+    givenPlans(plan(1L, "co", "co/01", TODAY, DEC, true));
+
+    assertThat(service.getSelectablePlans("co", "co/01/A", TODAY, DEC, null))
+        .extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  @Test
+  public void refuses_a_plan_whose_scope_does_not_cover_the_suborder() {
+    givenPlans(plan(1L, "co", "co/02", TODAY, DEC, true));
+
+    assertThat(service.getSelectablePlans("co", "co/01", TODAY, DEC, null)).isEmpty();
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", "co/01", 1L, TODAY, DEC)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
+  }
+
+  @Test
+  public void refuses_a_plan_of_another_customer_order() {
+    givenPlans(plan(1L, "other", null, TODAY, DEC, true));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null)).isEmpty();
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
+  }
+
+  @Test
+  public void refuses_a_plan_whose_validity_does_not_overlap() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(2), TODAY.minusYears(1), true));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null)).isEmpty();
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_PERIOD_DISJOINT);
+  }
+
+  /**
+   * A single amount is due on one day, and that one day is the period the plan has to meet — the
+   * end the form carries is never stored for it.
+   */
+  @Test
+  public void judges_a_one_off_flat_rate_by_its_due_date_alone() {
+    givenPlans(plan(1L, "co", null, DEC, DEC, true));
+
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_PERIOD_DISJOINT);
+  }
+
+  @Test
+  public void does_not_offer_an_inactive_plan_but_keeps_a_stored_one() {
+    givenPlans(plan(1L, "co", null, TODAY, DEC, false));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null)).isEmpty();
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, 1L))
+        .extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  @Test
+  public void stores_the_named_plan_on_the_flat_rate() {
+    givenPlans(plan(1L, "co", null, TODAY, DEC, true));
+
+    service.save(dataWithPlan("co", null, 1L, TODAY, DEC));
+
+    assertThat(savedFlatRate().getOrderBudgetId()).isEqualTo(1L);
+  }
+
+  private void givenPlans(OrderBudget... plans) {
+    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of(plans));
+    for (var plan : plans) {
+      when(orderBudgetRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+    }
+  }
+
+  private static OrderBudget plan(long id, String customerorderSign, String suborderSign,
+                                  LocalDate validFrom, LocalDate validUntil, boolean active) {
+    var plan = new OrderBudget();
+    setId(plan, id);
+    plan.setName("plan " + id);
+    plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderSign(suborderSign);
+    plan.setValidFrom(validFrom);
+    plan.setValidUntil(validUntil);
+    plan.setActive(active);
+    return plan;
+  }
+
+  private static OrderFlatRateData dataWithPlan(String customerorderSign, String suborderSign,
+                                                Long planId, LocalDate from, LocalDate until) {
+    return new OrderFlatRateData(customerorderSign, suborderSign, planId, "description",
+        FlatRateRhythm.ONCE, new BigDecimal("1000"), from, until);
   }
 
 }

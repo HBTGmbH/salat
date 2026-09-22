@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -14,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.persistence.AuthorizedUserAuditorAware;
+import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderPricing;
 
 /**
@@ -31,6 +33,9 @@ public class OrderPricingRepositoryTest {
 
   @Autowired
   private OrderPricingRepository orderPricingRepository;
+
+  @Autowired
+  private OrderBudgetRepository orderBudgetRepository;
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
@@ -67,6 +72,69 @@ public class OrderPricingRepositoryTest {
 
     assertThat(orderPricingRepository.findByCustomerorderSignOrderByValidFromAsc("co-one"))
         .containsExactly(earlier, later);
+  }
+
+  // --- the budget plan is part of the overlap key (#1065) ---------------------------------------
+
+  /**
+   * Two rates that differ only in their plan do not conflict: the plan-bound one narrows the
+   * plan-less one, exactly as a specific pattern narrows a general one.
+   */
+  @Test
+  public void two_rates_of_different_plans_do_not_overlap() {
+    var planA = plan("A");
+    var planB = plan("B");
+    boundPricing("co", FROM, UNTIL, planA);
+
+    assertThat(overlapping("co", planB.getId())).isEmpty();
+  }
+
+  @Test
+  public void a_plan_bound_rate_does_not_overlap_the_plan_less_one() {
+    boundPricing("co", FROM, UNTIL, plan("A"));
+
+    assertThat(overlapping("co", null)).isEmpty();
+  }
+
+  @Test
+  public void two_rates_of_the_same_plan_still_overlap() {
+    var plan = plan("A");
+    var existing = boundPricing("co", FROM, UNTIL, plan);
+
+    assertThat(overlapping("co", plan.getId())).containsExactly(existing);
+  }
+
+  /** Nothing changes for the rates that name no plan — all of the existing ones. */
+  @Test
+  public void two_plan_less_rates_still_overlap() {
+    var existing = pricing("co", FROM, UNTIL);
+
+    assertThat(overlapping("co", null)).containsExactly(existing);
+  }
+
+  private List<OrderPricing> overlapping(String customerorderSign, Long planId) {
+    return orderPricingRepository.findOverlapping(customerorderSign, null, null, planId, FROM, UNTIL, null);
+  }
+
+  private OrderBudget plan(String name) {
+    var plan = new OrderBudget();
+    plan.setName(name);
+    plan.setCustomerorderSign("co");
+    plan.setValidFrom(FROM);
+    plan.setValidUntil(UNTIL);
+    plan.setActive(true);
+    return orderBudgetRepository.save(plan);
+  }
+
+  private OrderPricing boundPricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil,
+                                    OrderBudget plan) {
+    var pricing = new OrderPricing();
+    pricing.setCustomerorderSign(customerorderSign);
+    pricing.setPriceCentsPerHour(10000);
+    pricing.setValidFrom(validFrom);
+    pricing.setValidUntil(validUntil);
+    pricing.setOrderBudget(plan);
+    return orderPricingRepository.save(pricing);
   }
 
   private OrderPricing pricing(String customerorderSign, LocalDate validFrom, LocalDate validUntil) {

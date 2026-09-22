@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.tb.common.domain.AuditedEntity;
 
 /**
  * Which plan a flat rate amount counts against (#972). The rule mirrors the one a booking follows,
@@ -119,6 +120,57 @@ public class FlatRateAllocationTest {
     assertThat(FlatRateAllocation.uniquePlanFor(dueAmount(null, IN_H1), List.of(plan))).isEmpty();
   }
 
+  // --- a flat rate that names its plan (#1065) --------------------------------------------------
+
+  /** The whole point: the ambiguous case #1004 made common now has an answer. */
+  @Test
+  public void a_named_plan_wins_against_the_derivation() {
+    var first = withId(plan("A", null, JAN, DEC, true), 1L);
+    var second = withId(plan("B", null, JAN, DEC, true), 2L);
+    var dueAmount = boundTo(dueAmount(null, IN_H1), second);
+
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount, List.of(first, second))).contains(second);
+  }
+
+  /**
+   * Period and scope are not weighed again — the saving did that. A due date outside the plan is
+   * therefore no special case, which is what keeps this rule to one line.
+   */
+  @Test
+  public void a_named_plan_is_not_judged_by_period_and_scope_again() {
+    var plan = withId(plan("H2", "co/01", JUL, DEC, true), 1L);
+    var dueAmount = boundTo(dueAmount("co/02", IN_H1), plan);
+
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount, List.of(plan))).contains(plan);
+  }
+
+  /**
+   * A deactivated plan is not evaluated, so its amounts are reported without a budget — the same
+   * answer its bookings get. Falling back to the derivation would move the amount to a plan
+   * somebody else picked.
+   */
+  @Test
+  public void a_named_plan_that_is_no_longer_active_holds_nothing() {
+    var named = withId(plan("archived", null, JAN, DEC, false), 1L);
+    var other = withId(plan("current", null, JAN, DEC, true), 2L);
+    var dueAmount = boundTo(dueAmount(null, IN_H1), named);
+
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount, List.of(other))).isEmpty();
+  }
+
+  /** Without a named plan nothing changes — every existing flat rate is unbound. */
+  @Test
+  public void an_unbound_flat_rate_is_still_derived() {
+    var plan = withId(plan("year", null, JAN, DEC, true), 1L);
+
+    assertThat(FlatRateAllocation.uniquePlanFor(dueAmount(null, IN_H1), List.of(plan))).contains(plan);
+  }
+
+  private static FlatRateDueAmount boundTo(FlatRateDueAmount dueAmount, OrderBudget plan) {
+    dueAmount.flatRate().setOrderBudget(plan);
+    return dueAmount;
+  }
+
   private static FlatRateDueAmount dueAmount(String suborderSign, LocalDate due) {
     var rate = new OrderFlatRate();
     rate.setCustomerorderSign("co");
@@ -128,6 +180,18 @@ public class FlatRateAllocationTest {
     rate.setValidUntil(due);
     rate.setAmount(new BigDecimal("100"));
     return new FlatRateDueAmount(rate, due, rate.getAmount());
+  }
+
+  /** The id is generated, so there is no setter; a stored plan always has one. */
+  private static OrderBudget withId(OrderBudget plan, long id) {
+    try {
+      var field = AuditedEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(plan, id);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("cannot assign an id to the test record", e);
+    }
+    return plan;
   }
 
   private static OrderBudget plan(String name, String suborderSign, LocalDate from, LocalDate until,

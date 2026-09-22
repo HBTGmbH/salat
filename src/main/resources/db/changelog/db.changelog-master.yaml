@@ -3016,5 +3016,73 @@ databaseChangeLog:
               - column:
                   name: work_date
 
+  - changeSet:
+      id: 83
+      author: kr
+      comment: Kundenstundensatz optional an einen Budgetplan binden (#1065)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_pricing
+                columnName: order_budget_id
+      changes:
+        # Optional: alle Bestandssaetze bleiben planlos und verhalten sich unveraendert. Gesetzt
+        # wirkt die Spalte als vierte Spezifitaetsstufe - unter dem Mitarbeitenden, ueber dem
+        # Unterauftragsmuster.
+        - addColumn:
+            tableName: order_pricing
+            columns:
+              - column:
+                  name: order_budget_id
+                  type: bigint
+        # Plaene werden nie geloescht, nur deaktiviert - der Fremdschluessel kann also nicht ins
+        # Leere zeigen und braucht keine Loeschregel.
+        - addForeignKeyConstraint:
+            baseTableName: order_pricing
+            baseColumnNames: order_budget_id
+            referencedTableName: order_budget
+            referencedColumnNames: id
+            constraintName: fk_order_pricing_order_budget
+        # Die Detailansicht eines Plans fragt genau andersherum: welche Saetze haengen an ihm.
+        - createIndex:
+            tableName: order_pricing
+            indexName: idx_order_pricing_order_budget
+            columns:
+              - column:
+                  name: order_budget_id
+
+  - changeSet:
+      id: 84
+      author: kr
+      comment: Pauschale optional an einen Budgetplan binden (#1065)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_flat_rate
+                columnName: order_budget_id
+      changes:
+        # Hier nagelt die Spalte eine bisher hergeleitete Zuordnung fest: ohne sie bleibt es bei
+        # FlatRateAllocation.uniquePlanFor, das bei mehreren passenden Plaenen keinen waehlt.
+        - addColumn:
+            tableName: order_flat_rate
+            columns:
+              - column:
+                  name: order_budget_id
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: order_flat_rate
+            baseColumnNames: order_budget_id
+            referencedTableName: order_budget
+            referencedColumnNames: id
+            constraintName: fk_order_flat_rate_order_budget
+        - createIndex:
+            tableName: order_flat_rate
+            indexName: idx_order_flat_rate_order_budget
+            columns:
+              - column:
+                  name: order_budget_id
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

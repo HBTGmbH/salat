@@ -34,6 +34,8 @@ import org.tb.budget.domain.OrderBudgetScopeEntryData;
 import org.tb.budget.domain.ProgressMode;
 import org.tb.budget.service.BudgetEmployeeService;
 import org.tb.budget.service.OrderBudgetService;
+import org.tb.budget.service.OrderFlatRateService;
+import org.tb.budget.service.OrderPricingService;
 import org.tb.budget.service.TimereportBudgetAssignmentService;
 import org.tb.budget.viewhelper.AssignedTimereportViewHelper;
 import org.tb.budget.viewhelper.BudgetEmployeesViewHelper;
@@ -61,6 +63,8 @@ public class BudgetController {
     private final OrderBudgetService orderBudgetService;
     private final TimereportBudgetAssignmentService assignmentService;
     private final BudgetEmployeeService budgetEmployeeService;
+    private final OrderPricingService orderPricingService;
+    private final OrderFlatRateService orderFlatRateService;
     private final CustomerorderService customerorderService;
     private final SuborderService suborderService;
     private final AuthorizedUser authorizedUser;
@@ -259,6 +263,11 @@ public class BudgetController {
         model.addAttribute("scopeEntryForm", new OrderBudgetScopeEntryForm());
         model.addAttribute("progressModes", ProgressMode.values());
         model.addAttribute("isManager", authorizedUser.isManager());
+        // The conditions negotiated for this work package (#1065). Shown to everybody who reaches
+        // the plan, like the rates of the "Mitarbeitende" card; only editing them stays with
+        // managers, which is where the links lead.
+        model.addAttribute("boundPricings", orderPricingService.getByOrderBudgetId(id));
+        model.addAttribute("boundFlatRates", orderFlatRateService.getByOrderBudgetId(id));
         addAssignedTimereports(budget, from, until, model);
         return "budget/budget-detail";
     }

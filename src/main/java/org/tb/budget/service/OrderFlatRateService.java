@@ -1,23 +1,32 @@
 package org.tb.budget.service;
 
+import static java.lang.Boolean.TRUE;
+import static java.util.Comparator.comparing;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.FlatRateRhythm;
+import org.tb.budget.domain.OrderBudget;
+import org.tb.budget.domain.OrderBudgetBinding;
 import org.tb.budget.domain.OrderFlatRate;
 import org.tb.budget.domain.OrderFlatRateData;
 import org.tb.budget.domain.OrderFlatRateInstalment;
 import org.tb.budget.domain.OrderFlatRateInstalmentData;
 import org.tb.budget.domain.OrderFlatRateLookup;
 import org.tb.budget.domain.OrderFlatRateRow;
+import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.OrderFlatRateRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
@@ -42,8 +51,10 @@ import org.tb.order.service.SuborderService;
 public class OrderFlatRateService {
 
     private final OrderFlatRateRepository orderFlatRateRepository;
+    private final OrderBudgetRepository orderBudgetRepository;
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
+    private final BudgetAuthorization budgetAuthorization;
 
     @Transactional(readOnly = true)
     public List<OrderFlatRate> getAll() {
@@ -66,11 +77,49 @@ public class OrderFlatRateService {
         var sign = trimToNull(customerorderSign);
         var flatRates = sign == null ? getAll() : getByCustomerorderSign(sign);
         var ordersBySign = ordersOf(flatRates);
+        var planNames = planNamesOf(flatRates);
         return flatRates.stream()
             .filter(flatRate -> showInactive || flatRate.getCurrentlyValid())
+            // Most flat rates name no plan at all, and an immutable map refuses a null key outright.
             .map(flatRate -> new OrderFlatRateRow(flatRate, ordersBySign.get(flatRate.getCustomerorderSign()),
-                flatRate.dueAmountsWithin(flatRate.getValidFrom(), flatRate.getValidUntil())))
+                flatRate.dueAmountsWithin(flatRate.getValidFrom(), flatRate.getValidUntil()),
+                flatRate.getOrderBudgetId() == null ? null : planNames.get(flatRate.getOrderBudgetId())))
             .filter(row -> showExpiredOrders || orderStillValid(row))
+            .toList();
+    }
+
+    /** The names of the plans the given flat rates are booked against, by id — one query for all. */
+    private Map<Long, String> planNamesOf(List<OrderFlatRate> flatRates) {
+        var ids = flatRates.stream().map(OrderFlatRate::getOrderBudgetId).filter(Objects::nonNull)
+            .distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return StreamSupport.stream(orderBudgetRepository.findAllById(ids).spliterator(), false)
+            .collect(toMap(OrderBudget::getId, OrderBudget::getName, (first, second) -> first));
+    }
+
+    /**
+     * The budget plans this flat rate may be booked against (#1065) — the options of the select and
+     * the set the saving judges by. The suborder is a concrete sign here, not a pattern, so the
+     * scope check is {@code BudgetScope.covers} on its own.
+     *
+     * @param keepPlanId the plan the record being edited already stores, or {@code null} on create
+     */
+    @Transactional(readOnly = true)
+    public List<OrderBudget> getSelectablePlans(String customerorderSign, String suborderSign,
+                                                LocalDate validFrom, LocalDate validUntil,
+                                                Long keepPlanId) {
+        var sign = trimToNull(customerorderSign);
+        if (sign == null || validFrom == null || validUntil == null) {
+            return List.of();
+        }
+        return orderBudgetRepository.findByCustomerorderSign(sign).stream()
+            .filter(budgetAuthorization::isAuthorized)
+            .filter(plan -> TRUE.equals(plan.getActive()) || plan.getId().equals(keepPlanId))
+            .filter(plan -> OrderBudgetBinding.scopeMeetsSuborder(plan, sign, trimToNull(suborderSign)))
+            .filter(plan -> OrderBudgetBinding.periodsOverlap(plan, validFrom, validUntil))
+            .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
     }
 
@@ -106,6 +155,12 @@ public class OrderFlatRateService {
         return orderFlatRateRepository.findByCustomerorderSignOrderByValidFromAsc(customerorderSign);
     }
 
+    /** The flat rates booked against one budget plan (#1065) — what the plan's detail page lists. */
+    @Transactional(readOnly = true)
+    public List<OrderFlatRate> getByOrderBudgetId(long orderBudgetId) {
+        return orderFlatRateRepository.findByOrderBudgetId(orderBudgetId);
+    }
+
     /**
      * Loads the flat rates of the given customer orders into an in-memory lookup. The controlling
      * expands the schedules once per evaluation, so they must not be resolved by query.
@@ -124,8 +179,9 @@ public class OrderFlatRateService {
         checkCustomerorderExists(data.customerorderSign());
         checkSuborderExists(data.customerorderSign(), data.suborderSign());
         checkAmountPresent(data);
+        var plan = resolvePlan(data);
         var flatRate = new OrderFlatRate();
-        apply(flatRate, data);
+        apply(flatRate, data, plan);
         return orderFlatRateRepository.save(flatRate).getId();
     }
 
@@ -138,8 +194,9 @@ public class OrderFlatRateService {
     public void update(long id, OrderFlatRateData data) {
         checkSuborderExists(data.customerorderSign(), data.suborderSign());
         checkAmountPresent(data);
+        var plan = resolvePlan(data);
         var flatRate = getById(id);
-        apply(flatRate, data);
+        apply(flatRate, data, plan);
         orderFlatRateRepository.save(flatRate);
     }
 
@@ -208,16 +265,43 @@ public class OrderFlatRateService {
         }
     }
 
-    private void apply(OrderFlatRate flatRate, OrderFlatRateData data) {
+    /**
+     * The plan the flat rate names, refused where it could never hold the amounts (#1065). Checked
+     * here and not only in the select, because this is what lets {@code FlatRateAllocation} take a
+     * named plan without weighing period and scope again.
+     */
+    private OrderBudget resolvePlan(OrderFlatRateData data) {
+        if (data.orderBudgetId() == null) {
+            return null;
+        }
+        var plan = orderBudgetRepository.findById(data.orderBudgetId())
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, data.orderBudgetId()));
+        budgetAuthorization.checkAuthorized(plan);
+        if (!OrderBudgetBinding.scopeMeetsSuborder(plan, data.customerorderSign(), data.suborderSign())) {
+            throw new BusinessRuleException(ErrorCode.BU_BUDGET_SCOPE_DISJOINT, plan.getName());
+        }
+        if (!OrderBudgetBinding.periodsOverlap(plan, data.validFrom(), effectiveValidUntil(data))) {
+            throw new BusinessRuleException(ErrorCode.BU_BUDGET_PERIOD_DISJOINT, plan.getName());
+        }
+        return plan;
+    }
+
+    /** What {@link #apply} will store as the end — a single amount is due on one day. */
+    private static LocalDate effectiveValidUntil(OrderFlatRateData data) {
+        return data.rhythm() == FlatRateRhythm.ONCE ? data.validFrom() : data.validUntil();
+    }
+
+    private void apply(OrderFlatRate flatRate, OrderFlatRateData data, OrderBudget plan) {
         flatRate.setCustomerorderSign(data.customerorderSign());
         flatRate.setSuborderSign(data.suborderSign());
+        flatRate.setOrderBudget(plan);
         flatRate.setDescription(data.description());
         flatRate.setRhythm(data.rhythm());
         // An amount left on an instalment definition would look like it earns something on its own.
         flatRate.setAmount(data.rhythm().hasOwnAmount() ? data.amount() : null);
         flatRate.setValidFrom(data.validFrom());
         // A single amount is due on one day, so its end cannot say anything else.
-        flatRate.setValidUntil(data.rhythm() == FlatRateRhythm.ONCE ? data.validFrom() : data.validUntil());
+        flatRate.setValidUntil(effectiveValidUntil(data));
     }
 
 }

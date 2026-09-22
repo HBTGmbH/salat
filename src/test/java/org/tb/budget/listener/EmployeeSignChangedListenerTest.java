@@ -114,6 +114,10 @@ public class EmployeeSignChangedListenerTest {
   @MockitoBean
   private org.tb.common.web.UiState uiState;
 
+  /** OrderPricingService reads plans and their authorization since #1065; neither is under test here. */
+  @MockitoBean
+  private org.tb.budget.auth.BudgetAuthorization budgetAuthorization;
+
   @BeforeEach
   public void initAuthorizedUser() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
@@ -140,7 +144,7 @@ public class EmployeeSignChangedListenerTest {
     var newSign = whenAnonymized(employee);
 
     assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, newSign, WORKDAY)).isPresent();
+        .findEffectiveRate(ORDER_SIGN, null, newSign, null, WORKDAY)).isPresent();
   }
 
   /**
@@ -158,7 +162,7 @@ public class EmployeeSignChangedListenerTest {
 
     assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, OrderType.STANDARD, WORKDAY)).isEmpty();
     assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, TESTY_SIGN, WORKDAY)).isEmpty();
+        .findEffectiveRate(ORDER_SIGN, null, TESTY_SIGN, null, WORKDAY)).isEmpty();
   }
 
   /** Anonymizing one person must not drag the records of anybody else along. */
@@ -191,7 +195,7 @@ public class EmployeeSignChangedListenerTest {
 
     assertThat(employeeCostService.findEffectiveCost("newby", null, OrderType.STANDARD, WORKDAY)).isPresent();
     assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, "newby", WORKDAY)).isPresent();
+        .findEffectiveRate(ORDER_SIGN, null, "newby", null, WORKDAY)).isPresent();
   }
 
   /** A save that leaves the sign alone must not rewrite anything. */

@@ -17,55 +17,75 @@
 
   <salat:form th:action="@{/budget/pricing/store}" th:object="${pricingForm}" th:id-property="*{id}">
     <salat:inputs>
-      <div class="row">
-        <div class="col-md-6">
-          <!--/* Plain select rather than salat:select, which does not forward the hx-* attributes. */-->
-          <div class="mb-3">
-            <label class="form-label" for="customerorderSign"
-                   th:text="#{main.pricing.field.customerorderSign}">Auftrag</label>
-            <select class="form-select tomselect" th:field="*{customerorderSign}"
-                    th:hx-post="@{/budget/pricing/suborders}"
-                    hx-swap="none"
-                    hx-include="closest form"
-                    hx-trigger="change">
+      <!--/* Which of several matching rates wins is not readable field by field, so it hangs behind
+             an info icon rather than standing in the form (#1065). The line carries nothing else,
+             so the form does not grow by it. */-->
+      <div class="d-flex align-items-center gap-1 mb-3">
+        <span class="subheader" th:text="#{main.pricing.help.selection.title}">Welcher Satz gilt?</span>
+        <button type="button" class="info-popover-toggle" data-info-popover="#pricingSelectionHelp"
+                th:title="#{main.pricing.help.selection.toggle}"
+                th:aria-label="#{main.pricing.help.selection.toggle}">
+          <i class="bi bi-info-circle"></i>
+        </button>
+      </div>
+      <div class="d-none" id="pricingSelectionHelp">
+        <div th:replace="~{fragments/pricing-selection-help :: pricingSelectionHelp}"></div>
+      </div>
+
+      <!--/* The plan select narrows with order, pattern and validity, so every one of those fields
+             reloads it — one endpoint for the picker and the plans, or the two drift apart while
+             the form is being filled in. The trigger sits here because neither salat:textInput nor
+             salat:select forwards hx-* attributes; `from:` puts the listener on the fields. */-->
+      <div th:hx-post="@{/budget/pricing/suborders}"
+           hx-swap="none"
+           hx-include="closest form"
+           hx-trigger="change from:#customerorderSign, change from:#suborderSign, change from:#validFrom, change from:#validUntil">
+        <div class="row">
+          <div class="col-md-6">
+            <salat:select th:field="*{customerorderSign}" th:label="#{main.pricing.field.customerorderSign}">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="co : ${customerorders}"
                       th:value="${co.sign}"
                       th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
                       th:attr="data-subtext=${customerLabel}"
                       th:text="|${co.sign} - ${co.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
-            </select>
+            </salat:select>
+          </div>
+          <div class="col-md-6">
+            <div th:replace="~{fragments/suborder-picker :: suborderPicker(${suborders}, null)}"></div>
+            <salat:textInput th:field="*{suborderSign}" th:label="#{main.pricing.field.suborderSign}"
+                             maxlength="255" th:helpText="#{main.pricing.field.suborderSign.help}" />
           </div>
         </div>
-        <div class="col-md-6">
-          <div th:replace="~{fragments/suborder-picker :: suborderPicker(${suborders}, null)}"></div>
-          <salat:textInput th:field="*{suborderSign}" th:label="#{main.pricing.field.suborderSign}"
-                           maxlength="255" th:helpText="#{main.pricing.field.suborderSign.help}" />
+        <div class="row">
+          <div class="col-md-6">
+            <!--/* A hidden employee only appears when the rate already references them; say so. */-->
+            <salat:select th:field="*{employeeSign}" th:label="#{main.pricing.field.employeeSign}">
+              <option value="" th:text="#{main.pricing.field.employeeSign.all}">--- Alle Mitarbeiter ---</option>
+              <option th:each="emp : ${employees}"
+                      th:value="${emp.sign}"
+                      th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}| + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
+            </salat:select>
+          </div>
+          <div class="col-md-6">
+            <div th:replace="~{fragments/budget-plan-select :: budgetPlanSelect(${budgetPlans}, *{orderBudgetId}, #{main.pricing.field.orderBudget}, #{main.pricing.field.orderBudget.help}, null)}"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-4">
+            <salat:textInput th:field="*{priceEuro}" type="text" th:label="#{main.pricing.field.priceEuro}" required="true" />
+          </div>
+          <div class="col-md-4">
+            <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.pricing.field.validFrom}" required="true" />
+          </div>
+          <div class="col-md-4">
+            <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.pricing.field.validUntil}" />
+          </div>
         </div>
       </div>
       <div class="row">
-        <div class="col-md-6">
-          <!--/* A hidden employee only appears when the rate already references them; say so. */-->
-          <salat:select th:field="*{employeeSign}" th:label="#{main.pricing.field.employeeSign}">
-            <option value="" th:text="#{main.pricing.field.employeeSign.all}">--- Alle Mitarbeiter ---</option>
-            <option th:each="emp : ${employees}"
-                    th:value="${emp.sign}"
-                    th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}| + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
-          </salat:select>
-        </div>
         <div class="col-md-6">
           <salat:textInput th:field="*{description}" th:label="#{main.pricing.field.description}" maxlength="255" />
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4">
-          <salat:textInput th:field="*{priceEuro}" type="text" th:label="#{main.pricing.field.priceEuro}" required="true" />
-        </div>
-        <div class="col-md-4">
-          <salat:textInput th:field="*{validFrom}" type="date" th:label="#{main.pricing.field.validFrom}" required="true" />
-        </div>
-        <div class="col-md-4">
-          <salat:textInput th:field="*{validUntil}" type="date" th:label="#{main.pricing.field.validUntil}" />
         </div>
       </div>
     </salat:inputs>
@@ -77,6 +97,7 @@
   <!-- HTMX OOB updates -->
   <div th:if="${htmxRequest}">
     <div th:replace="~{fragments/suborder-picker :: suborderPicker(${suborders}, ${subordersChanged})}"></div>
+    <div th:replace="~{fragments/budget-plan-select :: budgetPlanSelect(${budgetPlans}, ${pricingForm.orderBudgetId}, #{main.pricing.field.orderBudget}, #{main.pricing.field.orderBudget.help}, ${subordersChanged})}"></div>
   </div>
 
   <script th:inline="none">
