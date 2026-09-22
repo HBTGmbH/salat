@@ -91,6 +91,38 @@ Die Referenz ist der Tabler-Standard.
 **Seitentitel** kommen aus dem Model (`title`, `sectionTitle`, `pageTitle`); Browser-Titel ist
 immer `SALAT - <pageTitle>`.
 
+### 3.1 Tastaturbedienung: Reihenfolge und Einstieg (#1064)
+
+**Die Tab-Reihenfolge ist die Reihenfolge des Dokuments.** Es gibt keinen positiven `tabindex` —
+weder im Markup noch aus JavaScript. Ein positiver Wert reiht das Element vor allem ein, was 0
+trägt, und zwingt damit jedem später eingefügten Element eine Nummer auf, die es nicht hat. Der
+einzige erlaubte Wert ist `-1` für etwas, das nur gezielt angesprungen wird (Dialoge, das
+Sprungziel `#page-content`). Wer die Reihenfolge ändern will, ändert die Reihenfolge im Markup.
+
+**Der Einstieg liegt im ersten Feld.** `focusEntryField()` in `salat.js` setzt den Fokus beim Laden
+auf das erste sichtbare, bedienbare Feld des ersten Formulars in `.page-body` — bei einer Liste ist
+das das erste Feld des Filters. Knöpfe und Links sind bewusst keine Kandidaten, und Felder
+ausserhalb eines Formulars auch nicht.
+
+- Nur beim ersten Laden, **nicht** nach `htmx:after:swap`: die Tagesansicht tauscht Fragmente,
+  während getippt wird, und ein erneut gesetzter Fokus nähme den Cursor aus dem Feld.
+- Nur mit Maus oder Zeigegerät (`(hover: hover) and (pointer: fine)`): auf einem Touchgerät öffnete
+  er beim Laden die Bildschirmtastatur über der halben Seite.
+- Ein `autofocus` im Markup hat Vorrang, ebenso ein Dialog, der beim Laden schon den Fokus hält.
+- Bei einem TomSelect-Feld ist das Ziel `tomselect.focus_node`, nicht das versteckte `<select>` —
+  und `openOnFocus` wird für diesen einen Aufruf abgeschaltet, sonst klappte auf jeder Seite ein
+  Dropdown auf.
+- **Ein Feld, das beim Verlassen speichert, braucht einen Vergleich mit dem gespeicherten Wert.**
+  Start und Pause der Tagesansicht hängen am `blur` und posteten bisher bedingungslos. Mit dem
+  Einstiegsfokus im Feld löste der erste Klick irgendwohin eine Speicherung aus und tauschte die
+  Buchungsliste unter genau diesem Klick weg — samt dem Knopf, der ihn bekommen sollte. `saveTime`
+  in `daily.html` speichert deshalb nur, wenn sich der Wert seit dem letzten Stand geändert hat.
+
+**Der Sprunglink** (`.skip-link` in `layout/base.html`) ist das erste fokussierbare Element der
+Seite und führt auf `#page-content`. Er ist der vorgesehene Weg an der Navigation vorbei; sichtbar
+wird er nur, solange er den Fokus trägt (`visually-hidden-focusable`). Er liegt auf `z-index: 1040`
+— über der fixierten Sidebar (1030), unter einem Dialog (1055).
+
 ## 4. Seitentypen
 
 ### 4.1 Listenansicht (Standardfall, 12+ Seiten)

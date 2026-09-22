@@ -681,6 +681,22 @@ body {
   }
 }
 
+/* Sprunglink (#1064)
+ *
+ * Das erste fokussierbare Element der Seite. Sichtbar wird es nur, solange es den Fokus traegt -
+ * das besorgt Bootstraps .visually-hidden-focusable. Bleibt die Ebene: die Sidebar ist fixiert und
+ * liegt auf 1030, ein Dialog auf 1055; dazwischen steht der Link, damit er ueber der Leiste
+ * erscheint und nicht ueber einem offenen Dialog. */
+.skip-link {
+  z-index: 1040;
+}
+
+/* Das Sprungziel nimmt den Fokus nur ueber den Link an (tabindex="-1") und darf dabei keinen
+   Fokusrahmen um den halben Seiteninhalt ziehen. */
+.page-body:focus {
+  outline: none;
+}
+
 /* Resizable dialogue (#1013)
  *
  * From the large breakpoint upwards a dialogue marked `salat-resizable` can be dragged bigger by its

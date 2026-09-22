@@ -663,16 +663,60 @@ function initTimeInputs() {
 initTimeInputs();
 document.addEventListener('htmx:after:swap', initTimeInputs);
 
-function applyFormTabOrder() {
-  var wrapper = document.querySelector('.page-body');
-  if (!wrapper) return;
-  var els = wrapper.querySelectorAll(
-    'a[href]:not([disabled]), button:not([disabled]), input:not([type="hidden"]):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]):not([readonly])'
-  );
-  if (!els.length) return;
-  els.forEach(function (el, i) {
-    (el.tomselect ? el.tomselect.control_input : el).tabIndex = i + 1;
-  });
+/* ─── Entry focus (#1064) ────────────────────────────────────────────────────
+ *
+ * The tab order is the document order — nothing hands out tabindex values. What is set here is
+ * only where the keyboard starts: on the first field of the form, on a list on the first field of
+ * the filter. Everything after that follows from the markup.
+ *
+ * Buttons and links are deliberately not candidates: the entry belongs on the first field, not on
+ * "Save" and not on a link of the list. Elements outside a form are none either — that keeps the
+ * dismiss button of a toast and the links of a card out of it.
+ * -------------------------------------------------------------------------- */
+
+const ENTRY_FOCUS_SELECTOR = [
+  'form input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"])',
+  'form select',
+  'form textarea',
+].join(', ');
+
+function isEntryFocusCandidate(el) {
+  if (el.disabled || el.readOnly) return false;
+  // TomSelect builds an input of its own plus a placeholder input inside .ts-wrapper. Neither is
+  // the field the template declared — that one stands next to the wrapper and carries .tomselect.
+  if (el.closest('.ts-wrapper')) return false;
+  // a TomSelect field is hidden itself (ts-hidden-accessible); its control stands in for it below
+  if (el.tomselect) return true;
+  return el.offsetParent !== null;
 }
-applyFormTabOrder();
-document.addEventListener('htmx:after:swap', applyFormTabOrder);
+
+function focusEntryField() {
+  // a field focused on load opens the on-screen keyboard on a touch device and covers half the
+  // page with it; the entry focus is there for operating the application by keyboard
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  // what the markup asks for wins — the browser has already honoured it by now
+  if (document.querySelector('[autofocus]')) return;
+  // something already holds the focus (a dialog opened on load brings its own)
+  if (document.activeElement && document.activeElement !== document.body) return;
+
+  const wrapper = document.querySelector('.page-body');
+  if (!wrapper) return;
+  const field = Array.from(wrapper.querySelectorAll(ENTRY_FOCUS_SELECTOR))
+    .find(isEntryFocusCandidate);
+  if (!field) return;
+
+  if (field.tomselect) {
+    const select = field.tomselect;
+    // openOnFocus would drop the dropdown open over the page on every single load
+    const openOnFocus = select.settings.openOnFocus;
+    select.settings.openOnFocus = false;
+    (select.focus_node || select.control).focus();
+    select.settings.openOnFocus = openOnFocus;
+    return;
+  }
+  field.focus();
+}
+
+// only on the first load, and deliberately not on htmx:after:swap: the daily view swaps fragments
+// while the user types, and a focus set again there would take the cursor out of the field
+focusEntryField();
