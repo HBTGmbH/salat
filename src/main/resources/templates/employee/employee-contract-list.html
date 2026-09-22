@@ -130,7 +130,12 @@
               </td>
               <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
                 <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
-                      th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                      data-confirm
+                      th:data-confirm-title="#{main.employeecontract.delete.confirm.title}"
+                      th:data-confirm-detail="${ec.employeeName}"
+                      th:data-confirm-detail-secondary="|${ec.validFrom} – ${ec.validUntil != null ? ec.validUntil : #messages.msg('main.general.open.text')}|"
+                      th:data-confirm-label="#{main.general.button.delete.text}"
+                      data-confirm-variant="danger">
                   <button type="submit" class="btn btn-outline-danger"
                           th:title="#{main.headlinedescription.employeecontracts.delete.text}">
                     <i class="icon ti ti-trash m-0"></i>
@@ -192,7 +197,12 @@
               </td>
               <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
                 <form th:action="@{/employees/contracts/{id}/delete(id=${ec.id})}" method="post"
-                      th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                      data-confirm
+                      th:data-confirm-title="#{main.employeecontract.delete.confirm.title}"
+                      th:data-confirm-detail="${ec.employeeName}"
+                      th:data-confirm-detail-secondary="|${ec.validFrom} – ${ec.validUntil != null ? ec.validUntil : #messages.msg('main.general.open.text')}|"
+                      th:data-confirm-label="#{main.general.button.delete.text}"
+                      data-confirm-variant="danger">
                   <button type="submit" class="btn btn-outline-danger"
                           th:title="#{main.headlinedescription.employeecontracts.delete.text}">
                     <i class="icon ti ti-trash m-0"></i>

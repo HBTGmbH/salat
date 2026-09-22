@@ -7,6 +7,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -190,6 +191,31 @@ public abstract class PlaywrightE2ETestBase {
         .filter(new Locator.FilterOptions().setHasText(optionText))
         .first()
         .click();
+  }
+
+  /**
+   * The shared confirmation dialog (#1032, ADR-0027) once it is on the screen. Every confirmation
+   * in the application goes through this one element — there is no native {@code confirm()} left,
+   * so {@code page.onDialog(...)} answers nothing any more.
+   */
+  protected Locator confirmDialog(Page page) {
+    Locator dialog = page.locator("#confirmModal");
+    dialog.waitFor();
+    return dialog;
+  }
+
+  /** Answers the confirmation with "yes" and waits for the dialog to be gone again. */
+  protected void confirmAction(Page page) {
+    confirmDialog(page).locator("#confirmModalAccept").click();
+    page.locator("#confirmModal").waitFor(
+        new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+  }
+
+  /** Answers the confirmation with "no" — the action must not have happened afterwards. */
+  protected void cancelAction(Page page) {
+    confirmDialog(page).locator("[data-bs-dismiss=modal]").click();
+    page.locator("#confirmModal").waitFor(
+        new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
   }
 
 }

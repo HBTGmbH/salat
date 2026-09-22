@@ -248,7 +248,12 @@
       Alle Arbeitstage, an denen nichts gebucht wurde, werden auf 'nicht gearbeitet' gesetzt.
     </span>
     <form method="post" th:action="@{/dailyreport/matrix/fill-not-worked}"
-          th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
+          data-confirm
+          th:data-confirm-title="#{main.matrix.fillnotworked.confirm.title}"
+          th:data-confirm-text="#{main.matrix.fillnotworked.confirm.text}"
+          th:data-confirm-detail="${#temporals.format(yearMonth.atDay(1), 'MMMM yyyy')}"
+          th:data-confirm-label="#{main.matrix.fillnotworked.button.text}"
+          data-confirm-variant="warning">
       <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
       <input type="hidden" name="year" th:value="${yearMonth.year}"/>
       <!--/* warning, like the "Nicht gearbeitet" badge this action produces */-->

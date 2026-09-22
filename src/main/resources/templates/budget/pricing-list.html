@@ -123,7 +123,12 @@
           </td>
           <td th:if="${isManager}">
             <form th:action="@{/budget/pricing/{id}/delete(id=${p.id})}" method="post"
-                  th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                  data-confirm
+                  th:data-confirm-title="#{main.pricing.delete.confirm.title}"
+                  th:data-confirm-detail="|${p.customerorderSign} · ${p.suborderSign ?: '-'} · ${p.employeeSign ?: '-'}|"
+                  th:data-confirm-detail-secondary="|${#messages.msg('main.budget.format.amount', p.priceCentsPerHour / 100.0)} · ${#temporals.format(p.validFrom, 'dd.MM.yyyy')} – ${p.validUntil.year != 2999 ? #temporals.format(p.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
+                  th:data-confirm-label="#{main.general.button.delete.text}"
+                  data-confirm-variant="danger">
               <button type="submit" class="btn btn-outline-danger btn-sm">
                 <i class="icon ti ti-trash m-0"></i>
               </button>

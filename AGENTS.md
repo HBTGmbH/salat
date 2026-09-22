@@ -61,6 +61,42 @@ See also README.md
     judgement, and a rule triggering on every `#NNN` would misfire on the next section marker that
     carries one.
 
+## Bestätigungen und modale Dialoge (→ ADR-0027)
+
+**Es gibt kein `confirm()`, `alert()` oder `prompt()`.** Jede Rückfrage läuft über den gemeinsamen
+Bestätigungsdialog: einmal als Fragment (`fragments/confirm-dialog.html`) in `layout/base.html`,
+ausgelöst über `data-confirm`-Attribute am Formular oder an einem einzelnen Submit-Knopf, gefüllt
+vom delegierten Handler in `static/js/salat.js`. Kein Template bringt dafür eigenes JavaScript mit,
+und kein zweiter handgeschriebener Bestätigungsdialog kommt daneben.
+
+```html
+<form th:action="@{/customers/delete}" method="post"
+      data-confirm
+      th:data-confirm-title="#{main.customer.delete.confirm.title}"
+      th:data-confirm-detail="${cu.shortName}"
+      th:data-confirm-detail-secondary="${cu.name}"
+      th:data-confirm-label="#{main.general.button.delete.text}"
+      data-confirm-variant="danger">
+```
+
+**Ein modaler Dialog nennt in seiner Meldung die fachlichen Schlüsselinformationen des betroffenen
+Geschäftsobjekts** — so viel, dass zwei benachbarte Zeilen derselben Liste auseinanderzuhalten
+sind, denn der Dialog verdeckt genau die Zeile, an der man gegenprüfen würde. Das gilt für **jeden**
+Dialog mit einer Meldung, nicht nur für Bestätigungen. Die Datenbank-ID ist keine fachliche
+Information. Wo es kein einzelnes Objekt gibt, benennt der Text den **Umfang** der Aktion (Zeitraum,
+Anzahl, Bereich); wo der Umfang erst eingegeben wird, holt `data-confirm-detail-input` ihn aus dem
+Feld. Die Attributliste steht in [`docs/ui-style-guide.md` §5.5](docs/ui-style-guide.md).
+
+Zwei Fallstricke, die beide daher kommen, dass der Dialog zwischen Klick und Aktion steht:
+
+- **`th:attr` wertet seine Ausdrücke eingeschränkt aus** — eine Bohne (`${@durationUtils…}`) ist
+  dort so wenig erreichbar wie in einem Nachrichtenparameter (siehe „Globally Accessible Objects").
+  Erst mit `th:with` binden, dann im Attribut verwenden.
+- **Der Handler hängt am `submit`-Ereignis in der Capture-Phase** und stoppt es dort. HTMX
+  registriert seinen Auslöser am Formular selbst; alles andere als Capture ließe ein `hx-post`
+  abgehen, bevor die Frage beantwortet ist. Ausgelöst wird danach mit `requestSubmit()`, nicht mit
+  `submit()`: nur das erste behält den auslösenden Knopf und die HTML5-Validierung.
+
 ## Farben und Kontrast (→ ADR-0025)
 
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene

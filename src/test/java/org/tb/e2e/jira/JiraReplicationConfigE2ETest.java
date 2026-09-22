@@ -24,6 +24,10 @@ import org.tb.e2e.PlaywrightE2ETestBase;
  * <p>The third is the scope picker (#1025): choosing the order fills the suborder select through an
  * out-of-band swap, so only a browser can show that the two selects really produce the one sign the
  * list then displays.
+ *
+ * <p>Deleting and resetting the watermark run through the shared confirmation dialog (#1032). The
+ * test answers it rather than a native {@code confirm()}, and checks that it names the replication
+ * it is about — a list of replications differs in the name alone.
  */
 class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
@@ -45,10 +49,6 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
     var renamed = name + " (geaendert)";
 
     runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/jira/replications", page -> {
-      // every confirmation on these pages is a confirm() dialog, and Playwright dismisses those by
-      // default — which would silently turn "delete" into "do nothing"
-      page.onDialog(dialog -> dialog.accept());
-
       assertThat(page.locator("h2.page-title")).containsText("JIRA-Replikationen");
 
       // --- create: scoped to the whole order, which is what an empty suborder means -----------
@@ -95,7 +95,9 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       rowOf(page, renamed).getByTitle("Ändern").click();
       assertThat(page.locator("#lastMaxUpdated")).hasCount(0);
       page.getByRole(AriaRole.BUTTON,
-          new Page.GetByRoleOptions().setName("Wasserstand zurücksetzen")).click();
+          new Page.GetByRoleOptions().setName("Wasserstand zurücksetzen")).first().click();
+      assertThat(confirmDialog(page)).containsText(renamed);
+      confirmAction(page);
       assertThat(page.locator(".alert-success")).containsText("Wasserstand");
 
       // --- a filled field replaces the stored password, and that one does not come back either --
@@ -104,8 +106,15 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       save(page);
       assertPageIsFreeOf(page, REPLACEMENT_PASSWORD);
 
-      // --- delete ------------------------------------------------------------------------------
+      // --- delete: cancelling keeps the record, and the dialog says which one it is about -------
       rowOf(page, renamed).getByTitle("Löschen").click();
+      assertThat(confirmDialog(page)).containsText(renamed);
+      assertThat(confirmDialog(page)).containsText(SUBORDER_SCOPE);
+      cancelAction(page);
+      assertThat(rowOf(page, renamed)).hasCount(1);
+
+      rowOf(page, renamed).getByTitle("Löschen").click();
+      confirmAction(page);
       assertThat(rowOf(page, name)).hasCount(0);
     });
   }

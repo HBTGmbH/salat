@@ -220,7 +220,11 @@
          record, not an unsaved edit of it. */-->
   <form th:if="${isEdit}" th:action="@{/jira/replications/{id}/reset-watermark(id=${replicationForm.id})}"
         method="post" class="mt-3"
-        th:onsubmit="|return confirm('#{main.jira.replication.confirm.resetwatermark}');|">
+        data-confirm
+        th:data-confirm-title="#{main.jira.replication.resetwatermark.confirm.title}"
+        th:data-confirm-text="#{main.jira.replication.confirm.resetwatermark}"
+        th:data-confirm-detail="${replicationForm.name}"
+        th:data-confirm-label="#{main.jira.replication.action.resetwatermark}">
     <button type="submit" class="btn btn-outline-secondary">
       <i class="icon ti ti-restore"></i>
       <span th:text="#{main.jira.replication.action.resetwatermark}">Wasserstand zurücksetzen</span>

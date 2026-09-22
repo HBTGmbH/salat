@@ -45,7 +45,12 @@
             <a th:if="${mayEdit[report.id]}" class="btn btn-outline-primary" th:href="@{/reporting/reports/edit(id=${report.id})}"><i class="icon ti ti-pencil m-0"></i></a>
           </td>
           <td>
-            <form th:if="${mayDelete[report.id]}" th:action="@{/reporting/reports/delete}" method="post" th:onsubmit="|return confirm('Are you sure?');|">
+            <form th:if="${mayDelete[report.id]}" th:action="@{/reporting/reports/delete}" method="post"
+                  data-confirm
+                  th:data-confirm-title="#{main.reporting.report.delete.confirm.title}"
+                  th:data-confirm-detail="${report.name}"
+                  th:data-confirm-label="#{main.general.button.delete.text}"
+                  data-confirm-variant="danger">
               <input type="hidden" name="id" th:value="${report.id}"/>
               <button type="submit" class="btn btn-outline-danger"><i class="icon ti ti-trash m-0"></i></button>
             </form>

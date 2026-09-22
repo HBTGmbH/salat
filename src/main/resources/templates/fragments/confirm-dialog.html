@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Der gemeinsame Bestaetigungsdialog (#1032, ADR-0027). Er liegt einmal in layout/base.html;
+       die ausloesende Aktion beschreibt ihn ueber data-confirm-* und der Handler in salat.js
+       fuellt ihn. Kein Template bringt dafuer eigenes JavaScript mit.
+
+       Die beiden Detailzeilen sind der Grund, warum es den Dialog ueberhaupt gibt: das native
+       Browser-Popup sagte nur, dass etwas geloescht wird, nie welches. Sie tragen die fachlichen
+       Schluesselinformationen des betroffenen Geschaeftsobjekts - so viel, dass eine Zeile von
+       ihrer Nachbarin zu unterscheiden ist, waehrend die Liste selbst hinter dem Dialog liegt.
+
+       Die Vorgabewerte fuer Titel und Knopfbeschriftung haengen am Dialog selbst: eine Aktion,
+       die nur data-confirm setzt, bekommt eine vollstaendige Rueckfrage, ohne dass der Handler
+       uebersetzte Texte kennen muesste. */-->
+<div th:fragment="confirmDialog"
+     class="modal modal-blur fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true"
+     aria-labelledby="confirmModalTitle" aria-describedby="confirmModalText confirmModalDetail"
+     th:attr="data-default-title=#{main.general.confirm.modal.title},
+              data-default-label=#{main.general.button.confirm.text}">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="modal-title" id="confirmModalTitle">Wirklich fortfahren?</div>
+        <div class="text-muted mt-1" id="confirmModalText"></div>
+        <div class="fw-medium mt-2" id="confirmModalDetail"></div>
+        <div class="text-muted small mt-1" id="confirmModalDetailSecondary"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link link-secondary me-auto" data-bs-dismiss="modal"
+                th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+        <button type="button" class="btn btn-primary" id="confirmModalAccept">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

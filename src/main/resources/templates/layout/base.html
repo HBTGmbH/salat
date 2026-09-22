@@ -681,6 +681,10 @@
   })();
 </script>
 
+<!--/* Der gemeinsame Bestaetigungsdialog (#1032): einmal fuer die ganze Anwendung, die ausloesende
+       Aktion beschreibt ihn ueber data-confirm-*. */-->
+<div th:replace="~{fragments/confirm-dialog :: confirmDialog}"></div>
+
 <div class="modal modal-blur fade" id="loginSwitchModal" tabindex="-1" role="dialog"
      th:if="${@loginSwitchViewHelper.visible}">
   <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
