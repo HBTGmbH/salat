@@ -354,7 +354,8 @@ Farbe. Großflächige getönte Bereiche bleiben getönt:
 
 | Flag | Farbe | Icon |
 |---|---|---|
-| ausgeblendet (`hide`) | `bg-danger-lt` | `bi-eye-slash` (bzw. `bi-eye` transparent, wenn sichtbar) |
+| ausgeblendet (`hide`) | `bg-danger-lt` | `bi-eye-slash` |
+| eingeblendet (`hide`, Umschalter) | `bg-success-lt` | `bi-eye` |
 | fakturierbar | `bg-success-lt` | `bi-cash-stack` |
 | Standard | `bg-warning-lt` | `bi-bookmark-star-fill` |
 | Kommentar erforderlich | `bg-danger-lt` | `bi-chat-square-text` |
@@ -363,7 +364,19 @@ Farbe. Großflächige getönte Bereiche bleiben getönt:
 
 Für Manager ist die `hide`-Badge ein **klickbarer Inline-Toggle** (HTMX-POST, tauscht nur die
 Zelle) — realisiert in `fragments/hide-toggle.html`, dem einzigen verbliebenen Fragment mit
-fachlicher Logik.
+fachlicher Logik. Sie zeigt **den Zustand, in dem der Datensatz ist**, nicht die Aktion, die der
+Klick auslöst: eingeblendet grün mit offenem Auge, ausgeblendet rot mit durchgestrichenem. Beide
+Zustände sind damit eine Aussage, nicht nur einer.
+
+Eingeblendet war vorher eine graue Badge mit einem auf 35 % abgeblendeten Auge — auf der gefüllten
+Sekundärfarbe kam das Icon auf **1,91:1**, in beiden Farbmodi: Die feinen Linien des Umrisses waren
+praktisch unsichtbar. Das ist ein Folgefehler der gefüllten Badge — auf der früheren 10-%-Tönung war
+die Fläche hell genug, dass ein abgeblendetes Icon darauf noch trug. Auf der grünen Füllung steht das
+Icon jetzt bei **5,20:1**.
+
+**Wer nicht umschalten darf, sieht weiter nur den ausgeblendeten Zustand** als Flag. Ein Zustand, der
+die Regel ist, braucht keine Markierung in jeder Zeile; der Umschalter dagegen muss zeigen, woran man
+gerade dreht.
 
 ### 5.5 Rückmeldungen
 - **Erfolg/Fehler nach Redirect:** Flash-Attribute `toastSuccess` / `toastError` / `toastErrors`
@@ -440,7 +453,7 @@ ohne Format-Hinweis.
 | Farbe | Bedeutung im Projekt |
 |---|---|
 | `primary` (blau) | Standard-/Bestätigungsaktion, Bearbeiten |
-| `success` (grün) | Anlegen, fakturierbar, positiver Saldo |
+| `success` (grün) | Anlegen, fakturierbar, positiver Saldo, eingeblendet |
 | `warning` (gelb) | Aufmerksamkeit ohne Fehler (abgelaufener Vertrag, fehlende Freigabe), Standard-Flag, Rücknahme eines Vorgangs |
 | `danger` (rot) | Löschen, Fehler, ausgeblendet, Kommentarpflicht |
 | `secondary` (grau) | neutral/inaktiv, Abbrechen |
@@ -644,7 +657,7 @@ Tablers eigene Regel `!important` trägt.
 Die klickbare `hide`-Badge ([§5.4](#54-badges--flags-spalte)) bleibt im Hover unverändert: weder
 Tabler noch `salat.css` bringen eine `:hover`-Regel mit, die den Button (`border-0 bg-transparent`)
 oder die Badge darin trifft — geprüft über alle geladenen Stylesheets und am gehoverten Element
-nachgemessen (5,10:1 in Ruhe wie im Hover).
+nachgemessen (5,10:1 in Ruhe wie im Hover; der eingeblendete Zustand liegt auf Grün bei 5,20:1).
 
 **Für diese Prüfung muss die Messseite über HTTP ausgeliefert werden.** Bei einem Aufruf über
 `file://` sperrt Chrome den Zugriff auf `cssRules` der verlinkten Stylesheets: `document.styleSheets`
