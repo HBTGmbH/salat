@@ -9,6 +9,27 @@
   --bs-font-sans-serif: var(--tblr-font-sans-serif);
 }
 
+/* ===== Ein satteres Gelb als Tablers =====
+   Tabler kennt genau ein Gelb: --tblr-yellow und --tblr-warning sind beide #f59f00. Das ist ein
+   Bernstein - als Flaeche liest es sich als Ocker, nicht als Gelb, und abgedunkelt, damit helle
+   Schrift darauf traegt, wird daraus vollends ein Braun.
+   Der Ton wird deshalb einmal zentral ersetzt statt an jeder Fundstelle nachgebessert: alles
+   Abgeleitete - Fuellung, Hover (-darken), Toenung (-lt, -200) und die ueber das Token gelesene
+   Diagrammfarbe - mischt Tabler aus dem Token und folgt von selbst. Nur die -rgb-Varianten stehen
+   dort als Literal daneben und muessen mitgezogen werden.
+   #ffcc00 ist heller und im Farbton weiter weg vom Orange: oklch(0,87 0,18 92) statt
+   oklch(0,77 0,16 67). Es ist der einzige eigene Farbton im Projekt - die uebrigen Literale sind
+   Mischpartner, Schatten und Druck. Gefuehrt und begruendet in der Ausnahmeliste des Style Guide
+   (ADR-0025). */
+:root,
+[data-bs-theme="light"],
+[data-bs-theme="dark"] {
+  --tblr-yellow: #ffcc00;
+  --tblr-warning: #ffcc00;
+  --tblr-yellow-rgb: 255, 204, 0;
+  --tblr-warning-rgb: 255, 204, 0;
+}
+
 /* ===== Manuelle Textselektion =====
    An data-bs-theme gekoppelt, nicht an prefers-color-scheme: der Salat-Umschalter
    ist maßgeblich, nicht das Theme des Betriebssystems. Seit Tabler 1.5 gilt das mit
@@ -104,7 +125,9 @@
    dort also genau den Ton der Badge. Das ist keine Koinzidenz, sondern rechnet sich: wer weisse
    Schrift auf einem Ton mit 4,8:1 haelt, hat einen Ton um 0,17 relativer Leuchtdichte - und der
    ergibt auf der Seitenflaeche wieder rund 4,6:1. Die beiden Bloecke gehoeren damit zusammen: wer
-   hier einen Anteil aendert, aendert den der Badge mit.
+   hier einen Anteil aendert, aendert den der Badge mit. Ausgenommen ist Gelb: seine Badge traegt
+   dunkle Schrift auf voller Farbe und ist damit aus der Rechnung heraus (siehe dort).
+   Rot faellt dunkel aus dem Mischschema heraus und steht in einer eigenen Regel weiter unten.
    Der Dunkelmodus-Zweig steht in :where(), traegt also keine eigene Spezifitaet. Sonst schluege er
    die bg-*-lt-Regel darunter, und die Fehlerzellen der Matrix (bg-danger-lt text-danger) und die
    Avatare (bg-azure-lt text-azure) bekaemen den Farbton auf der Toenung zurueck - dort, wo #1022
@@ -126,9 +149,13 @@
   color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)) !important; /* hell 4,97:1 */
 }
 
+/* Gelb ist der Ton, der hier am meisten verliert, und das laesst sich nicht beheben: ein Text, der
+   auf der hellen Seitenflaeche 4,5:1 traegt, muss unter eine relative Leuchtdichte von 0,17 - und
+   ein Gelb ist dort ein Braun, bei jeder Saettigung. Das volle #ffcc00 traegt hell 1,45:1. Der
+   Anteil ist mit dem satteren Gelb von 60% auf 53% gesunken, weil der neue Ton heller ist. */
 .text-warning,
 .text-yellow {
-  color: color-mix(in srgb, var(--tblr-warning) 60%, var(--tblr-black)) !important; /* hell 5,18:1 */
+  color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)) !important; /* hell 4,80:1 */
 }
 
 /* --tblr-info traegt denselben Wert wie --tblr-azure und teilt deshalb den Anteil. */
@@ -160,9 +187,17 @@
   color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)) !important; /* dunkel 4,92:1 */
 }
 
+/* Rot geht dunkel nicht ueber die Beimischung von Weiss: die hellt zwar auf, nimmt dem Ton dabei
+   aber die Saettigung - #e27474 stand neben der Badge desselben Namens wie ein ausgeblichenes Rot.
+   Aufhellen muss es trotzdem, --tblr-danger selbst traegt auf der Karte nur 3,15:1.
+   Beides zugleich geht nur ueber den Rand des sRGB-Raums: in oklch wird die Helligkeit gesetzt und
+   die Buntheit hoeher angegeben, als der Farbraum sie an dieser Stelle hergibt - der Browser bildet
+   auf den Rand ab und liefert damit das saettigste Rot, das bei dieser Helligkeit ueberhaupt
+   moeglich ist. Der Farbton bleibt der des Tokens (from ... h), nur Helligkeit und Buntheit werden
+   gesetzt; 0,70 ist der Wert, bei dem der Rand noch 4,5:1 traegt. */
 :where([data-bs-theme="dark"]) .text-danger,
 :where([data-bs-theme="dark"]) .text-red {
-  color: color-mix(in srgb, var(--tblr-danger) 70%, var(--tblr-white)) !important; /* dunkel 4,88:1 */
+  color: oklch(from var(--tblr-danger) 0.7 0.2 h) !important; /* dunkel 4,92:1 */
 }
 
 :where([data-bs-theme="dark"]) .text-success,
@@ -172,7 +207,7 @@
 
 :where([data-bs-theme="dark"]) .text-warning,
 :where([data-bs-theme="dark"]) .text-yellow {
-  color: var(--tblr-warning) !important; /* dunkel 6,88:1 - volle Farbe */
+  color: var(--tblr-warning) !important; /* dunkel 9,71:1 - volle Farbe */
 }
 
 :where([data-bs-theme="dark"]) .text-azure,
@@ -240,6 +275,7 @@
    gegen Schwarz gemischt, dass 4,8:1 stehen - und keinen Schritt weiter, damit so viel Farbe wie
    moeglich bleibt. Das ist derselbe Grundsatz wie bei den text-*-Utilities oben, nur in die andere
    Richtung gemischt. Die dunklen Toene bleiben dabei unveraendert.
+   Warning und Yellow fehlen in der Liste: sie gehen den umgekehrten Weg und stehen weiter unten.
    Die Regel gilt nur fuer .badge, nicht fuer bg-*-lt allgemein: dieselbe Klasse faerbt ganze
    Tabellenzeilen, die Wochenend- und Feiertagsspalten der Matrix, die ungelesenen Meldungen des
    Glocken-Dropdowns, die Kacheln des Dashboards und die Avatare - die bleiben getoent.
@@ -249,7 +285,6 @@
 .badge.bg-primary-lt,
 .badge.bg-secondary-lt,
 .badge.bg-success-lt,
-.badge.bg-warning-lt,
 .badge.bg-danger-lt,
 .badge.bg-info-lt,
 .badge.bg-blue-lt,
@@ -259,7 +294,6 @@
 .badge.bg-pink-lt,
 .badge.bg-red-lt,
 .badge.bg-orange-lt,
-.badge.bg-yellow-lt,
 .badge.bg-lime-lt,
 .badge.bg-green-lt,
 .badge.bg-teal-lt,
@@ -327,12 +361,28 @@
   background-color: color-mix(in srgb, var(--tblr-lime) 65%, #000) !important;
 }
 
+/* Gelb ist der einzige Ton, dem der Weg zu heller Schrift den Farbton nimmt: rechnerisch war
+   #935f00 ein Gelb mit 60% Anteil, gelesen wurde es als Braun - und weil die Badge-Fuellung
+   modusunabhaengig ist, in beiden Farbmodi. Das lag nicht an der Mischung, sondern an der Farbe:
+   ein Gelb, das helle Schrift bei 4,8:1 haelt, muss unter eine relative Leuchtdichte von 0,17 -
+   und ein dunkles Gelb ist ein Braun, egal wie gesaettigt.
+   Gelb geht deshalb den umgekehrten Weg: volle Farbe, dunkle Schrift, 9,71:1. Das ist dieselbe
+   Wahl, die --tblr-warning-fg weiter unten fuer btn-warning trifft - Badge und Button zeigen damit
+   denselben Ton.
+   Der Preis: im hellen Modus trennen sich Badge-Fuellung und Textfarbe desselben Namens, die sonst
+   ueberall derselbe Ton sind. Anders geht es nicht - farbiger Text auf heller Flaeche kann nicht
+   satt gelb sein, das volle Token traegt dort 1,45:1. */
+.badge.bg-warning-lt,
+.badge.bg-yellow-lt {
+  color: var(--tblr-dark) !important;
+}
+
 .badge.bg-warning-lt {
-  background-color: color-mix(in srgb, var(--tblr-warning) 60%, #000) !important;
+  background-color: var(--tblr-warning) !important;
 }
 
 .badge.bg-yellow-lt {
-  background-color: color-mix(in srgb, var(--tblr-yellow) 60%, #000) !important;
+  background-color: var(--tblr-yellow) !important;
 }
 
 /* Grau ist der einzige Ton, dessen Fuellung sich mit dem Modus aendert: Tabler hellt die
@@ -349,7 +399,7 @@
 /* ===== Buttons: die Textfarbe folgt der Fuellung =====
    Tabler faerbt den Text jeder gefuellten Variante ueber --tblr-<farbe>-fg, und das ist fuer alle
    Varianten dasselbe Fastweiss (--tblr-light). Wie hell die Fuellung darunter ist, spielt dabei
-   keine Rolle - auf Gruen ergab das 2,63:1, auf Gelb 2,04:1, und zwar in beiden Farbmodi.
+   keine Rolle - auf Gruen ergab das 2,63:1, auf Gelb 1,45:1, und zwar in beiden Farbmodi.
    Im Dunkelmodus hellt Tabler zusaetzlich die Sekundaerfuellung von #6b7280 auf #9ca3af auf, laesst
    den Text aber weiss: das war der gemeldete Abbrechen-Button mit 2,43:1.
    Die Variable sitzt an der richtigen Stelle, um das an einer Stelle zu loesen - sie faerbt die
@@ -359,7 +409,7 @@
 [data-bs-theme="light"],
 [data-bs-theme="dark"] {
   --tblr-success-fg: var(--tblr-dark); /* auf #2fb344: 5,35:1 statt 2,63:1 */
-  --tblr-warning-fg: var(--tblr-dark); /* auf #f59f00: 6,88:1 statt 2,04:1 */
+  --tblr-warning-fg: var(--tblr-dark); /* auf #ffcc00: 9,71:1 statt 1,45:1 */
   --tblr-danger-fg: var(--tblr-white); /* auf #d63939: 4,67:1 statt 4,46:1 - reines Weiss statt --tblr-light reicht */
 }
 
@@ -443,8 +493,8 @@
 
 .btn-outline-warning,
 .btn-ghost-warning {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 60%, var(--tblr-black)); /* hell 5,18:1 */
-  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-warning) 60%, var(--tblr-black));
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)); /* hell 4,80:1 */
+  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black));
 }
 
 [data-bs-theme="dark"] .btn-outline-primary,
@@ -455,8 +505,8 @@
 
 [data-bs-theme="dark"] .btn-outline-danger,
 [data-bs-theme="dark"] .btn-ghost-danger {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-danger) 70%, var(--tblr-white)); /* dunkel 4,88:1 */
-  --tblr-btn-border-color: color-mix(in srgb, var(--tblr-danger) 70%, var(--tblr-white));
+  --tblr-btn-color: oklch(from var(--tblr-danger) 0.7 0.2 h); /* dunkel 4,92:1 */
+  --tblr-btn-border-color: oklch(from var(--tblr-danger) 0.7 0.2 h);
 }
 
 [data-bs-theme="dark"] .btn-outline-success,
@@ -467,7 +517,7 @@
 
 [data-bs-theme="dark"] .btn-outline-warning,
 [data-bs-theme="dark"] .btn-ghost-warning {
-  --tblr-btn-color: var(--tblr-warning); /* dunkel 6,88:1 - volle Farbe */
+  --tblr-btn-color: var(--tblr-warning); /* dunkel 9,71:1 - volle Farbe */
   --tblr-btn-border-color: var(--tblr-warning);
 }
 

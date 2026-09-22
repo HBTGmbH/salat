@@ -349,7 +349,8 @@ Boolesche Zustände in Listen stehen gesammelt in einer **Flags-Spalte**
 (`d-none d-lg-table-cell`), nie inline neben dem Namen. Jedes Flag ist eine Badge mit Icon und
 `title`-Tooltip. Die Klassen heißen weiterhin `bg-*-lt`, Badges sind aber **gefüllt und tragen helle
 Schrift** statt der Tönung — ihr Farbsignal steckt seit der Kontrastkorrektur allein in der Fläche
-([§7.1](#badges-gefüllt-statt-getönt)); großflächige getönte Bereiche bleiben getönt:
+([§7.1](#badges-gefüllt-statt-getönt)); Gelb ist die Ausnahme und trägt dunkle Schrift auf voller
+Farbe. Großflächige getönte Bereiche bleiben getönt:
 
 | Flag | Farbe | Icon |
 |---|---|---|
@@ -556,6 +557,37 @@ und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards un
 Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` ist auf hellem Grund *heller* als der
 Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen (1,04:1–1,11:1).
 
+#### Ein satteres Gelb als Tablers
+
+Tabler kennt genau ein Gelb: `--tblr-yellow` und `--tblr-warning` sind beide `#f59f00`. Das ist ein
+Bernstein — als Fläche liest es sich als Ocker, nicht als Gelb, und abgedunkelt, damit helle Schrift
+darauf trägt, wird daraus vollends ein Braun. Der Ton ist deshalb einmal zentral ersetzt:
+
+| Token | Tabler | Salat |
+|---|---|---|
+| `--tblr-yellow`, `--tblr-warning` | `#f59f00` — oklch(0,77 0,16 67) | `#ffcc00` — oklch(0,87 0,18 92) |
+
+Heller **und** im Farbton weiter weg vom Orange. Der Eingriff steht an einer Stelle, weil alles
+Abgeleitete Tabler aus dem Token mischt und von selbst folgt: Füllung, Hover (`-darken`), Tönung
+(`-lt`, `-200`) und die zur Laufzeit über `--tblr-<name>` gelesene Diagrammfarbe. Nur die
+`-rgb`-Varianten stehen bei Tabler als Literal daneben und sind mitgezogen.
+
+Nachgemessen in beiden Farbmodi, über Seitenfläche und Karte:
+
+| Probe | vorher | nachher |
+|---|---|---|
+| Badge (`bg-warning-lt`, dunkle Schrift) | 6,88 | 9,71 |
+| `btn-warning` | 6,88 | 9,71 |
+| `btn-warning` im Hover (`-darken`) | — | 10,43 hell / 6,69 dunkel |
+| `text-warning` hell (Anteil 60 % → 53 %) | 5,18 | 4,81 |
+| `text-warning` dunkel (volle Farbe) | 6,88 | 9,71 |
+| getönte Fläche `bg-warning-lt` | 8,90–11,09 | 9,37–11,70 |
+| TomSelect-Trefferhervorhebung | 7,62 / 7,02 | 8,54 / 5,88 |
+
+Es ist der einzige Farbwert im Projekt, der nicht aus einem Tabler-Token kommt
+([Verbliebene Literale](#verbliebene-literale)). Das ist bewusst: Ein zweites Gelb daneben — Badge
+satt, Button bernstein — wäre genau die Drift, vor der dieser Abschnitt sonst warnt.
+
 #### Badges: gefüllt statt getönt
 
 Aus normalfarbigem Text folgt: Was eine Badge farblich aussagt, steckt vollständig in ihrer Fläche —
@@ -577,11 +609,22 @@ Anteil, der farbige Text trägt dort genau diesen Ton
 | 75 % | `info`, `azure`, `orange`, `teal`, `cyan` | 5,03–5,20 |
 | 70 % | `success`, `green` | 5,20 |
 | 65 % | `lime` | 5,26 |
-| 60 % | `warning`, `yellow` | 5,42 |
+| 100 %, **dunkle** Schrift | `warning`, `yellow` | 9,71 |
 
 `secondary` ist der einzige Ton mit zwei Werten: Tabler hellt die Sekundärfüllung im Dunkelmodus von
 `#6b7280` auf `#9ca3af` auf. Hell trägt sie helle Schrift unverändert (4,83:1), dunkel muss sie dafür
 erst auf 70 % abgedunkelt werden (4,84:1).
+
+**Gelb geht den umgekehrten Weg.** Es ist der einzige Ton, dem das Abdunkeln den Farbton nimmt: Wer
+helle Schrift auf einem Gelb bei 4,8:1 halten will, muss unter eine relative Leuchtdichte von 0,17 —
+und ein dunkles Gelb ist ein Braun, bei jeder Sättigung. Die Badge lag damit bei `#935f00` und wurde
+als Braun gelesen, in beiden Farbmodi, weil die Badge-Füllung modusunabhängig ist. Sie trägt deshalb
+die **volle Farbe mit dunkler Schrift** (`--tblr-dark`, 9,71:1) — dieselbe Wahl, die
+`--tblr-warning-fg` für `btn-warning` trifft, Badge und Button zeigen damit denselben Ton.
+
+Der Preis steht unter [Wo Farbe erhalten bleibt](#wo-farbe-erhalten-bleibt): Für Gelb fallen
+Badge-Füllung und gleichnamige Textfarbe im hellen Modus auseinander. Anders ist es nicht zu haben —
+farbiger Text auf heller Fläche kann nicht satt gelb sein, das volle Token trägt dort 1,45:1.
 
 Gemessen wurden 18 Farbtöne × zwei Farbmodi × Seitenfläche, Karte, Tabellenzeile (gerade, ungerade,
 `table-active`) und Sidebar, mit Text und nur mit Icon. **Alle Werte liegen zwischen 4,83:1 und
@@ -630,7 +673,7 @@ direkt in `.ts-control > input`.
 | „Übernehmen"-Zeile | **2,73** ✘ | 4,63 | **1,21** ✘ | 6,99 |
 | Gruppenkopf | **4,49** ✘ | 4,63 | **3,78** ✘ | 6,99 |
 | Platzhalter | **2,24** ✘ | 4,83 | 7,93 | 6,99 |
-| Trefferhervorhebung | 9,19 | 7,62 | **4,32** ✘ | 7,02 |
+| Trefferhervorhebung | 9,19 | 8,54 | **4,32** ✘ | 5,88 |
 | Chip der Mehrfachauswahl | 10,01 | 7,69 | 10,01 | 9,71 |
 
 Der Chip war kontrastseitig in Ordnung, aber ein festes Hellgrau — im Dunkelmodus ein greller Fleck.
@@ -643,7 +686,7 @@ Farbwerte gegen beide Farbmodi geprüft sind. Ein Blick in `src/` reicht dafür 
 
 Tabler färbt den Text **jeder** gefüllten Variante über `--tblr-<farbe>-fg`, und das ist für alle
 dieselbe Fastweiß-Farbe (`--tblr-light`). Wie hell die Füllung darunter ist, spielt dabei keine
-Rolle — auf Grün ergab das 2,63:1, auf Gelb 2,04:1, in **beiden** Farbmodi. Im Dunkelmodus hellt
+Rolle — auf Grün ergab das 2,63:1, auf Gelb 1,45:1, in **beiden** Farbmodi. Im Dunkelmodus hellt
 Tabler zusätzlich die Sekundärfüllung von `#6b7280` auf `#9ca3af` auf, lässt den Text aber weiß:
 das war der gemeldete Abbrechen-Button mit 2,43:1.
 
@@ -651,13 +694,13 @@ das war der gemeldete Abbrechen-Button mit 2,43:1.
 |---|---|---|---|---|
 | `btn-secondary` (12×) | 4,63 | 4,63 | **2,43** ✘ | 5,78 |
 | `btn-success` (23×) | **2,63** ✘ | 5,35 | **2,63** ✘ | 5,35 |
-| `btn-warning` | **2,04** ✘ | 6,88 | **2,04** ✘ | 6,88 |
+| `btn-warning` | **1,45** ✘ | 9,71 | **1,45** ✘ | 9,71 |
 | `btn-danger` | **4,46** ✘ | 4,66 | **4,46** ✘ | 4,66 |
 | `btn-outline-primary` (29×) | 5,00 | 6,54 | **2,94** ✘ | 4,86 |
-| `btn-outline-danger` (19×) | 4,66 | 6,61 | **3,15** ✘ | 4,80 |
+| `btn-outline-danger` (19×) | 4,66 | 6,61 | **3,15** ✘ | 4,92 |
 | `btn-outline-success` | **2,74** ✘ | 5,22 | 5,35 | 7,88 |
-| `btn-outline-warning` | **2,13** ✘ | 5,32 | 6,88 | 9,34 |
-| `btn-ghost-warning` | **2,13** ✘ | 5,32 | 6,88 | 9,34 |
+| `btn-outline-warning` | **2,13** ✘ | 4,81 | 6,88 | 9,71 |
+| `btn-ghost-warning` | **2,13** ✘ | 4,81 | 6,88 | 9,71 |
 | `btn-link` | **4,13** ✘ | 6,54 | **3,55** ✘ | 4,86 |
 
 Drei Dinge sind dabei zu wissen:
@@ -703,19 +746,36 @@ Varianten übernehmen jetzt zusätzlich die Zeilenhöhe des umgebenden Feldes.
 Die semantischen `text-*`-Utilities behalten ihren Farbton und werden **gegen Schwarz bzw. Weiß**
 gemischt — hell abgedunkelt, dunkel aufgehellt, je Modus mit eigenem Anteil (#1043). Im hellen Modus
 ist der Anteil derselbe wie bei der Badge-Füllung: **ein farbiger Text trägt dort genau den Ton der
-Badge desselben Namens.**
+Badge desselben Namens.** Ausgenommen ist Gelb, dessen Badge dunkle Schrift auf voller Farbe trägt
+und damit aus dieser Rechnung heraus ist ([Badges](#badges-gefüllt-statt-getönt)).
 
 | Farbton | hell: Anteil gegen Schwarz | Ton | hell | dunkel: Anteil gegen Weiß | Ton | dunkel |
 |---|---|---|---|---|---|---|
 | `primary`, `blue` | 100 % | `#066fd1` | 4,78 | 70 % | `#519adf` | 4,92 |
-| `danger`, `red` | 95 % | `#cb3636` | 4,88 | 70 % | `#e27474` | 4,88 |
+| `danger`, `red` | 95 % | `#cb3636` | 4,88 | sRGB-Rand statt Mischung | `#ff5f5a` | 4,92 |
 | `purple` | 100 % | `#ae3ec9` | 4,64 | 70 % | `#c678d9` | 4,96 |
 | `indigo` | 100 % | `#4263eb` | 4,77 | 70 % | `#7b92f1` | 5,05 |
 | `orange` | 75 % | `#b94d05` | 4,87 | 100 % | `#f76707` | 4,82 |
 | `azure`, `info` | 75 % | `#3273a9` | 4,83 | 100 % | `#4299e1` | 4,81 |
 | `teal` | 75 % | `#097c5a` | 4,97 | 95 % | `#18aa7f` | 4,96 |
 | `success`, `green` | 70 % | `#217d30` | 4,97 | 100 % | `#2fb344` | 5,35 |
-| `warning`, `yellow` | 60 % | `#935f00` | 5,18 | 100 % | `#f59f00` | 6,88 |
+| `warning`, `yellow` | 53 % | `#876c00` | 4,80 | 100 % | `#ffcc00` | 9,71 |
+
+Zwei Töne fallen aus dem Mischschema heraus:
+
+- **`danger` im dunklen Modus** wird nicht mehr mit Weiß aufgehellt. Weiß hellt zwar auf, nimmt dem
+  Ton dabei aber die Sättigung — `#e27474` stand neben der Badge desselben Namens wie ein
+  ausgeblichenes Rot. Bei der vollen Farbe bleiben ist keine Alternative, `--tblr-danger` trägt auf
+  der Karte nur 3,15:1. Beides zugleich geht nur über den **Rand des sRGB-Raums**: In
+  `oklch(from var(--tblr-danger) 0.7 0.2 h)` wird die Helligkeit gesetzt und die Buntheit höher
+  angegeben, als der Farbraum an dieser Stelle hergibt; der Browser bildet auf den Rand ab und
+  liefert damit das sättigste Rot, das bei dieser Helligkeit möglich ist — `#ff5f5a`, 4,92:1. Der
+  Farbton stammt weiter aus dem Token (`from … h`), gesetzt werden nur Helligkeit und Buntheit.
+  0,70 ist der Wert, bei dem der Rand noch 4,5:1 trägt.
+- **`warning`/`yellow` im hellen Modus** ist der Ton, der am meisten verliert, und das lässt sich
+  nicht beheben: Ein Text mit 4,5:1 auf der hellen Seitenfläche liegt unter einer relativen
+  Leuchtdichte von 0,17, und dort ist jedes Gelb ein Braun. Der Anteil ist mit dem satteren Gelb
+  von 60 % auf 53 % gesunken, weil der neue Ton heller ist.
 
 Vorher wurde gegen `--tblr-body-color` gemischt, mit **einem** Anteil für beide Modi. Beides hat
 Farbe gekostet:
@@ -733,7 +793,8 @@ Farbe gekostet:
 Dass der Badge-Ton als Textfarbe trägt, ist kein Zufall, sondern rechnet sich: Wer weiße Schrift auf
 einem Ton mit 4,8:1 hält, hat einen Ton mit einer relativen Leuchtdichte um 0,17 — und der ergibt auf
 der Seitenfläche wieder rund 4,6:1. Die beiden Blöcke in `salat.css` gehören damit zusammen: **wer
-einen Anteil ändert, ändert den der Badge mit.**
+einen Anteil ändert, ändert den der Badge mit** — außer bei Gelb, wo die Badge keinen Anteil mehr
+hat.
 
 **Im dunklen Modus ist derselbe Hex-Wert ausgeschlossen.** Die Badge-Füllung ist modusunabhängig
 dunkel und trägt helle Schrift; ein Text auf der dunklen Karte muss umgekehrt hell sein. Erreichbar
@@ -742,7 +803,7 @@ ist dort derselbe Farbton bei gleicher Sättigung, nicht derselbe Wert.
 **Die Aufschrift eines Outline- oder Ghost-Buttons ist farbiger Text** und folgt denselben Anteilen
 ([§7.1](#buttons-die-textfarbe-muss-der-füllung-folgen)) — sonst stünden auf einer Seite zwei Rottöne
 für dieselbe Aussage, einer im Utility und einer auf dem Knopf daneben. Der Rahmen nimmt die Mischung
-mit (3:1 als Nicht-Text-Element, gemessen 4,78–6,88); Hover und Aktivzustand kommen aus
+mit (3:1 als Nicht-Text-Element, gemessen 4,78–9,71); Hover und Aktivzustand kommen aus
 `--tblr-btn-hover-bg`/`-fg` und sind unberührt.
 
 **Der Dunkelmodus-Zweig der `text-*`-Regeln steht in `:where()`** und trägt damit keine eigene
@@ -766,6 +827,7 @@ benannt und begründet:
 
 | Ort | Literal | Begründung |
 |---|---|---|
+| `salat.css`, `--tblr-yellow`/`--tblr-warning` | `#ffcc00` | Tabler kennt genau ein Gelb (`#f59f00`), und das ist ein Bernstein — als Fläche gelesen ein Ocker. Siehe [Ein satteres Gelb](#ein-satteres-gelb-als-tablers) |
 | `salat.css`, `::selection` | `#fff` | Mischpartner zum Aufhellen der Primärfarbe. Für den dunklen Modus hält Tabler kein helles Blau bereit: `--tblr-blue-200` ist `color-mix(… 20%, transparent)` und wird auf dunklem Grund selbst dunkel |
 | `matrix.html`, Popover-Schatten | `rgba(0,0,0,…)`, `rgba(255,255,255,…)` | Für Schattenfarben gibt es in Tabler kein Token |
 | `static/style/invoiceprint.css` | `1px solid black` | Reines Druck-Stylesheet, kein Bildschirmkontrast |
