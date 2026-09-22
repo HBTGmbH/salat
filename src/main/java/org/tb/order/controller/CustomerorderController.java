@@ -260,7 +260,7 @@ public class CustomerorderController {
 
     if (form.getResponsibleHbtIds() == null || form.getResponsibleHbtIds().isEmpty()) {
       bindingResult.rejectValue("responsibleHbtIds", "error.responsibleHbtIds",
-          messages.getMessage("form.customerorder.error.responsiblehbt.required", "Responsible HBT employee is required"));
+          messages.getMessage("form.customerorder.error.responsiblehbt.required", "Responsible at HBT (execution) is required"));
     }
 
     if (form.getRespContrEmployeeId() == null) {

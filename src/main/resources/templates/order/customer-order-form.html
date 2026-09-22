@@ -78,7 +78,7 @@
 
       <div class="row">
         <div class="col-md-6">
-          <salat:select th:field="*{responsibleHbtIds}" th:label="#{main.customerorder.responsiblehbt.text}" required multiple>
+          <salat:select th:field="*{responsibleHbtIds}" th:label="#{main.customerorder.responsiblehbt.execution.text}" required multiple>
             <option th:each="e : ${employees}" th:value="${e.id}"
                     th:text="${e.name} + ${@hiddenMarkerViewHelper.suffix(e.hide)}"></option>
           </salat:select>

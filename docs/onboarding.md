@@ -99,7 +99,7 @@ Tests, dann etwas, das Modulgrenzen berührt.
 **Zuletzt passiert.** Der Schwerpunkt der letzten Wochen lag auf dem Budget-Modul: Budgetpläne,
 Kundenstundensätze, Mitarbeiterkostensätze, Soll-Ist-Controlling, Forecast, Dashboard mit Ampel und
 Warnmeldungen. Zuletzt wurde der Zugriff darauf geregelt (#919) — Manager sehen alles,
-Auftragsverantwortliche ihre nicht ausgeblendeten Aufträge, Backoffice hat kein eigenes Recht.
+Durchführungsverantwortliche ihre nicht ausgeblendeten Aufträge, Backoffice hat kein eigenes Recht.
 Daneben Verbesserungen an Matrix- und Einzelübersicht. Letztes Release: 5.0.9.
 
 **Laufende Epics.** [#767](https://github.com/HBTGmbH/salat/issues/767) Budgetplanung und
