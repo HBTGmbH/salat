@@ -126,19 +126,27 @@
         </div>
       </div>
 
-      <salat:checkboxSwitch th:field="*{enabled}" th:label="#{main.jira.replication.field.enabled}" />
-
       <!--/* Writing back to JIRA (#1007). The one switch here that needs more permission than the
-             replication itself, so the help text says so right next to it. */-->
+             replication itself, so the help text says so right next to it.
+
+             The start date only appears once the switch is on: without the sync it decides nothing,
+             and an empty date field next to a switched-off option reads like something left
+             unfilled. It is not removed from the form, only hidden — the stored value has to come
+             back unchanged when the form is saved with the sync switched off. */-->
       <div class="row">
         <div class="col-md-6">
-          <salat:checkboxSwitch th:field="*{worklogSyncEnabled}"
-                                th:label="#{main.jira.replication.field.worklogSyncEnabled}" />
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" th:field="*{worklogSyncEnabled}"
+                   onchange="salatToggleWorklogSyncFrom()" />
+            <span class="form-check-label"
+                  th:text="#{main.jira.replication.field.worklogSyncEnabled}">Worklogs schreiben</span>
+          </label>
           <div class="form-text mb-3" th:text="#{main.jira.replication.field.worklogSyncEnabled.help}">
             Schreibrechte noetig.
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6" id="worklogSyncFromSection"
+             th:classappend="${replicationForm.worklogSyncEnabled} ? '' : 'd-none'">
           <div th:replace="~{fragments/form-fields :: dateInput(
             field='worklogSyncFrom', label=#{main.jira.replication.field.worklogSyncFrom}, required=false
           )}"></div>
@@ -147,6 +155,10 @@
           </div>
         </div>
       </div>
+
+      <!--/* Last of the settings: what all of them above amount to is whether this replication runs
+             at all. Still before the watermark, which is no setting but a report on the runs. */-->
+      <salat:checkboxSwitch th:field="*{enabled}" th:label="#{main.jira.replication.field.enabled}" />
 
       <!--/* The watermark is not a form field: a date entered by hand would skip every ticket
              updated before it, for good. Resetting it is the one operation that makes sense, and it
@@ -214,6 +226,18 @@
       <span th:text="#{main.jira.replication.action.resetwatermark}">Wasserstand zurücksetzen</span>
     </button>
   </form>
+
+  <script th:inline="none">
+    // The start date belongs to the worklog sync and is shown with it (#1007). Hidden, not removed:
+    // the field keeps submitting its stored value, so switching the sync off and saving does not
+    // silently clear the date the next switch-on would need.
+    function salatToggleWorklogSyncFrom() {
+      const toggle = document.querySelector('input[name="worklogSyncEnabled"]');
+      const section = document.getElementById('worklogSyncFromSection');
+      if (!toggle || !section) return;
+      section.classList.toggle('d-none', !toggle.checked);
+    }
+  </script>
 
 </main>
 
