@@ -26,7 +26,7 @@
           </select>
         </div>
         <div class="col-md-4" th:if="${showResponsibleFilter}">
-          <label class="form-label" th:text="#{main.budget.dashboard.filter.responsible}">Auftragsverantwortlicher</label>
+          <label class="form-label" th:text="#{main.budget.dashboard.filter.responsible}">Durchführungsverantwortliche</label>
           <select class="form-select tomselect" name="fBudgetResponsibleId" onchange="form.requestSubmit()">
             <option value="" th:text="#{main.budget.dashboard.filter.all}">Alle</option>
             <option th:each="employee : ${responsibles}"
