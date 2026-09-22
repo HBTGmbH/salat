@@ -6,6 +6,7 @@ import static org.tb.common.exception.ErrorCode.EC_NO_CURRENT_CONTRACT;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.Locale;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -28,18 +29,34 @@ class EmployeeAccessFilterTest {
   private EmployeeAccessFilter classUnderTest;
   private MockHttpServletResponse response;
   private MockFilterChain chain;
+  private Locale defaultLocale;
 
   @BeforeEach
   void setUp() {
+    // Deutsch steht im Basisbuendel, ein MessageResources_de gibt es nicht. Ein Buendel, das es zur
+    // gesuchten Sprache nicht gibt, faellt auf die Sprache des Rechners zurueck - und die ist hier
+    // deutsch, auf dem Bauknecht englisch. Der Test setzt sie deshalb selbst auf Englisch: was er
+    // prueft, ist die Aufloesung nach Locale.GERMAN, nicht die Sprache der Maschine.
+    defaultLocale = Locale.getDefault();
+    Locale.setDefault(Locale.US);
+
     var messageSource = new ResourceBundleMessageSource();
     messageSource.setBasename("org/tb/web/MessageResources");
     messageSource.setDefaultEncoding("UTF-8");
+    // Wie in application.yaml (spring.messages.fallback-to-system-locale: false). Ohne das ist die
+    // aufgeloeste Meldung die des Rechners statt die der angefragten Sprache.
+    messageSource.setFallbackToSystemLocale(false);
     classUnderTest = new EmployeeAccessFilter(
         employeeAccessDenial,
         new ErrorCodeViewHelper(new MessageSourceAccessor(messageSource, Locale.GERMAN))
     );
     response = new MockHttpServletResponse();
     chain = new MockFilterChain();
+  }
+
+  @AfterEach
+  void restoreDefaultLocale() {
+    Locale.setDefault(defaultLocale);
   }
 
   @Test
