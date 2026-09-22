@@ -250,7 +250,7 @@ Aktionen in `card-footer`. Tabellen sitzen direkt in der Karte (`card-table`, oh
 | Anlegen (in Listen, rechts oben) | `btn btn-success` | `ti ti-*-plus` |
 | Filter anwenden | `btn btn-primary` | `ti ti-filter` |
 | Zeilenaktion Bearbeiten | `btn btn-outline-primary` | `ti ti-pencil` |
-| Zeilenaktion Anzeigen (schreibgeschützt) | `btn btn-outline-secondary` | `ti ti-list-details` |
+| Zeilenaktion Anzeigen (schreibgeschützt) | `btn btn-outline-secondary` | `ti ti-notes` |
 | Zeilenaktion Löschen | `btn btn-outline-danger` | `ti ti-trash` |
 | Sekundäre Zeilenaktion | `btn btn-outline-secondary btn-sm` | wechselnd |
 | Icon-Button Kopfzeile | `btn btn-icon` | `ti ti-*` |
@@ -270,11 +270,21 @@ doppelt belegt werden: als Zeilenaktion „Anzeigen" (das schreibgeschützte Geg
 4×) und zugleich als Zustands-Badge für Ein-/Ausblenden in der Flags-Spalte derselben Zeile
 ([§5.4](#54-badges--flags-spalte)). Aufgelöst ist der Konflikt auf der Seite der Aktion: Auge und
 durchgestrichenes Auge sind ein natürliches Gegensatzpaar für Sichtbarkeit, das ein Zustands-Umschalter
-braucht; für „Anzeigen" gibt es gleichwertige Alternativen. Gewählt ist `ti ti-list-details` — bei
-16 px klar vom Auge unterscheidbar und im Projekt sonst nicht belegt. Geprüft und verworfen:
-`ti-file-description`/`ti-file-text` (dokumentlastig), `ti-file-search`/`ti-zoom-in` (bei 16 px zu
-kleinteilig, und `ti-list-search` ist bereits Suche), `ti-clipboard-text` (anderswo „kopieren"),
-`ti-chevron-right`/`ti-arrow-right` (reine Navigation, schon fürs Blättern belegt).
+braucht; für „Anzeigen" gibt es gleichwertige Alternativen. Gewählt ist `ti ti-notes` — von allen
+Kandidaten der kräftigste Umriss und damit bei 16 px am besten lesbar, klar vom Auge unterscheidbar
+und im Projekt sonst nicht belegt.
+
+Geprüft und verworfen (alle in der laufenden Anwendung in Button-Größe gegeneinander gestellt):
+
+| Kandidat | Grund |
+|---|---|
+| `ti-list-details`, `ti-file-info`, `ti-file-description`, `ti-clipboard-list`, `ti-table-row`, `ti-id-badge-2` | tragfähig, aber bei 16 px feiner gezeichnet als `ti-notes`; `ti-clipboard-*` legt „kopieren" nahe, `ti-id-badge-2` passt nur zu Personen |
+| `ti-details` | heißt so, **ist aber ein Warndreieck** und kollidiert mit `ti-alert-triangle` (8×) |
+| `ti-info-circle` | bereits als Hinweis-Icon belegt |
+| `ti-external-link` | sagt „öffnet woanders"; die Detailseite öffnet im selben Tab |
+| `ti-zoom-scan`, `ti-viewfinder`, `ti-file-search`, `ti-zoom-in` | lesen sich als scannen/zielen/suchen, und `ti-list-search` ist bereits Suche |
+| `ti-article`, `ti-book-2`, `ti-layout-list` | bei 16 px ein Fleck ohne Aussage |
+| `ti-chevron-right`, `ti-arrow-right`, `ti-square-arrow-right` | reine Navigation, schon fürs Blättern belegt |
 
 #### Farblogik der Buttons
 
