@@ -61,6 +61,15 @@ funktioniert:
 * **HTTP 302 Found** beschreibt nur den HTML-Fall. Was ein Aufrufer ohne Anmeldung tatsächlich
   zurückbekommt, entscheidet EasyAuth anhand des `Accept`-Headers — siehe *Consequences*.
 
+**Das gilt für jede Umgebung mit EasyAuth, nicht nur für Produktion.** `staging` ist hier keine
+abgeschwächte Variante: dieselben fünf Einstellungen in der Web App, dieselben Header- und
+Claim-Namen unter `salat.auth.easy-auth`, und die Werte stehen im Profil, nicht in den App Settings.
+Verschieden ist allein die App-Registrierung — `salat.auth.api-scope` und die springdoc-`client-id`
+tragen je Umgebung deren eigene Client-ID. Jede Abweichung darüber hinaus ist ein Fehler und keine
+Umgebungseigenheit: `application-staging.yaml` war bis #1049 auf einen Property-Baum verdrahtet, den
+`SalatProperties` längst nicht mehr kannte, und der Zweig, den `AzureEasyAuthSecurityConfiguration`
+dereferenziert, fehlte ganz.
+
 ### Aufgabenteilung
 
 **EasyAuth** authentifiziert: es hält die Sitzung (Cookie `AppServiceAuthSession`), führt den
