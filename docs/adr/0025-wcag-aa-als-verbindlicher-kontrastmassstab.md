@@ -7,8 +7,10 @@ Status: Accepted
 > kennt genau ein Gelb (`#f59f00`), einen Bernstein — als Fläche gelesen ein Ocker, abgedunkelt für
 > helle Schrift ein Braun. `--tblr-yellow` und `--tblr-warning` sind deshalb auf `#ffcc00` gesetzt;
 > alles Abgeleitete mischt Tabler aus dem Token und folgt. Aus drei benannten Literalen sind damit
-> vier geworden. Gelbe Badges tragen dunkle Schrift auf voller Farbe, weil ein Gelb, auf dem helle
-> Schrift trägt, kein Gelb mehr ist. Rot im Dunkelmodus wird nicht mehr mit Weiß gemischt, sondern
+> vier geworden. Die hellen Töne — Gelb, Grün, Lime — tragen als Badge dunkle Schrift auf voller
+> Farbe: Ein Gelb, auf dem helle Schrift trägt, ist kein Gelb mehr, und ein abgedunkeltes Grün steht
+> neben dem gleichnamigen Button als zweiter Grünton. Badge und Button desselben Namens zeigen damit
+> denselben Ton. Rot im Dunkelmodus wird nicht mehr mit Weiß gemischt, sondern
 > über den Rand des sRGB-Raums gesättigt (`oklch(from … )`). Werte und Begründung stehen im Style
 > Guide.
 
