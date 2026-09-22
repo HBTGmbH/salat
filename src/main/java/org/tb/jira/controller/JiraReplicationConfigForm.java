@@ -1,7 +1,9 @@
 package org.tb.jira.controller;
 
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.tb.jira.domain.JiraApiFlavor;
 import org.tb.jira.domain.JiraReplicationConfigInfo;
 
@@ -48,6 +50,19 @@ public class JiraReplicationConfigForm {
   /** A new replication is switched on, otherwise creating it would have no visible effect. */
   private boolean enabled = true;
 
+  /**
+   * Whether the booked hours are written back to JIRA as worklogs (#1007). Off by default, on a new
+   * config as well: writing into a foreign system is never a side effect of creating a replication.
+   */
+  private boolean worklogSyncEnabled;
+
+  /**
+   * First day the worklog sync covers. Left empty while the switch is turned on, the service fills
+   * it with today — the first run would otherwise write the whole history of the order at once.
+   */
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+  private LocalDate worklogSyncFrom;
+
   public boolean isNew() {
     return id == null;
   }
@@ -77,6 +92,8 @@ public class JiraReplicationConfigForm {
     form.setInheritedFieldNames(info.inheritedFieldNames());
     form.setPageSize(info.pageSize());
     form.setEnabled(info.enabled());
+    form.setWorklogSyncEnabled(info.worklogSyncEnabled());
+    form.setWorklogSyncFrom(info.worklogSyncFrom());
     return form;
   }
 

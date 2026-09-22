@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,8 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.test.FixedClock;
+import org.tb.common.util.DateUtils;
 import org.tb.jira.domain.JiraApiFlavor;
 import org.tb.jira.domain.JiraFieldOption;
 import org.tb.jira.domain.JiraReplicationConfig;
@@ -41,6 +44,7 @@ import org.tb.order.service.SuborderService;
 /**
  * Maintaining the replication configs from the user interface (#984).
  */
+@FixedClock
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class JiraReplicationConfigServiceTest {
@@ -196,7 +200,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_replication_without_a_jql_query_could_only_ever_fail() {
     var withoutJql = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true);
+        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true, false, null);
 
     assertThatThrownBy(() -> classUnderTest.create(withoutJql))
         .isInstanceOf(InvalidDataException.class)
@@ -207,7 +211,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_base_url_without_a_scheme_is_rejected() {
     var badUrl = new JiraReplicationConfigData("Alpha", "ALPHA", "jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true);
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null);
 
     assertThatThrownBy(() -> classUnderTest.create(badUrl))
         .isInstanceOf(InvalidDataException.class)
@@ -218,7 +222,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_page_size_of_zero_or_less_is_rejected() {
     var zeroPageSize = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true);
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true, false, null);
 
     assertThatThrownBy(() -> classUnderTest.create(zeroPageSize))
         .isInstanceOf(InvalidDataException.class)
@@ -230,9 +234,110 @@ class JiraReplicationConfigServiceTest {
   void a_missing_flavor_is_stored_as_server() {
     // What a row without an explicit flavor has always meant.
     classUnderTest.create(new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        null, "jira-user", "token", "project = ALPHA", null, null, null, null, true));
+        null, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null));
 
     assertThat(saved().getApiFlavor()).isEqualTo(JiraApiFlavor.SERVER);
+  }
+
+  @Test
+  void switching_the_worklog_sync_on_without_a_date_starts_today() {
+    // The first run must not carry the whole history of the order into JIRA (#1007).
+    classUnderTest.create(withWorklogSync("ALPHA", true, null));
+
+    assertThat(saved().getWorklogSyncFrom()).isEqualTo(DateUtils.today());
+  }
+
+  @Test
+  void a_start_date_that_was_entered_is_kept() {
+    // Moving it back is how a period is filled in afterwards, on purpose.
+    var backfill = LocalDate.of(2026, 1, 1);
+
+    classUnderTest.create(withWorklogSync("ALPHA", true, backfill));
+
+    assertThat(saved().getWorklogSyncFrom()).isEqualTo(backfill);
+  }
+
+  @Test
+  void a_replication_without_the_worklog_sync_gets_no_start_date() {
+    classUnderTest.create(withWorklogSync("ALPHA", false, null));
+
+    assertThat(saved().getWorklogSyncFrom()).isNull();
+  }
+
+  @Test
+  void switching_the_worklog_sync_off_keeps_the_start_date() {
+    // What SALAT wrote stays in JIRA and stays remembered; switching on again picks up where it
+    // left off instead of starting a second period next to the first.
+    var stored = existingConfig();
+    stored.setWorklogSyncEnabled(true);
+    stored.setWorklogSyncFrom(LocalDate.of(2026, 1, 1));
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withWorklogSync("ALPHA", false, LocalDate.of(2026, 1, 1)));
+
+    assertThat(stored.getWorklogSyncFrom()).isEqualTo(LocalDate.of(2026, 1, 1));
+    assertThat(stored.getWorklogSyncEnabled()).isFalse();
+  }
+
+  @Test
+  void a_second_worklog_sync_over_the_same_branch_of_the_same_instance_is_refused() {
+    // An order-wide replication and one for a suborder inside it would each write their own worklog
+    // on the same ticket and day — the time would stand twice in JIRA, and nothing in SALAT shows
+    // it.
+    givenSuborderScope("ALPHA/01", "ALPHA");
+    givenOtherReplication("ALPHA/01", "https://jira.example.com", true);
+
+    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync("ALPHA", true, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
+  }
+
+  @Test
+  void the_same_branch_on_another_jira_instance_is_allowed() {
+    // Different installations share no issue keys, so there is nothing to collide.
+    givenSuborderScope("ALPHA/01", "ALPHA");
+    givenOtherReplication("ALPHA/01", "https://other-jira.example.com", true);
+
+    classUnderTest.create(withWorklogSync("ALPHA", true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
+  }
+
+  @Test
+  void an_overlapping_replication_that_writes_no_worklogs_is_no_obstacle() {
+    givenSuborderScope("ALPHA/01", "ALPHA");
+    givenOtherReplication("ALPHA/01", "https://jira.example.com", false);
+
+    classUnderTest.create(withWorklogSync("ALPHA", true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
+  }
+
+  @Test
+  void a_replication_does_not_collide_with_itself_when_it_is_edited() {
+    var stored = existingConfig();
+    setId(stored, ID);
+    stored.setWorklogSyncEnabled(true);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+    when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(stored));
+
+    classUnderTest.update(ID, withWorklogSync("ALPHA", true, null));
+
+    assertThat(stored.getWorklogSyncEnabled()).isTrue();
+  }
+
+  @Test
+  void two_orders_whose_signs_read_like_a_path_are_not_an_overlap() {
+    // 0283 and 0283/03.20 are two customer orders, not an order and its suborder — comparing the
+    // signs as strings would call them an overlap.
+    when(customerorderService.getCustomerorderBySign("0283")).thenReturn(new Customerorder());
+    when(customerorderService.getCustomerorderBySign("0283/03.20")).thenReturn(new Customerorder());
+    givenOtherReplication("0283/03.20", "https://jira.example.com", true);
+
+    classUnderTest.create(withWorklogSync("0283", true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
   }
 
   @Test
@@ -507,7 +612,7 @@ class JiraReplicationConfigServiceTest {
   private static JiraReplicationConfigData withFields(String additional, String inherited) {
     return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", null, "project = ALPHA", null, additional, inherited,
-        100, true);
+        100, true, false, null);
   }
 
   private JiraReplicationConfig existingConfig() {
@@ -533,12 +638,36 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData withScope(String scopeSign, String password) {
     return new JiraReplicationConfigData("Alpha", scopeSign, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true);
+        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null);
+  }
+
+  private static JiraReplicationConfigData withWorklogSync(String scopeSign, boolean enabled,
+                                                           LocalDate from) {
+    return new JiraReplicationConfigData("Alpha", scopeSign, "https://jira.example.com",
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
+        enabled, from);
+  }
+
+  /** A scope that is a suborder path under the given customer order, not an order of its own. */
+  private void givenSuborderScope(String completeOrderSign, String customerorderSign) {
+    when(customerorderService.getCustomerorderBySign(completeOrderSign)).thenReturn(null);
+    when(suborderService.getSuborderByCompleteOrderSign(completeOrderSign))
+        .thenReturn(suborderOf(customerorderSign));
+  }
+
+  private void givenOtherReplication(String scopeSign, String baseUrl, boolean worklogSync) {
+    var other = new JiraReplicationConfig();
+    setId(other, 99L);
+    other.setName("Beta");
+    other.setScopeSign(scopeSign);
+    other.setBaseUrl(baseUrl);
+    other.setWorklogSyncEnabled(worklogSync);
+    when(configRepository.findAllByOrderByNameAsc()).thenReturn(List.of(other));
   }
 
   private static JiraReplicationConfigData data(String password) {
     return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true);
+        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null);
   }
 
   private JiraReplicationConfig saved() {

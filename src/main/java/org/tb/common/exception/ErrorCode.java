@@ -154,6 +154,7 @@ public enum ErrorCode {
   JI_REPLICATION_JQL_REQUIRED("JI-0008", "a jira replication needs a jql query"),
   JI_REPLICATION_PAGE_SIZE_INVALID("JI-0009", "the page size must be a positive number"),
   JI_REPLICATION_SCOPE_NOT_FOUND("JI-0010", "the scope of a jira replication must be an existing customer order or suborder"),
+  JI_REPLICATION_WORKLOG_SCOPE_OVERLAP("JI-0011", "another replication writing worklogs to the same jira instance already covers this scope"),
 
   RP_REPORT_NOT_FOUND("RP-0001", "the report was not found"),
   RP_REPORT_NAME_AMBIGUOUS("RP-0002", "the report name matches more than one report"),

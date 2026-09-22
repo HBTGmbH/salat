@@ -18,6 +18,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.tb.dailyreport.domain.MonthlyReportedMinutes;
 import org.tb.dailyreport.domain.Timereport;
+import org.tb.jira.command.TicketDaySum;
 
 @Repository
 public interface TimereportRepository extends CrudRepository<Timereport, Long>, JpaSpecificationExecutor<Timereport> {
@@ -197,6 +198,31 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       where tr.deleted = false and tr.employeeorder.id in (:ids) group by tr.employeeorder.id
   """)
   List<Long[]> getReportedMinutesForEmployeeordersAsMap(List<Long> ids);
+
+  /**
+   * What was booked per day and ticket reference on the given suborders (#1007), summed over all
+   * people — the shape a JIRA worklog has: one number per day and ticket, no person, no task.
+   *
+   * <p>The whole period is summed on every run rather than only the days that changed since the
+   * last one. A booking is soft-deleted through {@code @SQLDelete}, which writes nothing but
+   * {@code deleted = true} — {@code lastupdate} is not moved, because the auditing listener does
+   * not run on a delete. A deleted booking is therefore recognisable by no timestamp at all, and
+   * exactly its disappearance has to lower the sum. Comparing full sums against what was last
+   * written sidesteps that: what is gone is simply not in the answer.
+   */
+  @Query("""
+      select new org.tb.jira.command.TicketDaySum(
+             tr.referenceday.refdate,
+             tr.ticketReference,
+             sum(tr.durationminutes) + 60 * sum(tr.durationhours))
+      from Timereport tr
+      where tr.deleted = false
+        and tr.ticketReference is not null
+        and tr.suborder.id in (:suborderIds)
+        and tr.referenceday.refdate >= :from and tr.referenceday.refdate <= :until
+      group by tr.referenceday.refdate, tr.ticketReference
+  """)
+  List<TicketDaySum> getTicketDaySums(Collection<Long> suborderIds, LocalDate from, LocalDate until);
 
   @Modifying
   @NativeQuery("DELETE FROM timereport WHERE employeeorder_id = :employeeorderId and deleted = true")

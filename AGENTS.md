@@ -502,7 +502,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 | `etl` | Data integration / extract-transform-load |
 | `favorites` | User favorites for quick access |
 | `invoice` | Invoice generation and settings |
-| `jira` | Jira integration and replication; may import `order` — a replication is scoped to a place in the order tree (#1025) |
+| `jira` | Jira integration and replication; may import `order` — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
 | `notification` | Notifications |
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |
@@ -568,6 +568,7 @@ Entities are divided into two categories (→ ADR-0011):
 | `ScheduledReportExecutionHistory` | Bewegungsdaten | — |
 | `StatisticValue` | Bewegungsdaten | — |
 | `JiraTicket` | Bewegungsdaten | — |
+| `JiraWorklogSync` | Bewegungsdaten | — (gelöscht, sobald das Worklog in JIRA gelöscht wird) |
 | `Favorite` | Bewegungsdaten | — |
 
 ### Entity Pattern

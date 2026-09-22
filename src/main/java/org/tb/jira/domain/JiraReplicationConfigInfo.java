@@ -1,5 +1,6 @@
 package org.tb.jira.domain;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -11,6 +12,8 @@ import java.time.LocalDateTime;
  *
  * @param scopeSign where the replication applies (#1025) — a customer order sign for the whole
  *     order, or the fully qualified sign of one suborder, {@code AUFTRAG/01/02}
+ * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
+ * @param worklogSyncFrom first day the worklog sync covers
  * @param lastMaxUpdated the watermark the replication has reached — the one field that tells whether
  *     a replication is still running at all
  */
@@ -27,6 +30,8 @@ public record JiraReplicationConfigInfo(
     String inheritedFieldNames,
     Integer pageSize,
     boolean enabled,
+    boolean worklogSyncEnabled,
+    LocalDate worklogSyncFrom,
     LocalDateTime lastMaxUpdated
 ) {
 
@@ -44,6 +49,8 @@ public record JiraReplicationConfigInfo(
         config.getInheritedFieldNames(),
         config.getPageSize(),
         Boolean.TRUE.equals(config.getEnabled()),
+        Boolean.TRUE.equals(config.getWorklogSyncEnabled()),
+        config.getWorklogSyncFrom(),
         config.getLastMaxUpdated()
     );
   }

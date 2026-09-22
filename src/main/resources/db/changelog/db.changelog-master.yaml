@@ -2906,5 +2906,115 @@ databaseChangeLog:
             columnName: scope_sign
             columnDataType: varchar(255)
 
+  - changeSet:
+      id: 81
+      author: kr
+      comment: Worklog-Abgleich je Replikationskonfiguration ein- und ausschaltbar (#1007)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: worklog_sync_enabled
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              # Ausgeschaltet fuer jede bestehende wie neue Konfiguration: der Abgleich schreibt in
+              # ein fremdes System, das darf kein Nebeneffekt einer Migration sein.
+              - column:
+                  name: worklog_sync_enabled
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              # Ab wann Buchungen geschrieben werden. Ohne diesen Tag wuerde der erste Lauf nach dem
+              # Einschalten die gesamte Historie des Auftrags nach JIRA tragen.
+              - column:
+                  name: worklog_sync_from
+                  type: date
+
+  - changeSet:
+      id: 82
+      author: kr
+      comment: Gedaechtnis darueber, welche Worklogs SALAT in JIRA geschrieben hat (#1007)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: jira_worklog_sync
+      changes:
+        # Ohne diese Tabelle laesst sich weder ein von SALAT geschriebenes Worklog von einem fremden
+        # unterscheiden, noch bemerken, dass ein Tag/Ticket-Paar gar keine Buchungen mehr hat und
+        # sein Worklog geloescht gehoert.
+        - createTable:
+            tableName: jira_worklog_sync
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT AUTO_INCREMENT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_jira_worklog_sync
+              # Der Scope der Replikation, die das Worklog geschrieben hat - wie bei jira_ticket ein
+              # Kuerzel und kein Fremdschluessel: die Zeilen ueberleben ihre Konfiguration.
+              - column:
+                  name: scope_sign
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: issue_key
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: work_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: worklog_id
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: minutes
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_synced
+                  type: datetime
+              - column:
+                  name: createdby
+                  type: varchar(255)
+              - column:
+                  name: lastupdatedby
+                  type: varchar(255)
+              - column:
+                  name: lastupdate
+                  type: datetime
+              - column:
+                  name: created
+                  type: datetime
+              - column:
+                  name: updatecounter
+                  type: int
+        # Je Scope, Ticket und Tag genau ein Worklog - das ist die Zusage des Abgleichs, hier als
+        # Bedingung der Datenbank.
+        - addUniqueConstraint:
+            tableName: jira_worklog_sync
+            columnNames: scope_sign, issue_key, work_date
+            constraintName: uq_jira_worklog_sync_scope_key_date
+        - createIndex:
+            tableName: jira_worklog_sync
+            indexName: idx_jira_worklog_sync_scope_date
+            columns:
+              - column:
+                  name: scope_sign
+              - column:
+                  name: work_date
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

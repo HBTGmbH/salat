@@ -32,6 +32,7 @@ public class JiraReplicationService {
   private final JiraSearchClients searchClients;
   private final JiraReplicationConfigRepository configRepo;
   private final JiraTicketRepository ticketRepo;
+  private final JiraWorklogSyncService worklogSyncService;
 
   public List<JiraReplicationConfig> getEnabledReplications() {
     return configRepo.findByEnabledTrue();
@@ -110,6 +111,15 @@ public class JiraReplicationService {
     }
 
     log.info("Finished JIRA replication: name={}, processed={} (updated/inserted)", cfg.getName(), processed);
+
+    // Last, and with its own safety net (#1007): the worklogs are written against the tickets this
+    // run has just replicated, and a failure while writing them must not take the watermark above
+    // with it. Re-fetching the same tickets next time is harmless; losing the watermark is not.
+    try {
+      worklogSyncService.sync(cfg);
+    } catch (Exception ex) {
+      log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
+    }
   }
 
   /**

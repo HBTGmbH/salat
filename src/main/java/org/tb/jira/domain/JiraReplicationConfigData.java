@@ -1,5 +1,7 @@
 package org.tb.jira.domain;
 
+import java.time.LocalDate;
+
 /**
  * What a manager may write on a replication config (#984).
  *
@@ -13,6 +15,9 @@ package org.tb.jira.domain;
  *     order, or the fully qualified sign of one suborder, {@code AUFTRAG/01/02}
  * @param additionalFieldNames comma separated JIRA response keys to replicate in addition (#881)
  * @param inheritedFieldNames comma separated response keys resolved along the parent chain (#881)
+ * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
+ * @param worklogSyncFrom first day the worklog sync covers; filled with today when the switch is
+ *     turned on without one, so switching it on never writes the whole history at once
  */
 public record JiraReplicationConfigData(
     String name,
@@ -26,7 +31,9 @@ public record JiraReplicationConfigData(
     String additionalFieldNames,
     String inheritedFieldNames,
     Integer pageSize,
-    boolean enabled
+    boolean enabled,
+    boolean worklogSyncEnabled,
+    LocalDate worklogSyncFrom
 ) {
 
 }
