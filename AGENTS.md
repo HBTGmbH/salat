@@ -58,7 +58,9 @@ See also README.md
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene
 Marken-Palette. Ein Literal im Stylesheet oder in einem Template ist ein Fehler, solange es nicht
 in der Ausnahmeliste von [`docs/ui-style-guide.md` §7.1](docs/ui-style-guide.md) steht — dort sind
-die drei verbliebenen benannt und begründet.
+die vier verbliebenen benannt und begründet. Eines davon ist das Gelb selbst: Tabler kennt nur
+`#f59f00`, einen Bernstein, deshalb setzt `salat.css` `--tblr-yellow` und `--tblr-warning` auf
+`#ffcc00`. Alles Abgeleitete mischt Tabler aus dem Token und folgt von selbst.
 
 Wo ein Wert zur Laufzeit gebraucht wird (Diagramme), wird das Token gelesen statt abgeschrieben:
 `--tblr-<name>` vom `body`, wie es `tabler.tabler.getColor` tut. **Modusabhängige Tokens taugen
@@ -97,6 +99,13 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   mischt aber mit 20 % Transparenz gegen den Untergrund: auf hellem Grund hellt sie auf, auf
   dunklem dunkelt sie ab — jeweils in die Richtung, in der der Text verliert. Beide Zustände
   messen.
+- **Manche Töne lassen sich als Text nicht sättigen — das ist keine Nachlässigkeit, sondern die
+  Farbe.** Ein Text mit 4,5:1 auf heller Fläche liegt unter einer relativen Leuchtdichte von 0,17,
+  und dort ist jedes Gelb ein Braun; umgekehrt ist auf der dunklen Karte jedes Rot unterhalb von
+  4,5:1, solange es nicht aufgehellt wird. Aufhellen über Weiß entsättigt. Wo beides zugleich
+  gebraucht wird, liefert `oklch(from <token> <L> <zu hohe Buntheit> h)` den Rand des sRGB-Raums —
+  das sättigste, was bei dieser Helligkeit möglich ist. Wo auch das nicht reicht, gehört die Farbe
+  in die Fläche statt in die Schrift (gelbe Badge: dunkle Schrift auf voller Farbe).
 - **Ein Farbwert, den es zweimal gibt, driftet.** Die Füllung einer Badge und die semantische
   Textfarbe desselben Namens sind im hellen Modus **derselbe Ton** (`text-danger` = Füllung von
   `.badge.bg-danger-lt` = `#cb3636`, #1043). Wer einen Anteil ändert, ändert beide; sonst stehen

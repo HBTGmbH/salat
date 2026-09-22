@@ -3,6 +3,15 @@
 Date: 2026-09-16
 Status: Accepted
 
+> **Nachtrag 2026-09-22:** Die Entscheidung ist unverändert; ein Token ist hinzugekommen. Tabler
+> kennt genau ein Gelb (`#f59f00`), einen Bernstein — als Fläche gelesen ein Ocker, abgedunkelt für
+> helle Schrift ein Braun. `--tblr-yellow` und `--tblr-warning` sind deshalb auf `#ffcc00` gesetzt;
+> alles Abgeleitete mischt Tabler aus dem Token und folgt. Aus drei benannten Literalen sind damit
+> vier geworden. Gelbe Badges tragen dunkle Schrift auf voller Farbe, weil ein Gelb, auf dem helle
+> Schrift trägt, kein Gelb mehr ist. Rot im Dunkelmodus wird nicht mehr mit Weiß gemischt, sondern
+> über den Rand des sRGB-Raums gesättigt (`oklch(from … )`). Werte und Begründung stehen im Style
+> Guide.
+
 ## Context and Problem Statement
 
 Zwei Beobachtungen mit demselben Kern führten zu #1022: Farben, die nicht aus den Tabler-Tokens
@@ -71,7 +80,7 @@ Mischung dreht sich mit dem Farbmodus von selbst; der Anteil ist je Farbton der 
 Modi noch 4,8:1 erreicht — so viel Farbe wie möglich bei eingehaltenem Maßstab.
 
 **Werte werden gemessen, nicht geschätzt.** Verfahren, Messtabellen, Mischanteile und die Liste der
-drei verbliebenen Literale stehen in [`docs/ui-style-guide.md` §7.1](../ui-style-guide.md); die Regel
+verbliebenen Literale stehen in [`docs/ui-style-guide.md` §7.1](../ui-style-guide.md); die Regel
 selbst steht in `AGENTS.md`.
 
 ### Consequences
