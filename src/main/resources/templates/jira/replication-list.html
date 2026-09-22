@@ -58,9 +58,10 @@
           <td class="text-nowrap font-monospace small" th:text="${replication.scopeSign}">ALPHA/01</td>
           <td class="text-break small" th:text="${replication.baseUrl}">https://jira.example.com</td>
           <td class="d-none d-md-table-cell" th:text="#{${replication.apiFlavor.label}}">Server</td>
-          <td class="d-none d-lg-table-cell">
+          <td class="d-none d-lg-table-cell text-nowrap">
             <!--/* The switch is the state: one click is what turning a replication on and off takes. */-->
-            <form th:action="@{/jira/replications/{id}/enabled(id=${replication.id})}" method="post" class="d-inline">
+            <form th:action="@{/jira/replications/{id}/enabled(id=${replication.id})}" method="post"
+                  class="d-inline align-middle">
               <input type="hidden" name="enabled" th:value="${!replication.enabled}"/>
               <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
                       th:title="${replication.enabled}
@@ -72,10 +73,14 @@
               </button>
             </form>
             <!--/* Writing back to JIRA (#1007) is the one thing a replication does outside SALAT —
-                   it belongs in the list, not only in the form. */-->
-            <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt ms-1"
+                   it belongs in the list, not only in the form.
+
+                   `small` is what keeps it the size of its neighbour: a badge sizes itself in em,
+                   and the one next to it sits inside a `btn-sm`, so without this it renders a third
+                   larger than the switch it stands beside. */-->
+            <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt small align-middle ms-1"
                   th:title="#{main.jira.replication.flag.worklogsync}">
-              <i class="bi bi-clock-history"></i>
+              <i class="bi bi-arrow-left-right"></i>
             </span>
           </td>
           <td class="d-none d-md-table-cell small">
