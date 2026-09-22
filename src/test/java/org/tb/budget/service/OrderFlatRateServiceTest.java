@@ -344,7 +344,7 @@ public class OrderFlatRateServiceTest {
   public void offers_a_plan_that_covers_the_suborder_of_the_flat_rate() {
     givenPlans(plan(1L, "co", "co/01", TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", "co/01/A", TODAY, DEC, null))
+    assertThat(service.getSelectablePlans("co", "co/01/A", TODAY, DEC, null).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
   }
 
@@ -352,7 +352,7 @@ public class OrderFlatRateServiceTest {
   public void refuses_a_plan_whose_scope_does_not_cover_the_suborder() {
     givenPlans(plan(1L, "co", "co/02", TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", "co/01", TODAY, DEC, null)).isEmpty();
+    assertThat(service.getSelectablePlans("co", "co/01", TODAY, DEC, null).plans()).isEmpty();
     assertThatThrownBy(() -> service.save(dataWithPlan("co", "co/01", 1L, TODAY, DEC)))
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
         .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
@@ -362,17 +362,47 @@ public class OrderFlatRateServiceTest {
   public void refuses_a_plan_of_another_customer_order() {
     givenPlans(plan(1L, "other", null, TODAY, DEC, true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null)).isEmpty();
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
     assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
         .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
+  }
+
+  /**
+   * As with the hourly rate, the period narrows the list only once it is complete — on a new record
+   * it is entered below the plan. A flat rate knows no open end, so half a period would rule out
+   * plans that the complete one keeps.
+   */
+  @Test
+  public void offers_the_plans_of_the_order_before_the_period_is_complete() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
+
+    assertThat(service.getSelectablePlans("co", null, null, null, null).plans())
+        .extracting(OrderBudget::getId).containsExactly(1L);
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, null).plans())
+        .extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  @Test
+  public void narrows_the_plans_once_the_period_is_complete() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
+  }
+
+  /** The scope still narrows straight away — it hangs on fields entered above the plan. */
+  @Test
+  public void narrows_by_the_suborder_even_before_the_period_is_entered() {
+    givenPlans(plan(1L, "co", "co/02", TODAY, DEC, true));
+
+    assertThat(service.getSelectablePlans("co", "co/01", null, null, null).plans()).isEmpty();
   }
 
   @Test
   public void refuses_a_plan_whose_validity_does_not_overlap() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(2), TODAY.minusYears(1), true));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null)).isEmpty();
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
     assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L, TODAY, DEC)))
         .extracting(e -> errorCodeOf((ErrorCodeException) e))
         .isEqualTo(ErrorCode.BU_BUDGET_PERIOD_DISJOINT);
@@ -395,8 +425,8 @@ public class OrderFlatRateServiceTest {
   public void does_not_offer_an_inactive_plan_but_keeps_a_stored_one() {
     givenPlans(plan(1L, "co", null, TODAY, DEC, false));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null)).isEmpty();
-    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, 1L))
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, null).plans()).isEmpty();
+    assertThat(service.getSelectablePlans("co", null, TODAY, DEC, 1L).plans())
         .extracting(OrderBudget::getId).containsExactly(1L);
   }
 
@@ -409,8 +439,15 @@ public class OrderFlatRateServiceTest {
     assertThat(savedFlatRate().getOrderBudgetId()).isEqualTo(1L);
   }
 
+  /**
+   * The query is by customer order, so a plan of another order is simply not among the answers —
+   * stubbing it per sign keeps the test from claiming a reach the repository does not have.
+   */
   private void givenPlans(OrderBudget... plans) {
-    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of(plans));
+    when(orderBudgetRepository.findByCustomerorderSign(any())).thenAnswer(invocation ->
+        List.of(plans).stream()
+            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .toList());
     for (var plan : plans) {
       when(orderBudgetRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
     }

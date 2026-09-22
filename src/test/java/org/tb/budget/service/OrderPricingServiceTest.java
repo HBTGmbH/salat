@@ -436,6 +436,36 @@ public class OrderPricingServiceTest {
     assertThat(plansFor("co", null)).extracting(OrderBudget::getId).containsExactly(1L);
   }
 
+  /**
+   * On a new rate the validity is entered below the plan, so a plan select that waits for it is
+   * dead at the moment it is operated — which is how it reached the user (empty on create, filled
+   * on edit). Each condition applies as soon as its field is filled in; the saving applies all
+   * three either way.
+   */
+  @Test
+  public void offers_the_plans_of_the_order_before_a_validity_has_been_entered() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
+
+    assertThat(service.getSelectablePlans("co", null, null, null, null).plans())
+        .extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  /** …and narrows again the moment it is. */
+  @Test
+  public void narrows_the_plans_once_the_validity_is_entered() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, null).plans()).isEmpty();
+  }
+
+  /** Without an order there is nothing to narrow at all — a plan belongs to one. */
+  @Test
+  public void offers_nothing_before_an_order_has_been_chosen() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
+
+    assertThat(service.getSelectablePlans(null, null, null, null, null).plans()).isEmpty();
+  }
+
   @Test
   public void refuses_a_plan_whose_validity_does_not_overlap_the_rate() {
     givenPlans(plan(1L, "co", null, TODAY.minusYears(2), YESTERDAY, true));
@@ -451,7 +481,7 @@ public class OrderPricingServiceTest {
   public void does_not_offer_an_inactive_plan() {
     givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, null)).isEmpty();
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, null).plans()).isEmpty();
   }
 
   /** …but the one the rate already stores stays, or the next save would silently drop it. */
@@ -459,8 +489,10 @@ public class OrderPricingServiceTest {
   public void keeps_the_stored_plan_in_the_list_even_once_it_is_inactive() {
     givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
 
-    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L))
-        .extracting(OrderBudget::getId).containsExactly(1L);
+    var selectable = service.getSelectablePlans("co", null, TODAY, null, 1L);
+
+    assertThat(selectable.plans()).extracting(OrderBudget::getId).containsExactly(1L);
+    assertThat(selectable.notFittingId()).isEqualTo(1L);
   }
 
   /** An inactive plan is still storable: deactivating one must not make its rate uneditable. */
@@ -471,6 +503,72 @@ public class OrderPricingServiceTest {
     service.save(dataWithPlan("co", null, 1L));
 
     verify(orderPricingRepository).save(any());
+  }
+
+  // --- the plan the form already holds survives the narrowing (#1065) --------------------------
+
+  /**
+   * Narrowing the select must never take away what the form holds. A select cannot mark a value
+   * that is not among its options, so the browser falls back to the first entry and the next save
+   * writes that — here it would quietly unbind a rate whose condition somebody negotiated (#1005).
+   */
+  @Test
+  public void keeps_the_held_plan_when_the_validity_no_longer_fits_it() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true));
+
+    var selectable = service.getSelectablePlans("co", null, TODAY, null, 1L);
+
+    assertThat(selectable.plans()).extracting(OrderBudget::getId).containsExactly(1L);
+    assertThat(selectable.notFittingId()).isEqualTo(1L);
+  }
+
+  @Test
+  public void keeps_the_held_plan_when_the_scope_no_longer_fits_it() {
+    givenSuborders("co/01", "co/02");
+    givenPlans(plan(1L, "co", "co/02", TODAY, OPEN_END, true));
+
+    var selectable = service.getSelectablePlans("co", "co/01/", TODAY, null, 1L);
+
+    assertThat(selectable.plans()).extracting(OrderBudget::getId).containsExactly(1L);
+    assertThat(selectable.notFittingId()).isEqualTo(1L);
+  }
+
+  /** A plan that fits is not marked — the mark says "this one cannot be saved as it stands". */
+  @Test
+  public void marks_nothing_where_the_held_plan_still_fits() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L).notFittingId()).isNull();
+  }
+
+  /** The kept plan is appended, so the ones that can be picked come first. */
+  @Test
+  public void appends_the_held_plan_behind_the_ones_that_fit() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(3), YESTERDAY, true),
+        plan(2L, "co", null, TODAY, OPEN_END, true));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L).plans())
+        .extracting(OrderBudget::getId).containsExactly(2L, 1L);
+  }
+
+  /** Switching the customer order drops the plan with it — the way it drops the suborder. */
+  @Test
+  public void drops_a_held_plan_that_belongs_to_another_order() {
+    givenPlans(plan(1L, "other", null, TODAY, OPEN_END, true));
+
+    var selectable = service.getSelectablePlans("co", null, TODAY, null, 1L);
+
+    assertThat(selectable.plans()).isEmpty();
+    assertThat(selectable.notFittingId()).isNull();
+  }
+
+  /** Authorization is no narrowing condition but a boundary, and a boundary has no exceptions. */
+  @Test
+  public void does_not_keep_a_held_plan_the_user_may_not_see() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
+    when(budgetAuthorization.isAuthorized(any())).thenReturn(false);
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L).plans()).isEmpty();
   }
 
   @Test
@@ -502,11 +600,18 @@ public class OrderPricingServiceTest {
   }
 
   private List<OrderBudget> plansFor(String customerorderSign, String suborderPattern) {
-    return service.getSelectablePlans(customerorderSign, suborderPattern, TODAY, null, null);
+    return service.getSelectablePlans(customerorderSign, suborderPattern, TODAY, null, null).plans();
   }
 
+  /**
+   * The query is by customer order, so a plan of another order is simply not among the answers —
+   * stubbing it per sign keeps the test from claiming a reach the repository does not have.
+   */
   private void givenPlans(OrderBudget... plans) {
-    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of(plans));
+    when(orderBudgetRepository.findByCustomerorderSign(any())).thenAnswer(invocation ->
+        List.of(plans).stream()
+            .filter(plan -> plan.getCustomerorderSign().equals(invocation.getArgument(0)))
+            .toList());
     for (var plan : plans) {
       when(orderBudgetRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
     }
