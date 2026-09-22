@@ -1,5 +1,6 @@
 package org.tb.reporting.rest;
 
+import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -9,6 +10,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,7 @@ import org.tb.common.exception.ServiceFeedbackMessage;
  * CSV-Konverter findet.
  */
 @Slf4j
+@Order(HIGHEST_PRECEDENCE)
 @RestControllerAdvice(assignableTypes = ReportRestEndpoint.class)
 public class ReportRestExceptionHandler {
 

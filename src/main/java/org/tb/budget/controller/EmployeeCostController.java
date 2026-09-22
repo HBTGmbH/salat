@@ -9,7 +9,6 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,7 +73,7 @@ public class EmployeeCostController {
      * Name and first rate, nothing else: the validity of that rate is set by the service to today
      * with an open end. A rate that has to start earlier is corrected on the category page.
      */
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/store")
     public String store(@ModelAttribute("costForm") EmployeeCostForm form,
                         Model model,
@@ -118,7 +117,7 @@ public class EmployeeCostController {
         return "budget/employee-cost-category";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/category/rename")
     public String rename(@RequestParam("name") String name,
                          @RequestParam("newName") String newName,
@@ -170,7 +169,7 @@ public class EmployeeCostController {
      * The category of a rate is not editable here — a rename carries all periods and all assignments
      * along and therefore belongs to the category, not to one of its periods.
      */
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/rates/store")
     public String storeRate(@ModelAttribute("costForm") EmployeeCostForm form,
                             Model model,
@@ -206,7 +205,7 @@ public class EmployeeCostController {
         return redirectToCategory(form.getName(), redirectAttributes);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/rates/{id}/delete")
     public String deleteRate(@PathVariable long id, RedirectAttributes redirectAttributes) {
         var name = employeeCostService.getById(id).getName();
@@ -257,7 +256,7 @@ public class EmployeeCostController {
         return "budget/employee-cost-assignment-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/assignments/store")
     public String storeAssignment(@ModelAttribute("assignmentForm") EmployeeCostAssignmentForm form,
                                   Model model,
@@ -287,7 +286,7 @@ public class EmployeeCostController {
         return redirectToCategory(form.getEmployeeCostName(), redirectAttributes);
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/assignments/{id}/delete")
     public String deleteAssignment(@PathVariable long id, RedirectAttributes redirectAttributes) {
         var name = employeeCostService.getAssignmentById(id).getEmployeeCostName();

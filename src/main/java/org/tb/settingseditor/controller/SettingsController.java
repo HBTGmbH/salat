@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
+import org.tb.auth.domain.Authorized;
 import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.dailyreport.preferences.DailyPreferences;
 import org.tb.dailyreport.preferences.DurationInputMode;
@@ -43,7 +43,7 @@ import org.tb.settings.web.LocaleSyncInterceptor;
 @Controller
 @RequestMapping("/settings")
 @RequiredArgsConstructor
-@PreAuthorize("isAuthenticated()")
+@Authorized
 public class SettingsController {
 
   private final DailyPreferenceService dailyPreferenceService;

@@ -7,6 +7,11 @@ Status: Accepted
 > hat sich seit 2026-05-24: `AuthorizedUser` ist `@RequestScope` statt session-scoped, es gibt die
 > Rolle `PEOPLE_LEAD` mit eigenem Fehlercode `AA-0006`, und alle Filter-Chains sind `STATELESS`.
 > Die Entscheidung selbst — zwei gestapelte Durchsetzungsebenen — steht unverändert.
+>
+> **Nachtrag 2026-09-22 (#926):** Ebene 1 wird nicht mehr mit `@PreAuthorize` ausgedrückt, sondern
+> mit demselben `@Authorized(requires…)` wie Ebene 2. Die Entscheidung — zwei gestapelte Ebenen —
+> steht weiterhin; was fällt, ist die zweite Ausdrucksform für dieselbe Aussage. Siehe „Ebene 1"
+> unten für die Begründung und für die eine Verhaltensänderung, die daraus folgt.
 
 ## Context and Problem Statement
 
@@ -14,7 +19,7 @@ Die Anwendung verwaltet sensible Daten (Zeitberichte, Verträge, Rechnungen) und
 
 ## Considered Options
 
-* Nur HTTP-Boundary-Checks (Spring Security `@PreAuthorize` auf Controllern)
+* Nur HTTP-Boundary-Checks (Annotation auf Controllern)
 * Nur Service-Layer-Checks (manuelle `if`-Guards in jedem Service)
 * Zwei gestapelte Ebenen: HTTP-Boundary + Service-Boundary via AOP
 
@@ -24,7 +29,7 @@ Chosen: **Zwei gestapelte Ebenen** (Defense in Depth), weil ein einzelner Check 
 
 ### Consequences
 
-* Good: ein vergessener `@PreAuthorize` auf einem Controller führt nicht automatisch zu einer Sicherheitslücke — der Service-Layer fängt es auf
+* Good: ein vergessener Guard auf einem Controller führt nicht automatisch zu einer Sicherheitslücke — der Service-Layer fängt es auf
 * Good: Scheduled Jobs und interne Service-Aufrufe unterliegen denselben Prüfungen wie HTTP-Requests
 * Bad: jede Operation wird zweimal geprüft (Performance-Overhead ist vernachlässigbar, aber Komplexität steigt)
 * Bad: neue Entwickler müssen beide Ebenen kennen, um Berechtigungen korrekt zu modellieren
@@ -52,29 +57,62 @@ asynchronen Kontext keinen `SecurityContext` und damit keine Authentifizierung
 
 ---
 
-## Ebene 1: HTTP-Boundary (`@PreAuthorize` auf Controllern)
+## Ebene 1: HTTP-Boundary (`@Authorized` auf Controllern)
 
-Spring Security wertet `@PreAuthorize`-Ausdrücke aus, bevor die Controller-Methode ausgeführt wird. `@EnableMethodSecurity` ist auf `SalatApplication` aktiviert.
-
-Typische Muster:
+Der Controller verlangt seine Berechtigung mit derselben Annotation wie der Service (#926):
 
 ```java
 // Klasse: alle Methoden sperren RESTRICTED-Nutzer aus
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class SuborderController { ... }
 
-// Methode: schreibende Operationen erfordern MANAGER
-@PreAuthorize("hasRole('MANAGER')")
+// Methode: schreibende Operationen erfordern die Geschäftsführung
+@Authorized(requiresManager = true)
 public String store(...) { ... }
 
-// Gesamter Controller: nur BACKOFFICE+
-@PreAuthorize("hasRole('BACKOFFICE')")
+// Gesamter Controller: nur Backoffice und darüber
+@Authorized(requiresBackoffice = true)
 public class InvoiceController { ... }
 ```
 
-Spring Authorities: `ROLE_USER`, `ROLE_RESTRICTED`, `ROLE_BACKOFFICE`, `ROLE_PEOPLE_LEAD`,
-`ROLE_MANAGER`, `ROLE_ADMIN`. Gebildet werden sie in `EmployeeStatusAuthorities.from(status)`,
-kumulativ entlang der Hierarchie oben.
+Bis #926 stand hier `@PreAuthorize("hasRole(…)")`. Beide Formen prüfen vor derselben Methode und
+beide sind Proxy-basiert; **dieselbe Frage beantworten sie aber nicht**:
+
+- `hasRole` liest die Authorities aus dem `SecurityContext`. Die entstehen bei der Anmeldung aus
+  dem Mitarbeiterstatus (`EmployeeStatusAuthorities.from(status)`) und ändern sich innerhalb einer
+  Anmeldung nicht.
+- `@Authorized` fragt `AuthorizedUser`, und der schlägt die **übernommene** Anmeldung im `UiState`
+  nach.
+
+Während einer Impersonation antworteten die beiden Ebenen deshalb verschieden: der Controller ließ
+durch, was der Service danach ablehnte. Wer eine fremde Anmeldung übernimmt, sieht die Anwendung
+seitdem so, wie die übernommene Person sie sieht — die gewollte Bedeutung von Impersonation, und
+die einzige Verhaltensänderung aus #926. Wer eine Impersonation nach `AuthorizationRule` mit
+`AccessLevel.LOGIN` vergibt, vergibt damit auch deren Rechte an der HTTP-Grenze; an Ebene 2 war das
+schon immer so.
+
+Was aus der Umstellung sonst noch folgt:
+
+- **Die Antwort auf eine fehlende Berechtigung entsteht jetzt an einer Stelle.** Die
+  `AuthorizationException` des Aspekts ist keine `AccessDeniedException`; ohne Behandlung kommt sie
+  als `500` heraus. Das beantwortet `AuthorizationExceptionHandler` (`common/web`) mit `403` —
+  bzw. `401` bei `AA-0001` — und für `/api` und `/rest` als `ProblemDetail`.
+- **Es gibt keine Rollenausdrücke mehr im Java-Code.** `ArchitectureTest` weist `@PreAuthorize` an
+  Klassen und Methoden zurück. Die Schalter sind `requiresAuthentication`, `requireUnrestricted`,
+  `requiresBackoffice`, `requiresPeopleLead`, `requiresManager`, `requiresAdmin`, `permitAll`.
+- **Eine Oder-Verknüpfung gibt es nicht** — und sie fehlte auch nicht: `hasAnyRole('MANAGER',
+  'PEOPLE_LEAD')` war `requiresPeopleLead`, weil die Rollen kumulativ sind (siehe Hierarchie oben).
+  Wo eine echte Oder-Bedingung entsteht, gehört sie als Runtime-Guard in die Ebene 3 und nicht in
+  einen Ausdruck.
+- `@EnableMethodSecurity` bleibt auf `SalatApplication` aktiviert. Es setzt nichts mehr durch,
+  fängt aber ein versehentlich stehengelassenes `@PreAuthorize` weiter ab, solange
+  `ArchitectureTest` es noch nicht gesehen hat.
+
+Die Spring Authorities (`ROLE_USER`, `ROLE_RESTRICTED`, `ROLE_BACKOFFICE`, `ROLE_PEOPLE_LEAD`,
+`ROLE_MANAGER`, `ROLE_ADMIN`) bleiben, was sie sind: die Sicherheitsketten arbeiten damit, und die
+Templates fragen sie über `#authorization.expression(…)`. **Die Templates sind damit weiterhin
+blind für die Impersonation** — ein Menüeintrag kann sichtbar sein, obwohl der Controller dahinter
+abweist. Das war vor #926 genauso und ist als eigener Schritt zu beheben.
 
 ---
 
@@ -173,8 +211,9 @@ sitzungsbasierte Chain. Die Sitzung hält in den deployten Umgebungen EasyAuth, 
 |--------|-------|-------|
 | `AuthorizedUser` | `auth/domain` | Request-scoped Bean, zentrale Berechtigungsquelle |
 | `EmployeeStatusAuthorities` | `auth/domain` | Abbildung `loginStatus` → Spring-Authorities |
-| `Authorized` | `auth/domain` | Service-Layer-Annotation |
+| `Authorized` | `auth/domain` | Annotation für beide Durchsetzungsebenen |
 | `AuthorizationAspect` | `auth/service` | AOP-Enforcement für `@Authorized` |
+| `AuthorizationExceptionHandler` | `common/web` | `AuthorizationException` → 403 bzw. `ProblemDetail` |
 | `AuthorizationRule` | `auth/domain` | JPA-Entity für datenbankgestützte Feinregeln |
 | `AuthService` | `auth/service` | Verwaltung und Cache der Autorisierungsregeln |
 | `AccessLevel` | `auth/domain` | Hierarchische Zugriffslevels |

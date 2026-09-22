@@ -11,7 +11,6 @@ import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.GlobalConstants;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DateUtils;
@@ -37,7 +37,7 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/invoice")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('BACKOFFICE')")
+@Authorized(requiresBackoffice = true)
 public class InvoiceController {
 
     private final CustomerorderService customerorderService;

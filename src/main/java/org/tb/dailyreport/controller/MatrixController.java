@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -81,7 +80,7 @@ public class MatrixController {
     }
 
     @PostMapping("/fill-not-worked")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String fillNotWorked(
             @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Integer month,

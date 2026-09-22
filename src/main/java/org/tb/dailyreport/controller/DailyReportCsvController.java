@@ -16,7 +16,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -76,7 +75,7 @@ public class DailyReportCsvController {
     }
 
     @PostMapping("/import")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String importCsv(
             @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "add") String importMode,

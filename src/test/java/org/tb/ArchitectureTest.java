@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.data.domain.Persistable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.tb.common.filter.UiStateFilter;
@@ -301,6 +302,29 @@ public class ArchitectureTest {
           });
         }
       });
+
+  /**
+   * Eine Berechtigung wird als {@code @Authorized(requires…)} verlangt, nicht als
+   * {@code @PreAuthorize("hasRole(…)")} (#926). Beide prüfen vor derselben Methode, aber sie fragen
+   * nicht dasselbe: {@code hasRole} liest die Rollen aus dem {@code SecurityContext},
+   * {@code @Authorized} fragt {@link org.tb.auth.domain.AuthorizedUser} — und der kennt die
+   * übernommene Anmeldung. Solange beide Formen nebeneinander standen, hing es von der Annotation
+   * ab, wen eine Seite während einer Impersonation sieht, und Controller und Service konnten sich
+   * widersprechen.
+   *
+   * <p>Ein zweiter Grund steckt in der Antwort: die Ausnahme des Aspekts beantwortet
+   * {@code AuthorizationExceptionHandler} mit {@code 403}, die von Spring Security die
+   * Sicherheitskette. Eine Mischung aus beidem hat zwei Wege für dieselbe Aussage.
+   */
+  @ArchTest
+  static final ArchRule noClassIsGuardedWithPreAuthorize = priority(HIGH).noClasses()
+      .should().beAnnotatedWith(PreAuthorize.class)
+      .because("an authorization requirement is spelled @Authorized(requires…) (#926)");
+
+  @ArchTest
+  static final ArchRule noMethodIsGuardedWithPreAuthorize = priority(HIGH).noMethods()
+      .should().beAnnotatedWith(PreAuthorize.class)
+      .because("an authorization requirement is spelled @Authorized(requires…) (#926)");
 
   @ArchTest
   static final ArchRule beFreeOfCycles = slices().matching("org.tb.(*)..").should().beFreeOfCycles();

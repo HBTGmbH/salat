@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -27,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.GlobalConstants;
 import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
@@ -47,7 +47,7 @@ import org.tb.order.viewhelper.SuborderViewDecorator;
 @Controller
 @RequestMapping("/orders/suborders")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class SuborderController {
 
   private final SuborderService suborderService;
@@ -108,7 +108,7 @@ public class SuborderController {
    * filter of the list behind it (ADR-0023). Without it the form is prefilled with what the list
    * is filtered to.
    */
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/create")
   public String createForm(
       @RequestParam(required = false) Long customerorderId,
@@ -132,7 +132,7 @@ public class SuborderController {
     return "order/sub-order-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/{id}/edit")
   public String editForm(@PathVariable Long id, Model model) {
     Suborder so = suborderService.getSuborderById(id);
@@ -141,7 +141,7 @@ public class SuborderController {
     return "order/sub-order-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/store")
   public String store(@ModelAttribute("suborderForm") SuborderForm form,
                       BindingResult bindingResult,
@@ -203,7 +203,7 @@ public class SuborderController {
     return "redirect:/orders/suborders";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/{id}/toggle-hide")
   public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
     try {
@@ -217,7 +217,7 @@ public class SuborderController {
     }
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/{id}/delete")
   public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
     try {
@@ -232,7 +232,7 @@ public class SuborderController {
     return "redirect:/orders/suborders";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/{id}/copy")
   public String copy(@PathVariable Long id, RedirectAttributes redirectAttributes) {
     suborderService.createCopy(id);
@@ -241,7 +241,7 @@ public class SuborderController {
     return "redirect:/orders/suborders";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/sign")
   @ResponseBody
   public String generateSign(
@@ -267,7 +267,7 @@ public class SuborderController {
     return df.format(version);
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/change-customer")
   public String changeCustomer(@ModelAttribute("suborderForm") SuborderForm form, Model model,
                                HttpServletRequest request) {
@@ -283,7 +283,7 @@ public class SuborderController {
     return "order/sub-order-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/change-customerorder")
   public String changeCustomerorder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
                                     HttpServletRequest request) {
@@ -297,7 +297,7 @@ public class SuborderController {
     return "order/sub-order-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/change-parent-order")
   public String changeParentOrder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
       HttpServletRequest request) {

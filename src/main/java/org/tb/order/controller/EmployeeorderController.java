@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -30,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -50,7 +50,7 @@ import org.tb.order.service.SuborderService;
 @Controller
 @RequestMapping("/orders/employeeorders")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class EmployeeorderController {
 
     private final EmployeeorderService employeeorderService;
@@ -115,7 +115,7 @@ public class EmployeeorderController {
         return htmxRequest ? "order/employee-order-list :: results" : "order/employee-order-list";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @GetMapping("/create")
     public String createForm(
             @RequestParam(required = false) Long fEmployeeOrderEmployeeContractId,
@@ -140,7 +140,7 @@ public class EmployeeorderController {
         return "order/employee-order-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @GetMapping("/edit")
     public String editForm(@RequestParam Long id, Model model) {
         Employeeorder eo = employeeorderService.getEmployeeorderById(id);
@@ -149,7 +149,7 @@ public class EmployeeorderController {
         return "order/employee-order-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/change-employeecontract")
     public String changeEmployeecontract(@ModelAttribute("employeeorderForm") EmployeeorderForm form, Model model,
         HttpServletRequest request) {
@@ -163,7 +163,7 @@ public class EmployeeorderController {
         return "order/employee-order-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/change-customer")
     public String changeCustomer(@ModelAttribute("employeeorderForm") EmployeeorderForm form, Model model,
         HttpServletRequest request) {
@@ -179,7 +179,7 @@ public class EmployeeorderController {
         return "order/employee-order-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/change-customerorder")
     public String changeCustomerorder(@ModelAttribute("employeeorderForm") EmployeeorderForm form, Model model,
         HttpServletRequest request) {
@@ -193,7 +193,7 @@ public class EmployeeorderController {
         return "order/employee-order-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/change-suborder")
     public String changeSuborder(@ModelAttribute("employeeorderForm") EmployeeorderForm form, Model model,
         HttpServletRequest request) {
@@ -218,7 +218,7 @@ public class EmployeeorderController {
         }
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/store")
     public String store(
             @ModelAttribute("employeeorderForm") EmployeeorderForm form,
@@ -285,7 +285,7 @@ public class EmployeeorderController {
         return "redirect:/orders/employeeorders";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
@@ -300,7 +300,7 @@ public class EmployeeorderController {
         return "redirect:/orders/employeeorders";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/adjust-dates")
     public String adjustDates(
             @RequestParam(required = false, defaultValue = "-1") Long fEmployeeOrderEmployeeContractId,

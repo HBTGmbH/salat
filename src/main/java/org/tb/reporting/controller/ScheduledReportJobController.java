@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.reporting.domain.JobExecutionResult;
 import org.tb.reporting.domain.ScheduledReportJob;
 import org.tb.reporting.service.ReportService;
@@ -27,7 +27,7 @@ import org.tb.reporting.service.ScheduledReportJobService;
 @Controller
 @RequestMapping("/reporting/jobs")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
+@Authorized(requiresPeopleLead = true)
 public class ScheduledReportJobController {
 
   private final ScheduledReportJobService jobService;

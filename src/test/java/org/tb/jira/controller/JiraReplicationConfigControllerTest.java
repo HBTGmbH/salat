@@ -7,7 +7,6 @@ import java.util.Arrays;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.tb.auth.domain.Authorized;
 import org.tb.jira.domain.JiraApiFlavor;
@@ -27,10 +26,6 @@ class JiraReplicationConfigControllerTest {
     var authorized = JiraReplicationConfigController.class.getAnnotation(Authorized.class);
     assertThat(authorized).isNotNull();
     assertThat(authorized.requiresManager()).isTrue();
-
-    var preAuthorize = JiraReplicationConfigController.class.getAnnotation(PreAuthorize.class);
-    assertThat(preAuthorize).isNotNull();
-    assertThat(preAuthorize.value()).isEqualTo("hasRole('MANAGER')");
   }
 
   @Test
@@ -41,8 +36,9 @@ class JiraReplicationConfigControllerTest {
 
     assertThat(writes).isNotEmpty();
     assertThat(writes).allSatisfy(method -> assertThat(guardOf(method))
-        .as("@PreAuthorize on %s", method.getName())
-        .isEqualTo("hasRole('MANAGER')"));
+        .as("@Authorized on %s", method.getName())
+        .isNotNull()
+        .satisfies(guard -> assertThat(guard.requiresManager()).isTrue()));
   }
 
   @Test
@@ -119,8 +115,7 @@ class JiraReplicationConfigControllerTest {
         JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, null);
   }
 
-  private static String guardOf(Method method) {
-    var preAuthorize = method.getAnnotation(PreAuthorize.class);
-    return preAuthorize == null ? null : preAuthorize.value();
+  private static Authorized guardOf(Method method) {
+    return method.getAnnotation(Authorized.class);
   }
 }
