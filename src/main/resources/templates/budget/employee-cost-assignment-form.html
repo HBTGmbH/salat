@@ -50,9 +50,9 @@
       </div>
     </salat:inputs>
     <salat:buttons>
-      <!-- Called from a budget plan there is no category yet (#964), and a cancel carrying an empty
-           name would land on a category page that does not exist. Checked for empty rather than for
-           null: on a re-render after a failed save the select binds the empty option as "". -->
+      <!--/* Called from a budget plan there is no category yet (#964), and a cancel carrying an empty
+             name would land on a category page that does not exist. Checked for empty rather than for
+             null: on a re-render after a failed save the select binds the empty option as "". */-->
       <salat:formButtons th:saveLabel="${isEdit} ? #{main.button.label.edit.text} : #{main.button.label.save.text}"
                          th:cancelHref="${not #strings.isEmpty(assignmentForm.employeeCostName)} ? @{/budget/employee-cost/category(name=${assignmentForm.employeeCostName})} : @{/budget/employee-cost}" />
     </salat:buttons>

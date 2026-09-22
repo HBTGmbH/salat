@@ -7,8 +7,8 @@
      style="min-width:200px; max-width:320px">
   <div class="card-body py-2 px-3 d-flex flex-column">
     <div class="d-flex justify-content-between align-items-start gap-2 flex-grow-1">
-      <!-- The month view has no columns to move the text into, so it takes the other half of #834:
-           the booking text is the main line of the card, the order the context above it. -->
+      <!--/* The month view has no columns to move the text into, so it takes the other half of #834:
+             the booking text is the main line of the card, the order the context above it. */-->
       <div class="overflow-hidden flex-grow-1" th:with="hasText=${not #strings.isEmpty(singleTr.taskdescription)}">
         <div class="text-muted text-truncate" style="font-size:0.75rem"
              th:text="|${singleTr.customerorderSign} · ${singleTr.customerorderDescription} · ${singleTr.customerShortname}|"></div>
@@ -74,7 +74,7 @@
               th:text="${singleTr.ticketReference}"></span>
         <span th:if="${singleTr.training}" class="badge bg-purple-lt text-purple"
               th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
-        <!-- standby is booked here but counts towards no sum of this day (#463) -->
+        <!--/* standby is booked here but counts towards no sum of this day (#463) */-->
         <span th:if="${singleTr.standby}" class="badge bg-orange-lt text-orange" data-standby-badge
               th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
       </div>

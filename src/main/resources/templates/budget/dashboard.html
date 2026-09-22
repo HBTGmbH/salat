@@ -9,9 +9,9 @@
 ">
 <main layout:fragment="content">
 
-  <!-- Filter form without a submit button: every select filters on change (#952). Both selects
-       always submit their parameter; the empty option clears the remembered choice instead of
-       leaving the previous one in place. -->
+  <!--/* Filter form without a submit button: every select filters on change (#952). Both selects
+         always submit their parameter; the empty option clears the remembered choice instead of
+         leaving the previous one in place. */-->
   <div class="card mb-4">
     <div class="card-body">
       <form method="get" th:action="@{/budget/dashboard}" class="row g-2 align-items-end">
@@ -123,10 +123,10 @@
     </table>
   </div>
 
-  <!--
+  <!--/*
     The validity column shows how long a plan runs; budget, revenue and utilization say where it
     stands today (#972). Two different dates in one row, so the reference date is named.
-  -->
+  */-->
   <p class="text-muted small mt-2" th:unless="${#lists.isEmpty(rows)}"
      th:text="#{main.budget.dashboard.asof(${#temporals.format(today, 'dd.MM.yyyy')})}">
     Budget, Ist-Erlös und Auslastung zum Stichtag 15.06.2026.
