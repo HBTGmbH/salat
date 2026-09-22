@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -78,6 +79,25 @@ public class JiraReplicationConfig extends AuditedEntity {
 
   @Column(name = "enabled")
   private Boolean enabled;
+
+  /**
+   * Whether the run writes the booked hours back to JIRA as worklogs (#1007). Off means the
+   * replication stays the pure read it has always been — not a single writing call is made.
+   *
+   * <p>Switched on, the stored account needs write permission in JIRA, and it is the account the
+   * worklogs are authored by: the person who booked never reaches JIRA.
+   */
+  @Column(name = "worklog_sync_enabled")
+  private Boolean worklogSyncEnabled;
+
+  /**
+   * The first day the worklog sync covers (#1007). Without it the first run after switching on
+   * would write the whole history of the order into JIRA in one go. Bookings before this day are
+   * never written, and rows of {@code jira_worklog_sync} before it are never touched — moving the
+   * date forward must not read the days it leaves behind as "all bookings are gone".
+   */
+  @Column(name = "worklog_sync_from")
+  private LocalDate worklogSyncFrom;
 
   @Column(name = "last_max_updated")
   private LocalDateTime lastMaxUpdated;

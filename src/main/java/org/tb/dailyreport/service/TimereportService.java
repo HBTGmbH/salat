@@ -107,6 +107,7 @@ import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.jira.command.GetTicketWorklogSumsCommandEvent;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
@@ -687,6 +688,22 @@ public class TimereportService {
 
     var timereportIds = timereports.stream().map(Timereport::getId).toList();
     eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(timereportIds));
+  }
+
+  /**
+   * Answers the jira module's question for the booked minutes per day and ticket (#1007). No
+   * per-person filter applies here and none is missing: the caller is the replication, not a user,
+   * and what leaves is a sum over everybody with no person in it. Which suborders may be asked
+   * about is decided by the replication config, which only a manager can write.
+   */
+  @EventListener
+  void handleCommandEvent(GetTicketWorklogSumsCommandEvent event) {
+    var suborderIds = event.getSuborderIds();
+    if (suborderIds == null || suborderIds.isEmpty()) {
+      event.setResult(List.of());
+      return;
+    }
+    event.setResult(timereportRepository.getTicketDaySums(suborderIds, event.getFrom(), event.getUntil()));
   }
 
   @EventListener

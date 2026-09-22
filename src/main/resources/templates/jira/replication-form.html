@@ -128,6 +128,26 @@
 
       <salat:checkboxSwitch th:field="*{enabled}" th:label="#{main.jira.replication.field.enabled}" />
 
+      <!--/* Writing back to JIRA (#1007). The one switch here that needs more permission than the
+             replication itself, so the help text says so right next to it. */-->
+      <div class="row">
+        <div class="col-md-6">
+          <salat:checkboxSwitch th:field="*{worklogSyncEnabled}"
+                                th:label="#{main.jira.replication.field.worklogSyncEnabled}" />
+          <div class="form-text mb-3" th:text="#{main.jira.replication.field.worklogSyncEnabled.help}">
+            Schreibrechte noetig.
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='worklogSyncFrom', label=#{main.jira.replication.field.worklogSyncFrom}, required=false
+          )}"></div>
+          <div class="form-text mb-3" th:text="#{main.jira.replication.field.worklogSyncFrom.help}">
+            Buchungen ab diesem Tag werden geschrieben.
+          </div>
+        </div>
+      </div>
+
       <!--/* The watermark is not a form field: a date entered by hand would skip every ticket
              updated before it, for good. Resetting it is the one operation that makes sense, and it
              is a button of its own rather than an input. */-->

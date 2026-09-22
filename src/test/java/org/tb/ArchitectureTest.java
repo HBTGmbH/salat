@@ -135,20 +135,27 @@ public class ArchitectureTest {
 
   /**
    * dailyreport owns the bookings and is imported by everything that evaluates them (budget,
-   * invoice, statistic), so its own list has to stay narrow — every entry here is a module that can
-   * never evaluate bookings in turn.
+   * invoice, statistic), so its own list has to stay narrow.
    *
    * <p>{@code favorites} is the one to watch: the booking screens offer favourites, so dailyreport
    * reaches into that module. It works only because favorites knows nothing about bookings; the
    * reverse import would close a cycle.
+   *
+   * <p>{@code jira} is the entry that costs an explanation, because jira <em>does</em> evaluate
+   * bookings since #1007 — it writes the booked hours back to JIRA as worklogs. It does not read
+   * them itself: it asks with a {@code CommandEvent} from {@code org.tb.jira.command}, and
+   * {@code TimereportService} answers it. The event class has to be visible from the listener,
+   * hence this edge. What must stay forbidden is the other direction, {@code jira -> dailyreport}
+   * — see {@link #jiraShouldAccessCommonAuthOrderOnly}, which does not list dailyreport and is what
+   * keeps the pair free of a cycle.
    */
   @ArchTest
   static final ArchRule dailyreportShouldAccessOnlyItsKnownDependencies = priority(HIGH).noClasses().that()
       .resideInAPackage("org.tb.dailyreport..")
       .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
-          "dailyreport must only import common, auth, customer, employee, favorites, notification, order, settings",
+          "dailyreport must only import common, auth, customer, employee, favorites, jira, notification, order, settings",
           "org.tb.common.", "org.tb.auth.", "org.tb.customer.", "org.tb.employee.", "org.tb.favorites.",
-          "org.tb.notification.", "org.tb.order.", "org.tb.settings.", "org.tb.dailyreport."));
+          "org.tb.jira.", "org.tb.notification.", "org.tb.order.", "org.tb.settings.", "org.tb.dailyreport."));
 
   /**
    * statistic aggregates bookings into numbers. It reads dailyreport and order and is imported by
@@ -207,9 +214,16 @@ public class ArchitectureTest {
    * is made of rather than a shortcut.
    *
    * <p>The edge is free of cycles: the transitive hull of order is {common, auth, customer,
-   * employee, settings, notification}, none of which imports jira, and jira is imported by no module
-   * at all — {@link #beFreeOfCycles} covers that for good. jira still hangs its tickets off signs
-   * rather than off foreign ids, so the storage form stays independent of the order tables.
+   * employee, settings, notification}, none of which imports jira — {@link #beFreeOfCycles} covers
+   * that for good. jira still hangs its tickets off signs rather than off foreign ids, so the
+   * storage form stays independent of the order tables.
+   *
+   * <p>{@code dailyreport} is deliberately <em>not</em> in this list, although the worklog sync
+   * (#1007) needs the booked minutes. That is what the command event in {@code org.tb.jira.command}
+   * is for: dailyreport imports it and answers, jira never reaches into dailyreport. Since
+   * dailyreport now imports jira (see
+   * {@link #dailyreportShouldAccessOnlyItsKnownDependencies}), adding dailyreport here would close
+   * a cycle.
    */
   @ArchTest
   static final ArchRule jiraShouldAccessCommonAuthOrderOnly = priority(HIGH).noClasses().that()

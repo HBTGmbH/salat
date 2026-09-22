@@ -96,7 +96,9 @@ public class JiraReplicationConfigController {
         form.getAdditionalFieldNames(),
         form.getInheritedFieldNames(),
         form.getPageSize(),
-        form.isEnabled()
+        form.isEnabled(),
+        form.isWorklogSyncEnabled(),
+        form.getWorklogSyncFrom()
     );
 
     try {

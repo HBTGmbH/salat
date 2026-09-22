@@ -11,6 +11,7 @@ import static org.tb.common.exception.ErrorCode.JI_REPLICATION_PASSWORD_REQUIRED
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_SCOPE_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_SCOPE_REQUIRED;
 import static org.tb.common.exception.ErrorCode.JI_REPLICATION_USERNAME_REQUIRED;
+import static org.tb.common.exception.ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP;
 
 import static java.util.Comparator.comparing;
 
@@ -29,6 +30,7 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DateUtils;
 import org.tb.jira.domain.JiraApiFlavor;
 import org.tb.jira.domain.JiraFieldCatalog;
 import org.tb.jira.domain.JiraFieldOption;
@@ -83,7 +85,7 @@ public class JiraReplicationConfigService {
 
   public long create(JiraReplicationConfigData data) {
     checkManager();
-    validate(data);
+    validate(null, data);
     if (isBlank(data.password())) {
       // On an edit an empty field means "keep what is stored"; on a new record there is nothing to
       // keep, so the replication would fail on its first run with a null password.
@@ -97,7 +99,7 @@ public class JiraReplicationConfigService {
 
   public void update(long id, JiraReplicationConfigData data) {
     checkManager();
-    validate(data);
+    validate(id, data);
     var config = load(id);
     apply(data, config);
     if (!isBlank(data.password())) {
@@ -240,6 +242,25 @@ public class JiraReplicationConfigService {
     applyFieldNames(data, config);
     config.setPageSize(data.pageSize());
     config.setEnabled(data.enabled());
+    applyWorklogSync(data, config);
+  }
+
+  /**
+   * The start date is the moment of switching on (#1007) when none is given: the first run would
+   * otherwise write every booking the order ever carried into JIRA at once. It stays editable, so a
+   * period can be filled in deliberately — moving it back is a decision, not an accident.
+   *
+   * <p>Switching the sync off keeps the date. What SALAT already wrote stays in JIRA and stays
+   * remembered; switching on again picks up where it left off instead of starting a second period
+   * next to the first.
+   */
+  private void applyWorklogSync(JiraReplicationConfigData data, JiraReplicationConfig config) {
+    config.setWorklogSyncEnabled(data.worklogSyncEnabled());
+    if (data.worklogSyncFrom() != null) {
+      config.setWorklogSyncFrom(data.worklogSyncFrom());
+    } else if (data.worklogSyncEnabled() && config.getWorklogSyncFrom() == null) {
+      config.setWorklogSyncFrom(DateUtils.today());
+    }
   }
 
   /**
@@ -278,7 +299,7 @@ public class JiraReplicationConfigService {
     config.setInheritedFieldNames(inherited);
   }
 
-  private void validate(JiraReplicationConfigData data) {
+  private void validate(Long id, JiraReplicationConfigData data) {
     requireText(data.name(), JI_REPLICATION_NAME_REQUIRED);
     requireText(data.scopeSign(), JI_REPLICATION_SCOPE_REQUIRED);
     requireText(data.baseUrl(), JI_REPLICATION_BASE_URL_REQUIRED);
@@ -294,6 +315,63 @@ public class JiraReplicationConfigService {
     if (data.pageSize() != null && data.pageSize() <= 0) {
       throw new InvalidDataException(JI_REPLICATION_PAGE_SIZE_INVALID);
     }
+    checkWorklogScopeIsExclusive(id, data);
+  }
+
+  /**
+   * No two worklog syncs may cover the same bookings on the same JIRA instance (#1007). Since #1025
+   * an order-wide replication and one for a suborder inside it are the normal case — with worklogs
+   * switched on for both, each would write its own entry on the same ticket and the same day, and
+   * the time would stand twice in JIRA. Nothing in SALAT shows that, so it is refused here rather
+   * than noticed there.
+   *
+   * <p>Only within one instance: two configs pointing at different JIRA installations share no
+   * issue keys and cannot collide, however much their scopes overlap.
+   */
+  private void checkWorklogScopeIsExclusive(Long id, JiraReplicationConfigData data) {
+    if (!data.worklogSyncEnabled()) {
+      return;
+    }
+    var scopeSign = data.scopeSign().trim();
+    var baseUrl = normalizedBaseUrl(data.baseUrl());
+    var customerorderSign = customerorderSignOf(scopeSign);
+    for (var other : configRepository.findAllByOrderByNameAsc()) {
+      if (id != null && id.equals(other.getId())) continue;
+      if (!Boolean.TRUE.equals(other.getWorklogSyncEnabled())) continue;
+      if (!baseUrl.equals(normalizedBaseUrl(other.getBaseUrl()))) continue;
+      // Different customer orders never share a suborder, so their branches cannot overlap - and
+      // comparing the signs as strings would call 0283 and 0283/03.20 an overlap although they are
+      // two orders, not an order and its suborder.
+      if (!customerorderSign.equals(customerorderSignOf(other.getScopeSign()))) continue;
+      if (scopesOverlap(scopeSign, other.getScopeSign(), customerorderSign)) {
+        log.info("Worklog sync of scope {} refused: it overlaps with the replication {} on scope {} "
+            + "at the same JIRA instance", scopeSign, other.getName(), other.getScopeSign());
+        throw new InvalidDataException(JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
+      }
+    }
+  }
+
+  /**
+   * Whether two scopes of the same customer order cover a common suborder. An order-wide scope
+   * covers every branch of its order; two suborder paths overlap when one is the other or lies
+   * below it, which the fully qualified sign shows at a segment boundary.
+   */
+  private static boolean scopesOverlap(String one, String other, String customerorderSign) {
+    if (customerorderSign.equals(one) || customerorderSign.equals(other)) {
+      return true;
+    }
+    return covers(one, other) || covers(other, one);
+  }
+
+  private static boolean covers(String outer, String inner) {
+    return inner.equals(outer) || inner.startsWith(outer + "/");
+  }
+
+  /** A trailing slash and the case of the host say nothing about which instance is meant. */
+  private static String normalizedBaseUrl(String baseUrl) {
+    if (baseUrl == null) return "";
+    var trimmed = baseUrl.trim().toLowerCase();
+    return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
   }
 
   /**

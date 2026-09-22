@@ -71,6 +71,12 @@
                 </span>
               </button>
             </form>
+            <!--/* Writing back to JIRA (#1007) is the one thing a replication does outside SALAT —
+                   it belongs in the list, not only in the form. */-->
+            <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt ms-1"
+                  th:title="#{main.jira.replication.flag.worklogsync}">
+              <i class="bi bi-clock-history"></i>
+            </span>
           </td>
           <td class="d-none d-md-table-cell small">
             <!--/* This is where you see whether a replication still runs at all — an old date or none
