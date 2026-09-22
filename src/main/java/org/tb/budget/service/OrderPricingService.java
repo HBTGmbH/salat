@@ -26,6 +26,7 @@ import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.domain.OrderPricingDeviation;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.OrderPricingRow;
+import org.tb.budget.domain.SelectablePlans;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.exception.BusinessRuleException;
@@ -177,39 +178,50 @@ public class OrderPricingService {
      * the select, and the very same set the saving judges by, so the two cannot disagree.
      *
      * <p>Only active plans are offered: no booking is assigned to an inactive plan, so a rate bound
-     * to one would apply to nobody. The plan the rate already stores stays in the list regardless,
-     * the way a stored record always survives a filter that would drop it (→ AGENTS.md, "The
-     * {@code hide} Flag") — otherwise deactivating a plan would silently rewrite the rate hanging
-     * off it on the next save.
+     * to one would apply to nobody.
      *
-     * @param keepPlanId the plan the rate being edited already stores, or {@code null} when creating
+     * <p><strong>Each condition is only applied once the field it reads has been filled in.</strong>
+     * On a new rate the validity is entered below the plan, so demanding it first left the select
+     * dead at the moment it is operated — and the empty-state hint then claimed that no plan
+     * qualifies when in truth none had been judged yet. What is already known narrows the list, the
+     * rest narrows it as soon as it is entered. Nothing is lost by that: the validity is a required
+     * field, and the saving applies all three conditions regardless of what the select offered.
+     *
+     * <p><strong>The plan the form already holds survives every one of them</strong> (→
+     * {@link SelectablePlans}). Only authorization is no condition but a boundary, and it keeps
+     * applying.
+     *
+     * @param keepPlanId what the form currently holds — the stored plan of the rate being edited,
+     *                   or whatever has been picked since; {@code null} on a fresh create form
      */
     @Transactional(readOnly = true)
-    public List<OrderBudget> getSelectablePlans(String customerorderSign, String suborderPattern,
-                                                LocalDate validFrom, LocalDate validUntil,
-                                                Long keepPlanId) {
+    public SelectablePlans getSelectablePlans(String customerorderSign, String suborderPattern,
+                                              LocalDate validFrom, LocalDate validUntil,
+                                              Long keepPlanId) {
         var sign = trimToNull(customerorderSign);
-        if (sign == null || validFrom == null) {
-            return List.of();
+        if (sign == null) {
+            return SelectablePlans.none();
         }
-        var until = validUntil != null ? validUntil : OPEN_END;
-        // Period first, scope second: the scope check is the one that has to read the suborders,
-        // and where no plan survives the dates there is nothing left to read them for.
-        var candidates = orderBudgetRepository.findByCustomerorderSign(sign).stream()
+        var authorized = orderBudgetRepository.findByCustomerorderSign(sign).stream()
             .filter(budgetAuthorization::isAuthorized)
-            .filter(plan -> TRUE.equals(plan.getActive()) || Objects.equals(plan.getId(), keepPlanId))
-            .filter(plan -> OrderBudgetBinding.periodsOverlap(plan, validFrom, until))
             .toList();
-        if (candidates.isEmpty()) {
-            return List.of();
+        if (authorized.isEmpty()) {
+            return SelectablePlans.none();
         }
+        // An empty end is an open one here and needs no field of its own — unlike the start, which
+        // is simply not entered yet while the form is being filled in.
+        var until = validUntil != null ? validUntil : OPEN_END;
         var suborderSigns = suborderSignsOf(sign);
-        return candidates.stream()
+        var fitting = authorized.stream()
+            .filter(plan -> TRUE.equals(plan.getActive()))
+            .filter(plan -> validFrom == null || OrderBudgetBinding.periodsOverlap(plan, validFrom, until))
             .filter(plan -> OrderBudgetBinding.scopeMeetsPattern(plan, sign, trimToNull(suborderPattern),
                 suborderSigns))
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
+        return SelectablePlans.of(fitting, authorized, keepPlanId);
     }
+
 
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {

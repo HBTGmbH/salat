@@ -26,6 +26,7 @@ import org.tb.budget.domain.OrderFlatRateInstalment;
 import org.tb.budget.domain.OrderFlatRateInstalmentData;
 import org.tb.budget.domain.OrderFlatRateLookup;
 import org.tb.budget.domain.OrderFlatRateRow;
+import org.tb.budget.domain.SelectablePlans;
 import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.OrderFlatRateRepository;
 import org.tb.common.exception.BusinessRuleException;
@@ -104,23 +105,36 @@ public class OrderFlatRateService {
      * the set the saving judges by. The suborder is a concrete sign here, not a pattern, so the
      * scope check is {@code BudgetScope.covers} on its own.
      *
-     * @param keepPlanId the plan the record being edited already stores, or {@code null} on create
+     * <p>The period narrows the list only once it is complete, for the reason
+     * {@code OrderPricingService#getSelectablePlans} gives: on a new record it is entered below the
+     * plan. A flat rate knows no open end, so a missing end here means "not entered yet" rather than
+     * "runs on" — and half a period cannot rule a plan out without ruling out plans a complete one
+     * would keep.
+     *
+     * <p>The plan the form already holds survives the narrowing here as well (→
+     * {@link SelectablePlans}); only authorization keeps applying.
+     *
+     * @param keepPlanId what the form currently holds, or {@code null} on a fresh create form
      */
     @Transactional(readOnly = true)
-    public List<OrderBudget> getSelectablePlans(String customerorderSign, String suborderSign,
-                                                LocalDate validFrom, LocalDate validUntil,
-                                                Long keepPlanId) {
+    public SelectablePlans getSelectablePlans(String customerorderSign, String suborderSign,
+                                              LocalDate validFrom, LocalDate validUntil,
+                                              Long keepPlanId) {
         var sign = trimToNull(customerorderSign);
-        if (sign == null || validFrom == null || validUntil == null) {
-            return List.of();
+        if (sign == null) {
+            return SelectablePlans.none();
         }
-        return orderBudgetRepository.findByCustomerorderSign(sign).stream()
+        var authorized = orderBudgetRepository.findByCustomerorderSign(sign).stream()
             .filter(budgetAuthorization::isAuthorized)
-            .filter(plan -> TRUE.equals(plan.getActive()) || plan.getId().equals(keepPlanId))
+            .toList();
+        var periodKnown = validFrom != null && validUntil != null;
+        var fitting = authorized.stream()
+            .filter(plan -> TRUE.equals(plan.getActive()))
             .filter(plan -> OrderBudgetBinding.scopeMeetsSuborder(plan, sign, trimToNull(suborderSign)))
-            .filter(plan -> OrderBudgetBinding.periodsOverlap(plan, validFrom, validUntil))
+            .filter(plan -> !periodKnown || OrderBudgetBinding.periodsOverlap(plan, validFrom, validUntil))
             .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
             .toList();
+        return SelectablePlans.of(fitting, authorized, keepPlanId);
     }
 
     private Map<String, Customerorder> ordersOf(List<OrderFlatRate> flatRates) {

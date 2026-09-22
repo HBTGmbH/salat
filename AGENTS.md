@@ -820,6 +820,14 @@ Wirkung ist auf beiden Seiten eine andere, und das ist beabsichtigt:
   (`BU-0028`, `BU-0029`). Zwei Fälle antworten ohne einen einzigen Unterauftrag: ein auftragsweiter
   Satz trifft jeden Plan seines Auftrags, ein auftragsweiter Plan jeden Satz — sonst scheiterte die
   Prüfung an einem Auftrag ohne (sichtbare) Unteraufträge.
+- **Eine Bedingung der Auswahl greift erst, wenn ihr Feld gefüllt ist.** Beim Anlegen steht die
+  Gültigkeit **unter** dem Plan im Formular; wer sie vorab verlangt, liefert genau dann eine leere
+  Auswahl, wenn sie bedient wird — und die Leermeldung behauptet dann, kein Plan passe, obwohl
+  keiner geprüft wurde. Beim Bearbeiten fällt das nicht auf, weil das Datum vorbelegt ist. Verloren
+  geht dadurch nichts: die Gültigkeit ist Pflichtfeld, das Speichern prüft ohnehin alle drei
+  Bedingungen, und die Auswahl verengt sich, sobald das Feld gefüllt ist. Bei der Pauschale zählt
+  dafür der **ganze** Zeitraum — sie kennt kein offenes Ende, ein fehlendes „bis" heißt dort „noch
+  nicht eingegeben" und nicht „läuft weiter".
 - **Aktiv ist ein Auswahlkriterium, kein Speicherkriterium.** Inaktive Pläne stehen nicht zur
   Auswahl, ein bereits gespeicherter bleibt aber in der Liste und bleibt speicherbar — sonst würde
   das Deaktivieren eines Plans den Satz, der an ihm hängt, unbearbeitbar machen.
