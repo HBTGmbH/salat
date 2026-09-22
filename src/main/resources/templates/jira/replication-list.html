@@ -63,11 +63,20 @@
             <form th:action="@{/jira/replications/{id}/enabled(id=${replication.id})}" method="post"
                   class="d-inline align-middle">
               <input type="hidden" name="enabled" th:value="${!replication.enabled}"/>
+              <!--/* `btn-sm` stays: with `p-0` the button only shows as the plate behind the flag,
+                     and `.btn` sizes that plate from its own padding variable rather than from the
+                     padding actually set — at the larger variant it grows by a third around an
+                     unchanged flag. What the flag measures hangs on `fs-5` below instead. */-->
               <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
                       th:title="${replication.enabled}
                           ? #{main.jira.replication.action.disable}
                           : #{main.jira.replication.action.enable}">
-                <span class="badge" th:classappend="${replication.enabled} ? 'bg-green-lt' : 'bg-danger-lt'">
+                <!--/* A badge sizes itself in em, so inside a `btn-sm` it came out at 10.3px while
+                       every other list view draws its flags at 12px. `fs-5` is that 12px, as an
+                       absolute value and with the `!important` of a utility — which is what it
+                       takes, because `.badge` sets `font-size` itself and stands late in
+                       tabler.css. */-->
+                <span class="badge fs-5" th:classappend="${replication.enabled} ? 'bg-green-lt' : 'bg-danger-lt'">
                   <i class="bi" th:classappend="${replication.enabled} ? 'bi-play-fill' : 'bi-pause-fill'"></i>
                 </span>
               </button>
@@ -75,15 +84,12 @@
             <!--/* Writing back to JIRA (#1007) is the one thing a replication does outside SALAT —
                    it belongs in the list, not only in the form.
 
-                   The wrapper is what keeps it the size of its neighbour, and it has to be a
-                   wrapper: `.badge` sets `font-size` itself and stands later in tabler.css than
-                   `.small`, so `small` on the badge does nothing at all. Around it, the em of the
-                   badge resolves against 0.766rem instead of 0.875rem and lands on the 0.643rem of
-                   the switch beside it, which draws its badge inside a `btn-sm`. */-->
-            <span th:if="${replication.worklogSyncEnabled}" class="small align-middle ms-1">
-              <span class="badge bg-blue-lt" th:title="#{main.jira.replication.flag.worklogsync}">
-                <i class="bi bi-arrow-left-right"></i>
-              </span>
+                   `fs-5` for the reason the switch above gives: both flags of this column are
+                   pinned to the 12px the flags of every other list view come out at, rather than
+                   to whatever their surroundings happen to be. */-->
+            <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt fs-5 align-middle ms-1"
+                  th:title="#{main.jira.replication.flag.worklogsync}">
+              <i class="bi bi-arrow-left-right"></i>
             </span>
           </td>
           <td class="d-none d-md-table-cell small">
