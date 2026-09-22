@@ -16,17 +16,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.domain.OrderPricingRow;
+import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.test.FixedClock;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
@@ -45,6 +50,9 @@ public class OrderPricingServiceTest {
   private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
 
   private OrderPricingRepository orderPricingRepository;
+  private OrderBudgetRepository orderBudgetRepository;
+  private BudgetAuthorization budgetAuthorization;
+  private SuborderService suborderService;
   private CustomerorderService customerorderService;
   private EmployeeService employeeService;
   private OrderPricingService service;
@@ -59,8 +67,13 @@ public class OrderPricingServiceTest {
     when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
     employeeService = mock(EmployeeService.class);
     when(employeeService.getEmployeeBySign(any())).thenReturn(new Employee());
-    service = new OrderPricingService(orderPricingRepository, mock(SuborderService.class),
-        customerorderService, employeeService);
+    orderBudgetRepository = mock(OrderBudgetRepository.class);
+    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of());
+    budgetAuthorization = mock(BudgetAuthorization.class);
+    when(budgetAuthorization.isAuthorized(any())).thenReturn(true);
+    suborderService = mock(SuborderService.class);
+    service = new OrderPricingService(orderPricingRepository, orderBudgetRepository, suborderService,
+        customerorderService, employeeService, budgetAuthorization);
   }
 
   @Test
@@ -323,15 +336,15 @@ public class OrderPricingServiceTest {
   }
 
   private static OrderPricingData data(String customerorderSign, String suborderSign, String employeeSign) {
-    return new OrderPricingData(customerorderSign, suborderSign, employeeSign, null, 10000, TODAY, null);
+    return new OrderPricingData(customerorderSign, suborderSign, employeeSign, null, null, 10000, TODAY, null);
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */
-  private static void setId(OrderPricing pricing, long id) {
+  private static void setId(AuditedEntity entity, long id) {
     try {
       var field = AuditedEntity.class.getDeclaredField("id");
       field.setAccessible(true);
-      field.set(pricing, id);
+      field.set(entity, id);
     } catch (ReflectiveOperationException e) {
       throw new IllegalStateException("cannot assign an id to the test record", e);
     }
@@ -361,6 +374,189 @@ public class OrderPricingServiceTest {
     pricing.setValidFrom(validFrom);
     pricing.setValidUntil(validUntil);
     return pricing;
+  }
+
+  // --- which budget plans a rate may be bound to (#1065) ----------------------------------------
+
+  /**
+   * Selection and validation answer the same question, so each of these cases is asserted twice:
+   * the plan is not offered, and a post that names it anyway is refused.
+   */
+  @Test
+  public void offers_a_plan_of_the_same_order_whose_scope_and_period_meet_the_rate() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
+
+    assertThat(plansFor("co", null)).extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  @Test
+  public void refuses_a_plan_of_another_customer_order() {
+    givenPlans(plan(1L, "other", null, TODAY, OPEN_END, true));
+
+    assertThat(plansFor("co", null)).isEmpty();
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
+  }
+
+  @Test
+  public void refuses_a_plan_whose_scope_is_disjoint_from_the_pattern() {
+    givenSuborders("co/01", "co/02");
+    givenPlans(plan(1L, "co", "co/02", TODAY, OPEN_END, true));
+
+    assertThat(plansFor("co", "co/01/")).isEmpty();
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", "co/01/", 1L)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_SCOPE_DISJOINT);
+  }
+
+  /** The plan narrows the rate — the very purpose of the new level. */
+  @Test
+  public void offers_a_plan_narrower_than_the_pattern() {
+    givenSuborders("co/01", "co/01/A");
+    givenPlans(plan(1L, "co", "co/01/A", TODAY, OPEN_END, true));
+
+    assertThat(plansFor("co", "co/01/")).extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  /** And the other way round: a wide plan over a narrow pattern meets it just as well. */
+  @Test
+  public void offers_a_plan_wider_than_the_pattern() {
+    givenSuborders("co/01", "co/01/A");
+    givenPlans(plan(1L, "co", "co/01", TODAY, OPEN_END, true));
+
+    assertThat(plansFor("co", "co/01/A/")).extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  /** An order-wide rate meets every plan of its order, even before any suborder exists. */
+  @Test
+  public void offers_a_plan_to_an_order_wide_rate_without_asking_the_suborders() {
+    givenPlans(plan(1L, "co", "co/01", TODAY, OPEN_END, true));
+
+    assertThat(plansFor("co", null)).extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  @Test
+  public void refuses_a_plan_whose_validity_does_not_overlap_the_rate() {
+    givenPlans(plan(1L, "co", null, TODAY.minusYears(2), YESTERDAY, true));
+
+    assertThat(plansFor("co", null)).isEmpty();
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 1L)))
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_PERIOD_DISJOINT);
+  }
+
+  /** No booking is assigned to an inactive plan, so a rate on one would apply to nobody. */
+  @Test
+  public void does_not_offer_an_inactive_plan() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, null)).isEmpty();
+  }
+
+  /** …but the one the rate already stores stays, or the next save would silently drop it. */
+  @Test
+  public void keeps_the_stored_plan_in_the_list_even_once_it_is_inactive() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
+
+    assertThat(service.getSelectablePlans("co", null, TODAY, null, 1L))
+        .extracting(OrderBudget::getId).containsExactly(1L);
+  }
+
+  /** An inactive plan is still storable: deactivating one must not make its rate uneditable. */
+  @Test
+  public void still_stores_a_rate_bound_to_a_plan_that_has_become_inactive() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, false));
+
+    service.save(dataWithPlan("co", null, 1L));
+
+    verify(orderPricingRepository).save(any());
+  }
+
+  @Test
+  public void does_not_offer_a_plan_the_user_may_not_see() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
+    when(budgetAuthorization.isAuthorized(any())).thenReturn(false);
+
+    assertThat(plansFor("co", null)).isEmpty();
+  }
+
+  @Test
+  public void refuses_a_plan_that_does_not_exist_at_all() {
+    when(orderBudgetRepository.findById(9L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.save(dataWithPlan("co", null, 9L)))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(e -> errorCodeOf((ErrorCodeException) e))
+        .isEqualTo(ErrorCode.BU_BUDGET_NOT_FOUND);
+  }
+
+  /** Two rates differing only in their plan are no conflict — the query carries the plan now. */
+  @Test
+  public void asks_for_overlaps_with_the_plan_in_the_key() {
+    givenPlans(plan(1L, "co", null, TODAY, OPEN_END, true));
+
+    service.save(dataWithPlan("co", null, 1L));
+
+    verify(orderPricingRepository).findOverlapping("co", null, null, 1L, TODAY, OPEN_END, null);
+  }
+
+  private List<OrderBudget> plansFor(String customerorderSign, String suborderPattern) {
+    return service.getSelectablePlans(customerorderSign, suborderPattern, TODAY, null, null);
+  }
+
+  private void givenPlans(OrderBudget... plans) {
+    when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of(plans));
+    for (var plan : plans) {
+      when(orderBudgetRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+    }
+  }
+
+  private void givenSuborders(String... completeOrderSigns) {
+    var order = new Customerorder();
+    setId(order, 1L);
+    when(customerorderService.getCustomerorderBySign(any())).thenReturn(order);
+    // The pattern check of #958 runs first and is not what these tests are about.
+    when(suborderService.existsSuborderMatching(any(), any())).thenReturn(true);
+    when(suborderService.getSubordersByCustomerorderId(1L))
+        .thenReturn(List.of(completeOrderSigns).stream().map(OrderPricingServiceTest::suborder).toList());
+  }
+
+  /** {@code getCompleteOrderSign()} walks the parent chain, so the sign is built from real records. */
+  private static Suborder suborder(String completeOrderSign) {
+    var parts = completeOrderSign.split("/");
+    var customerorder = new Customerorder();
+    customerorder.setSign(parts[0]);
+    Suborder suborder = null;
+    for (int i = 1; i < parts.length; i++) {
+      var next = new Suborder();
+      next.setCustomerorder(customerorder);
+      next.setParentorder(suborder);
+      next.setSign(parts[i]);
+      suborder = next;
+    }
+    return suborder;
+  }
+
+  private static OrderBudget plan(long id, String customerorderSign, String suborderSign,
+                                  LocalDate validFrom, LocalDate validUntil, boolean active) {
+    var plan = new OrderBudget();
+    setId(plan, id);
+    plan.setName("plan " + id);
+    plan.setCustomerorderSign(customerorderSign);
+    plan.setSuborderSign(suborderSign);
+    plan.setValidFrom(validFrom);
+    plan.setValidUntil(validUntil);
+    plan.setActive(active);
+    return plan;
+  }
+
+  private static OrderPricingData dataWithPlan(String customerorderSign, String suborderSign, Long planId) {
+    return new OrderPricingData(customerorderSign, suborderSign, null, planId, null, 10000, TODAY, null);
+  }
+
+  private static ErrorCode errorCodeOf(ErrorCodeException ex) {
+    return ex.getMessages().get(0).getErrorCode();
   }
 
 }

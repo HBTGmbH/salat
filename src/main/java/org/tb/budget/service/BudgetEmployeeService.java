@@ -96,7 +96,9 @@ public class BudgetEmployeeService {
             return AppliedRates.none(includeCosts);
         }
 
-        var lookup = AppliedRateLookup.of(budget.getCustomerorderSign(),
+        // Every booking this resolves is assigned to this plan — the query reads them by plan id —
+        // so the plan is what decides whether a plan-bound rate applies (#1065).
+        var lookup = AppliedRateLookup.of(budget.getCustomerorderSign(), budget.getId(),
             subordersOf(days, rendered),
             includeCosts ? employeeCostService.lookup() : null,
             orderPricingService.lookupFor(List.of(budget.getCustomerorderSign())));

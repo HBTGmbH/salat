@@ -16,6 +16,10 @@ public class OrderFlatRateForm {
     private Long id;
     private String customerorderSign;
     private String suborderSign;
+
+    /** Optional (#1065): without it the plan is derived, as it was before. */
+    private Long orderBudgetId;
+
     private String description;
 
     /** Preselected, because it is the simplest case and the one that needs the fewest fields. */

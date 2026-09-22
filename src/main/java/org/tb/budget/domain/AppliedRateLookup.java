@@ -31,22 +31,30 @@ public final class AppliedRateLookup {
     private record SuborderRates(String completeOrderSign, boolean invoiceable, OrderType orderType) {}
 
     private final String customerorderSign;
+    private final Long orderBudgetId;
     private final Map<Long, SuborderRates> subordersById;
     private final EmployeeCostLookup costLookup;
     private final OrderPricingLookup pricingLookup;
 
-    private AppliedRateLookup(String customerorderSign, Map<Long, SuborderRates> subordersById,
+    private AppliedRateLookup(String customerorderSign, Long orderBudgetId,
+                              Map<Long, SuborderRates> subordersById,
                               EmployeeCostLookup costLookup, OrderPricingLookup pricingLookup) {
         this.customerorderSign = customerorderSign;
+        this.orderBudgetId = orderBudgetId;
         this.subordersById = subordersById;
         this.costLookup = costLookup;
         this.pricingLookup = pricingLookup;
     }
 
     /**
-     * @param costLookup {@code null} where costs are not reported — see the class comment
+     * @param orderBudgetId the plan whose page is being rendered — every booking this lookup is
+     *                      asked about is assigned to it, so a rate bound to that plan applies and
+     *                      one bound to another does not (#1065). {@code null} where the caller
+     *                      resolves outside any plan.
+     * @param costLookup    {@code null} where costs are not reported — see the class comment
      */
-    public static AppliedRateLookup of(String customerorderSign, Collection<Suborder> suborders,
+    public static AppliedRateLookup of(String customerorderSign, Long orderBudgetId,
+                                       Collection<Suborder> suborders,
                                        EmployeeCostLookup costLookup, OrderPricingLookup pricingLookup) {
         Map<Long, SuborderRates> subordersById = new HashMap<>();
         for (var suborder : suborders) {
@@ -54,7 +62,8 @@ public final class AppliedRateLookup {
                 suborder.getCompleteOrderSign(), suborder.isInvoiceable(),
                 suborder.getEffectiveOrderType()));
         }
-        return new AppliedRateLookup(customerorderSign, subordersById, costLookup, pricingLookup);
+        return new AppliedRateLookup(customerorderSign, orderBudgetId, subordersById, costLookup,
+            pricingLookup);
     }
 
     /** Whether the cost side is resolved at all. */
@@ -78,7 +87,8 @@ public final class AppliedRateLookup {
             .findEffectiveCost(employeeSign, suborder.completeOrderSign(), suborder.orderType(), day)
             .orElse(null);
         var price = pricingLookup
-            .findEffectiveRate(customerorderSign, suborder.completeOrderSign(), employeeSign, day)
+            .findEffectiveRate(customerorderSign, suborder.completeOrderSign(), employeeSign,
+                orderBudgetId, day)
             .orElse(null);
         return new AppliedRate(
             cost == null ? null : cost.getName(),

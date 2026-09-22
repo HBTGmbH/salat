@@ -12,11 +12,14 @@ import org.tb.order.domain.Customerorder;
  *                      rate references its order by sign and outlives it, as a rate does.
  * @param dueAmounts    the amounts this definition puts on the calendar, so the list can say what a
  *                      monthly rate or a set of instalments actually adds up to.
+ * @param orderBudgetName the name of the budget plan the amounts are booked against, or
+ *                        {@code null} where the allocation is left to be derived (#1065)
  */
 public record OrderFlatRateRow(
     OrderFlatRate flatRate,
     Customerorder customerorder,
-    List<FlatRateDueAmount> dueAmounts) {
+    List<FlatRateDueAmount> dueAmounts,
+    String orderBudgetName) {
 
     public BigDecimal totalAmount() {
         return dueAmounts.stream().map(FlatRateDueAmount::amount)

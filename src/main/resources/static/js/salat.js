@@ -244,6 +244,49 @@ document.addEventListener('htmx:after:swap', function () {
   }
 });
 
+/* ─── Explanation behind an info icon (#1065) ────────────────────────────────
+ *
+ * A rule that is needed when looking it up, not on every visit, hangs in a popover behind an info
+ * icon instead of standing in the page: the form stays as short as it was, and whoever knows the
+ * rule is not told it again every time.
+ *
+ *   data-info-popover   on the toggle, a CSS selector of the hidden block holding the explanation
+ *
+ * Declared here and not in the page, the way the confirmation dialog is (#1032): the two
+ * hand-written popovers that predate this (matrix.html, dashboard.html) are the reason — a third
+ * one-off script would have made the pattern a habit. Tabler builds `[data-bs-toggle="popover"]`
+ * by itself, but only from a string attribute, and an explanation with a list of steps in an
+ * attribute means markup in the message bundles.
+ *
+ * `hover focus` covers both ways in: pointing at it, and the keyboard. On a touch device the tap
+ * focuses the button and opens it too. The content is read on every open rather than captured once,
+ * so a block replaced by an htmx swap is picked up.
+ * -------------------------------------------------------------------------- */
+
+const INFO_POPOVER_SELECTOR = '[data-info-popover]';
+
+function initInfoPopovers() {
+  document.querySelectorAll(INFO_POPOVER_SELECTOR).forEach(function (toggle) {
+    if (toggle.dataset.infoPopoverReady) return;
+    const selector = toggle.dataset.infoPopover;
+    if (!selector || !document.querySelector(selector)) return;
+    toggle.dataset.infoPopoverReady = 'true';
+    new tabler.bootstrap.Popover(toggle, {
+      html: true,
+      content: function () {
+        const content = document.querySelector(selector);
+        return content ? content.innerHTML : '';
+      },
+      trigger: 'hover focus',
+      placement: 'bottom',
+      customClass: 'info-popover'
+    });
+  });
+}
+
+initInfoPopovers();
+document.addEventListener('htmx:after:swap', initInfoPopovers);
+
 /* ─── Confirmation dialog (#1032, ADR-0027) ──────────────────────────────────
  *
  * One dialog for the whole application (fragments/confirm-dialog.html, included once by

@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.tb.common.domain.AuditedEntity;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Suborder;
 
@@ -23,6 +24,8 @@ public class OrderPricingLookupTest {
   private static final LocalDate JUL = LocalDate.of(2026, 7, 1);
   private static final LocalDate DEC = LocalDate.of(2026, 12, 31);
   private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
+  private static final long PLAN_A = 1L;
+  private static final long PLAN_B = 2L;
 
   @Test
   public void should_prefer_employee_specific_over_suborder_wide_and_order_wide() {
@@ -57,7 +60,7 @@ public class OrderPricingLookupTest {
   public void should_ignore_rates_of_other_customerorders() {
     var lookup = OrderPricingLookup.of(List.of(pricing("other", null, null, 100)));
 
-    assertThat(lookup.findEffectiveRate("co", "so", "emp", DATE)).isEmpty();
+    assertThat(lookup.findEffectiveRate("co", "so", "emp", null, DATE)).isEmpty();
   }
 
   @Test
@@ -70,7 +73,7 @@ public class OrderPricingLookupTest {
 
     assertThat(rate(OrderPricingLookup.of(List.of(expired, future, current)), "co", null, null))
         .isEqualTo(300);
-    assertThat(OrderPricingLookup.of(List.of(expired, future)).findEffectiveRate("co", null, null, DATE))
+    assertThat(OrderPricingLookup.of(List.of(expired, future)).findEffectiveRate("co", null, null, null, DATE))
         .isEmpty();
   }
 
@@ -104,7 +107,7 @@ public class OrderPricingLookupTest {
 
   @Test
   public void should_return_empty_for_an_empty_lookup() {
-    assertThat(OrderPricingLookup.of(List.of()).findEffectiveRate("co", "so", "emp", DATE)).isEmpty();
+    assertThat(OrderPricingLookup.of(List.of()).findEffectiveRate("co", "so", "emp", null, DATE)).isEmpty();
   }
 
   /**
@@ -337,7 +340,11 @@ public class OrderPricingLookupTest {
   }
 
   private static Integer rate(OrderPricingLookup lookup, String co, String so, String emp) {
-    return lookup.findEffectiveRate(co, so, emp, DATE)
+    return rate(lookup, co, so, emp, null);
+  }
+
+  private static Integer rate(OrderPricingLookup lookup, String co, String so, String emp, Long planId) {
+    return lookup.findEffectiveRate(co, so, emp, planId, DATE)
         .map(OrderPricing::getPriceCentsPerHour)
         .orElse(null);
   }
@@ -350,6 +357,131 @@ public class OrderPricingLookupTest {
     pricing.setPriceCentsPerHour(cents);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));
     pricing.setValidUntil(LocalDate.of(2026, 12, 31));
+    return pricing;
+  }
+
+  // --- the budget plan as a fourth level of specificity (#1065) ---------------------------------
+
+  @Test
+  public void should_prefer_the_plan_bound_rate_for_a_booking_of_that_plan() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 12000),
+        boundTo(pricing("co", null, null, 15000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "so", null, PLAN_A)).isEqualTo(15000);
+  }
+
+  /**
+   * The plan is a rank, not a switch. A booking of another plan is not left unpriced — it falls
+   * back exactly as work by somebody without their own rate falls back to the general one.
+   */
+  @Test
+  public void should_fall_back_to_the_plan_less_rate_for_a_booking_of_another_plan() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 12000),
+        boundTo(pricing("co", null, null, 15000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "so", null, PLAN_B)).isEqualTo(12000);
+  }
+
+  @Test
+  public void should_fall_back_to_the_plan_less_rate_for_a_booking_without_an_assignment() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 12000),
+        boundTo(pricing("co", null, null, 15000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "so", null, null)).isEqualTo(12000);
+  }
+
+  /** Without a plan-less rate next to it, a booking of another plan is priced by nothing at all. */
+  @Test
+  public void should_resolve_nothing_when_only_a_rate_of_another_plan_exists() {
+    var lookup = OrderPricingLookup.of(List.of(boundTo(pricing("co", null, null, 15000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "so", null, PLAN_B)).isNull();
+  }
+
+  /** The plan sits below the employee: a personal rate wins even without a plan. */
+  @Test
+  public void should_prefer_an_employee_specific_plan_less_rate_over_a_plan_bound_one() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, "emp", 20000),
+        boundTo(pricing("co", null, null, 15000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "so", "emp", PLAN_A)).isEqualTo(20000);
+  }
+
+  /** And above the pattern: the shortest plan-bound pattern beats the longest plan-less one. */
+  @Test
+  public void should_prefer_a_plan_bound_rate_without_a_pattern_over_a_plan_less_long_pattern() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", "co/01/", null, 12000),
+        boundTo(pricing("co", null, null, 15000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "co/01", null, PLAN_A)).isEqualTo(15000);
+  }
+
+  /** Among plan-bound rates of the same plan the pattern decides again, as it always did. */
+  @Test
+  public void should_rank_two_rates_of_the_same_plan_by_their_pattern() {
+    var lookup = OrderPricingLookup.of(List.of(
+        boundTo(pricing("co", null, null, 15000), PLAN_A),
+        boundTo(pricing("co", "co/01/", null, 18000), PLAN_A)));
+
+    assertThat(rate(lookup, "co", "co/01", null, PLAN_A)).isEqualTo(18000);
+  }
+
+  /**
+   * Every stored rate is plan-less, so they all rank equal on the new step and keep the order they
+   * had among themselves. This is what makes the change invisible to existing figures.
+   */
+  @Test
+  public void should_not_change_the_outcome_where_no_rate_names_a_plan() {
+    var lookup = OrderPricingLookup.of(List.of(
+        pricing("co", null, null, 100),
+        pricing("co", "so", null, 200),
+        pricing("co", "so", "emp", 300)));
+
+    assertThat(rate(lookup, "co", "so", "emp", PLAN_A)).isEqualTo(300);
+    assertThat(rate(lookup, "co", "so", "emp", null)).isEqualTo(300);
+  }
+
+  /**
+   * A plan-bound rate prices only the bookings of its plan, so it leaves the rest of the order
+   * unpriced and must not silence the gap warning of the rate list (#957).
+   */
+  @Test
+  public void a_plan_bound_rate_does_not_cover_the_order_period() {
+    var planBound = boundTo(pricing("co", null, null, 15000), PLAN_A);
+
+    assertThat(planBound.isOrderWide()).isFalse();
+    assertThat(OrderPricingLookup.of(List.of(planBound)).hasUncoveredPeriod("co", JAN, DEC)).isFalse();
+  }
+
+  /** …and the warning still appears where only plan-bound rates sit next to an order-wide one. */
+  @Test
+  public void reports_the_gap_a_plan_bound_rate_leaves_beside_an_order_wide_one() {
+    var orderWide = pricing("co", null, null, 12000);
+    orderWide.setValidFrom(JAN);
+    orderWide.setValidUntil(JUN);
+    var planBound = boundTo(pricing("co", null, null, 15000), PLAN_A);
+    planBound.setValidFrom(JUL);
+    planBound.setValidUntil(DEC);
+
+    assertThat(OrderPricingLookup.of(List.of(orderWide, planBound)).hasUncoveredPeriod("co", JAN, DEC))
+        .isTrue();
+  }
+
+  private static OrderPricing boundTo(OrderPricing pricing, long planId) {
+    var plan = new OrderBudget();
+    try {
+      var field = AuditedEntity.class.getDeclaredField("id");
+      field.setAccessible(true);
+      field.set(plan, planId);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("cannot assign an id to the test record", e);
+    }
+    pricing.setOrderBudget(plan);
     return pricing;
   }
 

@@ -781,15 +781,48 @@ Keep this predicate separate from `notHidden()` — they are independent concern
 ### Revenue in the Budget Module
 An order earns from two sources, and they add up (#972):
 
-- **Hourly** — a time report priced with the `OrderPricing` rate that matches its suborder, employee and date. No booking, no revenue.
+- **Hourly** — a time report priced with the `OrderPricing` rate that matches its suborder, employee, budget plan and date. No booking, no revenue.
 - **Flat rate** — an `OrderFlatRate` amount falling due on a date, regardless of any booking: a maintenance retainer, an initial fee, the instalments of a fixed price order. Several definitions per order are normal and add up; there is deliberately no overlap rule.
 
 Rules that follow from this:
 - `BudgetControllingRow.revenueEuro` is the **hourly** part only. Every figure derived from revenue — budget utilization, overrun, gross profit, margin — must read `totalRevenueEuro()`, which is the sum of both. Reading `revenueEuro` for those would silently drop the flat rates.
 - A flat rate schedule is derived in exactly one place, `OrderFlatRate.dueAmountsWithin`. The form preview and the controlling both call it, so a rate cannot be previewed as one calendar and evaluated as another.
-- Which plan a flat rate amount counts against follows `FlatRateAllocation.uniquePlanFor`: the one active plan whose period contains the due date and whose scope covers it. Where several plans qualify, none does — the amount is reported as being without a budget, exactly as an ambiguous booking is. Never guess a plan; double counting and silent reassignment are both worse than an explicit "without budget".
+- Which plan a flat rate amount counts against follows `FlatRateAllocation.uniquePlanFor`: the plan the flat rate **names**, or — where it names none — the one active plan whose period contains the due date and whose scope covers it. Where several plans qualify and none is named, none is chosen; the amount is reported as being without a budget, exactly as an ambiguous booking is. Never guess a plan; double counting and silent reassignment are both worse than an explicit "without budget". A named plan is not weighed against period and scope again — the saving did that (→ Konditionen an einem Budgetplan) — but it only counts while it is **active**, so a deactivated plan drops its amounts to "without budget" just as it does its bookings.
 - The unit of allocation is a single due amount, not the definition: a monthly rate spanning two plans has each month counted against the plan it falls into.
 - **Dashboard and alerts end their window today**, never at the plan's own end (`BudgetControllingService.evaluatedUntil`). They answer "where does this plan stand", which is a question about the present; reading a plan to its end counted what has not happened yet — a monthly flat rate running to December contributed all twelve months in June. The cut applies to the budget as well: an adjustment taking effect in November has not been granted yet. With both ends cut, a dashboard row says exactly what a controlling evaluation up to today says, and the row links to that window rather than to a wider one. The controlling view itself keeps its explicit `from`/`until` filter and is not capped.
+
+### Konditionen an einem Budgetplan (#1065)
+
+Kundenstundensatz und Pauschale können **zusätzlich** einem Budgetplan zugeordnet werden. Das Feld
+ist optional, alle Bestandsdatensätze sind planlos, und ohne Plan verhält sich alles wie zuvor. Die
+Wirkung ist auf beiden Seiten eine andere, und das ist beabsichtigt:
+
+- **Beim Stundensatz ist der Plan eine Rangstufe, kein Schalter.** `OrderPricingLookup` prüft ihn an
+  *beiden* Stellen: `Candidate.covers` lässt einen plangebundenen Satz nur für seinen Plan zu,
+  `bySpecificity` ordnet ihn über den planlosen. Nur als Filter gebaut ließe er fremde Pläne
+  gewinnen; nur als Rang gebaut bepreiste er jede Buchung. Die Reihenfolge lautet **Kürzel, dann
+  Plan, dann Musterlänge, dann id** — die Stufe sitzt unter dem Mitarbeitendenbezug und über dem
+  Unterauftrag, und das ist die einzige Einfügung, die bestehende Zahlen nicht verändert.
+- **Bei der Pauschale nagelt der Plan eine hergeleitete Zuordnung fest** (siehe oben).
+- **Die Plan-id der Buchung kommt aus der gespeicherten Zuordnung**, nie aus einer Herleitung:
+  `BudgetControllingService.scoreReports` reicht `planOfBooking` durch, `BudgetEmployeeService` die
+  id des Plans, dessen Seite es rendert. Es gibt keine zusätzliche Abfrage je Buchung — die Plan-id
+  wandert in den `MemoKey` des Lookups.
+- **`OrderPricing.isOrderWide` verlangt zusätzlich, dass kein Plan gesetzt ist.** Ein plangebundener
+  Satz bepreist nur die Buchungen seines Plans, deckt den Auftragszeitraum also nicht ab und darf
+  die Lückenprüfung `hasUncoveredPeriod` nicht befriedigen.
+- **`findOverlapping` führt den Plan im Schlüssel.** Zwei Sätze mit gleichem Auftrag, Muster und
+  Kürzel, aber verschiedenen Plänen sind keine Überlappung — ein plangebundener Satz neben dem
+  planlosen, den er verengt, ist der Zweck der Stufe.
+- **Welche Pläne zur Auswahl stehen, entscheidet `OrderBudgetBinding`**, und zwar für Auswahl *und*
+  Speichern: gleicher Auftrag, sich schneidende Geltungsbereiche, sich überschneidende
+  Gültigkeiten. Eine nachweislich tote Kombination wird abgewiesen, nicht nur ausgeblendet
+  (`BU-0028`, `BU-0029`). Zwei Fälle antworten ohne einen einzigen Unterauftrag: ein auftragsweiter
+  Satz trifft jeden Plan seines Auftrags, ein auftragsweiter Plan jeden Satz — sonst scheiterte die
+  Prüfung an einem Auftrag ohne (sichtbare) Unteraufträge.
+- **Aktiv ist ein Auswahlkriterium, kein Speicherkriterium.** Inaktive Pläne stehen nicht zur
+  Auswahl, ein bereits gespeicherter bleibt aber in der Liste und bleibt speicherbar — sonst würde
+  das Deaktivieren eines Plans den Satz, der an ihm hängt, unbearbeitbar machen.
 
 ### Budget Assignments Follow a Changed Plan
 A booking is assigned to a budget plan explicitly (#913), and that assignment is what every

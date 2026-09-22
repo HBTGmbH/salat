@@ -119,6 +119,7 @@ public class OrderFlatRateController {
         var data = new OrderFlatRateData(
             form.getCustomerorderSign(),
             trimToNull(form.getSuborderSign()),
+            form.getOrderBudgetId(),
             trimToNull(form.getDescription()),
             form.getRhythm(),
             form.getAmountEuro(),
@@ -249,6 +250,7 @@ public class OrderFlatRateController {
         form.setId(flatRate.getId());
         form.setCustomerorderSign(flatRate.getCustomerorderSign());
         form.setSuborderSign(flatRate.getSuborderSign());
+        form.setOrderBudgetId(flatRate.getOrderBudgetId());
         form.setDescription(flatRate.getDescription());
         form.setRhythm(flatRate.getRhythm());
         form.setAmountEuro(flatRate.getAmount());
@@ -277,6 +279,12 @@ public class OrderFlatRateController {
         model.addAttribute("customerorders",
             customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
         model.addAttribute("suborders", subordersOf(form));
+        // A single amount is due on one day, so the period the plan is matched against is the one
+        // the saving will store, not the one the form shows (#1065).
+        model.addAttribute("budgetPlans", orderFlatRateService.getSelectablePlans(
+            form.getCustomerorderSign(), form.getSuborderSign(), form.getValidFrom(),
+            form.needsValidUntil() ? form.getValidUntil() : form.getValidFrom(),
+            form.getOrderBudgetId()));
         var preview = previewOf(form);
         model.addAttribute("previewDueAmounts", preview);
         model.addAttribute("previewTotal", preview.stream().map(FlatRateDueAmount::amount)

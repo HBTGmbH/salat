@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Wie unter mehreren passenden Kundenstundensaetzen einer gewaehlt wird (#1065).
+
+       Die Regel selbst steht in OrderPricingLookup.bySpecificity - dies ist ihre zweite
+       Formulierung, und beide muessen zusammen geaendert werden. Der Javadoc dort sagt das auch.
+
+       Der Block ist der Inhalt eines Popovers und traegt deshalb keinen eigenen Aussenabstand: die
+       Erklaerung ist beim Nachschlagen gefragt, nicht bei jedem Anlegen, und das Formular soll
+       durch sie nicht laenger werden. Gebaut wird das Popover zentral in salat.js, ueber
+       data-info-popover am Ausloeser - kein Template bringt dafuer eigenes JavaScript mit.
+
+       Ein Fragment und kein salat:-Tag, aus demselben Grund wie fragments/overtime-legend.html:
+       der Dialekt traegt die modulunabhaengigen Formularbausteine, dieser Text gehoert zu einem
+       einzigen Formular. */-->
+<div th:fragment="pricingSelectionHelp" class="small">
+  <div th:text="#{main.pricing.help.selection.intro}">
+    Zur Wahl stehen nur Sätze, die zur Buchung passen und am Buchungstag gültig sind.
+  </div>
+  <ol class="mb-1 mt-1 ps-3">
+    <li th:text="#{main.pricing.help.selection.rank.employee}">Mitarbeiter vor „Alle Mitarbeiter“</li>
+    <li th:text="#{main.pricing.help.selection.rank.plan}">Budgetplan vor „Kein Budgetplan“</li>
+    <li th:text="#{main.pricing.help.selection.rank.pattern}">längeres Unterauftragsmuster vor kürzerem</li>
+    <li th:text="#{main.pricing.help.selection.rank.id}">bei Gleichstand der zuerst angelegte Satz</li>
+  </ol>
+  <div class="text-muted" th:text="#{main.pricing.help.selection.fallback}">
+    Passt kein Satz, wird die Buchung mit 0 €/h bewertet.
+  </div>
+</div>
+
+</body>
+</html>

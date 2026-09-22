@@ -108,6 +108,7 @@ public class OrderPricingController {
         form.setCustomerorderSign(pricing.getCustomerorderSign());
         form.setSuborderSign(pricing.getSuborderSign());
         form.setEmployeeSign(pricing.getEmployeeSign());
+        form.setOrderBudgetId(pricing.getOrderBudgetId());
         form.setDescription(pricing.getDescription());
         form.setPriceEuro(new BigDecimal(pricing.getPriceCentsPerHour()).movePointLeft(2));
         form.setValidFrom(pricing.getValidFrom());
@@ -149,6 +150,7 @@ public class OrderPricingController {
             form.getCustomerorderSign(),
             trimToNull(form.getSuborderSign()),
             trimToNull(form.getEmployeeSign()),
+            form.getOrderBudgetId(),
             trimToNull(form.getDescription()),
             form.getPriceEuro().movePointRight(2).intValue(),
             form.getValidFrom(),
@@ -189,9 +191,13 @@ public class OrderPricingController {
     }
 
     /**
-     * Refills the suborder picker when the customer order changes. The picker only prefills the
-     * pattern, but offering the suborders of every order would make it useless — and it is a list of
-     * several thousand entries.
+     * Refills the suborder picker when the customer order changes, and the budget plans with it.
+     * The picker only prefills the pattern, but offering the suborders of every order would make it
+     * useless — and it is a list of several thousand entries.
+     *
+     * <p>The plan select depends on more fields than the picker does — order, pattern and validity
+     * (#1065) — so every one of them triggers this same call. One endpoint for both keeps the two
+     * selects from drifting apart while the form is being filled in.
      */
     @Authorized(requiresManager = true)
     @PostMapping("/suborders")
@@ -224,6 +230,11 @@ public class OrderPricingController {
             customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
         model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
         model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeSign()));
+        // The plans that can ever apply to what the form currently says — the same set the saving
+        // judges by (#1065). The stored one stays in the list even once it is inactive.
+        model.addAttribute("budgetPlans", orderPricingService.getSelectablePlans(
+            form.getCustomerorderSign(), form.getSuborderSign(), form.getValidFrom(),
+            form.getValidUntil(), form.getOrderBudgetId()));
     }
 
     /**

@@ -5,6 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -49,6 +52,16 @@ public class OrderFlatRate extends AuditedEntity {
     @Column(name = "suborder_sign")
     private String suborderSign;
 
+    /**
+     * The budget plan this amount counts against; {@code null} leaves the allocation to be derived
+     * as before (#1065, → {@link FlatRateAllocation}). Setting it is what makes an amount countable
+     * at all where several plans cover it — since #1004 plans of the same level may overlap in time,
+     * and an ambiguous amount lands in the section without a budget.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_budget_id")
+    private OrderBudget orderBudget;
+
     @Column
     private String description;
 
@@ -90,6 +103,11 @@ public class OrderFlatRate extends AuditedEntity {
     /** Whether this flat rate applies to the customer order as a whole. */
     public boolean isOrderWide() {
         return BudgetScope.isOrderWide(suborderSign);
+    }
+
+    /** The id of the bound plan without loading it — see {@code OrderPricing#getOrderBudgetId()}. */
+    public Long getOrderBudgetId() {
+        return orderBudget == null ? null : orderBudget.getId();
     }
 
     /**

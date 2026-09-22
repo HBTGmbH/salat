@@ -64,6 +64,7 @@
           <th th:text="#{main.pricing.field.customerorderSign}">Auftrag</th>
           <th th:text="#{main.pricing.field.suborderSign}">Unterauftrag</th>
           <th th:text="#{main.pricing.field.employeeSign}">Mitarbeiter</th>
+          <th th:text="#{main.pricing.field.orderBudget}">Budgetplan</th>
           <th th:text="#{main.pricing.field.description}">Beschreibung</th>
           <th th:text="#{main.pricing.field.priceEuro}">€/h</th>
           <th class="d-none d-md-table-cell" th:text="#{main.pricing.field.valid}">Gültig</th>
@@ -73,7 +74,7 @@
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(rows)}">
-          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
         <tr th:each="row : ${rows}" th:classappend="${!row.pricing().currentlyValid} ? 'table-danger' : ''"
             th:with="p=${row.pricing()}, order=${row.customerorder()}, deviation=${row.deviation()}">
@@ -93,6 +94,9 @@
               <i class="icon ti ti-user-off m-0"></i>
             </span>
           </td>
+          <!--/* Leer heisst planlos — der Satz gilt dann unabhaengig davon, zu welchem Plan eine
+                 Buchung gehoert (#1065). */-->
+          <td th:text="${row.orderBudgetName()} ?: '-'"></td>
           <td th:text="${p.description} ?: '-'"></td>
           <td th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
           <!--/* One column like everywhere else in the module; 31.12.2999 means "no end". */-->

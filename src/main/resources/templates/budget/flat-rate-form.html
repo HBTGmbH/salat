@@ -43,6 +43,11 @@
       </div>
       <div class="row">
         <div class="col-md-6">
+          <div th:replace="~{fragments/budget-plan-select :: budgetPlanSelect(${budgetPlans}, *{orderBudgetId}, #{main.flatrate.field.orderBudget}, #{main.flatrate.field.orderBudget.help}, null)}"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
           <salat:textInput th:field="*{description}" th:label="#{main.flatrate.field.description}" maxlength="255"
                            th:helpText="#{main.flatrate.field.description.help}" />
         </div>
@@ -88,9 +93,11 @@
     </salat:buttons>
   </salat:form>
 
-  <!--/* HTMX OOB updates: the suborders of the chosen order, and the dates the definition amounts to. */-->
+  <!--/* HTMX OOB updates: the suborders of the chosen order, the budget plans that can hold the
+         amounts, and the dates the definition amounts to. */-->
   <div th:if="${htmxRequest}">
     <div th:replace="~{budget/flat-rate-form :: suborderSelect(${suborders}, ${flatRateForm.suborderSign}, true)}"></div>
+    <div th:replace="~{fragments/budget-plan-select :: budgetPlanSelect(${budgetPlans}, ${flatRateForm.orderBudgetId}, #{main.flatrate.field.orderBudget}, #{main.flatrate.field.orderBudget.help}, true)}"></div>
     <div th:replace="~{budget/flat-rate-form :: schedulePreview(
             ${previewDueAmounts}, ${previewTotal}, ${previewInstalmentsPending}, true)}"></div>
   </div>
@@ -104,9 +111,17 @@
   Unlike an hourly rate the suborder is a concrete one, not a pattern: a flat rate is a single agreed
   amount and has nothing to spread over several matches. So this is the field itself, not a picker
   that prefills one.
+
+  It carries its own htmx trigger, unlike the other fields whose trigger sits on a surrounding row:
+  the budget plans on offer depend on it (#1065), and a listener bound from outside would be lost
+  the first time this very fragment is swapped out of band.
 */-->
 <div th:fragment="suborderSelect(suborders, selectedSign, oob)" class="mb-3" id="flatRateSuborderSelect"
-     th:attr="hx-swap-oob=${oob}">
+     th:attr="hx-swap-oob=${oob}"
+     th:hx-post="@{/budget/flat-rate/refresh}"
+     hx-swap="none"
+     hx-include="closest form"
+     hx-trigger="change">
   <label class="form-label" for="suborderSign" th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</label>
   <select class="form-select tomselect" id="suborderSign" name="suborderSign"
           th:attr="data-value=${selectedSign}"

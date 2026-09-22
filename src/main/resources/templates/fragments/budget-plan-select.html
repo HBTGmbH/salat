@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  Optional binding of a customer rate or a flat rate to a budget plan (#1065).
+
+  Rendered twice, like the suborder picker next to it: inline in the form, and again as an htmx
+  out-of-band swap once order, suborder or validity has changed — that is what the oob parameter is
+  for. The options are what the service would accept, so the select can never offer a plan the
+  saving refuses.
+
+  No th:field: the out-of-band render happens outside the <form>, where there is no bound object.
+  The name matches the form property, which is what binding needs; the selection is set by hand.
+
+  An empty list is not an error and says so instead of leaving a select that does nothing: an order
+  without plans, or a validity that meets none, is the normal case.
+*/-->
+<div th:fragment="budgetPlanSelect(plans, selectedId, label, helpText, oob)" class="mb-3"
+     id="orderBudgetIdInput" th:attr="hx-swap-oob=${oob}"
+     th:with="inactiveSuffix=#{main.budget.plan.select.inactive}">
+  <label class="form-label" for="orderBudgetId" th:text="${label}">Budgetplan</label>
+  <select class="form-select tomselect" id="orderBudgetId" name="orderBudgetId"
+          th:disabled="${#lists.isEmpty(plans)}">
+    <option value="" th:text="#{main.budget.plan.select.none}">--- Kein Budgetplan ---</option>
+    <!--/* Two plans of one order may carry the same name; period and scope are what tell them
+           apart, so they go into the second line TomSelect renders.
+
+           Ein inaktiver Plan steht nur in der Liste, weil der Datensatz ihn speichert - und sagt
+           das, wie jeder Eintrag, den ein Filter sonst entfernt hätte. */-->
+    <option th:each="plan : ${plans}"
+            th:value="${plan.id}"
+            th:selected="${selectedId != null and plan.id == selectedId}"
+            th:attr="data-subtext=|${plan.suborderSign ?: plan.customerorderSign} · ${#temporals.format(plan.validFrom, 'dd.MM.yyyy')} – ${#temporals.format(plan.validUntil, 'dd.MM.yyyy')}|"
+            th:text="${plan.active} ? ${plan.name} : |${plan.name} ${inactiveSuffix}|"></option>
+  </select>
+  <div class="form-text" th:text="${#lists.isEmpty(plans)} ? #{main.budget.plan.select.empty} : ${helpText}"></div>
+</div>
+
+</body>
+</html>

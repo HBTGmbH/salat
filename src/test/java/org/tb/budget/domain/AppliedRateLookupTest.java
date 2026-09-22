@@ -104,7 +104,7 @@ public class AppliedRateLookupTest {
   /** A page that does not report costs must not read as a page on which no cost rate applies. */
   @Test
   public void reports_no_cost_at_all_where_costs_are_not_included() {
-    var lookup = AppliedRateLookup.of("co", List.of(suborder(true, OrderType.STANDARD)),
+    var lookup = AppliedRateLookup.of("co", null, List.of(suborder(true, OrderType.STANDARD)),
         null, pricingLookup(14000));
 
     var rate = lookup.resolve("abc", SUBORDER_ID, DAY);
@@ -131,7 +131,7 @@ public class AppliedRateLookupTest {
    */
   @Test
   public void resolves_nothing_for_an_unknown_suborder() {
-    var lookup = AppliedRateLookup.of("co", List.of(), costLookup("Senior", 9500), pricingLookup(14000));
+    var lookup = AppliedRateLookup.of("co", null, List.of(), costLookup("Senior", 9500), pricingLookup(14000));
 
     var rate = lookup.resolve("abc", SUBORDER_ID, DAY);
 
@@ -152,7 +152,7 @@ public class AppliedRateLookupTest {
     onOtherSign.setValidFrom(FROM);
     onOtherSign.setValidUntil(UNTIL);
 
-    var rate = AppliedRateLookup.of("co", List.of(suborder), costLookup("Senior", 9500),
+    var rate = AppliedRateLookup.of("co", null, List.of(suborder), costLookup("Senior", 9500),
         OrderPricingLookup.of(List.of(onOtherSign))).resolve("abc", SUBORDER_ID, DAY);
 
     assertThat(suborder.getCompleteOrderSign()).isEqualTo("co/01");
@@ -161,7 +161,7 @@ public class AppliedRateLookupTest {
 
   private static AppliedRateLookup lookup(Suborder suborder, EmployeeCostLookup costs,
                                           OrderPricingLookup pricings) {
-    return AppliedRateLookup.of("co", List.of(suborder), costs, pricings);
+    return AppliedRateLookup.of("co", null, List.of(suborder), costs, pricings);
   }
 
   private static EmployeeCostLookup costLookup(String name, int centsPerHour) {

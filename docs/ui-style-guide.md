@@ -475,11 +475,44 @@ gerade dreht.
   (`daily.html`), Anonymisieren (`employee-form.html`, Danger Zone mit Doppelbestätigung) und der
   Feldauswahl-Dialog der JIRA-Replikation. Die Regel oben gilt auch für sie.
 
-### 5.6 HTMX-Muster
+### 5.6 Hilfetext — drei Stufen, nach Länge und Nachschlagehäufigkeit
+
+| Was | Wie | Wann |
+|---|---|---|
+| Ein Satz zu **einem Feld** | `th:helpText` am `salat:`-Tag → `div.form-text` unter dem Control, immer sichtbar | der Regelfall; kurz genug, dass er nicht stört |
+| Eine **Regel über mehrere Felder** | Info-Icon + Popover (siehe unten) | beim Nachschlagen gefragt, nicht bei jedem Aufruf |
+| Ein **Hinweis zur ganzen Seite** | `alert alert-info` über dem Inhalt | betrifft jeden Aufruf und darf Platz kosten |
+
+**Erklärung hinter einem Info-Icon** (#1065). Der Auslöser ist ein `<button type="button">` mit
+`class="info-popover-toggle"`, `bi bi-info-circle`, `title` und `aria-label`; `data-info-popover`
+trägt den CSS-Selektor des verborgenen Blocks mit dem Text. Aufgebaut wird das Popover zentral in
+`salat.js` (`initInfoPopovers`, auch nach `htmx:after:swap`) — **kein Template bringt dafür eigenes
+JavaScript mit**, dieselbe Zusage wie beim Bestätigungsdialog ([§5.5](#55-rückmeldungen), ADR-0027).
+
+- `trigger: 'hover focus'` deckt Maus, Tastatur und Berührung ab; der Inhalt wird bei jedem Öffnen
+  neu gelesen, ein per OOB getauschter Block wird also mitgenommen.
+- `customClass: 'info-popover'` hebt Bootstraps 276-px-Deckel auf; die Farben des Auslösers stehen
+  in `salat.css` und sind die gemessenen von [§7.1](#71-kontrast--verbindlicher-maßstab)
+  (Ruhe 4,83:1 / 5,78:1, Hover und Tastaturfokus 10,31:1 / 11,86:1).
+- **Deklarativ ginge auch** — Tabler baut jedes `[data-bs-toggle="popover"]` beim Laden selbst —
+  aber nur mit dem Text als Attributwert. Eine Erklärung mit Aufzählung zöge damit Markup in die
+  Message-Bundles; deshalb der verborgene Block.
+- Ältere Einzelstücke: die Tagesdetails der Matrix (`matrix.html`) und die Überstunden-Legende des
+  Dashboards (`dashboard.html`, #1030) bauen ihr Popover noch selbst. Sie sind das Vorbild dieses
+  Bausteins und wandern bei Gelegenheit darauf.
+
+### 5.7 HTMX-Muster
 `th:hx-post` / `hx-get`, `hx-include="closest form"`, `hx-target`, `hx-swap`; Controller erkennt
 `HX-Request` und liefert `"view :: fragment"`. Eingesetzt für: abhängige Auswahlfelder in
 Auftragsformularen, Inline-Toggles, Benachrichtigungsglocke, Buchungs-Popover in der Matrix.
 CSRF-Token werden in `salat.js` per `htmx:config:request` nachgezogen.
+
+**Ein Auslöser, den ein OOB-Swap ersetzt, nimmt seinen Listener mit.** Wo ein Feld selbst getauscht
+wird und zugleich ein Nachladen auslösen soll, gehören die `hx-*`-Attribute an das getauschte
+Fragment, nicht an ein umgebendes Element mit `hx-trigger="change from:#feld"` — nur das erste wird
+nach dem Swap neu verdrahtet (`flat-rate-form :: suborderSelect`, #1065). Umgekehrt ist das
+umgebende Element das Mittel der Wahl, wo die Felder bleiben, aber `salat:`-Tags keine
+`hx-*`-Attribute durchreichen (`pricing-form.html`).
 
 ## 6. Eingabekomponenten nach Datentyp
 

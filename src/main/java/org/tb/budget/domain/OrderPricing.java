@@ -2,6 +2,9 @@ package org.tb.budget.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import lombok.Getter;
@@ -32,6 +35,17 @@ public class OrderPricing extends AuditedEntity {
     @Column(name = "employee_sign")
     private String employeeSign;
 
+    /**
+     * The budget plan this rate is bound to; {@code null} means it applies whatever plan a booking
+     * belongs to (#1065). A bound rate is a specificity level of its own — more specific than the
+     * suborder pattern, less specific than the employee — and it applies only to bookings assigned
+     * to that plan; every other booking falls back to the plan-less rate (→ {@link
+     * OrderPricingLookup}).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_budget_id")
+    private OrderBudget orderBudget;
+
     @Column
     private String description;
 
@@ -58,12 +72,25 @@ public class OrderPricing extends AuditedEntity {
     }
 
     /**
-     * Whether this rate prices the customer order as a whole — no suborder pattern, no employee. It
-     * is the only kind that claims to cover the order period, which is what the coverage check of
-     * the rate list judges (#957, → {@code OrderPricingLookup#hasUncoveredPeriod}).
+     * The id of the bound plan without loading it. Reading the identifier off a lazy proxy does not
+     * initialize it, so the rate resolution stays free of a query per rate — which is the whole
+     * reason {@link OrderPricingLookup} exists.
+     */
+    public Long getOrderBudgetId() {
+        return orderBudget == null ? null : orderBudget.getId();
+    }
+
+    /**
+     * Whether this rate prices the customer order as a whole — no suborder pattern, no employee, no
+     * budget plan. It is the only kind that claims to cover the order period, which is what the
+     * coverage check of the rate list judges (#957, → {@code OrderPricingLookup#hasUncoveredPeriod}).
+     *
+     * <p>A plan-bound rate is deliberately not order-wide even without a pattern (#1065): it prices
+     * only the bookings of its plan, so it leaves every other day of the order unpriced and must not
+     * silence the gap warning.
      */
     public boolean isOrderWide() {
-        return isBlank(suborderSign) && isBlank(employeeSign);
+        return isBlank(suborderSign) && isBlank(employeeSign) && orderBudget == null;
     }
 
     private static boolean isBlank(String value) {

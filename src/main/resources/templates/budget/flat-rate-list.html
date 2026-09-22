@@ -61,6 +61,7 @@
         <tr>
           <th th:text="#{main.flatrate.field.customerorderSign}">Auftrag</th>
           <th th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</th>
+          <th th:text="#{main.flatrate.field.orderBudget}">Budgetplan</th>
           <th th:text="#{main.flatrate.field.description}">Beschreibung</th>
           <th th:text="#{main.flatrate.field.rhythm}">Abrechnung</th>
           <th class="text-end" th:text="#{main.flatrate.field.total}">Summe (€)</th>
@@ -71,7 +72,7 @@
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(rows)}">
-          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
+          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
         <tr th:each="row : ${rows}" th:classappend="${!row.flatRate().currentlyValid} ? 'table-danger' : ''"
             th:with="f=${row.flatRate()}, order=${row.customerorder()}">
@@ -83,6 +84,8 @@
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td th:text="${f.suborderSign} ?: '-'"></td>
+          <!--/* Leer heisst: der Plan wird hergeleitet, und bei mehreren passenden keiner (#1065). */-->
+          <td th:text="${row.orderBudgetName()} ?: '-'"></td>
           <td>
             <a th:href="@{/budget/flat-rate/{id}(id=${f.id})}" th:text="${f.description} ?: '-'">Beschreibung</a>
           </td>

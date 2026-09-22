@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.tb.budget.domain.OrderFlatRate;
 
@@ -26,5 +27,13 @@ public interface OrderFlatRateRepository
      */
     @Query("SELECT DISTINCT f.customerorderSign FROM OrderFlatRate f ORDER BY f.customerorderSign ASC")
     List<String> findDistinctCustomerorderSigns();
+
+    /** The flat rates bound to one budget plan — what its detail page lists (#1065). */
+    @Query("""
+        SELECT f FROM OrderFlatRate f
+        WHERE f.orderBudget.id = :budgetId
+        ORDER BY f.validFrom ASC, f.id ASC
+        """)
+    List<OrderFlatRate> findByOrderBudgetId(@Param("budgetId") long orderBudgetId);
 
 }

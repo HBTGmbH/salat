@@ -1,29 +1,39 @@
 package org.tb.budget.service;
 
+import static java.util.Comparator.comparing;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+
+import static java.lang.Boolean.TRUE;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.budget.auth.BudgetAuthorization;
+import org.tb.budget.domain.OrderBudget;
+import org.tb.budget.domain.OrderBudgetBinding;
 import org.tb.budget.domain.OrderPricing;
 import org.tb.budget.domain.OrderPricingData;
 import org.tb.budget.domain.OrderPricingDeviation;
 import org.tb.budget.domain.OrderPricingLookup;
 import org.tb.budget.domain.OrderPricingRow;
+import org.tb.budget.persistence.OrderBudgetRepository;
 import org.tb.budget.persistence.OrderPricingRepository;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.employee.service.EmployeeService;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.Suborder;
 import org.tb.order.service.CustomerorderService;
 import org.tb.order.service.SuborderService;
 
@@ -33,10 +43,15 @@ import org.tb.order.service.SuborderService;
 @Authorized
 public class OrderPricingService {
 
+    /** An open rate end, stored as a sentinel rather than as {@code null}. */
+    private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
+
     private final OrderPricingRepository orderPricingRepository;
+    private final OrderBudgetRepository orderBudgetRepository;
     private final SuborderService suborderService;
     private final CustomerorderService customerorderService;
     private final EmployeeService employeeService;
+    private final BudgetAuthorization budgetAuthorization;
 
     @Transactional(readOnly = true)
     public List<OrderPricing> getAll() {
@@ -62,18 +77,36 @@ public class OrderPricingService {
         var ordersBySign = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
         var knownEmployeeSigns = employeeService.getAllEmployeeSigns();
+        var planNames = planNamesOf(pricings);
         return pricings.stream()
             .filter(pricing -> showInactive || pricing.getCurrentlyValid())
             .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage,
-                knownEmployeeSigns))
+                knownEmployeeSigns, planNames))
             .filter(row -> showExpiredOrders || orderStillValid(row))
             .toList();
     }
 
     private static OrderPricingRow row(OrderPricing pricing, Customerorder order,
-                                       OrderPricingLookup coverage, Set<String> knownEmployeeSigns) {
+                                       OrderPricingLookup coverage, Set<String> knownEmployeeSigns,
+                                       Map<Long, String> planNames) {
+        // Most rates carry no plan at all, and an immutable map refuses a null key outright.
+        var planId = pricing.getOrderBudgetId();
         return new OrderPricingRow(pricing, order, OrderPricingDeviation.of(pricing, order, coverage),
-            employeeUnknown(pricing, knownEmployeeSigns));
+            employeeUnknown(pricing, knownEmployeeSigns), planId == null ? null : planNames.get(planId));
+    }
+
+    /**
+     * The names of the plans the given rates are bound to, by id. One query for the whole list
+     * rather than a lazy load per row (#1065).
+     */
+    private Map<Long, String> planNamesOf(List<OrderPricing> pricings) {
+        var ids = pricings.stream().map(OrderPricing::getOrderBudgetId).filter(Objects::nonNull)
+            .distinct().toList();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return StreamSupport.stream(orderBudgetRepository.findAllById(ids).spliterator(), false)
+            .collect(toMap(OrderBudget::getId, OrderBudget::getName, (first, second) -> first));
     }
 
     /**
@@ -118,6 +151,15 @@ public class OrderPricingService {
     }
 
     /**
+     * The rates bound to one budget plan (#1065) — what the plan's detail page lists, so that a
+     * condition negotiated for this work package is visible where the work package is.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderPricing> getByOrderBudgetId(long orderBudgetId) {
+        return orderPricingRepository.findByOrderBudgetId(orderBudgetId);
+    }
+
+    /**
      * Loads the pricings of the given customer orders into an in-memory lookup, which resolves the
      * whole matching hierarchy. Rates are resolved once per time report, so they must not be
      * resolved by query.
@@ -130,16 +172,56 @@ public class OrderPricingService {
         return OrderPricingLookup.of(orderPricingRepository.findByCustomerorderSignInOrderByIdAsc(customerorderSigns));
     }
 
+    /**
+     * The budget plans a rate with this scope and validity may be bound to (#1065) — the options of
+     * the select, and the very same set the saving judges by, so the two cannot disagree.
+     *
+     * <p>Only active plans are offered: no booking is assigned to an inactive plan, so a rate bound
+     * to one would apply to nobody. The plan the rate already stores stays in the list regardless,
+     * the way a stored record always survives a filter that would drop it (→ AGENTS.md, "The
+     * {@code hide} Flag") — otherwise deactivating a plan would silently rewrite the rate hanging
+     * off it on the next save.
+     *
+     * @param keepPlanId the plan the rate being edited already stores, or {@code null} when creating
+     */
+    @Transactional(readOnly = true)
+    public List<OrderBudget> getSelectablePlans(String customerorderSign, String suborderPattern,
+                                                LocalDate validFrom, LocalDate validUntil,
+                                                Long keepPlanId) {
+        var sign = trimToNull(customerorderSign);
+        if (sign == null || validFrom == null) {
+            return List.of();
+        }
+        var until = validUntil != null ? validUntil : OPEN_END;
+        // Period first, scope second: the scope check is the one that has to read the suborders,
+        // and where no plan survives the dates there is nothing left to read them for.
+        var candidates = orderBudgetRepository.findByCustomerorderSign(sign).stream()
+            .filter(budgetAuthorization::isAuthorized)
+            .filter(plan -> TRUE.equals(plan.getActive()) || Objects.equals(plan.getId(), keepPlanId))
+            .filter(plan -> OrderBudgetBinding.periodsOverlap(plan, validFrom, until))
+            .toList();
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+        var suborderSigns = suborderSignsOf(sign);
+        return candidates.stream()
+            .filter(plan -> OrderBudgetBinding.scopeMeetsPattern(plan, sign, trimToNull(suborderPattern),
+                suborderSigns))
+            .sorted(comparing(OrderBudget::getValidFrom).thenComparing(OrderBudget::getName))
+            .toList();
+    }
+
     @Authorized(requiresManager = true)
     public void save(OrderPricingData data) {
-        var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
         checkCustomerorderExists(data.customerorderSign());
         checkEmployeeExists(data.employeeSign());
         checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
+        var plan = resolvePlan(data, validUntil);
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
-            data.validFrom(), validUntil, null);
+            data.orderBudgetId(), data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
-        apply(pricing, data);
+        apply(pricing, data, plan);
         orderPricingRepository.save(pricing);
     }
 
@@ -150,13 +232,14 @@ public class OrderPricingService {
      */
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
-        var validUntil = data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31);
+        var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
         checkEmployeeExists(data.employeeSign());
         checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
+        var plan = resolvePlan(data, validUntil);
         checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
-            data.validFrom(), validUntil, id);
+            data.orderBudgetId(), data.validFrom(), validUntil, id);
         var pricing = getById(id);
-        apply(pricing, data);
+        apply(pricing, data, plan);
         orderPricingRepository.save(pricing);
     }
 
@@ -204,21 +287,65 @@ public class OrderPricingService {
         }
     }
 
-    private void checkNoOverlap(String co, String so, String emp, LocalDate from, LocalDate until, Long excludeId) {
-        var overlapping = orderPricingRepository.findOverlapping(co, so, emp, from, until, excludeId);
+    /**
+     * Two rates conflict only when they carry the same plan as well (#1065). A plan-bound rate next
+     * to the plan-less one it narrows is the point of the new level, exactly as a specific pattern
+     * over a general one is the point of the old one.
+     */
+    private void checkNoOverlap(String co, String so, String emp, Long budgetId,
+                                LocalDate from, LocalDate until, Long excludeId) {
+        var overlapping = orderPricingRepository.findOverlapping(co, so, emp, budgetId, from, until, excludeId);
         if (!overlapping.isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_PRICING_OVERLAP);
         }
     }
 
-    private void apply(OrderPricing pricing, OrderPricingData data) {
+    /**
+     * The plan the rate names, refused where it could never apply (#1065). The check repeats what
+     * {@link #getSelectablePlans} filters by rather than trusting the select: a post can carry any
+     * id, and an id the list never offered is exactly the case that would earn nothing in silence.
+     */
+    private OrderBudget resolvePlan(OrderPricingData data, LocalDate validUntil) {
+        if (data.orderBudgetId() == null) {
+            return null;
+        }
+        var plan = orderBudgetRepository.findById(data.orderBudgetId())
+            .orElseThrow(() -> new InvalidDataException(ErrorCode.BU_BUDGET_NOT_FOUND, data.orderBudgetId()));
+        budgetAuthorization.checkAuthorized(plan);
+        if (!OrderBudgetBinding.scopeMeetsPattern(plan, data.customerorderSign(), data.suborderSign(),
+            suborderSignsOf(data.customerorderSign()))) {
+            throw new BusinessRuleException(ErrorCode.BU_BUDGET_SCOPE_DISJOINT, plan.getName());
+        }
+        if (!OrderBudgetBinding.periodsOverlap(plan, data.validFrom(), validUntil)) {
+            throw new BusinessRuleException(ErrorCode.BU_BUDGET_PERIOD_DISJOINT, plan.getName());
+        }
+        return plan;
+    }
+
+    /**
+     * The complete order signs of the order's suborders — the ground the scope check stands on. An
+     * order that is gone, or not stored yet, has none; the two cases that need no suborder at all
+     * answer without this list anyway (→ {@link OrderBudgetBinding}).
+     */
+    private List<String> suborderSignsOf(String customerorderSign) {
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        if (customerorder == null || customerorder.getId() == null) {
+            return List.of();
+        }
+        return suborderService.getSubordersByCustomerorderId(customerorder.getId()).stream()
+            .map(Suborder::getCompleteOrderSign)
+            .toList();
+    }
+
+    private void apply(OrderPricing pricing, OrderPricingData data, OrderBudget plan) {
         pricing.setCustomerorderSign(data.customerorderSign());
         pricing.setSuborderSign(data.suborderSign());
         pricing.setEmployeeSign(data.employeeSign());
+        pricing.setOrderBudget(plan);
         pricing.setDescription(data.description());
         pricing.setPriceCentsPerHour(data.priceCentsPerHour());
         pricing.setValidFrom(data.validFrom());
-        pricing.setValidUntil(data.validUntil() != null ? data.validUntil() : LocalDate.of(2999, 12, 31));
+        pricing.setValidUntil(data.validUntil() != null ? data.validUntil() : OPEN_END);
     }
 
 }
