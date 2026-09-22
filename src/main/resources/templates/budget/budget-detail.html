@@ -296,7 +296,7 @@
             th:text="#{main.budget.assignments.summary(${assignedCount}, ${assignedHours})}">0 Buchungen</span>
     </div>
 
-    <!-- Period filter: the plan's validity by default, narrowed when the list gets long -->
+    <!--/* Period filter: the plan's validity by default, narrowed when the list gets long */-->
     <div class="card-body">
       <form method="get" th:action="@{/budget/{id}(id=${budget.id})}" class="row g-2 align-items-end">
         <div class="col-md-3">

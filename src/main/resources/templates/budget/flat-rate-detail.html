@@ -55,10 +55,10 @@
     </div>
   </div>
 
-  <!--
+  <!--/*
     The due dates the definition amounts to. Derived for a one-off and a monthly rate, stored for
     instalments — the table reads the same either way, which is what makes the rhythms comparable.
-  -->
+  */-->
   <div class="card mb-3">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.flatrate.schedule.title}">Fällige Beträge</h3>
@@ -84,7 +84,7 @@
     </div>
   </div>
 
-  <!-- Instalments: the only rhythm whose dates are entered rather than derived. -->
+  <!--/* Instalments: the only rhythm whose dates are entered rather than derived. */-->
   <div class="card mb-3" th:if="${flatRate.rhythm.name() == 'INSTALMENTS'}">
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.flatrate.instalments.title}">Abschläge</h3>
@@ -126,7 +126,7 @@
             th:object="${instalmentForm}" class="row g-2 align-items-end">
         <div class="col-md-3">
           <label class="form-label" th:text="#{main.flatrate.field.due}">Fällig am</label>
-          <!-- Bounded by the validity: an instalment outside it would be due but invisible. -->
+          <!--/* Bounded by the validity: an instalment outside it would be due but invisible. */-->
           <input type="date" class="form-control" th:field="*{due}" required
                  th:min="${flatRate.validFrom}" th:max="${flatRate.validUntil}"/>
         </div>

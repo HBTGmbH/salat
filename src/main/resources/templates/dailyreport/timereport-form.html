@@ -99,8 +99,8 @@
 
                   <!-- Begin/End entry -->
                   <div id="beginEndSection" th:classappend="${beginEnd} ? '' : 'd-none'">
-                    <!-- flex-wrap: the two fields plus their steppers do not fit next to each other
-                         on a phone, so they stack there and stay inline from md upwards -->
+                    <!--/* flex-wrap: the two fields plus their steppers do not fit next to each other
+                           on a phone, so they stack there and stay inline from md upwards */-->
                     <div class="d-flex flex-wrap gap-2 align-items-center">
                       <input type="time" class="form-control" th:field="*{beginTime}"
                              id="beginTimeInput" style="width:auto" size="5"
@@ -112,7 +112,7 @@
                                       data-time-step=${betaTimeInput} ? '15' : null,
                                       data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                       data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
-                      <!-- only meaningful while both fields sit next to each other -->
+                      <!--/* only meaningful while both fields sit next to each other */-->
                       <span class="text-muted d-none d-md-inline">–</span>
                       <input type="time" class="form-control" th:field="*{endTime}"
                              id="endTimeInput" style="width:auto" size="5"
@@ -129,8 +129,8 @@
                   </div>
 
                 </div>
-                <!-- Quick-add chips are rendered here (see data-time-chips-target) so that they get
-                     the full width of the column instead of the width of the input itself -->
+                <!--/* Quick-add chips are rendered here (see data-time-chips-target) so that they get
+                       the full width of the column instead of the width of the input itself */-->
                 <div id="durationChips" class="mt-2" th:if="${betaTimeInput}"
                      th:classappend="${beginEnd} ? 'd-none' : ''"></div>
               </div>
@@ -193,8 +193,8 @@
             <!-- Training -->
             <div class="mb-3">
               <label class="form-check form-switch">
-                <!-- explicit id: Thymeleaf numbers the generated ids of checkboxes (training1, ...),
-                     but applySuborderTrainingDefault() needs a stable one -->
+                <!--/* explicit id: Thymeleaf numbers the generated ids of checkboxes (training1, ...),
+                       but applySuborderTrainingDefault() needs a stable one */-->
                 <input class="form-check-input" type="checkbox" id="trainingSwitch" th:field="*{training}"/>
                 <span class="form-check-label" th:text="#{main.timereport.form.training.label}">Fortbildung</span>
               </label>
@@ -556,11 +556,11 @@
 
 </section>
 
-<!--
+<!--/*
   Composite fragment returned by refresh-orders: invisible to the page renderer
   (outside layout:fragment="content") but reachable by HTMX fragment requests.
   Primary swap = ordersAndSubordersFragment; OOB swap = sidebarFragment.
--->
+*/-->
 <th:block th:fragment="ordersRefreshCompositeFragment">
   <th:block th:replace="~{:: ordersAndSubordersFragment}"/>
   <th:block th:replace="~{:: sidebarFragment}"/>

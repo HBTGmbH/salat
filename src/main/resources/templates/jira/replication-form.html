@@ -22,7 +22,7 @@
 
       <div class="row">
         <div class="col-md-6">
-          <!-- Plain select rather than salat:select, which does not forward the hx-* attributes. -->
+          <!--/* Plain select rather than salat:select, which does not forward the hx-* attributes. */-->
           <div class="mb-3">
             <label class="form-label required" for="customerorderSign"
                    th:text="#{main.jira.replication.field.customerorderSign}">Auftrag</label>
@@ -66,8 +66,8 @@
                            th:helpText="#{main.jira.replication.field.username.help}" />
         </div>
         <div class="col-md-6">
-          <!-- Never prefilled: the stored password does not leave the service. An empty field keeps
-               it, a filled one replaces it. -->
+          <!--/* Never prefilled: the stored password does not leave the service. An empty field keeps
+                 it, a filled one replaces it. */-->
           <salat:textInput th:field="*{password}" type="password"
                            th:label="#{main.jira.replication.field.password}" maxlength="255"
                            th:helpText="${isEdit}

@@ -19,7 +19,7 @@
     <salat:inputs>
       <div class="row">
         <div class="col-md-6">
-          <!-- Plain select rather than salat:select, which does not forward the hx-* attributes. -->
+          <!--/* Plain select rather than salat:select, which does not forward the hx-* attributes. */-->
           <div class="mb-3">
             <label class="form-label required" for="customerorderSign"
                    th:text="#{main.flatrate.field.customerorderSign}">Auftrag</label>
@@ -47,7 +47,7 @@
                            th:helpText="#{main.flatrate.field.description.help}" />
         </div>
         <div class="col-md-6">
-          <!-- The rhythm decides which of the fields below mean anything, so it drives the preview. -->
+          <!--/* The rhythm decides which of the fields below mean anything, so it drives the preview. */-->
           <div class="mb-3">
             <label class="form-label required" for="rhythm" th:text="#{main.flatrate.field.rhythm}">Abrechnung</label>
             <select class="form-select tomselect" th:field="*{rhythm}"
@@ -60,7 +60,7 @@
           </div>
         </div>
       </div>
-      <!-- One htmx trigger for the three fields the schedule follows from; change bubbles up here. -->
+      <!--/* One htmx trigger for the three fields the schedule follows from; change bubbles up here. */-->
       <div class="row"
            th:hx-post="@{/budget/flat-rate/refresh}"
            hx-swap="none"
@@ -88,7 +88,7 @@
     </salat:buttons>
   </salat:form>
 
-  <!-- HTMX OOB updates: the suborders of the chosen order, and the dates the definition amounts to. -->
+  <!--/* HTMX OOB updates: the suborders of the chosen order, and the dates the definition amounts to. */-->
   <div th:if="${htmxRequest}">
     <div th:replace="~{budget/flat-rate-form :: suborderSelect(${suborders}, ${flatRateForm.suborderSign}, true)}"></div>
     <div th:replace="~{budget/flat-rate-form :: schedulePreview(
@@ -97,14 +97,14 @@
 
 </main>
 
-<!--
+<!--/*
   Rendered twice: inline in the form, and again as an out-of-band swap when the customer order
   changes — that is what the oob parameter is for.
 
   Unlike an hourly rate the suborder is a concrete one, not a pattern: a flat rate is a single agreed
   amount and has nothing to spread over several matches. So this is the field itself, not a picker
   that prefills one.
--->
+*/-->
 <div th:fragment="suborderSelect(suborders, selectedSign, oob)" class="mb-3" id="flatRateSuborderSelect"
      th:attr="hx-swap-oob=${oob}">
   <label class="form-label" for="suborderSign" th:text="#{main.flatrate.field.suborderSign}">Unterauftrag</label>
@@ -120,14 +120,14 @@
   <div class="form-text" th:text="#{main.flatrate.field.suborderSign.help}">Ohne Unterauftrag gilt die Pauschale für den ganzen Auftrag.</div>
 </div>
 
-<!--
+<!--/*
   What the definition would put on the calendar, before it is saved. Computed on an unsaved
   OrderFlatRate, so the preview and the schedule the controlling later expands cannot disagree —
   both ask the entity itself.
--->
+*/-->
 <div th:fragment="schedulePreview(dueAmounts, total, instalmentsPending, oob)" id="flatRateSchedulePreview"
      th:attr="hx-swap-oob=${oob}">
-  <!-- Instalments are stored, not derived, so an unsaved definition has none to show yet. -->
+  <!--/* Instalments are stored, not derived, so an unsaved definition has none to show yet. */-->
   <div class="alert alert-info mb-0" th:if="${instalmentsPending}"
        th:text="#{main.flatrate.preview.instalments.hint}">
     Abschläge werden nach dem Speichern erfasst.

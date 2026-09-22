@@ -21,7 +21,7 @@
                th:classappend="${hasText} ? 'fw-medium' : 'is-empty text-muted'"
                th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; min-height:1.4em'"
                th:text="${singleTr.taskdescription}"></div>
-          <!-- same size as the display it replaces, so the card does not jump on edit -->
+          <!--/* same size as the display it replaces, so the card does not jump on edit */-->
           <textarea class="form-control form-control-sm inline-edit-input d-none"
                     rows="2"
                     style="font-size:0.85rem; resize:none"
@@ -45,9 +45,9 @@
           <span class="badge bg-blue-lt inline-edit-display"
                 style="user-select:none"
                 th:text="${@durationUtils.format(singleTr.duration)}"></span>
-          <!-- see daily.html: the wrapper carries the visibility for field plus stepper -->
+          <!--/* see daily.html: the wrapper carries the visibility for field plus stepper */-->
           <div class="inline-edit-field d-none">
-            <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
+            <!--/* font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus */-->
             <input type="text" class="form-control form-control-sm text-center inline-edit-input"
                    style="width:auto; font-size:1rem" size="6"
                    inputmode="decimal" maxlength="8"
