@@ -635,6 +635,16 @@ body {
   border-bottom: 0;
 }
 
+/* Dieselbe Annahme von der anderen Seite: Tabler raeumt die letzte tbody-Zeile ab, weil dort die
+   Karte abschliesst - folgt ein tfoot, nimmt es damit die Trennung zur Fusszeile mit weg, die eine
+   Tabelle ohne .card-table von selbst haette. Die Kurzform, nicht nur die Breite: Tablers
+   border-bottom: 0 setzt auch style: none, und bei none rechnet jede Breite zu null.
+   Die Matrix bekommt dieselbe 1px-Linie: ihr .table-group-divider auf der GESAMT-Zeile traegt
+   hier nichts bei, weil .card-table tfoot tr:first-child { border-top: 0 } spezifischer ist. */
+.card-table > tbody:has(+ tfoot) > tr:last-child > * {
+  border-bottom: var(--tblr-border-width) solid var(--tblr-table-border-color);
+}
+
 .navbar-brand a:hover {
   text-decoration: none !important;
 }
