@@ -624,7 +624,13 @@ body {
    (.card-table tbody tr:last-child td). Eine Tabelle mit tfoot behaelt deshalb die
    border-bottom-width aus .table > :not(caption) > * > * - und weil dort keine Farbe gesetzt
    wird, faellt sie auf currentColor zurueck: unter der Fusszeile stand eine fast schwarze
-   Linie, unter einer .text-muted-Zelle sogar in einem anderen Grau. */
+   Linie, unter einer .text-muted-Zelle sogar in einem anderen Grau.
+   Die Farbe zuerst, damit auch Trennlinien zwischen zwei Fusszeilen den Ton der Tabelle
+   treffen; die letzte Zeile braucht danach gar keine mehr, dort schliesst die Karte ab. */
+.card-table > tfoot > tr > * {
+  border-bottom-color: var(--tblr-table-border-color);
+}
+
 .card-table > tfoot > tr:last-child > * {
   border-bottom: 0;
 }
