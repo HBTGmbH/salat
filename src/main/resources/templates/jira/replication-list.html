@@ -75,12 +75,15 @@
             <!--/* Writing back to JIRA (#1007) is the one thing a replication does outside SALAT —
                    it belongs in the list, not only in the form.
 
-                   `small` is what keeps it the size of its neighbour: a badge sizes itself in em,
-                   and the one next to it sits inside a `btn-sm`, so without this it renders a third
-                   larger than the switch it stands beside. */-->
-            <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt small align-middle ms-1"
-                  th:title="#{main.jira.replication.flag.worklogsync}">
-              <i class="bi bi-arrow-left-right"></i>
+                   The wrapper is what keeps it the size of its neighbour, and it has to be a
+                   wrapper: `.badge` sets `font-size` itself and stands later in tabler.css than
+                   `.small`, so `small` on the badge does nothing at all. Around it, the em of the
+                   badge resolves against 0.766rem instead of 0.875rem and lands on the 0.643rem of
+                   the switch beside it, which draws its badge inside a `btn-sm`. */-->
+            <span th:if="${replication.worklogSyncEnabled}" class="small align-middle ms-1">
+              <span class="badge bg-blue-lt" th:title="#{main.jira.replication.flag.worklogsync}">
+                <i class="bi bi-arrow-left-right"></i>
+              </span>
             </span>
           </td>
           <td class="d-none d-md-table-cell small">
