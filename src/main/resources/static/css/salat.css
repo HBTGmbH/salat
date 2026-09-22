@@ -275,7 +275,8 @@
    gegen Schwarz gemischt, dass 4,8:1 stehen - und keinen Schritt weiter, damit so viel Farbe wie
    moeglich bleibt. Das ist derselbe Grundsatz wie bei den text-*-Utilities oben, nur in die andere
    Richtung gemischt. Die dunklen Toene bleiben dabei unveraendert.
-   Warning und Yellow fehlen in der Liste: sie gehen den umgekehrten Weg und stehen weiter unten.
+   Die hellen Toene - Gelb, Gruen, Lime - fehlen in der Liste: sie gehen den umgekehrten Weg und
+   stehen weiter unten.
    Die Regel gilt nur fuer .badge, nicht fuer bg-*-lt allgemein: dieselbe Klasse faerbt ganze
    Tabellenzeilen, die Wochenend- und Feiertagsspalten der Matrix, die ungelesenen Meldungen des
    Glocken-Dropdowns, die Kacheln des Dashboards und die Avatare - die bleiben getoent.
@@ -284,7 +285,6 @@
    table-active) und Sidebar, in beiden Farbmodi. */
 .badge.bg-primary-lt,
 .badge.bg-secondary-lt,
-.badge.bg-success-lt,
 .badge.bg-danger-lt,
 .badge.bg-info-lt,
 .badge.bg-blue-lt,
@@ -294,8 +294,6 @@
 .badge.bg-pink-lt,
 .badge.bg-red-lt,
 .badge.bg-orange-lt,
-.badge.bg-lime-lt,
-.badge.bg-green-lt,
 .badge.bg-teal-lt,
 .badge.bg-cyan-lt {
   color: var(--tblr-white) !important;
@@ -349,40 +347,46 @@
   background-color: color-mix(in srgb, var(--tblr-cyan) 75%, #000) !important;
 }
 
-.badge.bg-success-lt {
-  background-color: color-mix(in srgb, var(--tblr-success) 70%, #000) !important;
-}
-
-.badge.bg-green-lt {
-  background-color: color-mix(in srgb, var(--tblr-green) 70%, #000) !important;
-}
-
-.badge.bg-lime-lt {
-  background-color: color-mix(in srgb, var(--tblr-lime) 65%, #000) !important;
-}
-
-/* Gelb ist der einzige Ton, dem der Weg zu heller Schrift den Farbton nimmt: rechnerisch war
-   #935f00 ein Gelb mit 60% Anteil, gelesen wurde es als Braun - und weil die Badge-Fuellung
-   modusunabhaengig ist, in beiden Farbmodi. Das lag nicht an der Mischung, sondern an der Farbe:
-   ein Gelb, das helle Schrift bei 4,8:1 haelt, muss unter eine relative Leuchtdichte von 0,17 -
-   und ein dunkles Gelb ist ein Braun, egal wie gesaettigt.
-   Gelb geht deshalb den umgekehrten Weg: volle Farbe, dunkle Schrift, 9,71:1. Das ist dieselbe
-   Wahl, die --tblr-warning-fg weiter unten fuer btn-warning trifft - Badge und Button zeigen damit
-   denselben Ton.
-   Der Preis: im hellen Modus trennen sich Badge-Fuellung und Textfarbe desselben Namens, die sonst
-   ueberall derselbe Ton sind. Anders geht es nicht - farbiger Text auf heller Flaeche kann nicht
-   satt gelb sein, das volle Token traegt dort 1,45:1. */
+/* ===== Die hellen Toene: volle Farbe, dunkle Schrift =====
+   Gelb, Gruen und Lime sind zu hell fuer helle Schrift - auf dem vollen Ton stehen 1,45:1, 2,63:1
+   und 2,33:1. Abdunkeln bis 4,8:1 geht, kostet aber genau das, was die Badge ausmacht: Gelb wurde
+   dabei zu #935f00 und damit als Braun gelesen, und Gruen zu einem Ton, der neben dem gleichnamigen
+   Button als zweites Gruen dastand.
+   Diese drei gehen deshalb andersherum: volle Farbe, dunkle Schrift. Das ist dieselbe Wahl, die
+   --tblr-warning-fg und --tblr-success-fg weiter unten fuer btn-warning und btn-success treffen -
+   Badge und Button desselben Namens zeigen damit denselben Ton, statt zwei verschiedene.
+   Die Grenze verlaeuft an der Helligkeit, nicht an der Bedeutung: Ein Ton, auf dem helle Schrift
+   4,5:1 traegt, bleibt oben in der Liste. Wer einen Ton hinzunimmt, misst beide Richtungen und
+   nimmt die, die traegt - tragen beide, gilt weiter helle Schrift.
+   Der Preis steht bei den text-*-Utilities oben: Fuer diese drei fallen Badge-Fuellung und
+   gleichnamige Textfarbe im hellen Modus auseinander. Anders ist es nicht zu haben, farbiger Text
+   auf heller Flaeche kann nicht hell sein. */
 .badge.bg-warning-lt,
-.badge.bg-yellow-lt {
+.badge.bg-yellow-lt,
+.badge.bg-success-lt,
+.badge.bg-green-lt,
+.badge.bg-lime-lt {
   color: var(--tblr-dark) !important;
 }
 
 .badge.bg-warning-lt {
-  background-color: var(--tblr-warning) !important;
+  background-color: var(--tblr-warning) !important; /* 9,71:1 */
 }
 
 .badge.bg-yellow-lt {
-  background-color: var(--tblr-yellow) !important;
+  background-color: var(--tblr-yellow) !important; /* 9,71:1 */
+}
+
+.badge.bg-success-lt {
+  background-color: var(--tblr-success) !important; /* 5,35:1 */
+}
+
+.badge.bg-green-lt {
+  background-color: var(--tblr-green) !important; /* 5,35:1 */
+}
+
+.badge.bg-lime-lt {
+  background-color: var(--tblr-lime) !important; /* 6,02:1 */
 }
 
 /* Grau ist der einzige Ton, dessen Fuellung sich mit dem Modus aendert: Tabler hellt die

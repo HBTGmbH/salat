@@ -371,8 +371,8 @@ Boolesche Zustände in Listen stehen gesammelt in einer **Flags-Spalte**
 (`d-none d-lg-table-cell`), nie inline neben dem Namen. Jedes Flag ist eine Badge mit Icon und
 `title`-Tooltip. Die Klassen heißen weiterhin `bg-*-lt`, Badges sind aber **gefüllt und tragen helle
 Schrift** statt der Tönung — ihr Farbsignal steckt seit der Kontrastkorrektur allein in der Fläche
-([§7.1](#badges-gefüllt-statt-getönt)); Gelb ist die Ausnahme und trägt dunkle Schrift auf voller
-Farbe. Großflächige getönte Bereiche bleiben getönt:
+([§7.1](#badges-gefüllt-statt-getönt)); die hellen Töne Gelb, Grün und Lime sind die Ausnahme und
+tragen dunkle Schrift auf voller Farbe. Großflächige getönte Bereiche bleiben getönt:
 
 | Flag | Farbe | Icon |
 |---|---|---|
@@ -642,28 +642,43 @@ Anteil, der farbige Text trägt dort genau diesen Ton
 | 100 % (unverändert) | `primary`, `blue`, `indigo`, `purple` | 4,85–5,00 |
 | 95 % | `danger`, `red`, `pink` | 5,05–5,10 |
 | 75 % | `info`, `azure`, `orange`, `teal`, `cyan` | 5,03–5,20 |
-| 70 % | `success`, `green` | 5,20 |
-| 65 % | `lime` | 5,26 |
 | 100 %, **dunkle** Schrift | `warning`, `yellow` | 9,71 |
+| 100 %, **dunkle** Schrift | `success`, `green` | 5,35 |
+| 100 %, **dunkle** Schrift | `lime` | 6,02 |
 
 `secondary` ist der einzige Ton mit zwei Werten: Tabler hellt die Sekundärfüllung im Dunkelmodus von
 `#6b7280` auf `#9ca3af` auf. Hell trägt sie helle Schrift unverändert (4,83:1), dunkel muss sie dafür
 erst auf 70 % abgedunkelt werden (4,84:1).
 
-**Gelb geht den umgekehrten Weg.** Es ist der einzige Ton, dem das Abdunkeln den Farbton nimmt: Wer
-helle Schrift auf einem Gelb bei 4,8:1 halten will, muss unter eine relative Leuchtdichte von 0,17 —
-und ein dunkles Gelb ist ein Braun, bei jeder Sättigung. Die Badge lag damit bei `#935f00` und wurde
-als Braun gelesen, in beiden Farbmodi, weil die Badge-Füllung modusunabhängig ist. Sie trägt deshalb
-die **volle Farbe mit dunkler Schrift** (`--tblr-dark`, 9,71:1) — dieselbe Wahl, die
-`--tblr-warning-fg` für `btn-warning` trifft, Badge und Button zeigen damit denselben Ton.
+**Die hellen Töne gehen den umgekehrten Weg.** Gelb, Grün und Lime tragen helle Schrift auf dem
+vollen Ton nicht — 1,45:1, 2,63:1 und 2,33:1. Abdunkeln bis 4,8:1 geht, kostet aber jedes Mal genau
+das, was die Badge ausmacht:
 
-Der Preis steht unter [Wo Farbe erhalten bleibt](#wo-farbe-erhalten-bleibt): Für Gelb fallen
+- **Gelb** verliert dabei den Farbton. Wer helle Schrift auf einem Gelb bei 4,8:1 halten will, muss
+  unter eine relative Leuchtdichte von 0,17 — und dort ist jedes Gelb ein Braun, bei jeder
+  Sättigung. Die Badge lag bei `#935f00` und wurde als Braun gelesen, in beiden Farbmodi, weil die
+  Badge-Füllung modusunabhängig ist.
+- **Grün** verliert die Übereinstimmung mit dem Button. `btn-success` trägt den vollen Ton mit
+  dunkler Schrift, die Badge trug `#217d30` mit weißer — auf derselben Seite standen damit zwei
+  Grüntöne mit zwei Schriftfarben für dieselbe Aussage. Genau die Drift, vor der dieser Abschnitt
+  sonst warnt.
+
+Diese drei tragen deshalb die **volle Farbe mit dunkler Schrift** (`--tblr-dark`) — dieselbe Wahl,
+die `--tblr-warning-fg` und `--tblr-success-fg` für `btn-warning` und `btn-success` treffen. Badge
+und Button desselben Namens zeigen jetzt denselben Ton.
+
+**Die Grenze verläuft an der Helligkeit, nicht an der Bedeutung.** Ein Ton, auf dem helle Schrift
+4,5:1 trägt, bleibt in der Tabelle oben. Wer einen Ton hinzunimmt, misst beide Richtungen und nimmt
+die, die trägt; tragen beide, gilt weiter helle Schrift.
+
+Der Preis steht unter [Wo Farbe erhalten bleibt](#wo-farbe-erhalten-bleibt): Für diese drei fallen
 Badge-Füllung und gleichnamige Textfarbe im hellen Modus auseinander. Anders ist es nicht zu haben —
-farbiger Text auf heller Fläche kann nicht satt gelb sein, das volle Token trägt dort 1,45:1.
+farbiger Text auf heller Fläche kann nicht hell sein.
 
 Gemessen wurden 18 Farbtöne × zwei Farbmodi × Seitenfläche, Karte, Tabellenzeile (gerade, ungerade,
-`table-active`) und Sidebar, mit Text und nur mit Icon. **Alle Werte liegen zwischen 4,83:1 und
-5,42:1** — eng beieinander, weil jeder Ton an seiner eigenen Grenze sitzt.
+`table-active`) und Sidebar, mit Text und nur mit Icon. **Kein Wert unter 4,83:1**; die Töne mit
+heller Schrift liegen zwischen 4,83:1 und 5,42:1 — eng beieinander, weil jeder an seiner eigenen
+Grenze sitzt —, die drei hellen Töne darüber, weil ihre Schrift nicht an einer Grenze klebt.
 
 Verworfen wurde die naheliegende Zwischenstufe, die Tönung bloß kräftiger zu ziehen: Eine getönte
 Fläche trägt die normale Textfarbe und ist damit bei 40 % ausgereizt (bei 45 % fällt `warning` auf
@@ -679,7 +694,7 @@ Tablers eigene Regel `!important` trägt.
 Die klickbare `hide`-Badge ([§5.4](#54-badges--flags-spalte)) bleibt im Hover unverändert: weder
 Tabler noch `salat.css` bringen eine `:hover`-Regel mit, die den Button (`border-0 bg-transparent`)
 oder die Badge darin trifft — geprüft über alle geladenen Stylesheets und am gehoverten Element
-nachgemessen (5,10:1 in Ruhe wie im Hover; der eingeblendete Zustand liegt auf Grün bei 5,20:1).
+nachgemessen (5,10:1 in Ruhe wie im Hover; der eingeblendete Zustand liegt auf Grün bei 5,35:1).
 
 **Für diese Prüfung muss die Messseite über HTTP ausgeliefert werden.** Bei einem Aufruf über
 `file://` sperrt Chrome den Zugriff auf `cssRules` der verlinkten Stylesheets: `document.styleSheets`
@@ -781,8 +796,9 @@ Varianten übernehmen jetzt zusätzlich die Zeilenhöhe des umgebenden Feldes.
 Die semantischen `text-*`-Utilities behalten ihren Farbton und werden **gegen Schwarz bzw. Weiß**
 gemischt — hell abgedunkelt, dunkel aufgehellt, je Modus mit eigenem Anteil (#1043). Im hellen Modus
 ist der Anteil derselbe wie bei der Badge-Füllung: **ein farbiger Text trägt dort genau den Ton der
-Badge desselben Namens.** Ausgenommen ist Gelb, dessen Badge dunkle Schrift auf voller Farbe trägt
-und damit aus dieser Rechnung heraus ist ([Badges](#badges-gefüllt-statt-getönt)).
+Badge desselben Namens.** Ausgenommen sind die hellen Töne Gelb, Grün und Lime, deren Badges dunkle
+Schrift auf voller Farbe tragen und damit aus dieser Rechnung heraus sind
+([Badges](#badges-gefüllt-statt-getönt)).
 
 | Farbton | hell: Anteil gegen Schwarz | Ton | hell | dunkel: Anteil gegen Weiß | Ton | dunkel |
 |---|---|---|---|---|---|---|
@@ -828,8 +844,8 @@ Farbe gekostet:
 Dass der Badge-Ton als Textfarbe trägt, ist kein Zufall, sondern rechnet sich: Wer weiße Schrift auf
 einem Ton mit 4,8:1 hält, hat einen Ton mit einer relativen Leuchtdichte um 0,17 — und der ergibt auf
 der Seitenfläche wieder rund 4,6:1. Die beiden Blöcke in `salat.css` gehören damit zusammen: **wer
-einen Anteil ändert, ändert den der Badge mit** — außer bei Gelb, wo die Badge keinen Anteil mehr
-hat.
+einen Anteil ändert, ändert den der Badge mit** — außer bei den hellen Tönen, deren Badges keinen
+Anteil mehr haben.
 
 **Im dunklen Modus ist derselbe Hex-Wert ausgeschlossen.** Die Badge-Füllung ist modusunabhängig
 dunkel und trägt helle Schrift; ein Text auf der dunklen Karte muss umgekehrt hell sein. Erreichbar
