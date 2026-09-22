@@ -889,6 +889,30 @@ Two stacked layers provide defence in depth:
   - `ADMIN` — system administrators (`status=adm`); full access; only role that is NOT an employee
   - A "regular employee" is someone with `BACKOFFICE` but not `PEOPLE_LEAD` or `MANAGER` — they can only view their own data.
 
+### Ein Ereignis-Listener entscheidet über keinen HTTP-Status (#1054)
+
+Die Filterketten sind zustandslos (`SessionCreationPolicy.STATELESS`), die Authentifizierung gelingt
+also bei **jeder** Anfrage neu — und damit auch in der Weiterleitung des Servlet-Containers auf
+`/error`. Ein `@EventListener` auf `AuthorizedUserChangedEvent` läuft deshalb zweimal je Fehlerfall.
+Wer dort eine `ResponseStatusException` wirft, nimmt die Fehlerseite mit: Tomcat bricht die
+Bearbeitung der Fehlerseite ab (`Exception Processing [ErrorPage[…]]`) und antwortet mit seiner
+eigenen 500-Seite. Der Statuscode, den der Code setzt, erreicht den Aufrufer nie.
+
+Eine Bedingung, die vor jedem Controller feststeht, wird deshalb **festgehalten und getrennt davon
+beantwortet**:
+
+- Der Listener schreibt sie in eine anfragebezogene Bohne (`EmployeeAccessDenial`) — eine
+  `ServiceFeedbackMessage` mit `ErrorCode`, wie jeder andere fachliche Fehler auch.
+- Ein Filter hinter der Sicherheitskette (`EmployeeAccessFilter`, `@Order(104)`) gibt die Antwort:
+  `sendError(403, …)` für eine Seite, damit der Container auf `/error` weiterleitet und die
+  Fehlerseite der Anwendung den Grund nennt; ein `ProblemDetail` als `application/problem+json` für
+  `/api/**` und `/rest/**`.
+- Der Filter greift in der Weiterleitung auf `/error` **nicht** — `OncePerRequestFilter` lässt den
+  Fehler-Dispatch von sich aus aus, und genau das ist hier die Zusage.
+- Ausgenommen bleiben statische Dateien (die Fehlerseite braucht ihr Stylesheet) und
+  `/auth/exit-impersonation` (sonst ist der Weg zurück aus einer übernommenen Anmeldung gesperrt).
+  Die Pfadlisten stehen einmal in `org.tb.common.filter.RequestPaths`.
+
 ### Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.
 
