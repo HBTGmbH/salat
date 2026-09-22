@@ -250,6 +250,7 @@ Aktionen in `card-footer`. Tabellen sitzen direkt in der Karte (`card-table`, oh
 | Anlegen (in Listen, rechts oben) | `btn btn-success` | `ti ti-*-plus` |
 | Filter anwenden | `btn btn-primary` | `ti ti-filter` |
 | Zeilenaktion Bearbeiten | `btn btn-outline-primary` | `ti ti-pencil` |
+| Zeilenaktion Anzeigen (schreibgeschützt) | `btn btn-outline-secondary` | `ti ti-list-details` |
 | Zeilenaktion Löschen | `btn btn-outline-danger` | `ti ti-trash` |
 | Sekundäre Zeilenaktion | `btn btn-outline-secondary btn-sm` | wechselnd |
 | Icon-Button Kopfzeile | `btn btn-icon` | `ti ti-*` |
@@ -263,6 +264,17 @@ Aktionen in `card-footer`. Tabellen sitzen direkt in der Karte (`card-table`, oh
 
 Icon-only-Buttons tragen `m-0` am `<i>`, Buttons mit Text `me-1`. In Listen sind Zeilenaktionen
 **ohne** Textlabel.
+
+**Anzeigen trägt kein Auge.** Die Zeile fehlte in dieser Tabelle, und genau deshalb konnte das Auge
+doppelt belegt werden: als Zeilenaktion „Anzeigen" (das schreibgeschützte Gegenstück zu Bearbeiten,
+4×) und zugleich als Zustands-Badge für Ein-/Ausblenden in der Flags-Spalte derselben Zeile
+([§5.4](#54-badges--flags-spalte)). Aufgelöst ist der Konflikt auf der Seite der Aktion: Auge und
+durchgestrichenes Auge sind ein natürliches Gegensatzpaar für Sichtbarkeit, das ein Zustands-Umschalter
+braucht; für „Anzeigen" gibt es gleichwertige Alternativen. Gewählt ist `ti ti-list-details` — bei
+16 px klar vom Auge unterscheidbar und im Projekt sonst nicht belegt. Geprüft und verworfen:
+`ti-file-description`/`ti-file-text` (dokumentlastig), `ti-file-search`/`ti-zoom-in` (bei 16 px zu
+kleinteilig, und `ti-list-search` ist bereits Suche), `ti-clipboard-text` (anderswo „kopieren"),
+`ti-chevron-right`/`ti-arrow-right` (reine Navigation, schon fürs Blättern belegt).
 
 #### Farblogik der Buttons
 
