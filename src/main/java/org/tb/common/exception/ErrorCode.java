@@ -35,10 +35,12 @@ public enum ErrorCode {
   EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS("EC-0007", "employee contract validity overlaps too many other employee contracts"),
   EC_CONFLICT_RESOLUTION_GOT_VETO("EC-0008", "conflict resolution cannot be performed due to veto"),
   EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT("EC-0009", "employee contract does not clearly overlap an existing but results in a split."),
+  EC_NO_CURRENT_CONTRACT("EC-0010", "no employee contract is valid today for the current login"),
 
   EM_DELETE_GOT_VETO("EM-0001", "employee cannot be deleted due to veto"),
   EM_ANONYMIZE_WRONG_SIGN("EM-0002", "confirm sign does not match the employee sign"),
   EM_NOT_FOUND("EM-0003", "employee was not found"),
+  EM_NO_LOGIN_EMPLOYEE("EM-0004", "no employee matches the current login"),
 
   EO_UPDATE_GOT_VETO("EO-0001", "employee order cannot be changed due to veto"),
   EO_DELETE_GOT_VETO("EO-0002", "employee order cannot be deleted due to veto"),

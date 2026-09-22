@@ -5,14 +5,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.filter.RequestPaths;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeeService;
 
@@ -21,15 +20,6 @@ import org.tb.employee.service.EmployeeService;
 @RequiredArgsConstructor
 @Order(103)
 public class AuthorizedEmployeeFilter extends OncePerRequestFilter {
-
-    private static final AntPathMatcher ANT = new AntPathMatcher();
-    private static final List<String> STATIC_PATTERNS = List.of(
-        "/images/**", "/webjars/**",
-        "/**/*.css", "/**/*.js",
-        "/**/*.gif", "/**/*.png", "/**/*.jpg", "/**/*.jpeg",
-        "/**/*.svg", "/**/*.ico",
-        "/**/*.woff", "/**/*.woff2", "/**/*.ttf", "/**/*.eot",
-        "/**/*.map", "/**/*.webp");
 
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
@@ -51,7 +41,6 @@ public class AuthorizedEmployeeFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return STATIC_PATTERNS.stream().anyMatch(p -> ANT.match(p, path));
+        return RequestPaths.isStaticResource(request);
     }
 }

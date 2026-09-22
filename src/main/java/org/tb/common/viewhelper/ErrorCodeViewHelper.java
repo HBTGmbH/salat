@@ -16,12 +16,19 @@ public class ErrorCodeViewHelper {
   private final MessageSourceAccessor messages;
 
   public List<ViewMessage> toViewMessages(ErrorCodeException ex) {
-    return ex.getMessages().stream().map(m -> {
-      String key = toErrorKey(m);
-      Object[] args = m.getArguments().toArray();
-      String resolved = messages.getMessage(key, args, "???" + key + "???");
-      return new ViewMessage(key, args, resolved);
-    }).collect(Collectors.toList());
+    return ex.getMessages().stream().map(this::toViewMessage).collect(Collectors.toList());
+  }
+
+  /**
+   * Die einzelne Meldung, aufgelöst. Nicht jede Meldung kommt aus einer Ausnahme: eine Bedingung,
+   * die festgehalten und später beantwortet wird, trägt dieselbe {@link ServiceFeedbackMessage}
+   * ohne je geworfen worden zu sein (#1054).
+   */
+  public ViewMessage toViewMessage(ServiceFeedbackMessage message) {
+    String key = toErrorKey(message);
+    Object[] args = message.getArguments().toArray();
+    String resolved = messages.getMessage(key, args, "???" + key + "???");
+    return new ViewMessage(key, args, resolved);
   }
 
   public ViewMessage toViewMessage(String key) {

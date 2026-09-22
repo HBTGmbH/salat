@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.crypto.Mac;
@@ -19,7 +18,6 @@ import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.tb.common.SalatProperties;
@@ -37,24 +35,6 @@ public class UiStateFilter extends OncePerRequestFilter {
     static final String COOKIE_NAME = "salat_uistate";
     static final String COOKIE_KEY_LOGIN_SIGN = "_ls";
 
-    private static final AntPathMatcher ANT = new AntPathMatcher();
-    private static final List<String> STATIC_PATTERNS = List.of(
-        "/images/**", "/webjars/**",
-        "/**/*.css", "/**/*.js",
-        "/**/*.gif", "/**/*.png", "/**/*.jpg", "/**/*.jpeg",
-        "/**/*.svg", "/**/*.ico",
-        "/**/*.woff", "/**/*.woff2", "/**/*.ttf", "/**/*.eot",
-        "/**/*.map", "/**/*.webp");
-
-    /**
-     * Der gemerkte Zustand gehört der Oberfläche. Die REST-Pfade laufen in einer zustandslosen
-     * Filterkette für maschinelle Aufrufer; ein Parameter, den sie nicht selbst geschickt haben,
-     * hat dort nichts zu suchen. Ohne diese Ausnahme bekäme eine Schnittstelle, die freie
-     * Anfrageparameter durchreicht, aus einem Browser-Aufruf Werte aus dem Cookie und aus einem
-     * Skript keine — dieselbe Anfrage mit zwei Ergebnissen (#1035).
-     */
-    private static final List<String> STATELESS_PATTERNS = List.of("/api/**", "/rest/**");
-
     private final UiState uiState;
     private final UiStateKeyRegistry uiStateKeyRegistry;
     private final LoginSignProvider loginSignProvider;
@@ -71,11 +51,16 @@ public class UiStateFilter extends OncePerRequestFilter {
         signingKeyBytes = key.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Der gemerkte Zustand gehört der Oberfläche. Die REST-Pfade laufen in einer zustandslosen
+     * Filterkette für maschinelle Aufrufer; ein Parameter, den sie nicht selbst geschickt haben,
+     * hat dort nichts zu suchen. Ohne diese Ausnahme bekäme eine Schnittstelle, die freie
+     * Anfrageparameter durchreicht, aus einem Browser-Aufruf Werte aus dem Cookie und aus einem
+     * Skript keine — dieselbe Anfrage mit zwei Ergebnissen (#1035).
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return STATIC_PATTERNS.stream().anyMatch(p -> ANT.match(p, path))
-            || STATELESS_PATTERNS.stream().anyMatch(p -> ANT.match(p, path));
+        return RequestPaths.isStaticResource(request) || RequestPaths.isStateless(request);
     }
 
     @Override
