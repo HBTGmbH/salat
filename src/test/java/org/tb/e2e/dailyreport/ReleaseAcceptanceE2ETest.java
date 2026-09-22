@@ -18,9 +18,13 @@ class ReleaseAcceptanceE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void employee_can_self_release_bookings(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/release", page -> {
-      page.onDialog(dialog -> dialog.accept());
       page.fill("input[name=selfReleaseDate]", "2026-05");
       page.click("button[type=submit]");
+
+      // the shared dialog (#1032) names who is releasing and up to when — the month is what was
+      // just typed into the form, so only the dialog can carry it
+      assertThat(confirmDialog(page)).containsText("2026-05");
+      confirmAction(page);
       page.waitForLoadState();
 
       assertThat(page.locator("body")).containsText("2026-05-31");

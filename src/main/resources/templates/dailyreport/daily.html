@@ -290,7 +290,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr th:each="tr : ${dailyData.timereports}">
+              <!--/* Die formatierte Dauer einmal binden: th:attr wertet seine Ausdruecke
+                     eingeschraenkt aus, und eine Bohne ist dort nicht erreichbar (AGENTS.md,
+                     "Globally Accessible Objects"). */-->
+              <tr th:each="tr : ${dailyData.timereports}"
+                  th:with="trDuration=${@durationUtils.format(tr.duration)}">
                 <td class="d-none d-md-table-cell daily-order-col">
                   <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
                 </td>
@@ -371,20 +375,32 @@
                     </a>
                     <button type="button" class="btn btn-outline-success"
                             style="padding:1px 5px; font-size:0.7rem"
-                            th:attr="data-tr-id=${tr.id},data-suborder-id=${tr.suborderId},data-date=${tr.referenceday}"
+                            th:attr="data-tr-id=${tr.id},data-suborder-id=${tr.suborderId},data-date=${tr.referenceday},data-tr-desc=${tr.completeOrderSign},data-tr-duration=${trDuration}"
                             onclick="openShareModal(this)"
                             data-bs-toggle="modal" data-bs-target="#shareModal"
                             th:title="#{main.timereport.action.share.tooltip}">
                       <i class="icon ti ti-share m-0"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-danger"
-                            style="padding:1px 5px; font-size:0.7rem"
-                            th:attr="data-tr-id=${tr.id},data-tr-desc=${tr.completeOrderSign},data-date=${date}"
-                            onclick="openDeleteModal(this)"
-                            data-bs-toggle="modal" data-bs-target="#deleteModal"
-                            th:title="#{main.timereport.action.delete.tooltip}">
-                      <i class="icon ti ti-trash m-0"></i>
-                    </button>
+                    <!--/* Seit #1032 ein gewoehnliches Formular mit data-confirm statt eines eigenen
+                           Dialogs je Seite: der gemeinsame Dialog nennt Auftrag, Buchungstext und
+                           Dauer, also genau das, woran zwei Zeilen desselben Tages sich
+                           unterscheiden. */-->
+                    <form th:action="@{/dailyreport/daily/delete-timereport}" method="post" class="d-inline"
+                          data-confirm
+                          th:data-confirm-title="#{main.daily.delete.modal.title}"
+                          th:data-confirm-detail="${tr.completeOrderSign}"
+                          th:data-confirm-detail-secondary="|${trDuration}${#strings.isEmpty(tr.taskdescription) ? '' : ' · ' + tr.taskdescription}|"
+                          th:data-confirm-label="#{main.daily.delete.modal.confirm}"
+                          data-confirm-variant="danger">
+                      <input type="hidden" name="timereportId" th:value="${tr.id}"/>
+                      <input type="hidden" name="date" th:value="${date}"/>
+                      <input type="hidden" name="mode" value="daily"/>
+                      <button type="submit" class="btn btn-outline-danger"
+                              style="padding:1px 5px; font-size:0.7rem"
+                              th:title="#{main.timereport.action.delete.tooltip}">
+                        <i class="icon ti ti-trash m-0"></i>
+                      </button>
+                    </form>
                   </div>
                 </td>
               </tr>
@@ -743,7 +759,12 @@
         Alle Arbeitstage, an denen nichts gebucht wurde, werden auf 'nicht gearbeitet' gesetzt.
       </span>
       <form method="post" th:action="@{/dailyreport/daily/fill-not-worked}"
-            th:onsubmit="|return confirm('#{main.matrix.fillnotworked.confirm.text}')|">
+            data-confirm
+            th:data-confirm-title="#{main.matrix.fillnotworked.confirm.title}"
+            th:data-confirm-text="#{main.matrix.fillnotworked.confirm.text}"
+            th:data-confirm-detail="${#temporals.format(yearMonth.atDay(1), 'MMMM yyyy')}"
+            th:data-confirm-label="#{main.matrix.fillnotworked.button.text}"
+            data-confirm-variant="warning">
         <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
         <input type="hidden" name="year" th:value="${yearMonth.year}"/>
         <!--/* warning, like the "Nicht gearbeitet" badge this action produces */-->
@@ -759,15 +780,23 @@
 </div><!-- end list mode -->
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- Delete confirmation modal                                   -->
+<!-- Share modal                                                 -->
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!--/* Kein reiner Bestaetigungsdialog: hier wird ausgewaehlt, mit wem geteilt wird, deshalb bleibt
+       er eigenstaendig statt ueber data-confirm zu laufen (#1032). Welche Buchung gemeint ist,
+       nennt der Titel; die Empfaengerliste wird fuer genau diese Buchung nachgeladen. */-->
 <div class="modal modal-blur fade" id="shareModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-md modal-dialog-centered" role="document">
     <div class="modal-content">
       <form id="shareForm" method="post">
         <input type="hidden" id="shareReturnUrl" name="returnUrl"/>
         <div class="modal-header">
-          <h5 class="modal-title" th:text="#{main.timereport.share.modal.title}">Buchung mit Kollegen teilen</h5>
+          <div>
+            <h5 class="modal-title" th:text="#{main.timereport.share.modal.title}">Buchung mit Kollegen teilen</h5>
+            <!--/* Welche Buchung geteilt wird - die Zeile, aus der der Knopf kam, liegt hinter dem
+                   Dialog (#1032). */-->
+            <div id="shareModalDetail" class="text-muted small"></div>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -783,76 +812,7 @@
   </div>
 </div>
 
-<div class="modal modal-blur fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-body">
-        <div class="modal-title" th:text="#{main.daily.delete.modal.title}">Buchung löschen?</div>
-        <div id="deleteModalDesc" class="text-muted mt-1"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal"
-                th:text="#{main.general.button.cancel.text}">Abbrechen</button>
-        <form id="deleteForm" method="post" th:action="@{/dailyreport/daily/delete-timereport}">
-          <input type="hidden" id="deleteTimereportId" name="timereportId"/>
-          <input type="hidden" id="deleteDate" name="date"/>
-          <input type="hidden" id="deleteMode" name="mode"/>
-          <input type="hidden" id="deleteMonth" name="month"/>
-          <input type="hidden" id="deleteYear" name="year"/>
-          <button type="submit" class="btn btn-danger" th:text="#{main.daily.delete.modal.confirm}">Löschen</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!--/* Deleting a favourite (#835). One modal for the whole page; the button of a favourite only
-       fills in which one it is. The form posts through HTMX like the buttons did before, so the
-       bookings area and the favourites panel are swapped in place. */-->
-<div class="modal modal-blur fade" id="deleteFavouriteModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-body">
-        <div class="modal-title" th:text="#{main.daily.favourites.delete.modal.title}">Favorit löschen?</div>
-        <div id="deleteFavouriteModalComment" class="fw-medium mt-1"></div>
-        <div class="d-flex align-items-center gap-2 mt-1">
-          <span id="deleteFavouriteModalLabel" class="text-muted small"></span>
-          <!--/* two favourites can now differ in their ticket alone (#1029), so the dialog names it */-->
-          <span id="deleteFavouriteModalTicket" class="badge bg-secondary-lt d-none"></span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal"
-                th:text="#{main.general.button.cancel.text}">Abbrechen</button>
-        <form id="deleteFavouriteForm" method="post" th:action="@{/dailyreport/daily/delete-favourite}"
-              th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
-              hx-target="#daily-bookings-area"
-              hx-swap="outerHTML">
-          <input type="hidden" id="deleteFavouriteId" name="favoriteId"/>
-          <input type="hidden" name="date" th:value="${date}"/>
-          <!--/* data-bs-dismiss closes the dialog while HTMX sends the request: the list is swapped
-                 in place, so nothing else would take the modal off the screen */-->
-          <button type="submit" class="btn btn-danger" data-bs-dismiss="modal"
-                  th:text="#{main.daily.delete.modal.confirm}">Löschen</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script th:inline="javascript">
-  function openDeleteFavouriteModal(btn) {
-    document.getElementById('deleteFavouriteId').value = btn.dataset.favId;
-    var comment = document.getElementById('deleteFavouriteModalComment');
-    // a favourite without a comment leaves the line out rather than opening a gap above the order
-    comment.textContent = btn.dataset.favComment || '';
-    comment.classList.toggle('d-none', !btn.dataset.favComment);
-    document.getElementById('deleteFavouriteModalLabel').textContent = btn.dataset.favLabel || '';
-    var ticket = document.getElementById('deleteFavouriteModalTicket');
-    ticket.textContent = btn.dataset.favTicket || '';
-    ticket.classList.toggle('d-none', !btn.dataset.favTicket);
-  }
-
   function openShareModal(btn) {
     var trId = btn.dataset.trId;
     var suborderId = btn.dataset.suborderId;
@@ -860,6 +820,8 @@
 
     document.getElementById('shareForm').action = '/dailyreport/timereports/' + trId + '/share';
     document.getElementById('shareReturnUrl').value = window.location.pathname + window.location.search;
+    document.getElementById('shareModalDetail').textContent =
+      [btn.dataset.trDesc, btn.dataset.trDuration, date].filter(Boolean).join(' · ');
 
     var params = new URLSearchParams();
     if (suborderId) params.append('suborderId', suborderId);
@@ -869,15 +831,6 @@
       target: '#shareRecipientsList',
       swap: 'innerHTML'
     });
-  }
-
-  function openDeleteModal(btn) {
-    document.getElementById('deleteTimereportId').value = btn.dataset.trId;
-    document.getElementById('deleteModalDesc').textContent = btn.dataset.trDesc || '';
-    document.getElementById('deleteDate').value = btn.dataset.date || '';
-    document.getElementById('deleteMode').value = btn.dataset.mode || 'daily';
-    document.getElementById('deleteMonth').value = btn.dataset.month || '';
-    document.getElementById('deleteYear').value = btn.dataset.year || '';
   }
 
   function toggleWorkingFields(notWorked) {
@@ -1024,19 +977,32 @@
 </div>
 
 <!--/*
-  Deleting a favourite (#835). The button only opens #deleteFavouriteModal and hands it the
-  favourite; the posting form lives there, once for the whole page. The dialog repeats the
-  hierarchy of the list: comment first, order and suborder as the secondary line under it. Why the
+  Deleting a favourite (#835). Since #1032 the form posts directly and describes the shared
+  confirmation dialog over data-confirm-*; there is no dialog of its own on this page any more.
+  The dialog repeats the hierarchy of the list: comment first, order and suborder as the secondary
+  line under it, with the ticket appended — two favourites can differ in it alone (#1029). Why the
   comment is shortened: FavoriteView.shortComment.
+  The form posts through HTMX as the button did before, so the bookings area and the favourites
+  panel are swapped in place.
 */-->
 <div th:fragment="favoriteDeleteButton(fav)" class="d-flex align-items-center">
-  <button type="button" class="btn btn-ghost-danger btn-sm py-2 pe-2"
-          th:title="#{main.daily.favourites.delete.title}"
-          th:attr="data-fav-id=${fav.id},data-fav-comment=${fav.shortComment},data-fav-label=${fav.label},data-fav-ticket=${fav.ticketReference}"
-          onclick="openDeleteFavouriteModal(this)"
-          data-bs-toggle="modal" data-bs-target="#deleteFavouriteModal">
-    <i class="icon ti ti-trash m-0"></i>
-  </button>
+  <form method="post" th:action="@{/dailyreport/daily/delete-favourite}"
+        th:attr="hx-post=@{/dailyreport/daily/delete-favourite}"
+        hx-target="#daily-bookings-area"
+        hx-swap="outerHTML"
+        data-confirm
+        th:data-confirm-title="#{main.daily.favourites.delete.modal.title}"
+        th:data-confirm-detail="${fav.shortComment}"
+        th:data-confirm-detail-secondary="|${fav.label}${#strings.isEmpty(fav.ticketReference) ? '' : ' · ' + fav.ticketReference}|"
+        th:data-confirm-label="#{main.daily.delete.modal.confirm}"
+        data-confirm-variant="danger">
+    <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
+    <input type="hidden" name="date" th:value="${date}"/>
+    <button type="submit" class="btn btn-ghost-danger btn-sm py-2 pe-2"
+            th:title="#{main.daily.favourites.delete.title}">
+      <i class="icon ti ti-trash m-0"></i>
+    </button>
+  </form>
 </div>
 
 <!--/*

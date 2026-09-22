@@ -620,6 +620,15 @@ body {
   border-bottom-color: transparent;
 }
 
+/* Tablers Reset fuer Kartentabellen raeumt die letzte Zeile nur im tbody ab
+   (.card-table tbody tr:last-child td). Eine Tabelle mit tfoot behaelt deshalb die
+   border-bottom-width aus .table > :not(caption) > * > * - und weil dort keine Farbe gesetzt
+   wird, faellt sie auf currentColor zurueck: unter der Fusszeile stand eine fast schwarze
+   Linie, unter einer .text-muted-Zelle sogar in einem anderen Grau. */
+.card-table > tfoot > tr:last-child > * {
+  border-bottom: 0;
+}
+
 .navbar-brand a:hover {
   text-decoration: none !important;
 }
@@ -722,4 +731,17 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+}
+
+/* ===== Bestaetigungen ohne JavaScript (#1032, ADR-0027) =====
+   Das native Browser-Popup verhinderte das Absenden von sich aus - faellt salat.js aus, waere ein
+   Loeschknopf ohne diese Regel ein Knopf, der ohne Rueckfrage loescht. Der Knopf entsteht deshalb
+   erst, wenn der Handler steht: salat.js setzt die Klasse am Ende seiner Einrichtung. Das Skript
+   liegt am Ende von <body>, die Klasse ist also vor dem ersten Rendern gesetzt; ein Aufblitzen
+   gibt es nur, wenn das Skript gar nicht laedt - und dann ist Wegbleiben die richtige Antwort.
+   display statt pointer-events: eine nur unklickbare Schaltflaeche bliebe ueber die Tastatur
+   erreichbar. */
+body:not(.salat-confirm-ready) [data-confirm] button[type="submit"],
+body:not(.salat-confirm-ready) button[data-confirm] {
+  display: none;
 }

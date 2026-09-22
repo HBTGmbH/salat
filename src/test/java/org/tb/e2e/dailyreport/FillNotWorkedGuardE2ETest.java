@@ -4,8 +4,6 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -76,18 +74,15 @@ class FillNotWorkedGuardE2ETest extends PlaywrightE2ETestBase {
     Locator button = page.locator(footerSelector).getByText(FILL_NOT_WORKED);
     assertThat(button).isVisible();
 
-    List<String> prompts = new ArrayList<>();
-    page.onDialog(dialog -> {
-      prompts.add(dialog.message());
-      dialog.dismiss();
-    });
-
     button.click();
-    page.waitForTimeout(500);
 
-    Assertions.assertEquals(1, prompts.size(), "expected exactly one confirmation");
-    Assertions.assertTrue(prompts.getFirst().contains("nur Tag für Tag"), prompts.getFirst());
-    // dismissed - so the month is untouched and no success toast appeared
+    // the question itself moved into the shared dialog (#1032); what it has to say has not
+    assertThat(confirmDialog(page)).containsText("nur Tag für Tag");
+    // and it names the scope of a change that has no single object to name: the month it covers
+    assertThat(confirmDialog(page)).containsText("Juni 2026");
+
+    cancelAction(page);
+    // cancelled - so the month is untouched and no success toast appeared
     assertThat(page.locator(".alert-success")).hasCount(0);
   }
 

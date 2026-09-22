@@ -95,7 +95,12 @@
             </td>
             <td>
               <form th:action="@{/budget/employee-cost/rates/{id}/delete(id=${rate.id})}" method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                    data-confirm
+                    th:data-confirm-title="#{main.employeecost.rate.delete.confirm.title}"
+                    th:data-confirm-detail="#{main.budget.format.amount(${rate.costCentsPerHour / 100.0})}"
+                    th:data-confirm-detail-secondary="|${categoryName} · ${#temporals.format(rate.validFrom, 'dd.MM.yyyy')} – ${rate.validUntil.year != 2999 ? #temporals.format(rate.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
+                    th:data-confirm-label="#{main.general.button.delete.text}"
+                    data-confirm-variant="danger">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                   <i class="icon ti ti-trash m-0"></i>
                 </button>
@@ -162,7 +167,12 @@
             </td>
             <td>
               <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                    data-confirm
+                    th:data-confirm-title="#{main.employeecost.assignment.delete.confirm.title}"
+                    th:data-confirm-detail="|${a.employeeSign} · ${a.suborderSign ?: '—'}|"
+                    th:data-confirm-detail-secondary="|${#temporals.format(a.validFrom, 'dd.MM.yyyy')} – ${a.validUntil.year != 2999 ? #temporals.format(a.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
+                    th:data-confirm-label="#{main.general.button.delete.text}"
+                    data-confirm-variant="danger">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                   <i class="icon ti ti-trash m-0"></i>
                 </button>

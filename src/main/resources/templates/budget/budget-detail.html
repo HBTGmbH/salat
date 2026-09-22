@@ -80,7 +80,12 @@
             <td th:if="${isManager}">
               <form th:action="@{/budget/{id}/adjustments/{adjId}/delete(id=${budget.id},adjId=${adj.id})}"
                     method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                    data-confirm
+                    th:data-confirm-title="#{main.budget.adjustment.delete.confirm.title}"
+                    th:data-confirm-detail="#{main.budget.format.amount(${adj.amount})}"
+                    th:data-confirm-detail-secondary="|${adj.effective}${#strings.isEmpty(adj.comment) ? '' : ' · ' + adj.comment}|"
+                    th:data-confirm-label="#{main.general.button.delete.text}"
+                    data-confirm-variant="danger">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                   <i class="icon ti ti-trash m-0"></i>
                 </button>
@@ -143,7 +148,12 @@
             <td th:if="${isManager}">
               <form th:action="@{/budget/{id}/scope-entries/{entryId}/delete(id=${budget.id},entryId=${entry.id})}"
                     method="post"
-                    th:onsubmit="|return confirm('#{main.general.confirmdelete.text}');|">
+                    data-confirm
+                    th:data-confirm-title="#{main.budget.scopeentry.delete.confirm.title}"
+                    th:data-confirm-detail="|${entry.refdate} · ${entry.percent} %|"
+                    th:data-confirm-detail-secondary="${entry.comment}"
+                    th:data-confirm-label="#{main.general.button.delete.text}"
+                    data-confirm-variant="danger">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                   <i class="icon ti ti-trash m-0"></i>
                 </button>

@@ -93,7 +93,13 @@
         <form th:action="@{/employees/{id}/anonymize(id=${employeeForm.id})}" method="post"
               id="anonymizeForm" th:attr="data-employee-sign=${employeeForm.sign}">
           <div class="modal-header">
-            <h5 class="modal-title" th:text="#{form.employee.anonymize.modal.title}">Anonymize Employee</h5>
+            <div>
+              <h5 class="modal-title" th:text="#{form.employee.anonymize.modal.title}">Anonymize Employee</h5>
+              <!--/* Wen es trifft, steht im Dialog und nicht nur in dem Kuerzel, das abgetippt
+                     werden muss (#1032): die Eingabe ist eine Huerde, keine Auskunft. */-->
+              <div class="text-muted small"
+                   th:text="|${employeeForm.firstname} ${employeeForm.lastname} · ${employeeForm.sign}|"></div>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">

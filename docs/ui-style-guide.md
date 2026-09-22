@@ -302,12 +302,12 @@ die vom `FormButtonsProcessor` in Java erzeugten Speichern-/Abbrechen-Buttons si
 | `btn-secondary` | 12 | Abbrechen/Zurück (10×) — plus zwei Fälle als **zweite gleichrangige Aktion**: „Anlegen & Neu" (`employee-order-form:129`) und Excel-Export (`invoice-form:353`) |
 | `btn-ghost-danger` | 7 | Löschen in dichten Flächen (Benachrichtigungen, Favoriten, Nutzerkarte) |
 | `btn-outline-success` | 4 | Aktivieren (Zustands-Toggle, 2×), Buchung teilen (`daily.html:330`, `daily-list-card.html:66`) |
-| `btn-danger` | 4 | Danger Zone und deren Modal-Bestätigung |
+| `btn-danger` | 3 | Danger Zone und deren Modal-Bestätigung. Im gemeinsamen Bestätigungsdialog steht die Variante nicht im Template, sondern kommt aus `data-confirm-variant` (#1032) |
 | `btn-outline-warning` | 2 | Deaktivieren (Zustands-Toggle) |
 | `btn-ghost-warning` | 2 | Erinnerungsmail bei überfälliger Freigabe/Abnahme |
 | `btn-ghost-secondary` | 2 | Icon-Aktionen in der Nutzerkarte |
 | `btn-warning` | 1 | Monat wieder öffnen (Admin, `acceptance.html:117`) |
-| `btn-link` | 2 | Abbrechen im Modal (`link-secondary me-auto`), Hinweis ausblenden (`daily.html:56`) |
+| `btn-link` | 3 | Abbrechen im Modal (`link-secondary me-auto`) — auch im gemeinsamen Bestätigungsdialog, Hinweis ausblenden (`daily.html:56`) |
 
 **Nicht verwendet:** `btn-info`, `btn-dark`, `btn-light` und die Tabler-Sonderfarben
 (`btn-azure`, `btn-purple`, …). `purple`, `azure`, `green`, `red` erscheinen ausschließlich bei
@@ -406,8 +406,42 @@ gerade dreht.
   (trotz des Namens keine echten Toasts: keine Overlay-Position, kein Auto-Dismiss).
   `toastSuccess` kann eine Folgeaktion als Button tragen (`toastAction` / `toastActionLabel`).
   Mehrere Fehler werden zusammengefasst: erster sichtbar, Rest in einem `<details>`.
-- **Löschbestätigung:** natives `confirm()` per `th:onsubmit` — 23 Verwendungen.
-- **Modale Dialoge:** nur an 4 Stellen (Benutzerwechsel, Buchungsdetails, Mitarbeiterformular).
+- **Bestätigungen:** ein gemeinsamer Modal-Dialog für die ganze Anwendung (#1032, → ADR-0027).
+  Er liegt einmal als Fragment (`fragments/confirm-dialog.html`) in `layout/base.html`; die
+  auslösende Aktion beschreibt ihn deklarativ über `data-confirm-*` am Formular (oder an einem
+  einzelnen Submit-Knopf), der delegierte Handler in `salat.js` füllt und öffnet ihn. Kein
+  Template bringt dafür eigenes JavaScript mit. Natives `confirm()`, `alert()` und `prompt()`
+  kommen nicht mehr vor.
+
+  | Attribut | Bedeutung |
+  |---|---|
+  | `data-confirm` | markiert die Aktion als bestätigungspflichtig |
+  | `data-confirm-title` | Überschrift; ohne Angabe die allgemeine Rückfrage |
+  | `data-confirm-text` | was die Aktion tut — nur, wo es etwas zu erklären gibt |
+  | `data-confirm-detail` / `-detail-secondary` | die fachlichen Schlüsselinformationen (siehe unten) |
+  | `data-confirm-detail-input` | Selektor eines Feldes desselben Formulars, dessen aktueller Wert die zweite Zeile vervollständigt |
+  | `data-confirm-label` | Beschriftung des bestätigenden Knopfs |
+  | `data-confirm-variant` | `danger` beim Löschen, sonst `warning`, `success` oder `primary` |
+
+  Layout wie gehabt: `modal-sm modal-dialog-centered`, Abbrechen links (`me-auto`), Bestätigung
+  rechts. Ohne JavaScript entsteht der bestätigende Knopf gar nicht erst — `salat.css` blendet
+  ihn aus, bis `salat.js` die Klasse `salat-confirm-ready` gesetzt hat.
+
+- **Modale Dialoge nennen das Geschäftsobjekt.** Ein Dialog legt sich über die Zeile, an der man
+  gegenprüfen würde; „Soll der Eintrag wirklich gelöscht werden?" ist in diesem Moment nicht mehr
+  nachzuvollziehen. Deshalb gilt für **jeden** modalen Dialog mit einer Meldung, nicht nur für
+  Bestätigungen: er nennt die fachlichen Schlüsselinformationen des betroffenen Objekts — so viel,
+  dass zwei benachbarte Zeilen derselben Liste auseinanderzuhalten sind. Was das heißt, folgt dem,
+  was die Liste zur Unterscheidung ohnehin zeigt: Kunde → Kürzel und Name; Auftrag → Nummer,
+  Kunde und Bezeichnung; Mitarbeitervertrag → Mitarbeiter und Gültigkeitszeitraum; Buchung →
+  Auftrag, Dauer und Buchungstext. Die Datenbank-ID ist keine fachliche Information und gehört
+  nicht in den Text. Gibt es kein einzelnes Objekt, benennt der Text den **Umfang** der Aktion —
+  „Rest nicht gearbeitet" nennt den Monat, das Freigeben den Monat, bis zu dem freigegeben wird.
+
+- **Eigenständige modale Dialoge** bleiben, wo mehr als eine Bestätigung verlangt wird:
+  Benutzerwechsel (`layout/base.html`, die Auswahl findet im Dialog selbst statt), Teilen
+  (`daily.html`), Anonymisieren (`employee-form.html`, Danger Zone mit Doppelbestätigung) und der
+  Feldauswahl-Dialog der JIRA-Replikation. Die Regel oben gilt auch für sie.
 
 ### 5.6 HTMX-Muster
 `th:hx-post` / `hx-get`, `hx-include="closest form"`, `hx-target`, `hx-swap`; Controller erkennt
@@ -1013,9 +1047,12 @@ Bewusst als Fragen formuliert — offene Punkte, kein beschlossenes Backlog.
 3. **„New"/„Beta"-Badges** in der Navigation haben kein Verfallsdatum. Wann wird etwas „normal"?
 
 **Interaktion**
-4. **Natives `confirm()`** für alle 23 Löschvorgänge: keine Angabe *was* gelöscht wird, nicht
-   stilisiert, nicht übersetzbar über den i18n-Text hinaus. Alternative: Modal mit Objektnamen,
-   oder Soft-Delete mit Undo.
+4. ~~**Natives `confirm()`** für alle 23 Löschvorgänge: keine Angabe *was* gelöscht wird, nicht
+   stilisiert, nicht übersetzbar über den i18n-Text hinaus.~~ **Beantwortet (#1032, → ADR-0027).**
+   Ein gemeinsamer Modal-Dialog für die ganze Anwendung, deklarativ über `data-confirm-*`
+   ausgelöst, und die Regel dazu: ein modaler Dialog nennt die fachlichen Schlüsselinformationen
+   des betroffenen Geschäftsobjekts (→ §5.5). Soft-Delete mit Undo bleibt offen — es ist eine
+   andere Frage als die nach der Rückfrage.
 5. **Rückmeldungen heißen „Toast", sind aber Inline-Alerts** oben auf der Seite — nach einem
    Redirect ggf. außerhalb des Blickfelds, kein Auto-Dismiss.
 6. **Filter-Umschalter senden bei jeder Änderung das Formular ab** (Full Page Reload). Bei
@@ -1058,8 +1095,12 @@ Bewusst als Fragen formuliert — offene Punkte, kein beschlossenes Backlog.
 17. **Native Datums-/Zeit-Controls** (`type="date"`, `month`, `time`): Format und Bedienung folgen
     dem Betriebssystem, nicht der App — browserübergreifend also nicht konsistent, dafür
     barrierefrei und ohne JS. Bewusst so beibehalten?
-18. **Danger-Zone-Muster mit Doppelbestätigung** existiert genau einmal (Mitarbeiter anonymisieren),
-    während 23 Löschvorgänge mit `confirm()` auskommen. Welche Aktionen verdienen welche Hürde?
+18. ~~**Danger-Zone-Muster mit Doppelbestätigung** existiert genau einmal (Mitarbeiter
+    anonymisieren), während 23 Löschvorgänge mit `confirm()` auskommen.~~ **Beantwortet
+    (#1032, → ADR-0027).** Drei Stufen, nach Umkehrbarkeit: eine Aktion ohne bleibenden Schaden
+    fragt nicht; eine löschende oder in die Vergangenheit greifende Aktion geht über den
+    gemeinsamen Dialog, der benennt, was sie trifft; die Doppelbestätigung bleibt dem einen Fall
+    vorbehalten, der unwiderruflich Daten überschreibt.
 
 **Barrierefreiheit** (nicht auditiert, Beobachtungen aus dem Code)
 19. **Icon-only-Buttons ohne `aria-label`**: `aria-label` erscheint nur in 3 Templates plus

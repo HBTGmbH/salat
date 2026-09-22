@@ -118,7 +118,13 @@
           </td>
           <td>
             <form th:action="@{/jira/replications/{id}/delete(id=${replication.id})}" method="post"
-                  th:onsubmit="|return confirm('#{main.jira.replication.confirm.delete}');|">
+                  data-confirm
+                  th:data-confirm-title="#{main.jira.replication.delete.confirm.title}"
+                  th:data-confirm-text="#{main.jira.replication.confirm.delete}"
+                  th:data-confirm-detail="${replication.name}"
+                  th:data-confirm-detail-secondary="${replication.scopeSign}"
+                  th:data-confirm-label="#{main.general.button.delete.text}"
+                  data-confirm-variant="danger">
               <button type="submit" class="btn btn-outline-danger btn-sm" th:title="#{main.button.label.delete.text}">
                 <i class="icon ti ti-trash m-0"></i>
               </button>

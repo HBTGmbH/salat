@@ -244,6 +244,129 @@ document.addEventListener('htmx:after:swap', function () {
   }
 });
 
+/* ─── Confirmation dialog (#1032, ADR-0027) ──────────────────────────────────
+ *
+ * One dialog for the whole application (fragments/confirm-dialog.html, included once by
+ * layout/base.html). The triggering action describes it declaratively; no page brings its own
+ * script for a confirmation:
+ *
+ *   data-confirm                    marks the form — or a single submit button of it — as needing
+ *                                   a confirmation
+ *   data-confirm-title              heading; defaults to the generic one carried by the dialog
+ *   data-confirm-text               what the action does
+ *   data-confirm-detail             the business object it hits, and
+ *   data-confirm-detail-secondary   whatever else tells it apart from its neighbour in the list.
+ *                                   Mandatory wherever the action aims at exactly one object —
+ *                                   naming it is the whole point of replacing the native popup.
+ *   data-confirm-detail-input       selector of a field of the same form whose current value
+ *                                   completes the second line. Where the scope is what somebody
+ *                                   just typed — release up to which month — a fixed text cannot
+ *                                   say it, and that scope is the key information here.
+ *   data-confirm-label              caption of the confirming button
+ *   data-confirm-variant            danger | warning | success | primary (default)
+ *
+ * The listener sits on `document` in the capture phase and stops the event there. HTMX registers
+ * its trigger on the form element itself, so anything but capture would let an hx-post leave
+ * before the question is answered.
+ * -------------------------------------------------------------------------- */
+
+// anything else would be a class name straight from an attribute into the DOM
+const CONFIRM_VARIANTS = ['primary', 'danger', 'warning', 'success'];
+
+function confirmDialogLine(id, value) {
+  const el = document.getElementById(id);
+  el.textContent = value || '';
+  // an absent line collapses rather than opening a gap under the text
+  el.classList.toggle('d-none', !value);
+}
+
+function confirmDialogSecondary(source, form) {
+  const parts = [source.dataset.confirmDetailSecondary];
+  if (source.dataset.confirmDetailInput) {
+    parts.push(form.querySelector(source.dataset.confirmDetailInput)?.value);
+  }
+  return parts.filter(Boolean).join(': ');
+}
+
+function fillConfirmDialog(modal, source, form) {
+  const data = source.dataset;
+  document.getElementById('confirmModalTitle').textContent =
+    data.confirmTitle || modal.dataset.defaultTitle;
+  confirmDialogLine('confirmModalText', data.confirmText);
+  confirmDialogLine('confirmModalDetail', data.confirmDetail);
+  confirmDialogLine('confirmModalDetailSecondary', confirmDialogSecondary(source, form));
+
+  const accept = document.getElementById('confirmModalAccept');
+  accept.textContent = data.confirmLabel || modal.dataset.defaultLabel;
+  const variant = CONFIRM_VARIANTS.includes(data.confirmVariant) ? data.confirmVariant : 'primary';
+  accept.className = 'btn btn-' + variant;
+}
+
+function openConfirmDialog(source, form, onConfirm) {
+  const modal = document.getElementById('confirmModal');
+  // no dialog, no confirmation — and therefore no action either
+  if (!modal) return;
+  fillConfirmDialog(modal, source, form);
+
+  const accept = document.getElementById('confirmModalAccept');
+  const trigger = document.activeElement;
+  let confirmed = false;
+
+  const onAccept = () => {
+    confirmed = true;
+    instance.hide();
+  };
+  accept.addEventListener('click', onAccept);
+
+  // the confirming button carries the focus, so Enter answers the question that was asked and
+  // Escape (Bootstrap) cancels; the dialog is reachable by keyboard alone from here on
+  modal.addEventListener('shown.bs.modal', () => accept.focus(), { once: true });
+  modal.addEventListener('hidden.bs.modal', () => {
+    accept.removeEventListener('click', onAccept);
+    // the native popup handed the focus back by itself; Bootstrap only does that for a modal opened
+    // through data-bs-toggle, and this one is opened from script
+    if (trigger && document.body.contains(trigger)) trigger.focus();
+    // act after the dialog is gone: an HTMX action swaps the page underneath it, and a backdrop
+    // whose modal is mid-transition stays on the screen
+    if (confirmed) onConfirm();
+  }, { once: true });
+
+  const instance = tabler.bootstrap.Modal.getOrCreateInstance(modal);
+  instance.show();
+}
+
+function confirmSource(form, submitter) {
+  // the button wins: a form may have one action that asks and another that does not
+  if (submitter && submitter.hasAttribute('data-confirm')) return submitter;
+  if (form.hasAttribute('data-confirm')) return form;
+  return null;
+}
+
+document.addEventListener('submit', function (event) {
+  const form = event.target;
+  const submitter = event.submitter;
+  const source = confirmSource(form, submitter);
+  if (!source) return;
+  if (form.salatConfirmed) {
+    // the re-submit below, on its way through: let it pass exactly once
+    form.salatConfirmed = false;
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  openConfirmDialog(source, form, function () {
+    form.salatConfirmed = true;
+    // requestSubmit, not submit(): it keeps the submitter (so the pressed button's name and value
+    // are sent) and runs the HTML5 validation, both of which form.submit() skips
+    form.requestSubmit(submitter || undefined);
+  });
+}, true);
+
+// The CSS counterpart hides every confirming button until this line has run: without the script
+// there is no dialog, and a destructive action that simply fires would be worse than one that is
+// missing (see salat.css).
+document.body.classList.add('salat-confirm-ready');
+
 /* ─── Time and duration input (#830) ─────────────────────────────────────────
  *
  * Single implementation for every time and duration field, driven by data attributes on the

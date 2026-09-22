@@ -78,7 +78,12 @@
               </td>
               <td th:if="${#authorization.expression('hasRole(''MANAGER'')')}">
                 <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post"
-                      th:onsubmit="|return confirm('#{main.general.confirmdelete.text}')|">
+                      data-confirm
+                      th:data-confirm-title="#{main.employee.delete.confirm.title}"
+                      th:data-confirm-detail="|${employee.firstname} ${employee.lastname}|"
+                      th:data-confirm-detail-secondary="${employee.sign}"
+                      th:data-confirm-label="#{main.general.button.delete.text}"
+                      data-confirm-variant="danger">
                   <button type="submit" class="btn btn-outline-danger"
                           th:title="#{main.headlinedescription.employees.delete.text}">
                     <i class="icon ti ti-trash m-0"></i>
