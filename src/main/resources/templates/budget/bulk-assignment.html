@@ -131,7 +131,7 @@
     </div>
   </form>
 
-  <!-- HTMX out-of-band updates: the preview always, the dependent selects only when the order changed -->
+  <!--/* HTMX out-of-band updates: the preview always, the dependent selects only when the order changed */-->
   <div th:if="${htmxRequest}">
     <div th:replace="~{budget/bulk-assignment-preview :: panel('true')}"></div>
 
@@ -165,8 +165,8 @@
       </select>
     </div>
 
-    <!-- Multi-select: the native multiple attribute has to be here as well, or the browser would
-         submit only one of the chosen people. -->
+    <!--/* Multi-select: the native multiple attribute has to be here as well, or the browser would
+           submit only one of the chosen people. */-->
     <div class="mb-3" id="employeeIdsInput" th:hx-swap-oob="${employeesChanged}">
       <label class="form-label" th:text="#{main.bulkassignment.field.employees}">Mitarbeitende</label>
       <select class="form-select tomselect tomselect-multi" name="employeeIds" multiple

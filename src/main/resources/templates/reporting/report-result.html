@@ -31,8 +31,8 @@
     </div>
     <div class="card-body">
       <!-- Error Alert -->
-      <!-- The details live on the nested ErrorInfo. Read through a local variable and tolerate it
-           being absent: a missing detail must not turn the error page itself into a 500. -->
+      <!--/* The details live on the nested ErrorInfo. Read through a local variable and tolerate it
+             being absent: a missing detail must not turn the error page itself into a 500. */-->
       <div th:if="${reportResult.error}" class="alert alert-danger" role="alert"
            th:with="errorInfo=${reportResult.errorInfo}">
         <div class="d-flex">

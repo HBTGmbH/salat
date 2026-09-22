@@ -19,7 +19,7 @@
     <salat:inputs>
       <div class="row">
         <div class="col-md-6">
-          <!-- Plain select rather than salat:select, which does not forward the hx-* attributes. -->
+          <!--/* Plain select rather than salat:select, which does not forward the hx-* attributes. */-->
           <div class="mb-3">
             <label class="form-label" for="customerorderSign"
                    th:text="#{main.pricing.field.customerorderSign}">Auftrag</label>
@@ -45,7 +45,7 @@
       </div>
       <div class="row">
         <div class="col-md-6">
-          <!-- A hidden employee only appears when the rate already references them; say so. -->
+          <!--/* A hidden employee only appears when the rate already references them; say so. */-->
           <salat:select th:field="*{employeeSign}" th:label="#{main.pricing.field.employeeSign}">
             <option value="" th:text="#{main.pricing.field.employeeSign.all}">--- Alle Mitarbeiter ---</option>
             <option th:each="emp : ${employees}"

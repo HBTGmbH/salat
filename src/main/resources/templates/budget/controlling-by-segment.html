@@ -60,16 +60,16 @@
       <table class="table table-vcenter card-table">
         <thead th:replace="~{budget/controlling-section :: headers(${result.columns()}, true, ${result.filter().getFrom()}, #{main.controlling.bysegment.col.order}, true)}"></thead>
         <tbody>
-          <!-- th:each auf einem äußeren Block: th:replace hat die höhere Präzedenz und würde sonst
-               vor der Schleife ausgewertet. -->
+          <!--/* th:each auf einem äußeren Block: th:replace hat die höhere Präzedenz und würde sonst
+                 vor der Schleife ausgewertet. */-->
           <th:block th:each="order : ${segment.orders()}">
             <tr th:replace="~{budget/controlling-section :: row(${result.columns()}, ${order.total()}, true, 'small', '',
                               @{/budget/controlling(fCustomerOrderSign=${order.customerorderSign()},
                                 from=${result.filter().getFrom()},until=${result.filter().getUntil()},
                                 evaluate=true)})}"></tr>
           </th:block>
-          <!-- Die Summenzeile führt nirgends hin und bekommt den leeren String, damit ihre Zellen
-               unter denen der Auftragszeilen bleiben. -->
+          <!--/* Die Summenzeile führt nirgends hin und bekommt den leeren String, damit ihre Zellen
+                 unter denen der Auftragszeilen bleiben. */-->
           <tr th:replace="~{budget/controlling-section :: row(${result.columns()}, ${segment.total()}, true, 'fw-bold', 'table-active fw-bold', '')}"></tr>
         </tbody>
       </table>

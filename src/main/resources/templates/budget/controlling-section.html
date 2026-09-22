@@ -28,8 +28,8 @@
 <table class="table table-vcenter card-table">
   <thead th:replace="~{budget/controlling-section :: headers(${columns}, ${isManager}, ${windowFrom}, #{main.controlling.col.order}, false)}"></thead>
   <tbody>
-    <!-- th:each and th:if sit on an outer block: th:replace has higher precedence and would be
-         evaluated before either of them, leaving the fragment without its row. -->
+    <!--/* th:each and th:if sit on an outer block: th:replace has higher precedence and would be
+           evaluated before either of them, leaving the fragment without its row. */-->
     <th:block th:each="group : ${section.groups()}">
       <th:block th:each="row : ${group.rows()}">
         <tr th:replace="~{budget/controlling-section :: row(${columns}, ${row}, ${isManager}, 'small', '', null)}"></tr>
@@ -44,10 +44,10 @@
   </div>
 </div>
 
-<!--
+<!--/*
   The header row of every controlling table. The label of the first column is a parameter: it names
   suborders in a section, whole orders in the segment listing.
--->
+*/-->
 <thead th:fragment="headers(columns, isManager, windowFrom, firstColumnLabel, hasAction)">
     <tr>
       <th th:text="${firstColumnLabel}">Auftrag / Subauftrag</th>
@@ -72,7 +72,7 @@
       */-->
       <th class="text-end" th:if="${columns.flatRate()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
       <th class="text-end" th:if="${columns.budget()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
-      <!-- Two lines, like the column before it: the label is wider than the numbers below it. -->
+      <!--/* Two lines, like the column before it: the label is wider than the numbers below it. */-->
       <th class="text-end" th:if="${columns.budget()}">
         <span th:text="#{main.controlling.col.budgetused.line1}">Budget</span><br/>
         <span th:text="#{main.controlling.col.budgetused.line2}">genutzt</span>
@@ -96,11 +96,11 @@
   summary line of a table whose other lines link somewhere needs to stay aligned with them.
 */-->
 <tr th:fragment="row(columns, row, isManager, cellClass, rowClass, actionUrl)" th:class="${rowClass}">
-  <!--
+  <!--/*
     Two lines: the complete order sign, and below it the suborder's own description — not the
     qualified name, the sign above already carries the hierarchy. Neither line breaks; the
     description of a suborder is short, and wrapping it would make the rows different heights.
-  -->
+  */-->
   <td>
     <div class="text-muted small text-nowrap"
          th:text="${row.signFormatted()} ?: #{main.controlling.row.total}">1612 / 01 / D</div>

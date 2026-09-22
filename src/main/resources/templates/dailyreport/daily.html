@@ -141,8 +141,8 @@
                 hx-swap="outerHTML">
             <input type="hidden" name="date" th:value="${date}"/>
 
-            <!-- flex-wrap: three field groups plus their steppers overflow a phone viewport,
-                 so they stack there and stay in one row from md upwards -->
+            <!--/* flex-wrap: three field groups plus their steppers overflow a phone viewport,
+                   so they stack there and stay in one row from md upwards */-->
             <div class="d-flex flex-wrap align-items-center gap-2">
 
               <!-- Not-worked toggle -->
@@ -208,11 +208,11 @@
           <!-- Progress / quitting time -->
           <div th:if="${dailyData != null and dailyData.hasTarget}" id="daily-progress"
                th:classappend="${workingdayForm.notWorked} ? 'd-none' : ''" class="mt-3">
-            <!-- The content is a fragment because the OOB refresh below renders the same block. It
-                 used to be copied, and a change in one place silently drifted from the other. -->
+            <!--/* The content is a fragment because the OOB refresh below renders the same block. It
+                   used to be copied, and a change in one place silently drifted from the other. */-->
             <div th:fragment="dailyProgressContent">
-              <!-- flex-wrap: the booked duration and the quitting time must not squeeze each other
-                   on a narrow window -->
+              <!--/* flex-wrap: the booked duration and the quitting time must not squeeze each other
+                     on a narrow window */-->
               <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
                 <span class="text-muted small">
                   <span th:text="#{main.daily.booked.label}">Gebucht:</span>
@@ -295,8 +295,8 @@
                   <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
                 </td>
                 <td th:with="hasText=${not #strings.isEmpty(tr.taskdescription)}">
-                  <!-- below md the order has no column of its own and rides along here, still as
-                       the secondary line -->
+                  <!--/* below md the order has no column of its own and rides along here, still as
+                         the secondary line */-->
                   <div class="d-md-none mb-1">
                     <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
                   </div>
@@ -308,8 +308,8 @@
                          th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
                          th:classappend="${hasText} ? 'fw-medium' : 'is-empty text-muted small'"
                          th:text="${tr.taskdescription}"></div>
-                    <!-- same font size as the display above: the row must not jump when the
-                         textarea takes its place -->
+                    <!--/* same font size as the display above: the row must not jump when the
+                           textarea takes its place */-->
                     <textarea class="form-control form-control-sm inline-edit-input d-none"
                               rows="2"
                               style="font-size:1rem; resize:none"
@@ -333,10 +333,10 @@
                     <span class="badge bg-blue-lt inline-edit-display"
                           style="user-select:none"
                           th:text="${@durationUtils.format(tr.duration)}"></span>
-                    <!-- the wrapper carries the visibility so that the stepper buttons follow it;
-                         no chips here, a table cell has no room for a second row -->
+                    <!--/* the wrapper carries the visibility so that the stepper buttons follow it;
+                           no chips here, a table cell has no room for a second row */-->
                     <div class="inline-edit-field d-none">
-                      <!-- font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus -->
+                      <!--/* font-size must stay at 1rem: below 16px iOS Safari zooms the page on focus */-->
                       <input type="text" class="form-control form-control-sm text-center inline-edit-input"
                              style="width:auto; font-size:1rem" size="6"
                              inputmode="decimal" maxlength="8"
@@ -391,8 +391,8 @@
             </tbody>
             <tfoot th:if="${dailyData != null}" style="border-top: 2px solid var(--tblr-border-color);">
               <tr>
-                <!-- one cell per column up to the duration, so the total keeps sitting under it
-                     (the order column is gone below md, hence the two spans instead of a colspan) -->
+                <!--/* one cell per column up to the duration, so the total keeps sitting under it
+                       (the order column is gone below md, hence the two spans instead of a colspan) */-->
                 <td class="d-none d-md-table-cell"></td>
                 <td class="text-muted" th:text="#{main.daily.column.total}" style="text-align: right">Gesamt</td>
                 <td><span class="badge bg-blue-lt" th:text="${@durationUtils.format(dailyData.totalBooked)}"></span></td>
@@ -407,7 +407,7 @@
       <div th:if="${isHtmxRequest == true and isDailyMode == true and dailyData != null and dailyData.hasTarget}" id="daily-progress"
            th:classappend="${workingdayForm.notWorked} ? 'd-none' : ''"
            hx-swap-oob="outerHTML:#daily-progress" class="mt-3">
-        <!-- same content as the initial render, see dailyProgressContent -->
+        <!--/* same content as the initial render, see dailyProgressContent */-->
         <div th:replace="~{:: dailyProgressContent}"></div>
       </div>
 
@@ -463,7 +463,7 @@
             hx-swap="outerHTML">
           <input type="hidden" name="date" th:value="${date}"/>
 
-          <!-- flex-wrap: see the main copy above -->
+          <!--/* flex-wrap: see the main copy above */-->
           <div class="d-flex flex-wrap align-items-center gap-2">
 
             <!-- Not-worked toggle -->
@@ -830,8 +830,8 @@
               hx-swap="outerHTML">
           <input type="hidden" id="deleteFavouriteId" name="favoriteId"/>
           <input type="hidden" name="date" th:value="${date}"/>
-          <!-- data-bs-dismiss closes the dialog while HTMX sends the request: the list is swapped
-               in place, so nothing else would take the modal off the screen -->
+          <!--/* data-bs-dismiss closes the dialog while HTMX sends the request: the list is swapped
+                 in place, so nothing else would take the modal off the screen */-->
           <button type="submit" class="btn btn-danger" data-bs-dismiss="modal"
                   th:text="#{main.daily.delete.modal.confirm}">Löschen</button>
         </form>

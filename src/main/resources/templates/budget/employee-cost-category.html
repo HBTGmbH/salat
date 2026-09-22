@@ -31,9 +31,9 @@
         <input type="hidden" name="name" th:value="${categoryName}"/>
         <div class="col-md-6">
           <label class="form-label required" th:text="#{main.employeecost.field.name}">Name</label>
-          <!-- Feld und Button in einer input-group: der Hinweis unter dem Feld macht die Spalte
-               höher, und mit align-items-end stünde der Button neben dem Hinweis statt neben dem
-               Feld. -->
+          <!--/* Feld und Button in einer input-group: der Hinweis unter dem Feld macht die Spalte
+                 höher, und mit align-items-end stünde der Button neben dem Hinweis statt neben dem
+                 Feld. */-->
           <div class="input-group">
             <input type="text" class="form-control" name="newName" th:value="${categoryName}" maxlength="255" required/>
             <button type="submit" class="btn btn-primary">

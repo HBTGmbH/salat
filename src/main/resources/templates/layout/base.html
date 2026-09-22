@@ -11,12 +11,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
-  <!-- htmx 4 changed three defaults against htmx 2 (https://four.htmx.org/docs#migrating-from-htmx-2x-to-4x).
-       Two of them are switched back to the 2.x semantics here, because the whole application relies on them:
-       attribute inheritance is explicit in 4.x (every inherited hx-include/hx-target would need `:inherited`),
-       and 4xx/5xx responses are swapped in 4.x (our error handling answers with a status and expects the DOM
-       to stay untouched). The third one - history navigation refetches from the server instead of restoring a
-       local snapshot - is handled by the hx-history-cache extension loaded at the end of the body. -->
+  <!--/* htmx 4 changed three defaults against htmx 2 (https://four.htmx.org/docs#migrating-from-htmx-2x-to-4x).
+         Two of them are switched back to the 2.x semantics here, because the whole application relies on them:
+         attribute inheritance is explicit in 4.x (every inherited hx-include/hx-target would need `:inherited`),
+         and 4xx/5xx responses are swapped in 4.x (our error handling answers with a status and expects the DOM
+         to stay untouched). The third one - history navigation refetches from the server instead of restoring a
+         local snapshot - is handled by the hx-history-cache extension loaded at the end of the body. */-->
   <meta name="htmx-config" content='{"implicitInheritance":true,"noSwap":[204,304,"4xx","5xx"]}'/>
   <title th:text="'SALAT - ' + ${pageTitle}">Salat</title>
   <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}"/>
@@ -297,11 +297,11 @@
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'budget'} ? 'show' : ''">
               <div class="dropdown-menu-columns">
-                <!--
+                <!--/*
                   Erst auswerten, dann pflegen: Dashboard, Controlling und die Segmentauswertung
                   stehen zusammen oben, weil sie dieselbe Frage in drei Flughöhen beantworten. Die
                   Stammdaten darunter werden selten angefasst.
-                -->
+                */-->
                 <div class="dropdown-menu-column">
                   <a class="dropdown-item" th:href="@{/budget/dashboard}"
                      th:classappend="${subSection == 'dashboard'} ? 'active' : ''"
@@ -442,8 +442,8 @@
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'systemsettings'}">
               <i class="nav-link-icon bi bi-gear"></i>
-              <!-- The marker sits on the section, not on the single entry inside it: the whole area
-                   is what is new here. -->
+              <!--/* The marker sits on the section, not on the single entry inside it: the whole area
+                     is what is new here. */-->
               <span class="nav-link-title">
                 <span th:text="#{main.general.mainmenu.system.text}">System</span>
                 <span class="badge bg-green-lt ms-2 nav-link-badge">New</span>
@@ -661,9 +661,9 @@
 </div>
 <script th:src="@{/webjars/tabler__core/dist/js/tabler.min.js}"></script>
 <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
-<!-- Restores the htmx 2 history behaviour: back/forward serve from a local snapshot instead of re-requesting
-     the pushed URL. The list views push their filter URL (hx-push-url), and the controllers answer such a
-     request with a fragment, so a refetch would replace the whole page with the results table. -->
+<!--/* Restores the htmx 2 history behaviour: back/forward serve from a local snapshot instead of re-requesting
+       the pushed URL. The list views push their filter URL (hx-push-url), and the controllers answer such a
+       request with a fragment, so a refetch would replace the whole page with the results table. */-->
 <script th:src="@{/webjars/htmx.org/dist/ext/hx-history-cache.min.js}"></script>
 <script th:src="@{/webjars/tom-select/dist/js/tom-select.complete.min.js}"></script>
 <script th:src="@{/js/salat.js}"></script>
