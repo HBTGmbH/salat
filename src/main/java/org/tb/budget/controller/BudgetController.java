@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -317,7 +316,6 @@ public class BudgetController {
      * wrong instead of leaving a half-moved selection behind.
      */
     @Authorized(requiresManager = true)
-    @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/{id}/assignments/move")
     public String moveAssignments(@PathVariable long id,
                                   @RequestParam(required = false) List<Long> timereportIds,

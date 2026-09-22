@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +32,6 @@ import org.tb.order.service.SuborderService;
 @RequestMapping("/budget/bulk-assignment")
 @RequiredArgsConstructor
 @Authorized(requiresManager = true)
-@PreAuthorize("hasRole('MANAGER')")
 public class BudgetBulkAssignmentController {
 
     private final TimereportBudgetBulkAssignmentService bulkAssignmentService;

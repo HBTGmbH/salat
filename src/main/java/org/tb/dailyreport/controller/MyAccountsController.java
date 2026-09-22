@@ -16,7 +16,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -88,7 +88,7 @@ public class MyAccountsController {
     }
 
     @PostMapping("/overtime/correct")
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     public String correctOvertime(@RequestParam(required = false) Long fEmployeeContractId, RedirectAttributes redirectAttributes) {
         var contract = currentContract(fEmployeeContractId);
         overtimeService.updateOvertimeStatic(contract.getId());

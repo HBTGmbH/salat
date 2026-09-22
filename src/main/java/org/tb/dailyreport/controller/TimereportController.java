@@ -15,7 +15,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -150,7 +149,7 @@ public class TimereportController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String create(
             @RequestParam(required = false) Long fEmployeeContractId,
             @ModelAttribute TimereportForm form,
@@ -165,7 +164,7 @@ public class TimereportController {
     }
 
     @PostMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String update(
             @PathVariable Long id,
             @RequestParam(required = false) Long fEmployeeContractId,
@@ -182,7 +181,7 @@ public class TimereportController {
     }
 
     @PostMapping("/refresh-orders")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String refreshOrders(@RequestParam(required = false) Long fEmployeeContractId, @ModelAttribute TimereportForm form, Model model) {
         long ecId = effectiveContractId(fEmployeeContractId);
         LocalDate date = form.getReferenceday();
@@ -215,7 +214,7 @@ public class TimereportController {
     }
 
     @PostMapping("/refresh-sidebar")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String refreshSidebar(@RequestParam(required = false) Long fEmployeeContractId, @ModelAttribute TimereportForm form, Model model) {
         long ecId = effectiveContractId(fEmployeeContractId);
         model.addAttribute("timereportForm", form);
@@ -231,7 +230,7 @@ public class TimereportController {
     }
 
     @PostMapping("/preferences/favorite-suborder")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     @ResponseBody
     public ResponseEntity<Void> setFavoriteSuborder(@RequestParam(required = false) Long suborderId) {
         timereportPreferenceService.toggleFavoriteSuborder(suborderId);
@@ -239,7 +238,7 @@ public class TimereportController {
     }
 
     @GetMapping("/share-recipients")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String getShareRecipients(@RequestParam(required = false) Long fEmployeeContractId,
                                      @RequestParam(required = false) Long suborderId,
                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -257,7 +256,7 @@ public class TimereportController {
     }
 
     @PostMapping("/{id}/share")
-    @PreAuthorize("isAuthenticated()")
+    @Authorized
     public String shareTimereport(@PathVariable Long id,
                                   @RequestParam List<Long> recipientUserIds,
                                   @RequestParam(required = false) String returnUrl,

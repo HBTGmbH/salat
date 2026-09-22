@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
+import org.tb.auth.domain.Authorized;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
 import org.tb.order.service.OrderRevenueImportResult;
@@ -35,7 +35,7 @@ public class OrderRevenueUploadController {
     private final EmployeeService employeeService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('BACKOFFICE','MANAGER')")
+    @Authorized(requiresBackoffice = true)
     public String uploadForm(Model model) {
         model.addAttribute("section", "backoffice");
         model.addAttribute("subSection", "revenue-upload");
@@ -47,7 +47,7 @@ public class OrderRevenueUploadController {
     }
 
     @PostMapping(path = "/process", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('BACKOFFICE','MANAGER')")
+    @Authorized(requiresBackoffice = true)
     public String process(
             @ModelAttribute UploadForm uploadForm,
             Model model,

@@ -2,7 +2,6 @@ package org.tb.jira.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +36,7 @@ public class JiraTicketSuggestionController {
   private final JiraTicketSuggestionService jiraTicketSuggestionService;
 
   @GetMapping("/suggestions")
-  @PreAuthorize("isAuthenticated()")
+  @Authorized
   @ResponseBody
   public List<JiraTicketSuggestion> suggestions(@RequestParam(required = false) Long suborderId,
       @RequestParam(required = false) String q) {

@@ -14,7 +14,6 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
@@ -45,7 +45,7 @@ import org.tb.employee.service.EmployeecontractService.ContractStoredInfo;
 @Controller
 @RequestMapping("/employees/contracts")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class EmployeecontractController {
 
     private final EmployeecontractService employeecontractService;
@@ -103,7 +103,7 @@ public class EmployeecontractController {
         return "employee/employee-contract-view";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @GetMapping("/create")
     public String createForm(@RequestParam(required = false) Long fEmployeeId, Model model) {
         var form = new EmployeecontractForm();
@@ -118,7 +118,7 @@ public class EmployeecontractController {
         return "employee/employee-contract-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @GetMapping("/edit")
     public String editForm(@RequestParam Long id, Model model) {
         Employeecontract ec = employeecontractService.getEmployeeContractWithVacationsById(id);
@@ -136,7 +136,7 @@ public class EmployeecontractController {
         return "employee/employee-contract-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/store")
     public String store(@ModelAttribute("employeecontractForm") EmployeecontractForm form,
                         BindingResult bindingResult,
@@ -213,7 +213,7 @@ public class EmployeecontractController {
         return "redirect:/employees/contracts";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/overtime")
     public String addOvertime(@PathVariable Long id,
                               @ModelAttribute("employeecontractForm") EmployeecontractForm form,
@@ -253,7 +253,7 @@ public class EmployeecontractController {
         return "redirect:/employees/contracts/edit?id=" + id;
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/toggle-hide")
     public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         try {
@@ -267,7 +267,7 @@ public class EmployeecontractController {
         }
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Employeecontract ec = employeecontractService.getEmployeecontractById(id);

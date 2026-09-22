@@ -7,7 +7,6 @@ import static org.tb.common.GlobalConstants.CUSTOMERSHORTNAME_MAX_LENGTH;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.viewhelper.FilterHintViewHelper;
@@ -28,7 +28,7 @@ import org.tb.customer.service.CustomerService;
 @Controller
 @RequestMapping("/customers")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class CustomerController {
 
   private final CustomerService customerService;
@@ -49,7 +49,7 @@ public class CustomerController {
     return "customer/customer-list";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/create")
   public String createForm(Model model) {
     model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.addcustomer.text", "Create Customer"));
@@ -59,7 +59,7 @@ public class CustomerController {
     return "customer/customer-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/edit")
   public String editForm(@RequestParam("id") Long id, Model model) {
     var dto = customerService.getCustomerById(id);
@@ -70,7 +70,7 @@ public class CustomerController {
     return "customer/customer-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/store")
   public String store(@Valid @ModelAttribute("customer") CustomerDTO form,
                       BindingResult bindingResult,
@@ -130,7 +130,7 @@ public class CustomerController {
     return "redirect:/customers";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/{id}/toggle-hide")
   public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
     try {
@@ -144,7 +144,7 @@ public class CustomerController {
     }
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/delete")
   public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     customerService.deleteCustomerById(id);

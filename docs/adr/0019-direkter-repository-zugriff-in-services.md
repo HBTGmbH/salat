@@ -19,8 +19,8 @@ Service keinen sicheren, transaktionsgebundenen Kontext garantierte.
 
 Heute gelten diese Randbedingungen nicht mehr:
 
-- **Authorization** wird in zwei Ebenen durchgesetzt: `@PreAuthorize` auf dem Controller und
-  `@Authorized` auf dem `@Service`. Ein separater DAO-Filter ist redundant.
+- **Authorization** wird in zwei Ebenen durchgesetzt: `@Authorized` auf dem Controller und
+  `@Authorized` auf dem `@Service` (→ ADR-0006). Ein separater DAO-Filter ist redundant.
 - **Transaktionsmanagement** ist durch `@Transactional` auf dem Service garantiert. Lazy-Assoziationen
   können innerhalb der Service-Methode sicher aufgelöst werden. LazyInitializationException ist kein
   Architekturproblem mehr, sondern ein Fetch-Strategy-Problem, das am Entity gelöst wird.

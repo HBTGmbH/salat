@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
@@ -45,7 +45,7 @@ import org.tb.order.viewhelper.CustomerOrderViewDecorator;
 @Controller
 @RequestMapping("/orders/customerorders")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class CustomerorderController {
 
   private final CustomerorderService customerorderService;
@@ -91,7 +91,7 @@ public class CustomerorderController {
     return htmxRequest ? "order/customer-order-list :: results" : "order/customer-order-list";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/create")
   public String createForm(@RequestParam(required = false) Long fCustomerId, Model model) {
     var form = new CustomerorderForm();
@@ -105,7 +105,7 @@ public class CustomerorderController {
     return "order/customer-order-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @GetMapping("/edit")
   public String editForm(@RequestParam Long id, Model model) {
     Customerorder co = customerorderService.getCustomerorderById(id);
@@ -114,7 +114,7 @@ public class CustomerorderController {
     return "order/customer-order-form";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/store")
   public String store(@ModelAttribute("customerorderForm") CustomerorderForm form,
                       BindingResult bindingResult,
@@ -164,7 +164,7 @@ public class CustomerorderController {
     return "redirect:/orders/customerorders";
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/{id}/toggle-hide")
   public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
     try {
@@ -178,7 +178,7 @@ public class CustomerorderController {
     }
   }
 
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   @PostMapping("/{id}/delete")
   public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
     try {

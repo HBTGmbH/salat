@@ -4,7 +4,6 @@ import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
@@ -28,7 +28,7 @@ import org.tb.employee.service.EmployeeService;
 @Controller
 @RequestMapping("/employees")
 @RequiredArgsConstructor
-@PreAuthorize("not hasRole('RESTRICTED')")
+@Authorized(requireUnrestricted = true)
 public class EmployeeController {
 
     private final EmployeeService employeeService;
@@ -67,7 +67,7 @@ public class EmployeeController {
         return "employee/employee-view";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @GetMapping("/create")
     public String createForm(Model model) {
         var form = new EmployeeForm();
@@ -78,7 +78,7 @@ public class EmployeeController {
         return "employee/employee-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @GetMapping("/edit")
     public String editForm(@RequestParam Long id, Model model) {
         Employee employee = employeeService.getEmployeeById(id);
@@ -88,7 +88,7 @@ public class EmployeeController {
         return "employee/employee-form";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/store")
     public String store(@ModelAttribute("employeeForm") EmployeeForm form,
                         BindingResult bindingResult,
@@ -137,7 +137,7 @@ public class EmployeeController {
         return "redirect:/employees";
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/toggle-hide")
     public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         try {
@@ -151,7 +151,7 @@ public class EmployeeController {
         }
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/anonymize")
     public String anonymize(@PathVariable Long id,
                             @RequestParam String confirmSign,
@@ -169,7 +169,7 @@ public class EmployeeController {
         }
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Employee loginEmployee = employeeService.getLoginEmployee();

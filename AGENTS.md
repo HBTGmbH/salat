@@ -316,7 +316,7 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] All existing tests pass; new behaviour should be covered by tests
 - [ ] No new cross-module cycles introduced; cross-module side-effects go through Spring events
 - [ ] Controllers are thin — business logic lives in a service within the same module
-- [ ] Security: `@PreAuthorize` on every controller write method; `@Authorized` + runtime guard in the service
+- [ ] Security: `@Authorized(requires…)` on every controller write method; `@Authorized` + runtime guard in the service. No `@PreAuthorize` (#926)
 - [ ] No unused imports in the changed files. Removing code tends to leave its imports behind, and
   the compiler does not complain. Check the files the task touched — not the whole codebase.
 
@@ -386,7 +386,7 @@ A feature or fix is considered done when **all** of the following are true:
   - Verify dependencies and coupling follow the rules above (no new cycles; use events for cross-module collaboration).
   - For views, prefer Thymeleaf fragments and the shared layout structure.
   - Place cross-cutting Spring Boot/Spring Security enabling annotations on SalatApplication.
-  - Favor standard Spring Security (@PreAuthorize/roles) over custom aspects, unless explicitly required.
+  - Require a permission with `@Authorized(requires…)` — on the controller and on the service alike. `@PreAuthorize` is not used here (#926, → ADR-0006).
   - Keep controllers thin; push logic to services within the same module.
   - Start the commit message with the issue ID, or `#noissue` if there is none
     (`#NNN - <short description>`).
@@ -397,7 +397,7 @@ An agent produces proposals; the responsibility stays with the person who merges
 reads the diff, not just the running application. Review depth is deliberately **not** uniform:
 
 - **Critical — everything from the service layer inwards**: `service`, `persistence`, `domain`,
-  authorization (`@Authorized`, `@PreAuthorize`, runtime guards), `event`/`listener`, and Liquibase
+  authorization (`@Authorized`, runtime guards), `event`/`listener`, and Liquibase
   changesets. Mistakes here produce wrong results, wrong numbers, data loss or unauthorized access,
   and they are typically invisible in the UI. Read these diffs line by line and demand evidence:
   which test covers it, which test run was green, what the numbers were before and after.
@@ -663,7 +663,19 @@ Entities are divided into two categories (→ ADR-0011):
     knowing the URL. Spell the requirement out on every controller.
   - The available switches are `requiresAuthentication` (default `true`), `requireUnrestricted`,
     `requiresBackoffice`, `requiresPeopleLead`, `requiresManager`, `requiresAdmin`, `permitAll`.
-- Write operations get `@PreAuthorize(“hasRole('MANAGER')”)` on the method
+- Write operations get `@Authorized(requiresManager = true)` on the method
+- **`@PreAuthorize` does not appear in this codebase** (#926, → ADR-0006). Both forms guard the same
+  method, but they do not ask the same question: `hasRole` reads the authorities of the
+  `SecurityContext`, `@Authorized` asks `AuthorizedUser` — and that one knows the impersonated
+  login. With both in use it depended on the annotation whether a page answered the real or the
+  impersonated person, and controller and service could contradict each other. `ArchitectureTest`
+  rejects `@PreAuthorize` on a class or a method.
+  - There is no *or*: `hasAnyRole('MANAGER','PEOPLE_LEAD')` was `requiresPeopleLead` all along,
+    because the roles are cumulative. A genuine either/or is a runtime guard in the service, not an
+    expression.
+  - A method-level `@Authorized` **replaces** the class-level one, it does not add to it. That is
+    safe for `requiresManager` on a `requireUnrestricted` class — a status is one value, so a
+    manager is never restricted — but it is not a general licence to weaken.
 - Filter persistence goes through `UiState` (→ ADR-0022), not through the session and not through a
   `containsKey` check on the request: the filter remembers a registered `f…` parameter and supplies
   it again as a fallback, so a controller only declares `@RequestParam(required = false) String
@@ -960,9 +972,16 @@ try {
 - Spring MVC `BindingResult` validation errors (field-level) are separate: they use `bindingResult.rejectValue(…)` and are rendered via `th:errors` on the form fields.
 
 ### Security Layers
-Two stacked layers provide defence in depth:
-- **HTTP boundary** (`@PreAuthorize` on controller): enforced by Spring Security before the method runs
+Two stacked layers provide defence in depth — **both spelled `@Authorized`** (#926, → ADR-0006):
+- **HTTP boundary** (`@Authorized` on the controller class, and on a method where it differs):
+  enforced by `AuthorizationAspect` before the handler method runs
 - **Service boundary** (`@Authorized` + runtime guard): enforced inside the service regardless of caller
+- **The answer to a denial comes from one place**: `AuthorizationException` is a plain
+  `RuntimeException`, so nothing in Spring Security sees it — unhandled it leaves the
+  `DispatcherServlet` as a **500**. `AuthorizationExceptionHandler` (`common/web`) answers it with
+  `403` (`401` for `AA-0001`), as a `ProblemDetail` under `/api` and `/rest` and otherwise through
+  `sendError` so the application's own error page renders. Whoever adds a second place where an
+  authorization decision is made has to answer this question again.
 - `AuthorizedUser` (**request-scoped** bean, `auth/domain/AuthorizedUser.java`): exposes `isManager()`, `isAdmin()`, `isPeopleLead()`, `isBackoffice()`, `isRestricted()`, and the current login sign. It holds no state of its own — it reads the `SecurityContext` per request. A scheduled job has no `SecurityContext`, so it must call `authorizedUser.initForJob()` first (→ ADR-0006).
 - Spring Security roles: `USER`, `RESTRICTED`, `BACKOFFICE`, `PEOPLE_LEAD`, `MANAGER`, `ADMIN`; `manager` role includes admins; `backoffice` includes managers and admins; `people_lead` includes managers and admins
 - Role semantics (derived from `SalatUser.status` at login):

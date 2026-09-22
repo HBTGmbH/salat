@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.util.DateUtils;
 import org.tb.common.viewhelper.FilterHintViewHelper;
@@ -74,7 +74,7 @@ public class ReportController {
     return "reporting/reports-list";
   }
 
-  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
+  @Authorized(requiresPeopleLead = true)
   @GetMapping("/create")
   public String createForm(Model model) {
     model.addAttribute("pageTitle", "Create Report");
@@ -87,7 +87,7 @@ public class ReportController {
   }
 
   @GetMapping("/edit")
-  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
+  @Authorized(requiresPeopleLead = true)
   public String editForm(@RequestParam("id") Long id, Model model) {
     var rd = reportService.getReportDefinition(id);
     if(rd == null) throw new ErrorResponseException(HttpStatus.NOT_FOUND);
@@ -106,7 +106,7 @@ public class ReportController {
   }
 
   @PostMapping("/store")
-  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
+  @Authorized(requiresPeopleLead = true)
   public String store(@ModelAttribute("report") ReportForm form,
                       BindingResult bindingResult,
                       Model model,
@@ -142,7 +142,7 @@ public class ReportController {
   }
 
   @PostMapping("/delete")
-  @PreAuthorize("hasAnyRole('MANAGER','PEOPLE_LEAD')")
+  @Authorized(requiresPeopleLead = true)
   public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
     reportService.deleteReportDefinition(id);
     redirectAttributes.addFlashAttribute("toastSuccess", "Report deleted successfully");

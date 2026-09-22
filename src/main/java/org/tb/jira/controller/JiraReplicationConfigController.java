@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +34,6 @@ import org.tb.order.service.SuborderService;
 @RequestMapping("/jira/replications")
 @RequiredArgsConstructor
 @Authorized(requiresManager = true)
-@PreAuthorize("hasRole('MANAGER')")
 public class JiraReplicationConfigController {
 
   private final JiraReplicationConfigService jiraReplicationConfigService;
@@ -80,7 +78,7 @@ public class JiraReplicationConfigController {
   }
 
   @PostMapping("/store")
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   public String store(@ModelAttribute("replicationForm") JiraReplicationConfigForm form,
                       Model model,
                       RedirectAttributes redirectAttributes) {
@@ -123,7 +121,7 @@ public class JiraReplicationConfigController {
   }
 
   @PostMapping("/{id}/delete")
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   public String delete(@PathVariable long id, RedirectAttributes redirectAttributes) {
     try {
       jiraReplicationConfigService.delete(id);
@@ -136,7 +134,7 @@ public class JiraReplicationConfigController {
   }
 
   @PostMapping("/{id}/enabled")
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   public String setEnabled(@PathVariable long id, @RequestParam boolean enabled,
                            RedirectAttributes redirectAttributes) {
     try {
@@ -150,7 +148,7 @@ public class JiraReplicationConfigController {
   }
 
   @PostMapping("/{id}/reset-watermark")
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   public String resetWatermark(@PathVariable long id, RedirectAttributes redirectAttributes) {
     try {
       jiraReplicationConfigService.resetWatermark(id);
@@ -167,7 +165,7 @@ public class JiraReplicationConfigController {
    * while the request is on its way — a replication of a large order fetches page after page.
    */
   @PostMapping("/{id}/run")
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   public String run(@PathVariable long id, RedirectAttributes redirectAttributes) {
     try {
       var outcome = jiraReplicationConfigService.runNow(id);
@@ -190,7 +188,7 @@ public class JiraReplicationConfigController {
    * always a place below one order.
    */
   @PostMapping("/suborders")
-  @PreAuthorize("hasRole('MANAGER')")
+  @Authorized(requiresManager = true)
   public String suborders(@ModelAttribute("replicationForm") JiraReplicationConfigForm form,
                           Model model, HttpServletRequest request) {
     form.setSuborderSign(null); // the previous pick belongs to the order that was just replaced

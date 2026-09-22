@@ -2,7 +2,6 @@ package org.tb.budget.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +31,7 @@ public class BudgetBackfillController {
     private final MessageSourceAccessor messages;
 
     @GetMapping
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     public String show(@ModelAttribute("form") BudgetBackfillForm form, Model model) {
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
         return "budget/backfill";
@@ -44,7 +43,7 @@ public class BudgetBackfillController {
      * runs again — which is safe, because a second run over the same data changes nothing.
      */
     @PostMapping("/run")
-    @PreAuthorize("hasRole('MANAGER')")
+    @Authorized(requiresManager = true)
     public String run(@ModelAttribute("form") BudgetBackfillForm form, Model model) {
         model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
         try {
