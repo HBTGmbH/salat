@@ -2,11 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!--
+<!--/*
   The bulk assignment preview panel (#911). Used twice: inline on the first render, and as the
   out-of-band replacement on every htmx response. One definition instead of two copies that drift
   apart — the caller only passes whether this rendering is the out-of-band one.
--->
+*/-->
 <div th:fragment="panel(oob)" id="previewPanel" class="card h-100" th:hx-swap-oob="${oob}">
   <div class="card-header">
     <h3 class="card-title" th:text="#{main.bulkassignment.preview.title}">Vorschau</h3>

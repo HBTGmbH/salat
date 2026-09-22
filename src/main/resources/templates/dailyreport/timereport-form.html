@@ -23,8 +23,8 @@
 
           <div class="card-body">
 
-            <!-- Beta hint (#830): in-context entry point, sits at the top of the card so it cannot
-                 affect the width of the col-auto columns below. Gone once the feature is on. -->
+            <!--/* Beta hint (#830): in-context entry point, sits at the top of the card so it cannot
+                   affect the width of the col-auto columns below. Gone once the feature is on. */-->
             <div th:unless="${@betaViewHelper.timeInput}" class="d-flex justify-content-end mb-2">
               <a class="small text-decoration-none"
                  th:href="@{/settings} + '#beta'"
@@ -53,13 +53,13 @@
                        hx-on="htmx:after:swap -> refreshShareRecipientsOnFieldChange()"/>
               </div>
 
-              <!-- beginEnd: the entry mode the user prefers (#844), rendered server-side so the
-                   form does not visibly flip modes after the first paint -->
+              <!--/* beginEnd: the entry mode the user prefers (#844), rendered server-side so the
+                     form does not visibly flip modes after the first paint */-->
               <div class="col-auto" th:with="betaTimeInput=${@betaViewHelper.timeInput},
                                              beginEnd=${timereportForm.durationMode == 'beginEnd'}">
                 <label class="form-label required" for="durationTime">
                   <span th:text="#{main.timereport.form.duration.label}">Dauer</span>
-                  <!-- part of the label so it cannot widen the col-auto column on its own (#830) -->
+                  <!--/* part of the label so it cannot widen the col-auto column on its own (#830) */-->
                   <span th:if="${betaTimeInput}" class="badge bg-azure-lt ms-2"
                         th:title="#{main.beta.feedback.hint}"
                         th:text="#{main.beta.badge}">Beta</span>
@@ -159,12 +159,12 @@
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
             </div>
 
-            <!-- Ticket reference (#982): free text, with suggestions from the tickets replicated for
-                 the branch of the selected suborder (#1025) — the suborder itself, its parents and
-                 the order-wide replication. Stored is the number alone. Sits above the comment:
-                 picking a ticket writes its title into an untouched comment, so it is read before
-                 it. The select itself is the context: the endpoint takes the id and resolves the
-                 branch on the server, so no sign travels through the browser. -->
+            <!--/* Ticket reference (#982): free text, with suggestions from the tickets replicated for
+                   the branch of the selected suborder (#1025) — the suborder itself, its parents and
+                   the order-wide replication. Stored is the number alone. Sits above the comment:
+                   picking a ticket writes its title into an untouched comment, so it is read before
+                   it. The select itself is the context: the endpoint takes the id and resolves the
+                   branch on the server, so no sign travels through the browser. */-->
             <div class="mb-3">
               <label class="form-label" for="ticketReference"
                      th:text="#{main.timereport.form.ticketreference.label}">Ticket</label>
@@ -224,7 +224,7 @@
                 <div class="d-flex gap-2 align-items-center">
                   <select class="form-select" th:field="*{numberOfSerialDays}" style="width:210px">
                     <option value="1" th:text="#{main.timereport.form.serial.none}">Nicht wiederholen</option>
-                    <!-- 2..MAX_SERIAL_BOOKING_DAYS generated, so the list cannot drift apart again (#826) -->
+                    <!--/* 2..MAX_SERIAL_BOOKING_DAYS generated, so the list cannot drift apart again (#826) */-->
                     <option th:each="days : ${#numbers.sequence(2, T(org.tb.common.GlobalConstants).MAX_SERIAL_BOOKING_DAYS)}"
                             th:value="${days}"
                             th:text="${days} + ' ' + #{main.timereport.form.serial.days.label}">2 Arbeitstage</option>
@@ -236,15 +236,15 @@
 
           </div><!-- end card-body -->
 
-          <!-- Footer: Save + Cancel. flex-wrap so the buttons stack instead of overflowing once
-               "Speichern und neu" (#843) is in the row as well -->
+          <!--/* Footer: Save + Cancel. flex-wrap so the buttons stack instead of overflowing once
+                 "Speichern und neu" (#843) is in the row as well */-->
           <div class="card-footer d-flex flex-wrap gap-2">
             <button type="submit" class="btn btn-primary">
               <i class="ti ti-device-floppy me-1"></i>
               <span th:text="#{main.timereport.form.save}">Speichern</span>
             </button>
-            <!-- #843: a named submit button, so the server can tell the two save actions apart
-                 without a hidden field. Enter still triggers plain "Speichern" (the first one). -->
+            <!--/* #843: a named submit button, so the server can tell the two save actions apart
+                   without a hidden field. Enter still triggers plain "Speichern" (the first one). */-->
             <button type="submit" class="btn btn-outline-primary" th:unless="${isEdit}"
                     name="saveAndNew" value="true"
                     th:title="#{main.timereport.form.saveandnew.tooltip}">
@@ -312,11 +312,11 @@
           </div>
         </div>
 
-        <!-- Recent comments. Each entry brings the ticket reference of the booking its comment
-             comes from (#1029) - on the same suborder that is as a rule exactly the fitting one.
-             The reference is the subtext, the same shape the ticket field gives its suggestions:
-             with the pair, the same comment can appear twice and only the reference tells the two
-             entries apart. -->
+        <!--/* Recent comments. Each entry brings the ticket reference of the booking its comment
+               comes from (#1029) - on the same suborder that is as a rule exactly the fitting one.
+               The reference is the subtext, the same shape the ticket field gives its suggestions:
+               with the pair, the same comment can appear twice and only the reference tells the two
+               entries apart. */-->
         <div class="card" th:if="${timereportForm.suborderId != null and not #lists.isEmpty(recentBookings)}">
           <div class="card-header">
             <h3 class="card-title" th:text="#{main.timereport.sidebar.recentcomments.title}">Letzte Kommentare</h3>

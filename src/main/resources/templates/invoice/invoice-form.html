@@ -50,7 +50,7 @@
                       th:text="${so.completeOrderSignAndDescription}"></option>
             </select>
 
-            <!-- Alternative narrowing: bill what is assigned to a budget plan (#915) -->
+            <!--/* Alternative narrowing: bill what is assigned to a budget plan (#915) */-->
             <div class="mt-2" th:if="${not #lists.isEmpty(orderBudgets)}">
               <label class="form-label fw-semibold small" for="orderBudgetId"
                      th:text="#{main.invoice.orderbudget.text}">Budgetplan</label>

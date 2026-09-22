@@ -162,7 +162,7 @@
           <td class="matrix-last-col text-center px-1 fw-bold" th:text="${matrixData.totalString}">0:00</td>
         </tr>
 
-        <!-- Standby below the sum row: own row totals, no share in any sum of the day or month (#463) -->
+        <!--/* Standby below the sum row: own row totals, no share in any sum of the day or month (#463) */-->
         <th:block th:each="row, rs : ${matrixData.standbyRows}">
           <tr th:replace="~{fragments/matrix-row :: matrixRow(${row}, ${rs.even}, ${matrixData.dayHeaders}, true)}"></tr>
         </th:block>

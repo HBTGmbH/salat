@@ -16,7 +16,7 @@
         <div class="row g-2 align-items-end">
           <div class="col-md-6">
             <label class="form-label" th:text="#{main.suborder.customerorder.text}">Auftrag</label>
-            <!-- No submit button: the select filters on change, like every other list here (#952). -->
+            <!--/* No submit button: the select filters on change, like every other list here (#952). */-->
             <select class="form-select tomselect" name="fCustomerOrderSign" th:attr="data-value=${fCustomerOrderSign}"
                     onchange="form.requestSubmit()">
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
@@ -43,7 +43,7 @@
             </label>
           </div>
           <div class="col-auto ms-2">
-            <!-- The definition's own validity and its order's are two different things (#957). -->
+            <!--/* The definition's own validity and its order's are two different things (#957). */-->
             <label class="form-check form-switch">
               <input class="form-check-input" type="checkbox" name="flatRateShowExpiredOrders" value="true" th:checked="${showExpiredOrders}"/>
               <input type="hidden" name="flatRateShowExpiredOrders" value="false"/>

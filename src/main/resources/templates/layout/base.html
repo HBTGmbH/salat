@@ -282,7 +282,7 @@
             </div>
           </li>
 
-          <!-- Budget: managers and employees responsible for at least one order (#919) -->
+          <!--/* Budget: managers and employees responsible for at least one order (#919) */-->
           <li class="nav-item dropdown"
               th:if="${@budgetMenuViewHelper.isBudgetMenuAvailable()}"
               th:classappend="${section == 'budget'} ? 'active' : ''">
@@ -313,11 +313,11 @@
                      th:text="#{main.controlling.title}">
                     Soll-Ist-Controlling
                   </a>
-                  <!--
+                  <!--/*
                     Direkt unter dem Controlling: dieselbe Auswertung über alle Aufträge (#779).
                     Eigenes, kurzes Label statt des Seitentitels — der Eintrag steht ohnehin unter
                     "Controlling", und die volle Überschrift wäre die längste Zeile des Menüs.
-                  -->
+                  */-->
                   <a class="dropdown-item" th:if="${@authorizedUser.isManager()}"
                      th:href="@{/budget/controlling/by-segment}"
                      th:classappend="${subSection == 'controlling-by-segment'} ? 'active' : ''">
@@ -432,9 +432,9 @@
             </div>
           </li>
 
-          <!-- System: what the application itself is configured with, as opposed to the business
-               data every other section deals with. Management only — the entries here reach into
-               foreign systems and carry their credentials (#984). -->
+          <!--/* System: what the application itself is configured with, as opposed to the business
+                 data every other section deals with. Management only — the entries here reach into
+                 foreign systems and carry their credentials (#984). */-->
           <li class="nav-item dropdown"
               th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
               th:classappend="${section == 'systemsettings'} ? 'active' : ''">

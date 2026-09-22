@@ -51,11 +51,10 @@
   }
 </style>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- BETA HINT: new time/duration input (#830)                    -->
-<!-- Remove this block together with the BetaFeature.TIME_INPUT   -->
-<!-- constant when the beta test ends.                            -->
-<!-- ═══════════════════════════════════════════════════════════ -->
+<!--/*
+  BETA HINT: new time/duration input (#830).
+  Remove this block together with the BetaFeature.TIME_INPUT constant when the beta test ends.
+*/-->
 <div th:unless="${@betaViewHelper.timeInput}"
      id="beta-timeinput-hint" class="alert alert-info alert-dismissible d-none" role="alert">
   <div class="d-flex align-items-start gap-2">
@@ -217,28 +216,28 @@
               <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
                 <span class="text-muted small">
                   <span th:text="#{main.daily.booked.label}">Gebucht:</span>
-                  <!-- both values are durations; without the unit they read like a time of day,
-                       especially next to the quitting time in the same h:mm format (#831) -->
+                  <!--/* both values are durations; without the unit they read like a time of day,
+                         especially next to the quitting time in the same h:mm format (#831) */-->
                   <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
                   <span th:text="#{main.daily.duration.unit}">h</span>
-                  <!-- the booked value stays visible on a day without a target - whoever works on a
-                       Saturday wants to see what they booked. Only the target itself goes (#857). -->
+                  <!--/* the booked value stays visible on a day without a target - whoever works on a
+                         Saturday wants to see what they booked. Only the target itself goes (#857). */-->
                   <th:block th:if="${dailyData.hasDayTarget}">
                     <span th:text="#{main.daily.of.label}">von</span>
                     <strong th:text="${dailyData.dailyWorkingTimeFormatted}"></strong>
                     <span th:text="#{main.daily.duration.unit}">h</span>
                   </th:block>
                 </span>
-                <!-- no longer bound to a stored working day: the quitting time is computed from the
-                     effective start, so it is there before the first booking too (#831) -->
+                <!--/* no longer bound to a stored working day: the quitting time is computed from the
+                       effective start, so it is there before the first booking too (#831) */-->
                 <span class="text-muted small">
                   <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
                   <strong th:text="${dailyData.quittingTime}"></strong>
                 </span>
               </div>
-              <!-- On a day without a target the empty track stays as a hint: it keeps the block at
-                   the same height as on a working day, and without a target there is nothing the
-                   bar could be filled against (#857). -->
+              <!--/* On a day without a target the empty track stays as a hint: it keeps the block at
+                     the same height as on a working day, and without a target there is nothing the
+                     bar could be filled against (#857). */-->
               <div class="progress" style="height: 8px"
                    th:classappend="${dailyData.hasDayTarget} ? '' : 'opacity-50'">
                 <div class="progress-bar" th:if="${dailyData.hasDayTarget}"
@@ -281,9 +280,9 @@
           <table class="table table-vcenter card-table">
             <thead>
               <tr>
-                <!-- The order is context, the booking text is what the day is read for (#834), so
-                     the text gets the whole remaining width. Below md the order column folds into
-                     the text cell instead of forcing the table to scroll sideways. -->
+                <!--/* The order is context, the booking text is what the day is read for (#834), so
+                       the text gets the whole remaining width. Below md the order column folds into
+                       the text cell instead of forcing the table to scroll sideways. */-->
                 <th class="d-none d-md-table-cell daily-order-col" th:text="#{main.daily.column.order}">Auftrag / Unterauftrag</th>
                 <th class="w-100" th:text="#{main.daily.column.taskdescription}">Buchungstext</th>
                 <th class="w-1 text-nowrap" th:text="#{main.daily.column.duration}">Zeit</th>
@@ -301,8 +300,8 @@
                   <div class="d-md-none mb-1">
                     <div th:replace="~{:: timereportOrderLines(${tr})}"></div>
                   </div>
-                  <!-- task description: editable or read-only. It carries the weight of the row
-                       unless it is empty - then the order is all there is to read (#834). -->
+                  <!--/* task description: editable or read-only. It carries the weight of the row
+                         unless it is empty - then the order is all there is to read (#834). */-->
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="inline-edit-wrap">
                     <div class="inline-edit-display"
                          style="white-space:pre-wrap; min-height:1.4em"
@@ -359,7 +358,7 @@
                         th:text="${@durationUtils.format(tr.duration)}"></span>
                   <span th:if="${tr.training}" class="badge bg-purple-lt text-purple d-block mt-1"
                         th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
-                  <!-- standby is booked here but counts towards no sum of this day (#463) -->
+                  <!--/* standby is booked here but counts towards no sum of this day (#463) */-->
                   <span th:if="${tr.standby}" class="badge bg-orange-lt text-orange ms-1" data-standby-badge
                         th:title="#{main.daily.standby.hint}"><i class="ti ti-bell"></i></span>
                 </td>
@@ -449,10 +448,10 @@
         </a>
       </div>
 
-      <!-- OOB: workday form.
-           renderWorkingdayForm is only set by the workingday save itself and is false when just a
-           time changed — swapping the form back then would pull the field out from under the
-           user's caret (#830). Every other endpoint leaves it unset and keeps the swap. -->
+      <!--/* OOB: workday form.
+             renderWorkingdayForm is only set by the workingday save itself and is false when just a
+             time changed — swapping the form back then would pull the field out from under the
+             user's caret (#830). Every other endpoint leaves it unset and keeps the swap. */-->
       <form th:if="${isHtmxRequest == true and isDailyMode == true and renderWorkingdayForm != false}"
             method="post"
             hx-swap-oob="outerHTML:#workingday-form"
@@ -807,9 +806,9 @@
   </div>
 </div>
 
-<!-- Deleting a favourite (#835). One modal for the whole page; the button of a favourite only
-     fills in which one it is. The form posts through HTMX like the buttons did before, so the
-     bookings area and the favourites panel are swapped in place. -->
+<!--/* Deleting a favourite (#835). One modal for the whole page; the button of a favourite only
+       fills in which one it is. The form posts through HTMX like the buttons did before, so the
+       bookings area and the favourites panel are swapped in place. */-->
 <div class="modal modal-blur fade" id="deleteFavouriteModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -818,7 +817,7 @@
         <div id="deleteFavouriteModalComment" class="fw-medium mt-1"></div>
         <div class="d-flex align-items-center gap-2 mt-1">
           <span id="deleteFavouriteModalLabel" class="text-muted small"></span>
-          <!-- two favourites can now differ in their ticket alone (#1029), so the dialog names it -->
+          <!--/* two favourites can now differ in their ticket alone (#1029), so the dialog names it */-->
           <span id="deleteFavouriteModalTicket" class="badge bg-secondary-lt d-none"></span>
         </div>
       </div>
@@ -979,10 +978,10 @@
 
 </section>
 
-<!--
+<!--/*
   Applying a favourite (#834, #835). Used by the dropdown, by the sidebar panel and by its OOB
   refresh; only the dropdown closes itself on click.
--->
+*/-->
 <form th:fragment="favoriteApplyForm(fav, dismissDropdown)"
       th:action="@{/dailyreport/daily/apply-favourite}" method="post" class="fav-apply-form flex-fill"
       th:attr="hx-post=@{/dailyreport/daily/apply-favourite}"
@@ -998,7 +997,7 @@
   </button>
 </form>
 
-<!--
+<!--/*
   A favourite as it is offered for applying (#834, #835): favourites differ from each other by
   their comment, so that is the main line; without one the order has to carry the entry. Used by
   the dropdown, by the sidebar panel and by its OOB refresh. Both lines truncate - a comment is a
@@ -1006,7 +1005,7 @@
   The ticket reference the favourite carries (#1029) sits on the secondary line, in the same badge
   the booking itself wears in the list: without it two favourites on the same suborder do not say
   which ticket each of them means.
--->
+*/-->
 <div th:fragment="favoriteLines(fav)" class="flex-fill overflow-hidden"
      th:with="hasComment=${fav.comment != null and !fav.comment.isEmpty()}">
   <div th:if="${hasComment}" class="fw-medium text-truncate"
@@ -1024,12 +1023,12 @@
   </div>
 </div>
 
-<!--
+<!--/*
   Deleting a favourite (#835). The button only opens #deleteFavouriteModal and hands it the
   favourite; the posting form lives there, once for the whole page. The dialog repeats the
   hierarchy of the list: comment first, order and suborder as the secondary line under it. Why the
   comment is shortened: FavoriteView.shortComment.
--->
+*/-->
 <div th:fragment="favoriteDeleteButton(fav)" class="d-flex align-items-center">
   <button type="button" class="btn btn-ghost-danger btn-sm py-2 pe-2"
           th:title="#{main.daily.favourites.delete.title}"
@@ -1040,12 +1039,12 @@
   </button>
 </div>
 
-<!--
+<!--/*
   Order and suborder of a booking as the secondary line of its row (#834). Defined once and used
   twice: as its own column from md upwards, and folded into the text cell below that. Sits outside
   layout:fragment="content", so it is invisible to the page renderer and only reachable as a
   fragment.
--->
+*/-->
 <th:block th:fragment="timereportOrderLines(tr)">
   <div class="text-muted small text-truncate"
        th:text="|${tr.customerorderSign} · ${tr.customerorderDescription} · ${tr.customerShortname}|"></div>

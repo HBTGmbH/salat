@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!--
+<!--/*
   One evaluation of the controlling view. Column visibility is decided per section: only a planned
   section has a budget to compare against, and the overrun column only appears when something
   actually went over it.
@@ -19,7 +19,7 @@
   an order, the total over those sections, and the listing of orders per customer segment. Which
   columns they carry is decided by the caller and handed in as one object, so the same figures never
   appear under different headers depending on where they are read.
--->
+*/-->
 <!--/* The column set is resolved once here: it is derived from every row of the section, and
        asking for it again per line would walk them all over again. */-->
 <div th:fragment="table(section, isManager, windowFrom)" th:with="columns=${section.columns()}">
@@ -51,12 +51,12 @@
 <thead th:fragment="headers(columns, isManager, windowFrom, firstColumnLabel, hasAction)">
     <tr>
       <th th:text="${firstColumnLabel}">Auftrag / Subauftrag</th>
-      <!--
+      <!--/*
         What was earned before the window opened — the part of the budget that was already consumed
         when the period being looked at began (#779). Two lines, because the date makes this the
         longest header of the table and the column would otherwise push the numbers apart. The second
         line reuses the neighbouring revenue label: it is the same figure, for an earlier time.
-      -->
+      */-->
       <th class="text-end d-none d-lg-table-cell" th:if="${columns.revenueBeforeWindow()}">
         <span th:text="#{main.controlling.col.bookedbefore(${#temporals.format(windowFrom, 'dd.MM.yyyy')})}">Bis 01.09.2026</span><br/>
         <span th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</span>
@@ -65,11 +65,11 @@
       <th class="text-end" th:if="${columns.planned()}" th:text="#{main.controlling.col.planned}">Sollstunden (h)</th>
       <th class="text-end" th:if="${columns.planned()}" th:text="#{main.controlling.col.percent}">Verbrauch</th>
       <th class="text-end" th:text="#{main.controlling.col.revenue}">Ist-Erlös (€)</th>
-      <!--
+      <!--/*
         The flat rate share of the column before it (#972). Only where flat rates actually fall due:
         on an order billed purely by the hour this would be a column of dashes, and the table has
         enough of them to fit already.
-      -->
+      */-->
       <th class="text-end" th:if="${columns.flatRate()}" th:text="#{main.controlling.col.flatrate}">Pauschal (€)</th>
       <th class="text-end" th:if="${columns.budget()}" th:text="#{main.controlling.col.budget}">Budget (€)</th>
       <!-- Two lines, like the column before it: the label is wider than the numbers below it. -->
@@ -82,19 +82,19 @@
       <th class="text-end" th:if="${isManager}" th:text="#{main.controlling.col.gp}">Gewinn (€)</th>
       <th class="text-end" th:if="${isManager and columns.grossProfitMargin()}"
           th:text="#{main.controlling.col.margin}">Marge (%)</th>
-      <!-- Where the lines lead somewhere (#779); the column carries the buttons and needs no label. -->
+      <!--/* Where the lines lead somewhere (#779); the column carries the buttons and needs no label. */-->
       <th th:if="${hasAction}"></th>
     </tr>
 </thead>
 
-<!--
+<!--/*
   Detail, subtotal and total line are identical apart from their emphasis; one fragment keeps them
   from drifting apart.
 
   actionUrl decides the trailing cell (#779): null leaves it out entirely — that is every table
   without buttons — while an empty string keeps the cell but shows no button, which is what the
   summary line of a table whose other lines link somewhere needs to stay aligned with them.
--->
+*/-->
 <tr th:fragment="row(columns, row, isManager, cellClass, rowClass, actionUrl)" th:class="${rowClass}">
   <!--
     Two lines: the complete order sign, and below it the suborder's own description — not the

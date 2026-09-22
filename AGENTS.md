@@ -52,6 +52,14 @@ See also README.md
   - **Prefer the `salat:` custom dialect** for reusable form and table components over raw `th:replace` fragment calls. The dialect provides cleaner, attribute-based tags that are easier to read and IDE-friendly.
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
+  - **A rationale belongs in a parser comment `<!--/* … */-->`** (#1056). Thymeleaf removes that form
+    while parsing, so it never reaches the browser; a plain `<!-- … -->` is passed through unchanged
+    and stands in the source of the delivered page. A comment that explains *why* something is built
+    the way it is — with or without an issue number — addresses the development team and has no place
+    there. A pure section marker (`<!-- DAILY MODE -->`, `<!-- Row 1: Date + Duration -->`) may stay
+    an HTML comment. Nothing in the build checks this: telling a rationale from a section marker is a
+    judgement, and a rule triggering on every `#NNN` would misfire on the next section marker that
+    carries one.
 
 ## Farben und Kontrast (→ ADR-0025)
 
@@ -274,6 +282,7 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] Leaf-level form components use the `salat:` custom dialect; layout/structural reuse uses fragments
 - [ ] Bootstrap 5 + Tabler components for layout and widgets
 - [ ] CSRF protection relies solely on `th:action="@{...}"` — no explicit `_csrf` hidden input
+- [ ] Comments stating a rationale use the parser form `<!--/* … */-->`; only section markers stay `<!-- … -->` (→ Controller and View Guidelines)
 - [ ] No hard-coded colour value — every colour derives from a `--tblr-*` token (→ Farben und Kontrast)
 - [ ] New text colour measured in both colour modes and at or above 4,5:1 (→ Farben und Kontrast)
 
