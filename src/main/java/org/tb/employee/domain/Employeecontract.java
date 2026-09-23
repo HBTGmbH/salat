@@ -1,5 +1,6 @@
 package org.tb.employee.domain;
 
+import static java.time.temporal.ChronoUnit.DAYS;
 import static org.tb.common.util.DateUtils.format;
 
 import jakarta.persistence.Column;
@@ -10,10 +11,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Year;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -78,12 +80,9 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @JoinColumn(name = "EMPLOYEE_ID")
     private Employee employee;
 
-    /**
-     * list of vacations, associated to this employeecontract
-     */
-    @OneToMany(mappedBy = "employeecontract")
-    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-    private List<Vacation> vacations = new ArrayList<>();
+    /** Urlaubstage pro Jahr; der anteilige Anspruch eines Jahres folgt daraus (#1077) */
+    @Column(nullable = false)
+    private int vacationEntitlement;
 
     public Boolean getHide() {
         return hide != null && hide;
@@ -135,9 +134,83 @@ public class Employeecontract extends AuditedEntity implements Serializable {
         return new LocalDateRange(getValidFrom(), getValidUntil());
     }
 
-    public int getVacationEntitlement() {
-        if(vacations == null) return 0;
-        return vacations.stream().findAny().map(Vacation::getEntitlement).orElse(0);
+    /**
+     * Der Urlaubsanspruch des Jahres als Zeit — {@code Urlaubstage × Tagesarbeitszeit}, anteilig
+     * gekürzt, soweit der Vertrag das Jahr nicht abdeckt. Ein angefangener Monat zählt zu dem
+     * Anteil, den er an seinen Tagen hat; ganze Monate zu einem Zwölftel.
+     * <p>
+     * Die Rechnung hing bis #1077 an einer eigenen Entity {@code Vacation} je Vertrag und Jahr.
+     * Zustand war daran nichts: sie ist eine Funktion aus Gültigkeit, Tagesarbeitszeit, Anspruch
+     * und dem gefragten Jahr.
+     */
+    public Duration getEffectiveVacationEntitlement(Year year) {
+        LocalDate begin = year.atDay(1);
+        LocalDate end = begin.with(TemporalAdjusters.lastDayOfYear());
+        // if year is before employee contract validity return ZERO
+        if (validFrom.isAfter(end)) {
+            return Duration.ZERO;
+        }
+        // if year is after employee contract validity return ZERO
+        if (validUntil != null && validUntil.isBefore(begin)) {
+            return Duration.ZERO;
+        }
+        // return full entitlement if year is covered fully
+        if (!validFrom.isAfter(begin) && (validUntil == null || !validUntil.isBefore(end))) {
+            return getDailyWorkingTime().multipliedBy(vacationEntitlement);
+        }
+
+        // else return partial entitlement
+        Duration effectiveEntitlement = Duration.ZERO;
+        LocalDate from = DateUtils.max(validFrom, begin);
+        LocalDate until = DateUtils.min(validUntil, end);
+
+        // 1. if first month is partial, calc partial of 1/12th entitlement
+        if (!from.equals(from.with(TemporalAdjusters.firstDayOfMonth()))) {
+            effectiveEntitlement = effectiveEntitlement.plus(partialMonth(
+                from,
+                // plus 1 day because second date is exclusive
+                from.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
+            ));
+            from = from.with(TemporalAdjusters.firstDayOfNextMonth());
+        }
+
+        // 2. if last month is partial, calc partial of 1/12th entitlement
+        if (!until.equals(until.with(TemporalAdjusters.lastDayOfMonth()))) {
+            effectiveEntitlement = effectiveEntitlement.plus(partialMonth(
+                until.with(TemporalAdjusters.firstDayOfMonth()),
+                // plus 1 day because second date is exclusive
+                until.plusDays(1)
+            ));
+            until = until.with(TemporalAdjusters.firstDayOfMonth()).minusDays(1);
+        }
+
+        // 3. calc full month
+        var monthCount = 0;
+        do {
+            monthCount++;
+            from = from.plusMonths(1);
+        } while (from.isBefore(until));
+
+        return effectiveEntitlement.plus(
+            getDailyWorkingTime()
+                .multipliedBy(monthCount)
+                .multipliedBy(vacationEntitlement)
+                .dividedBy(12)
+        );
+    }
+
+    private Duration partialMonth(LocalDate from, LocalDate untilExclusive) {
+        var actualDays = DAYS.between(from, untilExclusive);
+        var maxDays = DAYS.between(
+            from.with(TemporalAdjusters.firstDayOfMonth()),
+            // plus 1 day because second date is exclusive
+            from.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
+        );
+        return getDailyWorkingTime()
+            .multipliedBy(actualDays)
+            .dividedBy(maxDays)
+            .multipliedBy(vacationEntitlement)
+            .dividedBy(12);
     }
 
     /**

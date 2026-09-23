@@ -624,7 +624,6 @@ Entities are divided into two categories (→ ADR-0011):
 | `TimereportBudgetAssignment` | Bewegungsdaten | — (gelöst oder gelöscht) |
 | `Workingday` | Bewegungsdaten | — |
 | `Overtime` | Bewegungsdaten | — |
-| `Vacation` | Bewegungsdaten | — |
 | `OrderRevenue` | Bewegungsdaten | — |
 | `ETLExecutionHistory` | Bewegungsdaten | — |
 | `ScheduledReportExecutionHistory` | Bewegungsdaten | — |

@@ -14,10 +14,8 @@ import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
-import org.tb.employee.domain.Vacation;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractRepository;
-import org.tb.employee.persistence.VacationRepository;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.OrderType;
@@ -88,7 +86,6 @@ public class E2ETestData {
       EmployeecontractRepository employeecontractRepository,
       EmployeeorderRepository employeeorderRepository,
       SalatUserRepository salatUserRepository,
-      VacationRepository vacationRepository,
       PublicholidayRepository publicholidayRepository) {
 
     if (customerRepository.findAllVisibleOrderByShortnameIgnoreCase().stream()
@@ -159,18 +156,13 @@ public class E2ETestData {
     employeecontract(employeecontractRepository, restricted, null);
     Employeecontract regularContract = employeecontract(employeecontractRepository, regular, peopleLead);
     regularContract.setReportReleaseDate(ALREADY_RELEASED_UNTIL);
+    regularContract.setVacationEntitlement(GlobalConstants.DEFAULT_VACATION_PER_YEAR);
     regularContract = employeecontractRepository.save(regularContract);
 
     employeeorder(employeeorderRepository, regularContract, alphaDev);
     employeeorder(employeeorderRepository, regularContract, globexConsult);
     employeeorder(employeeorderRepository, regularContract, standby);
 
-    Vacation vacation = new Vacation();
-    vacation.setEmployeecontract(regularContract);
-    vacation.setYear(Year.now(ClockProvider.getClock()).getValue());
-    vacation.setEntitlement(GlobalConstants.DEFAULT_VACATION_PER_YEAR);
-    vacation.setUsed(0);
-    vacationRepository.save(vacation);
   }
 
   private static Customer customer(CustomerRepository repository, String name, String shortname) {

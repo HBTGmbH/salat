@@ -32,7 +32,6 @@ import org.tb.customer.persistence.CustomerRepository;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractRepository;
-import org.tb.employee.persistence.VacationRepository;
 import org.tb.order.persistence.CustomerorderRepository;
 import org.tb.order.persistence.EmployeeorderRepository;
 import org.tb.order.persistence.SuborderRepository;
@@ -109,8 +108,6 @@ public abstract class PlaywrightE2ETestBase {
   @Autowired
   private SalatUserRepository salatUserRepository;
   @Autowired
-  private VacationRepository vacationRepository;
-  @Autowired
   private PublicholidayRepository publicholidayRepository;
 
   // no SMTP server is available in the E2E environment; release/acceptance/sharing flows send
@@ -131,7 +128,7 @@ public abstract class PlaywrightE2ETestBase {
     ClockProvider.useFixedClock(LocalDateTime.parse(FIXED_NOW));
     E2ETestData.seedIfNeeded(customerRepository, customerorderRepository, suborderRepository,
         employeeRepository, employeecontractRepository, employeeorderRepository, salatUserRepository,
-        vacationRepository, publicholidayRepository);
+        publicholidayRepository);
   }
 
   @AfterAll
