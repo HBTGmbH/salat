@@ -3084,5 +3084,54 @@ databaseChangeLog:
               - column:
                   name: order_budget_id
 
+  - changeSet:
+      id: 85
+      author: kr
+      comment: Add table etl_run_history - der ETL-Lauf als Ganzes, mit Start, Ende und Ausgang (#573)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: etl_run_history
+      changes:
+        - createTable:
+            tableName: etl_run_history
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              # Beim Start geschrieben, nicht am Ende: nur so unterscheidet sich ein Lauf, der nie
+              # zu Ende kam (status RUNNING, finished_at NULL), von einem, der nie begann.
+              - column:
+                  name: started_at
+                  type: datetime
+              - column:
+                  name: finished_at
+                  type: datetime
+              - column:
+                  name: status
+                  type: varchar(20)
+              - column:
+                  name: triggered_by
+                  type: varchar(20)
+              - column:
+                  name: date_from
+                  type: date
+              - column:
+                  name: date_until
+                  type: date
+              - column:
+                  name: message
+                  type: varchar(4000)
+        - createIndex:
+            tableName: etl_run_history
+            indexName: idx_etl_run_history_started_at
+            columns:
+              - column:
+                  name: started_at
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

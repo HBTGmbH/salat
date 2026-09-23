@@ -2,6 +2,11 @@ package org.tb.etl.service;
 
 import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.exception.ErrorCode.ETL_INVALID_DATE_RANGE;
+import static org.tb.etl.domain.ETLRunHistory.Status.FAILED;
+import static org.tb.etl.domain.ETLRunHistory.Status.RUNNING;
+import static org.tb.etl.domain.ETLRunHistory.Status.SUCCEEDED;
+import static org.tb.etl.domain.ETLRunHistory.Trigger.MANUAL;
+import static org.tb.etl.domain.ETLRunHistory.Trigger.SCHEDULED;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
@@ -9,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.tb.auth.domain.AccessLevel;
@@ -21,8 +27,11 @@ import org.tb.etl.auth.ETLAuthorization;
 import org.tb.etl.domain.ETLDefinition;
 import org.tb.etl.domain.ETLDefinition.ReferencePeriod;
 import org.tb.etl.domain.ETLExecutionHistory;
+import org.tb.etl.domain.ETLRunHistory;
+import org.tb.etl.domain.ETLRunHistory.Status;
 import org.tb.etl.persistence.ETLDefinitionRepository;
 import org.tb.etl.persistence.ETLExecutionHistoryRepository;
+import org.tb.etl.persistence.ETLRunHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,14 +49,18 @@ import java.util.function.Function;
 @Slf4j
 public class ETLService {
 
+  /** Grenze der Spalte {@code etl_run_history.message}. */
+  private static final int MESSAGE_MAX_LENGTH = 4000;
+
   private final ETLDefinitionRepository definitionRepo;
   private final ETLExecutionHistoryRepository historyRepo;
+  private final ETLRunHistoryRepository runHistoryRepo;
   private final ParameterResolver parameterResolver;
   private final JdbcTemplate jdbc;
   private final ETLAuthorization authorization;
   private final SchemaDiffService schemaDiffService;
 
-  @Scheduled(cron = "0 0 2 * * *") // täglich um 21:00
+  @Scheduled(cron = "0 0 2 * * *") // täglich um 02:00
   public void runDaily() {
     try {
       var today = DateUtils.today();
@@ -62,7 +75,7 @@ public class ETLService {
   }
 
   public void executeAll(LocalDateRange dateRange, boolean scheduled) {
-    execute(dateRange, getAllETLNames(), scheduled);
+    runWithHistory(dateRange, scheduled, this::getAllETLNames);
   }
 
   private List<String> getAllETLNames() {
@@ -108,12 +121,63 @@ public class ETLService {
   }
 
   public void execute(LocalDateRange dateRange, List<String> etlNames, boolean scheduled) {
-    for (String etlName : etlNames) {
-      executeETL(etlName, dateRange, scheduled);
+    runWithHistory(dateRange, scheduled, () -> etlNames);
+  }
+
+  /**
+   * Führt einen Lauf aus und hält ihn in {@code etl_run_history} fest (#573).
+   *
+   * <p>Die Zeile wird <em>vor</em> der ersten Definition geschrieben und am Ende fortgeschrieben.
+   * Ein Lauf, der nie zu Ende kommt, bleibt damit als {@link Status#RUNNING} ohne Endzeitpunkt
+   * stehen und ist so von einem Lauf zu unterscheiden, der gar nicht erst begann.
+   *
+   * <p>Die Namen kommen als {@link Supplier}, weil ihre Ermittlung selbst scheitern kann: ein Zyklus
+   * im Abhängigkeitsgraphen bricht den Lauf ab, bevor eine einzige Definition lief, und auch das
+   * gehört in die Zeile.
+   */
+  private void runWithHistory(LocalDateRange dateRange, boolean scheduled, Supplier<List<String>> etlNames) {
+    var run = runHistoryRepo.save(ETLRunHistory.builder()
+        .startedAt(DateTimeUtils.now())
+        .status(RUNNING)
+        .triggeredBy(scheduled ? SCHEDULED : MANUAL)
+        .dateFrom(dateRange.getFrom())
+        .dateUntil(dateRange.getUntil())
+        .build());
+
+    var failed = new ArrayList<String>();
+    int executed = 0;
+    try {
+      for (String etlName : etlNames.get()) {
+        if (!executeETL(etlName, dateRange, scheduled)) {
+          failed.add(etlName);
+        }
+        executed++;
+      }
+    } catch (RuntimeException e) {
+      log.error("ETL run aborted after {} definition(s)", executed, e);
+      finishRun(run, FAILED, "Lauf abgebrochen nach %d Definition(en): %s".formatted(executed, e));
+      throw e;
+    }
+
+    if (failed.isEmpty()) {
+      finishRun(run, SUCCEEDED, "%d Definition(en) ausgeführt".formatted(executed));
+    } else {
+      finishRun(run, FAILED, "%d Definition(en) ausgeführt, fehlgeschlagen: %s"
+          .formatted(executed, String.join(", ", failed)));
     }
   }
 
-  private void executeETL(String etlName, LocalDateRange dateRange, boolean scheduled) {
+  private void finishRun(ETLRunHistory run, Status status, String message) {
+    run.setFinishedAt(DateTimeUtils.now());
+    run.setStatus(status);
+    run.setMessage(message.length() > MESSAGE_MAX_LENGTH ? message.substring(0, MESSAGE_MAX_LENGTH) : message);
+    runHistoryRepo.save(run);
+  }
+
+  /**
+   * @return {@code true}, wenn jede Referenzperiode dieser Definition durchlief
+   */
+  private boolean executeETL(String etlName, LocalDateRange dateRange, boolean scheduled) {
     ETLDefinition def = definitionRepo.findByName(etlName)
         .orElseThrow(() -> new IllegalArgumentException("ETL not found: " + etlName));
     if (!scheduled && !authorization.isAuthorized(def, AccessLevel.EXECUTE)) {
@@ -125,6 +189,7 @@ public class ETLService {
     }
 
     var refPeriods = generateReferencePeriodRanges(dateRange, def.getReferencePeriod());
+    boolean allPeriodsSucceeded = true;
     for (LocalDateRange refPeriod : refPeriods) {
       boolean success = false;
       StringBuilder message = new StringBuilder();
@@ -182,13 +247,22 @@ public class ETLService {
       } catch (DataAccessException ex) {
         log.error("ETL execution failed: {}", etlName, ex);
         message.append("ETL execution failed: ").append(ex.getMessage()).append("\n");
+      } catch (RuntimeException ex) {
+        // Alles jenseits des SQLs — aufgelöste Parameter, Schema-Vergleich — bricht den ganzen Lauf
+        // ab, so wie bisher. Ohne diesen Zweig stünde in der Zeile aber nur das zuletzt abgesetzte
+        // SQL und kein Wort darüber, woran es lag (#573).
+        log.error("ETL execution failed unexpectedly: {}", etlName, ex);
+        message.append("ETL execution failed: ").append(ex).append("\n");
+        throw ex;
       } finally {
         historyRepo.save(ETLExecutionHistory.builder()
             .etlId(def.getId())
             .etlName(def.getName())
             .executedAt(DateTimeUtils.now()).success(success).message(message.toString()).build());
+        allPeriodsSucceeded &= success;
       }
     }
+    return allPeriodsSucceeded;
   }
 
   private List<LocalDateRange> generateReferencePeriodRanges(LocalDateRange dateRange, ReferencePeriod referencePeriod) {
