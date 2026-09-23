@@ -33,7 +33,8 @@
         <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <input type="month" class="form-control" name="selfReleaseDate" th:value="${selfReleaseDateStr}" />
+            <input type="month" class="form-control" name="selfReleaseDate" th:value="${selfReleaseDateStr}"
+                   th:max="${lastMonthStr}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary"

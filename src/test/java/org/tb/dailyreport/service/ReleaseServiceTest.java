@@ -1,6 +1,8 @@
 package org.tb.dailyreport.service;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 
@@ -13,10 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.tb.auth.domain.AccessLevel;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
+import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
@@ -25,6 +30,7 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.OrderType;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +48,70 @@ class ReleaseServiceTest {
     private PublicholidayDAO publicholidayDAO;
     @Mock
     private TimereportService timereportService;
+    @Mock
+    private ReleaseAuthorization releaseAuthorization;
+    @Mock
+    private EmployeecontractService employeecontractService;
+    @Mock
+    private OvertimeService overtimeService;
+    @Mock
+    private AuthorizedUser authorizedUser;
+
+    /**
+     * Ein Vertrag endet mitten im Monat, das Formular kennt aber nur Monate: der Monatsletzte
+     * liegt dann hinter dem Vertragsende (#324).
+     */
+    @Nested
+    class BeyondTheContractEnd {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        // ein Wochenende als Vertragslaufzeit: so bleibt kein Arbeitstag ohne Buchung zurück
+        private static final LocalDate CONTRACT_START = LocalDate.of(2024, 1, 6);
+        private static final LocalDate CONTRACT_END = LocalDate.of(2024, 1, 7);
+        private static final LocalDate END_OF_MONTH = LocalDate.of(2024, 1, 31);
+
+        @Test
+        void releaseStopsAtTheContractEndInsteadOfBeingRefused() {
+            // given a contract that ended in the middle of the chosen month
+            final var contract = endedContract();
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+
+            // when releasing the whole month
+            classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, END_OF_MONTH);
+
+            // then the contract end is what gets released and stored
+            verify(timereportDAO, atLeastOnce()).getOpenTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, CONTRACT_END, null);
+        }
+
+        @Test
+        void acceptanceStopsAtTheContractEndInsteadOfBeingRefused() {
+            // given a contract that ended in the middle of the chosen month, released until its end
+            final var contract = endedContract();
+            contract.setReportReleaseDate(CONTRACT_END);
+            when(releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+
+            // when accepting the whole month
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, END_OF_MONTH);
+
+            // then the contract end is what gets accepted and stored
+            verify(timereportDAO).getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, CONTRACT_END, CONTRACT_END);
+            verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
+        }
+
+        private Employeecontract endedContract() {
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            employee.setSign("xx");
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(CONTRACT_START);
+            contract.setValidUntil(CONTRACT_END);
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            return contract;
+        }
+    }
 
     @Nested
     class ValidateForRelease {

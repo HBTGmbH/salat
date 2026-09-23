@@ -219,7 +219,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * @return Returns true, if the contract is not released until the last day of the preceding month, false otherwise.
      */
     public boolean getReleaseWarning() {
-        boolean releaseWarning = false;
         LocalDate release = getReportReleaseDate();
 
         if (release == null) {
@@ -227,11 +226,16 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             return false;
         }
 
-        LocalDate endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
-        if (release.isBefore(endOfPreviousMonth)) {
-            releaseWarning = true;
-        }
-        return releaseWarning;
+        return release.isBefore(dueUntil());
+    }
+
+    /**
+     * Bis wann Freigabe und Abnahme reichen müssen: bis zum Ende des Vormonats, bei einem
+     * beendeten Vertrag aber nur bis zu seinem letzten Tag (#324). Sonst stünde ein vollständig
+     * abgenommener Vertrag für immer als überfällig da.
+     */
+    private LocalDate dueUntil() {
+        return DateUtils.min(DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1)), validUntil);
     }
 
     /**
@@ -241,7 +245,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
      * @return Returns true, if the contract is not accepted until the last day of the preceding month, false otherwise.
      */
     public boolean getAcceptanceWarning() {
-        boolean acceptanceWarning = false;
         LocalDate acceptance = getReportAcceptanceDate();
 
         if (acceptance == null) {
@@ -249,11 +252,7 @@ public class Employeecontract extends AuditedEntity implements Serializable {
             return false;
         }
 
-        LocalDate endOfPreviousMonth = DateUtils.getEndOfMonth(DateUtils.addMonths(DateUtils.today(), -1));
-        if (acceptance.isBefore(endOfPreviousMonth)) {
-            acceptanceWarning = true;
-        }
-        return acceptanceWarning;
+        return acceptance.isBefore(dueUntil());
     }
 
     /**

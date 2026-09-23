@@ -103,19 +103,21 @@ public class ReleaseService {
       throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
     }
 
-    validateForRelease(employeecontractId, releaseDate);
+    var effectiveReleaseDate = limitToContractEnd(employeecontract, releaseDate);
+
+    validateForRelease(employeecontractId, effectiveReleaseDate);
 
     // set status in timereports
     var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(
         employeecontractId,
-        releaseDate
+        effectiveReleaseDate
     );
     for (var timereport : timereports) {
       releaseTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // store new release date in employee contract
-    employeecontractService.updateReportReleaseData(employeecontractId, releaseDate, employeecontract.getReportAcceptanceDate());
+    employeecontractService.updateReportReleaseData(employeecontractId, effectiveReleaseDate, employeecontract.getReportAcceptanceDate());
 
     sendTimeReportsReleasedMail(employeecontract);
   }
@@ -127,19 +129,31 @@ public class ReleaseService {
       throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
     }
 
-    validateForAcceptance(employeecontractId, acceptanceDate);
+    var effectiveAcceptanceDate = limitToContractEnd(employeecontract, acceptanceDate);
+
+    validateForAcceptance(employeecontractId, effectiveAcceptanceDate);
 
     // set status in timereports
-    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, acceptanceDate);
+    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, effectiveAcceptanceDate);
     for (var timereport : timereports) {
       acceptTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // set new acceptance date in employee contract
-    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), acceptanceDate);
+    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), effectiveAcceptanceDate);
 
     // compute overtimeStatic and set it in employee contract
-    overtimeService.updateOvertimeStatic(employeecontract.getId());
+    overtimeService.updateOvertimeStatic(employeecontractId);
+  }
+
+  /**
+   * Das Formular kennt nur Monate, ein Vertrag endet aber mitten im Monat: der Monatsletzte liegt
+   * dann hinter {@code validUntil}. Gemeint ist „bis zum Vertragsende" — mehr gibt es dort nicht
+   * abzunehmen, und eine Fehlermeldung machte den letzten Monat eines Vertrags unabnehmbar (#324).
+   */
+  private static LocalDate limitToContractEnd(Employeecontract contract, LocalDate date) {
+    if (date == null) return null;
+    return min(date, contract.getValidUntil());
   }
 
   @Authorized(requiresAdmin = true)

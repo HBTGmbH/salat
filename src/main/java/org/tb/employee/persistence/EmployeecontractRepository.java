@@ -30,6 +30,15 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
   """)
   List<Employeecontract> findAllSupervisedValidAt(long supervisorId, LocalDate date);
 
+  @Query("""
+    select ec from Employeecontract ec
+    join ec.supervisors s
+    where s.id = :supervisorId
+    and (ec.hide = false or ec.hide is null)
+    order by ec.employee.lastname asc, ec.validFrom asc
+  """)
+  List<Employeecontract> findAllSupervised(long supervisorId);
+
   List<Employeecontract> findAllByEmployeeId(Long employeeId);
 
   @Query("""
