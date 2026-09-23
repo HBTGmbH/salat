@@ -1,6 +1,7 @@
 package org.tb.etl.service;
 
-import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
+import static org.tb.auth.domain.AccessLevel.EXECUTE;
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.etl.domain.ETLRunHistory.Status.SUCCEEDED;
 
 import java.util.List;
@@ -9,25 +10,31 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.etl.auth.ETLAuthorization;
 import org.tb.etl.domain.ETLRunHistory;
 import org.tb.etl.persistence.ETLRunHistoryRepository;
 
 /**
  * Liest die Laufhistorie des ETL (#573) für die Anzeige.
  *
- * <p>Management only, wie die JIRA-Replikationen daneben: die Meldung eines Laufs enthält das
- * abgesetzte SQL und damit den inneren Aufbau der Auswertungen.
+ * <p>Wer einen ETL ausführen darf, darf auch sehen, wie die Läufe ausgegangen sind: neben
+ * Geschäftsführung und Administration kommt hier durch, wer eine Regel der Kategorie {@code ETL} mit
+ * {@code EXECUTE} hat. Deshalb kein {@code @Authorized(requiresManager = true)} am Controller — ein
+ * Entweder-oder ist eine Laufzeitprüfung im Service, keine Annotation (→ AGENTS.md).
+ *
+ * <p>Die Regel hängt sonst an einer einzelnen Definition; ein Lauf geht über mehrere und gehört
+ * keiner davon. Gezeigt werden deshalb alle Läufe, auch wenn die Regel nur eine Definition nennt —
+ * und die Meldung eines Laufs nennt die Namen der Definitionen, die gelaufen sind.
  */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@Authorized(requiresManager = true)
+@Authorized
 public class ETLRunHistoryService {
 
   private final ETLRunHistoryRepository runHistoryRepository;
-  private final AuthorizedUser authorizedUser;
+  private final ETLAuthorization etlAuthorization;
 
   /**
    * Die jüngsten Läufe, neueste zuerst.
@@ -37,16 +44,21 @@ public class ETLRunHistoryService {
    *     ihn hier herauszufiltern hieße, genau den Fall zu verstecken, für den es die Tabelle gibt.
    */
   public List<ETLRunHistory> getLatestRuns(int limit, boolean failedOnly) {
-    checkManager();
+    checkAuthorized();
     var page = PageRequest.of(0, limit);
     return failedOnly
         ? runHistoryRepository.findByStatusNotOrderByStartedAtDesc(SUCCEEDED, page)
         : runHistoryRepository.findByOrderByStartedAtDesc(page);
   }
 
-  private void checkManager() {
-    if (!authorizedUser.isManager()) {
-      throw new AuthorizationException(AA_NEEDS_MANAGER);
+  /** Ob die Anzeige für die anfragende Person überhaupt offen ist — auch die Frage des Menüs. */
+  public boolean isRunHistoryVisible() {
+    return etlAuthorization.isAuthorizedForAnyETL(EXECUTE);
+  }
+
+  private void checkAuthorized() {
+    if (!isRunHistoryVisible()) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
     }
   }
 

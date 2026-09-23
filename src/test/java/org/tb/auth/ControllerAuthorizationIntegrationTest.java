@@ -79,13 +79,20 @@ class ControllerAuthorizationIntegrationTest {
       "/orders/suborders",
       "/orders/employeeorders");
 
-  /** Pflege der Stammdaten, alles, was Zeiten verschiebt, und der Betrieb der Anwendung selbst. */
+  /** Pflege der Stammdaten und alles, was Zeiten verschiebt. */
   private static final List<String> MANAGER_VIEWS = List.of(
       "/customers/create",
       "/employees/create",
       "/employees/contracts/create",
       "/orders/customerorders/create",
-      "/dailyreports/move",
+      "/dailyreports/move");
+
+  /**
+   * Der Betrieb der Anwendung. Hier entscheidet nicht die Rolle allein: eine Regel der Kategorie
+   * {@code ETL} mit {@code EXECUTE} kommt ebenfalls durch (#573). Keine der Anmeldungen hier trägt
+   * eine solche Regel, deshalb steht die Liste neben den Geschäftsführungssichten.
+   */
+  private static final List<String> ETL_VIEWS = List.of(
       "/etl/runs");
 
   /** Rechnungen und die Umsätze aus Buchhaltung und Aufzeichnungen. */
@@ -145,6 +152,7 @@ class ControllerAuthorizationIntegrationTest {
     return Stream.of(
         pairs(UNRESTRICTED_VIEWS, REGULAR, BACKOFFICE, PEOPLE_LEAD, MANAGER),
         pairs(MANAGER_VIEWS, MANAGER),
+        pairs(ETL_VIEWS, MANAGER),
         pairs(BACKOFFICE_VIEWS, BACKOFFICE, MANAGER),
         pairs(PEOPLE_LEAD_VIEWS, PEOPLE_LEAD, MANAGER)
     ).flatMap(s -> s);
@@ -154,6 +162,7 @@ class ControllerAuthorizationIntegrationTest {
     return Stream.of(
         pairs(UNRESTRICTED_VIEWS, RESTRICTED),
         pairs(MANAGER_VIEWS, RESTRICTED, REGULAR, BACKOFFICE, PEOPLE_LEAD),
+        pairs(ETL_VIEWS, RESTRICTED, REGULAR, BACKOFFICE, PEOPLE_LEAD),
         pairs(BACKOFFICE_VIEWS, RESTRICTED, REGULAR, PEOPLE_LEAD),
         pairs(PEOPLE_LEAD_VIEWS, RESTRICTED, REGULAR, BACKOFFICE)
     ).flatMap(s -> s);

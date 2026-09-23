@@ -25,4 +25,15 @@ public class ETLAuthorization {
     return authService.isAuthorized(AUTH_CATEGORY, today(), accessLevel, etlDefinition.getName());
   }
 
+  /**
+   * Ob überhaupt eine Regel der Kategorie {@code ETL} diese Zugriffsstufe gewährt — für alles, was
+   * nicht an einer einzelnen Definition hängt, allen voran die Laufhistorie (#573): ein Lauf geht
+   * über mehrere Definitionen und gehört keiner davon.
+   */
+  public boolean isAuthorizedForAnyETL(AccessLevel accessLevel) {
+    if (authorizedUser.isManager()) return true;
+    if (authorizedUser.isAdmin()) return true;
+    return authService.isAuthorizedAnyObject(AUTH_CATEGORY, today(), accessLevel);
+  }
+
 }
