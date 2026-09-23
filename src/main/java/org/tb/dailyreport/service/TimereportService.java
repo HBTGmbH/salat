@@ -91,6 +91,7 @@ import org.tb.common.util.DataValidationUtils;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.auth.TimereportAuthorization;
+import org.tb.dailyreport.domain.PreviousBooking;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.RecentBooking;
 import org.tb.dailyreport.domain.Referenceday;
@@ -894,6 +895,12 @@ public class TimereportService {
   @Transactional(readOnly = true)
   public List<RecentBooking> getRecentBookings(long employeeContractId, long suborderId) {
     return timereportDAO.getRecentBookingsByEmployeeContractIdAndSuborderId(employeeContractId, suborderId);
+  }
+
+  /** what the days before {@code date} offer a booking of that day for reuse (#1017) */
+  @Transactional(readOnly = true)
+  public List<PreviousBooking> getPreviousBookings(long employeeContractId, LocalDate date) {
+    return timereportDAO.getPreviousBookingsByEmployeeContractId(employeeContractId, date);
   }
 
   @Transactional(readOnly = true)

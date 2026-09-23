@@ -33,12 +33,13 @@
   #daily-week-strip .list-group-item-action {
     text-decoration: none;
   }
-  /* A favourite comment can be long. text-truncate only bites when every flex ancestor is
-     allowed to shrink below its content (#835). */
-  .fav-apply-form, .fav-apply-btn {
+  /* An offered comment can be long. text-truncate only bites when every flex ancestor is
+     allowed to shrink below its content (#835). Shared by the favourites and by the bookings of
+     earlier days (#1017) - the two lists stand next to each other and behave the same. */
+  .offer-apply-form, .offer-apply-btn {
     min-width: 0;
   }
-  .fav-apply-btn:hover {
+  .offer-apply-btn:hover {
     background-color: rgba(var(--tblr-primary-rgb), 0.04) !important;
   }
   /* form-control-sm renders at 12px; below 16px iOS Safari zooms the page whenever a text field
@@ -254,11 +255,24 @@
       <!-- ─── Inline-edit refresh target ─────────────────────── -->
       <div id="daily-bookings-area" th:fragment="dailyBookings">
 
-      <!-- Add booking + Apply favourite -->
+      <!-- Add booking + Apply previous + Apply favourite -->
       <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
         <a th:href="@{/dailyreport/timereports/new(date=${date},returnUrl='/dailyreport/daily?mode=daily&date='+${date})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
+        <!--/* What the days before this one carried (#1017). It stands before the favourites
+               because it needs no preparation: a favourite has to be laid down first, while this
+               list is simply there as soon as anything was booked. */-->
+        <div class="dropdown flex-fill" th:if="${previousBookings != null and not #lists.isEmpty(previousBookings)}">
+          <button class="btn btn-outline-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="ti ti-history me-1"></i><span th:text="#{main.daily.previous.apply.button}">Vorherige übernehmen</span>
+          </button>
+          <ul class="dropdown-menu w-100">
+            <li th:each="pb : ${previousBookings}">
+              <form th:replace="~{:: previousApplyForm(${pb})}"></form>
+            </li>
+          </ul>
+        </div>
         <div class="dropdown flex-fill" th:if="${favorites != null and not #lists.isEmpty(favorites)}">
           <button class="btn btn-outline-secondary w-100 dropdown-toggle" data-bs-toggle="dropdown">
             <i class="ti ti-star me-1"></i><span th:text="#{main.daily.favourites.apply.button}">Favorit anwenden</span>
@@ -949,13 +963,13 @@
   refresh; only the dropdown closes itself on click.
 */-->
 <form th:fragment="favoriteApplyForm(fav, dismissDropdown)"
-      th:action="@{/dailyreport/daily/apply-favourite}" method="post" class="fav-apply-form flex-fill"
+      th:action="@{/dailyreport/daily/apply-favourite}" method="post" class="offer-apply-form flex-fill"
       th:attr="hx-post=@{/dailyreport/daily/apply-favourite}"
       hx-target="#daily-bookings-area"
       hx-swap="outerHTML">
   <input type="hidden" name="favoriteId" th:value="${fav.id}"/>
   <input type="hidden" name="date" th:value="${date}"/>
-  <button type="submit" class="fav-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2"
+  <button type="submit" class="offer-apply-btn w-100 text-start py-2 ps-3 pe-2 border-0 bg-transparent d-flex align-items-center gap-2"
           th:attr="data-bs-dismiss=${dismissDropdown} ? 'dropdown' : null">
     <div th:replace="~{:: favoriteLines(${fav})}"></div>
     <span class="badge bg-blue-lt flex-shrink-0"
@@ -986,6 +1000,52 @@
           style="max-width:120px"
           th:title="#{main.daily.timereport.ticketreference.title}"
           th:text="${fav.ticketReference}"></span>
+  </div>
+</div>
+
+<!--/*
+  Taking over a booking of an earlier day (#1017). Everything the new booking needs rides in the
+  form: unlike a favourite there is no stored record the server could read it back from. The whole
+  entry is the button, so the click target is the line the eye reads.
+*/-->
+<form th:fragment="previousApplyForm(pb)"
+      th:action="@{/dailyreport/daily/apply-previous}" method="post" class="offer-apply-form"
+      th:attr="hx-post=@{/dailyreport/daily/apply-previous}"
+      hx-target="#daily-bookings-area"
+      hx-swap="outerHTML">
+  <input type="hidden" name="employeeorderId" th:value="${pb.employeeorderId}"/>
+  <input type="hidden" name="comment" th:value="${pb.comment}"/>
+  <input type="hidden" name="ticketReference" th:value="${pb.ticketReference}"/>
+  <input type="hidden" name="durationMinutes" th:value="${pb.duration.toMinutes()}"/>
+  <input type="hidden" name="date" th:value="${date}"/>
+  <button type="submit" data-bs-dismiss="dropdown"
+          class="offer-apply-btn w-100 text-start py-2 px-3 border-0 bg-transparent d-flex align-items-center gap-2">
+    <div th:replace="~{:: previousLines(${pb})}"></div>
+    <span class="badge bg-blue-lt flex-shrink-0"
+          th:text="${@durationUtils.format(pb.duration)}"></span>
+  </button>
+</form>
+
+<!--/*
+  A booking of an earlier day as it is offered (#1017) - built like favoriteLines, because the two
+  lists stand next to each other and reading differently would make them look like different kinds
+  of thing. The booking text is the main line; without one the order carries the entry, as this
+  list spans every suborder and the comment alone would not say what is booked.
+*/-->
+<div th:fragment="previousLines(pb)" class="flex-fill overflow-hidden"
+     th:with="hasComment=${pb.comment != null and !pb.comment.isEmpty()}">
+  <div th:if="${hasComment}" class="fw-medium text-truncate"
+       th:title="${pb.comment}" th:text="${pb.comment}"></div>
+  <div class="d-flex align-items-center gap-2 overflow-hidden"
+       th:classappend="${hasComment} ? 'mt-1' : ''">
+    <span class="text-truncate"
+          th:classappend="${hasComment} ? 'text-muted small' : 'fw-medium'"
+          th:title="${pb.label}" th:text="${pb.label}"></span>
+    <span th:if="${not #strings.isEmpty(pb.ticketReference)}"
+          class="badge bg-secondary-lt flex-shrink-0 d-inline-block text-truncate"
+          style="max-width:120px"
+          th:title="#{main.daily.timereport.ticketreference.title}"
+          th:text="${pb.ticketReference}"></span>
   </div>
 </div>
 
