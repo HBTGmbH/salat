@@ -68,6 +68,12 @@ public class JiraReplicationService {
     int processed = 0;
     LocalDateTime newMax = baseline;
 
+    // What the run could not store (#841). The oldest of those timestamps caps the watermark below,
+    // and an issue that did not even carry a readable one holds it where it was.
+    int failed = 0;
+    LocalDateTime oldestFailure = null;
+    boolean failureWithoutTimestamp = false;
+
     var fields = buildFieldList(cfg, fieldConfig);
     var jql = appendMaxUpdated(cfg.getJql(), baseline);
     var request = new JiraSearchRequest(
@@ -94,21 +100,30 @@ public class JiraReplicationService {
         var updated = toDateTime(getString(issue.getFields(), "updated"));
         if (updated != null && (newMax == null || updated.isAfter(newMax))) newMax = updated;
       } catch (Exception ex) {
+        failed++;
         log.error(
             "Failed to process issue {} in replication {}: {}",
             issue.getKey(), cfg.getName(), ex.getMessage(), ex
         );
+        var failedUpdated = readUpdated(issue);
+        if (failedUpdated == null) failureWithoutTimestamp = true;
+        else if (oldestFailure == null || failedUpdated.isBefore(oldestFailure)) {
+          oldestFailure = failedUpdated;
+        }
       }
     }
     warnAboutUnansweredFields(cfg, fieldConfig, answeredFields, fetched);
 
     resolveParentChains(cfg, fieldConfig);
 
-    // Update last_max_updated if progressed
-    if (newMax != null && (cfg.getLastMaxUpdated() == null || newMax.isAfter(cfg.getLastMaxUpdated()))) {
+    // Update last_max_updated if progressed - but never past an issue this run failed to store
+    newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
+    boolean advanced = newMax != null && (baseline == null || newMax.isAfter(baseline));
+    if (advanced) {
       cfg.setLastMaxUpdated(newMax);
       configRepo.save(cfg);
     }
+    warnAboutFailedIssues(cfg, failed, advanced, newMax);
 
     log.info("Finished JIRA replication: name={}, processed={} (updated/inserted)", cfg.getName(), processed);
 
@@ -192,6 +207,56 @@ public class JiraReplicationService {
   private static String storedValue(JiraTicket ticket, String field) {
     var customFields = ticket.getCustomFields();
     return customFields != null ? customFields.get(field) : null;
+  }
+
+  /**
+   * The watermark must not move past an issue the run could not store (#841). The next run asks JIRA
+   * for {@code updated >= watermark}, so an issue below that bar is never offered again: the run
+   * counts as successful and the ticket is missing from the database for good. A failure therefore
+   * pulls the new maximum back under the oldest failed issue — the next run fetches that window once
+   * more, which costs nothing because {@link #upsertIfChanged} is idempotent.
+   *
+   * <p>An issue whose own {@code updated} could not be read gives no position to cap at, so the
+   * watermark stays where it was. Both cases mean the same for a <em>permanently</em> failing issue:
+   * the watermark stops advancing and every run fetches the same window again. That is the right
+   * direction — fetch again rather than skip — and it makes the failure something that has to be
+   * dealt with instead of one that disappears quietly. {@link #warnAboutFailedIssues} says so in the
+   * log.
+   */
+  private static LocalDateTime capBelowFailures(LocalDateTime newMax, LocalDateTime baseline,
+                                                LocalDateTime oldestFailure, boolean failureWithoutTimestamp) {
+    if (failureWithoutTimestamp) return baseline;
+    if (oldestFailure == null || newMax == null || newMax.isBefore(oldestFailure)) return newMax;
+    // A second is enough of a step back: the JQL filter is written with day granularity anyway, so
+    // the next run asks from the failed issue's own day on.
+    return oldestFailure.minusSeconds(1);
+  }
+
+  /**
+   * The failures of a run as one line, next to the single {@code ERROR} per issue: the count alone
+   * says whether a run needs attention, and what it did to the watermark says how urgently.
+   */
+  private void warnAboutFailedIssues(JiraReplicationConfig cfg, int failed, boolean advanced,
+                                     LocalDateTime watermark) {
+    if (failed == 0) return;
+    if (advanced) {
+      log.warn("{} issues of replication {} could not be processed - the watermark was held back to "
+              + "{} so that the next run asks for them again",
+          failed, cfg.getName(), watermark);
+    } else {
+      log.warn("{} issues of replication {} could not be processed - the watermark does not advance "
+              + "and every run fetches the same window again until the cause is fixed",
+          failed, cfg.getName());
+    }
+  }
+
+  /** The issue's {@code updated}, or {@code null} when it is missing or not readable as a date. */
+  private LocalDateTime readUpdated(JiraIssue issue) {
+    try {
+      return toDateTime(getString(issue.getFields(), "updated"));
+    } catch (Exception ex) {
+      return null;
+    }
   }
 
   /**

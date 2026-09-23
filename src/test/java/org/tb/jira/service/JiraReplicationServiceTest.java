@@ -129,6 +129,96 @@ class JiraReplicationServiceTest {
   }
 
   @Test
+  void testAFailedIssueCapsTheWatermarkBelowItself() {
+    LocalDateTime watermark = LocalDateTime.of(2026, 6, 1, 8, 0, 0);
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(watermark);
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(
+        failingIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0)),
+        mockIssue(LocalDateTime.of(2026, 6, 20, 17, 30, 0))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // the younger issue alone would push the watermark past the failed one, which JIRA would then
+    // never offer again - the ticket would be missing for good (#841)
+    assertEquals(LocalDateTime.of(2026, 6, 10, 8, 59, 59), config.getLastMaxUpdated());
+  }
+
+  @Test
+  void testAFailedIssueIsAskedForAgainInTheNextRun() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any()))
+        .thenReturn(issues(
+            failingIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0)),
+            mockIssue(LocalDateTime.of(2026, 6, 20, 17, 30, 0))))
+        .thenReturn(issues());
+
+    jiraReplicationService.runReplication(config.getId());
+    jiraReplicationService.runReplication(config.getId());
+
+    var requests = ArgumentCaptor.forClass(JiraSearchRequest.class);
+    verify(searchClient, times(2)).search(requests.capture());
+    assertEquals("(project = MOCK) AND updated >= '2026-06-10'", requests.getAllValues().get(1).jql());
+  }
+
+  @Test
+  void testAFailureWithoutAReadableTimestampHoldsTheWatermark() {
+    LocalDateTime watermark = LocalDateTime.of(2026, 6, 1, 8, 0, 0);
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(watermark);
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    var unreadable = mockIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0));
+    unreadable.setId("1002");
+    unreadable.setKey("MOCK-2");
+    unreadable.getFields().put("updated", "vorgestern");
+    when(searchClient.search(any())).thenReturn(issues(
+        unreadable, mockIssue(LocalDateTime.of(2026, 6, 20, 17, 30, 0))));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // without a timestamp of its own the failed issue gives no position to cap at, so the watermark
+    // stays where it was rather than guessing a bar the issue might fall under
+    verify(configRepo, never()).save(any(JiraReplicationConfig.class));
+    assertEquals(watermark, config.getLastMaxUpdated());
+  }
+
+  @Test
+  void testFailedIssuesAreSummarisedAtTheEndOfTheRun() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(
+        failingIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0)),
+        mockIssue(LocalDateTime.of(2026, 6, 20, 17, 30, 0))));
+    var logged = captureWarnings();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // the single ERROR per issue drowns in a long run - the count and its effect on the watermark
+    // are what say whether the run needs attention
+    assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+        .extracting(ILoggingEvent::getFormattedMessage)
+        .anyMatch(message -> message.contains("1 issues") && message.contains("watermark"));
+  }
+
+  @Test
+  void testARunWithoutFailuresLogsNoSummary() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var logged = captureWarnings();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+        .extracting(ILoggingEvent::getFormattedMessage)
+        .noneMatch(message -> message.contains("could not be processed"));
+  }
+
+  @Test
   void testBaselineIsTakenFromConfigWatermark() {
     JiraReplicationConfig config = createMockReplicationConfig();
     config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
@@ -475,6 +565,17 @@ class JiraReplicationServiceTest {
     ));
     fields.putAll(additionalFields);
     issue.setFields(fields);
+    return issue;
+  }
+
+  /**
+   * An issue whose processing blows up the way an unexpected id does: {@code Long.parseLong} in
+   * {@code upsertIfChanged} throws before the ticket is ever written.
+   */
+  private static JiraIssue failingIssue(LocalDateTime updated) {
+    var issue = mockIssue(updated);
+    issue.setId("not-a-number");
+    issue.setKey("MOCK-2");
     return issue;
   }
 
