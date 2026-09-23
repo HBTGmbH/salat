@@ -3,6 +3,8 @@ package org.tb.dailyreport.persistence;
 import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.not;
 import static org.springframework.data.jpa.domain.Specification.where;
+import static org.tb.common.GlobalConstants.PREVIOUS_BOOKINGS_LOOKBACK_DAYS;
+import static org.tb.common.GlobalConstants.PREVIOUS_BOOKINGS_MAX;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.YESNO_YES;
@@ -11,6 +13,7 @@ import jakarta.persistence.criteria.Order;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -467,6 +470,48 @@ public class TimereportDAO {
             .distinct()
             .limit(5)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * The bookings of the days before the given one that a booking of that day can take over
+     * (#1017) — across all suborders, so the list can name the order instead of presupposing it.
+     *
+     * <p>The given day itself stays out: what is booked on it already stands in the list below the
+     * offer. Entries are reduced to the first occurrence of an employee order, a comment and a
+     * ticket reference; since the query hands them over the most recent day first, the duration
+     * that survives is the one last booked.
+     */
+    public List<PreviousBooking> getPreviousBookingsByEmployeeContractId(long employeecontractId, LocalDate date) {
+        var seen = new HashSet<PreviousBookingKey>();
+        return timereportRepository.findAll(
+            where(matchesEmployeecontractId(employeecontractId))
+                .and(reportedBetween(date.minusDays(PREVIOUS_BOOKINGS_LOOKBACK_DAYS), date.minusDays(1)))
+                .and(notDeleted())
+                .and(orderedByReferencedayDesc())
+                .and(orderedByCreatedDesc())
+        ).stream()
+            .filter(tr -> tr.getEmployeeorder() != null)
+            .map(TimereportDAO::toPreviousBooking)
+            .filter(pb -> seen.add(PreviousBookingKey.of(pb)))
+            .limit(PREVIOUS_BOOKINGS_MAX)
+            .collect(Collectors.toList());
+    }
+
+    private static PreviousBooking toPreviousBooking(Timereport timereport) {
+        var comment = timereport.getTaskdescription();
+        return new PreviousBooking(
+            timereport.getEmployeeorder().getId(),
+            comment == null ? "" : comment.strip(),
+            timereport.getTicketReference(),
+            timereport.getDuration());
+    }
+
+    /** what makes two offers of {@link #getPreviousBookingsByEmployeeContractId} the same one */
+    private record PreviousBookingKey(long employeeorderId, String comment, String ticketReference) {
+
+        static PreviousBookingKey of(PreviousBooking booking) {
+            return new PreviousBookingKey(booking.employeeorderId(), booking.comment(), booking.ticketReference());
+        }
     }
 
     private Specification<Timereport> orderedByCreatedDesc() {

@@ -129,6 +129,15 @@ public class GlobalConstants {
     /** upper bound of the "Wiederholen für" selection in the booking form (#826) */
     public static final int MAX_SERIAL_BOOKING_DAYS = 10;
 
+    /**
+     * How far back "Vorherige übernehmen" looks for bookings to offer (#1017). Two weeks cover a
+     * task one sits on for a few days without dragging along what was finished long ago.
+     */
+    public static final int PREVIOUS_BOOKINGS_LOOKBACK_DAYS = 14;
+
+    /** how many entries "Vorherige übernehmen" offers (#1017) - as many as the recent comments */
+    public static final int PREVIOUS_BOOKINGS_MAX = 5;
+
     public static final byte DEBITHOURS_UNIT_MONTH = 12;
     public static final byte DEBITHOURS_UNIT_YEAR = 1;
     public static final byte DEBITHOURS_UNIT_TOTALTIME = 0;

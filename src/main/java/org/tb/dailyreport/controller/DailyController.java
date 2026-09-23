@@ -29,6 +29,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.dailyreport.domain.PreviousBooking;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.DailyService;
 import org.tb.dailyreport.service.MatrixService;
@@ -135,7 +136,7 @@ public class DailyController {
             model.addAttribute("nextDate", next);
             model.addAttribute("title", targetDate.toString());
             if (ecId > 0) {
-                model.addAttribute("favorites", buildFavoriteViews());
+                addBookingOffers(model, ecId, targetDate);
             }
         }
 
@@ -199,7 +200,7 @@ public class DailyController {
                 model.addAttribute("selectedContractId", effEmployeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
-                model.addAttribute("favorites", buildFavoriteViews());
+                addBookingOffers(model, effEmployeeContractId, date);
                 return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -223,7 +224,7 @@ public class DailyController {
                 model.addAttribute("selectedContractId", effEmployeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
-                model.addAttribute("favorites", buildFavoriteViews());
+                addBookingOffers(model, effEmployeeContractId, date);
                 return "dailyreport/daily :: dailyBookings";
             }
             redirectAttributes.addFlashAttribute("toastError", errMsg);
@@ -293,7 +294,7 @@ public class DailyController {
             model.addAttribute("selectedContractId", ecId);
             model.addAttribute("isHtmxRequest", true);
             model.addAttribute("isDailyMode", true);
-            model.addAttribute("favorites", buildFavoriteViews());
+            addBookingOffers(model, ecId, date);
             return "dailyreport/daily :: dailyBookings";
         }
         return "redirect:/dailyreport/daily?mode=daily&date=" + date;
@@ -333,8 +334,56 @@ public class DailyController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("isHtmxRequest", true);
         model.addAttribute("isDailyMode", true);
-        model.addAttribute("favorites", buildFavoriteViews());
+        addBookingOffers(model, ecId, date);
         model.addAttribute("oobFavourites", true);
+        return "dailyreport/daily :: dailyBookings";
+    }
+
+    /**
+     * Books what an earlier day already carried, at the day on screen (#1017). Everything the
+     * booking needs comes with the request rather than being read back from the booking it
+     * imitates: the offer is a copy, and a copy the user could have edited before sending is still
+     * a copy, not a reference to the original.
+     *
+     * <p>Follows {@link #applyFavourite} step for step - both create a booking out of one click on
+     * the day in view, and doing it twice in two shapes would be two ways for it to go wrong.
+     */
+    @PostMapping("/apply-previous")
+    public String applyPrevious(
+            @RequestParam(required = false) Long fEmployeeContractId,
+            @RequestParam long employeeorderId,
+            @RequestParam(required = false) String comment,
+            @RequestParam(required = false) String ticketReference,
+            @RequestParam long durationMinutes,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletResponse response,
+            Model model) {
+        long ecId = effectiveContractId(fEmployeeContractId);
+        try {
+            var beginTime = dailyPreferenceService.getForEmployeeContractId(ecId).workDayStart();
+            workingdayService.seedWorkingday(ecId, date, beginTime.getHour(), beginTime.getMinute());
+            timereportService.createTimereports(ecId, employeeorderId, date,
+                comment != null ? comment : "", ticketReference, false,
+                durationMinutes / MINUTES_PER_HOUR, durationMinutes % MINUTES_PER_HOUR, 1);
+        } catch (ErrorCodeException ex) {
+            String err = errorCodeViewHelper.toViewMessages(ex).stream()
+                .map(Object::toString).findFirst().orElse("Error");
+            response.setHeader("HX-Trigger", "{\"showError\":\"" + err.replace("\"", "'") + "\"}");
+        }
+        var dailyData = dailyService.buildDailyView(date, ecId);
+        var wdForm = new WorkingdayForm();
+        wdForm.setDate(date);
+        wdForm.setNotWorked(dailyData.notWorked());
+        wdForm.setStartTime(dailyData.startTime());
+        wdForm.setBreakTime(dailyData.breakTime());
+        model.addAttribute("dailyData", dailyData);
+        model.addAttribute("weekStripData", dailyData.weekStrip());
+        model.addAttribute("workingdayForm", wdForm);
+        model.addAttribute("date", date);
+        model.addAttribute("selectedContractId", ecId);
+        model.addAttribute("isHtmxRequest", true);
+        model.addAttribute("isDailyMode", true);
+        addBookingOffers(model, ecId, date);
         return "dailyreport/daily :: dailyBookings";
     }
 
@@ -363,9 +412,39 @@ public class DailyController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("isHtmxRequest", true);
         model.addAttribute("isDailyMode", true);
-        model.addAttribute("favorites", buildFavoriteViews());
+        addBookingOffers(model, ecId, date);
         model.addAttribute("oobFavourites", true);
         return "dailyreport/daily :: dailyBookings";
+    }
+
+    /**
+     * The two offers standing above the bookings of a day: the favourites and what the days before
+     * it carried (#1017). They are set together because they are rendered together — the fragment
+     * {@code dailyBookings} holds both dropdowns, so a caller remembering only one of them would
+     * make the other disappear from the page.
+     */
+    private void addBookingOffers(Model model, long ecId, LocalDate date) {
+        model.addAttribute("favorites", buildFavoriteViews());
+        model.addAttribute("previousBookings", buildPreviousBookingViews(ecId, date));
+    }
+
+    private List<PreviousBookingView> buildPreviousBookingViews(long ecId, LocalDate date) {
+        return timereportService.getPreviousBookings(ecId, date).stream()
+            .map(booking -> buildPreviousBookingView(booking, date))
+            .filter(Objects::nonNull)
+            .toList();
+    }
+
+    private PreviousBookingView buildPreviousBookingView(PreviousBooking booking, LocalDate date) {
+        var eo = employeeorderService.getEmployeeorderById(booking.employeeorderId());
+        // an employee order that has run out in the meantime would be offered and then refused on
+        // saving with TR_EMPLOYEE_ORDER_INVALID_REF_DATE - an offer has to be bookable
+        if (eo == null || !eo.isValidAt(date)) {
+            return null;
+        }
+        return new PreviousBookingView(booking.employeeorderId(),
+            eo.getSuborder().getCompleteOrderSignAndDescription(),
+            booking.comment(), booking.ticketReference(), booking.duration());
     }
 
     private List<FavoriteView> buildFavoriteViews() {
