@@ -173,20 +173,46 @@ public class EmployeeorderService {
     List<Employeeorder> employeeorders = employeeorderDAO.getEmployeeOrdersByEmployeeContractId(employeecontract.getId());
     for (Employeeorder employeeorder : employeeorders) {
       var existingValidity = employeeorder.getValidity();
-      var updating = existingValidity.overlaps(newValidity);
-      if(updating) {
-        if(!newValidity.contains(existingValidity)) {
-          // new validity does not contain the validity of the employee order, thus we need to reduce it to fit in
-          adjustValidity(employeeorder.getId(), newValidity);
-          // ensure correct reduction of vacation budget
-          if(isVacationOrder(employeeorder)) {
-            adjustVacationBudget(employeeorder);
-          }
-        }
-      } else {
+      if(!existingValidity.overlaps(newValidity)) {
         deleteEmployeeorderById(employeeorder.getId());
+        continue;
+      }
+      var resultingValidity = resultingValidity(employeeorder, newValidity);
+      if(resultingValidity.equals(existingValidity)) {
+        continue;
+      }
+      createOrUpdate(employeeorder, resultingValidity.getFrom(), resultingValidity.getUntil());
+      // ensure the vacation budget matches the period the order now covers
+      if(isVacationOrder(employeeorder)) {
+        adjustVacationBudget(employeeorder);
       }
     }
+  }
+
+  /**
+   * Ein Standardauftrag (Urlaub, Krankheit, Fortbildung) spannt genau Vertrag &cap; Unterauftrag —
+   * sein Ende ist das Minimum aus Vertragsende und Ende des Unterauftrags, sein Beginn der spätere
+   * der beiden Anfänge. So legt ihn {@link #generateMissingStandardOrders(Employeecontract)} an,
+   * und so folgt er der Gültigkeit des Vertrags in beide Richtungen.
+   * <p>
+   * Bis #565 wurde nur gekürzt, weil die Bedingung {@code !newValidity.contains(existingValidity)}
+   * lautete — die eine Verlängerung nie erfüllt. Der Urlaubsauftrag endete danach weiter am alten
+   * Vertragsende und behielt das anteilige Soll des kürzeren Vertrags. Aufgefallen ist das im
+   * Urlaubskonto: für einen Auftrag, dessen Gültigkeit vor heute endet, zeigt es statt des
+   * Anspruchs den gebuchten Urlaub — also in aller Regel 0.
+   * <p>
+   * Jeder andere Mitarbeiterauftrag ist eine Zusage auf einen ausgehandelten Zeitraum. Ihn an einer
+   * Vertragsänderung mitwachsen zu lassen, erteilte eine Buchungsberechtigung, die niemand vergeben
+   * hat — er wird deshalb weiterhin nur gekürzt.
+   */
+  private LocalDateRange resultingValidity(Employeeorder employeeorder, LocalDateRange contractValidity) {
+    if(TRUE.equals(employeeorder.getSuborder().getStandard())) {
+      var standardValidity = contractValidity.intersection(employeeorder.getSuborder().getValidity());
+      if(standardValidity != null) {
+        return standardValidity;
+      }
+    }
+    return employeeorder.getValidity().intersection(contractValidity);
   }
 
   @EventListener
