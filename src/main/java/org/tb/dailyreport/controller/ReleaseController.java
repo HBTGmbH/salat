@@ -2,6 +2,7 @@ package org.tb.dailyreport.controller;
 
 import static org.tb.common.util.DateUtils.addMonths;
 import static org.tb.common.util.DateUtils.format;
+import static org.tb.common.util.DateUtils.min;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -41,13 +42,16 @@ public class ReleaseController {
 
         var effectiveContractId = effectiveContractId(fEmployeeContractId);
         var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
-        var employee = contract.getEmployee();
+        // Wer weder einen laufenden noch einen künftigen Vertrag hat, bekommt den Hinweis der
+        // Seite statt einer Fehlerseite (#324).
+        var employee = contract != null ? contract.getEmployee() : employeeService.getLoginEmployee();
 
         model.addAttribute("employee", employee);
         model.addAttribute("employeeContract", contract);
         model.addAttribute("selfReleaseDateStr", defaultReleaseDateStr(contract));
-        model.addAttribute("releasedUntil", format(contract.getReportReleaseDate()));
-        model.addAttribute("acceptedUntil", format(contract.getReportAcceptanceDate()));
+        model.addAttribute("lastMonthStr", lastMonthStr(contract));
+        model.addAttribute("releasedUntil", contract != null ? format(contract.getReportReleaseDate()) : "");
+        model.addAttribute("acceptedUntil", contract != null ? format(contract.getReportAcceptanceDate()) : "");
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "release");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.release.text"));
@@ -88,7 +92,13 @@ public class ReleaseController {
         if (contract == null) return "";
         LocalDate rd = contract.getReportReleaseDate();
         LocalDate defaultDate = rd == null ? contract.getValidFrom() : addMonths(rd, 1);
-        return YearMonth.from(defaultDate).toString();
+        return YearMonth.from(min(defaultDate, contract.getValidUntil())).toString();
+    }
+
+    /** Der letzte Monat, in dem es etwas freizugeben gibt (#324). */
+    private String lastMonthStr(Employeecontract contract) {
+        if (contract == null || contract.getValidUntil() == null) return null;
+        return YearMonth.from(contract.getValidUntil()).toString();
     }
 
     private List<String> allMessages(ErrorCodeException ex) {

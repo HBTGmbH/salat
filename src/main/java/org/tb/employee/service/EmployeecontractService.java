@@ -468,6 +468,9 @@ public class EmployeecontractService {
     return ec;
   }
 
+  /**
+   * Alle nicht versteckten Verträge des Teams, auch die abgelaufenen (#324).
+   */
   public List<Employeecontract> getTeamContracts(long teamManagerEmployeeId) {
     return employeecontractDAO.getTeamContracts(teamManagerEmployeeId);
   }

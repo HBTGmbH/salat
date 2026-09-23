@@ -56,13 +56,22 @@ public class EmployeecontractDAO {
     }
 
     /**
-     * Get a list of all Employeecontracts ordered by lastname.
-     *
-     * @return List<Employeecontract>
+     * Die heute gültigen Verträge des Teams, geordnet nach Nachname. Das ist der Umfang, in dem
+     * eine Teamleitung Mitarbeiterdaten sehen darf — nicht der Umfang, in dem sie freigeben und
+     * abnehmen kann, dafür {@link #getTeamContracts(long)}.
      */
-    public List<Employeecontract> getTeamContracts(long supervisorId) {
+    public List<Employeecontract> getCurrentTeamContracts(long supervisorId) {
         LocalDate now = DateUtils.today();
         return employeecontractRepository.findAllSupervisedValidAt(supervisorId, now);
+    }
+
+    /**
+     * Alle nicht versteckten Verträge des Teams, geordnet nach Nachname — auch die abgelaufenen.
+     * Ein Vertrag endet, die Abnahme seiner Buchungen endet damit nicht (#324); entrümpelt wird
+     * über das {@code hide}-Flag.
+     */
+    public List<Employeecontract> getTeamContracts(long supervisorId) {
+        return employeecontractRepository.findAllSupervised(supervisorId);
     }
 
     private Specification<Employeecontract> showOnlyValid() {

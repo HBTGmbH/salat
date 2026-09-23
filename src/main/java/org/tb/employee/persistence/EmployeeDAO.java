@@ -166,7 +166,7 @@ public class EmployeeDAO {
     public Set<Long> getSupervisedEmployeeIds() {
         if (!authorizedUser.isPeopleLead() || authorizedUser.isManager()) return Set.of();
         return employeeRepository.findByLoginname(authorizedUser.getEffectiveLoginSign())
-            .map(emp -> employeecontractDAO.getTeamContracts(emp.getId()).stream()
+            .map(emp -> employeecontractDAO.getCurrentTeamContracts(emp.getId()).stream()
                 .map(ec -> ec.getEmployee().getId())
                 .collect(Collectors.toSet()))
             .orElse(Set.of());

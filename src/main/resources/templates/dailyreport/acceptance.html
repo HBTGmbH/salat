@@ -85,7 +85,8 @@
         <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <input type="month" class="form-control" name="releaseDate" th:value="${releaseDateStr}" />
+            <input type="month" class="form-control" name="releaseDate" th:value="${releaseDateStr}"
+                   th:max="${lastMonthStr}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary"
@@ -108,7 +109,8 @@
         <label class="form-label fw-semibold" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <input type="month" class="form-control" name="acceptanceDate" th:value="${acceptanceDateStr}" />
+            <input type="month" class="form-control" name="acceptanceDate" th:value="${acceptanceDateStr}"
+                   th:max="${lastMonthStr}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-success"
@@ -132,7 +134,8 @@
         <label class="form-label fw-semibold" th:text="#{main.release.reopen.until.text}">Buchungen öffnen ab (nur Admin)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <input type="month" class="form-control" name="reopenDate" th:value="${reopenDateStr}" />
+            <input type="month" class="form-control" name="reopenDate" th:value="${reopenDateStr}"
+                   th:max="${lastMonthStr}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-warning"

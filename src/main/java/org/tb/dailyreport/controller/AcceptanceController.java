@@ -2,6 +2,7 @@ package org.tb.dailyreport.controller;
 
 import static org.tb.common.util.DateUtils.addMonths;
 import static org.tb.common.util.DateUtils.format;
+import static org.tb.common.util.DateUtils.min;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.controller.ReleaseController.parseEndOfMonth;
 
@@ -81,6 +82,7 @@ public class AcceptanceController {
         model.addAttribute("releaseDateStr", defaultReleaseDateStr(selected));
         model.addAttribute("acceptanceDateStr", defaultAcceptanceDateStr(selected));
         model.addAttribute("reopenDateStr", defaultReleaseDateStr(selected));
+        model.addAttribute("lastMonthStr", lastMonthStr(selected));
         model.addAttribute("section", "backoffice");
         model.addAttribute("subSection", "acceptance");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.acceptance.text"));
@@ -171,14 +173,24 @@ public class AcceptanceController {
         if (contract == null) return "";
         LocalDate rd = contract.getReportReleaseDate();
         LocalDate defaultDate = rd == null ? contract.getValidFrom() : addMonths(rd, 1);
-        return YearMonth.from(defaultDate).toString();
+        return monthStr(min(defaultDate, contract.getValidUntil()));
     }
 
     private String defaultAcceptanceDateStr(Employeecontract contract) {
         if (contract == null) return "";
         LocalDate ad = contract.getReportAcceptanceDate();
         LocalDate defaultDate = ad == null ? contract.getValidFrom() : ad;
-        return YearMonth.from(defaultDate).toString();
+        return monthStr(min(defaultDate, contract.getValidUntil()));
+    }
+
+    /** Der letzte Monat, in dem es etwas freizugeben oder abzunehmen gibt (#324). */
+    private String lastMonthStr(Employeecontract contract) {
+        if (contract == null || contract.getValidUntil() == null) return null;
+        return monthStr(contract.getValidUntil());
+    }
+
+    private static String monthStr(LocalDate date) {
+        return YearMonth.from(date).toString();
     }
 
     private List<String> allMessages(ErrorCodeException ex) {
