@@ -462,6 +462,11 @@
                      th:text="#{main.general.mainmenu.jirareplications.text}">
                     JIRA-Replikationen
                   </a>
+                  <a class="dropdown-item" th:href="@{/etl/runs}"
+                     th:classappend="${subSection == 'etl-runs'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.etlruns.text}">
+                    ETL-Läufe
+                  </a>
                 </div>
               </div>
             </div>
