@@ -14,7 +14,11 @@ import org.springframework.context.annotation.Import;
 import org.tb.common.SalatProperties;
 import org.tb.common.util.ClockProvider;
 import org.tb.etl.domain.ETLExecutionHistory;
+import org.tb.etl.domain.ETLRunHistory;
+import org.tb.etl.domain.ETLRunHistory.Status;
+import org.tb.etl.domain.ETLRunHistory.Trigger;
 import org.tb.etl.persistence.ETLExecutionHistoryRepository;
+import org.tb.etl.persistence.ETLRunHistoryRepository;
 
 @DataJpaTest
 @Import({ ETLExecutionHistoryCleanupService.class, SalatProperties.class })
@@ -30,12 +34,16 @@ class ETLExecutionHistoryCleanupServiceTest {
   private ETLExecutionHistoryRepository repository;
 
   @Autowired
+  private ETLRunHistoryRepository runHistoryRepository;
+
+  @Autowired
   private SalatProperties salatProperties;
 
   @BeforeEach
   void setUp() {
     ClockProvider.useFixedClock(NOW);
     repository.deleteAll();
+    runHistoryRepository.deleteAll();
     salatProperties.getEtl().getHistory().setRetentionDays(14);
   }
 
@@ -90,6 +98,28 @@ class ETLExecutionHistoryCleanupServiceTest {
     cleanupService.deleteExpiredExecutionHistory();
 
     assertThat(repository.count()).isEqualTo(1);
+  }
+
+  @Test
+  void deletes_expired_run_history_with_the_same_retention_period() {
+    saveRun(NOW.minusDays(15));
+    var withinRetention = saveRun(NOW.minusDays(13));
+
+    cleanupService.deleteExpiredExecutionHistory();
+
+    assertThat(runHistoryRepository.findAll())
+        .extracting(ETLRunHistory::getId)
+        .containsExactly(withinRetention.getId());
+  }
+
+  private ETLRunHistory saveRun(LocalDateTime startedAt) {
+    return runHistoryRepository.save(ETLRunHistory.builder()
+        .startedAt(startedAt)
+        .finishedAt(startedAt.plusMinutes(3))
+        .status(Status.SUCCEEDED)
+        .triggeredBy(Trigger.SCHEDULED)
+        .message("2 Definition(en) ausgeführt")
+        .build());
   }
 
   private ETLExecutionHistory save(LocalDateTime executedAt) {
