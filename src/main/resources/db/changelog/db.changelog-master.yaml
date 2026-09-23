@@ -3187,5 +3187,43 @@ databaseChangeLog:
         - dropTable:
             tableName: vacation
 
-#  - include:
-#      file: db/changelog/includes/addAllEmployees.sql
+  - changeSet:
+      id: 88
+      author: kr
+      comment: View suborder_fqs nachtragen, die Reporting und ETL schon benutzen
+      runOnChange: true
+      # Der vollstaendige Auftragsschluessel eines Unterauftrags, von der Wurzel bis zum Blatt und mit
+      # abschliessendem Schraegstrich. Der Strich am Ende ist die Bedingung dafuer, dass ein LIKE-Muster
+      # einen Teilbaum trifft und nicht in einen Nachbarn laeuft, dessen Schluessel zufaellig gleich
+      # anfaengt - dieselbe Zusage, auf die sich OrderPricingLookup in der Anwendung stuetzt.
+      #
+      # Der Aufstieg laeuft rekursiv und kennt damit keine feste Maximaltiefe. Die Vorgaengerform hatte
+      # zehn LEFT JOINs aufgereiht: bei einer elften Ebene waere der oberste Teil des Schluessels
+      # kommentarlos weggefallen, und ein zu kurzer Schluessel faellt nirgends auf - er trifft einfach
+      # andere Muster. Bricht die Rekursion wider Erwarten nicht ab, laeuft sie gegen
+      # cte_max_recursion_depth und die Abfrage scheitert, statt still etwas Falsches zu liefern.
+      #
+      # Der Kundenauftrag kommt vom Blatt und wird beim Aufstieg mitgefuehrt, nicht von der Wurzel
+      # geholt - so steht vorne derselbe Auftrag, den auch die aufrufende Abfrage am Unterauftrag sieht.
+      changes:
+        - createView:
+            viewName: suborder_fqs
+            replaceIfExists: true
+            selectQuery: |-
+              WITH RECURSIVE pfad AS (SELECT s.id                                   AS suborder_id,
+                                             s.CUSTOMERORDER_ID                     AS customerorder_id,
+                                             s.PARENTORDER_ID,
+                                             CAST(CONCAT(s.sign, '/') AS CHAR(1000)) AS teilpfad
+                                      FROM suborder s
+                                      UNION ALL
+                                      SELECT p.suborder_id,
+                                             p.customerorder_id,
+                                             eltern.PARENTORDER_ID,
+                                             CAST(CONCAT(eltern.sign, '/', p.teilpfad) AS CHAR(1000))
+                                      FROM pfad p
+                                               JOIN suborder eltern ON p.PARENTORDER_ID = eltern.id)
+              SELECT pfad.suborder_id,
+                     CONCAT(c.sign, '/', pfad.teilpfad) AS sign_fully_qualified
+              FROM pfad
+                       JOIN customerorder c ON pfad.customerorder_id = c.id
+              WHERE pfad.PARENTORDER_ID IS NULL
