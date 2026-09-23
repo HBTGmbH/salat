@@ -14,13 +14,15 @@ import org.tb.auth.domain.Authorized;
 class ETLRunHistoryControllerTest {
 
   @Test
-  void the_whole_controller_is_management_only() {
-    // Die Meldung eines Laufs traegt den inneren Aufbau der Auswertungen — wie bei den
-    // JIRA-Replikationen daneben reicht es nicht, den Menueeintrag auszublenden.
+  void the_controller_keeps_the_restricted_out_and_leaves_the_rest_to_the_service() {
+    // Wer ausfuehren darf, darf auch die Laeufe sehen: Geschaeftsfuehrung oder eine Regel der
+    // Kategorie ETL. Ein Entweder-oder traegt keine Annotation — es steht als Laufzeitpruefung im
+    // Service. Was die Annotation hier leistet, ist die Grenze nach unten.
     var authorized = ETLRunHistoryController.class.getAnnotation(Authorized.class);
 
     assertThat(authorized).isNotNull();
-    assertThat(authorized.requiresManager()).isTrue();
+    assertThat(authorized.requireUnrestricted()).isTrue();
+    assertThat(authorized.requiresManager()).isFalse();
   }
 
   @Test

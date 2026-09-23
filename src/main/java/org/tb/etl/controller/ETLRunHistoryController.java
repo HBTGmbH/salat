@@ -13,13 +13,15 @@ import org.tb.etl.viewhelper.ETLRunViewHelper;
 /**
  * Zeigt die Laufhistorie des ETL (#573).
  *
- * <p>Management only, wie die JIRA-Replikationen, unter denen der Menüeintrag steht: hier steht das
- * abgesetzte SQL der Auswertungen, und der nächtliche Lauf ist Betrieb, keine Fachlichkeit.
+ * <p>Wer einen ETL ausführen darf, darf auch sehen, wie die Läufe ausgegangen sind: Geschäftsführung
+ * und Administration wie bisher, dazu jede Anmeldung mit einer Regel der Kategorie {@code ETL} und
+ * {@code EXECUTE}. Ein Entweder-oder trägt keine Annotation — die Prüfung steht als Laufzeitprüfung
+ * in {@code ETLRunHistoryService} (→ AGENTS.md, ADR-0006).
  */
 @Controller
 @RequestMapping("/etl/runs")
 @RequiredArgsConstructor
-@Authorized(requiresManager = true)
+@Authorized(requireUnrestricted = true)
 public class ETLRunHistoryController {
 
   static final int DEFAULT_LIMIT = 100;
