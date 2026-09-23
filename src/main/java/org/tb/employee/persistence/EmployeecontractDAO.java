@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
@@ -43,16 +42,6 @@ public class EmployeecontractDAO {
      */
     public Employeecontract getEmployeecontractById(long id) {
         return employeecontractRepository.findById(id).orElse(null);
-    }
-
-    /**
-     * Gets the EmployeeContract with the given id and concretly initialize vacations.
-     */
-    public Employeecontract getEmployeeContractByIdInitializeEager(long id) {
-        return employeecontractRepository.findById(id).map(e -> {
-            Hibernate.initialize(e.getVacations());
-            return e;
-        }).orElse(null);
     }
 
     /**

@@ -46,7 +46,6 @@ import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.EmployeecontractListItemDTO;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.employee.domain.Overtime;
-import org.tb.employee.domain.Vacation;
 import org.tb.employee.event.EmployeeAnonymizedEvent;
 import org.tb.employee.event.EmployeeDeleteEvent;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
@@ -56,7 +55,6 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.EmployeecontractRepository;
 import org.tb.employee.persistence.OvertimeRepository;
-import org.tb.employee.persistence.VacationRepository;
 import org.tb.notification.service.NotificationService;
 
 @Slf4j
@@ -70,7 +68,6 @@ public class EmployeecontractService {
   private final EmployeecontractDAO employeecontractDAO;
   private final EmployeeDAO employeeDAO;
   private final EmployeecontractRepository employeecontractRepository;
-  private final VacationRepository vacationRepository;
   private final OvertimeRepository overtimeRepository;
   private final EmployeecontractAuthorization employeecontractAuthorization;
   private final NotificationService notificationService;
@@ -115,7 +112,6 @@ public class EmployeecontractService {
       create(overtime);
     }
 
-    createVacation(employeecontract.getId(), Year.from(today()), vacationEntitlement);
     emitContractCreatedNotification(employeecontract);
     return info;
   }
@@ -188,8 +184,7 @@ public class EmployeecontractService {
     employeecontract.setFreelancer(freelancer);
     employeecontract.setHide(hide);
     employeecontract.setDailyWorkingTime(dailyWorkingTime);
-
-    adjustVacations(employeecontract, vacationEntitlement);
+    employeecontract.setVacationEntitlement(vacationEntitlement);
 
     if(!valid) {
 
@@ -292,32 +287,9 @@ public class EmployeecontractService {
     return info;
   }
 
-  private Vacation createVacation(long employeecontractId, Year year, int vacationEntitlement) {
-    var employeecontract = getEmployeecontractById(employeecontractId);
-    var vacation = new Vacation();
-    vacation.setEmployeecontract(employeecontract);
-    vacation.setYear(year.getValue());
-    vacation.setEntitlement(vacationEntitlement);
-    vacation.setUsed(0);
-    employeecontract.getVacations().add(vacation);
-    vacationRepository.save(vacation);
-    return vacation;
-  }
-
+  @Transactional(readOnly = true)
   public Duration getEffectiveVacationEntitlement(long employeecontractId, Year year) {
-    var employeecontract = getEmployeecontractById(employeecontractId);
-    var vacation = vacationRepository
-        .findByEmployeecontractIdAndYear(employeecontractId, year.getValue())
-        .orElseGet(() -> createVacation(employeecontractId, year, employeecontract.getVacationEntitlement()));
-    return vacation.getEffectiveEntitlement();
-  }
-
-  private void adjustVacations(Employeecontract employeecontract, int vacationEntitlement) {
-    employeecontract.getVacations().stream().forEach(v -> {
-      if(!v.getEntitlement().equals(vacationEntitlement)) {
-        v.setEntitlement(vacationEntitlement);
-      }
-    });
+    return getEmployeecontractById(employeecontractId).getEffectiveVacationEntitlement(year);
   }
 
   private boolean validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
@@ -397,17 +369,13 @@ public class EmployeecontractService {
         event.veto(allMessages);
       }
 
-      // if ok for deletion, check for overtime and vacation entries and
+      // if ok for deletion, check for overtime entries and
       // delete them successively (cannot yet be done via web application)
 
       var overtimes = overtimeRepository.findAllByEmployeecontractId(employeeContractId);
       overtimes.stream()
           .map(AuditedEntity::getId)
           .forEach(overtimeRepository::deleteById);
-
-      vacationRepository.findAllByEmployeecontractId(employeeContractId).stream()
-          .map(AuditedEntity::getId)
-          .forEach(vacationRepository::deleteById);
 
       // finally, go for deletion of employeecontract
       employeecontractRepository.delete(ec);
@@ -492,7 +460,7 @@ public class EmployeecontractService {
   }
 
   public Employeecontract getEmployeecontractForView(long employeeContractId) {
-    var ec = employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
+    var ec = employeecontractDAO.getEmployeecontractById(employeeContractId);
     if (ec == null) return null;
     if (!employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ)) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
@@ -530,10 +498,6 @@ public class EmployeecontractService {
             ec.getHide()
         ))
         .toList();
-  }
-
-  public Employeecontract getEmployeeContractWithVacationsById(long employeeContractId) {
-    return employeecontractDAO.getEmployeeContractByIdInitializeEager(employeeContractId);
   }
 
   public List<Overtime> getOvertimeAdjustmentsByEmployeeContractId(long employeeContractId) {

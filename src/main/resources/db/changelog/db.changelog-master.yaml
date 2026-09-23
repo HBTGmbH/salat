@@ -3132,6 +3132,34 @@ databaseChangeLog:
             columns:
               - column:
                   name: started_at
+  - changeSet:
+      id: 86
+      author: kr
+      comment: Urlaubsanspruch als Spalte am Vertrag statt als eigene Entity Vacation (#1077)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: employeecontract
+                columnName: vacationEntitlement
+      changes:
+        - addColumn:
+            tableName: employeecontract
+            columns:
+              - column:
+                  name: vacationEntitlement
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        # Die Jahreszeilen eines Vertrags tragen denselben Wert - adjustVacations hat sie bei jedem
+        # Speichern gleichgesetzt, und das Formular kennt nur ein Feld. MAX greift ihn und antwortet
+        # auch dann, wenn ein Vertrag gar keine Zeile hat; die Spalte bleibt dann auf 0.
+        - sql:
+            sql: >-
+              UPDATE employeecontract ec
+              SET ec.vacationEntitlement = COALESCE(
+                (SELECT MAX(v.entitlement) FROM vacation v WHERE v.EMPLOYEECONTRACT_ID = ec.id), 0)
 
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql

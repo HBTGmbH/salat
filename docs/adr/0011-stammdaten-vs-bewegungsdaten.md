@@ -93,7 +93,6 @@ Bewegungsdaten halten *Ereignisse* und *Aktivitäten* fest, die die Anwendung ü
 | `Timereport` | dailyreport | Zeitbuchung; Soft-Delete via `deleted`-Flag + `@SQLRestriction` |
 | `Workingday` | dailyreport | Tägliche Anwesenheit |
 | `Overtime` | employee | Überstunden-Korrektur |
-| `Vacation` | employee | Urlaubsanspruch und -verbrauch |
 | `Employeeorder` | order | Mitarbeiter-Auftragsbudget (zeitgebundene Zuweisung — Grenzfall; klassifiziert als Stammdatum wegen Konfigurationscharakter) |
 | `OrderRevenue` | order | Finanzieller Umsatzeintrag |
 | `ETLExecutionHistory` | etl | Systemprotokoll von ETL-Läufen |

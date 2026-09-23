@@ -64,7 +64,7 @@ public class EmployeecontractServiceTest {
 	}
 
 	@Test
-	public void employee_contract_can_be_saved_and_creates_vacation() {
+	public void employee_contract_can_be_saved_with_its_vacation_entitlement() {
 		Employee employee = EmployeeTestUtils.createEmployee(TESTY_SIGN);
 		this.employeeService.createOrUpdate(employee);
 		Employee supervisor = EmployeeTestUtils.createEmployee(BOSS_SIGN);
@@ -90,8 +90,7 @@ public class EmployeecontractServiceTest {
 		var employeecontract = employeecontractService.getEmployeecontractById(info.getId());
 		assertThat(employeecontract).isNotNull();
 		assertThat(employeecontract.getId()).isEqualTo(info.getId());
-		assertThat(employeecontract.getVacations()).hasSize(1);
-		assertThat(employeecontract.getVacations().getFirst().getEntitlement()).isEqualTo(ec.getVacationEntitlement());
+		assertThat(employeecontract.getVacationEntitlement()).isEqualTo(ec.getVacationEntitlement());
 	}
 
 	@Test

@@ -37,7 +37,6 @@ import org.tb.common.viewhelper.FilterHintViewHelper;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.domain.Overtime;
-import org.tb.employee.domain.Vacation;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.EmployeecontractService.ContractStoredInfo;
@@ -121,7 +120,7 @@ public class EmployeecontractController {
     @Authorized(requiresManager = true)
     @GetMapping("/edit")
     public String editForm(@RequestParam Long id, Model model) {
-        Employeecontract ec = employeecontractService.getEmployeeContractWithVacationsById(id);
+        Employeecontract ec = employeecontractService.getEmployeecontractById(id);
         var form = toForm(ec);
         model.addAttribute("employeecontractForm", form);
 
@@ -371,12 +370,7 @@ public class EmployeecontractController {
         form.setFreelancer(ec.getFreelancer());
         form.setHide(ec.getHide());
         form.setDailyWorkingTime(DurationUtils.format(ec.getDailyWorkingTime()));
-        if (!ec.getVacations().isEmpty()) {
-            Vacation va = ec.getVacations().getFirst();
-            form.setYearlyVacation(va.getEntitlement().toString());
-        } else {
-            form.setYearlyVacation(String.valueOf(DEFAULT_VACATION_PER_YEAR));
-        }
+        form.setYearlyVacation(String.valueOf(ec.getVacationEntitlement()));
         form.setValidFrom(format(ec.getValidFrom()));
         form.setValidUntil(ec.getValidUntil() != null ? format(ec.getValidUntil()) : "");
         // Initialize overtime effective date
