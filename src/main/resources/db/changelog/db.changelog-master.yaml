@@ -3161,5 +3161,31 @@ databaseChangeLog:
               SET ec.vacationEntitlement = COALESCE(
                 (SELECT MAX(v.entitlement) FROM vacation v WHERE v.EMPLOYEECONTRACT_ID = ec.id), 0)
 
+  - changeSet:
+      id: 87
+      author: kr
+      comment: Tabelle vacation ablegen - der Anspruch steht jetzt am Vertrag (#1077)
+      # Abgelegt wird erst, wenn das Ziel nachweislich steht: die Spalte ist da und jeder Vertrag
+      # traegt einen Wert. Schlaegt eine der Bedingungen fehl, bleibt die Tabelle stehen - MARK_RAN
+      # haelt den Changeset dann fuer erledigt, und das ist hier die gewollte Richtung: lieber eine
+      # verwaiste Tabelle als ein Drop gegen eine Uebernahme, die nicht gelaufen ist.
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: vacation
+        - columnExists:
+            tableName: employeecontract
+            columnName: vacationEntitlement
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM employeecontract WHERE vacationEntitlement IS NULL
+      changes:
+        # Laeuft nach Changeset 86, das den Anspruch in employeecontract.vacationEntitlement
+        # uebernommen hat. Die Tabelle traegt darueber hinaus nichts: year war je Vertrag immer
+        # derselbe Anspruch, und used wurde seit jeher geschrieben, aber nie gelesen - der
+        # Urlaubsverbrauch kommt aus den Buchungen.
+        - dropTable:
+            tableName: vacation
+
 #  - include:
 #      file: db/changelog/includes/addAllEmployees.sql
