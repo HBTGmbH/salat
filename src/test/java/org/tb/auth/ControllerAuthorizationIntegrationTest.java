@@ -79,13 +79,14 @@ class ControllerAuthorizationIntegrationTest {
       "/orders/suborders",
       "/orders/employeeorders");
 
-  /** Pflege der Stammdaten und alles, was Zeiten verschiebt. */
+  /** Pflege der Stammdaten, alles, was Zeiten verschiebt, und der Betrieb der Anwendung selbst. */
   private static final List<String> MANAGER_VIEWS = List.of(
       "/customers/create",
       "/employees/create",
       "/employees/contracts/create",
       "/orders/customerorders/create",
-      "/dailyreports/move");
+      "/dailyreports/move",
+      "/etl/runs");
 
   /** Rechnungen und die Umsätze aus Buchhaltung und Aufzeichnungen. */
   private static final List<String> BACKOFFICE_VIEWS = List.of(

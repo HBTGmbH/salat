@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='systemsettings',
+        subSection='etl-runs',
+        title=#{main.etl.run.list.title},
+        pageTitle=#{main.etl.run.list.title},
+        sectionTitle=#{main.general.mainmenu.system.text}
+">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" th:action="@{/etl/runs}" data-filter-form="etl">
+        <div class="row g-2 align-items-end">
+          <div class="col-auto">
+            <label class="form-label" for="fEtlRunLimit" th:text="#{main.etl.run.filter.limit}">Anzahl</label>
+            <input type="number" class="form-control" id="fEtlRunLimit" name="fEtlRunLimit"
+                   min="1" max="1000" th:value="${fEtlRunLimit}"/>
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary"><i class="icon ti ti-filter m-0"></i></button>
+          </div>
+          <div class="col-auto ms-2">
+            <label class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="fEtlRunFailedOnly" value="true"
+                     th:checked="${fEtlRunFailedOnly}"/>
+              <!--/* Ohne das versteckte Feld bliebe der Schalter an: ein nicht angehaktes Kaestchen
+                     sendet nichts, und der UiState-Filter reicht dann den gemerkten Wert nach. */-->
+              <input type="hidden" name="fEtlRunFailedOnly" value="false"/>
+              <span class="form-check-label" th:text="#{main.etl.run.filter.failedonly}">Nur Fehlerhafte</span>
+            </label>
+          </div>
+        </div>
+      </form>
+      <p class="text-secondary mb-0 mt-3" th:text="#{main.etl.run.list.hint}">
+        Der naechtliche Lauf schreibt seine Zeile beim Start.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.etl.run.field.startedAt}">Start</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.finishedAt}">Ende</th>
+          <th th:text="#{main.etl.run.field.duration}">Dauer</th>
+          <th th:text="#{main.etl.run.field.status}">Status</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.trigger}">Ausgeloest durch</th>
+          <th class="d-none d-lg-table-cell" th:text="#{main.etl.run.field.daterange}">Zeitraum</th>
+          <th th:text="#{main.etl.run.field.message}">Meldung</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(runs)}">
+          <td colspan="7" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+            Keine Einträge vorhanden
+          </td>
+        </tr>
+        <tr th:each="run : ${runs}">
+          <td class="text-nowrap"
+              th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 02:00:00</td>
+          <td class="d-none d-md-table-cell text-nowrap">
+            <span th:if="${run.finishedAt != null}"
+                  th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 02:03:12</span>
+            <span th:if="${run.finishedAt == null}" class="text-muted">&ndash;</span>
+          </td>
+          <td class="text-nowrap">
+            <span th:if="${run.duration != null}" th:text="${run.duration}">3 min 12 s</span>
+            <span th:if="${run.duration == null}" class="text-muted">&ndash;</span>
+          </td>
+          <td>
+            <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'}"
+                  th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : 'bg-azure-lt')"
+                  th:text="#{${'main.etl.run.status.' + run.status}}">Erfolgreich</span>
+          </td>
+          <td class="d-none d-md-table-cell" th:text="#{${'main.etl.run.trigger.' + run.triggeredBy}}">Nächtlich</td>
+          <td class="d-none d-lg-table-cell text-nowrap small">
+            <span th:if="${run.dateFrom != null}"
+                  th:text="|${#temporals.format(run.dateFrom, 'dd.MM.yyyy')} – ${#temporals.format(run.dateUntil, 'dd.MM.yyyy')}|">
+              01.06.2026 – 01.09.2026
+            </span>
+          </td>
+          <!--/* Die Meldung eines abgebrochenen Laufs traegt den Ausnahmetext und wird lang; die
+                 Zelle bricht ihn um, statt die Tabelle in die Breite zu ziehen. */-->
+          <td class="text-break small" th:text="${run.message}">12 Definition(en) ausgeführt</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script th:inline="none">
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form[data-filter-form]');
+      if (!form) return;
+      form.querySelectorAll('input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.requestSubmit(); });
+      });
+    });
+  </script>
+
+</main>
+</html>
