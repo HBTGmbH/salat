@@ -238,10 +238,14 @@
 
   <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0"
        role="alert">
-    <i class="ti ti-alert-triangle me-2"></i>
-    <span th:text="#{main.timereportlist.truncated(${result.timereports.size()},${result.totalCount})}">
-      Die Anzeige ist begrenzt.
-    </span>
+    <!--/* Symbol und Text in einer Zeilenbox: als eigene Flex-Kinder haben sie verschiedene
+           Zeilenhoehen, und das Zeichen saesse oben in seiner Box statt auf der Schriftlinie. */-->
+    <div>
+      <i class="ti ti-alert-triangle me-2"></i><span
+         th:text="#{main.timereportlist.truncated(${result.timereports.size()},${result.totalCount})}">
+        Die Anzeige ist begrenzt.
+      </span>
+    </div>
   </div>
 
   <div class="table-responsive">
