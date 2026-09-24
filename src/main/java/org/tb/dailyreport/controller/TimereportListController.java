@@ -124,6 +124,7 @@ public class TimereportListController {
   public String orders(
       @RequestParam(required = false) String q,
       @RequestParam(required = false) String levels,
+      @RequestParam(required = false) String selectedCustomers,
       @RequestParam(required = false) String selectedOrders,
       @RequestParam(required = false) String selectedSuborders,
       Model model) {
@@ -131,7 +132,8 @@ public class TimereportListController {
     var chosenLevels = strings(levels);
     var includeOrders = chosenLevels.isEmpty() || chosenLevels.contains("order");
     var includeSuborders = chosenLevels.isEmpty() || chosenLevels.contains("suborder");
-    var result = timereportListService.searchOrders(q, includeOrders, includeSuborders, DIALOG_ROWS);
+    var result = timereportListService.searchOrders(q, longs(selectedCustomers), includeOrders, includeSuborders,
+        DIALOG_ROWS);
 
     model.addAttribute("orders", result.orders());
     model.addAttribute("suborders", result.suborders());

@@ -150,7 +150,9 @@ public class TimereportListService {
    * The orders and suborders a dialog shows: what matches the search, capped. Without a search term the orders alone,
    * because a flat list of every suborder helps nobody — the term is what narrows it down.
    */
-  public OrderSearchResult searchOrders(String term, boolean includeOrders, boolean includeSuborders, int limit) {
+  public OrderSearchResult searchOrders(String term, List<Long> selectedCustomerIds, boolean includeOrders,
+      boolean includeSuborders, int limit) {
+
     var visibility = visibilityService.anyTime();
     if (visibility.isEmpty()) return new OrderSearchResult(List.of(), List.of(), 0);
 
@@ -166,24 +168,36 @@ public class TimereportListService {
       suborders = notHidden(suborderService.getSubordersByIds(values.suborderIds()), Suborder::isHide);
     }
 
+    // Auf die gewaehlten Auftraggeber eingeschraenkt, aus demselben Grund wie die Ticketauswahl: ein
+    // Eintrag, den der uebrige Filter ohnehin nicht durchliesse, gehoert nicht in die Liste.
+    if (!selectedCustomerIds.isEmpty()) {
+      var customers = new HashSet<>(selectedCustomerIds);
+      orders = orders.stream().filter(order -> customers.contains(order.getCustomer().getId())).toList();
+      var orderIds = orders.stream().map(Customerorder::getId).collect(Collectors.toSet());
+      suborders = suborders.stream()
+          .filter(suborder -> orderIds.contains(suborder.getCustomerorder().getId()))
+          .toList();
+    }
+
     var search = term == null ? "" : term.trim().toLowerCase(java.util.Locale.ROOT);
     var matchedOrders = includeOrders
         ? orders.stream().filter(order -> matches(search, order.getSign(), order.getShortdescription(),
               order.getCustomer().getShortname())).toList()
         : List.<Customerorder>of();
-    var matchedSuborders = !includeSuborders || search.isEmpty()
-        ? List.<Suborder>of()
-        : suborders.stream()
+    var matchedSuborders = includeSuborders
+        ? suborders.stream()
             .filter(suborder -> matches(search, suborder.getCompleteOrderSign(), suborder.getShortdescription()))
-            .toList();
+            .toList()
+        : List.<Suborder>of();
 
-    int total = matchedOrders.size() + matchedSuborders.size();
-    var subordersByOrder = matchedSuborders.stream()
-        .collect(Collectors.groupingBy(suborder -> suborder.getCustomerorder().getId()));
-    return new OrderSearchResult(
-        matchedOrders.stream().limit(limit).map(this::toOption).toList(),
-        matchedSuborders.stream().limit(limit).map(TimereportListService::toOption).toList(),
-        total);
+    // Die Obergrenze gilt fuer beide zusammen: zweimal zweihundert Zeilen waeren keine Liste mehr, die
+    // jemand ueberfliegt. Auftraege zuerst, Unterauftraege fuellen den Rest.
+    var shownOrders = matchedOrders.stream().limit(limit).map(this::toOption).toList();
+    var shownSuborders = matchedSuborders.stream()
+        .limit(Math.max(0, limit - shownOrders.size()))
+        .map(TimereportListService::toOption)
+        .toList();
+    return new OrderSearchResult(shownOrders, shownSuborders, matchedOrders.size() + matchedSuborders.size());
   }
 
   /**
