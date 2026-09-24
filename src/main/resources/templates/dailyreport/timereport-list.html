@@ -73,10 +73,12 @@
         </button>
         <div class="mt-1 small d-flex align-items-center gap-2"
              th:with="picked=${options.selectedOrders.size() + options.selectedSuborders.size()}">
+          <!--/* Ohne Auswahl steht hier nichts: das Feld darueber sagt bereits "Alle Auftraege", und
+                 eine Zeile, die dasselbe noch einmal sagt, ist keine Auskunft. */-->
           <span class="text-secondary" id="order-detail"
                 th:text="${picked == 0}
-                           ? #{main.timereportlist.filter.unrestricted}
-                           : ${options.includedSuborders} + ' ' + #{main.timereportlist.orders.dialog.included}">keine Einschränkung</span>
+                           ? ''
+                           : ${options.includedSuborders} + ' ' + #{main.timereportlist.orders.dialog.included}"></span>
           <!--/* Immer im Dokument, sichtbar nur mit Auswahl: der Filterbereich wird beim Wechsel
                  nicht neu gerendert, ein serverseitiges th:if bliebe also stehen wie es war. */-->
           <a href="#" id="order-clear" th:classappend="${picked == 0} ? 'd-none'"
@@ -98,10 +100,10 @@
         <div class="mt-1 small d-flex align-items-center gap-2">
           <span class="text-secondary" id="ticket-detail"
                 th:text="${selectedTicketKeys.isEmpty()}
-                           ? #{main.timereportlist.filter.unrestricted}
+                           ? ''
                            : (${ticketChildren}
                                ? #{main.timereportlist.tickets.dialog.children.included}
-                               : #{main.timereportlist.tickets.dialog.children.excluded})">keine Einschränkung</span>
+                               : #{main.timereportlist.tickets.dialog.children.excluded})"></span>
           <a href="#" id="ticket-clear" th:classappend="${selectedTicketKeys.isEmpty()} ? 'd-none'"
              th:text="#{main.timereportlist.filter.clear}">leeren</a>
         </div>
@@ -471,7 +473,6 @@
     ticketsAll: /*[[#{main.timereportlist.filter.tickets.all}]]*/ 'Alle Tickets',
     tickets: /*[[#{main.timereportlist.filter.tickets.count}]]*/ 'Tickets',
     entries: /*[[#{main.timereportlist.filter.entries}]]*/ 'Einträge',
-    unrestricted: /*[[#{main.timereportlist.filter.unrestricted}]]*/ 'keine Einschränkung',
     childrenIncluded: /*[[#{main.timereportlist.tickets.dialog.children.included}]]*/ 'inklusive untergeordneter',
     childrenExcluded: /*[[#{main.timereportlist.tickets.dialog.children.excluded}]]*/ 'ohne untergeordnete',
     includedNone: /*[[#{main.timereportlist.orders.dialog.included.none}]]*/ 'Ohne Auswahl gilt kein Auftragsfilter.',
@@ -710,19 +711,9 @@
       row.classList.toggle('d-none', !matches);
       if (matches) visible.add(row.dataset.id);
     });
-    rows.forEach(row => {
-      const context = row.querySelector('[data-context]');
-      if (!context) return;
-      const parent = row.dataset.parent;
-      const parentShown = parent && visible.has(parent);
-      row.style.paddingLeft = (parentShown ? 2.25 : 0.75) + 'rem';
-      if (!parent || parentShown) {
-        context.classList.add('d-none');
-      } else {
-        context.textContent = labels.under + ' ' + parent;
-        context.classList.remove('d-none');
-      }
-    });
+    // Die Einrueckung kommt vom Server, der den Baum kennt. Blendet der Typfilter ein Elternteil aus,
+    // bleibt sein Kind eingerueckt stehen - das ist ehrlicher als es an den Rand zu ziehen und damit
+    // eine Wurzel zu behaupten, die es nicht ist.
   }
 
   function addManualTicket() {
@@ -771,7 +762,7 @@
       : (picks.size === 1 ? signOf([...picks][0]) : picks.size + ' ' + labels.entries);
     document.getElementById('order-clear').classList.toggle('d-none', picks.size === 0);
     if (picks.size === 0) {
-      document.getElementById('order-detail').textContent = labels.unrestricted;
+      document.getElementById('order-detail').textContent = '';
     }
 
     document.getElementById('ticket-summary').textContent = state.tickets.size === 0
@@ -779,7 +770,7 @@
       : (state.tickets.size === 1 ? [...state.tickets][0] : state.tickets.size + ' ' + labels.tickets);
     document.getElementById('ticket-clear').classList.toggle('d-none', state.tickets.size === 0);
     document.getElementById('ticket-detail').textContent = state.tickets.size === 0
-      ? labels.unrestricted
+      ? ''
       : (document.getElementById('ticket-children').checked
           ? labels.childrenIncluded : labels.childrenExcluded);
   }
