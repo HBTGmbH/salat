@@ -197,8 +197,38 @@ public class TimereportListService {
         .limit(Math.max(0, limit - shownOrders.size()))
         .map(TimereportListService::toOption)
         .toList();
-    return new OrderSearchResult(shownOrders, shownSuborders, matchedOrders.size() + matchedSuborders.size());
+    return new OrderSearchResult(groupsOf(shownOrders, shownSuborders),
+        orphansOf(shownOrders, shownSuborders), matchedOrders.size() + matchedSuborders.size());
   }
+
+  /**
+   * Der Baum, wie der Dialog ihn zeigt: jeder Auftrag mit seinen Unterauftraegen darunter, diese nach ihrem
+   * vollstaendigen Kuerzel sortiert — damit steht ein Kind hinter seinem Elternteil, ohne dass die Vorlage den
+   * Baum selbst laufen muss.
+   */
+  private static List<OrderGroup> groupsOf(List<OrderOption> orders, List<SuborderOption> suborders) {
+    var byOrder = suborders.stream().collect(Collectors.groupingBy(SuborderOption::customerOrderId));
+    return orders.stream()
+        .map(order -> new OrderGroup(order, byOrder.getOrDefault(order.id(), List.of()).stream()
+            .sorted(Comparator.comparing(SuborderOption::completeSign))
+            .toList()))
+        .toList();
+  }
+
+  /**
+   * Unterauftraege, deren Auftrag nicht in der Trefferliste steht — etwa weil der Ebenenfilter die Auftraege
+   * ausblendet. Sie stehen danach flach, und die Zeile nennt den Auftrag, zu dem sie gehoeren.
+   */
+  private static List<SuborderOption> orphansOf(List<OrderOption> orders, List<SuborderOption> suborders) {
+    var known = orders.stream().map(OrderOption::id).collect(Collectors.toSet());
+    return suborders.stream()
+        .filter(suborder -> !known.contains(suborder.customerOrderId()))
+        .sorted(Comparator.comparing(SuborderOption::completeSign))
+        .toList();
+  }
+
+  /** Ein Auftrag mit den Unterauftraegen, die zu ihm gehoeren und die Suche ueberstanden haben. */
+  public record OrderGroup(OrderOption order, List<SuborderOption> suborders) {}
 
   /**
    * The tickets a dialog shows: those replicated under the scopes the rest of the filter names, matching the search,
@@ -264,8 +294,17 @@ public class TimereportListService {
     return included.size();
   }
 
-  /** @param total how many the search found, of which only the first were rendered */
-  public record OrderSearchResult(List<OrderOption> orders, List<SuborderOption> suborders, int total) {}
+  /**
+   * @param groups  je Auftrag seine Unterauftraege, in der Reihenfolge des Baums
+   * @param orphans Unterauftraege ohne ihren Auftrag in der Liste
+   * @param total   wie viele die Suche gefunden hat, von denen nur die ersten gerendert wurden
+   */
+  public record OrderSearchResult(List<OrderGroup> groups, List<SuborderOption> orphans, int total) {
+
+    public int shown() {
+      return groups.stream().mapToInt(group -> 1 + group.suborders().size()).sum() + orphans.size();
+    }
+  }
 
   /** @param total how many the search found, of which only the first were rendered */
   public record TicketSearchResult(List<TicketOption> tickets, List<String> types, int total) {}

@@ -632,12 +632,7 @@
    * Kuerzel — sonst haengt ein Unterauftrag ohne Zusammenhang in der Liste.
    */
   function renderOrderContext() {
-    const rows = [...document.querySelectorAll('#order-tree [data-row]')];
-    const visible = new Set(rows.map(row => row.dataset.id));
-    rows.forEach(row => {
-      const parentShown = row.dataset.parent && visible.has(row.dataset.parent);
-      row.style.paddingLeft = (parentShown ? 2.25 : 0.75) + 'rem';
-    });
+    // Die Einrueckung kommt vom Server, der den Baum kennt; hier bleibt nur der Umfang der Auswahl.
     document.getElementById('order-included').textContent = orderDraft.size === 0
       ? labels.includedNone : orderDraft.size + ' ' + labels.entries;
   }

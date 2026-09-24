@@ -19,25 +19,46 @@
 <!--/* Beide Dialoge holen ihre Zeilen hier: was zu Suche, Ebene und den gewaehlten Auftraggebern
        passt, gedeckelt. Auftraege stehen vor den Unterauftraegen, weil man so danach sucht. */-->
 <th:block th:fragment="orderTree">
-  <label th:each="order : ${orders}"
-         class="list-group-item d-flex align-items-center gap-2"
-         data-row="order" th:data-id="'o:' + ${order.id}" th:data-order="${order.id}"
-         th:data-text="${order.sign}"
-         style="padding-left: 0.75rem">
-    <input class="form-check-input m-0" type="checkbox" th:data-pick="'o:' + ${order.id}"
-           th:checked="${selectedOrderIds.contains(order.id)}">
-    <span class="fw-medium text-nowrap" th:text="${order.sign}">Auftrag</span>
-    <span class="text-secondary text-truncate"
-          th:text="${order.description} + ' · ' + ${order.customerShortname}">Beschreibung</span>
-    <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
-      <span class="badge bg-secondary-lt" th:text="#{main.timereportlist.orders.dialog.level.order}">Auftrag</span>
-    </span>
-  </label>
+  <!--/* Der Baum in der Reihenfolge, in der man ihn liest: ein Auftrag, darunter seine Unterauftraege,
+         eingerueckt nach ihrer Ebene. */-->
+  <th:block th:each="group : ${groups}">
+    <label class="list-group-item d-flex align-items-center gap-2"
+           data-row="order" th:data-id="'o:' + ${group.order.id}" th:data-order="${group.order.id}"
+           th:data-text="${group.order.sign}"
+           style="padding-left: 0.75rem">
+      <input class="form-check-input m-0" type="checkbox" th:data-pick="'o:' + ${group.order.id}"
+             th:checked="${selectedOrderIds.contains(group.order.id)}">
+      <span class="fw-medium text-nowrap" th:text="${group.order.sign}">Auftrag</span>
+      <span class="text-secondary text-truncate"
+            th:text="${group.order.description} + ' · ' + ${group.order.customerShortname}">Beschreibung</span>
+      <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+        <span class="badge bg-secondary-lt" th:text="#{main.timereportlist.orders.dialog.level.order}">Auftrag</span>
+      </span>
+    </label>
 
-  <label th:each="suborder : ${suborders}"
+    <label th:each="suborder : ${group.suborders}"
+           class="list-group-item d-flex align-items-center gap-2"
+           data-row="suborder" th:data-id="'s:' + ${suborder.id}" th:data-order="${suborder.customerOrderId}"
+           th:data-parent="${suborder.parentId != null} ? 's:' + ${suborder.parentId} : 'o:' + ${suborder.customerOrderId}"
+           th:data-text="${suborder.completeSign}"
+           th:style="'padding-left: ' + ${0.75 + (suborder.level + 1) * 1.5} + 'rem'">
+      <input class="form-check-input m-0" type="checkbox" th:data-pick="'s:' + ${suborder.id}"
+             th:checked="${selectedSuborderIds.contains(suborder.id)}">
+      <span class="fw-medium text-nowrap" th:text="${suborder.completeSign}">Unterauftrag</span>
+      <span class="text-secondary text-truncate" th:text="${suborder.description}">Bezeichnung</span>
+      <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+        <span class="text-secondary small" th:if="${suborder.descendantCount > 0}"
+              th:text="'+' + ${suborder.descendantCount} + ' ' + #{main.timereportlist.orders.dialog.descendants}">+2</span>
+        <span class="badge bg-secondary-lt" th:text="#{main.timereportlist.orders.dialog.level.suborder}">Unterauftrag</span>
+      </span>
+    </label>
+  </th:block>
+
+  <!--/* Unterauftraege, deren Auftrag nicht in der Liste steht - der Ebenenfilter blendet ihn aus.
+         Sie stehen flach, und die Zeile nennt den Auftrag, zu dem sie gehoeren. */-->
+  <label th:each="suborder : ${orphans}"
          class="list-group-item d-flex align-items-center gap-2"
          data-row="suborder" th:data-id="'s:' + ${suborder.id}" th:data-order="${suborder.customerOrderId}"
-         th:data-parent="${suborder.parentId != null} ? 's:' + ${suborder.parentId} : 'o:' + ${suborder.customerOrderId}"
          th:data-text="${suborder.completeSign}"
          style="padding-left: 0.75rem">
     <input class="form-check-input m-0" type="checkbox" th:data-pick="'s:' + ${suborder.id}"
