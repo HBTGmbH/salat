@@ -40,6 +40,78 @@
     </div>
   </div>
 
+  <!-- LAUF ANSTOSSEN -->
+  <!--/* Die Karte steht hinter dem Filter, nicht davor: `focusEntryField()` in salat.js setzt den
+         Einstiegsfokus in das erste Feld des ersten Formulars der Seite, und das soll wie in jeder
+         anderen Liste der Filter sein — nicht ein Datumsfeld, das einen Lauf anstoesst. */-->
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.etl.run.start.title}">ETL-Lauf anstossen</h3>
+    </div>
+    <div class="card-body">
+      <!--/* Keine Rueckfrage vor dem Anstossen (→ ADR-0027): ein Lauf baut abgeleitete Tabellen neu
+             auf, die ohnehin jede Nacht entstehen — eine Aktion ohne bleibenden Schaden fragt nicht.
+
+             Die Felder entstehen wie in der Filterzeile darueber als rohes Bootstrap und nicht ueber
+             den salat-Dialekt: dessen Prozessoren binden ausschliesslich ueber `th:field` an ein
+             Formularobjekt und verwerfen `name`, `th:value` und `disabled`. Hier stehen blanke
+             Anfrageparameter, die der Controller einzeln entgegennimmt. */-->
+      <form method="post" th:action="@{/etl/runs/run}">
+        <div class="row g-2">
+          <div class="col-md-3">
+            <label class="form-label required" for="etlRunDateFrom" th:text="#{main.etl.run.field.from}">Von</label>
+            <input type="date" class="form-control" id="etlRunDateFrom" name="dateFrom"
+                   th:value="${runDateFrom}" required/>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label required" for="etlRunDateUntil" th:text="#{main.etl.run.field.until}">Bis</label>
+            <input type="date" class="form-control" id="etlRunDateUntil" name="dateUntil"
+                   th:value="${runDateUntil}" required/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="etlDefinitionName"
+                   th:text="#{main.etl.run.field.definition}">Definition</label>
+            <!--/* Der Sammeleintrag traegt den Wert `*` und nicht den leeren Wert: TomSelect
+                   verwirft eine Option ohne Wert (`allowEmptyOption` steht auf der Vorgabe `false`,
+                   getSettings.ts:71) und boete sie hoechstens als Platzhalter an — sie waere nach
+                   einer Auswahl nicht wieder zu treffen. `*` ist im ETL ohnehin die Schreibweise
+                   fuer „alle Objekte": AuthService macht aus einem leeren Objekt einer
+                   Berechtigungsregel genau dieses Zeichen. */-->
+            <select class="form-select tomselect" id="etlDefinitionName" name="definitionName">
+              <option value="*" th:text="#{main.etl.run.field.definition.all}">--- Alle Definitionen ---</option>
+              <option th:each="def : ${etlDefinitions}"
+                      th:value="${def.name}" th:text="${def.name}"
+                      th:attr="data-subtext=${def.description}"></option>
+            </select>
+            <!--/* salat.js traegt die Beschreibung der gewaehlten Definition hier ein, sobald der
+                   Bezeichner `<id des Feldes>-subtext` lautet (salat.js:149-153). */-->
+            <small id="etlDefinitionName-subtext" class="form-text text-secondary"></small>
+            <div class="form-text" th:text="#{main.etl.run.field.definition.help}">
+              Eine einzelne Definition zieht ihre Abhaengigkeiten mit.
+            </div>
+          </div>
+        </div>
+        <!--/* Der gesperrte Knopf ist Hoeflichkeit, nicht die Sperre: die liegt in
+               ETLService.startRun und weist auch den Lauf ab, der ueber die REST-Schnittstelle,
+               ein zweites Fenster oder den naechtlichen Zeitplan hereinkommt. */-->
+        <div class="mt-3">
+          <button type="submit" class="btn btn-primary" th:disabled="${runInProgress}">
+            <i class="icon ti ti-player-play"></i>
+            <span th:text="#{main.etl.run.start.button}">Lauf starten</span>
+          </button>
+        </div>
+      </form>
+      <p class="text-secondary mb-0 mt-3" th:if="${runInProgress}"
+         th:text="#{main.etl.run.start.blocked}">
+        Es laeuft bereits ein ETL-Lauf.
+      </p>
+      <p class="text-secondary mb-0 mt-3" th:unless="${runInProgress}"
+         th:text="#{main.etl.run.start.hint}">
+        Der Lauf laeuft im Hintergrund weiter.
+      </p>
+    </div>
+  </div>
+
   <div class="table-responsive card">
     <table class="table table-vcenter card-table">
       <thead>
@@ -51,11 +123,12 @@
           <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.trigger}">Ausgeloest durch</th>
           <th class="d-none d-lg-table-cell" th:text="#{main.etl.run.field.daterange}">Zeitraum</th>
           <th th:text="#{main.etl.run.field.message}">Meldung</th>
+          <th class="w-1"></th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${#lists.isEmpty(runs)}">
-          <td colspan="7" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
             Keine Einträge vorhanden
           </td>
         </tr>
@@ -72,8 +145,8 @@
             <span th:if="${run.duration == null}" class="text-muted">&ndash;</span>
           </td>
           <td>
-            <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'}"
-                  th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : 'bg-azure-lt')"
+            <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'},skipped=${run.status.name() == 'SKIPPED'}"
+                  th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : (${skipped} ? 'bg-warning-lt' : 'bg-azure-lt'))"
                   th:text="#{${'main.etl.run.status.' + run.status}}">Erfolgreich</span>
           </td>
           <td class="d-none d-md-table-cell" th:text="#{${'main.etl.run.trigger.' + run.triggeredBy}}">Nächtlich</td>
@@ -86,6 +159,29 @@
           <!--/* Die Meldung eines abgebrochenen Laufs traegt den Ausnahmetext und wird lang; die
                  Zelle bricht ihn um, statt die Tabelle in die Breite zu ziehen. */-->
           <td class="text-break small" th:text="${run.message}">12 Definition(en) ausgeführt</td>
+          <!--/* Nur an einer laufenden Zeile: markiert wird ein Eintrag, den ein Absturz auf
+                 „Laeuft" stehen liess und der jeden neuen Lauf abweist. Der Dialog nennt Start und
+                 Zeitraum — daran unterscheiden sich zwei benachbarte Zeilen, die Datenbank-Id ist
+                 keine fachliche Angabe (Style Guide 5.5). */-->
+          <td th:with="runRange=${run.dateFrom != null
+                  ? #temporals.format(run.dateFrom, 'dd.MM.yyyy') + ' – ' + #temporals.format(run.dateUntil, 'dd.MM.yyyy')
+                  : ''}">
+            <form th:if="${run.status.name() == 'RUNNING'}" method="post"
+                  th:action="@{/etl/runs/{id}/mark-finished(id=${run.id})}"
+                  data-confirm
+                  th:data-confirm-title="#{main.etl.run.markfinished.confirm.title}"
+                  th:data-confirm-text="#{main.etl.run.markfinished.confirm.text}"
+                  th:data-confirm-detail="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}"
+                  th:data-confirm-detail-secondary="${runRange}"
+                  th:data-confirm-label="#{main.etl.run.action.markfinished}"
+                  data-confirm-variant="warning">
+              <button type="submit" class="btn btn-outline-warning"
+                      th:title="#{main.etl.run.action.markfinished}"
+                      th:aria-label="#{main.etl.run.action.markfinished}">
+                <i class="icon ti ti-check m-0"></i>
+              </button>
+            </form>
+          </td>
         </tr>
       </tbody>
     </table>

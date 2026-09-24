@@ -19,6 +19,9 @@ import org.tb.etl.domain.ETLRunHistory.Trigger;
 /**
  * Die Liste der ETL-Läufe (#573): die jüngsten zuerst, höchstens so viele wie angefragt, und auf
  * Wunsch nur die, die nicht sauber zu Ende kamen.
+ *
+ * <p>Dazu die eine Abfrage, auf der die Sperre aus #1071 steht: solange sie einen Lauf findet, darf
+ * kein zweiter starten.
  */
 @DataJpaTest
 @DisplayNameGeneration(ReplaceUnderscores.class)
@@ -52,6 +55,27 @@ class ETLRunHistoryRepositoryTest {
 
     assertThat(runs).extracting(ETLRunHistory::getId)
         .containsExactly(failed.getId(), crashed.getId());
+  }
+
+  @Test
+  void finds_the_run_that_is_still_going() {
+    // Die RUNNING-Zeile ist die Sperre (#1071): sie muss auch dann gefunden werden, wenn juengere
+    // Laeufe daneben stehen — denn nur solange sie steht, darf kein zweiter Lauf starten.
+    var running = save(NIGHT, RUNNING);
+    save(NIGHT.minusDays(1), SUCCEEDED);
+    save(NIGHT.plusDays(1), FAILED);
+
+    assertThat(repository.findFirstByStatusOrderByStartedAtDesc(RUNNING))
+        .map(ETLRunHistory::getId)
+        .contains(running.getId());
+  }
+
+  @Test
+  void finds_nothing_while_no_run_is_going() {
+    save(NIGHT, SUCCEEDED);
+    save(NIGHT.plusDays(1), FAILED);
+
+    assertThat(repository.findFirstByStatusOrderByStartedAtDesc(RUNNING)).isEmpty();
   }
 
   private ETLRunHistory save(LocalDateTime startedAt, Status status) {

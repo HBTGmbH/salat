@@ -38,16 +38,28 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ETLRunHistory {
 
+  /** Grenze der Spalte {@code message}. */
+  public static final int MESSAGE_MAX_LENGTH = 4000;
+
   public enum Status {
     RUNNING,
     SUCCEEDED,
-    FAILED
+    FAILED,
+    /**
+     * Der Lauf wurde gar nicht erst begonnen, weil zu dem Zeitpunkt schon einer lief (#1071).
+     *
+     * <p>Eigener Status statt {@link #FAILED}: fehlgeschlagen ist etwas, das lief und schiefging.
+     * Hier lief nichts. Der Unterschied zählt vor allem für den nächtlichen Lauf — ohne diese Zeile
+     * stünde sein Ausfall nur im Log, und die Liste zeigte eine Lücke, die von einer abgeschalteten
+     * Anwendung nicht zu unterscheiden wäre.
+     */
+    SKIPPED
   }
 
   public enum Trigger {
     /** Der nächtliche Lauf. */
     SCHEDULED,
-    /** Über die REST-Schnittstelle angestoßen. */
+    /** Von Hand angestoßen — über die Oberfläche (#1071) oder die REST-Schnittstelle. */
     MANUAL
   }
 

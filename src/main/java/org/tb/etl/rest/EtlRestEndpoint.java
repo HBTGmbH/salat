@@ -6,15 +6,14 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.tb.etl.domain.ETLRunHistory.Trigger.MANUAL;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.websocket.server.PathParam;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -63,7 +62,7 @@ public class EtlRestEndpoint {
     checkAuthenticated();
 
     try {
-      etlService.executeAll(new LocalDateRange(fromDate, untilDate), false);
+      etlService.executeAll(new LocalDateRange(fromDate, untilDate), MANUAL);
     } catch (AuthorizationException e) {
       throw new ResponseStatusException(FORBIDDEN, "Could not execute all ETL definitions. " + e);
     } catch (InvalidDataException | BusinessRuleException e) {
@@ -100,7 +99,7 @@ public class EtlRestEndpoint {
       if(!etlService.isETLExisting(etlName)) {
         throw new ResponseStatusException(NOT_FOUND, "ETL not found: " + etlName);
       }
-      etlService.execute(new LocalDateRange(fromDate, untilDate), List.of(etlName), false);
+      etlService.execute(new LocalDateRange(fromDate, untilDate), List.of(etlName), MANUAL);
     } catch (AuthorizationException e) {
       throw new ResponseStatusException(FORBIDDEN, "Could not execute ETL definition. " + e);
     } catch (InvalidDataException | BusinessRuleException e) {

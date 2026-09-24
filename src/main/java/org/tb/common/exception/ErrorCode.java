@@ -103,6 +103,13 @@ public enum ErrorCode {
   WD_DAY_LENGTH_TOO_LONG("WD-0014", "standby and working time together must not exceed 24 hours per day!"),
 
   ETL_INVALID_DATE_RANGE("ETL-0001", "etl definition executed with invalid date range"),
+  ETL_RUN_ALREADY_RUNNING("ETL-0002", "an etl run is already running"),
+  ETL_RUN_NOT_FOUND("ETL-0003", "etl run not found"),
+  ETL_RUN_NOT_RUNNING("ETL-0004", "etl run is not running"),
+  ETL_NO_EXECUTABLE_DEFINITION("ETL-0005", "no etl definition may be executed by this login"),
+  ETL_DEFINITION_NOT_FOUND("ETL-0006", "etl definition not found"),
+  ETL_RUN_EXECUTOR_BUSY("ETL-0007", "the etl execution thread is still occupied by an earlier run"),
+  ETL_CYCLIC_DEPENDENCY("ETL-0008", "the etl definitions depend on each other in a cycle"),
 
   SE_USER_NOT_FOUND("SE-0001", "salat user not found for current login"),
 
