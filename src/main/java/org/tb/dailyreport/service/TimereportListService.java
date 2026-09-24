@@ -85,7 +85,7 @@ public class TimereportListService {
     }
     var unlimited = new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
         filter.suborderIds(), filter.ticketKeys(), filter.ticketDescendants(), filter.from(), filter.until(),
-        filter.billable(), TimereportListFilter.UNLIMITED);
+        filter.billable(), filter.sort(), filter.descending(), TimereportListFilter.UNLIMITED);
     return timereportDAO.getDtosOf(timereportListDAO.findRows(expand(unlimited), visibility));
   }
 
@@ -265,7 +265,7 @@ public class TimereportListService {
             scopeSignsOf(filter.customerOrderIds(), filter.suborderIds())));
     return new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
         suborderIds, ticketKeys, filter.ticketDescendants(), filter.from(), filter.until(), filter.billable(),
-        filter.maxResults());
+        filter.sort(), filter.descending(), filter.maxResults());
   }
 
   private List<Long> expandSuborders(List<Long> suborderIds) {

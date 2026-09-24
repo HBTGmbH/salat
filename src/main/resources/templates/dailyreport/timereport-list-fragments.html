@@ -2,6 +2,19 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
+<!--/* Ein sortierbarer Spaltenkopf: benennt die Spalte, zeigt die Richtung und traegt beim Klick
+       den neuen Wert ins Formular. Zweimal dieselbe Spalte dreht die Richtung um. */-->
+<th th:fragment="sortHeader(column, label, cssClass)" th:class="${cssClass}">
+  <a href="#" class="text-reset text-decoration-none text-nowrap"
+     th:data-sort="${sort == column and !sortDescending} ? '-' + ${column} : ${column}">
+    <span th:text="${label}">Spalte</span>
+    <i th:if="${sort != column}" class="ti ti-arrows-sort opacity-50"></i>
+    <i th:if="${sort == column and !sortDescending}" class="ti ti-sort-ascending"></i>
+    <i th:if="${sort == column and sortDescending}" class="ti ti-sort-descending"></i>
+  </a>
+</th>
+
+
 <!-- ═══════════════════════════════ FRAGMENTE DER DIALOGE ═══════════════════════════════ -->
 <!--/* Beide Dialoge holen ihre Zeilen hier: was zur Suche passt, gedeckelt. Ohne Suchbegriff zeigt
        der Auftragsdialog nur die Auftraege — eine flache Liste aller Unterauftraege hilft niemandem,

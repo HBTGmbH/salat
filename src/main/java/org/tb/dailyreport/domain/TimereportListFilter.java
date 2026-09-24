@@ -21,6 +21,8 @@ import org.tb.common.LocalDateRange;
  * @param from             first day, inclusive
  * @param until            last day, inclusive
  * @param billable         all bookings, only the billable ones, or only the others
+ * @param sort             which column the rows are ordered by
+ * @param descending       whether that order is reversed
  * @param maxResults       how many rows to show; the sums always count every hit
  */
 public record TimereportListFilter(
@@ -33,6 +35,8 @@ public record TimereportListFilter(
     LocalDate from,
     LocalDate until,
     Billable billable,
+    Sort sort,
+    boolean descending,
     int maxResults
 ) {
 
@@ -59,5 +63,14 @@ public record TimereportListFilter(
 
   public enum Billable {
     ALL, BILLABLE, NOT_BILLABLE
+  }
+
+  /**
+   * The columns the list can be ordered by. Sorting happens in the query, not in the browser: only the first rows are
+   * on the page, and sorting those would order the excerpt instead of the hits — with a limit of 500 out of 2000 that
+   * is a different answer, not a different order.
+   */
+  public enum Sort {
+    DATE, EMPLOYEE, ORDER, SUBORDER, DURATION
   }
 }

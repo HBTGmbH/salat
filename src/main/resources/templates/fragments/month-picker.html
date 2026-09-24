@@ -28,14 +28,16 @@
     inputName - request parameter name when the picker sits in a form, or null
     yearMonth - the java.time.YearMonth to start from
     withSteps - whether the arrows for the neighbouring months are shown. The matrix pages through the
-                months and needs them; the booking list does not, there the month itself is the left
-                button of a group whose other button switches to a free date range (#1092).
+                months and needs them; the booking list picks a month and is done with it (#1092).
+    sizeClass - 'btn-group-sm' for the compact form, '' for the height of a standard field. A filter
+                row is read as one line: a control that is smaller than the text field next to it
+                makes the row look misaligned, however correct each part is on its own.
 */-->
 <th:block th:fragment="monthPicker(inputId, inputName, yearMonth)"
-          th:replace="~{fragments/month-picker :: monthPickerSteps(${inputId}, ${inputName}, ${yearMonth}, true)}">
+          th:replace="~{fragments/month-picker :: monthPickerSized(${inputId}, ${inputName}, ${yearMonth}, true, 'btn-group-sm')}">
 </th:block>
 
-<th:block th:fragment="monthPickerSteps(inputId, inputName, yearMonth, withSteps)">
+<th:block th:fragment="monthPickerSized(inputId, inputName, yearMonth, withSteps, sizeClass)">
 <!--/* th:data-* attributes are evaluated in a restricted context, which forbids bean access -
        hence the detour of resolving the current month through th:with first */-->
 <div data-month-picker
@@ -50,7 +52,7 @@
   <input type="hidden" data-month-value th:id="${inputId}" th:name="${inputName}"
          th:value="${yearMonth}"/>
 
-  <div class="btn-group btn-group-sm">
+  <div class="btn-group" th:classappend="${sizeClass}">
 
     <button type="button" class="btn btn-outline-secondary" data-month-step="-1"
             th:if="${withSteps}" th:title="#{main.general.month.previous}">
@@ -59,7 +61,7 @@
 
     <!--/* nested button group for the dropdown: Bootstrap keeps a .dropdown-toggle rounded on its
            right side, because it expects it to be the last element of the group */-->
-    <div class="btn-group btn-group-sm">
+    <div class="btn-group" th:classappend="${sizeClass}">
       <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-month-label
               data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
               th:title="#{main.general.month.select}"
