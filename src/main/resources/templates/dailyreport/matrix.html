@@ -91,6 +91,24 @@
   #matrix tr.matrix-row-even td.matrix-first-col {
     background-color: color-mix(in srgb, var(--tblr-body-color) 4%, var(--tblr-card-bg, var(--tblr-body-bg)));
   }
+  /* Die Zeilenlinie zwischen zwei Zellen gehoert im zusammengefallenen Rahmenmodell nicht der
+     Zelle, sondern der Tabelle: sie sitzt auf der Gitterlinie, und die Flaeche der Zelle deckt sie
+     nicht ab. Da Bootstrap sie durchscheinend fuehrt (--tblr-table-border-color, dunkel 20 %
+     Deckung), blieb in der fixierten Spalte ein 1px-Band, durch das die senkrechten Linien der
+     durchlaufenden Tageszellen als helle Striche zu sehen waren - im Dunkelmodus deutlich. Die
+     Spalte zieht ihre Zeilenlinie deshalb selbst, als Innenschatten: der liegt in der Zelle ueber
+     ihrer Flaeche statt zwischen den Zellen. Die Farbe bleibt dieselbe, nur der Untergrund ist
+     jetzt deckend. */
+  #matrix :is(tbody, tfoot) .matrix-first-col {
+    border-bottom-width: 0;
+    box-shadow: inset 0 -1px 0 0 var(--tblr-table-border-color);
+  }
+  /* Wo ohnehin eine dicke Trennlinie liegt - ueber und unter der GESAMT-Zeile -, zoege der
+     Innenschatten eine zweite daneben. Diese Linien sind deckend und zeigen nichts durch. */
+  #matrix > tbody > tr:last-child > .matrix-first-col,
+  #matrix > tfoot > tr:first-child > .matrix-first-col {
+    box-shadow: none;
+  }
   /* Gedruckt wird nicht gescrollt - und eine fixierte Spalte haette dort nichts, wovor sie
      stehen koennte. */
   @media print {

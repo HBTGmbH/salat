@@ -1082,6 +1082,17 @@ Zwei Dinge, die eine sticky-Spalte in einer Bootstrap-Tabelle nicht geschenkt be
 - **Der `z-index` hebt die Spalte über die Zellen, nicht über alles.** Das Popover einer Zelle
   hängt am `body` (Bootstrap löst `container: false` zu `document.body` auf) und liegt mit 1070
   darüber; im Scroll-Container läge es unter der Spalte und wäre beschnitten.
+- **Die Zeilenlinie gehört der Tabelle, nicht der Zelle.** Im zusammengefallenen Rahmenmodell
+  (`border-collapse: collapse`, in Reboot für jede Tabelle gesetzt) sitzt sie auf der Gitterlinie
+  *zwischen* den Zellen, und die Fläche der Zelle deckt sie nicht ab. Da Bootstrap sie
+  durchscheinend führt (`--tblr-table-border-color`, dunkel 20 % Deckung), bleibt in der fixierten
+  Spalte ein 1px-Band, durch das die senkrechten Linien der durchlaufenden Zellen als helle
+  Striche zu sehen sind — im Dunkelmodus deutlich. Die Spalte zieht ihre Zeilenlinie deshalb
+  selbst, als **Innenschatten** (`box-shadow: inset 0 -1px 0 0 …`) bei `border-bottom-width: 0`:
+  der liegt in der Zelle über ihrer Fläche. Dieselbe Farbe, nur mit deckendem Untergrund. Wo
+  ohnehin eine dicke, deckende Trennlinie liegt, bleibt der Schatten weg — sonst stünde eine
+  zweite daneben. Eine bloß *opake* Rahmenfarbe hilft übrigens nicht: an den Kreuzungen gewinnt
+  die senkrechte Linie und wird weiter darüber gezeichnet.
 
 Im Druck wird die Position zurückgenommen (`@media print { position: static }`) — gedruckt wird
 nicht gescrollt.
