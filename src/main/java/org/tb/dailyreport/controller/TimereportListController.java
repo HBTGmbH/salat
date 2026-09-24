@@ -140,12 +140,14 @@ public class TimereportListController {
   @GetMapping("/tickets")
   public String tickets(
       @RequestParam(required = false) String q,
+      @RequestParam(required = false) String selectedCustomers,
       @RequestParam(required = false) String selectedOrders,
       @RequestParam(required = false) String selectedSuborders,
       @RequestParam(required = false) String selectedTickets,
       Model model) {
 
-    var result = timereportListService.searchTickets(q, longs(selectedOrders), longs(selectedSuborders), DIALOG_ROWS);
+    var result = timereportListService.searchTickets(q, longs(selectedCustomers), longs(selectedOrders),
+        longs(selectedSuborders), DIALOG_ROWS);
     model.addAttribute("tickets", result.tickets());
     model.addAttribute("ticketTypes", result.types());
     model.addAttribute("total", result.total());
