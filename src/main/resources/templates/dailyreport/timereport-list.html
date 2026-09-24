@@ -380,7 +380,7 @@
              th:hx-get="@{/dailyreport/list/orders}"
              hx-trigger="load, search-orders from:body"
              hx-include="#order-search, #order-level-filter input"
-             hx-vals="js:{selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv()}"
+             hx-vals="js:{selectedCustomers: window.bookingsFilter.customerCsv(), selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv()}"
              hx-swap="innerHTML"></div>
       </div>
       <div class="modal-footer">

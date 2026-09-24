@@ -16,9 +16,8 @@
 
 
 <!-- ═══════════════════════════════ FRAGMENTE DER DIALOGE ═══════════════════════════════ -->
-<!--/* Beide Dialoge holen ihre Zeilen hier: was zur Suche passt, gedeckelt. Ohne Suchbegriff zeigt
-       der Auftragsdialog nur die Auftraege — eine flache Liste aller Unterauftraege hilft niemandem,
-       der Suchbegriff ist es, der sie eingrenzt. */-->
+<!--/* Beide Dialoge holen ihre Zeilen hier: was zu Suche, Ebene und den gewaehlten Auftraggebern
+       passt, gedeckelt. Auftraege stehen vor den Unterauftraegen, weil man so danach sucht. */-->
 <th:block th:fragment="orderTree">
   <label th:each="order : ${orders}"
          class="list-group-item d-flex align-items-center gap-2"
@@ -53,7 +52,7 @@
   </label>
 
   <div th:if="${shown == 0}" class="list-group-item text-secondary"
-       th:text="${searching} ? #{main.timereportlist.orders.dialog.empty} : #{main.timereportlist.orders.dialog.searchfirst}">
+       th:text="#{main.timereportlist.orders.dialog.empty}">
     Kein Auftrag passt.
   </div>
   <div th:if="${total > shown}" class="list-group-item text-secondary small"
