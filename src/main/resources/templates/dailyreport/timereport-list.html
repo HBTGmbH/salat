@@ -14,7 +14,6 @@
 </div>
 
 <style>
-  #bookings tbody tr[data-booking] { cursor: pointer; }
   #bookings tbody tr:hover td {
     background-color: rgba(var(--tblr-primary-rgb), 0.08);
   }
@@ -291,13 +290,8 @@
           <td colspan="9" class="text-center text-secondary py-4"
               th:text="#{main.timereportlist.table.empty}">Keine Buchungen gefunden.</td>
         </tr>
-        <tr th:each="tr : ${result.timereports}" th:data-booking="${tr.id}">
-          <td class="text-nowrap">
-            <!--/* Das Datum ist der Griff der Zeile und ihr einziger Tabstopp: eine ganze Zeile mit
-                   tabindex waere ein Tabstopp je Buchung. */-->
-            <a th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id})}"
-               th:text="${#temporals.format(tr.referenceday, 'dd.MM.yyyy')}">01.01.2026</a>
-          </td>
+        <tr th:each="tr : ${result.timereports}">
+          <td class="text-nowrap" th:text="${#temporals.format(tr.referenceday, 'dd.MM.yyyy')}">01.01.2026</td>
           <td class="text-nowrap">
             <span th:text="${tr.employeeName}">Name</span>
             <span class="text-secondary" th:text="'| ' + ${tr.employeeSign}">| sig</span>
@@ -788,9 +782,9 @@
     return row ? row.dataset.text : pick.slice(2);
   }
 
-  // ── Tabelle: Sortierung und Zeilensprung ──
+  // ── Tabelle: Sortierung ──
   // Delegiert am Dokument, weil der Ergebnisbereich bei jedem Filterwechsel ausgetauscht wird und
-  // Handler an den einzelnen Zeilen den Tausch nicht ueberleben wuerden.
+  // Handler an den einzelnen Koepfen den Tausch nicht ueberleben wuerden.
   document.addEventListener('click', event => {
     const sortLink = event.target.closest('#bookings thead [data-sort]');
     if (sortLink) {
@@ -799,10 +793,6 @@
       form.requestSubmit();
       return;
     }
-    const row = event.target.closest('#bookings tbody tr[data-booking]');
-    if (!row || event.target.closest('a')) return;
-    const link = row.querySelector('a');
-    if (link) window.location.href = link.href;
   });
 }());
 /*]]>*/
