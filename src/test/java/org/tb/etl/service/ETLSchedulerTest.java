@@ -23,7 +23,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.LocalDateRange;
 import org.tb.common.exception.BusinessRuleException;
@@ -43,9 +42,6 @@ class ETLSchedulerTest {
 
   @Mock
   private ETLService etlService;
-
-  @Mock
-  private ConfigurableListableBeanFactory beanFactory;
 
   @Mock
   private ObjectProvider<AuthorizedUser> authorizedUserProvider;

@@ -6,7 +6,6 @@ import static org.springframework.web.context.request.RequestContextHolder.setRe
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AuthorizedUser;
@@ -18,7 +17,6 @@ import org.tb.common.scheduling.SchedulerRequestAttributes;
 public class BudgetAlertScheduler {
 
     private final BudgetAlertService budgetAlertService;
-    private final ConfigurableListableBeanFactory beanFactory;
     private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
 
     @Scheduled(cron = "${salat.budget.alert.cron:0 0 6 * * *}")
@@ -31,7 +29,9 @@ public class BudgetAlertScheduler {
         } catch (Exception e) {
             log.error("Budget alert scheduler failed", e);
         } finally {
-            try { beanFactory.destroyScopedBean("authorizedUser"); } catch (Exception ignored) {}
+            // No bean is destroyed by hand: resetRequestAttributes() drops the whole scope with the
+            // bean inside it. Why destroyScopedBean("authorizedUser") must not come back here is
+            // written down on SchedulerRequestAttributes (#1084).
             resetRequestAttributes();
         }
     }

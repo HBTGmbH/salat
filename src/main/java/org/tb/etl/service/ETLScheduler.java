@@ -8,7 +8,6 @@ import static org.tb.etl.domain.ETLRunHistory.Trigger.SCHEDULED;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AuthorizedUser;
@@ -32,7 +31,6 @@ import org.tb.common.util.DateUtils;
 public class ETLScheduler {
 
   private final ETLService etlService;
-  private final ConfigurableListableBeanFactory beanFactory;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
 
   @Scheduled(cron = "0 0 2 * * *") // täglich um 02:00
@@ -62,11 +60,9 @@ public class ETLScheduler {
       log.error("Scheduled daily ETL run failed", e);
       throw new RuntimeException(e);
     } finally {
-      try {
-        beanFactory.destroyScopedBean("authorizedUser");
-      } catch (Exception ignored) {
-        // nothing to clean up if the scoped bean was never created
-      }
+      // Hier wird nichts von Hand zerstört: resetRequestAttributes() wirft den ganzen Scope
+      // samt Bohne weg. Warum destroyScopedBean("authorizedUser") nicht zurückkommen darf,
+      // steht an SchedulerRequestAttributes (#1084).
       resetRequestAttributes();
     }
   }

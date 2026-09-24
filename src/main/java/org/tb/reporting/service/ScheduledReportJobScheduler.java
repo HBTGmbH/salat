@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
@@ -43,7 +42,6 @@ public class ScheduledReportJobScheduler {
   private final TaskScheduler taskScheduler;
   private final ScheduledReportJobRepository scheduledReportJobRepository;
   private final ScheduledReportJobService scheduledReportJobService;
-  private final ConfigurableListableBeanFactory beanFactory;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
 
   @Value("${salat.reporting.scheduler.cron:0 0 5 * * ?}")
@@ -138,7 +136,9 @@ public class ScheduledReportJobScheduler {
       initializeAuthorizedUserForJobExecution();
       task.run();
     } finally {
-      destroyAuthorizedUserForJobExecution();
+      // No bean is destroyed by hand: resetRequestAttributes() drops the whole scope with the bean
+      // inside it. Why destroyScopedBean("authorizedUser") must not come back here is written down
+      // on SchedulerRequestAttributes (#1084).
       resetRequestAttributes();
     }
   }
@@ -147,14 +147,6 @@ public class ScheduledReportJobScheduler {
     // Initialize a synthetic AuthorizedUser within this session scope
     AuthorizedUser systemUser = authorizedUserProvider.getObject();
     systemUser.initForJob();
-  }
-
-  private void destroyAuthorizedUserForJobExecution() {
-    try {
-      beanFactory.destroyScopedBean("authorizedUser");
-    } catch (Exception ignored) {
-      // ignore cleanup issues
-    }
   }
 
   @RequiredArgsConstructor

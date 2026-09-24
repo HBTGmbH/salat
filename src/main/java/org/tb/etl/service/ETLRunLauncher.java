@@ -11,7 +11,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -50,7 +49,6 @@ public class ETLRunLauncher {
 
   private final ETLService etlService;
   private final ETLRunHistoryRepository runHistoryRepository;
-  private final ConfigurableListableBeanFactory beanFactory;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
   private final ThreadPoolTaskExecutor etlTaskExecutor;
 
@@ -62,12 +60,10 @@ public class ETLRunLauncher {
    */
   public ETLRunLauncher(ETLService etlService,
                         ETLRunHistoryRepository runHistoryRepository,
-                        ConfigurableListableBeanFactory beanFactory,
                         ObjectProvider<AuthorizedUser> authorizedUserProvider,
                         @Qualifier(ETL_TASK_EXECUTOR) ThreadPoolTaskExecutor etlTaskExecutor) {
     this.etlService = etlService;
     this.runHistoryRepository = runHistoryRepository;
-    this.beanFactory = beanFactory;
     this.authorizedUserProvider = authorizedUserProvider;
     this.etlTaskExecutor = etlTaskExecutor;
   }
@@ -112,11 +108,9 @@ public class ETLRunLauncher {
       // im Thread stecken, ohne dass irgendwo etwas davon stünde.
       log.error("Manual ETL run failed", e);
     } finally {
-      try {
-        beanFactory.destroyScopedBean("authorizedUser");
-      } catch (Exception ignored) {
-        // nothing to clean up if the scoped bean was never created
-      }
+      // Hier wird nichts von Hand zerstört: resetRequestAttributes() wirft den ganzen Scope
+      // samt Bohne weg. Warum destroyScopedBean("authorizedUser") nicht zurückkommen darf,
+      // steht an SchedulerRequestAttributes (#1084).
       resetRequestAttributes();
     }
   }
