@@ -15,6 +15,14 @@ public enum ErrorCode {
   AA_NEEDS_PEOPLE_LEAD("AA-0006", "not authorized. People Lead level required!"),
   AA_NOT_ATHORIZED("AA-9999", "not authorized."),
 
+  AR_NOT_FOUND("AR-0001", "authorization rule was not found"),
+  AR_CATEGORY_REQUIRED("AR-0002", "a category is required"),
+  AR_GRANTEE_REQUIRED("AR-0003", "at least one grantee is required"),
+  AR_ACCESS_LEVEL_REQUIRED("AR-0004", "at least one access level is required"),
+  AR_OBJECT_MALFORMED("AR-0005", "the object does not fit the format of this category"),
+  AR_VALIDITY_INVALID("AR-0006", "the rule ends before it starts"),
+  AR_VALUE_TOO_LONG("AR-0007", "the list of values is longer than the column holds"),
+
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),
   CO_RESPONSIBLE_HBT_REQUIRED("CO-0003", "responsible HBT employee is required"),

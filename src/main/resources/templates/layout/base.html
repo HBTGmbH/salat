@@ -471,6 +471,15 @@
                      th:text="#{main.general.mainmenu.etlruns.text}">
                     ETL-Läufe
                   </a>
+                  <!--/* Management only, and deliberately not opened to whoever carries an ETL rule
+                         (#1074): the rules themselves are how rights are granted, so a rule must
+                         not be the thing that lets somebody edit the rules. */-->
+                  <a class="dropdown-item" th:href="@{/auth/rules}"
+                     th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
+                     th:classappend="${subSection == 'auth-rules'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.authrules.text}">
+                    Berechtigungsregeln
+                  </a>
                 </div>
               </div>
             </div>

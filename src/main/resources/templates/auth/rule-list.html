@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='systemsettings',
+        subSection='auth-rules',
+        title=#{main.auth.rule.list.title},
+        pageTitle=#{main.auth.rule.list.title},
+        sectionTitle=#{main.general.mainmenu.system.text}
+">
+<main layout:fragment="content">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-center">
+        <div class="col">
+          <p class="text-secondary mb-0" th:text="#{main.auth.rule.list.hint}">
+            Eine Regel gewaehrt einem Berechtigten Zugriff auf ein Objekt einer Kategorie.
+          </p>
+        </div>
+        <div class="col-auto">
+          <a class="btn btn-success" th:href="@{/auth/rules/create}">
+            <i class="icon ti ti-plus"></i>
+            <span th:text="#{main.auth.rule.button.create}">Neue Regel</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-responsive card">
+    <table class="table table-vcenter card-table">
+      <thead>
+        <tr>
+          <th th:text="#{main.auth.rule.field.category}">Kategorie</th>
+          <th th:text="#{main.auth.rule.field.grantees}">Berechtigte</th>
+          <th th:text="#{main.auth.rule.field.objects}">Objekte</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.auth.rule.field.accesslevels}">Zugriffsstufen</th>
+          <th class="d-none d-md-table-cell" th:text="#{main.auth.rule.field.validity}">Gültigkeit</th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+          <th class="w-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(rules)}">
+          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+            Keine Einträge vorhanden
+          </td>
+        </tr>
+        <!--/* An ended rule stays in the list, greyed out: it is the record of who was allowed what. */-->
+        <tr th:each="rule : ${rules}" th:classappend="${!rule.active} ? 'text-muted' : ''">
+          <td>
+            <a th:href="@{/auth/rules/{id}/edit(id=${rule.id})}">
+              <!--/* A category no module offers keeps its raw name rather than disappearing. */-->
+              <span th:if="${rule.categoryLabelKey != null}" th:text="#{__${rule.categoryLabelKey}__}">ETL</span>
+              <span th:if="${rule.categoryLabelKey == null}" th:text="${rule.category}">ETL</span>
+            </a>
+          </td>
+          <td class="text-break small font-monospace" th:text="${#strings.listJoin(rule.granteeIds, ', ')}">kr, ar</td>
+          <td class="text-break small font-monospace">
+            <span th:if="${#lists.isEmpty(rule.objectIds)}" class="text-muted"
+                  th:text="#{main.auth.rule.object.any}">alle Objekte</span>
+            <span th:unless="${#lists.isEmpty(rule.objectIds)}"
+                  th:text="${#strings.listJoin(rule.objectIds, ', ')}">1453</span>
+          </td>
+          <td class="d-none d-md-table-cell small">
+            <span th:each="level : ${rule.accessLevels}" class="badge bg-blue-lt me-1"
+                  th:text="${level.name()}">READ</span>
+          </td>
+          <td class="d-none d-md-table-cell small text-nowrap">
+            <span th:text="${rule.validFrom != null ? #temporals.format(rule.validFrom, 'dd.MM.yyyy') : ''}">01.01.2026</span>
+            <span>–</span>
+            <span th:text="${rule.validUntil != null ? #temporals.format(rule.validUntil, 'dd.MM.yyyy') : ''}"></span>
+          </td>
+          <td>
+            <a class="btn btn-outline-primary btn-sm" th:href="@{/auth/rules/{id}/edit(id=${rule.id})}"
+               th:title="#{main.button.label.edit.text}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
+          <td>
+            <!--/* Ending is the usual way out: the rule stops granting today and stays readable. */-->
+            <form th:if="${rule.active}" th:action="@{/auth/rules/{id}/end(id=${rule.id})}" method="post"
+                  data-confirm
+                  th:data-confirm-title="#{main.auth.rule.end.confirm.title}"
+                  th:data-confirm-text="#{main.auth.rule.confirm.end}"
+                  th:data-confirm-detail="${rule.category + ' — ' + #strings.listJoin(rule.granteeIds, ', ')}"
+                  th:data-confirm-detail-secondary="${#strings.listJoin(rule.objectIds, ', ')}"
+                  th:data-confirm-label="#{main.auth.rule.action.end}">
+              <button type="submit" class="btn btn-outline-secondary btn-sm" th:title="#{main.auth.rule.action.end}">
+                <i class="icon ti ti-player-stop m-0"></i>
+              </button>
+            </form>
+          </td>
+          <td>
+            <!--/* For the rule that rests on a typo and never granted anything. */-->
+            <form th:action="@{/auth/rules/{id}/delete(id=${rule.id})}" method="post"
+                  data-confirm
+                  th:data-confirm-title="#{main.auth.rule.delete.confirm.title}"
+                  th:data-confirm-text="#{main.auth.rule.confirm.delete}"
+                  th:data-confirm-detail="${rule.category + ' — ' + #strings.listJoin(rule.granteeIds, ', ')}"
+                  th:data-confirm-detail-secondary="${#strings.listJoin(rule.objectIds, ', ')}"
+                  th:data-confirm-label="#{main.general.button.delete.text}"
+                  data-confirm-variant="danger">
+              <button type="submit" class="btn btn-outline-danger btn-sm" th:title="#{main.button.label.delete.text}">
+                <i class="icon ti ti-trash m-0"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</html>
