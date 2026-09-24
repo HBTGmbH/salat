@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
@@ -37,9 +38,18 @@ class EmployeeAuthorizationObjectProviderTest {
     private EmployeeAuthorizationObjectProvider provider;
 
     @Test
+    void hiddenPeopleAreNotOffered() {
+        // getSelectableEmployees is the select box method and leaves the hidden out; getAllEmployees would not say so
+        when(employeeService.getSelectableEmployees(null)).thenReturn(List.of());
+
+        assertThat(provider.objects()).isEmpty();
+        verify(employeeService, never()).getAllEmployees();
+    }
+
+    @Test
     void theOfferedIdIsTheLoginNameAndNotTheSign() {
         var somebody = employee("l.muster", "mus");
-        when(employeeService.getAllEmployees()).thenReturn(List.of(somebody));
+        when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
 
         assertThat(provider.objects()).extracting(AuthorizationObject::id).containsExactly("l.muster");
         assertThat(provider.judge("l.muster")).isEqualTo(VALID);
@@ -54,7 +64,7 @@ class EmployeeAuthorizationObjectProviderTest {
     @Test
     void theCheckingSiteAsksWithTheSameId() {
         var somebody = employee("l.muster", "mus");
-        when(employeeService.getAllEmployees()).thenReturn(List.of(somebody));
+        when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
         var authorizedUser = mock(AuthorizedUser.class);
         var authService = mock(AuthService.class);
         when(authorizedUser.getLoginSign()).thenReturn("somebody-else");

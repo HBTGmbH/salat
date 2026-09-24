@@ -68,6 +68,8 @@ public class TimereportAuthorizationObjectProvider implements AuthorizationObjec
     if (employeeSign.isBlank() || orderSign.isBlank()) {
       return ObjectJudgement.MALFORMED;
     }
+    // Every sign that exists, not only the ones a select box offers: a rule about somebody hidden is a
+    // perfectly good rule, and whether the typed sign resolves has nothing to do with decluttering.
     if (!employeeService.getAllEmployeeSigns().contains(employeeSign)) {
       return ObjectJudgement.UNKNOWN;
     }

@@ -27,7 +27,6 @@ import org.tb.auth.domain.AuthorizationRuleData;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.ObjectJudgement;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
-import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
@@ -40,9 +39,6 @@ class AuthorizationRuleServiceTest {
 
     @Mock
     private AuthorizationRuleRepository authorizationRuleRepository;
-
-    @Mock
-    private SalatUserRepository salatUserRepository;
 
     @Mock
     private AuthService authService;
@@ -90,7 +86,8 @@ class AuthorizationRuleServiceTest {
             }
         };
         service = new AuthorizationRuleService(
-            authorizationRuleRepository, salatUserRepository, List.of(provider), authService, authorizedUser);
+            authorizationRuleRepository, List.of(provider), List.of(() -> List.of("ar", "kr")), authService,
+            authorizedUser);
     }
 
     @Test
@@ -171,6 +168,12 @@ class AuthorizationRuleServiceTest {
         verify(authorizationRuleRepository).save(rule);
         verify(authorizationRuleRepository, never()).delete(any());
         verify(authService).clearCache();
+    }
+
+    @Test
+    void theGranteesOfferedAreTheOnesTheOwningModuleHandsOver() {
+        // who is hidden is decided there, not here - auth may not even import the employee module
+        assertThat(service.getGranteeCandidates()).containsExactly("ar", "kr");
     }
 
     @Test

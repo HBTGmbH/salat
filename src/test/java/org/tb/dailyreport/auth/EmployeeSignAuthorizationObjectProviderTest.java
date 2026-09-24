@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
@@ -12,7 +13,6 @@ import static org.tb.auth.domain.ObjectJudgement.UNKNOWN;
 import static org.tb.auth.domain.ObjectJudgement.VALID;
 
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.tb.auth.domain.AuthorizationObject;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 
@@ -46,10 +47,21 @@ class EmployeeSignAuthorizationObjectProviderTest {
 
     @BeforeEach
     void setUp() {
-        when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of(SIGN));
+        var muster = mock(Employee.class);
+        when(muster.getSign()).thenReturn(SIGN);
+        when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(muster));
         release = new ReleaseAuthorizationObjectProvider(employeeService);
         accept = new AcceptAuthorizationObjectProvider(employeeService);
         workingday = new WorkingdayAuthorizationObjectProvider(employeeService);
+    }
+
+    @Test
+    void hiddenPeopleAreNotOffered() {
+        // the select box method, not getAllEmployeeSigns - that one answers whether a stored sign resolves
+        when(employeeService.getSelectableEmployees(null)).thenReturn(List.of());
+
+        assertThat(release.objects()).isEmpty();
+        verify(employeeService, never()).getAllEmployeeSigns();
     }
 
     @Test

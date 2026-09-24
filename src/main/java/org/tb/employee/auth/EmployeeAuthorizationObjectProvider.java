@@ -15,6 +15,9 @@ import org.tb.employee.service.EmployeeService;
  * usually the same string and are not the same thing, which is why the hint at the field says so: a rule written with
  * the sign where the login name belongs looks right and never fires.
  *
+ * <p>Offered are the people not hidden; what a rule already carries is added back by the editor, so hiding
+ * somebody never makes an existing rule uneditable.
+ *
  * <p>A rule of this category with {@code LOGIN} lets the grantee act in the named person's name.
  */
 @Component
@@ -40,7 +43,7 @@ public class EmployeeAuthorizationObjectProvider implements AuthorizationObjectP
 
   @Override
   public List<AuthorizationObject> objects() {
-    return employeeService.getAllEmployees().stream()
+    return employeeService.getSelectableEmployees(null).stream()
         .map(employee -> employee.getLoginname())
         .filter(loginname -> loginname != null && !loginname.isBlank())
         .distinct()

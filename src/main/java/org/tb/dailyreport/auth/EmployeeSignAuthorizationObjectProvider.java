@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.tb.auth.domain.AuthorizationObject;
 import org.tb.auth.domain.AuthorizationObjectProvider;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.service.EmployeeService;
 
 /**
@@ -13,6 +14,9 @@ import org.tb.employee.service.EmployeeService;
  *
  * <p>The id is the employee <em>sign</em>, because that is what the calling sites pass — unlike {@code EMPLOYEE},
  * which passes the login name.
+ *
+ * <p>Offered are the people not hidden: {@code getSelectableEmployees} is the method for what belongs in a select box,
+ * and {@code getAllEmployeeSigns} is deliberately not — that one answers whether a stored sign resolves and says so.
  */
 @RequiredArgsConstructor
 abstract class EmployeeSignAuthorizationObjectProvider implements AuthorizationObjectProvider {
@@ -26,7 +30,8 @@ abstract class EmployeeSignAuthorizationObjectProvider implements AuthorizationO
 
   @Override
   public List<AuthorizationObject> objects() {
-    return employeeService.getAllEmployeeSigns().stream()
+    return employeeService.getSelectableEmployees(null).stream()
+        .map(Employee::getSign)
         .filter(sign -> sign != null && !sign.isBlank())
         .sorted(Comparator.naturalOrder())
         .map(sign -> new AuthorizationObject(sign, sign))

@@ -74,7 +74,7 @@ class AuthorizationRuleRoundTripTest {
             authorizedUser, authorizationRuleRepository, salatUserRepository, salatProperties, null, null);
         authService.init();
         ruleService = new AuthorizationRuleService(
-            authorizationRuleRepository, salatUserRepository, List.of(), authService, authorizedUser);
+            authorizationRuleRepository, List.of(), List.of(), authService, authorizedUser);
     }
 
     @Test
