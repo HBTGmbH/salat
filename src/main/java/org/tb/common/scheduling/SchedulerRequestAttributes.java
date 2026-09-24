@@ -20,6 +20,28 @@ import org.springframework.web.context.request.AbstractRequestAttributes;
  *
  * <p>Only the methods a scheduled job actually reaches are implemented; the rest fail loudly rather
  * than pretending to be a real request.
+ *
+ * <p><b>Nothing is destroyed by hand when a job ends.</b> A scheduler unbinds with
+ * {@code resetRequestAttributes()}, and that drops this whole object together with the beans inside
+ * it — the cleanup is complete at that point. A {@code beanFactory.destroyScopedBean("authorizedUser")}
+ * stood next to it in all five schedulers and never once succeeded:
+ * {@code @RequestScope(proxyMode = TARGET_CLASS)} registers <em>two</em> definitions — the singleton
+ * {@code ScopedProxyFactoryBean} under {@code authorizedUser} and the request-scoped bean under
+ * {@code scopedTarget.authorizedUser} — and {@code AbstractBeanFactory.destroyScopedBean} rejects
+ * the first as not corresponding "to an object in a mutable scope". The call threw on every run and
+ * a {@code catch (Exception ignored)} swallowed it, along with any real failure in the cleanup.
+ * Do not add it back (#1084).
+ *
+ * <p><b>Known limitation: a request-scoped bean reached by a job must not have a destruction
+ * method.</b> {@link #registerDestructionCallback} throws, and Spring calls it while <em>creating</em>
+ * a bean that needs destroying — so a {@code @PreDestroy}, a {@code DisposableBean} or a named
+ * {@code destroyMethod} on {@code AuthorizedUser} or {@code UiState} would take down every scheduled
+ * job and every ETL run at once, at {@code getObject()} rather than at cleanup. Neither bean has one
+ * today. Keeping the callbacks instead would mean implementing
+ * {@link #updateAccessedSessionAttributes()} as well ({@code AbstractRequestAttributes#requestCompleted}
+ * calls it) and giving every scheduler a {@code requestCompleted()} call — machinery for a case that
+ * does not exist, and the quiet alternative is the worse one: a destruction method that is never run
+ * and nobody notices. If a bean in a job path ever gets one, this class is what changes, not the job.
  */
 public class SchedulerRequestAttributes extends AbstractRequestAttributes {
 
@@ -54,7 +76,12 @@ public class SchedulerRequestAttributes extends AbstractRequestAttributes {
 
     @Override
     public void registerDestructionCallback(String name, Runnable callback, int scope) {
-        throw new UnsupportedOperationException(name + "#" + callback + "#" + scope);
+        // Reached while the bean is being created, not while it is being cleaned up - see the
+        // class javadoc on why this stays a refusal rather than becoming a stored callback.
+        throw new UnsupportedOperationException(
+            "Bean '" + name + "' (scope " + scope + ") has a destruction method, which a job scope "
+                + "does not run. Either drop the destruction method or teach "
+                + "SchedulerRequestAttributes to keep the callbacks - see its javadoc (#1084).");
     }
 
     @Override

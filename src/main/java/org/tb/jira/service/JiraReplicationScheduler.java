@@ -7,7 +7,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.AuthorizedUser;
@@ -20,7 +19,6 @@ import org.tb.jira.domain.JiraReplicationConfig;
 public class JiraReplicationScheduler {
 
   private final JiraReplicationService replicationService;
-  private final ConfigurableListableBeanFactory beanFactory;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
 
   // Default: hourly at :15 local time; can be overridden by property 'salat.jira.replication.cron'.
@@ -47,11 +45,9 @@ public class JiraReplicationScheduler {
     } catch (Exception e) {
       log.error("Scheduled JIRA replication failed", e);
     } finally {
-      try {
-        beanFactory.destroyScopedBean("authorizedUser");
-      } catch (Exception ignored) {
-        // nothing to clean up if the scoped bean was never created
-      }
+      // No bean is destroyed by hand: resetRequestAttributes() drops the whole scope with the
+      // bean inside it. Why destroyScopedBean("authorizedUser") must not come back here is
+      // written down on SchedulerRequestAttributes (#1084).
       resetRequestAttributes();
     }
     log.info("Scheduled JIRA replication finished");

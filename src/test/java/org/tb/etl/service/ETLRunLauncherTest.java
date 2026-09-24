@@ -27,7 +27,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -58,9 +57,6 @@ class ETLRunLauncherTest {
 
   @Mock
   private ETLRunHistoryRepository runHistoryRepository;
-
-  @Mock
-  private ConfigurableListableBeanFactory beanFactory;
 
   @Mock
   private ObjectProvider<AuthorizedUser> authorizedUserProvider;
