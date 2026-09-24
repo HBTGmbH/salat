@@ -81,22 +81,22 @@ public class WorkingdayService {
 
   public Workingday getWorkingday(long employeecontractId, LocalDate date) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
-    String grantorSign = employeecontract.getEmployee().getSign();
+    String employeeSign = employeecontract.getEmployee().getSign();
     if(!authorizedUser.isManager() &&
        !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
     }
     return workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId).orElse(null);
   }
 
   public void upsertWorkingday(Workingday workingday) {
-    String grantorSign = workingday.getEmployeecontract().getEmployee().getSign();
+    String employeeSign = workingday.getEmployeecontract().getEmployee().getSign();
     var employeecontract = workingday.getEmployeecontract();
     if(!authorizedUser.isManager() &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
       throw new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
     }
 
@@ -144,11 +144,11 @@ public class WorkingdayService {
 
   public void deleteWorkingdayById(long workingDayId) {
     var workingday = workingdayRepository.findById(workingDayId).orElseThrow();
-    String grantorSign = workingday.getEmployeecontract().getEmployee().getSign();
+    String employeeSign = workingday.getEmployeecontract().getEmployee().getSign();
     var employeecontract = workingday.getEmployeecontract();
     if(!authorizedUser.isManager() &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
       throw new AuthorizationException(WD_DELETE_REQ_EMPLOYEE_OR_MANAGER);
     }
 
@@ -158,11 +158,11 @@ public class WorkingdayService {
   public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate dateFirst,
       LocalDate dateLast) {
     var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
-    String grantorSign = employeecontract.getEmployee().getSign();
+    String employeeSign = employeecontract.getEmployee().getSign();
     if(!authorizedUser.isManager() &&
        !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_WORKINGDAY, today(), WRITE)) {
+       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
       throw new AuthorizationException(WD_READ_REQ_EMPLOYEE_OR_MANAGER);
     }
     return workingdayDAO.getWorkingdaysByEmployeeContractId(employeeContractId, dateFirst, dateLast);

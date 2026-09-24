@@ -2,6 +2,7 @@ package org.tb.dailyreport.auth;
 
 import static org.tb.auth.domain.AccessLevel.DELETE;
 import static org.tb.auth.domain.AccessLevel.READ;
+import static org.tb.auth.service.AuthService.ANY_MATCH;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
@@ -28,6 +29,7 @@ import org.tb.employee.domain.Employeecontract;
 public class TimereportAuthorization {
 
   private static final String AUTH_CATEGORY_TIMEREPORT = "TIMEREPORT";
+  private static final String SIGN_SEPARATOR = ":";
 
   private final AuthorizedUser authorizedUser;
   private final AuthService authService;
@@ -72,11 +74,34 @@ public class TimereportAuthorization {
     }
 
     // check rules as fallback
-    var grantor = timereport.getEmployeecontract().getEmployee().getSign();
+    var employeeSign = timereport.getEmployeecontract().getEmployee().getSign();
     var date = timereport.getReferenceday().getRefdate();
     var customerOrderSign = timereport.getSuborder().getCustomerorder().getSign();
     var suborderSign = timereport.getSuborder().getCompleteOrderSign();
-    return authService.isAuthorized(grantor, AUTH_CATEGORY_TIMEREPORT, date, accessLevel, customerOrderSign, suborderSign);
+    return authService.isAuthorized(AUTH_CATEGORY_TIMEREPORT, date, accessLevel,
+        objectsOf(employeeSign, customerOrderSign, suborderSign));
+  }
+
+  /**
+   * A rule of this category may name two things at once — whose bookings, and on which order. Both fit into the one
+   * object of a rule because the caller spells out every form it accepts, so the rule engine keeps comparing whole
+   * values and never parses one:
+   * <ul>
+   *   <li>{@code 1453}, {@code 1453/01} — bookings of anybody on that order</li>
+   *   <li>{@code xx:1453}, {@code xx:1453/01} — only the bookings of xx there</li>
+   *   <li>{@code xx:*} — the bookings of xx, on every order</li>
+   * </ul>
+   * The separator is read at its first occurrence: an order sign may contain a colon, a sign may not. The format
+   * belongs to this category alone — written into a rule of another one, it matches nothing.
+   */
+  private String[] objectsOf(String employeeSign, String customerOrderSign, String suborderSign) {
+    return new String[] {
+        customerOrderSign,
+        suborderSign,
+        employeeSign + SIGN_SEPARATOR + customerOrderSign,
+        employeeSign + SIGN_SEPARATOR + suborderSign,
+        employeeSign + SIGN_SEPARATOR + ANY_MATCH
+    };
   }
 
   public void checkAuthorized(List<Timereport> timereports, AccessLevel accessLevel) throws AuthorizationException {

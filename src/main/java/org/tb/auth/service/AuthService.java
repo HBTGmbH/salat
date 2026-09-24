@@ -43,7 +43,11 @@ import org.tb.common.web.UiState;
 @RequiredArgsConstructor
 public class AuthService {
 
-  private static final String ANY_MATCH = "*";
+  /**
+   * The wildcard of a rule, as it is written into the database. Public because a caller may build a composite object
+   * value that carries it — see {@code TimereportAuthorization}.
+   */
+  public static final String ANY_MATCH = "*";
 
   private final AuthorizedUser authorizedUser;
   private final AuthorizationRuleRepository authorizationRuleRepository;
@@ -73,7 +77,7 @@ public class AuthService {
   public void switchLogin(String loginname) {
     uiState.clearAll();
     if (!authorizedUser.getLoginSign().equals(loginname)) {
-      if (!isAuthorizedAnyObject(loginname, "EMPLOYEE", today(), LOGIN, true)) {
+      if (!isAuthorizedForOwnLogin("EMPLOYEE", today(), LOGIN, loginname)) {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
       uiState.setValue(AuthUiStateKeyContributor.IMPERSONATE_LOGIN_SIGN, loginname);
@@ -99,37 +103,16 @@ public class AuthService {
   }
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
-    return anyRuleMatches(category, rule -> {
-      if(!matchesGrantee(rule, authorizedUser.getEffectiveLoginSign())) return false;
-      if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
-      if(!rule.isValid(date)) return false;
-      return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
-    });
+    return isAuthorizedAs(authorizedUser.getEffectiveLoginSign(), category, date, accessLevel, objectId);
   }
 
-  public boolean isAuthorized(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
-    return anyRuleMatches(category, rule -> {
-      if(!matchesGrantee(rule, authorizedUser.getEffectiveLoginSign())) return false;
-      if(rule.getGrantorId() != null && !ANY_MATCH.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
-      if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
-      if(!rule.isValid(date)) return false;
-      return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
-    });
-  }
-
-  public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel) {
-    return isAuthorizedAnyObject(grantorSign, category, date, accessLevel, false);
-  }
-
-  public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, boolean useLoginSign) {
-    return anyRuleMatches(category, rule -> {
-      String userSign = useLoginSign ? authorizedUser.getLoginSign() : authorizedUser.getEffectiveLoginSign();
-      if(!matchesGrantee(rule, userSign)) return false;
-      if(rule.getGrantorId() != null && !grantorSign.equals(rule.getGrantorId())) return false;
-      if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
-      if(!rule.isValid(date)) return false;
-      return true;
-    });
+  /**
+   * Asks for the login the user really signed in with, not for the one they act in the name of. Only {@link
+   * AccessLevel#LOGIN} uses this: whoever took over somebody else's login must not use it to grant themselves the
+   * next takeover.
+   */
+  public boolean isAuthorizedForOwnLogin(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
+    return isAuthorizedAs(authorizedUser.getLoginSign(), category, date, accessLevel, objectId);
   }
 
   public boolean isAuthorizedAnyObject(String category, LocalDate date, AccessLevel accessLevel) {
@@ -138,6 +121,15 @@ public class AuthService {
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return true;
+    });
+  }
+
+  private boolean isAuthorizedAs(String userSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
+    return anyRuleMatches(category, rule -> {
+      if(!matchesGrantee(rule, userSign)) return false;
+      if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
+      if(!rule.isValid(date)) return false;
+      return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
     });
   }
 
@@ -172,7 +164,6 @@ public class AuthService {
               rules.add(
                   new Rule(
                       rule.getCategory(),
-                      rule.getGrantorId(),
                       granteeId,
                       new LocalDateRange(rule.getValidFrom(), rule.getValidUntil()),
                       ANY_MATCH,
@@ -184,7 +175,6 @@ public class AuthService {
                 rules.add(
                     new Rule(
                         rule.getCategory(),
-                        rule.getGrantorId(),
                         granteeId,
                         new LocalDateRange(rule.getValidFrom(), rule.getValidUntil()),
                         objectId,
@@ -209,7 +199,6 @@ public class AuthService {
   @RequiredArgsConstructor
   public static class Rule {
     private final String category;
-    private final String grantorId;
     private final String granteeId;
     private final LocalDateRange validity;
     private final String objectId;
