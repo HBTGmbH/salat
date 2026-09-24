@@ -406,7 +406,7 @@
              th:hx-get="@{/dailyreport/list/tickets}"
              hx-trigger="load, search-tickets from:body"
              hx-include="#ticket-search"
-             hx-vals="js:{selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv(), selectedTickets: window.bookingsFilter.ticketCsv()}"
+             hx-vals="js:{selectedCustomers: window.bookingsFilter.customerCsv(), selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv(), selectedTickets: window.bookingsFilter.ticketCsv()}"
              hx-swap="innerHTML"></div>
 
         <hr class="my-4">
@@ -560,6 +560,7 @@
     orderCsv: () => [...orderDraft].filter(id => id.startsWith('o:')).map(id => id.slice(2)).join(','),
     suborderCsv: () => [...orderDraft].filter(id => id.startsWith('s:')).map(id => id.slice(2)).join(','),
     ticketCsv: () => [...ticketDraft].join(','),
+    customerCsv: () => selectedValues('customer-select').join(','),
   };
   orderDraft = new Set(orderPicks());
   ticketDraft = new Set(state.tickets);

@@ -186,14 +186,17 @@ public class TimereportListService {
         total);
   }
 
-  /** The tickets a dialog shows: those of the scopes of the chosen orders, matching the search, capped. */
-  public TicketSearchResult searchTickets(String term, List<Long> selectedOrderIds, List<Long> selectedSuborderIds,
-      int limit) {
+  /**
+   * The tickets a dialog shows: those replicated under the scopes the rest of the filter names, matching the search,
+   * capped. Whoever has narrowed the list to one customer or one order is not looking for the tickets of the others.
+   */
+  public TicketSearchResult searchTickets(String term, List<Long> selectedCustomerIds, List<Long> selectedOrderIds,
+      List<Long> selectedSuborderIds, int limit) {
 
     var visibility = visibilityService.anyTime();
     if (visibility.isEmpty()) return new TicketSearchResult(List.of(), List.of(), 0);
 
-    var scopes = scopeSignsOf(selectedOrderIds, selectedSuborderIds);
+    var scopes = scopeSignsOf(selectedCustomerIds, selectedOrderIds, selectedSuborderIds);
     var search = term == null ? "" : term.trim().toLowerCase(java.util.Locale.ROOT);
     var byKey = new LinkedHashMap<String, TicketOption>();
     for (var ticket : jiraTicketService.getTickets(scopes)) {
@@ -262,7 +265,7 @@ public class TimereportListService {
     var ticketKeys = filter.ticketKeys().isEmpty() || !filter.ticketDescendants()
         ? filter.ticketKeys()
         : List.copyOf(jiraTicketService.expandWithDescendants(filter.ticketKeys(),
-            scopeSignsOf(filter.customerOrderIds(), filter.suborderIds())));
+            scopeSignsOf(filter.customerIds(), filter.customerOrderIds(), filter.suborderIds())));
     return new TimereportListFilter(filter.employeeIds(), filter.customerIds(), filter.customerOrderIds(),
         suborderIds, ticketKeys, filter.ticketDescendants(), filter.from(), filter.until(), filter.billable(),
         filter.sort(), filter.descending(), filter.maxResults());
@@ -277,13 +280,14 @@ public class TimereportListService {
   }
 
   /**
-   * The replication scopes the ticket search runs over: those of the orders the filter names — and without any order
-   * selection, those of every order the user may see bookings on.
+   * The replication scopes the ticket search runs over: those of the orders the filter names, of the suborders it
+   * names, and of every order belonging to a customer it names. A ticket the rest of the filter could never hit does
+   * not belong in the dialog. Without any of the three, those of every order the user may see bookings on.
    */
-  private List<String> scopeSignsOf(List<Long> customerOrderIds, List<Long> suborderIds) {
+  private List<String> scopeSignsOf(List<Long> customerIds, List<Long> customerOrderIds, List<Long> suborderIds) {
     var orders = new ArrayList<Customerorder>();
     var suborders = new ArrayList<Suborder>();
-    if (customerOrderIds.isEmpty() && suborderIds.isEmpty()) {
+    if (customerIds.isEmpty() && customerOrderIds.isEmpty() && suborderIds.isEmpty()) {
       var visibility = visibilityService.anyTime();
       if (visibility.unrestricted()) {
         orders.addAll(customerorderService.getVisibleCustomerorders());
@@ -297,6 +301,12 @@ public class TimereportListService {
       orders.addAll(customerorderService.getCustomerordersByIds(customerOrderIds));
       suborders.addAll(suborderService.getSubordersByIds(suborderIds));
       suborders.forEach(suborder -> orders.add(suborder.getCustomerorder()));
+      if (!customerIds.isEmpty()) {
+        var customers = new HashSet<>(customerIds);
+        customerorderService.getVisibleCustomerorders().stream()
+            .filter(order -> customers.contains(order.getCustomer().getId()))
+            .forEach(orders::add);
+      }
     }
     var scopes = new LinkedHashSet<String>();
     orders.forEach(order -> scopes.add(order.getSign()));
