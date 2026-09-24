@@ -374,11 +374,12 @@
           Gezeigt wird nur, was zu Suche und Ebene passt.
         </div>
 
-        <!--/* Die Zeilen kommen beim Oeffnen und bei jeder Suche vom Server: in der Produktion sind
-               das siebentausend Unterauftraege, und eine Seite, die sie mitbringt, laedt niemand. */-->
+        <!--/* Die Zeilen kommen beim Oeffnen des Dialogs und bei jeder Suche vom Server — nicht beim
+               Seitenaufbau: in der Produktion sind das siebentausend Unterauftraege und sechsunddreissig-
+               tausend Tickets, und wer nur die Liste lesen will, soll dafuer nichts bezahlen. */-->
         <div id="order-tree" class="list-group list-group-flush border rounded"
              th:hx-get="@{/dailyreport/list/orders}"
-             hx-trigger="load, search-orders from:body"
+             hx-trigger="search-orders from:body"
              hx-include="#order-search, #order-level-filter input"
              hx-vals="js:{selectedCustomers: window.bookingsFilter.customerCsv(), selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv()}"
              hx-swap="innerHTML"></div>
@@ -424,7 +425,7 @@
 
         <div id="ticket-tree" class="list-group list-group-flush border rounded"
              th:hx-get="@{/dailyreport/list/tickets}"
-             hx-trigger="load, search-tickets from:body"
+             hx-trigger="search-tickets from:body"
              hx-include="#ticket-search"
              hx-vals="js:{selectedCustomers: window.bookingsFilter.customerCsv(), selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv(), selectedTickets: window.bookingsFilter.ticketCsv()}"
              hx-swap="innerHTML"></div>
