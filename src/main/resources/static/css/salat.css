@@ -158,6 +158,20 @@
   color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)) !important; /* hell 4,80:1 */
 }
 
+/* Derselbe Fall eine Ebene hoeher: Tablers Warnhinweis setzt --tblr-alert-variant-color auf
+   --tblr-warning und faerbt damit Schrift, Flaeche und Rahmen zugleich. Die Flaeche ist eine
+   16%-Toenung und bleibt richtig; die Schrift traegt auf ihr gemessene 1,46:1 und ist nicht zu
+   lesen. Ueberschrieben wird deshalb nur --tblr-alert-color, also die Schrift - mit demselben
+   abgedunkelten Ton wie .text-warning, waehrend die Toenung ihr Gelb behaelt. Dunkel traegt die
+   volle Farbe schon 8,14:1 und bleibt stehen. */
+.alert-warning {
+  --tblr-alert-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)); /* hell 4,79:1 */
+}
+
+:where([data-bs-theme="dark"]) .alert-warning {
+  --tblr-alert-color: var(--tblr-warning); /* dunkel 8,14:1 - volle Farbe */
+}
+
 /* --tblr-info traegt denselben Wert wie --tblr-azure und teilt deshalb den Anteil. */
 .text-azure,
 .text-info {
