@@ -192,7 +192,7 @@
     <div class="card card-sm">
       <div class="card-body">
         <div class="subheader" th:text="#{main.timereportlist.kpi.count}">Buchungen</div>
-        <div class="h1 mb-0" th:text="${result.totalCount}">0</div>
+        <div class="h1 mb-0" th:text="${#numbers.formatInteger(result.totalCount, 1, 'DEFAULT')}">0</div>
       </div>
     </div>
   </div>
@@ -200,7 +200,11 @@
     <div class="card card-sm">
       <div class="card-body">
         <div class="subheader" th:text="#{main.timereportlist.kpi.duration}">Summe Stunden</div>
-        <div class="h1 mb-0" th:text="${@durationUtils.format(result.totalDuration)}">0:00</div>
+        <!--/* Stunden mit Tausendertrennzeichen, Minuten zweistellig: bei dreitausend Stunden ist
+               3.137:40 lesbar, 3137:40 nicht. */-->
+        <div class="h1 mb-0" th:with="minutes=${result.totalDuration.toMinutes()}"
+             th:text="${#numbers.formatInteger(minutes / 60, 1, 'DEFAULT')} + ':'
+                      + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</div>
       </div>
     </div>
   </div>
@@ -208,7 +212,9 @@
     <div class="card card-sm">
       <div class="card-body">
         <div class="subheader" th:text="#{main.timereportlist.kpi.billable}">davon fakturierbar</div>
-        <div class="h1 mb-0 text-green" th:text="${@durationUtils.format(result.billableDuration)}">0:00</div>
+        <div class="h1 mb-0 text-green" th:with="minutes=${result.billableDuration.toMinutes()}"
+             th:text="${#numbers.formatInteger(minutes / 60, 1, 'DEFAULT')} + ':'
+                      + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</div>
       </div>
     </div>
   </div>
@@ -216,7 +222,9 @@
     <div class="card card-sm">
       <div class="card-body">
         <div class="subheader" th:text="#{main.timereportlist.kpi.spread}">Mitarbeiter / Aufträge</div>
-        <div class="h1 mb-0" th:text="${result.employeeCount} + ' / ' + ${result.orderCount}">0 / 0</div>
+        <div class="h1 mb-0"
+             th:text="${#numbers.formatInteger(result.employeeCount, 1, 'DEFAULT')} + ' / '
+                      + ${#numbers.formatInteger(result.orderCount, 1, 'DEFAULT')}">0 / 0</div>
       </div>
     </div>
   </div>
@@ -304,7 +312,9 @@
       <tfoot class="table-group-divider fw-bold" th:unless="${result.timereports.isEmpty()}">
         <tr>
           <td colspan="6" class="text-end" th:text="#{main.timereportlist.table.sum}">Summe</td>
-          <td class="text-end" th:text="${@durationUtils.format(result.totalDuration)}">0:00</td>
+          <td class="text-end" th:with="minutes=${result.totalDuration.toMinutes()}"
+              th:text="${#numbers.formatInteger(minutes / 60, 1, 'DEFAULT')} + ':'
+                       + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</td>
           <td colspan="2"></td>
         </tr>
       </tfoot>
