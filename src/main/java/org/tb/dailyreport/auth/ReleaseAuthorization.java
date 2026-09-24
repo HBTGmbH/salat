@@ -24,8 +24,8 @@ public class ReleaseAuthorization {
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) return true;
     if (authorizedUser.isAdmin()) return true;
-    String grantorSign = employeecontract.getEmployee().getSign();
-    return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_RELEASE, today(), accessLevel);
+    String employeeSign = employeecontract.getEmployee().getSign();
+    return authService.isAuthorized(AUTH_CATEGORY_RELEASE, today(), accessLevel, employeeSign);
   }
 
   public boolean isAcceptAuthorized(Employeecontract employeecontract, AccessLevel accessLevel) {
@@ -33,8 +33,8 @@ public class ReleaseAuthorization {
     if (authorizedUser.isManager()) return true;
     if (authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(employeecontract)) return true;
     if (authorizedUser.isAdmin()) return true;
-    String grantorSign = employeecontract.getEmployee().getSign();
-    return authService.isAuthorizedAnyObject(grantorSign, AUTH_CATEGORY_ACCEPT, today(), accessLevel);
+    String employeeSign = employeecontract.getEmployee().getSign();
+    return authService.isAuthorized(AUTH_CATEGORY_ACCEPT, today(), accessLevel, employeeSign);
   }
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {

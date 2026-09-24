@@ -171,20 +171,26 @@ if (!authorizedUser.isManager()
 
 Datenbankgestützte Regeln (`AuthorizationRule`-Entity) erlauben granulare Vergabe von Zugriff auf bestimmte Kategorien, Objekte und Zeiträume mit hierarchischen `AccessLevel`-Werten (`DELETE ⊇ WRITE ⊇ READ ⊇ EXECUTE`).
 
+### Eine Regel nennt zwei Dinge: wer, und woran (#1089)
+
+Eine Regel besteht aus Kategorie, **Berechtigtem** (`grantee_id`), **Objekt** (`object_id`),
+Zugriffsstufen und Gültigkeit. Ein drittes Feld, den Gewährenden (`grantor_id`), gab es bis #1089.
+In vier von fünf Kategorien, die ihn füllten, war er genau das, worauf Zugriff gewährt wird — das
+Objektfeld blieb dort leer, und zwei Felder standen für dieselbe Rolle. Er ist im Objekt
+aufgegangen; `EMPLOYEE`, `RELEASE_TIMEREPORTS`, `ACCEPT_TIMEREPORTS` und `WORKINGDAY` tragen das
+Kürzel der betroffenen Person seitdem dort.
+
 ### Der Platzhalter `*` (#1087)
 
-Drei Felder einer Regel nennen ein Gegenüber, und `*` steht in jedem für „alle": `grantee_id` (der
-Berechtigte), `object_id` (das Objekt) und `grantor_id` (der Gewährende). Eine Auswertung wird damit
-für alle freigegeben, ohne eine Kürzelliste zu pflegen: `REPORT_DEFINITION` / `grantee_id = '*'` /
-`object_id = <id>`.
+Beide Felder kennen `*` als „alle". Eine Auswertung wird damit für alle freigegeben, ohne eine
+Kürzelliste zu pflegen: `REPORT_DEFINITION` / `grantee_id = '*'` / `object_id = <id>`.
 
-Die **leere** Menge bedeutet dagegen nicht überall dasselbe, und das ist Absicht:
+Die **leere** Menge bedeutet dagegen nicht bei beiden dasselbe, und das ist Absicht:
 
 | Feld | `*` | leer |
 |---|---|---|
 | `grantee_id` | jeder angemeldete Benutzer | **niemand** — die Regel greift nie |
 | `object_id` | jedes Objekt der Kategorie | jedes Objekt der Kategorie |
-| `grantor_id` | jeder Gewährende | jeder Gewährende (wird nicht geprüft) |
 
 Beim Berechtigten darf das Weglassen nicht alle berechtigen — sonst wäre ein vergessenes Feld eine
 Freigabe. Der Platzhalter wird hingeschrieben, sonst gilt er nicht. Und `*` schließt `RESTRICTED`
@@ -194,6 +200,35 @@ einzelne Kürzel.
 Bis #1087 wertete `AuthService` den Platzhalter beim Berechtigten nur in einer von vier Prüfungen
 aus — eine Regel mit `grantee_id = '*'` war für Auswertungen und ETL-Definitionen wirkungslos.
 Seitdem steht der Vergleich einmal in `matchesGrantee`, und jede Prüfung geht dort hindurch.
+
+### Zwei Achsen in einem Objektwert: `TIMEREPORT` (#1089)
+
+`TIMEREPORT` ist die einzige Kategorie, die zwei Dinge zugleich einschränkt: **wessen** Buchungen
+und **auf welchem Auftrag**. Beides steht im einen Objekt, getrennt durch einen Doppelpunkt:
+
+| Objektwert | Bedeutung |
+|---|---|
+| `1453`, `1453/01` | Buchungen aller Personen auf diesem Auftrag |
+| `xx:1453`, `xx:1453/01` | dort nur die Buchungen von `xx` |
+| `xx:*` | die Buchungen von `xx`, auf jedem Auftrag |
+
+**`AuthService` zerlegt dabei nichts.** Es vergleicht weiterhin ganze Werte auf Gleichheit; die
+Formen baut der Aufrufer, und `TimereportAuthorization` fragt mit allen fünf zugleich. Dadurch
+bleiben beide Achsen samt Platzhaltern erhalten, ohne dass die Regelauswertung Muster auswerten oder
+ein Format kennen müsste — der Preis dafür ist, dass dieses Format nur in dieser einen Kategorie
+etwas bedeutet.
+
+Zwei Grenzen, die dabei zu kennen sind:
+
+- **Gelesen wird am ersten Doppelpunkt.** Auftragszeichen dürfen einen enthalten und tun es
+  vereinzelt, Kürzel nicht — erzwungen wird das von keinem Constraint.
+- **`xx:*` wirkt nur, weil der Aufrufer es mitfragt.** In einer anderen Kategorie hingeschrieben
+  ergibt die Schreibweise eine Regel, die nie greift.
+
+Die Prüf-API besteht seitdem aus drei Methoden: `isAuthorized`, `isAuthorizedAnyObject` und
+`isAuthorizedForOwnLogin`. Die letzte fragt die **echte** Anmeldung statt der übernommenen und ist
+allein für `LOGIN` da: wer eine fremde Anmeldung übernommen hat, soll sich damit nicht die nächste
+Übernahme genehmigen.
 
 ---
 

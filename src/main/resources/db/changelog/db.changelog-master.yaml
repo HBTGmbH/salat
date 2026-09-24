@@ -3227,3 +3227,36 @@ databaseChangeLog:
               FROM pfad
                        JOIN customerorder c ON pfad.customerorder_id = c.id
               WHERE pfad.PARENTORDER_ID IS NULL
+
+  - changeSet:
+      id: 89
+      author: kr
+      comment: Gewaehrenden in das Objekt der Berechtigungsregel ueberfuehren und grantor_id entfernen
+      # Eine Regel nannte zwei Gegenueber: den Gewaehrenden und das Objekt. In vier von fuenf Kategorien
+      # war der Gewaehrende genau das, worauf Zugriff gewaehrt wird, und das Objekt blieb leer; nur
+      # TIMEREPORT nutzte beide Achsen. Die zweite Achse zieht in den Objektwert um: <kuerzel>:<auftrag>.
+      #
+      # Umgerechnet wird elementweise, denn object_id ist eine kommaseparierte Menge: aus "a,b" mit dem
+      # Gewaehrenden "xx" wird "xx:a,xx:b". Das leistet ein REPLACE auf den Trennkommas - eine Schleife
+      # ueber die Elemente braucht es dafuer nicht.
+      #
+      # Ein Gewaehrender "*" hiess "von wem auch immer" und ist damit keine Einschraenkung; er faellt
+      # weg, statt in einen Wert "*:..." einzugehen, den niemand abfragt.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: authorization_rule
+            columnName: grantor_id
+      changes:
+        - sql:
+            sql: |-
+              UPDATE authorization_rule
+                 SET object_id = CASE
+                       WHEN grantor_id = '*' THEN NULLIF(object_id, '')
+                       WHEN object_id IS NULL OR object_id = '' THEN grantor_id
+                       ELSE CONCAT(grantor_id, ':', REPLACE(object_id, ',', CONCAT(',', grantor_id, ':')))
+                     END
+               WHERE grantor_id IS NOT NULL AND grantor_id <> ''
+        - dropColumn:
+            tableName: authorization_rule
+            columnName: grantor_id

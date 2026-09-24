@@ -18,9 +18,6 @@ public class AuthorizationRule extends AuditedEntity {
     @Column(name = "category", nullable = false)
     private String category;
 
-    @Column(name = "grantor_id")
-    private String grantorId;
-
     @Column(name = "grantee_id", nullable = false)
     private Set<String> granteeId;
 

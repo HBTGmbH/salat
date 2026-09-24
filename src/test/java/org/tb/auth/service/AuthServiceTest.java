@@ -1,7 +1,6 @@
 package org.tb.auth.service;
 
 import static java.time.LocalDate.of;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
@@ -12,7 +11,6 @@ import static org.tb.auth.domain.AccessLevel.READ;
 import static org.tb.auth.domain.AccessLevel.WRITE;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,91 +55,36 @@ class AuthServiceTest {
     }
 
     @Test
-    void testObjectId() {
+    void objectIdMatches() {
         // Arrange
-        var rule = new AuthorizationRule();
-        rule.setObjectId(new HashSet<>());
-        rule.setValidFrom(of(2011, 1, 1));
-        rule.setGrantorId("test-grantor");
-        rule.setGranteeId(Set.of("test-grantee1", "test-grantee2", "auth-sign"));
-        rule.setCategory("TIMEREPORT");
-        rule.setAccessLevels(Set.of(READ));
-        rule.setObjectId(Set.of("4444"));
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(
-            rule
-        ));
+        givenRules(ruleFor(Set.of("test-grantee1", "test-grantee2", "auth-sign"), Set.of("4444")));
 
-        // Act
-        var authorized = authService.isAuthorized(
-            "test-grantor",
-            "TIMEREPORT",
-            of(2011, 1, 2),
-            READ,
-            "4444"
-        );
-
-        // Assert
-        assertEquals(true, authorized); // Assuming no matches in this case
+        // Act & Assert
+        assertTrue(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
     }
 
     @Test
-    void testAnyObject() {
+    void anyObjectMatches() {
         // Arrange
-        var rule = new AuthorizationRule();
-        rule.setObjectId(new HashSet<>());
-        rule.setValidFrom(of(2011, 1, 1));
-        rule.setGrantorId("test-grantor");
-        rule.setGranteeId(Set.of("test-grantee1", "test-grantee2", "auth-sign"));
-        rule.setCategory("TIMEREPORT");
-        rule.setAccessLevels(Set.of(READ));
-        rule.setObjectId(Set.of("4444"));
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(
-            rule
-        ));
+        givenRules(ruleFor(Set.of("test-grantee1", "test-grantee2", "auth-sign"), Set.of("4444")));
 
-        // Act
-        var authorized = authService.isAuthorizedAnyObject(
-            "test-grantor",
-            "TIMEREPORT",
-            of(2011, 1, 2),
-            READ
-        );
-
-        // Assert
-        assertEquals(true, authorized); // Assuming no matches in this case
+        // Act & Assert
+        assertTrue(authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ));
     }
 
     @Test
-    void testEmptyObjectId() {
+    void emptyObjectIdMatchesEveryObject() {
         // Arrange
-        var rule = new AuthorizationRule();
-        rule.setObjectId(new HashSet<>());
-        rule.setValidFrom(of(2011, 1, 1));
-        rule.setGrantorId("test-grantor");
-        rule.setGranteeId(Set.of("test-grantee1", "test-grantee2", "auth-sign"));
-        rule.setCategory("TIMEREPORT");
-        rule.setAccessLevels(Set.of(READ));
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(
-            rule
-        ));
+        givenRules(ruleFor(Set.of("test-grantee1", "test-grantee2", "auth-sign"), Set.of()));
 
-        // Act
-        var authorized = authService.isAuthorized(
-            "test-grantor",
-            "TIMEREPORT",
-            of(2011, 1, 2),
-            READ,
-            "4444"
-        );
-
-        // Assert
-        assertEquals(true, authorized); // Assuming no matches in this case
+        // Act & Assert
+        assertTrue(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
     }
 
     @Test
     void clearCacheForcesReloadOnNextAccess() {
         // Arrange
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(newRule()));
+        givenRules(ruleFor(Set.of("auth-sign"), Set.of()));
 
         // Act
         authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ);
@@ -161,45 +104,25 @@ class AuthServiceTest {
     @Test
     void anyGranteeMatchesEverybodyOnObjectCheck() {
         // Arrange - the rule names nobody in particular, and "auth-sign" is not among its grantees
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(ruleForGrantees(Set.of(ANY_MATCH))));
+        givenRules(ruleFor(Set.of(ANY_MATCH), Set.of("4444")));
 
         // Act & Assert
         assertTrue(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
     }
 
     @Test
-    void anyGranteeMatchesEverybodyOnObjectCheckWithGrantor() {
-        // Arrange
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(ruleForGrantees(Set.of(ANY_MATCH))));
-
-        // Act & Assert
-        assertTrue(authService.isAuthorized("test-grantor", "TIMEREPORT", of(2011, 1, 2), READ, "4444"));
-    }
-
-    @Test
     void anyGranteeMatchesEverybodyOnAnyObjectCheck() {
         // Arrange
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(ruleForGrantees(Set.of(ANY_MATCH))));
+        givenRules(ruleFor(Set.of(ANY_MATCH), Set.of("4444")));
 
         // Act & Assert
         assertTrue(authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ));
     }
 
     @Test
-    void anyGranteeMatchesEverybodyOnAnyObjectCheckWithGrantor() {
-        // Arrange
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(ruleForGrantees(Set.of(ANY_MATCH))));
-
-        // Act & Assert
-        assertTrue(authService.isAuthorizedAnyObject("test-grantor", "TIMEREPORT", of(2011, 1, 2), READ));
-    }
-
-    @Test
     void anyGranteeNextToConcreteGranteesMatchesEverybody() {
         // Arrange
-        when(authorizationRuleRepository.findAll()).thenReturn(
-            List.of(ruleForGrantees(Set.of(ANY_MATCH, "test-grantee1")))
-        );
+        givenRules(ruleFor(Set.of(ANY_MATCH, "test-grantee1"), Set.of("4444")));
 
         // Act & Assert
         assertTrue(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
@@ -208,20 +131,19 @@ class AuthServiceTest {
     @Test
     void noGranteeMatchesNobody() {
         // Arrange - leaving the grantee out is not a wildcard, unlike leaving the object out
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(ruleForGrantees(Set.of())));
+        givenRules(ruleFor(Set.of(), Set.of("4444")));
 
         // Act & Assert
         assertFalse(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
         assertFalse(authService.isAuthorizedAnyObject("TIMEREPORT", of(2011, 1, 2), READ));
-        assertFalse(authService.isAuthorizedAnyObject("test-grantor", "TIMEREPORT", of(2011, 1, 2), READ));
     }
 
     @Test
     void anyGranteeStillObeysTheOtherConditions() {
         // Arrange
-        var rule = ruleForGrantees(Set.of(ANY_MATCH));
+        var rule = ruleFor(Set.of(ANY_MATCH), Set.of("4444"));
         rule.setValidUntil(of(2011, 1, 1));
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(rule));
+        givenRules(rule);
 
         // Act & Assert - outside the validity, another category, another access level, another object
         assertFalse(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
@@ -232,30 +154,26 @@ class AuthServiceTest {
     }
 
     @Test
-    void useLoginSignAsksForTheOwnLoginNotForTheImpersonatedOne() {
+    void ownLoginIsAskedForInsteadOfTheImpersonatedOne() {
         // Arrange - the user acts in the name of somebody else
         when(authorizedUser.getLoginSign()).thenReturn("login-sign");
         when(authorizedUser.getEffectiveLoginSign()).thenReturn("impersonated-sign");
-        when(authorizationRuleRepository.findAll()).thenReturn(List.of(ruleForGrantees(Set.of("login-sign"))));
+        givenRules(ruleFor(Set.of("login-sign"), Set.of("4444")));
 
         // Act & Assert
-        assertTrue(authService.isAuthorizedAnyObject("test-grantor", "TIMEREPORT", of(2011, 1, 2), READ, true));
-        assertFalse(authService.isAuthorizedAnyObject("test-grantor", "TIMEREPORT", of(2011, 1, 2), READ, false));
+        assertTrue(authService.isAuthorizedForOwnLogin("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
+        assertFalse(authService.isAuthorized("TIMEREPORT", of(2011, 1, 2), READ, "4444"));
     }
 
-    private AuthorizationRule ruleForGrantees(Set<String> granteeIds) {
-        var rule = newRule();
-        rule.setGranteeId(granteeIds);
-        rule.setObjectId(Set.of("4444"));
-        return rule;
+    private void givenRules(AuthorizationRule... rules) {
+        when(authorizationRuleRepository.findAll()).thenReturn(List.of(rules));
     }
 
-    private AuthorizationRule newRule() {
+    private AuthorizationRule ruleFor(Set<String> granteeIds, Set<String> objectIds) {
         var rule = new AuthorizationRule();
-        rule.setObjectId(new HashSet<>());
         rule.setValidFrom(of(2011, 1, 1));
-        rule.setGrantorId("test-grantor");
-        rule.setGranteeId(Set.of("auth-sign"));
+        rule.setGranteeId(granteeIds);
+        rule.setObjectId(objectIds);
         rule.setCategory("TIMEREPORT");
         rule.setAccessLevels(Set.of(READ));
         return rule;

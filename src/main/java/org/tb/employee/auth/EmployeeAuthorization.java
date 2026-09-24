@@ -28,7 +28,7 @@ public class EmployeeAuthorization {
   public boolean isAuthorized(Employee employee, AccessLevel accessLevel, Set<Long> supervisedEmployeeIds) {
     if (accessLevel == LOGIN) {
       if (employee.getSalatUser().getLoginname().equals(authorizedUser.getLoginSign())) return true;
-      return authService.isAuthorizedAnyObject(employee.getSalatUser().getLoginname(), AUTH_CATEGORY_EMPLOYEE, today(), LOGIN, true);
+      return authService.isAuthorizedForOwnLogin(AUTH_CATEGORY_EMPLOYEE, today(), LOGIN, employee.getSalatUser().getLoginname());
     }
 
     if (authorizedUser.isManager()) return true;
