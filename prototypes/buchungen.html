@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<!--
+  KLICK-PROTOTYP "Buchungen" — kein Produktionscode.
+
+  Eigenstaendige Datei zum Oeffnen im Browser (file://). Tabler/TomSelect kommen vom CDN in den
+  Versionen aus der pom.xml, salat.css wird aus dem Arbeitsverzeichnis geladen, damit Farben,
+  Feldhoehen und TomSelect-Korrekturen dieselben sind wie in der Anwendung. Die Daten sind frei
+  erfunden und werden beim Laden erzeugt; gefiltert, sortiert und exportiert wird im Browser.
+-->
+<html lang="de" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SALAT - Buchungen (Prototyp)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.5.1/dist/css/tabler.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.35.0/dist/tabler-icons.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/css/tom-select.bootstrap5.min.css"/>
+  <link rel="stylesheet" href="../src/main/resources/static/css/salat.css"/>
+  <style>
+    /* Nur fuer den Prototyp: markiert Flaechen, ueber die wir noch reden. */
+    .proto-note {
+      border-left: 3px solid var(--tblr-primary);
+      background: color-mix(in srgb, var(--tblr-primary) 8%, transparent);
+    }
+    #bookings tbody tr[data-booking] { cursor: pointer; }
+    #bookings tbody tr:hover td {
+      background-color: rgba(var(--tblr-primary-rgb), 0.08);
+    }
+    .col-task { max-width: 26rem; }
+    th[data-sort] { cursor: pointer; white-space: nowrap; }
+    th[data-sort] .ti { opacity: 0.25; }
+    th[data-sort].sorted-asc .ti, th[data-sort].sorted-desc .ti { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Sidebar (verkuerzte Nachbildung, damit die Seite im gewohnten Rahmen steht) -->
+  <aside class="navbar navbar-vertical navbar-expand-md" data-bs-theme="dark" id="salat-nav">
+    <div class="container-fluid">
+      <h1 class="navbar-brand">
+        <a href="#" class="text-decoration-none">
+          <span class="nav-link-title fs-2 fw-bold text-white">SALAT</span>
+        </a>
+      </h1>
+      <div class="collapse navbar-collapse show">
+        <ul class="navbar-nav pt-lg-3">
+          <li class="nav-item dropdown active">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="false"
+               role="button" aria-expanded="true">
+              <i class="nav-link-icon bi bi-clock"></i>
+              <span class="nav-link-title">Buchungen</span>
+            </a>
+            <div class="dropdown-menu show">
+              <div class="dropdown-menu-columns">
+                <div class="dropdown-menu-column">
+                  <a class="dropdown-item" href="#">Dashboard</a>
+                  <a class="dropdown-item" href="#">Neue Buchung</a>
+                  <a class="dropdown-item" href="#">Einzelübersicht</a>
+                  <a class="dropdown-item" href="#">Matrixübersicht</a>
+                  <a class="dropdown-item active" href="#">Buchungsliste</a>
+                  <a class="dropdown-item" href="#">CSV Import / Export</a>
+                  <a class="dropdown-item" href="#">Freigabe</a>
+                  <a class="dropdown-item" href="#">Meine Konten</a>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="nav-link-icon bi bi-people"></i><span class="nav-link-title">Mitarbeiter</span></a></li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="nav-link-icon bi bi-briefcase"></i><span class="nav-link-title">Aufträge</span></a></li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="nav-link-icon bi bi-calculator"></i><span class="nav-link-title">Budget</span></a></li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="nav-link-icon bi bi-bar-chart"></i><span class="nav-link-title">Reports</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <div class="page-wrapper">
+
+    <header class="page-header d-print-none">
+      <div class="container-fluid">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <div class="page-pretitle">Buchungen</div>
+            <h2 class="page-title">Buchungsliste</h2>
+          </div>
+          <div class="col-auto ms-auto">
+            <div class="btn-list align-items-center">
+              <span class="text-secondary small d-none d-lg-inline">
+                angemeldet als <span class="fw-medium" id="current-user"></span> · Rolle
+              </span>
+              <select class="form-select form-select-sm" id="f-role" style="width: 10rem">
+                <option value="manager" selected>Manager</option>
+                <option value="peopleLead">People Lead</option>
+                <option value="employee">Mitarbeiter</option>
+              </select>
+              <span class="badge bg-purple-lt">Prototyp</span>
+              <button class="btn hide-theme-dark" title="Dunkler Modus" onclick="setTheme('dark')">
+                <i class="ti ti-moon ti-size-3"></i>
+              </button>
+              <button class="btn hide-theme-light" title="Heller Modus" onclick="setTheme('light')">
+                <i class="ti ti-sun-high ti-size-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="container-fluid">
+
+        <!-- ══════════════════ FILTER ══════════════════ -->
+        <form class="card mb-3" id="filter-form" onsubmit="event.preventDefault(); applyFilter();">
+          <div class="card-body">
+
+            <div class="row g-3">
+              <div class="col-lg-3">
+                <label class="form-label" for="f-employees">Mitarbeiter</label>
+                <select class="form-select tomselect tomselect-multi" id="f-employees" multiple
+                        placeholder="Alle Mitarbeiter"></select>
+                <div class="form-hint mt-1" id="employee-hint"></div>
+              </div>
+              <div class="col-lg-3">
+                <label class="form-label" for="f-customers">Auftraggeber</label>
+                <select class="form-select tomselect tomselect-multi" id="f-customers" multiple
+                        placeholder="Alle Auftraggeber"></select>
+              </div>
+              <div class="col-lg-3">
+                <label class="form-label" for="order-picker">Aufträge</label>
+                <button type="button" class="form-select text-start" id="order-picker"
+                        data-bs-toggle="modal" data-bs-target="#order-modal">
+                  <span id="order-summary" class="text-truncate d-block">Alle Aufträge</span>
+                </button>
+                <div class="mt-1 small d-flex align-items-center gap-2">
+                  <span class="text-secondary" id="order-detail">keine Einschränkung</span>
+                  <a href="#" class="d-none" id="order-clear"
+                     onclick="event.preventDefault(); clearOrders();">leeren</a>
+                </div>
+              </div>
+              <div class="col-lg-3">
+                <label class="form-label" for="ticket-picker">Tickets</label>
+                <button type="button" class="form-select text-start" id="ticket-picker"
+                        data-bs-toggle="modal" data-bs-target="#ticket-modal">
+                  <span id="ticket-summary" class="text-truncate d-block">Alle Tickets</span>
+                </button>
+                <div class="mt-1 small d-flex align-items-center gap-2">
+                  <span class="text-secondary" id="ticket-detail">keine Einschränkung</span>
+                  <a href="#" class="d-none" id="ticket-clear"
+                     onclick="event.preventDefault(); clearTickets();">leeren</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-0 align-items-end">
+              <!--/* Die Betriebsart steht nicht neben der Monatsauswahl, sie ist sie: der Monat
+                     selbst ist der linke Knopf der Gruppe. Wer ihn benutzt, waehlt damit den
+                     Monatsmodus. Ein Radio ohne Label bleibt der Zustandstraeger. */-->
+              <div class="col-lg-auto">
+                <label class="form-label">Zeitraum</label>
+                <div class="btn-group btn-group-sm w-100" role="group">
+                  <input type="radio" class="btn-check" name="period-mode" id="mode-month" value="month" checked>
+                  <div data-month-picker data-target="f-month" class="btn-group btn-group-sm"></div>
+                  <input type="radio" class="btn-check" name="period-mode" id="mode-range" value="range"
+                         onchange="switchPeriodMode()">
+                  <label class="btn btn-sm" for="mode-range">Freier Zeitraum</label>
+                </div>
+                <input type="hidden" id="f-month">
+              </div>
+
+              <!-- Freier Zeitraum: taggenau -->
+              <div class="col-lg-auto d-none" id="period-range">
+                <div class="d-flex align-items-center gap-2">
+                  <input type="date" class="form-control form-control-sm" id="f-date-from" style="width: 10rem">
+                  <span class="text-secondary">bis</span>
+                  <input type="date" class="form-control form-control-sm" id="f-date-to" style="width: 10rem">
+                </div>
+              </div>
+
+              <div class="col-lg-auto">
+                <div class="btn-list">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="preset('thisMonth')">Dieser Monat</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="preset('lastMonth')">Letzter Monat</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="preset('thisYear')">Dieses Jahr</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" onclick="preset('last30')">Letzte 30 Tage</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-0 align-items-end">
+              <div class="col-auto">
+                <label class="form-label">Fakturierbarkeit</label>
+                <div class="btn-group btn-group-sm d-flex" role="group" id="f-invoiceable">
+                  <input type="radio" class="btn-check" name="invoiceable" id="inv-all" value="all" checked>
+                  <label class="btn btn-sm" for="inv-all">Alle</label>
+                  <input type="radio" class="btn-check" name="invoiceable" id="inv-yes" value="yes">
+                  <label class="btn btn-sm" for="inv-yes">Fakturierbar</label>
+                  <input type="radio" class="btn-check" name="invoiceable" id="inv-no" value="no">
+                  <label class="btn btn-sm" for="inv-no">Nicht fakturierbar</label>
+                </div>
+              </div>
+              <div class="col-auto">
+                <label class="form-label" for="f-limit">Maximale Anzahl Treffer</label>
+                <select class="form-select tomselect" id="f-limit" style="width: 10rem">
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="500" selected>500</option>
+                  <option value="1000">1000</option>
+                  <option value="all">Alle</option>
+                </select>
+              </div>
+              <div class="col-auto ms-auto">
+                <div class="btn-list">
+                  <button type="button" class="btn btn-link" onclick="resetFilter()">Zurücksetzen</button>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-filter"></i>Filtern
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </form>
+
+        <!-- ══════════════════ KENNZAHLEN ══════════════════ -->
+        <div class="row row-cards mb-3">
+          <div class="col-sm-6 col-lg-3">
+            <div class="card card-sm">
+              <div class="card-body">
+                <div class="subheader">Buchungen</div>
+                <div class="h1 mb-0" id="kpi-count">–</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <div class="card card-sm">
+              <div class="card-body">
+                <div class="subheader">Summe Stunden</div>
+                <div class="h1 mb-0" id="kpi-hours">–</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <div class="card card-sm">
+              <div class="card-body">
+                <div class="subheader">davon fakturierbar</div>
+                <div class="h1 mb-0 text-green" id="kpi-invoiceable">–</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <div class="card card-sm">
+              <div class="card-body">
+                <div class="subheader">Mitarbeiter / Aufträge</div>
+                <div class="h1 mb-0" id="kpi-spread">–</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════ TABELLE ══════════════════ -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" id="result-title">Buchungen</h3>
+            <div class="card-actions btn-list">
+              <button class="btn btn-outline-secondary" id="export-button" onclick="exportExcel()">
+                <i class="ti ti-file-spreadsheet"></i>Export nach Excel
+              </button>
+            </div>
+          </div>
+          <div class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0 d-none"
+               id="limit-hint" role="alert">
+            <i class="ti ti-alert-triangle me-2"></i><span id="limit-hint-text"></span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-vcenter table-sm card-table" id="bookings">
+              <thead>
+                <tr>
+                  <th data-sort="date">Datum <i class="ti ti-arrows-sort"></i></th>
+                  <th data-sort="employee">Mitarbeiter <i class="ti ti-arrows-sort"></i></th>
+                  <th data-sort="order">Auftrag <i class="ti ti-arrows-sort"></i></th>
+                  <th data-sort="suborder">Unterauftrag <i class="ti ti-arrows-sort"></i></th>
+                  <th class="col-task">Tätigkeit</th>
+                  <th class="d-none d-xl-table-cell">Ticket</th>
+                  <th class="text-end" data-sort="duration">Dauer <i class="ti ti-arrows-sort"></i></th>
+                  <th class="text-center">Fakt.</th>
+                  <th class="text-center d-none d-lg-table-cell">Status</th>
+                </tr>
+              </thead>
+              <tbody id="bookings-body"></tbody>
+              <tfoot class="table-group-divider fw-bold">
+                <tr>
+                  <td colspan="6" class="text-end">Summe</td>
+                  <td class="text-end" id="foot-sum">–</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="card-footer">
+            <p class="m-0 text-secondary" id="result-info">–</p>
+          </div>
+        </div>
+
+        <div class="card mt-3 proto-note">
+          <div class="card-body">
+            <h4 class="mb-2"><i class="ti ti-bulb me-1"></i>Offene Punkte für die Abstimmung</h4>
+            <ul class="mb-0 text-secondary">
+              <li>Entschieden: Zeitraum ist entweder <strong>ein Monat</strong> (vom Ersten bis zum Letzten) oder ein <strong>freier Zeitraum</strong> — keine Mischform. Die Schnellwahl stellt das Passende ein: „Dieser Monat“ und „Letzter Monat“ schalten auf Monat, „Dieses Jahr“ und „Letzte 30 Tage“ auf den Zeitraum.</li>
+              <li>Entschieden: Auftragsauswahl wie die Ticketauswahl — Dialog mit Baum, Suche, Ebenenfilter (Auftrag / Unterauftrag), Mehrfachauswahl über beide Ebenen. Der <strong>Auftraggeber ist ein eigener Filter</strong> neben dem Auftrag, keine weitere Ebene im Baum.</li>
+              <li>Entschieden: <strong>Kein Schalter für untergeordnete Unteraufträge</strong> — sie sind immer eingeschlossen. Ein Schalter, dessen einzige sinnvolle Stellung „an“ ist, ist keine Wahl: gebucht wird auf dem Blatt, ohne die Nachfahren träfe ein Unterauftrag mit Kindern nichts. An seine Stelle tritt ein Infotext, der den Umfang nennt — im Dialog („Die Auswahl schließt 3 Unteraufträge ein“) und in der Zusammenfassung unter dem Feld.</li>
+              <li>Entschieden: Der Klick auf eine Zeile öffnet die Buchung im Dialog, das Datum bleibt dabei der Link — er ist der Griff der Zeile und der einzige Tabstopp darin. Der Ticketschlüssel ist kein Link (wie heute schon in der Einzelübersicht): eine Basis-URL gibt es nur je Replikations-Scope, ein selbst getippter Schlüssel hätte keine. „Bearbeiten“ springt in die <strong>bestehende Buchungsmaske</strong>, im Dialog selbst wird nichts geändert. Abgenommene Buchungen sind gesperrt.</li>
+              <li>Entschieden: „inklusive untergeordneter Tickets“ (voreingestellt an) schließt die <strong>ganze Nachfahrenkette</strong> ein — Epic → Story → Subtask, beliebig tief.</li>
+              <li>Entschieden: Die Hierarchie kennt nur, was repliziert wurde (<code>JiraTicket.parentKey</code>) — der Ticketbezug einer Buchung ist dagegen freier Text (<code>Timereport.ticketReference</code>). Ein selbst getippter Schlüssel wie <code>OPS-42</code> hat keine Kinder und trifft nur sich selbst; das <strong>Fragezeichen an der Zeile genügt</strong> als Hinweis, im Filter braucht es keinen.</li>
+              <li>Entschieden: Der Typfilter (Epic / Story / Subtask) bleibt eine <strong>Suchhilfe im Dialog</strong> — er blendet die Liste ein, lässt die Auswahl unberührt und steht beim nächsten Öffnen wieder auf „alle“. Kein eigenes Filterkriterium der Buchungsliste.</li>
+              <li>Entschieden: Ticketschlüssel werden <strong>unabhängig von Groß-/Kleinschreibung</strong> verglichen — in der Buchung steht getippter Text, <code>nwp-110</code> meint dasselbe Ticket wie <code>NWP-110</code>. Angezeigt bleibt, was in der Buchung steht. Für die Umsetzung heißt das: der Vergleich läuft über beide Seiten normalisiert (<code>lower(...)</code>), was einen Index auf <code>ticket_reference</code> nur über einen funktionalen Index nutzbar macht.</li>
+              <li>Entschieden: Die Ticketsuche läuft über die <strong>Scopes der gewählten Aufträge</strong> (<code>JiraTicket.scopeSign</code>); ohne Auftragsauswahl über alle zugänglichen. Der Auftragsfilter schneidet damit die Ticketliste zu — das ist dieselbe Regel wie überall sonst: angeboten wird, was einen Treffer liefern kann.</li>
+              <li>Entschieden: Fakturierbarkeit als Dreifachauswahl <strong>Alle / Fakturierbar / Nicht fakturierbar</strong>. „Alle“ schränkt nicht ein, „Nicht fakturierbar“ ist die eigene Sicht auf Projektleitung, Gewährleistung und Internes — die ein Schalter nicht ausdrücken konnte.</li>
+              <li>Entschieden: Der <strong>Zeitraum genügt als Filter</strong>. Die Liste sucht deshalb schon beim Aufruf, mit dem vorbelegten Monat über alle Mitarbeiter — eine Abfrage, die durch den Monat begrenzt ist. Zu klären bleibt für die Umsetzung, ob dieser erste Aufruf gemessen schnell genug ist; sonst ist der Ausweg der aus #1009: ein verstecktes Feld (<code>evaluate</code>) unterscheidet Submit von Seitenaufruf, niemals das Vorhandensein eines Filterparameters — den liefert die UiState-Hinterlegung bei jedem Aufruf mit.</li>
+              <li>Entschieden: Die Kennzahl „davon fakturierbar“ bleibt, auch wenn sie bei der Stellung „Nicht fakturierbar“ zwangsläufig 0:00 zeigt — das bestätigt den Filter.</li>
+              <li>Entschieden: Spalten und Sortierung reichen so; keine Gruppierung, keine Zwischensummen je Mitarbeiter oder Auftrag.</li>
+              <li>Entschieden: Maximale Anzahl Treffer bleibt wie gebaut — Vorbelegung 500, „Alle“ wählbar, und die Grenze beschneidet <strong>nur die Anzeige</strong>. Kennzahlen und Summe zählen immer den vollen Treffersatz, sonst hinge eine Summe an einer Anzeigeeinstellung.</li>
+              <li>Entschieden: Der Export enthält alle Treffer in den sichtbaren Spalten, auch die über der Anzeigegrenze — <strong>kein Summenblatt</strong>.</li>
+              <li>Entschieden: Die Seite steht jedem offen, sichtbar ist genau, worauf man Zugriff hat — und <strong>in den Filtern stehen genau die Werte, die zu diesen Buchungen passen</strong>. Mitarbeiter, Aufträge, Unteraufträge und Tickets leiten sich damit aus einer einzigen Quelle ab; was ohnehin keinen Treffer liefern könnte, wird nicht angeboten. Der Rollenumschalter oben rechts ist nur im Prototyp und zeigt die Wirkung.</li>
+              <li>Die Zugriffsregel ist vorhanden und wird nicht neu gebaut: <code>TimereportAuthorization.isAuthorized(tr, READ)</code> — Manager alles, People Lead die Betreuten, jeder sich selbst, Auftragsverantwortliche ihren Auftrag, Backoffice die fakturierbaren, und als Auffang die <strong>Einzelfreigaben</strong> über <code>AuthorizationRule</code> der Kategorie <code>TIMEREPORT</code> (Objektformen <code>1453</code>, <code>1453/01</code>, <code>xx:1453</code>, <code>xx:*</code>, mit Gültigkeitszeitraum). Im Prototyp sind zwei Freigaben gesetzt, damit man sie sieht.</li>
+              <li><strong>Die Herausforderung der Umsetzung: die gültigen Filterwerte performant laden.</strong>
+                <code>isAuthorized</code> prüft <em>eine</em> Buchung; eine Liste darf das weder je Zeile in Java tun
+                noch die Filterwerte über ein <code>distinct</code> auf <code>timereport</code> holen — das ist die
+                größte Tabelle der Anwendung. Vorschlag: <strong>ein Sichtbarkeitsbereich, einmal je Request gebaut,
+                aus den Stammdaten statt aus den Buchungen</strong> — und derselbe Bereich ist danach die
+                WHERE-Bedingung der Buchungsabfrage. Eine Berechnung, zwei Verwendungen; damit entfällt die
+                Zeilenprüfung in Java von selbst.
+                <ul>
+                  <li>Rollen aus <code>AuthorizedUser</code> — im Speicher, beim Manager Kurzschluss auf „alles“.</li>
+                  <li>Betreute Mitarbeiter: kleine Abfrage auf <code>employee</code>.</li>
+                  <li>Auftragsverantwortung (<code>responsibleHbt</code>, <code>respEmpHbtContract</code>): kleine
+                      Abfrage auf <code>customerorder</code>.</li>
+                  <li>Einzelfreigaben: <strong>schon im Speicher</strong> — <code>AuthService.cacheEntries</code> hält
+                      alle <code>AuthorizationRule</code> je Kategorie, <code>isAuthorized</code> fragt dafür nie die
+                      Datenbank.</li>
+                  <li>Tickets: <code>jira_ticket</code> über die sichtbaren Scopes.</li>
+                </ul>
+              </li>
+              <li>Vier Fallstricke dieses Wegs:
+                <ul>
+                  <li><strong>Der Bereich ist kein Kreuzprodukt.</strong> <code>xx:1453</code> heißt „xx auf diesem
+                      Auftrag“, nicht „alle sichtbaren Mitarbeiter auf allen sichtbaren Aufträgen“. Die Bedingung ist
+                      ein ODER von UND-Klauseln, eine je Berechtigungsquelle. Zwei Mengen zu kreuzen gäbe zu viel frei
+                      — ein Sicherheitsfehler, kein Schönheitsfehler.</li>
+                  <li><strong>Der Bereich ist zweite Wahrheit</strong> neben
+                      <code>TimereportAuthorization.isAuthorized</code>. Schutz gegen das Auseinanderdriften: ein Test,
+                      der über eine Stichprobe prüft, dass <code>scope.matches(tr)</code> und
+                      <code>isAuthorized(tr, READ)</code> dasselbe sagen.</li>
+                  <li><strong>Regeln haben einen Gültigkeitszeitraum.</strong> <code>isAuthorized</code> bekommt ein
+                      Datum, der Bereich einer Liste umspannt einen Zeitraum — entweder die Vereinigung über den
+                      Zeitraum, oder das Datum wandert in die Bedingung.</li>
+                  <li><code>AuthService</code> gibt die Regeln so noch nicht heraus:
+                      <code>getAuthRules(category, objectId)</code> filtert über das Objekt, nicht über den
+                      Berechtigten. Es fehlt ein <code>getRulesFor(category, userSign, …)</code>.</li>
+                </ul>
+              </li>
+              <li><strong>Gemessen</strong> gegen den lokalen Abzug (470.470 nicht gelöschte Buchungen, 194 Mitarbeiter,
+                500 Aufträge, 6.519 Unteraufträge, 17 Regeln; MySQL im Container, n=30 je Abfrage, Zeiten ohne
+                Verbindungsaufbau):
+                <ul>
+                  <li>Strenge Lesart <em>ohne</em> Einschränkung, also für eine Managerin — <code>distinct</code> über
+                      <code>timereport</code> für Mitarbeiter 364 ms ± 1,6 · Auftrag (Join auf <code>suborder</code>)
+                      241 ms ± 0,6 · Unterauftrag 365 ms ± 2,1 · <code>ticket_reference</code> 68 ms ± 0,5.
+                      <strong>Zusammen rund 1,04 s je Seitenaufruf</strong>, wachsend mit der Tabelle.</li>
+                  <li>Dieselbe Abfrage <em>mit</em> Sichtbarkeitsbedingung: <strong>33 ms ± 0,5 bei zehn
+                      Mitarbeiterverträgen, 7 ms ± 0,6 bei einem</strong> — der Index auf
+                      <code>EMPLOYEECONTRACT_ID</code> greift.</li>
+                  <li>Die Stammdatenabfragen (alle Mitarbeiter, alle Unteraufträge, alle Regeln) liegen
+                      <strong>unter der Messschwelle</strong>, also unter einer Millisekunde.</li>
+                </ul>
+                Daraus folgt eine Aufteilung statt einer Entscheidung: <strong>Für die Managerin ist die Antwort
+                ohnehin „alles“ — da genügen die Stammdaten ohne jedes <code>distinct</code>. Für alle anderen ist die
+                strenge Lesart mit der Sichtbarkeitsbedingung günstig genug</strong> und liefert exakte Listen ohne
+                tote Einträge. Teuer ist allein die Kombination, die niemand braucht: strenge Lesart ohne
+                Einschränkung. Die lokale Datenbank hat 128 MB Buffer Pool gegen 512 MB in der Produktion, die Zeiten
+                sind also eher pessimistisch.</li>
+              <li>Feinheit: Die Auswahllisten leiten sich aus <em>allen</em> zugänglichen Buchungen ab, nicht nur aus denen des gewählten Zeitraums — sonst leerte sich die Liste beim Umstellen des Monats. Ein angebotener Wert kann im gewählten Zeitraum also trotzdem null Treffer haben.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ BUCHUNG ANSEHEN ══════════════════ -->
+<div class="modal modal-blur fade" id="booking-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="booking-modal-title">Buchung</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body">
+        <dl class="row mb-0" id="booking-detail"></dl>
+      </div>
+      <!--/* me-auto statt justify-content-between: bricht die Fusszeile um, weil der Hinweis lang
+             ist, wuerde space-between die allein stehende Knopfgruppe an den Zeilenanfang setzen -
+             die Knoepfe sprangen nach links, sobald der Hinweis erschien. */-->
+      <div class="modal-footer">
+        <span class="text-secondary small me-auto" id="booking-lock"></span>
+        <div class="btn-list">
+          <button type="button" class="btn btn-link" data-bs-dismiss="modal">Schließen</button>
+          <button type="button" class="btn btn-primary" id="booking-edit" data-bs-dismiss="modal">
+            <i class="ti ti-pencil"></i>Bearbeiten
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ AUFTRAGSAUSWAHL ══════════════════ -->
+<div class="modal modal-blur fade" id="order-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Aufträge und Unteraufträge auswählen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="row g-2 align-items-center mb-2">
+          <div class="col">
+            <input type="search" class="form-control" id="order-search" autocomplete="off"
+                   placeholder="Suchen in Kürzel, Bezeichnung und Auftraggeber">
+          </div>
+          <div class="col-auto">
+            <div class="btn-group" id="order-type-filter" role="group" aria-label="Ebene"></div>
+          </div>
+        </div>
+        <div class="form-hint mb-3">
+          Gezeigt wird nur, was zu Suche und Ebene passt. Wo das übergeordnete Element dadurch
+          wegfällt, steht sein Kürzel hinter der Bezeichnung.
+        </div>
+
+        <div class="list-group list-group-flush border rounded" id="order-tree"></div>
+
+      </div>
+      <div class="modal-footer">
+        <!--/* Kein Schalter mehr: untergeordnete Unterauftraege sind immer eingeschlossen, und was
+               das bedeutet, sagt die Zeile an jedem Eintrag und die Zusammenfassung im Filter. */-->
+        <span class="text-secondary small me-auto" id="order-included"></span>
+        <div class="btn-list">
+          <button type="button" class="btn btn-link" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="commitOrders()">
+            Übernehmen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ TICKETAUSWAHL ══════════════════ -->
+<div class="modal modal-blur fade" id="ticket-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Tickets auswählen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="row g-2 align-items-center mb-2">
+          <div class="col">
+            <input type="search" class="form-control" id="ticket-search" autocomplete="off"
+                   placeholder="Suchen in Schlüssel und Titel">
+          </div>
+          <div class="col-auto">
+            <div class="btn-group" id="ticket-type-filter" role="group" aria-label="Tickettyp"></div>
+          </div>
+        </div>
+        <div class="form-hint mb-3">
+          Gezeigt wird nur, was zu Suche und Typ passt. Wo das übergeordnete Ticket dadurch
+          wegfällt, steht sein Schlüssel hinter dem Titel.
+        </div>
+
+        <div class="list-group list-group-flush border rounded" id="ticket-tree"></div>
+
+        <hr class="my-4">
+
+        <label class="form-label" for="ticket-manual">Ticket ohne Replikation</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="ticket-manual" placeholder="z. B. OPS-42"
+                 autocomplete="off">
+          <button class="btn" type="button" onclick="addManualTicket()">Hinzufügen</button>
+        </div>
+        <div class="form-hint">
+          Der Ticketbezug einer Buchung ist freier Text. Ein Schlüssel, den die Replikation nicht kennt,
+          lässt sich hier eintragen — untergeordnete Tickets hat er dann naturgemäß keine.
+        </div>
+        <div id="ticket-manual-list" class="mt-2"></div>
+
+      </div>
+      <div class="modal-footer">
+        <label class="form-check form-switch mb-0 me-auto">
+          <input class="form-check-input" type="checkbox" id="f-ticket-children" checked>
+          <span class="form-check-label">inklusive untergeordneter Tickets</span>
+        </label>
+        <div class="btn-list">
+          <button type="button" class="btn btn-link" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="commitTickets()">
+            Übernehmen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.5.1/dist/js/tabler.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+// ══════════════════ Erfundene Stammdaten ══════════════════
+const EMPLOYEES = [
+  { id: 1, sign: 'aab', name: 'Abel, Anna' },
+  { id: 2, sign: 'bbe', name: 'Berger, Bernd' },
+  { id: 3, sign: 'cco', name: 'Conrad, Clara' },
+  { id: 4, sign: 'ddi', name: 'Diehl, Dora' },
+  { id: 5, sign: 'eng', name: 'Engel, Erik' },
+  { id: 6, sign: 'fma', name: 'Falk, Mia' },
+  { id: 7, sign: 'gro', name: 'Groth, Gero' },
+  { id: 8, sign: 'hsc', name: 'Haas, Sina' },
+];
+
+const ORDERS = [
+  { id: 1, sign: 'NW-2024-01', title: 'Nordwind Portal', customer: 'Nordwind Handel GmbH' },
+  { id: 2, sign: 'SW-2023-07', title: 'Südwerk Migration', customer: 'Südwerk AG' },
+  { id: 3, sign: 'IN-2022-03', title: 'Interne Projekte', customer: 'Intern' },
+  { id: 4, sign: 'OS-2025-02', title: 'Ostsee Logistik', customer: 'Ostsee Logistik KG' },
+];
+
+// Unterauftraege sind selbst ein Baum: Suborder.parentorder, abzulesen am completeOrderSign.
+const SUBORDERS = [
+  { id: 11,  orderId: 1, parentId: null, sign: 'NW-2024-01/10',    title: 'Analyse',           invoiceable: true },
+  { id: 12,  orderId: 1, parentId: null, sign: 'NW-2024-01/20',    title: 'Umsetzung',         invoiceable: true },
+  { id: 121, orderId: 1, parentId: 12,   sign: 'NW-2024-01/20/10', title: 'Oberfläche',        invoiceable: true },
+  { id: 122, orderId: 1, parentId: 12,   sign: 'NW-2024-01/20/20', title: 'Fachlogik',         invoiceable: true },
+  { id: 13,  orderId: 1, parentId: null, sign: 'NW-2024-01/90',    title: 'Projektleitung',    invoiceable: false },
+  { id: 21,  orderId: 2, parentId: null, sign: 'SW-2023-07/10',    title: 'Datenübernahme',    invoiceable: true },
+  { id: 211, orderId: 2, parentId: 21,   sign: 'SW-2023-07/10/10', title: 'Altbestand',        invoiceable: true },
+  { id: 212, orderId: 2, parentId: 21,   sign: 'SW-2023-07/10/20', title: 'Abgleich',          invoiceable: true },
+  { id: 22,  orderId: 2, parentId: null, sign: 'SW-2023-07/80',    title: 'Gewährleistung',    invoiceable: false },
+  { id: 31,  orderId: 3, parentId: null, sign: 'IN-2022-03/10',    title: 'Weiterbildung',     invoiceable: false },
+  { id: 32,  orderId: 3, parentId: null, sign: 'IN-2022-03/20',    title: 'Vertrieb',          invoiceable: false },
+  { id: 41,  orderId: 4, parentId: null, sign: 'OS-2025-02/10',    title: 'Schnittstellen',    invoiceable: true },
+  { id: 411, orderId: 4, parentId: 41,   sign: 'OS-2025-02/10/10', title: 'Tourenplanung',     invoiceable: true },
+  { id: 42,  orderId: 4, parentId: null, sign: 'OS-2025-02/30',    title: 'Betrieb',           invoiceable: true },
+];
+
+const SUBORDER_BY_ID = new Map(SUBORDERS.map(s => [s.id, s]));
+const suborderChildren = id => SUBORDERS.filter(s => s.parentId === id);
+const suborderLevel = s => { let n = 0, c = s; while (c && c.parentId) { n++; c = SUBORDER_BY_ID.get(c.parentId); } return n; };
+
+// Gebucht wird auf dem Blatt: ein Unterauftrag mit Kindern traegt selbst keine Buchungen. Genau
+// deshalb ist "inklusive untergeordneter" beim Filter die Voreinstellung.
+const LEAF_SUBORDERS = SUBORDERS.filter(s => suborderChildren(s.id).length === 0);
+
+function suborderWithDescendants(id) {
+  const result = new Set([id]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const s of SUBORDERS) {
+      if (s.parentId && result.has(s.parentId) && !result.has(s.id)) { result.add(s.id); grew = true; }
+    }
+  }
+  return result;
+}
+
+// Replizierte JIRA-Tickets mit Eltern-Kind-Beziehung (JiraTicket.parentKey). Jeder Baum haengt an
+// einem Auftrag, damit Auftrags- und Ticketfilter zusammenpassen.
+const TICKETS = [
+  { key: 'NWP-100', summary: 'Portal-Ablösung',        type: 'Epic',    parent: null,      orderId: 1 },
+  { key: 'NWP-110', summary: 'Anmeldung und Rollen',   type: 'Story',   parent: 'NWP-100', orderId: 1 },
+  { key: 'NWP-111', summary: 'Rollenmodell entwerfen', type: 'Subtask', parent: 'NWP-110', orderId: 1 },
+  { key: 'NWP-112', summary: 'Anmeldemaske',           type: 'Subtask', parent: 'NWP-110', orderId: 1 },
+  { key: 'NWP-120', summary: 'Artikelsuche',           type: 'Story',   parent: 'NWP-100', orderId: 1 },
+  { key: 'NWP-121', summary: 'Suchindex aufbauen',     type: 'Subtask', parent: 'NWP-120', orderId: 1 },
+  { key: 'NWP-200', summary: 'Abrechnungslauf',        type: 'Epic',    parent: null,      orderId: 1 },
+  { key: 'NWP-210', summary: 'Rechnungsvorschau',      type: 'Story',   parent: 'NWP-200', orderId: 1 },
+
+  { key: 'SWM-300', summary: 'Datenübernahme',         type: 'Epic',    parent: null,      orderId: 2 },
+  { key: 'SWM-310', summary: 'Altbestand einlesen',    type: 'Story',   parent: 'SWM-300', orderId: 2 },
+  { key: 'SWM-311', summary: 'Feldabbildung klären',   type: 'Subtask', parent: 'SWM-310', orderId: 2 },
+  { key: 'SWM-320', summary: 'Abnahmetests',           type: 'Story',   parent: 'SWM-300', orderId: 2 },
+
+  { key: 'OSL-400', summary: 'Schnittstellen',         type: 'Epic',    parent: null,      orderId: 4 },
+  { key: 'OSL-410', summary: 'Tourenplanung anbinden', type: 'Story',   parent: 'OSL-400', orderId: 4 },
+  { key: 'OSL-411', summary: 'Fehlerbehandlung',       type: 'Subtask', parent: 'OSL-410', orderId: 4 },
+  { key: 'OSL-420', summary: 'Betriebsübergabe',       type: 'Story',   parent: 'OSL-400', orderId: 4 },
+];
+
+// Der Ticketbezug einer Buchung ist getippter Text: "NWP-110", "nwp-110" und "Nwp-110" meinen
+// dasselbe Ticket. Verglichen wird deshalb ueber den normalisierten Schluessel, angezeigt bleibt,
+// was in der Buchung steht.
+const normKey = k => (k || '').trim().toUpperCase();
+const TICKET_BY_KEY = new Map(TICKETS.map(t => [normKey(t.key), t]));
+const ticketFor = key => TICKET_BY_KEY.get(normKey(key));
+
+function ticketLevel(t) { let n = 0, c = t; while (c && c.parent) { n++; c = ticketFor(c.parent); } return n; }
+
+// Alle Nachfahren, nicht nur die direkten Kinder — eine Story unter einem Epic hat selbst Subtasks.
+function withDescendants(key) {
+  const result = new Set([normKey(key)]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const t of TICKETS) {
+      if (t.parent && result.has(normKey(t.parent)) && !result.has(normKey(t.key))) {
+        result.add(normKey(t.key)); grew = true;
+      }
+    }
+  }
+  return result;
+}
+
+// Mitarbeiterauftraege (Employeeorder): wer darf auf welchen Unterauftrag buchen. Daran haengt in
+// Salat, welche Auftraege eine Person ueberhaupt angeht - nicht daran, wo sie zufaellig gebucht hat.
+const EMPLOYEE_ORDERS = {
+  1: [11, 121, 122, 13],       // Abel        - Nordwind
+  2: [11, 12, 211, 22],        // Berger      - Nordwind und Südwerk
+  3: [211, 212, 22, 31, 32],   // Conrad      - Südwerk und Intern
+  4: [211, 212, 31],           // Diehl       - Südwerk und Intern
+  5: [411, 42, 32],            // Engel       - Ostsee und Intern
+  6: [121, 122, 411],          // Falk        - Nordwind und Ostsee
+  7: [42, 31, 32],             // Groth       - Ostsee und Intern
+  8: [11, 13, 22],             // Haas        - Nordwind und Südwerk
+};
+
+const TASKS = [
+  'Abstimmung mit dem Fachbereich', 'Review der Schnittstellenspezifikation', 'Fehleranalyse Import',
+  'Umsetzung Suchfilter', 'Testfälle ergänzt', 'Deployment vorbereitet', 'Refactoring Persistenzschicht',
+  'Sprint-Planung', 'Dokumentation aktualisiert', 'Performance-Messung', 'Onboarding-Gespräch',
+  'Störungsanalyse Produktion',
+];
+const STATUS = ['offen', 'freigegeben', 'abgenommen'];
+
+// Deterministischer Zufall, damit der Prototyp bei jedem Laden gleich aussieht.
+let seed = 20260924;
+function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+function pick(a) { return a[Math.floor(rnd() * a.length)]; }
+
+const TODAY = new Date(2026, 8, 24); // 24.09.2026 — der Prototyp rechnet mit festem "heute"
+
+const BOOKINGS = (() => {
+  const rows = [];
+  for (let back = 0; back < 400; back++) {
+    const d = new Date(TODAY); d.setDate(d.getDate() - back);
+    if (d.getDay() === 0 || d.getDay() === 6) continue;
+    const perDay = 2 + Math.floor(rnd() * 5);
+    for (let i = 0; i < perDay; i++) {
+      const emp = pick(EMPLOYEES);
+      const sub = SUBORDER_BY_ID.get(pick(EMPLOYEE_ORDERS[emp.id]));
+      const order = ORDERS.find(o => o.id === sub.orderId);
+      const minutes = (1 + Math.floor(rnd() * 12)) * 30;
+      // Der Ticketbezug ist freier Text (Timereport.ticketReference): meist ein repliziertes Ticket
+      // des Auftrags, manchmal nichts, gelegentlich ein Schluessel, den niemand repliziert hat.
+      const ownTickets = TICKETS.filter(t => t.orderId === order.id);
+      const roll = rnd();
+      let ticket = '';
+      if (ownTickets.length && roll < 0.62) ticket = pick(ownTickets).key;
+      else if (roll < 0.68) ticket = 'OPS-' + (10 + Math.floor(rnd() * 80));
+      // Ein Teil der Buchungen traegt den Schluessel klein geschrieben, wie er getippt wurde.
+      if (ticket && rnd() < 0.15) ticket = ticket.toLowerCase();
+      rows.push({
+        id: rows.length + 1,
+        date: new Date(d),
+        employeeId: emp.id, employee: emp.name, sign: emp.sign,
+        orderId: order.id, orderSign: order.sign, orderTitle: order.title, customer: order.customer,
+        suborderId: sub.id, suborderSign: sub.sign, suborderTitle: sub.title, invoiceable: sub.invoiceable,
+        task: pick(TASKS), ticket,
+        minutes, status: back < 20 ? 'offen' : pick(STATUS),
+      });
+    }
+  }
+  return rows.sort((a, b) => b.date - a.date);
+})();
+
+const BOOKING_BY_ID = new Map(BOOKINGS.map(b => [b.id, b]));
+
+// ══════════════════ Wer sieht was ══════════════════
+// Nachbildung von EmployeecontractService.getVisibleEmployeeContractsForAuthorizedUser(): der
+// Mitarbeiter sieht sich selbst, die People Lead zusaetzlich ihre Leute, die Managerin alles.
+// Die Auswahllisten zeigen nur, was daraus folgt - eine Liste, die Namen ohne Treffer anbietet,
+// verraet die Namensliste und stoert beim Suchen.
+const CURRENT_USER = EMPLOYEES.find(e => e.sign === 'cco');
+const LED_BY_CURRENT_USER = [4, 5]; // Diehl, Engel
+
+// Einzelfreigaben von Kolleginnen und Kollegen: AuthorizationRule der Kategorie TIMEREPORT. Das
+// Objekt einer Regel nennt zweierlei zugleich - wessen Buchungen und auf welchem Auftrag. Die vom
+// Aufrufer gebildeten Formen stehen in TimereportAuthorization.objectsOf:
+//   1453        jede Buchung auf diesem Auftrag
+//   1453/01     jede Buchung auf diesem Unterauftrag
+//   xx:1453     nur die Buchungen von xx dort
+//   xx:*        die Buchungen von xx auf jedem Auftrag
+const GRANTS = [
+  { object: 'hsc:*',       label: 'Haas, Sina — alle Buchungen (Vertretung)' },
+  { object: 'OS-2025-02',  label: 'OS-2025-02 — alle Buchungen aller Mitarbeiter' },
+];
+
+function grantedObjects(b) {
+  const sub = SUBORDER_BY_ID.get(b.suborderId);
+  return [b.orderSign, sub.sign, `${b.sign}:${b.orderSign}`, `${b.sign}:${sub.sign}`, `${b.sign}:*`];
+}
+
+function canRead(b) {
+  const role = document.getElementById('f-role').value;
+  if (role === 'manager') return true;
+  if (b.employeeId === CURRENT_USER.id) return true;
+  if (role === 'peopleLead' && LED_BY_CURRENT_USER.includes(b.employeeId)) return true;
+  const objects = grantedObjects(b);
+  return GRANTS.some(g => objects.includes(g.object));
+}
+
+function visibleBookings() {
+  return BOOKINGS.filter(canRead);
+}
+
+// Eine Quelle fuer alle Auswahllisten: in den Filtern steht genau, was in den zugaenglichen
+// Buchungen vorkommt. Was keinen Treffer liefern koennte, wird gar nicht erst angeboten - das
+// verraet keine Namen und schickt niemanden in eine leere Liste. Vorfahren kommen dazu, sonst
+// haette der Baum Luecken, durch die man nicht navigieren kann.
+let scope = { employees: new Set(), customers: new Set(), orders: new Set(), subs: new Set(), tickets: new Set() };
+
+function recomputeScope() {
+  const employees = new Set(), customers = new Set(), orders = new Set(), subs = new Set(), tickets = new Set();
+  visibleBookings().forEach(b => {
+    employees.add(b.employeeId);
+    customers.add(b.customer);
+    orders.add(b.orderId);
+    subs.add(b.suborderId);
+    if (b.ticket) tickets.add(normKey(b.ticket));
+  });
+  [...subs].forEach(id => {
+    let p = SUBORDER_BY_ID.get(id)?.parentId;
+    while (p) { subs.add(p); p = SUBORDER_BY_ID.get(p)?.parentId; }
+  });
+  [...tickets].forEach(k => {
+    let parent = ticketFor(k)?.parent;
+    while (parent) { tickets.add(normKey(parent)); parent = ticketFor(parent)?.parent; }
+  });
+  scope = { employees, customers, orders, subs, tickets };
+}
+
+function applyRole() {
+  recomputeScope();
+  const visible = scope.employees;
+
+  const keep = [...tsEmployees.getValue()].filter(v => visible.has(Number(v)));
+  tsEmployees.clear(true);
+  tsEmployees.clearOptions();
+  EMPLOYEES.filter(e => visible.has(e.id)).forEach(e =>
+    tsEmployees.addOption({ value: String(e.id), text: `${e.name} | ${e.sign}` }));
+  tsEmployees.refreshOptions(false);
+  keep.forEach(v => tsEmployees.addItem(v, true));
+
+  const keepCustomers = [...tsCustomers.getValue()].filter(v => scope.customers.has(v));
+  tsCustomers.clear(true);
+  tsCustomers.clearOptions();
+  [...scope.customers].sort().forEach(c => tsCustomers.addOption({ value: c, text: c }));
+  tsCustomers.refreshOptions(false);
+  keepCustomers.forEach(v => tsCustomers.addItem(v, true));
+
+  // Eine Auswahl, die jetzt niemand mehr sehen darf, faellt weg statt heimlich weiterzuwirken.
+  state.orderKeys = state.orderKeys.filter(key => {
+    const id = Number(key.slice(2));
+    return key.startsWith('o:') ? scope.orders.has(id) : scope.subs.has(id);
+  });
+  state.ticketKeys = state.ticketKeys.filter(k => scope.tickets.has(normKey(k)));
+  updateOrderSummary();
+  updateTicketSummary();
+  renderAccessHint();
+  applyFilter();
+}
+
+// Die Seite sagt, woher die Sichtbarkeit kommt - sonst bleibt unerklaerlich, warum eine Kollegin in
+// der Liste steht und die daneben nicht.
+function renderAccessHint() {
+  const role = document.getElementById('f-role').value;
+  const parts = ['eigene Buchungen'];
+  if (role === 'manager') {
+    parts.length = 0;
+    parts.push('alle Buchungen (Rolle Manager)');
+  } else {
+    if (role === 'peopleLead') {
+      parts.push('Betreute: ' + LED_BY_CURRENT_USER
+        .map(id => EMPLOYEES.find(e => e.id === id).sign).join(', '));
+    }
+    GRANTS.forEach(g => parts.push(`Einzelfreigabe ${g.object}`));
+  }
+  document.getElementById('employee-hint').textContent = 'Sichtbar: ' + parts.join(' · ');
+}
+
+// ══════════════════ Formatierung ══════════════════
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fmtDuration = m => `${Math.floor(m / 60)}:${pad(m % 60)}`;
+const ym = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+
+// ══════════════════ Monatsauswahl (Nachbau von fragments/month-picker) ══════════════════
+function buildMonthPicker(host) {
+  const input = document.getElementById(host.dataset.target);
+  host.innerHTML = `
+    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-label
+            data-bs-toggle="dropdown" data-bs-auto-close="outside"></button>
+    <div class="dropdown-menu p-2" style="min-width: 16rem">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary" data-year="-1"><i class="ti ti-chevron-left m-0"></i></button>
+        <span class="fw-bold" data-year-label></span>
+        <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary" data-year="1"><i class="ti ti-chevron-right m-0"></i></button>
+      </div>
+      <div class="row row-cols-3 g-1" data-months></div>
+    </div>`;
+
+  let shownYear = Number(input.value.slice(0, 4));
+
+  function render() {
+    const [y, m] = input.value.split('-').map(Number);
+    host.querySelector('[data-label]').textContent = `${MONTHS[m - 1]} ${y}`;
+    host.querySelector('[data-year-label]').textContent = shownYear;
+    host.querySelector('[data-months]').innerHTML = MONTHS.map((name, idx) => `
+      <div class="col"><button type="button" class="btn btn-sm w-100 text-nowrap ${idx + 1 === m && shownYear === y ? 'btn-primary' : 'btn-ghost-secondary'}"
+           data-month="${idx + 1}">${name}</button></div>`).join('');
+  }
+
+  host.addEventListener('click', e => {
+    const year = e.target.closest('[data-year]');
+    const month = e.target.closest('[data-month]');
+    if (year) {
+      shownYear += Number(year.dataset.year); render();
+      return;
+    }
+    // Jede Benutzung der Monatsauswahl waehlt zugleich den Monatsmodus - auch das blosse Aufklappen,
+    // damit der Knopf nicht angefasst aussieht, ohne dass sich der Zeitraum aendert.
+    document.getElementById('mode-month').checked = true;
+    switchPeriodMode();
+    if (month) {
+      input.value = `${shownYear}-${pad(month.dataset.month)}`;
+      render();
+      // Tabler legt die Bootstrap-Komponenten unter tabler.bootstrap ab, so wie salat.js sie nutzt.
+      tabler.bootstrap.Dropdown.getOrCreateInstance(host.querySelector('[data-label]')).hide();
+    }
+    applyFilter();
+  });
+
+  host.render = render;
+  render();
+}
+
+// ══════════════════ Filter ══════════════════
+let state = { sort: 'date', dir: 'desc', limit: 500, rows: [],
+              orderKeys: [],
+              ticketKeys: [], expandedTickets: new Set(), ticketChildren: true };
+let tsEmployees, tsCustomers, tsLimit;
+
+function currentPeriod() {
+  if (document.getElementById('mode-month').checked) {
+    const [y, m] = document.getElementById('f-month').value.split('-').map(Number);
+    return { from: new Date(y, m - 1, 1), to: new Date(y, m, 0) };
+  }
+  const from = document.getElementById('f-date-from').value;
+  const to = document.getElementById('f-date-to').value;
+  return {
+    from: from ? new Date(from + 'T00:00:00') : new Date(1970, 0, 1),
+    to: to ? new Date(to + 'T00:00:00') : new Date(2999, 0, 1),
+  };
+}
+
+function applyFilter() {
+  const emps = tsEmployees.getValue().map(Number);
+  const customers = [...tsCustomers.getValue()];
+  const { orders, subs } = selectedSuborderIds();
+  const invoiceable = document.querySelector('input[name="invoiceable"]:checked').value;
+  const { from, to } = currentPeriod();
+  const limit = document.getElementById('f-limit').value;
+  state.limit = limit === 'all' ? Infinity : Number(limit);
+
+  // Ticketfilter: die im Modal uebernommenen Schluessel, bei eingeschaltetem Schalter samt aller
+  // Nachfahren. Ein selbst eingetragener Schluessel ohne repliziertes Ticket bleibt allein.
+  const keys = new Set();
+  state.ticketKeys.forEach(k =>
+    (state.ticketChildren ? withDescendants(k) : new Set([k])).forEach(x => keys.add(x)));
+  state.expandedTickets = keys;
+
+  state.rows = visibleBookings().filter(b =>
+    (emps.length === 0 || emps.includes(b.employeeId)) &&
+    (customers.length === 0 || customers.includes(b.customer)) &&
+    (orders.size + subs.size === 0 || orders.has(b.orderId) || subs.has(b.suborderId)) &&
+    (keys.size === 0 || keys.has(normKey(b.ticket))) &&
+    (invoiceable === 'all' || b.invoiceable === (invoiceable === 'yes')) &&
+    b.date >= from && b.date <= to);
+
+  renderAll();
+}
+
+function resetFilter() {
+  tsEmployees.clear();
+  tsCustomers.clear();
+  state.orderKeys = [];
+  updateOrderSummary();
+  state.ticketKeys = []; state.ticketChildren = true;
+  document.getElementById('f-ticket-children').checked = true;
+  updateTicketSummary();
+  document.getElementById('inv-all').checked = true;
+  tsLimit.setValue('500', true);
+  document.getElementById('mode-month').checked = true;
+  switchPeriodMode();
+  preset('thisMonth');
+}
+
+// Ein Monat und ein freier Zeitraum sind zwei Betriebsarten, keine Mischform: "Dieser Monat" und
+// "Letzter Monat" stellen den Monat ein, alles Laengere schaltet auf den taggenauen Zeitraum um.
+function preset(which) {
+  const monthMode = document.getElementById('mode-month');
+  const rangeMode = document.getElementById('mode-range');
+  if (which === 'thisMonth' || which === 'lastMonth') {
+    const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - (which === 'lastMonth' ? 1 : 0), 1);
+    monthMode.checked = true;
+    document.getElementById('f-month').value = ym(d);
+    document.querySelectorAll('[data-month-picker]').forEach(h => h.render());
+  } else {
+    rangeMode.checked = true;
+    const from = which === 'thisYear'
+      ? new Date(TODAY.getFullYear(), 0, 1)
+      : new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate() - 29);
+    document.getElementById('f-date-from').value = isoDate(from);
+    document.getElementById('f-date-to').value = isoDate(TODAY);
+  }
+  switchPeriodMode();
+  applyFilter();
+}
+
+function switchPeriodMode() {
+  const month = document.getElementById('mode-month').checked;
+  // Der Monatsknopf traegt seinen Zustand selbst, denn er hat kein btn-check-Label ueber sich.
+  document.querySelectorAll('[data-month-picker] [data-label]')
+    .forEach(btn => btn.classList.toggle('active', month));
+  document.getElementById('period-range').classList.toggle('d-none', month);
+}
+
+// ══════════════════ Darstellung ══════════════════
+function sortedRows() {
+  const key = state.sort, dir = state.dir === 'asc' ? 1 : -1;
+  const value = b => ({
+    date: b.date.getTime(), employee: b.employee, order: b.orderSign,
+    suborder: b.suborderSign, duration: b.minutes,
+  })[key];
+  return [...state.rows].sort((a, b) => {
+    const va = value(a), vb = value(b);
+    return (va > vb ? 1 : va < vb ? -1 : 0) * dir;
+  });
+}
+
+// ══════════════════ Sprung von der Zeile in die Buchung ══════════════════
+// Der Klick auf die Zeile oeffnet die Buchung; das Datum ist zusaetzlich ein echter Link, damit die
+// Zeile auch mit der Tastatur und dem Screenreader erreichbar bleibt - eine ganze Zeile mit
+// tabindex waere ein Tabstopp je Buchung.
+let openBookingId = null;
+
+function openBooking(id) {
+  const b = BOOKING_BY_ID.get(id);
+  if (!b) return;
+  openBookingId = id;
+
+  const locked = b.status === 'abgenommen';
+  document.getElementById('booking-modal-title').textContent =
+    `Buchung vom ${fmtDate(b.date)} · ${b.sign}`;
+
+  const line = (label, value) =>
+    `<dt class="col-4 text-secondary fw-normal">${label}</dt><dd class="col-8">${value}</dd>`;
+  document.getElementById('booking-detail').innerHTML = [
+    line('Datum', fmtDate(b.date)),
+    line('Mitarbeiter', `${b.employee} <span class="text-secondary">| ${b.sign}</span>`),
+    line('Auftraggeber', b.customer),
+    line('Auftrag', `${b.orderSign} <span class="text-secondary">${b.orderTitle}</span>`),
+    line('Unterauftrag', `${b.suborderSign} <span class="text-secondary">${b.suborderTitle}</span>`),
+    line('Ticket', b.ticket ? ticketCell(b.ticket) : '<span class="text-secondary">–</span>'),
+    line('Tätigkeit', b.task),
+    line('Dauer', `<span class="fw-medium">${fmtDuration(b.minutes)}</span> Stunden`),
+    line('Fakturierbar', b.invoiceable
+      ? '<span class="text-green">ja</span>'
+      : '<span class="text-secondary">nein</span>'),
+    line('Status', statusBadge(b.status)),
+  ].join('');
+
+  const edit = document.getElementById('booking-edit');
+  edit.disabled = locked;
+  document.getElementById('booking-lock').textContent = locked
+    ? 'Abgenommene Buchungen lassen sich nicht mehr ändern.' : '';
+}
+
+function editBooking() {
+  const b = BOOKING_BY_ID.get(openBookingId);
+  toast(`In der Anwendung öffnet das die Buchung ${b.suborderSign} vom ${fmtDate(b.date)} `
+        + 'zum Bearbeiten (/dailyreport/timereports/' + b.id + ').');
+}
+
+// ══════════════════ Auftragsauswahl im Modal ══════════════════
+// Gleiche Bauart wie die Ticketauswahl: Baum, Suche, Ebenenfilter, Entwurf bis "Uebernehmen".
+// Ein Eintrag ist entweder ein Auftrag ("o:1") oder ein Unterauftrag ("s:12").
+let orderDraft = { keys: new Set(), types: new Set() };
+
+const ORDER_LEVELS = ['Auftrag', 'Unterauftrag'];
+
+function openOrderModal() {
+  orderDraft = { keys: new Set(state.orderKeys), types: new Set() };
+  document.getElementById('order-search').value = '';
+  renderOrderLevelFilter();
+  renderOrderTree();
+}
+
+function renderOrderLevelFilter() {
+  document.getElementById('order-type-filter').innerHTML = ORDER_LEVELS.map(level => `
+    <input type="checkbox" class="btn-check" id="level-${level}" data-level="${level}"
+           ${orderDraft.types.has(level) ? 'checked' : ''}>
+    <label class="btn btn-sm" for="level-${level}">${level}</label>`).join('');
+}
+
+function renderOrderTree() {
+  const q = document.getElementById('order-search').value.trim().toLowerCase();
+  const level = lvl => orderDraft.types.size === 0 || orderDraft.types.has(lvl);
+  const hitOrder = o => level('Auftrag') && scope.orders.has(o.id)
+    && (!q || `${o.sign} ${o.title} ${o.customer}`.toLowerCase().includes(q));
+  const hitSub = s => level('Unterauftrag') && scope.subs.has(s.id)
+    && (!q || `${s.sign} ${s.title}`.toLowerCase().includes(q));
+
+  const visibleOrders = new Set(ORDERS.filter(hitOrder).map(o => o.id));
+  const visibleSubs = new Set(SUBORDERS.filter(hitSub).map(s => s.id));
+
+  const row = (key, label, title, context, badge, extra, indent) => `
+    <label class="list-group-item d-flex align-items-center gap-2"
+           style="padding-left: ${0.75 + indent * 1.5}rem">
+      <input class="form-check-input m-0" type="checkbox" data-order="${key}"
+             ${orderDraft.keys.has(key) ? 'checked' : ''}>
+      <span class="fw-medium text-nowrap">${label}</span>
+      <span class="text-secondary text-truncate">${title}</span>
+      ${context ? `<span class="text-secondary small text-nowrap">${context}</span>` : ''}
+      <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+        ${extra ? `<span class="text-secondary small">${extra}</span>` : ''}
+        <span class="badge bg-secondary-lt">${badge}</span>
+      </span>
+    </label>`;
+
+  const rows = [];
+  ORDERS.forEach(o => {
+    if (visibleOrders.has(o.id)) {
+      const count = SUBORDERS.filter(s => s.orderId === o.id).length;
+      rows.push(row(`o:${o.id}`, o.sign, `${o.title} · ${o.customer}`, '',
+                    'Auftrag', count ? `${count} Unteraufträge` : '', 0));
+    }
+    SUBORDERS.filter(s => s.orderId === o.id && visibleSubs.has(s.id)).forEach(s => {
+      const parentShown = s.parentId ? visibleSubs.has(s.parentId) : visibleOrders.has(o.id);
+      const indent = parentShown ? suborderLevel(s) + 1 : 0;
+      const context = parentShown ? ''
+        : (s.parentId ? `unter ${SUBORDER_BY_ID.get(s.parentId).sign}` : `in ${o.sign}`);
+      const kids = suborderWithDescendants(s.id).size - 1;
+      rows.push(row(`s:${s.id}`, s.sign, s.title, context, 'Unterauftrag',
+                    kids ? `+${kids} untergeordnete` : '', indent));
+    });
+  });
+
+  document.getElementById('order-tree').innerHTML = rows.join('')
+    || '<div class="list-group-item text-secondary">Kein Auftrag passt zu Suche und Ebene.</div>';
+
+  const included = new Set();
+  orderDraft.keys.forEach(key => {
+    const id = Number(key.slice(2));
+    if (key.startsWith('o:')) SUBORDERS.filter(su => su.orderId === id).forEach(su => included.add(su.id));
+    else suborderWithDescendants(id).forEach(x => included.add(x));
+  });
+  document.getElementById('order-included').textContent = orderDraft.keys.size === 0
+    ? 'Ohne Auswahl gilt kein Auftragsfilter.'
+    : `Die Auswahl schließt ${included.size} ${included.size === 1 ? 'Unterauftrag' : 'Unteraufträge'} ein.`;
+}
+
+function commitOrders() {
+  state.orderKeys = [...orderDraft.keys];
+  updateOrderSummary();
+  applyFilter();
+}
+
+function clearOrders() {
+  state.orderKeys = [];
+  updateOrderSummary();
+  applyFilter();
+}
+
+// Eine Buchung haengt immer an einem Unterauftrag, nie am Auftrag selbst. Ein gewaehlter Auftrag
+// meint deshalb stets seinen ganzen Baum; der Schalter entscheidet nur ueber die Unterauftraege
+// unterhalb eines gewaehlten Unterauftrags.
+// Ein gewaehlter Unterauftrag schliesst seine Nachfahren immer ein - gebucht wird auf dem Blatt,
+// ohne sie traefe ein Unterauftrag mit Kindern nichts. Wie viele es sind, sagt der Infotext.
+function selectedSuborderIds() {
+  const orders = new Set();
+  const subs = new Set();
+  state.orderKeys.forEach(key => {
+    const id = Number(key.slice(2));
+    if (key.startsWith('o:')) orders.add(id);
+    else suborderWithDescendants(id).forEach(x => subs.add(x));
+  });
+  return { orders, subs };
+}
+
+// Alle Unterauftraege, die die Auswahl umfasst - auch die, die man nicht selbst angehakt hat.
+function includedSuborderIds() {
+  const { orders, subs } = selectedSuborderIds();
+  const all = new Set(subs);
+  SUBORDERS.filter(su => orders.has(su.orderId)).forEach(su => all.add(su.id));
+  return all;
+}
+
+// Die Auftraege, auf die die uebrigen Filter die Ticketsuche einengen (Auftraggeber und Auswahl).
+function selectedOrderIds() {
+  const ids = new Set();
+  const { orders, subs } = selectedSuborderIds();
+  orders.forEach(id => ids.add(id));
+  subs.forEach(id => ids.add(SUBORDER_BY_ID.get(id).orderId));
+  const customers = tsCustomers ? tsCustomers.getValue() : [];
+  if (customers.length) ORDERS.filter(o => customers.includes(o.customer)).forEach(o => ids.add(o.id));
+  return ids;
+}
+
+function updateOrderSummary() {
+  const keys = state.orderKeys;
+  const orders = keys.filter(k => k.startsWith('o:')).length;
+  const subs = keys.length - orders;
+
+  document.getElementById('order-summary').textContent = keys.length === 0
+    ? 'Alle Aufträge'
+    : (keys.length === 1
+        ? (keys[0].startsWith('o:')
+            ? ORDERS.find(o => o.id === Number(keys[0].slice(2))).sign
+            : SUBORDER_BY_ID.get(Number(keys[0].slice(2))).sign)
+        : `${keys.length} Einträge`);
+
+  const parts = [];
+  if (orders) parts.push(`${orders} ${orders === 1 ? 'Auftrag' : 'Aufträge'}`);
+  if (subs) parts.push(`${subs} ${subs === 1 ? 'Unterauftrag' : 'Unteraufträge'}`);
+  const included = includedSuborderIds().size;
+  if (included) parts.push(`${included} ${included === 1 ? 'Unterauftrag' : 'Unteraufträge'} eingeschlossen`);
+  document.getElementById('order-detail').textContent = keys.length === 0
+    ? 'keine Einschränkung' : parts.join(' · ');
+  document.getElementById('order-clear').classList.toggle('d-none', keys.length === 0);
+}
+
+// ══════════════════ Ticketauswahl im Modal ══════════════════
+// Der Entwurf lebt nur, solange das Modal offen ist: "Abbrechen" laesst die Auswahl der Liste
+// unangetastet, erst "Uebernehmen" schreibt sie zurueck und filtert neu.
+let ticketDraft = { keys: new Set(), children: true, types: new Set() };
+
+// Die Typen kommen aus den Daten, nicht aus einer festen Liste - eine Replikation kann morgen
+// einen weiteren Typ mitbringen.
+const TICKET_TYPES = [...new Set(TICKETS.map(t => t.type))];
+
+function openTicketModal() {
+  ticketDraft = { keys: new Set(state.ticketKeys), children: state.ticketChildren, types: new Set() };
+  document.getElementById('f-ticket-children').checked = ticketDraft.children;
+  document.getElementById('ticket-search').value = '';
+  document.getElementById('ticket-manual').value = '';
+  renderTypeFilter();
+  renderTicketTree();
+}
+
+// Leere Auswahl heisst "alle Typen" - dieselbe Lesart wie bei Mitarbeitern und Auftraegen.
+function renderTypeFilter() {
+  document.getElementById('ticket-type-filter').innerHTML = TICKET_TYPES.map(type => `
+    <input type="checkbox" class="btn-check" id="type-${type}" data-type="${type}"
+           ${ticketDraft.types.has(type) ? 'checked' : ''}>
+    <label class="btn btn-sm" for="type-${type}">${type}</label>`).join('');
+}
+
+function renderTicketTree() {
+  const q = document.getElementById('ticket-search').value.trim().toLowerCase();
+  // Ticketsuche laeuft ueber die Scopes der gewaehlten Auftraege - ohne Auftragsauswahl ueber alle
+  // zugaenglichen. Derselbe Schluessel kann in mehreren Scopes liegen (JiraTicket.scopeSign).
+  const orderScope = selectedOrderIds();
+  const hit = t =>
+    (!q || t.key.toLowerCase().includes(q) || t.summary.toLowerCase().includes(q))
+    && (ticketDraft.types.size === 0 || ticketDraft.types.has(t.type))
+    && scope.tickets.has(normKey(t.key))
+    && (orderScope.size === 0 || orderScope.has(t.orderId));
+
+  // Gezeigt wird nur, was zutrifft - ein nicht gewaehlter Typ verschwindet, auch wenn Kinder von ihm
+  // in der Liste stehen. Damit die uebrig gebliebene Zeile trotzdem einzuordnen ist, tritt an die
+  // Stelle der Einrueckung der Hinweis, unter welchem Ticket sie haengt, sobald das nicht mehr
+  // darueber steht.
+  const visible = new Set(TICKETS.filter(hit).map(t => t.key));
+
+  const rows = TICKETS.filter(t => visible.has(t.key)).map(t => {
+    const parentShown = t.parent && visible.has(t.parent);
+    const level = parentShown ? ticketLevel(t) : 0;
+    const kids = withDescendants(t.key).size - 1;
+    const checked = ticketDraft.keys.has(normKey(t.key));
+    return `
+      <label class="list-group-item d-flex align-items-center gap-2"
+             style="padding-left: ${0.75 + level * 1.5}rem">
+        <input class="form-check-input m-0" type="checkbox" data-ticket="${t.key}" ${checked ? 'checked' : ''}>
+        <span class="fw-medium text-nowrap">${t.key}</span>
+        <span class="text-secondary text-truncate">${t.summary}</span>
+        ${!parentShown && t.parent ? `<span class="text-secondary small text-nowrap">unter ${t.parent}</span>` : ''}
+        <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+          ${kids && ticketDraft.children ? `<span class="text-secondary small">+${kids} untergeordnete</span>` : ''}
+          <span class="badge bg-secondary-lt">${t.type}</span>
+        </span>
+      </label>`;
+  }).join('');
+
+  document.getElementById('ticket-tree').innerHTML = rows
+    || '<div class="list-group-item text-secondary">Kein Ticket passt zu Suche und Typ.</div>';
+  renderManualList();
+}
+
+function renderManualList() {
+  const manual = [...ticketDraft.keys].filter(k => !ticketFor(k));
+  document.getElementById('ticket-manual-list').innerHTML = manual.length
+    ? manual.map(k => `<span class="badge bg-secondary-lt me-1 mb-1">${k}
+        <a href="#" class="ms-1" onclick="event.preventDefault(); removeManualTicket('${k}')"
+           aria-label="Entfernen"><i class="ti ti-x"></i></a></span>`).join('')
+    : '';
+}
+
+function addManualTicket() {
+  const field = document.getElementById('ticket-manual');
+  const key = normKey(field.value);
+  if (!/^[A-Z][A-Z0-9]*-\d+$/.test(key)) { field.focus(); return; }
+  ticketDraft.keys.add(key);
+  field.value = '';
+  renderTicketTree();
+}
+
+function removeManualTicket(key) { ticketDraft.keys.delete(key); renderManualList(); }
+
+function commitTickets() {
+  state.ticketKeys = [...ticketDraft.keys];
+  state.ticketChildren = ticketDraft.children;
+  updateTicketSummary();
+  applyFilter();
+}
+
+function clearTickets() {
+  state.ticketKeys = [];
+  updateTicketSummary();
+  applyFilter();
+}
+
+function updateTicketSummary() {
+  const keys = state.ticketKeys;
+  const expanded = new Set();
+  keys.forEach(k => (state.ticketChildren ? withDescendants(k) : new Set([k])).forEach(x => expanded.add(x)));
+  const extra = expanded.size - keys.length;
+
+  document.getElementById('ticket-summary').textContent = keys.length === 0
+    ? 'Alle Tickets'
+    : (keys.length === 1 ? keys[0] : `${keys.length} Tickets`);
+  document.getElementById('ticket-detail').textContent = keys.length === 0
+    ? 'keine Einschränkung'
+    : (state.ticketChildren
+        ? (extra ? `inklusive ${extra} untergeordneter` : 'inklusive untergeordneter, hier ohne')
+        : 'ohne untergeordnete');
+  document.getElementById('ticket-clear').classList.toggle('d-none', keys.length === 0);
+}
+
+// Der Ticketbezug einer Buchung ist Text. Ist er ein repliziertes Ticket, steht darunter, wo es im
+// Baum haengt; ist er es nicht, sagt die Zeile genau das - dort greift kein "inklusive Kinder".
+function ticketCell(key) {
+  if (!key) return '<span class="text-secondary">–</span>';
+  const t = ticketFor(key);
+  if (!t) return `${key}
+    <i class="ti ti-help-circle text-secondary ms-1" title="Nicht repliziert – ohne Hierarchie"></i>`;
+  return `${key}
+    <br><span class="text-secondary small">${t.parent ? 'unter ' + t.parent : t.type}</span>`;
+}
+
+const statusBadge = s => ({
+  'offen': '<span class="badge bg-secondary-lt">offen</span>',
+  'freigegeben': '<span class="badge bg-azure-lt">freigegeben</span>',
+  'abgenommen': '<span class="badge bg-green-lt">abgenommen</span>',
+})[s];
+
+function renderAll() {
+  const rows = sortedRows();
+  const total = rows.reduce((s, b) => s + b.minutes, 0);
+  const billable = rows.filter(b => b.invoiceable).reduce((s, b) => s + b.minutes, 0);
+  const num = n => n.toLocaleString('de-DE');
+
+  document.getElementById('kpi-count').textContent = num(rows.length);
+  document.getElementById('kpi-hours').textContent = fmtDuration(total);
+  document.getElementById('kpi-invoiceable').textContent = fmtDuration(billable);
+  document.getElementById('kpi-spread').textContent =
+    `${new Set(rows.map(b => b.employeeId)).size} / ${new Set(rows.map(b => b.orderId)).size}`;
+
+  // Die Kennzahlen und die Summe beziehen sich auf den ganzen Treffersatz; die Obergrenze
+  // beschneidet nur die dargestellten Zeilen.
+  const shown = rows.slice(0, state.limit === Infinity ? rows.length : state.limit);
+  const truncated = shown.length < rows.length;
+
+  document.getElementById('export-button').disabled = false;
+  document.getElementById('result-title').textContent = `Buchungen (${num(rows.length)})`;
+  document.getElementById('foot-sum').textContent = fmtDuration(total);
+  const extraTickets = state.expandedTickets.size - state.ticketKeys.length;
+  const ticketInfo = state.ticketKeys.length && state.ticketChildren && extraTickets > 0
+    ? ` · Ticketfilter: ${state.ticketKeys.length} gewählt + ${extraTickets} untergeordnete`
+    : '';
+  document.getElementById('result-info').textContent = rows.length
+    ? (truncated
+        ? `Angezeigt: ${num(shown.length)} von ${num(rows.length)} Buchungen · Summe und Kennzahlen gelten für alle ${num(rows.length)}${ticketInfo}`
+        : `${num(rows.length)} Buchungen${ticketInfo}`)
+    : `Keine Buchungen im gewählten Zeitraum${ticketInfo}`;
+
+  const hint = document.getElementById('limit-hint');
+  hint.classList.toggle('d-none', !truncated);
+  if (truncated) {
+    document.getElementById('limit-hint-text').innerHTML =
+      `Die Anzeige ist auf <strong>${num(shown.length)}</strong> Treffer begrenzt, der Filter trifft `
+      + `<strong>${num(rows.length)}</strong>. Zeitraum enger fassen oder die maximale Anzahl erhöhen — `
+      + `der Excel-Export enthält alle ${num(rows.length)} Buchungen.`;
+  }
+
+  document.getElementById('bookings-body').innerHTML = shown.length ? shown.map(b => `
+    <tr data-booking="${b.id}">
+      <td class="text-nowrap">
+        <a href="#" class="booking-open" data-booking="${b.id}">${fmtDate(b.date)}</a>
+      </td>
+      <td class="text-nowrap">${b.employee} <span class="text-secondary">| ${b.sign}</span></td>
+      <td class="text-nowrap"><span class="fw-medium">${b.orderSign}</span><br>
+          <span class="text-secondary small">${b.customer}</span></td>
+      <td class="text-nowrap">${b.suborderSign}<br><span class="text-secondary small">${b.suborderTitle}</span></td>
+      <td class="col-task text-truncate" title="${b.task}">${b.task}</td>
+      <td class="d-none d-xl-table-cell text-nowrap">${ticketCell(b.ticket)}</td>
+      <td class="text-end text-nowrap">${fmtDuration(b.minutes)}</td>
+      <td class="text-center">${b.invoiceable
+        ? '<i class="ti ti-check text-green" title="fakturierbar"></i>'
+        : '<i class="ti ti-minus text-secondary" title="nicht fakturierbar"></i>'}</td>
+      <td class="text-center d-none d-lg-table-cell">${statusBadge(b.status)}</td>
+    </tr>`).join('')
+    : `<tr><td colspan="9" class="text-center text-secondary py-4">Keine Buchungen gefunden.</td></tr>`;
+
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.classList.toggle('sorted-asc', th.dataset.sort === state.sort && state.dir === 'asc');
+    th.classList.toggle('sorted-desc', th.dataset.sort === state.sort && state.dir === 'desc');
+    const icon = th.querySelector('.ti');
+    icon.className = th.dataset.sort === state.sort
+      ? (state.dir === 'asc' ? 'ti ti-sort-ascending' : 'ti ti-sort-descending')
+      : 'ti ti-arrows-sort';
+  });
+}
+
+// ══════════════════ Export ══════════════════
+function exportExcel() {
+  const rows = sortedRows();
+  const head = ['Datum', 'Kürzel', 'Mitarbeiter', 'Auftraggeber', 'Auftrag', 'Unterauftrag',
+                'Tätigkeit', 'Ticket', 'Übergeordnetes Ticket', 'Dauer (h:mm)', 'Dauer (dezimal)',
+                'Fakturierbar', 'Status'];
+  const body = rows.map(b => [fmtDate(b.date), b.sign, b.employee, b.customer,
+    `${b.orderSign} ${b.orderTitle}`, `${b.suborderSign} ${b.suborderTitle}`, b.task, b.ticket,
+    (ticketFor(b.ticket)?.parent) ?? '',
+    fmtDuration(b.minutes), (b.minutes / 60).toFixed(2).replace('.', ','),
+    b.invoiceable ? 'ja' : 'nein', b.status]);
+  const csv = [head, ...body]
+    .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `buchungen_${isoDate(currentPeriod().from)}_${isoDate(currentPeriod().to)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`${rows.length} Buchungen exportiert. In der Anwendung wird daraus eine .xlsx-Datei.`);
+}
+
+function toast(text) {
+  const el = document.createElement('div');
+  el.className = 'alert alert-success position-fixed bottom-0 end-0 m-3 shadow';
+  el.style.zIndex = 1080;
+  el.innerHTML = `<i class="ti ti-circle-check me-2"></i>${text}`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function setTheme(mode) { document.documentElement.setAttribute('data-bs-theme', mode); }
+
+// ══════════════════ Start ══════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const empSelect = document.getElementById('f-employees');
+  empSelect.innerHTML = EMPLOYEES.map(e => `<option value="${e.id}">${e.name} | ${e.sign}</option>`).join('');
+  const tsOptions = { maxItems: null, plugins: ['remove_button'], hidePlaceholder: false };
+  tsEmployees = new TomSelect(empSelect, tsOptions);
+  tsCustomers = new TomSelect(document.getElementById('f-customers'), tsOptions);
+  tsLimit = new TomSelect(document.getElementById('f-limit'), { maxItems: 1, controlInput: null });
+
+  document.getElementById('current-user').textContent = `${CURRENT_USER.name} (${CURRENT_USER.sign})`;
+  document.getElementById('f-role').addEventListener('change', applyRole);
+  recomputeScope();
+
+  const bookingModal = document.getElementById('booking-modal');
+  document.getElementById('bookings-body').addEventListener('click', e => {
+    const row = e.target.closest('tr[data-booking]');
+    if (!row) return;
+    // Sollte die Zeile einmal einen eigenen Link tragen, bleibt der ein Link und oeffnet nicht den
+    // Dialog; das Datum ist der Griff der Zeile.
+    if (e.target.closest('a') && !e.target.closest('.booking-open')) return;
+    e.preventDefault();
+    openBooking(Number(row.dataset.booking));
+    tabler.bootstrap.Modal.getOrCreateInstance(bookingModal).show();
+  });
+  document.getElementById('booking-edit').addEventListener('click', editBooking);
+
+  const orderModal = document.getElementById('order-modal');
+  orderModal.addEventListener('show.bs.modal', openOrderModal);
+  orderModal.addEventListener('shown.bs.modal', () => document.getElementById('order-search').focus());
+  document.getElementById('order-search').addEventListener('input', renderOrderTree);
+  document.getElementById('order-type-filter').addEventListener('change', e => {
+    const box = e.target.closest('[data-level]');
+    if (!box) return;
+    box.checked ? orderDraft.types.add(box.dataset.level) : orderDraft.types.delete(box.dataset.level);
+    renderOrderTree();
+  });
+  document.getElementById('order-tree').addEventListener('change', e => {
+    const box = e.target.closest('[data-order]');
+    if (!box) return;
+    box.checked ? orderDraft.keys.add(box.dataset.order) : orderDraft.keys.delete(box.dataset.order);
+    renderOrderTree();
+  });
+  updateOrderSummary();
+
+  const modal = document.getElementById('ticket-modal');
+  modal.addEventListener('show.bs.modal', openTicketModal);
+  modal.addEventListener('shown.bs.modal', () => document.getElementById('ticket-search').focus());
+  document.getElementById('ticket-search').addEventListener('input', renderTicketTree);
+  document.getElementById('ticket-type-filter').addEventListener('change', e => {
+    const box = e.target.closest('[data-type]');
+    if (!box) return;
+    box.checked ? ticketDraft.types.add(box.dataset.type) : ticketDraft.types.delete(box.dataset.type);
+    renderTicketTree();
+  });
+  document.getElementById('ticket-tree').addEventListener('change', e => {
+    const box = e.target.closest('[data-ticket]');
+    if (!box) return;
+    const key = normKey(box.dataset.ticket);
+    box.checked ? ticketDraft.keys.add(key) : ticketDraft.keys.delete(key);
+  });
+  document.getElementById('f-ticket-children').addEventListener('change', e => {
+    ticketDraft.children = e.target.checked;
+    renderTicketTree();
+  });
+  document.getElementById('ticket-manual').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addManualTicket(); }
+  });
+  updateTicketSummary();
+
+  document.getElementById('f-month').value = ym(TODAY);
+  document.getElementById('f-date-from').value = isoDate(new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
+  document.getElementById('f-date-to').value = isoDate(TODAY);
+  document.querySelectorAll('[data-month-picker]').forEach(buildMonthPicker);
+  switchPeriodMode();
+
+  document.querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
+    if (state.sort === th.dataset.sort) state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    else { state.sort = th.dataset.sort; state.dir = 'asc'; }
+    renderAll();
+  }));
+
+  ['f-employees', 'f-customers', 'f-invoiceable', 'f-limit', 'f-date-from', 'f-date-to']
+    .forEach(id => document.getElementById(id).addEventListener('change', applyFilter));
+
+  applyRole();
+});
+</script>
+</body>
+</html>
