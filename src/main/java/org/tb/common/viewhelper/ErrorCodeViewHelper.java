@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 
@@ -25,7 +26,7 @@ public class ErrorCodeViewHelper {
    * ohne je geworfen worden zu sein (#1054).
    */
   public ViewMessage toViewMessage(ServiceFeedbackMessage message) {
-    String key = toErrorKey(message);
+    String key = toErrorKey(message.getErrorCode());
     Object[] args = message.getArguments().toArray();
     String resolved = messages.getMessage(key, args, "???" + key + "???");
     return new ViewMessage(key, args, resolved);
@@ -37,9 +38,14 @@ public class ErrorCodeViewHelper {
     return new ViewMessage(key, args, resolved);
   }
 
-  private String toErrorKey(ServiceFeedbackMessage m) {
-    // TR-0015 -> errorcode.tr.0015
-    return "errorcode." + m.getErrorCode().getCode().replace('-', '.').toLowerCase();
+  /**
+   * Der Schlüssel, unter dem der Text eines {@link ErrorCode} in den Bündeln steht: {@code TR-0015}
+   * → {@code errorcode.tr.0015}. Öffentlich, damit der Test, der jeden Code gegen beide Bündel
+   * prüft, dieselbe Formel benutzt und nicht eine nachgebaute — eine Kopie driftet, und dann prüft
+   * der Test einen Schlüssel, den niemand nachschlägt (#1083).
+   */
+  public static String toErrorKey(ErrorCode errorCode) {
+    return "errorcode." + errorCode.getCode().replace('-', '.').toLowerCase();
   }
 
   public record ViewMessage(String key, Object[] args, String resolved) {
