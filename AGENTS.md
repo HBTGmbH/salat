@@ -319,6 +319,12 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] Security: `@Authorized(requires…)` on every controller write method; `@Authorized` + runtime guard in the service. No `@PreAuthorize` (#926)
 - [ ] No unused imports in the changed files. Removing code tends to leave its imports behind, and
   the compiler does not complain. Check the files the task touched — not the whole codebase.
+- [ ] Gestapelte Umgehungen sind **benannt statt fertiggebaut**: wo eine Lösung erst über die
+  zweite oder dritte Umgehung gegen dasselbe Framework trägt, stehen Aufwand, Nebenwirkungen und
+  Nutzen nebeneinander, und das Verwerfen ist ausdrücklich vorgeschlagen — beim zweiten Workaround,
+  nicht erst nach dem grünen Testlauf. Der Nutzen von UI-Politur ist dabei leicht zu überschätzen
+  (#829: die fixierte Auftragsspalte der Matrixübersicht kostete vier Umgehungen gegen Bootstrap,
+  nahm im schmalen Fenster genau den Platz, den sie retten sollte, und wurde verworfen).
 
 ### Views (if UI changed)
 - [ ] Uses Spring MVC + Thymeleaf
