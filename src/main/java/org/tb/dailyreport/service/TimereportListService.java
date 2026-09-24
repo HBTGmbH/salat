@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -232,7 +233,8 @@ public class TimereportListService {
 
   /**
    * The tickets a dialog shows: those replicated under the scopes the rest of the filter names, matching the search,
-   * capped. Whoever has narrowed the list to one customer or one order is not looking for the tickets of the others.
+   * ordered as a tree and capped. Whoever has narrowed the list to one customer or one order is not looking for the
+   * tickets of the others.
    */
   public TicketSearchResult searchTickets(String term, List<Long> selectedCustomerIds, List<Long> selectedOrderIds,
       List<Long> selectedSuborderIds, int limit) {
@@ -248,14 +250,54 @@ public class TimereportListService {
       byKey.putIfAbsent(ticket.key(),
           new TicketOption(ticket.key(), ticket.summary(), ticket.issueType(), ticket.parentKey(), List.of()));
     }
+
     var types = byKey.values().stream()
         .map(TicketOption::issueType)
         .filter(java.util.Objects::nonNull)
         .distinct()
         .sorted()
         .toList();
-    return new TicketSearchResult(byKey.values().stream().limit(limit).toList(), types, byKey.size());
+    var rows = treeOf(byKey);
+    return new TicketSearchResult(rows.stream().limit(limit).toList(), types, rows.size());
   }
+
+  /**
+   * Die Treffer als Baum: jedes Ticket vor seinen Nachfahren, die Tiefe als Einrueckung. Ohne diese Ordnung stuende
+   * ein Kind ueber seinem Elternteil und die Einrueckung behauptete eine Verwandtschaft zur falschen Zeile — die
+   * Replikation liefert die Tickets in keiner fachlichen Reihenfolge.
+   *
+   * <p>Ein Ticket, dessen Elternteil nicht unter den Treffern ist, ist selbst eine Wurzel; die Zeile nennt dann den
+   * Schluessel, unter dem es haengt.
+   */
+  private static List<TicketRow> treeOf(Map<String, TicketOption> byKey) {
+    var children = new LinkedHashMap<String, List<TicketOption>>();
+    var roots = new ArrayList<TicketOption>();
+    byKey.values().forEach(ticket -> {
+      if (ticket.parentKey() != null && byKey.containsKey(ticket.parentKey())) {
+        children.computeIfAbsent(ticket.parentKey(), key -> new ArrayList<>()).add(ticket);
+      } else {
+        roots.add(ticket);
+      }
+    });
+
+    var rows = new ArrayList<TicketRow>();
+    roots.stream().sorted(Comparator.comparing(TicketOption::key)).forEach(root -> append(rows, root, 0, children));
+    return rows;
+  }
+
+  private static void append(List<TicketRow> rows, TicketOption ticket, int level,
+      Map<String, List<TicketOption>> children) {
+
+    rows.add(new TicketRow(ticket, level));
+    children.getOrDefault(ticket.key(), List.of()).stream()
+        .sorted(Comparator.comparing(TicketOption::key))
+        .forEach(child -> append(rows, child, level + 1, children));
+  }
+
+  /**
+   * @param level wie tief im Baum, {@code 0} ganz oben — die Einrueckung des Dialogs
+   */
+  public record TicketRow(TicketOption ticket, int level) {}
 
   /** Was versteckt ist, wird nicht angeboten — dieselbe Regel, die jede andere Auswahlliste befolgt. */
   private static <T> List<T> notHidden(List<T> entries, java.util.function.Predicate<T> hidden) {
@@ -306,8 +348,8 @@ public class TimereportListService {
     }
   }
 
-  /** @param total how many the search found, of which only the first were rendered */
-  public record TicketSearchResult(List<TicketOption> tickets, List<String> types, int total) {}
+  /** @param total wie viele die Suche gefunden hat, von denen nur die ersten gerendert wurden */
+  public record TicketSearchResult(List<TicketRow> tickets, List<String> types, int total) {}
 
   /**
    * A suborder means its whole branch, a ticket its whole descendant chain. Expanding here rather than in the query

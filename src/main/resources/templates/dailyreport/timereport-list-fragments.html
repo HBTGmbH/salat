@@ -85,19 +85,23 @@
 <th:block th:fragment="ticketTree">
   <div th:if="${!ticketTypes.isEmpty()}" id="ticket-types" class="d-none"
        th:attr="data-types=${#strings.listJoin(ticketTypes, ',')}"></div>
-  <label th:each="ticket : ${tickets}"
+
+  <!--/* Als Baum geordnet: jedes Ticket vor seinen Nachfahren, die Tiefe als Einrueckung. Steht das
+         uebergeordnete Ticket nicht unter den Treffern, nennt die Zeile seinen Schluessel. */-->
+  <label th:each="row : ${tickets}"
          class="list-group-item d-flex align-items-center gap-2"
-         th:data-id="${ticket.key}" th:data-type="${ticket.issueType}"
-         th:data-parent="${ticket.parentKey}"
-         th:data-text="${ticket.key}"
-         style="padding-left: 0.75rem">
-    <input class="form-check-input m-0" type="checkbox" th:data-pick="${ticket.key}"
-           th:checked="${selectedTicketKeys.contains(ticket.key)}">
-    <span class="fw-medium text-nowrap" th:text="${ticket.key}">TICKET-1</span>
-    <span class="text-secondary text-truncate" th:text="${ticket.summary}">Titel</span>
-    <span class="text-secondary small text-nowrap d-none" data-context></span>
+         th:data-id="${row.ticket.key}" th:data-type="${row.ticket.issueType}"
+         th:data-parent="${row.level > 0} ? ${row.ticket.parentKey} : null"
+         th:data-text="${row.ticket.key}"
+         th:style="'padding-left: ' + ${0.75 + row.level * 1.5} + 'rem'">
+    <input class="form-check-input m-0" type="checkbox" th:data-pick="${row.ticket.key}"
+           th:checked="${selectedTicketKeys.contains(row.ticket.key)}">
+    <span class="fw-medium text-nowrap" th:text="${row.ticket.key}">TICKET-1</span>
+    <span class="text-secondary text-truncate" th:text="${row.ticket.summary}">Titel</span>
+    <span th:if="${row.level == 0 and row.ticket.parentKey != null}" class="text-secondary small text-nowrap"
+          th:text="#{main.timereportlist.tickets.dialog.under} + ' ' + ${row.ticket.parentKey}">unter X</span>
     <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
-      <span class="badge bg-secondary-lt" th:text="${ticket.issueType}">Story</span>
+      <span class="badge bg-secondary-lt" th:text="${row.ticket.issueType}">Story</span>
     </span>
   </label>
 
@@ -106,7 +110,6 @@
   <div th:if="${total > shown}" class="list-group-item text-secondary small"
        th:text="#{main.timereportlist.dialog.capped(${shown},${total})}">Nur die ersten Treffer.</div>
 </th:block>
-
 
 </body>
 </html>
