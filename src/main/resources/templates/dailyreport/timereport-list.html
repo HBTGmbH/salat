@@ -77,7 +77,10 @@
                 th:text="${picked == 0}
                            ? #{main.timereportlist.filter.unrestricted}
                            : ${options.includedSuborders} + ' ' + #{main.timereportlist.orders.dialog.included}">keine Einschränkung</span>
-          <a th:if="${picked > 0}" href="#" id="order-clear" th:text="#{main.timereportlist.filter.clear}">leeren</a>
+          <!--/* Immer im Dokument, sichtbar nur mit Auswahl: der Filterbereich wird beim Wechsel
+                 nicht neu gerendert, ein serverseitiges th:if bliebe also stehen wie es war. */-->
+          <a href="#" id="order-clear" th:classappend="${picked == 0} ? 'd-none'"
+             th:text="#{main.timereportlist.filter.clear}">leeren</a>
         </div>
       </div>
 
@@ -99,7 +102,7 @@
                            : (${ticketChildren}
                                ? #{main.timereportlist.tickets.dialog.children.included}
                                : #{main.timereportlist.tickets.dialog.children.excluded})">keine Einschränkung</span>
-          <a th:if="${!selectedTicketKeys.isEmpty()}" href="#" id="ticket-clear"
+          <a href="#" id="ticket-clear" th:classappend="${selectedTicketKeys.isEmpty()} ? 'd-none'"
              th:text="#{main.timereportlist.filter.clear}">leeren</a>
         </div>
       </div>
@@ -467,6 +470,9 @@
     ticketsAll: /*[[#{main.timereportlist.filter.tickets.all}]]*/ 'Alle Tickets',
     tickets: /*[[#{main.timereportlist.filter.tickets.count}]]*/ 'Tickets',
     entries: /*[[#{main.timereportlist.filter.entries}]]*/ 'Einträge',
+    unrestricted: /*[[#{main.timereportlist.filter.unrestricted}]]*/ 'keine Einschränkung',
+    childrenIncluded: /*[[#{main.timereportlist.tickets.dialog.children.included}]]*/ 'inklusive untergeordneter',
+    childrenExcluded: /*[[#{main.timereportlist.tickets.dialog.children.excluded}]]*/ 'ohne untergeordnete',
     includedNone: /*[[#{main.timereportlist.orders.dialog.included.none}]]*/ 'Ohne Auswahl gilt kein Auftragsfilter.',
     under: /*[[#{main.timereportlist.tickets.dialog.under}]]*/ 'unter',
   };
@@ -612,8 +618,7 @@
     renderPickerSummaries();
     submitFilter();
   });
-  const orderClear = document.getElementById('order-clear');
-  if (orderClear) orderClear.addEventListener('click', event => {
+  document.getElementById('order-clear').addEventListener('click', event => {
     event.preventDefault();
     state.orders = new Set();
     state.suborders = new Set();
@@ -668,8 +673,7 @@
     renderPickerSummaries();
     submitFilter();
   });
-  const ticketClear = document.getElementById('ticket-clear');
-  if (ticketClear) ticketClear.addEventListener('click', event => {
+  document.getElementById('ticket-clear').addEventListener('click', event => {
     event.preventDefault();
     state.tickets = new Set();
     renderPickerSummaries();
@@ -766,14 +770,22 @@
    */
   function renderPickerSummaries() {
     const picks = orderPicks();
-    const orderSummary = document.getElementById('order-summary');
-    orderSummary.textContent = picks.size === 0
+    document.getElementById('order-summary').textContent = picks.size === 0
       ? labels.ordersAll
       : (picks.size === 1 ? signOf([...picks][0]) : picks.size + ' ' + labels.entries);
-    const ticketSummary = document.getElementById('ticket-summary');
-    ticketSummary.textContent = state.tickets.size === 0
+    document.getElementById('order-clear').classList.toggle('d-none', picks.size === 0);
+    if (picks.size === 0) {
+      document.getElementById('order-detail').textContent = labels.unrestricted;
+    }
+
+    document.getElementById('ticket-summary').textContent = state.tickets.size === 0
       ? labels.ticketsAll
       : (state.tickets.size === 1 ? [...state.tickets][0] : state.tickets.size + ' ' + labels.tickets);
+    document.getElementById('ticket-clear').classList.toggle('d-none', state.tickets.size === 0);
+    document.getElementById('ticket-detail').textContent = state.tickets.size === 0
+      ? labels.unrestricted
+      : (document.getElementById('ticket-children').checked
+          ? labels.childrenIncluded : labels.childrenExcluded);
   }
 
   function signOf(pick) {
