@@ -135,10 +135,10 @@ public class TimereportListController {
     var result = timereportListService.searchOrders(q, longs(selectedCustomers), includeOrders, includeSuborders,
         DIALOG_ROWS);
 
-    model.addAttribute("orders", result.orders());
-    model.addAttribute("suborders", result.suborders());
+    model.addAttribute("groups", result.groups());
+    model.addAttribute("orphans", result.orphans());
     model.addAttribute("total", result.total());
-    model.addAttribute("shown", result.orders().size() + result.suborders().size());
+    model.addAttribute("shown", result.shown());
     model.addAttribute("selectedOrderIds", longs(selectedOrders));
     model.addAttribute("selectedSuborderIds", longs(selectedSuborders));
     model.addAttribute("searching", q != null && !q.isBlank());
