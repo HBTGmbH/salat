@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.tb.common.exception.ErrorCode;
+import org.tb.common.viewhelper.ErrorCodeViewHelper;
 
 /**
  * Guards the German and English message bundles against drift. A key that only exists in the
@@ -93,6 +95,34 @@ class MessageResourcesConsistencyTest {
     }
 
     assertThat(mismatches).as("keys whose translations use different message arguments").isEmpty();
+  }
+
+  /**
+   * The other direction, and the one {@link #bothBundlesDefineTheSameKeys} cannot see: a code
+   * missing from <em>both</em> bundles leaves them in perfect agreement while the user reads
+   * {@code ???errorcode.xx.nnnn???} in the toast (#1083).
+   */
+  @Test
+  void everyErrorCodeHasATextInBothBundles() throws IOException {
+    Set<String> german = keysOf(GERMAN_BUNDLE);
+    Set<String> english = keysOf(ENGLISH_BUNDLE);
+    var undefined = new TreeMap<String, Set<String>>();
+
+    for (ErrorCode errorCode : ErrorCode.values()) {
+      // the helper's own formula, not a rebuilt one - a copy drifts, and then this test guards a
+      // key nobody looks up
+      String key = ErrorCodeViewHelper.toErrorKey(errorCode);
+      if (!german.contains(key)) {
+        undefined.computeIfAbsent(errorCode.name(), k -> new TreeSet<>()).add(GERMAN_BUNDLE);
+      }
+      if (!english.contains(key)) {
+        undefined.computeIfAbsent(errorCode.name(), k -> new TreeSet<>()).add(ENGLISH_BUNDLE);
+      }
+    }
+
+    assertThat(undefined)
+        .as("ErrorCodes without an errorcode.* text - the user would read ???errorcode.xx.nnnn???")
+        .isEmpty();
   }
 
   @Test
