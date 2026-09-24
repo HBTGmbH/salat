@@ -3,6 +3,7 @@ package org.tb.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.FOUND;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BO;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_MA;
@@ -12,6 +13,7 @@ import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
@@ -21,6 +23,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -35,6 +38,7 @@ import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractRepository;
+import org.tb.etl.persistence.ETLRunHistoryRepository;
 
 /**
  * #926: Die Controller tragen ihre Rechteprüfung als {@code @Authorized(requires…)} statt als
@@ -95,6 +99,13 @@ class ControllerAuthorizationIntegrationTest {
   private static final List<String> ETL_VIEWS = List.of(
       "/etl/runs");
 
+  /**
+   * Das Anstoßen eines Laufs (#1071) zieht dieselbe Linie wie die Liste — deshalb steht es hier und
+   * nicht bei den Geschäftsführungssichten. Ein POST ist an dieser Stelle prüfbar, weil der
+   * {@code local}-Profilkette der CSRF-Schutz bewusst fehlt (→ ADR-0018).
+   */
+  private static final String ETL_RUN_ACTION = "/etl/runs/run";
+
   /** Rechnungen und die Umsätze aus Buchhaltung und Aufzeichnungen. */
   private static final List<String> BACKOFFICE_VIEWS = List.of(
       "/invoice",
@@ -113,6 +124,8 @@ class ControllerAuthorizationIntegrationTest {
   private EmployeecontractRepository employeecontractRepository;
   @Autowired
   private SalatUserRepository salatUserRepository;
+  @Autowired
+  private ETLRunHistoryRepository etlRunHistoryRepository;
 
   @BeforeEach
   void seedOneLoginPerRole() {
@@ -146,6 +159,39 @@ class ControllerAuthorizationIntegrationTest {
     // copyErrorDetails steht nur in error/error.html und unterscheidet die Fehlerseite der
     // Anwendung von der des Servlet-Containers, unabhängig von der Sprache.
     assertThat(get(path, login).body()).contains("copyErrorDetails");
+  }
+
+  @ParameterizedTest(name = "{0} -> POST " + ETL_RUN_ACTION)
+  @MethodSource("etlDenied")
+  void an_unauthorized_login_cannot_start_an_etl_run(String login) throws Exception {
+    // Ein ausgeblendetes Formular ist keine Autorisierung — geprueft wird der abgeschickte POST.
+    // Der Zeitraum liegt richtig herum: nur dann kommt die Anfrage ueberhaupt bis zur
+    // Rechtepruefung, die hier die Aussage ist.
+    assertThat(post(ETL_RUN_ACTION, login, "dateFrom=2026-01-01&dateUntil=2026-01-31").statusCode())
+        .as("eine Anmeldung ohne Regel ETL/EXECUTE bekommt 403 und nicht still eine Umleitung")
+        .isEqualTo(FORBIDDEN.value());
+    assertThat(etlRunHistoryRepository.count()).isZero();
+  }
+
+  @Test
+  void an_authorized_login_gets_past_the_permission_check_without_starting_a_run() throws Exception {
+    // Von nach Bis: die Eingabe wird abgewiesen, bevor ein Lauf entsteht. Die Anmeldung darf, die
+    // Eingabe nicht — deshalb keine 403, sondern die Umleitung zurueck auf die Liste mit der
+    // Meldung. Ein echter Lauf wuerde hier gegen die Testdatenbank arbeiten, und der Test pruefte
+    // nicht mehr die Berechtigung, sondern den ETL.
+    //
+    // Dass diese Zeile ueberhaupt etwas aussagt, haengt an der Reihenfolge in
+    // ETLService.resolveManualRun: dort faellt die Berechtigung VOR der Eingabepruefung. Andersherum
+    // bekaeme auch eine Anmeldung ohne jede ETL-Regel hier eine 302, und der Test waere gruen, ohne
+    // etwas zu zeigen.
+    var response = post(ETL_RUN_ACTION, MANAGER, "dateFrom=2026-01-31&dateUntil=2026-01-01");
+
+    assertThat(response.statusCode()).isEqualTo(FOUND.value());
+    assertThat(etlRunHistoryRepository.count()).isZero();
+  }
+
+  private static Stream<String> etlDenied() {
+    return Stream.of(RESTRICTED, REGULAR, BACKOFFICE, PEOPLE_LEAD);
   }
 
   private static Stream<Arguments> allowed() {
@@ -185,6 +231,20 @@ class ControllerAuthorizationIntegrationTest {
     assertThat(ALL_LOGINS).contains(login);
     var uri = URI.create("http://localhost:" + port + path + "?login-name=" + login);
     return HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri).GET().build(), BodyHandlers.ofString());
+  }
+
+  /**
+   * Umleitungen werden bewusst nicht verfolgt ({@code HttpClient} tut das voreingestellt nicht):
+   * die Antwort auf den POST selbst ist die Aussage, nicht die Seite danach.
+   */
+  private HttpResponse<String> post(String path, String login, String form) throws Exception {
+    assertThat(ALL_LOGINS).contains(login);
+    var uri = URI.create("http://localhost:" + port + path + "?login-name=" + login);
+    var request = HttpRequest.newBuilder(uri)
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .POST(BodyPublishers.ofString(form))
+        .build();
+    return HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
   }
 
   private void employeeWithContract(String sign, String status) {
