@@ -313,9 +313,15 @@
           <td class="booking-task text-truncate" th:title="${tr.taskdescription}" th:text="${tr.taskdescription}">Tätigkeit</td>
           <td class="d-none d-xl-table-cell text-nowrap">
             <span th:if="${#strings.isEmpty(tr.ticketReference)}" class="text-secondary">–</span>
-            <span th:unless="${#strings.isEmpty(tr.ticketReference)}" th:text="${tr.ticketReference}">TICKET-1</span>
+            <span th:unless="${#strings.isEmpty(tr.ticketReference)}"
+                  class="badge bg-secondary-lt d-inline-block text-truncate" style="max-width: 10rem"
+                  th:title="${tr.ticketReference}" th:text="${tr.ticketReference}">TICKET-1</span>
           </td>
-          <td class="text-end text-nowrap" th:text="${@durationUtils.format(tr.duration)}">0:00</td>
+          <!--/* Dauer und Ticketnummer tragen in der Anwendung eine Badge — blau die Zeit, grau der
+                 Ticketbezug, wie in der Einzeluebersicht. */-->
+          <td class="text-end text-nowrap">
+            <span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}">0:00</span>
+          </td>
           <td class="text-center">
             <i th:if="${tr.billable}" class="ti ti-check text-green"
                th:title="#{main.timereportlist.filter.billable.yes}"></i>
@@ -334,9 +340,11 @@
       <tfoot class="table-group-divider fw-bold" th:unless="${result.timereports.isEmpty()}">
         <tr>
           <td colspan="6" class="text-end" th:text="#{main.timereportlist.table.sum}">Summe</td>
-          <td class="text-end" th:with="minutes=${result.totalDuration.toMinutes()}"
-              th:text="${#numbers.formatInteger(minutes / 60, 1, 'DEFAULT')} + ':'
-                       + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</td>
+          <td class="text-end" th:with="minutes=${result.totalDuration.toMinutes()}">
+            <span class="badge bg-blue-lt"
+                  th:text="${#numbers.formatInteger(minutes / 60, 1, 'DEFAULT')} + ':'
+                           + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</span>
+          </td>
           <td colspan="2"></td>
         </tr>
       </tfoot>
