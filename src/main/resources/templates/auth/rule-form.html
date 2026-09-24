@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:salat="http://hbt.de/salat/thymeleaf"
+      layout:decorate="~{layout/base}"
+      th:with="
+        section='systemsettings',
+        subSection='auth-rules',
+        title=${isEdit} ? #{main.auth.rule.form.title.edit} : #{main.auth.rule.form.title.create},
+        pageTitle=${isEdit} ? #{main.auth.rule.form.title.edit} : #{main.auth.rule.form.title.create},
+        sectionTitle=#{main.general.mainmenu.system.text}
+">
+<main layout:fragment="content">
+
+  <div th:if="${formErrors != null and not #lists.isEmpty(formErrors)}" class="alert alert-danger mb-3">
+    <p th:each="e : ${formErrors}" th:text="${e}" class="mb-0"></p>
+  </div>
+
+  <salat:form th:action="@{/auth/rules/store}" th:object="${ruleForm}" th:id-property="*{id}">
+    <salat:inputs>
+
+      <div class="row">
+        <div class="col-md-6">
+          <!--/* Plain select rather than salat:select, which does not forward the hx-* attributes.
+                 The category comes from a list: a typo would produce a rule that never fires, and
+                 nothing about it would look wrong. */-->
+          <div class="mb-3">
+            <label class="form-label required" for="category"
+                   th:text="#{main.auth.rule.field.category}">Kategorie</label>
+            <select class="form-select tomselect" th:field="*{category}"
+                    th:hx-post="@{/auth/rules/objects}"
+                    hx-swap="none"
+                    hx-include="closest form"
+                    hx-trigger="change">
+              <option value="" th:text="#{main.auth.rule.category.please}">--- Kategorie ---</option>
+              <option th:each="c : ${categories}" th:value="${c}" th:text="${c}">ETL</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <!--/* Cumulative: DELETE covers WRITE covers READ covers EXECUTE. Naming the highest one
+                 is enough, but several are allowed — the column is a set. */-->
+          <div class="mb-3">
+            <label class="form-label required" for="accessLevels"
+                   th:text="#{main.auth.rule.field.accesslevels}">Zugriffsstufen</label>
+            <select class="form-select tomselect tomselect-multi" th:field="*{accessLevels}" multiple>
+              <option th:each="level : ${accessLevels}" th:value="${level.name()}" th:text="${level.name()}">READ</option>
+            </select>
+            <small class="form-text" th:text="#{main.auth.rule.field.accesslevels.help}">
+              DELETE schliesst WRITE, READ und EXECUTE ein.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!--/* An empty grantee is not a wildcard, unlike an empty object: leaving it out must not
+             grant to everybody, so the wildcard is offered as an entry of its own. */-->
+      <div class="mb-3">
+        <label class="form-label required" for="granteeIds"
+               th:text="#{main.auth.rule.field.grantees}">Berechtigte</label>
+        <select class="form-select tomselect tomselect-multi" th:field="*{granteeIds}" multiple>
+          <option th:value="${anyObject}" th:text="#{main.auth.rule.grantee.any}">alle angemeldeten Benutzer</option>
+          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate}" th:text="${candidate}">kr</option>
+        </select>
+        <small class="form-text" th:text="#{main.auth.rule.field.grantees.help}">
+          Anmeldenamen. Mehrere sind erlaubt.
+        </small>
+      </div>
+
+      <div th:replace="~{auth/rule-form :: objectSelect(${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, null)}"></div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validFrom', label=#{main.auth.rule.field.validfrom}, required=false
+          )}"></div>
+        </div>
+        <div class="col-md-6">
+          <!--/* Ending a rule is what the list does with a button; here the date is editable for the
+                 case of a rule that is meant to lapse on a known day. */-->
+          <div th:replace="~{fragments/form-fields :: dateInput(
+            field='validUntil', label=#{main.auth.rule.field.validuntil}, required=false
+          )}"></div>
+        </div>
+      </div>
+
+    </salat:inputs>
+    <salat:buttons>
+      <salat:formButtons th:saveLabel="#{main.button.label.save.text}" th:cancelHref="@{/auth/rules}" />
+    </salat:buttons>
+  </salat:form>
+
+  <!--/* HTMX OOB update: which objects the chosen category offers, and what the hint says. */-->
+  <div th:if="${htmxRequest}">
+    <div th:replace="~{auth/rule-form :: objectSelect(
+            ${objectCandidates}, ${ruleForm.objectIds}, ${objectHintKey}, ${anyObject}, 'true')}"></div>
+  </div>
+
+</main>
+
+<!--/*
+  The object of the rule. Rendered twice: inline in the form, and again as an out-of-band swap when
+  the category changes — that is what the oob parameter is for. It uses name/th:selected rather
+  than th:field because the out-of-band copy sits outside the form and has no th:object to bind
+  against.
+
+  data-allow-create lets a value be typed that the category does not list: a rule may precede the
+  order or the ETL definition it is about. What the module makes of such a value is decided when it
+  is saved — a wrong format is refused, an unknown value is kept and pointed out.
+*/-->
+<div th:fragment="objectSelect(candidates, selected, hintKey, any, oob)" class="mb-3"
+     id="authRuleObjectSelect" th:attr="hx-swap-oob=${oob}">
+  <label class="form-label" for="objectIds" th:text="#{main.auth.rule.field.objects}">Objekte</label>
+  <select class="form-select tomselect tomselect-multi" id="objectIds" name="objectIds" multiple
+          data-allow-create="true">
+    <option th:value="${any}" th:text="#{main.auth.rule.object.any}"
+            th:selected="${selected != null and selected.contains(any)}">alle Objekte</option>
+    <option th:each="candidate : ${candidates}" th:value="${candidate.id}"
+            th:text="${candidate.label}"
+            th:selected="${selected != null and selected.contains(candidate.id)}">ETL-Definition</option>
+  </select>
+  <small class="form-text" th:if="${hintKey != null}" th:text="#{__${hintKey}__}">
+    Name der ETL-Definition.
+  </small>
+  <small class="form-text" th:if="${hintKey == null}" th:text="#{main.auth.rule.field.objects.help}">
+    Leer oder "alle Objekte" gilt fuer jedes Objekt der Kategorie.
+  </small>
+</div>
+</html>

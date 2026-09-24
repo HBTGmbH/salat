@@ -83,13 +83,20 @@ class ControllerAuthorizationIntegrationTest {
       "/orders/suborders",
       "/orders/employeeorders");
 
-  /** Pflege der Stammdaten und alles, was Zeiten verschiebt. */
+  /**
+   * Pflege der Stammdaten und alles, was Zeiten verschiebt. Dazu die Berechtigungsregeln selbst
+   * (#1074): wer sie schreiben darf, kann sich jedes Recht daraus selbst gewähren — und anders als
+   * die ETL-Laufhistorie steht diese Seite deshalb ausdrücklich <em>nicht</em> auch denen offen,
+   * die eine Regel tragen.
+   */
   private static final List<String> MANAGER_VIEWS = List.of(
       "/customers/create",
       "/employees/create",
       "/employees/contracts/create",
       "/orders/customerorders/create",
-      "/dailyreports/move");
+      "/dailyreports/move",
+      "/auth/rules",
+      "/auth/rules/create");
 
   /**
    * Der Betrieb der Anwendung. Hier entscheidet nicht die Rolle allein: eine Regel der Kategorie

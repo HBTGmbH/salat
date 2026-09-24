@@ -32,7 +32,9 @@ const tomSelectConfig = (el) => {
   const remoteUrl = el.dataset.remoteUrl || null;
 
   const config = {
-    create: false,
+    // A field whose values are not all known in advance says so with data-allow-create: the offered
+    // options stay a convenience, and what somebody types is kept (#1074).
+    create: el.dataset.allowCreate === 'true',
     maxItems: el.classList.contains('tomselect-multi') ? null : 1,
     maxOptions: 1000,
     plugins: ['dropdown_input'],

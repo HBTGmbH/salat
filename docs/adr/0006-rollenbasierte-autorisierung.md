@@ -171,6 +171,32 @@ if (!authorizedUser.isManager()
 
 Datenbankgestützte Regeln (`AuthorizationRule`-Entity) erlauben granulare Vergabe von Zugriff auf bestimmte Kategorien, Objekte und Zeiträume mit hierarchischen `AccessLevel`-Werten (`DELETE ⊇ WRITE ⊇ READ ⊇ EXECUTE`).
 
+### Gepflegt wird über die Oberfläche (#1074)
+
+Regeln werden unter „System" → „Berechtigungsregeln" gepflegt, der Geschäftsführung vorbehalten und
+ohne Abstufung: wer Regeln schreiben darf, kann sich jedes Recht daraus selbst gewähren — auch die
+Anmeldeübernahme. Anders als die ETL-Laufhistorie steht die Seite deshalb ausdrücklich *nicht* auch
+denen offen, die eine Regel tragen. **Jedes Schreiben leert den Zwischenspeicher**, sonst stünde die
+Regel in der Datenbank und wirkte bis zu einer Ablaufzeit lang nicht.
+
+Welche Kategorien es gibt und welche Objekte darin wählbar sind, weiß das Auth-Modul nicht — es darf
+nur `common` importieren. Jedes Modul implementiert stattdessen `AuthorizationObjectProvider` für
+seine eigene Kategorie, und Spring reicht der Oberfläche alle Implementierungen als Liste; dasselbe
+Muster wie `UiStateKeyContributor`. Der Anbieter liefert Anzeigename, Hinweistext, die wählbaren
+Objekte (leer = freie Eingabe) und ein Urteil über eine Eingabe:
+
+- **`MALFORMED`** wird am Feld abgewiesen — ein falsches Format wird nie richtig.
+- **`UNKNOWN`** wird gespeichert und benannt — eine Regel darf dem Auftrag oder der ETL-Definition
+  vorausgehen, um die es geht, und ein Auftrag kann auslaufen, während die Regel bestehen bleibt.
+
+Der blanke `*` erreicht keinen Anbieter: „gilt für alle Objekte" ist eine Aussage des Auth-Moduls.
+Zusammengesetzte Platzhalter wie `xx:*` kennt dagegen nur der Anbieter, und sein Urteil muss sie
+gelten lassen.
+
+Eine Regel wird **beendet** (`valid_until`), nicht gelöscht — so bleibt nachvollziehbar, wer wann was
+durfte; Löschen gibt es daneben für die Regel, die auf einem Tippfehler beruht und nie gewirkt hat.
+Eine Kategorie, die kein Modul anbietet, bleibt in der Liste sichtbar statt still zu verschwinden.
+
 ### Eine Regel nennt zwei Dinge: wer, und woran (#1089)
 
 Eine Regel besteht aus Kategorie, **Berechtigtem** (`grantee_id`), **Objekt** (`object_id`),
