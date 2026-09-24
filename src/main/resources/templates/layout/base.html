@@ -207,7 +207,7 @@
                   <a class="dropdown-item" th:href="@{/dailyreport/list}"
                      th:classappend="${subSection == 'list'} ? 'active' : ''">
                     <span th:text="#{main.general.mainmenu.timereportlist.text}">Buchungsliste</span>
-                    <span class="badge bg-green-lt ms-1">New</span>
+                    <span class="badge bg-azure-lt ms-1" th:text="#{main.beta.badge}">Beta</span>
                   </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/csv}"
                      th:classappend="${subSection == 'csv'} ? 'active' : ''"

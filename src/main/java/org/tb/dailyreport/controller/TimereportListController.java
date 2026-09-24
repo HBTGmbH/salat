@@ -2,6 +2,7 @@ package org.tb.dailyreport.controller;
 
 import static org.tb.common.util.DateUtils.today;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -65,6 +66,7 @@ public class TimereportListController {
       @RequestParam(required = false) String fBookingsBillable,
       @RequestParam(required = false) String fBookingsSort,
       @RequestParam(required = false) String fBookingsLimit,
+      HttpServletRequest request,
       Model model) {
 
     var employeeIds = longs(fBookingsEmployees);
@@ -106,7 +108,12 @@ public class TimereportListController {
     model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
     model.addAttribute("pageTitle", messages.getMessage("main.timereportlist.title"));
     model.addAttribute("title", messages.getMessage("main.timereportlist.title"));
-    return "dailyreport/timereport-list";
+
+    // Ein Filterwechsel tauscht nur den Ergebnisbereich. Die Seite selbst bleibt stehen — mit ihr das
+    // offene Modal, das ein Seitenwechsel mitgerissen haette.
+    return "true".equals(request.getHeader("HX-Request"))
+        ? "dailyreport/timereport-list :: results"
+        : "dailyreport/timereport-list";
   }
 
   /**
