@@ -100,7 +100,7 @@ public class AuthService {
 
   public boolean isAuthorized(String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getEffectiveLoginSign().equals(rule.getGranteeId())) return false;
+      if(!matchesGrantee(rule, authorizedUser.getEffectiveLoginSign())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return ANY_MATCH.equals(rule.getObjectId()) || Arrays.stream(objectId).anyMatch(rule.getObjectId()::equals);
@@ -109,7 +109,7 @@ public class AuthService {
 
   public boolean isAuthorized(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, String... objectId) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getEffectiveLoginSign().equals(rule.getGranteeId())) return false;
+      if(!matchesGrantee(rule, authorizedUser.getEffectiveLoginSign())) return false;
       if(rule.getGrantorId() != null && !ANY_MATCH.equals(rule.getGrantorId()) && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
@@ -124,7 +124,7 @@ public class AuthService {
   public boolean isAuthorizedAnyObject(String grantorSign, String category, LocalDate date, AccessLevel accessLevel, boolean useLoginSign) {
     return anyRuleMatches(category, rule -> {
       String userSign = useLoginSign ? authorizedUser.getLoginSign() : authorizedUser.getEffectiveLoginSign();
-      if(!userSign.equals(rule.getGranteeId()) && !ANY_MATCH.equals(rule.getGranteeId())) return false;
+      if(!matchesGrantee(rule, userSign)) return false;
       if(rule.getGrantorId() != null && !grantorSign.equals(rule.getGrantorId())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
@@ -134,7 +134,7 @@ public class AuthService {
 
   public boolean isAuthorizedAnyObject(String category, LocalDate date, AccessLevel accessLevel) {
     return anyRuleMatches(category, rule -> {
-      if(!authorizedUser.getEffectiveLoginSign().equals(rule.getGranteeId())) return false;
+      if(!matchesGrantee(rule, authorizedUser.getEffectiveLoginSign())) return false;
       if(!rule.getAccessLevel().satisfies(accessLevel)) return false;
       if(!rule.isValid(date)) return false;
       return true;
@@ -146,6 +146,15 @@ public class AuthService {
     return cacheEntries.getOrDefault(category, Set.of()).stream()
         .filter(r -> ANY_MATCH.equals(r.getObjectId()) || objectId.equals(r.getObjectId()))
         .toList();
+  }
+
+  /**
+   * Matches the grantee of a rule against a user. {@value #ANY_MATCH} stands for every authenticated user, the same
+   * way it does for the object of a rule — that is how a report is shared with everybody without maintaining a list
+   * of signs. A rule without any grantee matches nobody: leaving the grantee out must not grant to all.
+   */
+  private boolean matchesGrantee(Rule rule, String userSign) {
+    return ANY_MATCH.equals(rule.getGranteeId()) || userSign.equals(rule.getGranteeId());
   }
 
   private boolean anyRuleMatches(String category, Predicate<Rule> rulePredicate) {

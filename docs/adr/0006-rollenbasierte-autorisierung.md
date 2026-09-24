@@ -171,6 +171,30 @@ if (!authorizedUser.isManager()
 
 Datenbankgestützte Regeln (`AuthorizationRule`-Entity) erlauben granulare Vergabe von Zugriff auf bestimmte Kategorien, Objekte und Zeiträume mit hierarchischen `AccessLevel`-Werten (`DELETE ⊇ WRITE ⊇ READ ⊇ EXECUTE`).
 
+### Der Platzhalter `*` (#1087)
+
+Drei Felder einer Regel nennen ein Gegenüber, und `*` steht in jedem für „alle": `grantee_id` (der
+Berechtigte), `object_id` (das Objekt) und `grantor_id` (der Gewährende). Eine Auswertung wird damit
+für alle freigegeben, ohne eine Kürzelliste zu pflegen: `REPORT_DEFINITION` / `grantee_id = '*'` /
+`object_id = <id>`.
+
+Die **leere** Menge bedeutet dagegen nicht überall dasselbe, und das ist Absicht:
+
+| Feld | `*` | leer |
+|---|---|---|
+| `grantee_id` | jeder angemeldete Benutzer | **niemand** — die Regel greift nie |
+| `object_id` | jedes Objekt der Kategorie | jedes Objekt der Kategorie |
+| `grantor_id` | jeder Gewährende | jeder Gewährende (wird nicht geprüft) |
+
+Beim Berechtigten darf das Weglassen nicht alle berechtigen — sonst wäre ein vergessenes Feld eine
+Freigabe. Der Platzhalter wird hingeschrieben, sonst gilt er nicht. Und `*` schließt `RESTRICTED`
+ein: Externe und Praktikanten sind angemeldete Benutzer. Wer das nicht will, vergibt weiter
+einzelne Kürzel.
+
+Bis #1087 wertete `AuthService` den Platzhalter beim Berechtigten nur in einer von vier Prüfungen
+aus — eine Regel mit `grantee_id = '*'` war für Auswertungen und ETL-Definitionen wirkungslos.
+Seitdem steht der Vergleich einmal in `matchesGrantee`, und jede Prüfung geht dort hindurch.
+
 ---
 
 ## Fehlerbehandlung
