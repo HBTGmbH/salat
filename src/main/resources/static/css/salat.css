@@ -822,3 +822,25 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 .info-popover {
   max-width: min(24rem, calc(100vw - 2rem));
 }
+
+/* Eine Knopfgruppe mit btn-check zeigt ihren gewählten Knopf gefüllt (#1092). Zwei Gründe, beide
+   gemessen: Bootstrap setzt für :hover die neutralen Werte, und weil diese Regel später steht,
+   gewinnt sie gegen den gewählten Zustand — der gewählte Knopf sah unter dem Zeiger aus wie ein
+   nicht gewählter. Und Tablers Markierung des gewählten Zustands ist blaue Schrift auf einer 4 %
+   getönten Fläche, die auf der dunklen Karte nur 2,87:1 erreicht, also unter dem Maßstab liegt.
+
+   Die Füllung ist dieselbe Paarung, die jeder gefüllte Knopf benutzt: --tblr-primary mit
+   --tblr-primary-fg. Beim Überfahren dunkelt die Füllung nach, wie es Tabler bei den gefüllten
+   Varianten auch tut; die Schriftfarbe bleibt, der Kontrast wird dabei größer statt kleiner. */
+.btn-check:checked + .btn {
+  background-color: var(--tblr-primary);
+  border-color: var(--tblr-primary);
+  color: var(--tblr-primary-fg);
+}
+
+.btn-check:checked + .btn:hover,
+.btn-check:checked + .btn:focus-visible {
+  background-color: color-mix(in srgb, var(--tblr-primary) 82%, black);
+  border-color: color-mix(in srgb, var(--tblr-primary) 82%, black);
+  color: var(--tblr-primary-fg);
+}
