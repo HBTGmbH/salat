@@ -4,6 +4,15 @@
       layout:decorate="~{layout/base}" th:with="title=${pageTitle}">
 <main layout:fragment="content">
 
+<!--/* Die Seite ist neu und im Zuschnitt noch in Abstimmung; die Markierung sagt das, solange sie
+       gilt, und faellt mit ihr weg. */-->
+<div class="mb-3">
+  <span class="badge bg-azure-lt" th:text="#{main.beta.badge}">Beta</span>
+  <span class="text-secondary small ms-2" th:text="#{main.timereportlist.beta.hint}">
+    Neue Seite — Rückmeldungen willkommen.
+  </span>
+</div>
+
 <style>
   #bookings tbody tr[data-booking] { cursor: pointer; }
   #bookings tbody tr:hover td {
@@ -15,7 +24,11 @@
 </style>
 
 <!-- ═══════════════════════════════ FILTER ═══════════════════════════════ -->
-<form method="get" th:action="@{/dailyreport/list}" id="filter-form" class="card mb-3">
+<!--/* Der Filter tauscht den Ergebnisbereich, statt die Seite neu zu laden: ein Wechsel im Filter
+       laedt nach, waehrend jemand schon den naechsten Dialog oeffnet — und ein Seitenwechsel raeumt
+       das offene Modal mit weg. */-->
+<form method="get" th:action="@{/dailyreport/list}" id="filter-form" class="card mb-3"
+      th:hx-get="@{/dailyreport/list}" hx-target="#results-container" hx-push-url="true">
   <div class="card-body">
 
     <div class="row g-3">
@@ -181,6 +194,8 @@
   </div>
 </form>
 
+<div id="results-container" th:fragment="results">
+
 <!-- ═══════════════════════════════ KENNZAHLEN ═══════════════════════════════ -->
 <div class="row row-cards mb-3">
   <div class="col-sm-6 col-lg-3">
@@ -327,6 +342,8 @@
   </div>
 </div>
 
+</div>
+
 <!-- ═══════════════════════════════ AUFTRAGSAUSWAHL ═══════════════════════════════ -->
 <div class="modal modal-blur fade" id="order-modal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -446,6 +463,9 @@
 /*<![CDATA[*/
 (function () {
   const labels = {
+    ordersAll: /*[[#{main.timereportlist.filter.orders.all}]]*/ 'Alle Aufträge',
+    ticketsAll: /*[[#{main.timereportlist.filter.tickets.all}]]*/ 'Alle Tickets',
+    tickets: /*[[#{main.timereportlist.filter.tickets.count}]]*/ 'Tickets',
     entries: /*[[#{main.timereportlist.filter.entries}]]*/ 'Einträge',
     includedNone: /*[[#{main.timereportlist.orders.dialog.included.none}]]*/ 'Ohne Auswahl gilt kein Auftragsfilter.',
     under: /*[[#{main.timereportlist.tickets.dialog.under}]]*/ 'unter',
@@ -589,6 +609,7 @@
   document.getElementById('order-apply').addEventListener('click', () => {
     state.orders = new Set([...orderDraft].filter(id => id.startsWith('o:')));
     state.suborders = new Set([...orderDraft].filter(id => id.startsWith('s:')));
+    renderPickerSummaries();
     submitFilter();
   });
   const orderClear = document.getElementById('order-clear');
@@ -596,6 +617,7 @@
     event.preventDefault();
     state.orders = new Set();
     state.suborders = new Set();
+    renderPickerSummaries();
     submitFilter();
   });
 
@@ -643,12 +665,14 @@
   });
   document.getElementById('ticket-apply').addEventListener('click', () => {
     state.tickets = new Set(ticketDraft);
+    renderPickerSummaries();
     submitFilter();
   });
   const ticketClear = document.getElementById('ticket-clear');
   if (ticketClear) ticketClear.addEventListener('click', event => {
     event.preventDefault();
     state.tickets = new Set();
+    renderPickerSummaries();
     submitFilter();
   });
 
@@ -734,17 +758,41 @@
     });
   }
 
-  // ── Spaltenkopf sortiert: neuer Wert ins Formular, neu laden ──
-  document.querySelectorAll('#bookings thead [data-sort]').forEach(link =>
-    link.addEventListener('click', event => {
-      event.preventDefault();
-      hidden('f-sort').value = link.dataset.sort;
-      form.requestSubmit();
-    }));
+  /**
+   * Die Zusammenfassung unter den beiden Feldern kommt beim Aufruf vom Server. Wechselt die Auswahl,
+   * ohne dass die Seite neu geladen wird, zieht sie das Javascript nach — den Umfang der
+   * eingeschlossenen Unterauftraege kennt nur der Server, der steht deshalb erst nach dem naechsten
+   * vollen Aufruf wieder genau da.
+   */
+  function renderPickerSummaries() {
+    const picks = orderPicks();
+    const orderSummary = document.getElementById('order-summary');
+    orderSummary.textContent = picks.size === 0
+      ? labels.ordersAll
+      : (picks.size === 1 ? signOf([...picks][0]) : picks.size + ' ' + labels.entries);
+    const ticketSummary = document.getElementById('ticket-summary');
+    ticketSummary.textContent = state.tickets.size === 0
+      ? labels.ticketsAll
+      : (state.tickets.size === 1 ? [...state.tickets][0] : state.tickets.size + ' ' + labels.tickets);
+  }
 
-  // ── Klick auf die Zeile oeffnet die Buchung; ein Link in ihr bleibt ein Link ──
-  document.querySelector('#bookings tbody').addEventListener('click', event => {
-    const row = event.target.closest('tr[data-booking]');
+  function signOf(pick) {
+    const row = document.querySelector('#order-tree [data-id="' + pick + '"]');
+    return row ? row.dataset.text : pick.slice(2);
+  }
+
+  // ── Tabelle: Sortierung und Zeilensprung ──
+  // Delegiert am Dokument, weil der Ergebnisbereich bei jedem Filterwechsel ausgetauscht wird und
+  // Handler an den einzelnen Zeilen den Tausch nicht ueberleben wuerden.
+  document.addEventListener('click', event => {
+    const sortLink = event.target.closest('#bookings thead [data-sort]');
+    if (sortLink) {
+      event.preventDefault();
+      hidden('f-sort').value = sortLink.dataset.sort;
+      form.requestSubmit();
+      return;
+    }
+    const row = event.target.closest('#bookings tbody tr[data-booking]');
     if (!row || event.target.closest('a')) return;
     const link = row.querySelector('a');
     if (link) window.location.href = link.href;
