@@ -647,11 +647,19 @@ Entities are divided into two categories (→ ADR-0011):
 ### Criteria-Abfragen über den EntityManager (#1092)
 
 Eine einzige Stelle baut ihre Abfragen über den `EntityManager` statt über ein Spring-Data-Repository:
-`TimereportListDAO`. Der Grund ist die Form der Frage, nicht eine Vorliebe — die Bedingung entsteht
-zur Laufzeit aus **Filter und Sichtbarkeit**, und dieselbe Bedingung muss drei Dinge beantworten: die
-Zeilen, die Summen über alle Treffer und die Werte, die die Filter anbieten dürfen. Eine
-Repository-Methode kann weder eine dynamische Disjunktion noch eine `distinct`-Projektion darunter
-ausdrücken.
+`TimereportListDAO`. Dieselbe zur Laufzeit gebaute Bedingung aus **Filter und Sichtbarkeit** muss dort
+drei Dinge beantworten, und nur das erste davon kann ein Repository:
+
+| | über ein Repository? |
+|---|---|
+| Die Zeilen | **ja** — `JpaSpecificationExecutor.findAll(Specification, Pageable)` kann dynamisches Prädikat, Sortierung und Obergrenze |
+| Die Summen über alle Treffer (`count`, `sum`, `sum(case …)`, zweimal `count(distinct)`) | **nein** — `Specification` selektiert immer die Entität; `JpaSpecificationExecutor` kennt nur `count(Specification)`, keine eigenen Aggregate |
+| Die Werte der Filter (fünf `distinct`-Projektionen unter demselben Prädikat) | **nein** — die Fluent-API von `findBy` projiziert auf Entitäten, nicht auf einzelne Spalten, und kennt kein `distinct` |
+
+Die Zeilenabfrage bleibt trotzdem hier, statt als einzige ins Repository zu wandern: sonst stünde
+dieselbe Bedingung zweimal im Code, einmal als `Specification` und einmal als `Predicate`. Ein
+Sicherheitsprädikat an zwei Stellen zu pflegen ist ein Fehler, der beim ersten Auseinanderdriften
+Daten freigibt.
 
 Wer eine zweite solche Stelle anlegt, begründet sie genauso — für alles andere bleibt es bei
 Repository und `Specification`.

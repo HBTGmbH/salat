@@ -111,16 +111,19 @@ public class TimereportListService {
     var visibility = visibilityService.anyTime();
     if (visibility.isEmpty()) return TimereportFilterOptions.empty();
 
+    // Versteckte Stammdaten stehen in keiner Auswahlliste - das ist der Zweck des hide-Flags. Ihre
+    // Buchungen bleiben in der Liste sichtbar, nur anwaehlen laesst sich der Eintrag nicht mehr.
     List<Employee> employees;
     List<Customer> customers;
     if (visibility.unrestricted()) {
-      employees = employeeService.getEmployeesWithContracts();
-      customers = customerService.getAllCustomers();
+      employees = employeeService.getAllEmployees();
+      customers = customerService.getSelectableCustomers(null);
     } else {
       var values = timereportListDAO.findFilterValues(visibility);
-      employees = employeeService.getEmployeesByIds(values.employeeIds());
+      employees = notHidden(employeeService.getEmployeesByIds(values.employeeIds()),
+          employee -> Boolean.TRUE.equals(employee.getHide()));
       var customerIds = new HashSet<>(values.customerIds());
-      customers = customerService.getAllCustomers().stream()
+      customers = customerService.getSelectableCustomers(null).stream()
           .filter(customer -> customerIds.contains(customer.getId()))
           .toList();
     }
@@ -154,12 +157,13 @@ public class TimereportListService {
     List<Customerorder> orders;
     List<Suborder> suborders;
     if (visibility.unrestricted()) {
-      orders = customerorderService.getAllCustomerorders();
-      suborders = suborderService.getAllSuborders();
+      orders = customerorderService.getVisibleCustomerorders();
+      suborders = suborderService.getAllVisibleSuborders();
     } else {
       var values = timereportListDAO.findFilterValues(visibility);
-      orders = customerorderService.getCustomerordersByIds(values.customerOrderIds());
-      suborders = suborderService.getSubordersByIds(values.suborderIds());
+      orders = notHidden(customerorderService.getCustomerordersByIds(values.customerOrderIds()),
+          Customerorder::getHide);
+      suborders = notHidden(suborderService.getSubordersByIds(values.suborderIds()), Suborder::isHide);
     }
 
     var search = term == null ? "" : term.trim().toLowerCase(java.util.Locale.ROOT);
@@ -204,6 +208,11 @@ public class TimereportListService {
         .sorted()
         .toList();
     return new TicketSearchResult(byKey.values().stream().limit(limit).toList(), types, byKey.size());
+  }
+
+  /** Was versteckt ist, wird nicht angeboten — dieselbe Regel, die jede andere Auswahlliste befolgt. */
+  private static <T> List<T> notHidden(List<T> entries, java.util.function.Predicate<T> hidden) {
+    return entries.stream().filter(entry -> !hidden.test(entry)).toList();
   }
 
   private static boolean matches(String search, String... values) {
@@ -277,8 +286,8 @@ public class TimereportListService {
     if (customerOrderIds.isEmpty() && suborderIds.isEmpty()) {
       var visibility = visibilityService.anyTime();
       if (visibility.unrestricted()) {
-        orders.addAll(customerorderService.getAllCustomerorders());
-        suborders.addAll(suborderService.getAllSuborders());
+        orders.addAll(customerorderService.getVisibleCustomerorders());
+        suborders.addAll(suborderService.getAllVisibleSuborders());
       } else {
         var values = timereportListDAO.findFilterValues(visibility);
         orders.addAll(customerorderService.getCustomerordersByIds(values.customerOrderIds()));
