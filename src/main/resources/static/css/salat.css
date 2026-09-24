@@ -596,16 +596,27 @@
    Auswahl-Variante korrigiert; ein <input> bekommt von TomSelect aber .form-control statt
    .form-select an den Wrapper und fiel deshalb durch die Regel. Beide Varianten bekommen jetzt
    denselben Innenabstand und die Zeilenhoehe des umgebenden Feldes - damit sind sie exakt so hoch
-   wie ein unveraendertes .form-control. */
+   wie ein unveraendertes .form-control.
+   Die Mindesthoehe haelt diese Hoehe auch im geoeffneten Zustand: das dropdown_input-Plugin legt
+   das Eingabefeld ins Dropdown, ein Feld ohne Auswahl behaelt also nichts, was eine Zeile aufspannt,
+   und fiel beim Oeffnen auf den blossen Innenabstand zusammen. Aufgefangen hatte das bisher
+   salat.js mit einem festen `minHeight = '39px'` am Steuerelement - ein Pixel mehr als die 38px des
+   geschlossenen Feldes, weshalb der nachfolgende Seiteninhalt bei jedem Oeffnen um ein Pixel nach
+   unten sprang. Die 38px sind der Massstab fuer jeden Zustand: geschlossen wie geoeffnet, mit
+   Auswahl wie ohne, einfach wie mehrfach. */
 .ts-wrapper.form-control .ts-control,
 .ts-wrapper.form-select .ts-control {
   padding-top: .5625rem;
   padding-bottom: .5625rem;
   line-height: inherit;
+  min-height: calc(1lh + 1.125rem);
 }
 
 /* Die Chips bringen eigene Aussenabstaende mit; ohne die Gegenrechnung waere die
-   Mehrfachauswahl hoeher als ein einzeiliges Feld. */
+   Mehrfachauswahl hoeher als ein einzeiliges Feld. Die Mindesthoehe von oben gilt hier
+   unveraendert weiter - eine Chip-Zeile misst mit den Abstaenden 25px und kommt mit dem
+   verringerten Innenabstand auf dieselben 38px. Ohne sie war eine leere Mehrfachauswahl nur 35px
+   hoch und wuchs beim ersten Chip auf 40px: das Feld sprang, sobald jemand etwas auswaehlte. */
 .ts-wrapper.form-control.multi .ts-control,
 .ts-wrapper.form-select.multi .ts-control {
   padding-top: calc(.5625rem - 2.5px);

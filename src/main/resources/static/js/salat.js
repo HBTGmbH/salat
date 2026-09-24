@@ -41,10 +41,6 @@ const tomSelectConfig = (el) => {
     onDropdownOpen(dropdown) {
       dropdown.style.width = 'max-content';
       dropdown.style.minWidth = this.wrapper.offsetWidth + 'px';
-      this.control.style.minHeight = '39px';
-    },
-    onDropdownClose() {
-      this.control.style.minHeight = '';
     },
   };
 
