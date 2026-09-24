@@ -97,7 +97,7 @@
         <div class="btn-group btn-group-sm w-100" role="group">
           <input type="radio" class="btn-check" name="period-mode" id="mode-month" value="month"
                  th:checked="${monthMode}">
-          <th:block th:replace="~{fragments/month-picker :: monthPicker('bookings-month', null, ${yearMonth})}"></th:block>
+          <th:block th:replace="~{fragments/month-picker :: monthPickerSteps('bookings-month', null, ${yearMonth}, false)}"></th:block>
           <input type="radio" class="btn-check" name="period-mode" id="mode-range" value="range"
                  th:checked="${!monthMode}">
           <label class="btn btn-sm" for="mode-range" th:text="#{main.timereportlist.filter.period.range}">Freier Zeitraum</label>

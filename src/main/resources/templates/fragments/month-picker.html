@@ -27,8 +27,15 @@
     inputId   - id of the hidden input, e.g. 'matrix-month' (the caller listens for its change event)
     inputName - request parameter name when the picker sits in a form, or null
     yearMonth - the java.time.YearMonth to start from
+    withSteps - whether the arrows for the neighbouring months are shown. The matrix pages through the
+                months and needs them; the booking list does not, there the month itself is the left
+                button of a group whose other button switches to a free date range (#1092).
 */-->
-<th:block th:fragment="monthPicker(inputId, inputName, yearMonth)">
+<th:block th:fragment="monthPicker(inputId, inputName, yearMonth)"
+          th:replace="~{fragments/month-picker :: monthPickerSteps(${inputId}, ${inputName}, ${yearMonth}, true)}">
+</th:block>
+
+<th:block th:fragment="monthPickerSteps(inputId, inputName, yearMonth, withSteps)">
 <!--/* th:data-* attributes are evaluated in a restricted context, which forbids bean access -
        hence the detour of resolving the current month through th:with first */-->
 <div data-month-picker
@@ -46,7 +53,7 @@
   <div class="btn-group btn-group-sm">
 
     <button type="button" class="btn btn-outline-secondary" data-month-step="-1"
-            th:title="#{main.general.month.previous}">
+            th:if="${withSteps}" th:title="#{main.general.month.previous}">
       <i class="ti ti-chevron-left m-0"></i>
     </button>
 
@@ -87,7 +94,7 @@
     </div>
 
     <button type="button" class="btn btn-outline-secondary" data-month-step="1"
-            th:title="#{main.general.month.next}">
+            th:if="${withSteps}" th:title="#{main.general.month.next}">
       <i class="ti ti-chevron-right m-0"></i>
     </button>
 
