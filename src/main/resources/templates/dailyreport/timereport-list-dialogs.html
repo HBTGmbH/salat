@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ═══════════════════════════════ FRAGMENTE DER DIALOGE ═══════════════════════════════ -->
+<!--/* Beide Dialoge holen ihre Zeilen hier: was zur Suche passt, gedeckelt. Ohne Suchbegriff zeigt
+       der Auftragsdialog nur die Auftraege — eine flache Liste aller Unterauftraege hilft niemandem,
+       der Suchbegriff ist es, der sie eingrenzt. */-->
+<th:block th:fragment="orderTree">
+  <label th:each="order : ${orders}"
+         class="list-group-item d-flex align-items-center gap-2"
+         data-row="order" th:data-id="'o:' + ${order.id}" th:data-order="${order.id}"
+         th:data-text="${order.sign}"
+         style="padding-left: 0.75rem">
+    <input class="form-check-input m-0" type="checkbox" th:data-pick="'o:' + ${order.id}"
+           th:checked="${selectedOrderIds.contains(order.id)}">
+    <span class="fw-medium text-nowrap" th:text="${order.sign}">Auftrag</span>
+    <span class="text-secondary text-truncate"
+          th:text="${order.description} + ' · ' + ${order.customerShortname}">Beschreibung</span>
+    <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+      <span class="badge bg-secondary-lt" th:text="#{main.timereportlist.orders.dialog.level.order}">Auftrag</span>
+    </span>
+  </label>
+
+  <label th:each="suborder : ${suborders}"
+         class="list-group-item d-flex align-items-center gap-2"
+         data-row="suborder" th:data-id="'s:' + ${suborder.id}" th:data-order="${suborder.customerOrderId}"
+         th:data-parent="${suborder.parentId != null} ? 's:' + ${suborder.parentId} : 'o:' + ${suborder.customerOrderId}"
+         th:data-text="${suborder.completeSign}"
+         style="padding-left: 0.75rem">
+    <input class="form-check-input m-0" type="checkbox" th:data-pick="'s:' + ${suborder.id}"
+           th:checked="${selectedSuborderIds.contains(suborder.id)}">
+    <span class="fw-medium text-nowrap" th:text="${suborder.completeSign}">Unterauftrag</span>
+    <span class="text-secondary text-truncate" th:text="${suborder.description}">Bezeichnung</span>
+    <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+      <span class="text-secondary small" th:if="${suborder.descendantCount > 0}"
+            th:text="'+' + ${suborder.descendantCount} + ' ' + #{main.timereportlist.orders.dialog.descendants}">+2</span>
+      <span class="badge bg-secondary-lt" th:text="#{main.timereportlist.orders.dialog.level.suborder}">Unterauftrag</span>
+    </span>
+  </label>
+
+  <div th:if="${shown == 0}" class="list-group-item text-secondary"
+       th:text="${searching} ? #{main.timereportlist.orders.dialog.empty} : #{main.timereportlist.orders.dialog.searchfirst}">
+    Kein Auftrag passt.
+  </div>
+  <div th:if="${total > shown}" class="list-group-item text-secondary small"
+       th:text="#{main.timereportlist.dialog.capped(${shown},${total})}">
+    Nur die ersten Treffer.
+  </div>
+</th:block>
+
+<th:block th:fragment="ticketTree">
+  <div th:if="${!ticketTypes.isEmpty()}" id="ticket-types" class="d-none"
+       th:attr="data-types=${#strings.listJoin(ticketTypes, ',')}"></div>
+  <label th:each="ticket : ${tickets}"
+         class="list-group-item d-flex align-items-center gap-2"
+         th:data-id="${ticket.key}" th:data-type="${ticket.issueType}"
+         th:data-parent="${ticket.parentKey}"
+         th:data-text="${ticket.key}"
+         style="padding-left: 0.75rem">
+    <input class="form-check-input m-0" type="checkbox" th:data-pick="${ticket.key}"
+           th:checked="${selectedTicketKeys.contains(ticket.key)}">
+    <span class="fw-medium text-nowrap" th:text="${ticket.key}">TICKET-1</span>
+    <span class="text-secondary text-truncate" th:text="${ticket.summary}">Titel</span>
+    <span class="text-secondary small text-nowrap d-none" data-context></span>
+    <span class="ms-auto d-flex align-items-center gap-2 text-nowrap">
+      <span class="badge bg-secondary-lt" th:text="${ticket.issueType}">Story</span>
+    </span>
+  </label>
+
+  <div th:if="${shown == 0}" class="list-group-item text-secondary"
+       th:text="#{main.timereportlist.tickets.dialog.empty}">Kein Ticket passt.</div>
+  <div th:if="${total > shown}" class="list-group-item text-secondary small"
+       th:text="#{main.timereportlist.dialog.capped(${shown},${total})}">Nur die ersten Treffer.</div>
+</th:block>
+
+
+</body>
+</html>

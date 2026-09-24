@@ -593,6 +593,20 @@ public class TimereportDAO {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Maps bookings to DTOs <em>without</em> checking each one against {@link TimereportAuthorization} (#1092).
+     *
+     * <p>Every other finder here loads and then filters, which is fine for a day or a contract. The booking list
+     * cannot work that way: its condition already carries the visibility, so the rows that arrive are the rows the
+     * user may read — and asking again per row would walk the supervisors of every contract, a query per booking.
+     *
+     * <p>Whoever calls this owes the restriction. In this module that is {@code TimereportListService}, and the test
+     * that holds its scope against {@code isAuthorized} is what makes the promise checkable.
+     */
+    public List<TimereportDTO> getDtosOf(Collection<Timereport> timereports) {
+        return timereports.stream().map(this::toDao).collect(Collectors.toList());
+    }
+
     private boolean accessible(Timereport timereport) {
         return timereportAuthorization.isAuthorized(timereport, AccessLevel.READ);
     }

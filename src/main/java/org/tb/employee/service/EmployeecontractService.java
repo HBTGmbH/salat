@@ -11,6 +11,7 @@ import static org.tb.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_VALIDIT
 import static org.tb.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.common.util.DateUtils.today;
+import static java.util.stream.Collectors.toSet;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -437,6 +439,17 @@ public class EmployeecontractService {
 
   public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
     return employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+  }
+
+  /**
+   * The employees this person supervises, over <em>all</em> their contracts rather than only the currently valid ones
+   * (#1092). A contract ends, the responsibility for its bookings does not — the same reason
+   * {@code EmployeecontractDAO#getTeamContracts} exists next to the current team.
+   */
+  public Set<Long> getSupervisedEmployeeIds(long supervisorEmployeeId) {
+    return employeecontractDAO.getTeamContracts(supervisorEmployeeId).stream()
+        .map(ec -> ec.getEmployee().getId())
+        .collect(toSet());
   }
 
   public Optional<Employeecontract> getCurrentContract(long employeeId) {

@@ -141,6 +141,33 @@ public class AuthService {
   }
 
   /**
+   * Every rule of a category that grants the current user something at that date — the objects, not the answer to one
+   * question about one object (#1092). A list cannot ask {@code isAuthorized} per row: it has to turn the rules into a
+   * condition of its query, and for that it needs to read them. The rules come from the in-memory cache, so this costs
+   * no statement.
+   *
+   * <p>The objects are returned as they stand in the database. What a value means belongs to the category — the caller
+   * that wrote the object is the one that can read it (see {@code TimereportAuthorization#objectsOf}).
+   */
+  public List<Rule> getRulesForCurrentUser(String category, LocalDate date, AccessLevel accessLevel) {
+    return getRulesForCurrentUser(category, new LocalDateRange(date, date), accessLevel);
+  }
+
+  /**
+   * The same for a period: a list spans days, so a rule counts as soon as its validity overlaps that period. Whether
+   * a single booking inside the period is covered stays the question of {@code isAuthorized}.
+   */
+  public List<Rule> getRulesForCurrentUser(String category, LocalDateRange period, AccessLevel accessLevel) {
+    ensureUpToDateCache();
+    var userSign = authorizedUser.getEffectiveLoginSign();
+    return cacheEntries.getOrDefault(category, Set.of()).stream()
+        .filter(rule -> matchesGrantee(rule, userSign))
+        .filter(rule -> rule.getAccessLevel().satisfies(accessLevel))
+        .filter(rule -> rule.getValidity().overlaps(period))
+        .toList();
+  }
+
+  /**
    * Matches the grantee of a rule against a user. {@value #ANY_MATCH} stands for every authenticated user, the same
    * way it does for the object of a rule — that is how a report is shared with everybody without maintaining a list
    * of signs. A rule without any grantee matches nobody: leaving the grantee out must not grant to all.

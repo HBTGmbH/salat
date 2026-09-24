@@ -21,6 +21,13 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
   List<JiraTicket> findByScopeSignAndParentKeyIn(String scopeSign, Collection<String> parentKeys);
 
   /**
+   * The tickets of several scopes at once (#1092). The booking list offers the tickets of every order it may show, and
+   * a ticket tree that stopped at a scope boundary would be a tree with holes.
+   */
+  List<JiraTicket> findByScopeSignIn(Collection<String> scopeSigns);
+
+
+  /**
    * Suggestions for the booking form (#982). Matches the typed text against key and summary alike —
    * whoever books remembers either the number or what the ticket was about. Most recently updated
    * first, because that is what someone is booking on today.

@@ -5,6 +5,7 @@ import static org.springframework.data.domain.Sort.Direction.ASC;
 
 import com.google.common.collect.Lists;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,6 +47,14 @@ public class EmployeeDAO {
      */
     public Employee getEmployeeBySign(String sign) {
         return employeeRepository.findBySign(sign).orElse(null);
+    }
+
+    /**
+     * The employees with these ids, in one statement and without the read filter the other finders apply (#1092).
+     * Whether these people may be shown is decided by the caller — see {@code EmployeeService#getEmployeesByIds}.
+     */
+    public List<Employee> getEmployeesByIds(Collection<Long> ids) {
+        return Lists.newArrayList(employeeRepository.findAllById(ids));
     }
 
     /**
