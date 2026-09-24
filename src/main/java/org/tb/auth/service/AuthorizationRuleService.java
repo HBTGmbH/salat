@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tb.auth.domain.AuthorizationGranteeProvider;
 import org.tb.auth.domain.AuthorizationObject;
 import org.tb.auth.domain.AuthorizationObjectProvider;
 import org.tb.auth.domain.AuthorizationRule;
@@ -30,7 +31,6 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.ObjectJudgement;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
-import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
@@ -56,8 +56,8 @@ public class AuthorizationRuleService {
   private static final int COLUMN_LENGTH = 255;
 
   private final AuthorizationRuleRepository authorizationRuleRepository;
-  private final SalatUserRepository salatUserRepository;
   private final List<AuthorizationObjectProvider> objectProviders;
+  private final List<AuthorizationGranteeProvider> granteeProviders;
   private final AuthService authService;
   private final AuthorizedUser authorizedUser;
 
@@ -105,13 +105,15 @@ public class AuthorizationRuleService {
     return providerOf(category).map(AuthorizationObjectProvider::objectHintKey).orElse(null);
   }
 
-  /** Every login that can be a grantee. */
+  /**
+   * The logins offered as grantees. Hidden people are left out — what a rule already carries is added back by the
+   * editor, so hiding somebody never makes an existing rule uneditable.
+   */
   @Transactional(readOnly = true)
   public List<String> getGranteeCandidates() {
     requireManager();
-    return StreamSupport.stream(salatUserRepository.findAll().spliterator(), false)
-        .map(user -> user.getLoginname())
-        .filter(loginname -> loginname != null && !loginname.isBlank())
+    return granteeProviders.stream()
+        .flatMap(provider -> provider.granteeCandidates().stream())
         .distinct()
         .sorted()
         .toList();
