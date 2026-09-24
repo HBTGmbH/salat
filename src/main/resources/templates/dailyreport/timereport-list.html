@@ -21,7 +21,7 @@
     <div class="row g-3">
       <div class="col-lg-3">
         <label class="form-label" for="employee-select" th:text="#{main.timereportlist.filter.employees}">Mitarbeiter</label>
-        <select class="form-select tomselect tomselect-multi" id="employee-select" multiple
+        <select class="form-select tomselect tomselect-multi" id="employee-select" multiple autocomplete="off"
                 th:attr="placeholder=#{main.timereportlist.filter.employees.all}">
           <option th:each="employee : ${options.employees}"
                   th:value="${employee.id}"
@@ -32,12 +32,15 @@
 
       <div class="col-lg-3">
         <label class="form-label" for="customer-select" th:text="#{main.timereportlist.filter.customers}">Auftraggeber</label>
-        <select class="form-select tomselect tomselect-multi" id="customer-select" multiple
+        <select class="form-select tomselect tomselect-multi" id="customer-select" multiple autocomplete="off"
                 th:attr="placeholder=#{main.timereportlist.filter.customers.all}">
+          <!--/* Der Kurzname steht im Feld, der ausfuehrliche darunter: salat.js rendert data-subtext
+                 als zweite Zeile und sucht in beidem. */-->
           <option th:each="customer : ${options.customers}"
                   th:value="${customer.id}"
                   th:selected="${selectedCustomerIds.contains(customer.id)}"
-                  th:text="${customer.shortname} + ' - ' + ${customer.name}"></option>
+                  th:attr="data-subtext=${customer.name}"
+                  th:text="${customer.shortname}"></option>
         </select>
       </div>
 
@@ -89,40 +92,32 @@
       </div>
     </div>
 
+    <!--/* Ein Bedienelement statt zweier Betriebsarten: der Zeitraum ist immer ein von und ein bis.
+           Ganze Monate bleiben erreichbar, aber als Schnellwahl, die beide Felder setzt — damit gibt
+           es keinen Zustand mehr, den die Seite anzeigt und der Filter nicht meint. */-->
     <div class="row g-3 mt-0 align-items-end">
-      <!--/* Die Betriebsart steht nicht neben der Monatsauswahl, sie ist sie: der Monat selbst ist
-             der linke Knopf der Gruppe. Ein Radio ohne sichtbares Label traegt den Zustand. */-->
       <div class="col-lg-auto">
-        <label class="form-label" th:text="#{main.timereportlist.filter.period}">Zeitraum</label>
-        <div class="btn-group btn-group-sm w-100" role="group">
-          <input type="radio" class="btn-check" name="period-mode" id="mode-month" value="month"
-                 th:checked="${monthMode}">
-          <th:block th:replace="~{fragments/month-picker :: monthPickerSteps('bookings-month', null, ${yearMonth}, false)}"></th:block>
-          <input type="radio" class="btn-check" name="period-mode" id="mode-range" value="range"
-                 th:checked="${!monthMode}">
-          <label class="btn btn-sm" for="mode-range" th:text="#{main.timereportlist.filter.period.range}">Freier Zeitraum</label>
-        </div>
-      </div>
-
-      <div class="col-lg-auto d-none" id="period-range">
+        <label class="form-label" for="date-from" th:text="#{main.timereportlist.filter.period}">Zeitraum</label>
         <div class="d-flex align-items-center gap-2">
-          <input type="date" class="form-control form-control-sm" id="date-from" style="width: 10rem"
+          <input type="date" class="form-control" id="date-from" autocomplete="off" style="width: 10rem"
                  th:value="${from}">
           <span class="text-secondary" th:text="#{main.timereportlist.filter.period.until}">bis</span>
-          <input type="date" class="form-control form-control-sm" id="date-until" style="width: 10rem"
+          <input type="date" class="form-control" id="date-until" autocomplete="off" style="width: 10rem"
                  th:value="${until}">
         </div>
       </div>
 
       <div class="col-lg-auto">
+        <label class="form-label" th:text="#{main.timereportlist.filter.period.quickselect}">Schnellwahl</label>
         <div class="btn-list">
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="thisMonth"
+          <th:block th:replace="~{fragments/month-picker :: monthPickerSized('bookings-month', null, ${yearMonth}, false, '')}"></th:block>
+          <button type="button" class="btn btn-outline-secondary" data-preset="thisMonth"
                   th:text="#{main.general.month.current}">Dieser Monat</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="lastMonth"
+          <button type="button" class="btn btn-outline-secondary" data-preset="lastMonth"
                   th:text="#{main.timereportlist.filter.period.lastmonth}">Letzter Monat</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="thisYear"
+          <button type="button" class="btn btn-outline-secondary" data-preset="thisYear"
                   th:text="#{main.timereportlist.filter.period.thisyear}">Dieses Jahr</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="last30"
+          <button type="button" class="btn btn-outline-secondary" data-preset="last30"
                   th:text="#{main.timereportlist.filter.period.last30}">Letzte 30 Tage</button>
         </div>
       </div>
@@ -131,22 +126,22 @@
     <div class="row g-3 mt-0 align-items-end">
       <div class="col-auto">
         <label class="form-label" th:text="#{main.timereportlist.filter.billable}">Fakturierbarkeit</label>
-        <div class="btn-group btn-group-sm d-flex" role="group" id="billable-group">
+        <div class="btn-group d-flex" role="group" id="billable-group">
           <input type="radio" class="btn-check" name="billable-choice" id="billable-all" value="ALL"
                  th:checked="${billable == 'ALL'}">
-          <label class="btn btn-sm" for="billable-all" th:text="#{main.timereportlist.filter.billable.all}">Alle</label>
+          <label class="btn" for="billable-all" th:text="#{main.timereportlist.filter.billable.all}">Alle</label>
           <input type="radio" class="btn-check" name="billable-choice" id="billable-yes" value="BILLABLE"
                  th:checked="${billable == 'BILLABLE'}">
-          <label class="btn btn-sm" for="billable-yes" th:text="#{main.timereportlist.filter.billable.yes}">Fakturierbar</label>
+          <label class="btn" for="billable-yes" th:text="#{main.timereportlist.filter.billable.yes}">Fakturierbar</label>
           <input type="radio" class="btn-check" name="billable-choice" id="billable-no" value="NOT_BILLABLE"
                  th:checked="${billable == 'NOT_BILLABLE'}">
-          <label class="btn btn-sm" for="billable-no" th:text="#{main.timereportlist.filter.billable.no}">Nicht fakturierbar</label>
+          <label class="btn" for="billable-no" th:text="#{main.timereportlist.filter.billable.no}">Nicht fakturierbar</label>
         </div>
       </div>
 
       <div class="col-auto">
         <label class="form-label" for="limit-select" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
-        <select class="form-select tomselect" id="limit-select" style="width: 10rem">
+        <select class="form-select tomselect" id="limit-select" autocomplete="off" style="width: 10rem">
           <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
                   th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
         </select>
@@ -177,11 +172,11 @@
     <input type="hidden" name="fBookingsTickets" id="f-tickets"
            th:value="${#strings.listJoin(selectedTicketKeys, ',')}"/>
     <input type="hidden" name="fBookingsTicketChildren" id="f-ticket-children" th:value="${ticketChildren}"/>
-    <input type="hidden" name="fBookingsMode" id="f-mode" th:value="${monthMode} ? 'month' : 'range'"/>
-    <input type="hidden" name="fBookingsMonth" id="f-month" th:value="${yearMonth}"/>
     <input type="hidden" name="fBookingsFrom" id="f-from" th:value="${from}"/>
     <input type="hidden" name="fBookingsUntil" id="f-until" th:value="${until}"/>
     <input type="hidden" name="fBookingsBillable" id="f-billable" th:value="${billable}"/>
+    <input type="hidden" name="fBookingsSort" id="f-sort"
+           th:value="${sortDescending} ? '-' + ${sort} : ${sort}"/>
     <input type="hidden" name="fBookingsLimit" id="f-limit" th:value="${limit}"/>
   </div>
 </form>
@@ -251,15 +246,18 @@
 
   <div class="table-responsive">
     <table class="table table-vcenter table-sm card-table" id="bookings">
+      <!--/* Sortiert wird in der Abfrage, nicht im Browser: auf der Seite stehen nur die ersten Zeilen,
+             und die zu sortieren ordnete den Ausschnitt statt der Treffer. Der Kopf schickt deshalb
+             das Formular ab. */-->
       <thead>
         <tr>
-          <th th:text="#{main.timereportlist.column.date}">Datum</th>
-          <th th:text="#{main.timereportlist.column.employee}">Mitarbeiter</th>
-          <th th:text="#{main.timereportlist.column.order}">Auftrag</th>
-          <th th:text="#{main.timereportlist.column.suborder}">Unterauftrag</th>
+          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('DATE', #{main.timereportlist.column.date}, '')}"></th>
+          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('EMPLOYEE', #{main.timereportlist.column.employee}, '')}"></th>
+          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('ORDER', #{main.timereportlist.column.order}, '')}"></th>
+          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('SUBORDER', #{main.timereportlist.column.suborder}, '')}"></th>
           <th th:text="#{main.timereportlist.column.task}">Tätigkeit</th>
           <th class="d-none d-xl-table-cell" th:text="#{main.timereportlist.column.ticket}">Ticket</th>
-          <th class="text-end" th:text="#{main.timereportlist.column.duration}">Dauer</th>
+          <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('DURATION', #{main.timereportlist.column.duration}, 'text-end')}"></th>
           <th class="text-center" th:text="#{main.timereportlist.column.billable.short}">Fakt.</th>
           <th class="text-center d-none d-lg-table-cell" th:text="#{main.timereportlist.column.status}">Status</th>
         </tr>
@@ -475,12 +473,11 @@
     hidden('f-suborders').value = [...state.suborders].map(id => id.slice(2)).join(',');
     hidden('f-tickets').value = [...state.tickets].join(',');
     hidden('f-ticket-children').value = document.getElementById('ticket-children').checked;
-    hidden('f-mode').value = document.getElementById('mode-month').checked ? 'month' : 'range';
-    hidden('f-month').value = document.getElementById('bookings-month').value;
     hidden('f-from').value = document.getElementById('date-from').value;
     hidden('f-until').value = document.getElementById('date-until').value;
     hidden('f-billable').value = document.querySelector('input[name="billable-choice"]:checked').value;
     hidden('f-limit').value = document.getElementById('limit-select').value;
+    // f-sort wird nur vom Spaltenkopf gesetzt und behaelt sonst seinen Wert
   }
 
   function submitFilter() {
@@ -498,54 +495,43 @@
   document.querySelectorAll('input[name="billable-choice"]')
     .forEach(input => input.addEventListener('change', submitFilter));
 
-  // ── Zeitraum: ein Monat oder ein freier Zeitraum, keine Mischform ──
+  // ── Zeitraum: die Schnellwahl setzt von und bis, mehr tut sie nicht ──
   const monthInput = document.getElementById('bookings-month');
-  const monthButton = document.querySelector('[data-month-picker] [data-label]');
-  function switchPeriodMode() {
-    const month = document.getElementById('mode-month').checked;
-    if (monthButton) monthButton.classList.toggle('active', month);
-    document.getElementById('period-range').classList.toggle('d-none', month);
-  }
-  switchPeriodMode();
+  const monthButton = document.querySelector('[data-month-picker] [data-month-label]');
 
-  document.getElementById('mode-range').addEventListener('change', () => {
-    switchPeriodMode();
-    submitFilter();
-  });
-  if (monthButton) {
-    monthButton.addEventListener('click', () => {
-      document.getElementById('mode-month').checked = true;
-      switchPeriodMode();
-    });
-  }
   monthInput.addEventListener('change', () => {
-    document.getElementById('mode-month').checked = true;
-    switchPeriodMode();
-    submitFilter();
+    const [year, month] = monthInput.value.split('-').map(Number);
+    setRange(new Date(year, month - 1, 1), new Date(year, month, 0));
   });
 
   document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
     const today = new Date();
     const preset = button.dataset.preset;
     if (preset === 'thisMonth' || preset === 'lastMonth') {
-      const date = new Date(today.getFullYear(), today.getMonth() - (preset === 'lastMonth' ? 1 : 0), 1);
-      document.getElementById('mode-month').checked = true;
-      monthInput.value = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+      const first = new Date(today.getFullYear(), today.getMonth() - (preset === 'lastMonth' ? 1 : 0), 1);
+      setRange(first, new Date(first.getFullYear(), first.getMonth() + 1, 0));
+    } else if (preset === 'thisYear') {
+      setRange(new Date(today.getFullYear(), 0, 1), today);
     } else {
-      document.getElementById('mode-range').checked = true;
-      const from = preset === 'thisYear'
-        ? new Date(today.getFullYear(), 0, 1)
-        : new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
-      document.getElementById('date-from').value = isoDate(from);
-      document.getElementById('date-until').value = isoDate(today);
+      setRange(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29), today);
     }
-    switchPeriodMode();
-    submitFilter();
   }));
+
+  function setRange(from, until) {
+    document.getElementById('date-from').value = isoDate(from);
+    document.getElementById('date-until').value = isoDate(until);
+    submitFilter();
+  }
 
   function isoDate(date) {
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0')
         + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  // Der Knopf der Monatswahl sagt seinen Monat nur, solange der Zeitraum genau dieser Monat ist —
+  // sonst zeigte er einen Zustand an, den der Filter nicht meint.
+  if (monthButton && !/*[[${wholeMonth}]]*/ true) {
+    monthButton.textContent = /*[[#{main.timereportlist.filter.period.month}]]*/ 'Monat wählen';
   }
 
   // ── Export: derselbe Filter, aber alle Treffer ──
@@ -557,11 +543,10 @@
       fBookingsSuborders: [...state.suborders].map(id => id.slice(2)).join(','),
       fBookingsTickets: [...state.tickets].join(','),
       fBookingsTicketChildren: document.getElementById('ticket-children').checked,
-      fBookingsMode: document.getElementById('mode-month').checked ? 'month' : 'range',
-      fBookingsMonth: monthInput.value,
       fBookingsFrom: document.getElementById('date-from').value,
       fBookingsUntil: document.getElementById('date-until').value,
       fBookingsBillable: document.querySelector('input[name="billable-choice"]:checked').value,
+      fBookingsSort: hidden('f-sort').value,
     });
     event.currentTarget.href = event.currentTarget.pathname + '?' + params.toString();
   });
@@ -743,6 +728,14 @@
       timer = setTimeout(() => document.body.dispatchEvent(new CustomEvent(eventName)), 300);
     });
   }
+
+  // ── Spaltenkopf sortiert: neuer Wert ins Formular, neu laden ──
+  document.querySelectorAll('#bookings thead [data-sort]').forEach(link =>
+    link.addEventListener('click', event => {
+      event.preventDefault();
+      hidden('f-sort').value = link.dataset.sort;
+      form.requestSubmit();
+    }));
 
   // ── Klick auf die Zeile oeffnet die Buchung; ein Link in ihr bleibt ein Link ──
   document.querySelector('#bookings tbody').addEventListener('click', event => {

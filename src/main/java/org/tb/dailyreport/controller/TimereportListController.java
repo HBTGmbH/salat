@@ -60,11 +60,10 @@ public class TimereportListController {
       @RequestParam(required = false) String fBookingsSuborders,
       @RequestParam(required = false) String fBookingsTickets,
       @RequestParam(required = false) String fBookingsTicketChildren,
-      @RequestParam(required = false) String fBookingsMode,
-      @RequestParam(required = false) String fBookingsMonth,
       @RequestParam(required = false) String fBookingsFrom,
       @RequestParam(required = false) String fBookingsUntil,
       @RequestParam(required = false) String fBookingsBillable,
+      @RequestParam(required = false) String fBookingsSort,
       @RequestParam(required = false) String fBookingsLimit,
       Model model) {
 
@@ -73,13 +72,15 @@ public class TimereportListController {
     var orderIds = longs(fBookingsOrders);
     var suborderIds = longs(fBookingsSuborders);
     var ticketKeys = strings(fBookingsTickets);
-    var period = period(fBookingsMode, fBookingsMonth, fBookingsFrom, fBookingsUntil);
+    var period = period(fBookingsFrom, fBookingsUntil);
     var billable = billable(fBookingsBillable);
     var limit = limit(fBookingsLimit);
 
     var ticketChildren = ticketDescendants(fBookingsTicketChildren);
+    var order = sortOrder(fBookingsSort);
     var filter = new TimereportListFilter(employeeIds, customerIds, orderIds, suborderIds, ticketKeys, ticketChildren,
-        period.from(), period.until(), billable, limit == 0 ? TimereportListFilter.UNLIMITED : limit);
+        period.from(), period.until(), billable, order.sort(), order.descending(),
+        limit == 0 ? TimereportListFilter.UNLIMITED : limit);
 
     model.addAttribute("result", timereportListService.search(filter));
     model.addAttribute("options", timereportListService.getFilterOptions(orderIds, suborderIds, ticketKeys));
@@ -90,11 +91,13 @@ public class TimereportListController {
     model.addAttribute("selectedSuborderIds", suborderIds);
     model.addAttribute("selectedTicketKeys", ticketKeys);
     model.addAttribute("ticketChildren", ticketChildren);
-    model.addAttribute("monthMode", period.monthMode());
     model.addAttribute("yearMonth", period.yearMonth());
+    model.addAttribute("wholeMonth", period.wholeMonth());
     model.addAttribute("from", period.from());
     model.addAttribute("until", period.until());
     model.addAttribute("billable", billable.name());
+    model.addAttribute("sort", order.sort().name());
+    model.addAttribute("sortDescending", order.descending());
     model.addAttribute("limits", LIMITS);
     model.addAttribute("limit", limit);
 
@@ -130,7 +133,7 @@ public class TimereportListController {
     model.addAttribute("selectedOrderIds", longs(selectedOrders));
     model.addAttribute("selectedSuborderIds", longs(selectedSuborders));
     model.addAttribute("searching", q != null && !q.isBlank());
-    return "dailyreport/timereport-list-dialogs :: orderTree";
+    return "dailyreport/timereport-list-fragments :: orderTree";
   }
 
   /** The rows of the ticket dialog — the tickets of the scopes of the chosen orders, for the same reason. */
@@ -148,7 +151,7 @@ public class TimereportListController {
     model.addAttribute("total", result.total());
     model.addAttribute("shown", result.tickets().size());
     model.addAttribute("selectedTicketKeys", strings(selectedTickets));
-    return "dailyreport/timereport-list-dialogs :: ticketTree";
+    return "dailyreport/timereport-list-fragments :: ticketTree";
   }
 
   /**
@@ -163,18 +166,18 @@ public class TimereportListController {
       @RequestParam(required = false) String fBookingsSuborders,
       @RequestParam(required = false) String fBookingsTickets,
       @RequestParam(required = false) String fBookingsTicketChildren,
-      @RequestParam(required = false) String fBookingsMode,
-      @RequestParam(required = false) String fBookingsMonth,
       @RequestParam(required = false) String fBookingsFrom,
       @RequestParam(required = false) String fBookingsUntil,
       @RequestParam(required = false) String fBookingsBillable,
+      @RequestParam(required = false) String fBookingsSort,
       HttpServletResponse response) throws IOException {
 
-    var period = period(fBookingsMode, fBookingsMonth, fBookingsFrom, fBookingsUntil);
+    var period = period(fBookingsFrom, fBookingsUntil);
+    var order = sortOrder(fBookingsSort);
     var filter = new TimereportListFilter(longs(fBookingsEmployees), longs(fBookingsCustomers),
         longs(fBookingsOrders), longs(fBookingsSuborders), strings(fBookingsTickets),
         ticketDescendants(fBookingsTicketChildren), period.from(), period.until(), billable(fBookingsBillable),
-        TimereportListFilter.UNLIMITED);
+        order.sort(), order.descending(), TimereportListFilter.UNLIMITED);
 
     var bytes = excelService.export(timereportListService.searchAll(filter));
     var fileName = "buchungen_" + period.from() + "_" + period.until() + ".xlsx";
@@ -185,29 +188,33 @@ public class TimereportListController {
   }
 
   /**
-   * Either one whole month or a period of days — no mixture of the two. Whatever is missing or unreadable falls back
-   * to the current month, so a hand-written URL cannot produce a page without a period.
+   * The period is a first and a last day, nothing else — whole months are a quick selection that sets the two, not a
+   * second mode of the page (#1092). Whatever is missing or unreadable falls back to the current month, so a
+   * hand-written URL cannot produce a page without a period.
    */
-  private static Period period(String mode, String month, String from, String until) {
-    if ("range".equals(mode)) {
-      var begin = date(from);
-      var end = date(until);
-      if (begin != null && end != null && !end.isBefore(begin)) {
-        return new Period(false, YearMonth.from(begin), begin, end);
-      }
+  private static Period period(String from, String until) {
+    var begin = date(from);
+    var end = date(until);
+    if (begin == null || end == null || end.isBefore(begin)) {
+      var month = YearMonth.from(today());
+      return new Period(month.atDay(1), month.atEndOfMonth());
     }
-    var yearMonth = yearMonth(month);
-    return new Period(true, yearMonth, yearMonth.atDay(1), yearMonth.atEndOfMonth());
+    return new Period(begin, end);
   }
 
-  private record Period(boolean monthMode, YearMonth yearMonth, LocalDate from, LocalDate until) {}
+  /**
+   * @param wholeMonth whether the period is exactly one month — then the month selection may say which one, otherwise
+   *                   it would show a value the filter does not mean
+   */
+  private record Period(LocalDate from, LocalDate until) {
 
-  private static YearMonth yearMonth(String value) {
-    if (value == null || value.isBlank()) return YearMonth.from(today());
-    try {
-      return YearMonth.parse(value.trim());
-    } catch (DateTimeParseException e) {
-      return YearMonth.from(today());
+    YearMonth yearMonth() {
+      return YearMonth.from(from);
+    }
+
+    boolean wholeMonth() {
+      var month = YearMonth.from(from);
+      return from.equals(month.atDay(1)) && until.equals(month.atEndOfMonth());
     }
   }
 
@@ -219,6 +226,23 @@ public class TimereportListController {
       return null;
     }
   }
+
+  /**
+   * The sort as one parameter: the column, a leading minus for the reverse. Missing means chronological — the order a
+   * list of bookings is read in, oldest day first.
+   */
+  private static SortOrder sortOrder(String value) {
+    if (value == null || value.isBlank()) return new SortOrder(TimereportListFilter.Sort.DATE, false);
+    var descending = value.startsWith("-");
+    try {
+      return new SortOrder(TimereportListFilter.Sort.valueOf(
+          (descending ? value.substring(1) : value).trim().toUpperCase()), descending);
+    } catch (IllegalArgumentException e) {
+      return new SortOrder(TimereportListFilter.Sort.DATE, false);
+    }
+  }
+
+  private record SortOrder(TimereportListFilter.Sort sort, boolean descending) {}
 
   /** Missing means on: whoever filters by an epic means its subtasks as well. */
   private static boolean ticketDescendants(String value) {

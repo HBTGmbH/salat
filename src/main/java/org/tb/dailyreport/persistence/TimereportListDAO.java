@@ -7,6 +7,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.Duration;
@@ -44,7 +45,7 @@ public class TimereportListDAO {
 
   private final EntityManager entityManager;
 
-  /** The rows, ordered newest first and cut to the maximum the filter asks for. */
+  /** The rows, in chronological order and cut to the maximum the filter asks for. */
   public List<Timereport> findRows(TimereportListFilter filter, TimereportVisibility visibility) {
     var builder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Timereport> query = builder.createQuery(Timereport.class);
@@ -56,16 +57,45 @@ public class TimereportListDAO {
     root.fetch(Timereport_.suborder).fetch(Suborder_.customerorder).fetch(Customerorder_.customer);
     root.fetch(Timereport_.employeeorder);
     query.where(conditions(filter, visibility, root, builder));
-    query.orderBy(
-        builder.desc(root.join(Timereport_.referenceday).get(Referenceday_.refdate)),
-        builder.asc(root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.sign)),
-        builder.asc(root.get(Timereport_.sequencenumber)));
+    query.orderBy(orderBy(filter, root, builder));
 
     var typed = entityManager.createQuery(query);
     if (filter.limited()) {
       typed.setMaxResults(filter.maxResults());
     }
     return typed.getResultList();
+  }
+
+  /**
+   * Chronologisch als Voreinstellung: aeltester Tag zuerst, innerhalb eines Tages nach Kuerzel und der Reihenfolge,
+   * in der gebucht wurde. Jede andere Spalte sortiert genauso in der Abfrage — und behaelt Datum und Kuerzel als
+   * zweites Kriterium, damit zwei gleiche Werte nicht bei jedem Aufruf anders herum stehen.
+   */
+  private List<Order> orderBy(TimereportListFilter filter, Root<Timereport> root, CriteriaBuilder builder) {
+    var refdate = root.join(Timereport_.referenceday).get(Referenceday_.refdate);
+    var sign = root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.sign);
+    var suborder = root.join(Timereport_.suborder);
+
+    Expression<?> primary = switch (filter.sort()) {
+      case DATE -> refdate;
+      case EMPLOYEE -> sign;
+      case ORDER -> suborder.join(Suborder_.customerorder).get(Customerorder_.sign);
+      case SUBORDER -> suborder.get(Suborder_.sign);
+      case DURATION -> builder.sum(
+          builder.prod(root.get(Timereport_.durationhours).as(Long.class), (long) MINUTES_PER_HOUR),
+          root.get(Timereport_.durationminutes).as(Long.class));
+    };
+
+    var orders = new ArrayList<Order>();
+    orders.add(filter.descending() ? builder.desc(primary) : builder.asc(primary));
+    if (filter.sort() != TimereportListFilter.Sort.DATE) {
+      orders.add(builder.asc(refdate));
+    }
+    if (filter.sort() != TimereportListFilter.Sort.EMPLOYEE) {
+      orders.add(builder.asc(sign));
+    }
+    orders.add(builder.asc(root.get(Timereport_.sequencenumber)));
+    return orders;
   }
 
   /**
