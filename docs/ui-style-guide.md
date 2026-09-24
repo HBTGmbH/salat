@@ -1066,6 +1066,26 @@ sie sich zur 4rem breiten Icon-Leiste falten.
 Es gibt keine dedizierten mobilen Layouts, keine Karten-Ansicht als Tabellen-Ersatz.
 Faktisch ist SALAT eine Desktop-Anwendung, die auf kleinen Displays benutzbar bleibt.
 
+### Die mitlaufende Spalte einer waagerecht scrollenden Tabelle (#829)
+
+Eine Tabelle, deren Spalten aus den Daten entstehen statt aus dem Entwurf — die Tage eines Monats
+in der Matrixübersicht — kann nicht ausblenden, was nicht passt. Sie scrollt im
+`.table-responsive` waagerecht, und die Spalte, die die Zeile benennt, bleibt mit `position:
+sticky; left: 0` stehen. Ohne sie sind ab der Mitte des Monats nur noch Zahlenkolonnen zu sehen.
+
+Zwei Dinge, die eine sticky-Spalte in einer Bootstrap-Tabelle nicht geschenkt bekommt:
+
+- **Die Fläche muss deckend sein**, sonst laufen die Zellen sichtbar darunter durch. Sie deckend zu
+  bekommen braucht die id im Selektor: `.table > :not(caption) > * > *` setzt `background-color`
+  und ist spezifischer als eine einzelne Klasse. Eine getönte Zeile (Zebra) mischt ihren Ton
+  deshalb gegen die Kartenfläche statt gegen `transparent` — gleiche Farbe, aber ohne Alpha.
+- **Der `z-index` hebt die Spalte über die Zellen, nicht über alles.** Das Popover einer Zelle
+  hängt am `body` (Bootstrap löst `container: false` zu `document.body` auf) und liegt mit 1070
+  darüber; im Scroll-Container läge es unter der Spalte und wäre beschnitten.
+
+Im Druck wird die Position zurückgenommen (`@media print { position: static }`) — gedruckt wird
+nicht gescrollt.
+
 ### Reservierte URL-Parameter
 
 `tabler-theme.min.js` läuft auf **jeder** Seite und wertet dabei zehn Abfrageparameter aus:

@@ -6,7 +6,6 @@
 
 <style>
   .matrix-first-col {
-    background: var(--tblr-card-bg, var(--tblr-body-bg));
     border-right: 1.5px solid;
     color:  var(--tblr-table-color) !important;
   }
@@ -67,6 +66,37 @@
      dem Farbmodus von selbst - eine Regel statt zweier. Ergebnis hell #f7f8f8, dunkel #27303e. */
   .matrix-row-even td:not([class*="bg-"]) {
     background-color: color-mix(in srgb, var(--tblr-body-color) 4%, transparent);
+  }
+  /* Die Auftragsspalte bleibt beim waagerechten Scrollen stehen (#829). Scrollport ist das
+     umgebende .table-responsive; darin wirkt sticky. Der z-index haelt die Spalte ueber den
+     durchlaufenden Zellen - das Buchungsdetail-Popover haengt am body (Bootstrap loest
+     container: false zu document.body auf) und liegt mit 1070 darueber.
+     Die Flaeche muss deckend sein, sonst laufen die Tageszellen sichtbar darunter durch. Sie
+     braucht die id im Selektor: Bootstraps '.table > :not(caption) > * > *' setzt
+     background-color und ist spezifischer als eine einzelne Klasse - deshalb war die Spalte in
+     den Datenzeilen und im Fuss bisher durchsichtig. */
+  #matrix .matrix-first-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--tblr-card-bg, var(--tblr-body-bg));
+  }
+  /* Der Kopf traegt in Tabler seine eigene Flaeche ('.table thead th'). Die Regel oben ist mit der
+     id spezifischer und haette die Spalte dort weiss gesetzt - eine Naht mitten in der Kopfzeile. */
+  #matrix thead .matrix-first-col {
+    background-color: var(--tblr-bg-surface-tertiary);
+  }
+  /* Die Zebra-Regel oben mischt gegen transparent; hier dieselbe Mischung gegen die Kartenflaeche,
+     damit die Zeile gleich aussieht und trotzdem deckt. */
+  #matrix tr.matrix-row-even td.matrix-first-col {
+    background-color: color-mix(in srgb, var(--tblr-body-color) 4%, var(--tblr-card-bg, var(--tblr-body-bg)));
+  }
+  /* Gedruckt wird nicht gescrollt - und eine fixierte Spalte haette dort nichts, wovor sie
+     stehen koennte. */
+  @media print {
+    #matrix .matrix-first-col {
+      position: static;
+    }
   }
   .matrix-detail-popover.popover {
     border: none;
