@@ -3,6 +3,7 @@ package org.tb.order.service;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.CUSTOMER;
 
+import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -142,6 +143,12 @@ public class CustomerorderService {
     return customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
   }
 
+  /** The orders with these ids, in one statement — for a caller that resolved the ids elsewhere (#1092). */
+  public List<Customerorder> getCustomerordersByIds(Collection<Long> ids) {
+    if (ids.isEmpty()) return List.of();
+    return Lists.newArrayList(customerorderRepository.findAllById(ids));
+  }
+
   public List<Customerorder> getAllCustomerorders() {
     return customerorderDAO.getCustomerorders();
   }
@@ -189,6 +196,15 @@ public class CustomerorderService {
   /** The signs of every customer order this employee is responsible for. */
   public List<String> getSignsByResponsibleEmployeeId(long responsibleEmployeeId) {
     return customerorderRepository.findSignsByResponsibleHbt(responsibleEmployeeId);
+  }
+
+  /**
+   * The ids of every order this employee is responsible for, in either role — {@code responsibleHbt} or
+   * {@code respEmpHbtContract} (#1092). Ids rather than orders: the caller turns them into a condition of its own
+   * query and never displays them.
+   */
+  public List<Long> getIdsByResponsibleEmployeeId(long responsibleEmployeeId) {
+    return customerorderRepository.findIdsByResponsibleEmployee(responsibleEmployeeId);
   }
 
   /**

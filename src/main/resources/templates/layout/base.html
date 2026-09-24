@@ -204,6 +204,11 @@
                      th:text="#{main.general.mainmenu.matrixmenu.text}">
                     Matrixübersicht
                   </a>
+                  <a class="dropdown-item" th:href="@{/dailyreport/list}"
+                     th:classappend="${subSection == 'list'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.timereportlist.text}">
+                    Buchungsliste
+                  </a>
                   <a class="dropdown-item" th:href="@{/dailyreport/csv}"
                      th:classappend="${subSection == 'csv'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.csv.text}">

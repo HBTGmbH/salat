@@ -10,6 +10,7 @@ import static org.tb.common.exception.ErrorCode.EM_NOT_FOUND;
 import static org.tb.common.exception.ServiceFeedbackMessage.error;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +74,19 @@ public class EmployeeService {
 
   public List<Employee> getAllEmployees() {
     return employeeDAO.getEmployees();
+  }
+
+  /**
+   * The employees with these ids, without the read rules of this module (#1092).
+   *
+   * <p>Deliberately not {@link #getAllEmployees()}, which answers "whom may this user look at" and would be the wrong
+   * question here: the caller already knows it may show these people, because it derived the ids from bookings the
+   * user is allowed to read. A name that must not appear never comes out of that query, and filtering it a second
+   * time against a different rule would drop names from a list whose rows are shown anyway.
+   */
+  public List<Employee> getEmployeesByIds(Collection<Long> ids) {
+    if (ids.isEmpty()) return List.of();
+    return employeeDAO.getEmployeesByIds(ids);
   }
 
   /**

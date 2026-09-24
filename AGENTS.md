@@ -644,6 +644,18 @@ Entities are divided into two categories (→ ADR-0011):
 - Standard entity annotations: `@Entity`, `@Getter @Setter` (Lombok), `@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)`
 - Boolean columns in the database must be `bit(1)` — Hibernate maps `Boolean` to `bit`, not `tinyint`. In Liquibase migrations always use `type: bit(1)`.
 
+### Criteria-Abfragen über den EntityManager (#1092)
+
+Eine einzige Stelle baut ihre Abfragen über den `EntityManager` statt über ein Spring-Data-Repository:
+`TimereportListDAO`. Der Grund ist die Form der Frage, nicht eine Vorliebe — die Bedingung entsteht
+zur Laufzeit aus **Filter und Sichtbarkeit**, und dieselbe Bedingung muss drei Dinge beantworten: die
+Zeilen, die Summen über alle Treffer und die Werte, die die Filter anbieten dürfen. Eine
+Repository-Methode kann weder eine dynamische Disjunktion noch eine `distinct`-Projektion darunter
+ausdrücken.
+
+Wer eine zweite solche Stelle anlegt, begründet sie genauso — für alles andere bleibt es bei
+Repository und `Specification`.
+
 ### Repository-Zugriff in Services (→ ADR-0019)
 - Spring Data repositories extend `PagingAndSortingRepository<E, Long>` and `CrudRepository<E, Long>`; custom queries use `@Query` with multiline JPQL text blocks
 - **Neue Module**: Services verwenden das Repository direkt — kein DAO-Wrapper. (→ ADR-0019)

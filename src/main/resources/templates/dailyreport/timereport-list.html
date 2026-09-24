@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" th:with="title=${pageTitle}">
+<main layout:fragment="content">
+
+<style>
+  #bookings tbody tr[data-booking] { cursor: pointer; }
+  #bookings tbody tr:hover td {
+    background-color: rgba(var(--tblr-primary-rgb), 0.08);
+  }
+  .booking-task { max-width: 26rem; }
+  /* The picker of a tree opens a dialog; it has to read like the select boxes next to it. */
+  .tree-picker { text-align: left; }
+</style>
+
+<!-- ═══════════════════════════════ FILTER ═══════════════════════════════ -->
+<form method="get" th:action="@{/dailyreport/list}" id="filter-form" class="card mb-3">
+  <div class="card-body">
+
+    <div class="row g-3">
+      <div class="col-lg-3">
+        <label class="form-label" for="employee-select" th:text="#{main.timereportlist.filter.employees}">Mitarbeiter</label>
+        <select class="form-select tomselect tomselect-multi" id="employee-select" multiple
+                th:attr="placeholder=#{main.timereportlist.filter.employees.all}">
+          <option th:each="employee : ${options.employees}"
+                  th:value="${employee.id}"
+                  th:selected="${selectedEmployeeIds.contains(employee.id)}"
+                  th:text="${employee.name} + ' | ' + ${employee.sign}"></option>
+        </select>
+      </div>
+
+      <div class="col-lg-3">
+        <label class="form-label" for="customer-select" th:text="#{main.timereportlist.filter.customers}">Auftraggeber</label>
+        <select class="form-select tomselect tomselect-multi" id="customer-select" multiple
+                th:attr="placeholder=#{main.timereportlist.filter.customers.all}">
+          <option th:each="customer : ${options.customers}"
+                  th:value="${customer.id}"
+                  th:selected="${selectedCustomerIds.contains(customer.id)}"
+                  th:text="${customer.shortname} + ' - ' + ${customer.name}"></option>
+        </select>
+      </div>
+
+      <div class="col-lg-3">
+        <label class="form-label" for="order-picker" th:text="#{main.timereportlist.filter.orders}">Aufträge</label>
+        <button type="button" class="form-select tree-picker" id="order-picker"
+                data-bs-toggle="modal" data-bs-target="#order-modal">
+          <span id="order-summary" class="text-truncate d-block"
+                th:with="picked=${options.selectedOrders.size() + options.selectedSuborders.size()}"
+                th:text="${picked == 0}
+                           ? #{main.timereportlist.filter.orders.all}
+                           : (${picked == 1}
+                               ? (${options.selectedOrders.isEmpty()}
+                                   ? ${options.selectedSuborders[0].completeSign}
+                                   : ${options.selectedOrders[0].sign})
+                               : ${picked} + ' ' + #{main.timereportlist.filter.entries})">Alle Aufträge</span>
+        </button>
+        <div class="mt-1 small d-flex align-items-center gap-2"
+             th:with="picked=${options.selectedOrders.size() + options.selectedSuborders.size()}">
+          <span class="text-secondary" id="order-detail"
+                th:text="${picked == 0}
+                           ? #{main.timereportlist.filter.unrestricted}
+                           : ${options.includedSuborders} + ' ' + #{main.timereportlist.orders.dialog.included}">keine Einschränkung</span>
+          <a th:if="${picked > 0}" href="#" id="order-clear" th:text="#{main.timereportlist.filter.clear}">leeren</a>
+        </div>
+      </div>
+
+      <div class="col-lg-3">
+        <label class="form-label" for="ticket-picker" th:text="#{main.timereportlist.filter.tickets}">Tickets</label>
+        <button type="button" class="form-select tree-picker" id="ticket-picker"
+                data-bs-toggle="modal" data-bs-target="#ticket-modal">
+          <span id="ticket-summary" class="text-truncate d-block"
+                th:text="${selectedTicketKeys.isEmpty()}
+                           ? #{main.timereportlist.filter.tickets.all}
+                           : (${selectedTicketKeys.size() == 1}
+                               ? ${selectedTicketKeys[0]}
+                               : ${selectedTicketKeys.size()} + ' ' + #{main.timereportlist.filter.tickets.count})">Alle Tickets</span>
+        </button>
+        <div class="mt-1 small d-flex align-items-center gap-2">
+          <span class="text-secondary" id="ticket-detail"
+                th:text="${selectedTicketKeys.isEmpty()}
+                           ? #{main.timereportlist.filter.unrestricted}
+                           : (${ticketChildren}
+                               ? #{main.timereportlist.tickets.dialog.children.included}
+                               : #{main.timereportlist.tickets.dialog.children.excluded})">keine Einschränkung</span>
+          <a th:if="${!selectedTicketKeys.isEmpty()}" href="#" id="ticket-clear"
+             th:text="#{main.timereportlist.filter.clear}">leeren</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0 align-items-end">
+      <!--/* Die Betriebsart steht nicht neben der Monatsauswahl, sie ist sie: der Monat selbst ist
+             der linke Knopf der Gruppe. Ein Radio ohne sichtbares Label traegt den Zustand. */-->
+      <div class="col-lg-auto">
+        <label class="form-label" th:text="#{main.timereportlist.filter.period}">Zeitraum</label>
+        <div class="btn-group btn-group-sm w-100" role="group">
+          <input type="radio" class="btn-check" name="period-mode" id="mode-month" value="month"
+                 th:checked="${monthMode}">
+          <th:block th:replace="~{fragments/month-picker :: monthPicker('bookings-month', null, ${yearMonth})}"></th:block>
+          <input type="radio" class="btn-check" name="period-mode" id="mode-range" value="range"
+                 th:checked="${!monthMode}">
+          <label class="btn btn-sm" for="mode-range" th:text="#{main.timereportlist.filter.period.range}">Freier Zeitraum</label>
+        </div>
+      </div>
+
+      <div class="col-lg-auto d-none" id="period-range">
+        <div class="d-flex align-items-center gap-2">
+          <input type="date" class="form-control form-control-sm" id="date-from" style="width: 10rem"
+                 th:value="${from}">
+          <span class="text-secondary" th:text="#{main.timereportlist.filter.period.until}">bis</span>
+          <input type="date" class="form-control form-control-sm" id="date-until" style="width: 10rem"
+                 th:value="${until}">
+        </div>
+      </div>
+
+      <div class="col-lg-auto">
+        <div class="btn-list">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="thisMonth"
+                  th:text="#{main.general.month.current}">Dieser Monat</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="lastMonth"
+                  th:text="#{main.timereportlist.filter.period.lastmonth}">Letzter Monat</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="thisYear"
+                  th:text="#{main.timereportlist.filter.period.thisyear}">Dieses Jahr</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-preset="last30"
+                  th:text="#{main.timereportlist.filter.period.last30}">Letzte 30 Tage</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-0 align-items-end">
+      <div class="col-auto">
+        <label class="form-label" th:text="#{main.timereportlist.filter.billable}">Fakturierbarkeit</label>
+        <div class="btn-group btn-group-sm d-flex" role="group" id="billable-group">
+          <input type="radio" class="btn-check" name="billable-choice" id="billable-all" value="ALL"
+                 th:checked="${billable == 'ALL'}">
+          <label class="btn btn-sm" for="billable-all" th:text="#{main.timereportlist.filter.billable.all}">Alle</label>
+          <input type="radio" class="btn-check" name="billable-choice" id="billable-yes" value="BILLABLE"
+                 th:checked="${billable == 'BILLABLE'}">
+          <label class="btn btn-sm" for="billable-yes" th:text="#{main.timereportlist.filter.billable.yes}">Fakturierbar</label>
+          <input type="radio" class="btn-check" name="billable-choice" id="billable-no" value="NOT_BILLABLE"
+                 th:checked="${billable == 'NOT_BILLABLE'}">
+          <label class="btn btn-sm" for="billable-no" th:text="#{main.timereportlist.filter.billable.no}">Nicht fakturierbar</label>
+        </div>
+      </div>
+
+      <div class="col-auto">
+        <label class="form-label" for="limit-select" th:text="#{main.timereportlist.filter.limit}">Maximale Anzahl Treffer</label>
+        <select class="form-select tomselect" id="limit-select" style="width: 10rem">
+          <option th:each="option : ${limits}" th:value="${option}" th:selected="${option == limit}"
+                  th:text="${option == 0} ? #{main.timereportlist.filter.limit.all} : ${option}">500</option>
+        </select>
+      </div>
+
+      <div class="col-auto ms-auto">
+        <div class="btn-list">
+          <a class="btn btn-link" th:href="@{/dailyreport/list(fBookingsEmployees='',fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsBillable='ALL')}"
+             th:text="#{main.general.button.reset.text}">Zurücksetzen</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-filter"></i><span th:text="#{main.general.button.filter.text}">Filtern</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!--/* Jede Auswahl reist als ein Parameter: UiState merkt sich einen Wert je Schluessel, und
+           ein Filter, der beim Oeffnen einer Buchung vergessen wird, waere keiner. Die Felder
+           werden beim Absenden aus den Bedienelementen gefuellt. */-->
+    <input type="hidden" name="fBookingsEmployees" id="f-employees"
+           th:value="${#strings.listJoin(selectedEmployeeIds, ',')}"/>
+    <input type="hidden" name="fBookingsCustomers" id="f-customers"
+           th:value="${#strings.listJoin(selectedCustomerIds, ',')}"/>
+    <input type="hidden" name="fBookingsOrders" id="f-orders"
+           th:value="${#strings.listJoin(selectedOrderIds, ',')}"/>
+    <input type="hidden" name="fBookingsSuborders" id="f-suborders"
+           th:value="${#strings.listJoin(selectedSuborderIds, ',')}"/>
+    <input type="hidden" name="fBookingsTickets" id="f-tickets"
+           th:value="${#strings.listJoin(selectedTicketKeys, ',')}"/>
+    <input type="hidden" name="fBookingsTicketChildren" id="f-ticket-children" th:value="${ticketChildren}"/>
+    <input type="hidden" name="fBookingsMode" id="f-mode" th:value="${monthMode} ? 'month' : 'range'"/>
+    <input type="hidden" name="fBookingsMonth" id="f-month" th:value="${yearMonth}"/>
+    <input type="hidden" name="fBookingsFrom" id="f-from" th:value="${from}"/>
+    <input type="hidden" name="fBookingsUntil" id="f-until" th:value="${until}"/>
+    <input type="hidden" name="fBookingsBillable" id="f-billable" th:value="${billable}"/>
+    <input type="hidden" name="fBookingsLimit" id="f-limit" th:value="${limit}"/>
+  </div>
+</form>
+
+<!-- ═══════════════════════════════ KENNZAHLEN ═══════════════════════════════ -->
+<div class="row row-cards mb-3">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="subheader" th:text="#{main.timereportlist.kpi.count}">Buchungen</div>
+        <div class="h1 mb-0" th:text="${result.totalCount}">0</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="subheader" th:text="#{main.timereportlist.kpi.duration}">Summe Stunden</div>
+        <div class="h1 mb-0" th:text="${@durationUtils.format(result.totalDuration)}">0:00</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="subheader" th:text="#{main.timereportlist.kpi.billable}">davon fakturierbar</div>
+        <div class="h1 mb-0 text-green" th:text="${@durationUtils.format(result.billableDuration)}">0:00</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="subheader" th:text="#{main.timereportlist.kpi.spread}">Mitarbeiter / Aufträge</div>
+        <div class="h1 mb-0" th:text="${result.employeeCount} + ' / ' + ${result.orderCount}">0 / 0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TABELLE ═══════════════════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title" th:text="#{main.timereportlist.table.title(${result.totalCount})}">Buchungen</h3>
+    <div class="card-actions btn-list">
+      <a class="btn btn-outline-secondary" id="export-button" th:href="@{/dailyreport/list/export}">
+        <i class="ti ti-file-spreadsheet"></i><span th:text="#{main.timereportlist.export}">Export nach Excel</span>
+      </a>
+    </div>
+  </div>
+
+  <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0"
+       role="alert">
+    <i class="ti ti-alert-triangle me-2"></i>
+    <span th:text="#{main.timereportlist.truncated(${result.timereports.size()},${result.totalCount})}">
+      Die Anzeige ist begrenzt.
+    </span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-vcenter table-sm card-table" id="bookings">
+      <thead>
+        <tr>
+          <th th:text="#{main.timereportlist.column.date}">Datum</th>
+          <th th:text="#{main.timereportlist.column.employee}">Mitarbeiter</th>
+          <th th:text="#{main.timereportlist.column.order}">Auftrag</th>
+          <th th:text="#{main.timereportlist.column.suborder}">Unterauftrag</th>
+          <th th:text="#{main.timereportlist.column.task}">Tätigkeit</th>
+          <th class="d-none d-xl-table-cell" th:text="#{main.timereportlist.column.ticket}">Ticket</th>
+          <th class="text-end" th:text="#{main.timereportlist.column.duration}">Dauer</th>
+          <th class="text-center" th:text="#{main.timereportlist.column.billable.short}">Fakt.</th>
+          <th class="text-center d-none d-lg-table-cell" th:text="#{main.timereportlist.column.status}">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${result.timereports.isEmpty()}">
+          <td colspan="9" class="text-center text-secondary py-4"
+              th:text="#{main.timereportlist.table.empty}">Keine Buchungen gefunden.</td>
+        </tr>
+        <tr th:each="tr : ${result.timereports}" th:data-booking="${tr.id}">
+          <td class="text-nowrap">
+            <!--/* Das Datum ist der Griff der Zeile und ihr einziger Tabstopp: eine ganze Zeile mit
+                   tabindex waere ein Tabstopp je Buchung. */-->
+            <a th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id})}"
+               th:text="${#temporals.format(tr.referenceday, 'dd.MM.yyyy')}">01.01.2026</a>
+          </td>
+          <td class="text-nowrap">
+            <span th:text="${tr.employeeName}">Name</span>
+            <span class="text-secondary" th:text="'| ' + ${tr.employeeSign}">| sig</span>
+          </td>
+          <td class="text-nowrap">
+            <span class="fw-medium" th:text="${tr.customerorderSign}">Auftrag</span><br>
+            <span class="text-secondary small" th:text="${tr.customerShortname}">Auftraggeber</span>
+          </td>
+          <td class="text-nowrap">
+            <span th:text="${tr.completeOrderSign}">Unterauftrag</span><br>
+            <span class="text-secondary small" th:text="${tr.suborderDescription}">Bezeichnung</span>
+          </td>
+          <td class="booking-task text-truncate" th:title="${tr.taskdescription}" th:text="${tr.taskdescription}">Tätigkeit</td>
+          <td class="d-none d-xl-table-cell text-nowrap">
+            <span th:if="${#strings.isEmpty(tr.ticketReference)}" class="text-secondary">–</span>
+            <span th:unless="${#strings.isEmpty(tr.ticketReference)}" th:text="${tr.ticketReference}">TICKET-1</span>
+          </td>
+          <td class="text-end text-nowrap" th:text="${@durationUtils.format(tr.duration)}">0:00</td>
+          <td class="text-center">
+            <i th:if="${tr.billable}" class="ti ti-check text-green"
+               th:title="#{main.timereportlist.filter.billable.yes}"></i>
+            <i th:unless="${tr.billable}" class="ti ti-minus text-secondary"
+               th:title="#{main.timereportlist.filter.billable.no}"></i>
+          </td>
+          <td class="text-center d-none d-lg-table-cell">
+            <!--/* Die Statuswerte stehen technisch in der Datenbank (open, commited, closed); die Liste
+                   zeigt, was die Anwendung darunter versteht. */-->
+            <span th:class="'badge ' + (${tr.status == 'closed'} ? 'bg-green-lt'
+                                       : (${tr.status == 'commited'} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
+                  th:text="#{'main.timereportlist.status.' + ${tr.status}}">offen</span>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot class="table-group-divider fw-bold" th:unless="${result.timereports.isEmpty()}">
+        <tr>
+          <td colspan="6" class="text-end" th:text="#{main.timereportlist.table.sum}">Summe</td>
+          <td class="text-end" th:text="${@durationUtils.format(result.totalDuration)}">0:00</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="card-footer">
+    <p class="m-0 text-secondary" th:text="#{main.timereportlist.table.count(${result.totalCount})}">0 Buchungen</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ AUFTRAGSAUSWAHL ═══════════════════════════════ -->
+<div class="modal modal-blur fade" id="order-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" th:text="#{main.timereportlist.orders.dialog.title}">Aufträge auswählen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2 align-items-center mb-2">
+          <div class="col">
+            <input type="search" class="form-control" id="order-search" name="q" autocomplete="off"
+                   th:placeholder="#{main.timereportlist.orders.dialog.search}">
+          </div>
+          <div class="col-auto">
+            <div class="btn-group" role="group" id="order-level-filter">
+              <input type="checkbox" class="btn-check" id="level-order" name="levels" value="order" data-level="order">
+              <label class="btn btn-sm" for="level-order" th:text="#{main.timereportlist.orders.dialog.level.order}">Auftrag</label>
+              <input type="checkbox" class="btn-check" id="level-suborder" name="levels" value="suborder" data-level="suborder">
+              <label class="btn btn-sm" for="level-suborder" th:text="#{main.timereportlist.orders.dialog.level.suborder}">Unterauftrag</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-hint mb-3" th:text="#{main.timereportlist.orders.dialog.hint}">
+          Gezeigt wird nur, was zu Suche und Ebene passt.
+        </div>
+
+        <!--/* Die Zeilen kommen beim Oeffnen und bei jeder Suche vom Server: in der Produktion sind
+               das siebentausend Unterauftraege, und eine Seite, die sie mitbringt, laedt niemand. */-->
+        <div id="order-tree" class="list-group list-group-flush border rounded"
+             th:hx-get="@{/dailyreport/list/orders}"
+             hx-trigger="load, search-orders from:body"
+             hx-include="#order-search, #order-level-filter input"
+             hx-vals="js:{selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv()}"
+             hx-swap="innerHTML"></div>
+      </div>
+      <div class="modal-footer">
+        <!--/* Kein Schalter fuer untergeordnete Unterauftraege: sie sind immer eingeschlossen, weil
+               auf dem Blatt gebucht wird. Was das bedeutet, sagt dieser Text. */-->
+        <span class="text-secondary small me-auto" id="order-included"></span>
+        <div class="btn-list">
+          <button type="button" class="btn btn-link" data-bs-dismiss="modal"
+                  th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="order-apply"
+                  th:text="#{main.timereportlist.dialog.apply}">Übernehmen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TICKETAUSWAHL ═══════════════════════════════ -->
+<div class="modal modal-blur fade" id="ticket-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" th:text="#{main.timereportlist.tickets.dialog.title}">Tickets auswählen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2 align-items-center mb-2">
+          <div class="col">
+            <input type="search" class="form-control" id="ticket-search" name="q" autocomplete="off"
+                   th:placeholder="#{main.timereportlist.tickets.dialog.search}">
+          </div>
+          <div class="col-12">
+            <!--/* Die Typen kommen aus den Daten; in der Produktion sind es sechzehn, also umbrechen
+                   statt in eine Knopfgruppe zwingen. */-->
+            <div class="d-flex flex-wrap gap-1" id="ticket-type-filter"></div>
+          </div>
+        </div>
+        <div class="form-hint mb-3" th:text="#{main.timereportlist.tickets.dialog.hint}">
+          Gezeigt wird nur, was zu Suche und Typ passt.
+        </div>
+
+        <div id="ticket-tree" class="list-group list-group-flush border rounded"
+             th:hx-get="@{/dailyreport/list/tickets}"
+             hx-trigger="load, search-tickets from:body"
+             hx-include="#ticket-search"
+             hx-vals="js:{selectedOrders: window.bookingsFilter.orderCsv(), selectedSuborders: window.bookingsFilter.suborderCsv(), selectedTickets: window.bookingsFilter.ticketCsv()}"
+             hx-swap="innerHTML"></div>
+
+        <hr class="my-4">
+        <label class="form-label" for="ticket-manual" th:text="#{main.timereportlist.tickets.dialog.manual}">
+          Ticket ohne Replikation
+        </label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="ticket-manual" autocomplete="off" placeholder="OPS-42">
+          <button class="btn" type="button" id="ticket-manual-add"
+                  th:text="#{main.timereportlist.tickets.dialog.manual.add}">Hinzufügen</button>
+        </div>
+        <div class="form-hint" th:text="#{main.timereportlist.tickets.dialog.manual.hint}">
+          Der Ticketbezug einer Buchung ist freier Text.
+        </div>
+        <div id="ticket-manual-list" class="mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <label class="form-check form-switch mb-0 me-auto">
+          <input class="form-check-input" type="checkbox" id="ticket-children" th:checked="${ticketChildren}">
+          <span class="form-check-label" th:text="#{main.timereportlist.tickets.dialog.children}">
+            inklusive untergeordneter Tickets
+          </span>
+        </label>
+        <div class="btn-list">
+          <button type="button" class="btn btn-link" data-bs-dismiss="modal"
+                  th:text="#{main.general.button.cancel.text}">Abbrechen</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="ticket-apply"
+                  th:text="#{main.timereportlist.dialog.apply}">Übernehmen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+(function () {
+  const labels = {
+    entries: /*[[#{main.timereportlist.filter.entries}]]*/ 'Einträge',
+    includedNone: /*[[#{main.timereportlist.orders.dialog.included.none}]]*/ 'Ohne Auswahl gilt kein Auftragsfilter.',
+    under: /*[[#{main.timereportlist.tickets.dialog.under}]]*/ 'unter',
+  };
+
+  const form = document.getElementById('filter-form');
+  const hidden = id => document.getElementById(id);
+
+  // ── Auswahl der beiden Dialoge: der Entwurf lebt, solange der Dialog offen ist ──
+  const state = {
+    orders: new Set((hidden('f-orders').value || '').split(',').filter(Boolean).map(id => 'o:' + id)),
+    suborders: new Set((hidden('f-suborders').value || '').split(',').filter(Boolean).map(id => 's:' + id)),
+    tickets: new Set((hidden('f-tickets').value || '').split(',').filter(Boolean)),
+  };
+  let orderDraft = new Set();
+  let ticketDraft = new Set();
+
+  function orderPicks() {
+    return new Set([...state.orders, ...state.suborders]);
+  }
+
+  // ── Absenden: jede Auswahl wird zu einem Parameter ──
+  // Gefuellt wird im submit-Ereignis, nicht davor: es feuert, bevor der Browser die Formulardaten
+  // einsammelt, und ein requestSubmit() aus dem Handler heraus waere ein Aufruf ins Leere.
+  function fillHiddenFields() {
+    hidden('f-employees').value = selectedValues('employee-select').join(',');
+    hidden('f-customers').value = selectedValues('customer-select').join(',');
+    hidden('f-orders').value = [...state.orders].map(id => id.slice(2)).join(',');
+    hidden('f-suborders').value = [...state.suborders].map(id => id.slice(2)).join(',');
+    hidden('f-tickets').value = [...state.tickets].join(',');
+    hidden('f-ticket-children').value = document.getElementById('ticket-children').checked;
+    hidden('f-mode').value = document.getElementById('mode-month').checked ? 'month' : 'range';
+    hidden('f-month').value = document.getElementById('bookings-month').value;
+    hidden('f-from').value = document.getElementById('date-from').value;
+    hidden('f-until').value = document.getElementById('date-until').value;
+    hidden('f-billable').value = document.querySelector('input[name="billable-choice"]:checked').value;
+    hidden('f-limit').value = document.getElementById('limit-select').value;
+  }
+
+  function submitFilter() {
+    form.requestSubmit();
+  }
+
+  function selectedValues(id) {
+    return [...document.getElementById(id).selectedOptions].map(option => option.value);
+  }
+
+  form.addEventListener('submit', fillHiddenFields);
+
+  ['employee-select', 'customer-select', 'limit-select', 'date-from', 'date-until']
+    .forEach(id => document.getElementById(id).addEventListener('change', submitFilter));
+  document.querySelectorAll('input[name="billable-choice"]')
+    .forEach(input => input.addEventListener('change', submitFilter));
+
+  // ── Zeitraum: ein Monat oder ein freier Zeitraum, keine Mischform ──
+  const monthInput = document.getElementById('bookings-month');
+  const monthButton = document.querySelector('[data-month-picker] [data-label]');
+  function switchPeriodMode() {
+    const month = document.getElementById('mode-month').checked;
+    if (monthButton) monthButton.classList.toggle('active', month);
+    document.getElementById('period-range').classList.toggle('d-none', month);
+  }
+  switchPeriodMode();
+
+  document.getElementById('mode-range').addEventListener('change', () => {
+    switchPeriodMode();
+    submitFilter();
+  });
+  if (monthButton) {
+    monthButton.addEventListener('click', () => {
+      document.getElementById('mode-month').checked = true;
+      switchPeriodMode();
+    });
+  }
+  monthInput.addEventListener('change', () => {
+    document.getElementById('mode-month').checked = true;
+    switchPeriodMode();
+    submitFilter();
+  });
+
+  document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
+    const today = new Date();
+    const preset = button.dataset.preset;
+    if (preset === 'thisMonth' || preset === 'lastMonth') {
+      const date = new Date(today.getFullYear(), today.getMonth() - (preset === 'lastMonth' ? 1 : 0), 1);
+      document.getElementById('mode-month').checked = true;
+      monthInput.value = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    } else {
+      document.getElementById('mode-range').checked = true;
+      const from = preset === 'thisYear'
+        ? new Date(today.getFullYear(), 0, 1)
+        : new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+      document.getElementById('date-from').value = isoDate(from);
+      document.getElementById('date-until').value = isoDate(today);
+    }
+    switchPeriodMode();
+    submitFilter();
+  }));
+
+  function isoDate(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0')
+        + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  // ── Export: derselbe Filter, aber alle Treffer ──
+  document.getElementById('export-button').addEventListener('click', event => {
+    const params = new URLSearchParams({
+      fBookingsEmployees: selectedValues('employee-select').join(','),
+      fBookingsCustomers: selectedValues('customer-select').join(','),
+      fBookingsOrders: [...state.orders].map(id => id.slice(2)).join(','),
+      fBookingsSuborders: [...state.suborders].map(id => id.slice(2)).join(','),
+      fBookingsTickets: [...state.tickets].join(','),
+      fBookingsTicketChildren: document.getElementById('ticket-children').checked,
+      fBookingsMode: document.getElementById('mode-month').checked ? 'month' : 'range',
+      fBookingsMonth: monthInput.value,
+      fBookingsFrom: document.getElementById('date-from').value,
+      fBookingsUntil: document.getElementById('date-until').value,
+      fBookingsBillable: document.querySelector('input[name="billable-choice"]:checked').value,
+    });
+    event.currentTarget.href = event.currentTarget.pathname + '?' + params.toString();
+  });
+
+  // ── Die beiden Dialoge holen ihre Zeilen per HTMX; die Auswahl bleibt hier ──
+  window.bookingsFilter = {
+    orderCsv: () => [...orderDraft].filter(id => id.startsWith('o:')).map(id => id.slice(2)).join(','),
+    suborderCsv: () => [...orderDraft].filter(id => id.startsWith('s:')).map(id => id.slice(2)).join(','),
+    ticketCsv: () => [...ticketDraft].join(','),
+  };
+  orderDraft = new Set(orderPicks());
+  ticketDraft = new Set(state.tickets);
+
+  const orderModal = document.getElementById('order-modal');
+  orderModal.addEventListener('show.bs.modal', () => {
+    orderDraft = new Set(orderPicks());
+    document.getElementById('order-search').value = '';
+    document.querySelectorAll('#order-level-filter [data-level]').forEach(box => box.checked = false);
+    document.body.dispatchEvent(new CustomEvent('search-orders'));
+  });
+  orderModal.addEventListener('shown.bs.modal', () => document.getElementById('order-search').focus());
+  debounce('order-search', 'search-orders');
+  document.querySelectorAll('#order-level-filter [data-level]').forEach(box =>
+    box.addEventListener('change', () => document.body.dispatchEvent(new CustomEvent('search-orders'))));
+  document.getElementById('order-tree').addEventListener('change', event => {
+    const box = event.target.closest('[data-pick]');
+    if (!box) return;
+    box.checked ? orderDraft.add(box.dataset.pick) : orderDraft.delete(box.dataset.pick);
+    renderOrderContext();
+  });
+  document.getElementById('order-tree').addEventListener('htmx:after:swap', () => {
+    syncChecks('#order-tree', orderDraft);
+    renderOrderContext();
+  });
+  document.getElementById('order-apply').addEventListener('click', () => {
+    state.orders = new Set([...orderDraft].filter(id => id.startsWith('o:')));
+    state.suborders = new Set([...orderDraft].filter(id => id.startsWith('s:')));
+    submitFilter();
+  });
+  const orderClear = document.getElementById('order-clear');
+  if (orderClear) orderClear.addEventListener('click', event => {
+    event.preventDefault();
+    state.orders = new Set();
+    state.suborders = new Set();
+    submitFilter();
+  });
+
+  /**
+   * Faellt das uebergeordnete Element aus der Trefferliste, tritt an die Stelle der Einrueckung sein
+   * Kuerzel — sonst haengt ein Unterauftrag ohne Zusammenhang in der Liste.
+   */
+  function renderOrderContext() {
+    const rows = [...document.querySelectorAll('#order-tree [data-row]')];
+    const visible = new Set(rows.map(row => row.dataset.id));
+    rows.forEach(row => {
+      const parentShown = row.dataset.parent && visible.has(row.dataset.parent);
+      row.style.paddingLeft = (parentShown ? 2.25 : 0.75) + 'rem';
+    });
+    document.getElementById('order-included').textContent = orderDraft.size === 0
+      ? labels.includedNone : orderDraft.size + ' ' + labels.entries;
+  }
+
+  const ticketModal = document.getElementById('ticket-modal');
+  ticketModal.addEventListener('show.bs.modal', () => {
+    ticketDraft = new Set(state.tickets);
+    document.getElementById('ticket-search').value = '';
+    document.body.dispatchEvent(new CustomEvent('search-tickets'));
+  });
+  ticketModal.addEventListener('shown.bs.modal', () => document.getElementById('ticket-search').focus());
+  debounce('ticket-search', 'search-tickets');
+  document.getElementById('ticket-tree').addEventListener('change', event => {
+    const box = event.target.closest('[data-pick]');
+    if (!box) return;
+    box.checked ? ticketDraft.add(box.dataset.pick) : ticketDraft.delete(box.dataset.pick);
+    renderManualTickets();
+  });
+  document.getElementById('ticket-tree').addEventListener('htmx:after:swap', () => {
+    syncChecks('#ticket-tree', ticketDraft);
+    renderTypeFilter();
+    applyTypeFilter();
+    renderManualTickets();
+  });
+  document.getElementById('ticket-manual-add').addEventListener('click', addManualTicket);
+  document.getElementById('ticket-manual').addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addManualTicket();
+    }
+  });
+  document.getElementById('ticket-apply').addEventListener('click', () => {
+    state.tickets = new Set(ticketDraft);
+    submitFilter();
+  });
+  const ticketClear = document.getElementById('ticket-clear');
+  if (ticketClear) ticketClear.addEventListener('click', event => {
+    event.preventDefault();
+    state.tickets = new Set();
+    submitFilter();
+  });
+
+  /** Der Typfilter ist eine Suchhilfe im Dialog: er blendet die geladenen Zeilen ein, mehr nicht. */
+  function renderTypeFilter() {
+    const marker = document.getElementById('ticket-types');
+    const types = marker ? marker.dataset.types.split(',').filter(Boolean) : [];
+    const group = document.getElementById('ticket-type-filter');
+    group.innerHTML = types.map(type => {
+      const id = 'type-' + type.replace(/[^A-Za-z0-9]/g, '-');
+      return '<div class="btn-group btn-group-sm">'
+        + '<input type="checkbox" class="btn-check" id="' + id + '" data-type="' + escapeAttribute(type) + '">'
+        + '<label class="btn btn-sm" for="' + id + '">' + escapeText(type) + '</label></div>';
+    }).join('');
+    group.querySelectorAll('[data-type]').forEach(box => box.addEventListener('change', applyTypeFilter));
+  }
+
+  function escapeAttribute(value) {
+    return value.replace(/"/g, '&quot;');
+  }
+
+  function escapeText(value) {
+    const span = document.createElement('span');
+    span.textContent = value;
+    return span.innerHTML;
+  }
+
+  function applyTypeFilter() {
+    const types = [...document.querySelectorAll('#ticket-type-filter [data-type]')]
+      .filter(box => box.checked).map(box => box.dataset.type);
+    const rows = [...document.querySelectorAll('#ticket-tree [data-id]')];
+    const visible = new Set();
+    rows.forEach(row => {
+      const matches = types.length === 0 || types.includes(row.dataset.type);
+      row.classList.toggle('d-none', !matches);
+      if (matches) visible.add(row.dataset.id);
+    });
+    rows.forEach(row => {
+      const context = row.querySelector('[data-context]');
+      if (!context) return;
+      const parent = row.dataset.parent;
+      const parentShown = parent && visible.has(parent);
+      row.style.paddingLeft = (parentShown ? 2.25 : 0.75) + 'rem';
+      if (!parent || parentShown) {
+        context.classList.add('d-none');
+      } else {
+        context.textContent = labels.under + ' ' + parent;
+        context.classList.remove('d-none');
+      }
+    });
+  }
+
+  function addManualTicket() {
+    const field = document.getElementById('ticket-manual');
+    const key = field.value.trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9]*-\d+$/.test(key)) {
+      field.focus();
+      return;
+    }
+    ticketDraft.add(key);
+    field.value = '';
+    renderManualTickets();
+  }
+
+  function renderManualTickets() {
+    const known = new Set([...document.querySelectorAll('#ticket-tree [data-id]')].map(row => row.dataset.id));
+    const manual = [...ticketDraft].filter(key => !known.has(key));
+    document.getElementById('ticket-manual-list').innerHTML = manual
+      .map(key => '<span class="badge bg-secondary-lt me-1 mb-1">' + key + '</span>').join('');
+  }
+
+  function syncChecks(selector, draft) {
+    document.querySelectorAll(selector + ' [data-pick]')
+      .forEach(box => box.checked = draft.has(box.dataset.pick));
+  }
+
+  /** Jeder Tastendruck loest keine Abfrage aus; der Server sieht, was nach dem Tippen stehen bleibt. */
+  function debounce(inputId, eventName) {
+    let timer = null;
+    document.getElementById(inputId).addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => document.body.dispatchEvent(new CustomEvent(eventName)), 300);
+    });
+  }
+
+  // ── Klick auf die Zeile oeffnet die Buchung; ein Link in ihr bleibt ein Link ──
+  document.querySelector('#bookings tbody').addEventListener('click', event => {
+    const row = event.target.closest('tr[data-booking]');
+    if (!row || event.target.closest('a')) return;
+    const link = row.querySelector('a');
+    if (link) window.location.href = link.href;
+  });
+}());
+/*]]>*/
+</script>
+
+</main>
+</html>
