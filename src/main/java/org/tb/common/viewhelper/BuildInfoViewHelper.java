@@ -14,7 +14,10 @@ import org.springframework.stereotype.Component;
  * Bohne nicht — und {@code ${@gitProperties.shortCommitId}} im Template bricht die Seite mit einer
  * {@code NoSuchBeanDefinitionException} ab. Weil die Stelle in der Fußleiste steht, ist die Antwort
  * dann schon fast vollständig geschrieben: Der Server bricht mitten im Chunked-Strom ab, und der
- * Browser bekommt eine abgeschnittene Seite ohne jeden Hinweis darauf, was los ist.
+ * Browser bekommt eine abgeschnittene Seite ohne jeden Hinweis darauf, was los ist. Beim
+ * {@code java.net.http.HttpClient} heißt das {@code java.io.IOException: chunked transfer encoding,
+ * state: READING_LENGTH} — ein Fehlerbild, das nach Netz oder Sicherheit aussieht und nicht nach
+ * Rendern.
  *
  * <p>Ein {@code th:if} auf die Bohne hilft dagegen nicht — {@code ${@gitProperties != null}} löst
  * sie genauso auf und bricht genauso ab. Die Fallunterscheidung muss also aus dem Template heraus,

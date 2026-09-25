@@ -462,20 +462,6 @@ also erst mit `th:with` binden:
 <span th:text="#{main.general.impersonation.actsas.text(${@authorizedUser.impersonateLoginSign})}">...</span>
 ```
 
-**Eine bedingte Bohne wird hier nie gelesen** (#1117). `BuildProperties` und `GitProperties` gibt es
-nur, wenn `META-INF/build-info.properties` bzw. `git.properties` im Klassenpfad liegen — beide
-entstehen erst im Maven-Lauf. Fehlt eine davon, bricht `${@gitProperties.shortCommitId}` mit einer
-`NoSuchBeanDefinitionException` ab, und weil die Stelle in der Fußleiste steht, ist die Antwort
-dann **schon fast vollständig geschrieben**: Der Server bricht mitten im Chunked-Strom ab, der
-Browser bekommt eine abgeschnittene Seite, und es gibt keine Fehlerseite, die den Grund nennt. Beim
-`java.net.http.HttpClient` heißt das `java.io.IOException: chunked transfer encoding, state:
-READING_LENGTH` — ein Fehler, der nach Netz oder Sicherheit aussieht und nicht nach Rendern.
-
-Ein `th:if` hilft nicht: `${@gitProperties != null}` löst die Bohne genauso auf. Die
-Fallunterscheidung muss aus dem Template heraus und gehört in einen **View-Helfer, den es immer
-gibt** — er nimmt `Optional<…>` im Konstruktor und liefert für eine fehlende Angabe einen
-Leerstring (`common/viewhelper/BuildInfoViewHelper`). Das Template liest dann nur noch den Helfer.
-
 ## TomSelect Dropdowns
 
 All `<select>` elements use [TomSelect](https://tom-select.github.io/) for search-as-you-type behaviour. Initialisation is handled centrally in `layout/base.html` via a `querySelectorAll` on page load and again on `htmx:after:swap` (so OOB-swapped selects are picked up automatically).
