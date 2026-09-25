@@ -1,5 +1,6 @@
 package org.tb.order.domain;
 
+import org.tb.common.Hiding;
 import org.tb.common.Validity;
 import static org.tb.common.util.DateUtils.format;
 
@@ -143,11 +144,12 @@ public class Customerorder extends AuditedEntity implements Serializable {
         return sign + " - " + getShortdescription() + " (" + customer.getShortname() + ")";
     }
 
+    /**
+     * @return Returns true, if the {@link Customerorder} is hidden — {@code null} is not hidden
+     *     (→ {@link Hiding}).
+     */
     public Boolean getHide() {
-        if (hide == null) {
-            return false;
-        }
-        return hide;
+        return Hiding.isHidden(hide);
     }
 
     /**

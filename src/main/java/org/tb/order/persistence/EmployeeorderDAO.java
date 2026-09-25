@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
+import org.tb.common.Hiding;
 import org.tb.common.LocalDateRange;
 import org.tb.common.Validity;
 import org.tb.customer.domain.Customer_;
@@ -161,11 +162,20 @@ public class EmployeeorderDAO {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Nicht verborgen — {@link Employeeorder} hat kein eigenes {@code hide} und erbt die
+     * Sichtbarkeit von seinen Eltern, erreicht also beide Flags über einen Join. Die Regel dahinter
+     * ist dieselbe wie überall und steht in {@link Hiding} (#1104): {@code null} zählt als nicht
+     * verborgen.
+     */
     private Specification<Employeeorder> notHidden() {
-        return (root, query, builder) -> builder.and(
-            builder.notEqual(root.join(Employeeorder_.suborder).get(Suborder_.hide), TRUE),
-            builder.notEqual(root.join(Employeeorder_.suborder).join(Suborder_.customerorder).get(Customerorder_.hide), TRUE)
-        );
+        return (root, query, builder) -> {
+            var suborder = root.join(Employeeorder_.suborder);
+            return builder.and(
+                Hiding.notHidden(builder, suborder.get(Suborder_.hide)),
+                Hiding.notHidden(builder, suborder.join(Suborder_.customerorder).get(Customerorder_.hide))
+            );
+        };
     }
 
     private Specification<Employeeorder> matchingEmployeecontractId(long employeecontractId) {

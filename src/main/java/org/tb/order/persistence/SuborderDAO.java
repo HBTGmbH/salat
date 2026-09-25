@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.common.Hiding;
 import org.tb.common.Validity;
 import org.tb.customer.domain.Customer_;
 import org.tb.order.domain.Customerorder_;
@@ -87,8 +88,12 @@ public class SuborderDAO {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Nicht verborgen — und {@code null} zählt als nicht verborgen, so wie
+     * {@link Suborder#isHide()} es liest. Die Regel steht in {@link Hiding} (#1104).
+     */
     private Specification<Suborder> notHidden() {
-        return (root, query, builder) -> builder.notEqual(root.get(Suborder_.hide), TRUE);
+        return Hiding.notHidden(Suborder_.hide);
     }
 
     private Specification<Suborder> matchingCustomerorderId(long customerorderId) {

@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.tb.common.Hiding;
 import org.tb.common.domain.AuditedEntity;
 
 @Getter
@@ -35,11 +36,12 @@ public class Customer extends AuditedEntity implements Serializable {
     )
     private CustomerSegment segment;
 
+    /**
+     * @return Returns true, if the {@link Customer} is hidden — {@code null} is not hidden
+     *     (→ {@link Hiding}).
+     */
     public Boolean getHide() {
-        if (hide == null) {
-            return false;
-        }
-        return hide;
+        return Hiding.isHidden(hide);
     }
 
     public String getShortname() {

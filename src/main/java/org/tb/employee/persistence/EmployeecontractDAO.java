@@ -17,6 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
+import org.tb.common.Hiding;
 import org.tb.common.Validity;
 import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee_;
@@ -99,8 +100,12 @@ public class EmployeecontractDAO {
             .toList();
     }
 
+    /**
+     * Nicht verborgen — und {@code null} zählt als nicht verborgen, so wie
+     * {@link Employeecontract#getHide()} es liest. Die Regel steht in {@link Hiding} (#1104).
+     */
     private Specification<Employeecontract> notHidden() {
-        return (root, query, builder) -> builder.notEqual(root.get(Employeecontract_.hide), TRUE);
+        return Hiding.notHidden(Employeecontract_.hide);
     }
 
     private Specification<Employeecontract> matchingEmployeeId(long employeeId) {

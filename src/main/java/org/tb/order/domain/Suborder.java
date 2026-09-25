@@ -1,5 +1,6 @@
 package org.tb.order.domain;
 
+import org.tb.common.Hiding;
 import org.tb.common.Validity;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.tb.common.GlobalConstants.YESNO_YES;
@@ -156,10 +157,11 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     /**
-     * @return the hide
+     * @return Returns true, if the {@link Suborder} is hidden — {@code null} is not hidden
+     *     (→ {@link Hiding}).
      */
     public boolean isHide() {
-        return hide != null && hide;
+        return Hiding.isHidden(hide);
     }
 
     public String getTimeString() {

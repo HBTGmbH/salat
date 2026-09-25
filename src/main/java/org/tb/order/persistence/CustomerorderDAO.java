@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.common.Hiding;
 import org.tb.common.Validity;
 import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employee;
@@ -108,16 +109,10 @@ public class CustomerorderDAO {
 
     /**
      * Nicht verborgen — und {@code null} zählt als nicht verborgen, so wie
-     * {@link Customerorder#getHide()} es liest. Ein blosses {@code hide <> 1} ist in SQL für
-     * {@code NULL} unbekannt statt wahr und liesse solche Zeilen aus jeder Auswahlliste fallen,
-     * obwohl sie niemand verborgen hat (#1104). Die Spalte ist {@code bit(1)} mit Vorgabe
-     * {@code false}, aber ohne {@code NOT NULL}.
+     * {@link Customerorder#getHide()} es liest. Die Regel steht in {@link Hiding} (#1104).
      */
     private Specification<Customerorder> notHidden() {
-        return (root, query, builder) -> builder.or(
-            builder.isNull(root.get(Customerorder_.hide)),
-            builder.isFalse(root.get(Customerorder_.hide))
-        );
+        return Hiding.notHidden(Customerorder_.hide);
     }
 
     private Specification<Customerorder> matchingCustomerId(long customerId) {
