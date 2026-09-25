@@ -79,19 +79,6 @@ public class SuborderDAO {
     }
 
     /**
-     * Gets a list of Suborders by customer order id that are valid on the given date.
-     *
-     * <p>Asks whether the suborder applies on {@code date} — that includes its start and is
-     * therefore <em>not</em> the active/inactive question of {@link org.tb.common.Validity}.
-     */
-    public List<Suborder> getSubordersByCustomerorderId(long customerorderId, LocalDate date) {
-        return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.unsorted()).stream()
-            .filter(s -> s.isValidAt(date))
-            .sorted(comparing(Suborder::getCompleteOrderSign))
-            .collect(Collectors.toList());
-    }
-
-    /**
      * Get a list of all Suborders ordered by their sign.
      */
     public List<Suborder> getSuborders() {

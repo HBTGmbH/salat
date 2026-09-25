@@ -254,15 +254,14 @@ public class SuborderService {
   /**
    * The suborders of a customer order for a select box, optionally including the inactive ones.
    *
-   * <p>With {@code showInactive} off this asks {@link SuborderDAO#getSubordersByCustomerorderId(long,
-   * LocalDate)}, which answers "applies today" and therefore also drops a suborder that only starts
-   * in the future — see #1095; that is not the rule from #950.
+   * <p>With {@code showInactive} off this drops what is inactive — the validity has ended before
+   * today (→ {@link org.tb.common.Validity}). A suborder that only starts in the future is not
+   * inactive but merely not yet active and stays in the list, or it gets entered a second time
+   * (#1095, ADR-0029). {@code hide} is the other, unrelated criterion and is applied either way.
    */
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showInactive) {
-    var suborders = showInactive
-        ? suborderDAO.getSubordersByCustomerorderId(customerorderId)
-        : suborderDAO.getSubordersByCustomerorderId(customerorderId, DateUtils.today());
-    return suborders.stream()
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
+        .filter(suborder -> showInactive || suborder.getCurrentlyValid())
         .filter(not(Suborder::isHide))
         .toList();
   }
