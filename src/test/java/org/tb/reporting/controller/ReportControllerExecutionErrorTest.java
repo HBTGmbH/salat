@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -52,9 +51,6 @@ class ReportControllerExecutionErrorTest {
   @BeforeEach
   void setUp() {
     database = new EmbeddedDatabaseBuilder().setType(H2).generateUniqueName(true).build();
-    var jdbcTemplate = new JdbcTemplate(database);
-    jdbcTemplate.execute("create table report_probe (divisor int)");
-    jdbcTemplate.execute("insert into report_probe (divisor) values (0)");
 
     when(reportAuthorization.isAuthorized(any(), any())).thenReturn(true);
 
@@ -74,7 +70,7 @@ class ReportControllerExecutionErrorTest {
   @Test
   void a_report_failing_only_while_executing_answers_with_the_result_view() throws Exception {
     // syntaktisch gültig: der Teiler steht erst mit der gelesenen Zeile fest
-    var sql = "select 100 / divisor as quotient from report_probe";
+    var sql = "select 100 / (t.n - t.n) as quotient from (select 1 as n) t";
     givenReport(sql);
 
     var reportResult = executeReport();

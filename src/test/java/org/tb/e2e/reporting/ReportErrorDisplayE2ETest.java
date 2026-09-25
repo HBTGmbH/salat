@@ -60,7 +60,7 @@ class ReportErrorDisplayE2ETest extends PlaywrightE2ETestBase {
     var broken = new ReportDefinition();
     broken.setName("E2E report failing at runtime");
     // valid syntax, no placeholders — the divisor is only known once a row has been read
-    broken.setSql("select 100 / (id - id) as quotient from employee");
+    broken.setSql("select 100 / (t.n - t.n) as quotient from (select 1 as n) t");
     var id = reportDefinitionRepository.save(broken).getId();
 
     runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/reporting/reports/execute?id=" + id, page -> {
@@ -69,7 +69,7 @@ class ReportErrorDisplayE2ETest extends PlaywrightE2ETestBase {
       assertThat(alert).isVisible();
 
       // the view offers "Show failing SQL" here as well
-      assertThat(page.locator(".alert-danger pre code")).containsText("100 / (id - id)");
+      assertThat(page.locator(".alert-danger pre code")).containsText("100 / (t.n - t.n)");
     });
   }
 
