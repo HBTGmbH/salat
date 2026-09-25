@@ -164,9 +164,9 @@ public class AcceptanceController {
             if (supervisorId == null || supervisorId == -1L) {
                 return employeecontractService.getVisibleEmployeeContractsForAuthorizedUser();
             }
-            return employeecontractService.getTeamContracts(supervisorId);
+            return employeecontractService.getTeamContractsIncludingExpired(supervisorId);
         }
-        return employeecontractService.getTeamContracts(loginEmployee.getId());
+        return employeecontractService.getTeamContractsIncludingExpired(loginEmployee.getId());
     }
 
     private String defaultReleaseDateStr(Employeecontract contract) {

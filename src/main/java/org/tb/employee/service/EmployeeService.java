@@ -142,7 +142,7 @@ public class EmployeeService {
   public Employee getEmployeeForView(long id) {
     var employee = employeeDAO.getEmployeeById(id);
     if (employee == null) return null;
-    if (!employeeAuthorization.isAuthorized(employee, AccessLevel.READ, employeeDAO.getSupervisedEmployeeIds())) {
+    if (!employeeAuthorization.isAuthorized(employee, AccessLevel.READ, employeeDAO.getActiveTeamEmployeeIds())) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
     }
     return employee;

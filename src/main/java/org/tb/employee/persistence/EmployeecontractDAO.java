@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
 import org.tb.common.Validity;
-import org.tb.common.util.DateUtils;
 import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract;
@@ -57,22 +56,47 @@ public class EmployeecontractDAO {
     }
 
     /**
-     * Die heute gültigen Verträge des Teams, geordnet nach Nachname. Das ist der Umfang, in dem
-     * eine Teamleitung Mitarbeiterdaten sehen darf — nicht der Umfang, in dem sie freigeben und
-     * abnehmen kann, dafür {@link #getTeamContracts(long)}.
+     * „Wen leite ich, mit laufendem oder künftigem Vertrag?" — die nicht abgelaufenen Verträge des
+     * Teams, geordnet nach Nachname. Das ist der Umfang, in dem eine Teamleitung Mitarbeiterdaten
+     * sehen darf.
+     *
+     * <p>„Nicht abgelaufen" ist die Regel aus {@link Validity} und nur sie: ein Vertrag, der erst in
+     * der Zukunft beginnt, ist nicht inaktiv, sondern noch nicht aktiv, und gehört deshalb in den
+     * Sichtbereich (#1096, → ADR-0029). Sonst sieht eine Teamleitung die neu eingestellte Person
+     * bis zum Vertragsbeginn nicht — und nach einem Wechsel der Zuständigkeit die übernommene
+     * Person erst am Stichtag.
+     *
+     * @see #getTeamContractsIncludingExpired(long) für die rückblickende Frage
      */
-    public List<Employeecontract> getCurrentTeamContracts(long supervisorId) {
-        LocalDate now = DateUtils.today();
-        return employeecontractRepository.findAllSupervisedValidAt(supervisorId, now);
+    public List<Employeecontract> getActiveTeamContracts(long supervisorId) {
+        return teamContracts(supervisorId, false);
     }
 
     /**
-     * Alle nicht versteckten Verträge des Teams, geordnet nach Nachname — auch die abgelaufenen.
-     * Ein Vertrag endet, die Abnahme seiner Buchungen endet damit nicht (#324); entrümpelt wird
-     * über das {@code hide}-Flag.
+     * „Wen leite ich, auch rückblickend?" — alle nicht versteckten Verträge des Teams, geordnet nach
+     * Nachname, die abgelaufenen eingeschlossen.
+     *
+     * <p>Das ist die Frage der Freigabe und Abnahme: ein Vertrag endet, die Abnahme seiner
+     * Buchungen endet damit nicht (#324). Ein Datumskriterium gibt es hier deshalb nicht;
+     * entrümpelt wird allein über das {@code hide}-Flag.
+     *
+     * <p>Die weitere der beiden Mengen steht bewusst unter dem längeren Namen: wer sie will, sagt
+     * es, und ein Versehen landet bei {@link #getActiveTeamContracts(long)} — der engeren.
      */
-    public List<Employeecontract> getTeamContracts(long supervisorId) {
-        return employeecontractRepository.findAllSupervised(supervisorId);
+    public List<Employeecontract> getTeamContractsIncludingExpired(long supervisorId) {
+        return teamContracts(supervisorId, true);
+    }
+
+    /**
+     * Die eine Umsetzung hinter den beiden Fragen. Sie unterscheiden sich in einem Schritt, und nur
+     * der steht hier: ob die abgelaufenen Verträge mitkommen.
+     */
+    private List<Employeecontract> teamContracts(long supervisorId, boolean includeExpired) {
+        var contracts = employeecontractRepository.findAllSupervised(supervisorId);
+        if (includeExpired) return contracts;
+        return contracts.stream()
+            .filter(ec -> !Validity.isInactive(ec.getValidUntil()))
+            .toList();
     }
 
     private Specification<Employeecontract> notHidden() {

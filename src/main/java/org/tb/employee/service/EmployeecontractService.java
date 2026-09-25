@@ -442,12 +442,18 @@ public class EmployeecontractService {
   }
 
   /**
-   * The employees this person supervises, over <em>all</em> their contracts rather than only the currently valid ones
-   * (#1092). A contract ends, the responsibility for its bookings does not — the same reason
-   * {@code EmployeecontractDAO#getTeamContracts} exists next to the current team.
+   * „Wen leite ich, auch rückblickend?" — die Personen dieses Teams über <em>alle</em> ihre Verträge, nicht nur über
+   * die nicht abgelaufenen (#1092). Ein Vertrag endet, die Verantwortung für seine Buchungen endet damit nicht (#324);
+   * genau dafür gibt es {@link EmployeecontractDAO#getTeamContractsIncludingExpired(long)}.
+   *
+   * <p>Die andere Frage — „wen leite ich, mit laufendem oder künftigem Vertrag?" — beantwortet
+   * {@code EmployeeDAO#getActiveTeamEmployeeIds()} über {@link EmployeecontractDAO#getActiveTeamContracts(long)}.
+   * Sie trägt den Sichtbereich auf die <em>Stammdaten</em> einer Person und endet mit deren Vertrag; diese hier trägt
+   * die Sichtbarkeit von <em>Buchungen</em> und muss über beendete Verträge zurückreichen. Beide liegen auf einer
+   * Umsetzung, und welche der beiden gestellt wird, steht im Namen und nicht in einem Argument (#1096).
    */
-  public Set<Long> getSupervisedEmployeeIds(long supervisorEmployeeId) {
-    return employeecontractDAO.getTeamContracts(supervisorEmployeeId).stream()
+  public Set<Long> getTeamEmployeeIdsIncludingExpired(long supervisorEmployeeId) {
+    return employeecontractDAO.getTeamContractsIncludingExpired(supervisorEmployeeId).stream()
         .map(ec -> ec.getEmployee().getId())
         .collect(toSet());
   }
@@ -482,10 +488,12 @@ public class EmployeecontractService {
   }
 
   /**
-   * Alle nicht versteckten Verträge des Teams, auch die abgelaufenen (#324).
+   * Alle nicht versteckten Verträge des Teams, auch die abgelaufenen (#324) — die rückblickende der
+   * beiden Fragen, und der Name sagt es (#1096). Für Freigabe und Abnahme ist genau das richtig:
+   * ein Vertrag endet, die Abnahme seiner Buchungen endet damit nicht.
    */
-  public List<Employeecontract> getTeamContracts(long teamManagerEmployeeId) {
-    return employeecontractDAO.getTeamContracts(teamManagerEmployeeId);
+  public List<Employeecontract> getTeamContractsIncludingExpired(long teamManagerEmployeeId) {
+    return employeecontractDAO.getTeamContractsIncludingExpired(teamManagerEmployeeId);
   }
 
   public List<Employeecontract> getAllEmployeeContracts() {

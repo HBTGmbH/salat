@@ -68,7 +68,7 @@ public class EmployeeDAO {
      * @return Returns all {@link Employee}s with a contract.
      */
     public List<Employee> getEmployeesWithContracts() {
-        var supervisedIds = getSupervisedEmployeeIds();
+        var supervisedIds = getActiveTeamEmployeeIds();
         return employeecontractDAO.getEmployeeContracts().stream()
             .map(Employeecontract::getEmployee)
             .filter(e -> !e.getSign().equals(GlobalConstants.EMPLOYEE_SIGN_ADM))
@@ -82,7 +82,7 @@ public class EmployeeDAO {
      * @return Returns all {@link Employee}s with a valid contract.
      */
     public List<Employee> getEmployeesWithValidContracts() {
-        var supervisedIds = getSupervisedEmployeeIds();
+        var supervisedIds = getActiveTeamEmployeeIds();
         return employeecontractDAO.getEmployeeContracts().stream()
             .filter(Employeecontract::getCurrentlyValid)
             .map(Employeecontract::getEmployee)
@@ -102,7 +102,7 @@ public class EmployeeDAO {
      * Get a list of all non-hidden Employees ordered by name (for dropdowns).
      */
     public List<Employee> getEmployees() {
-        var supervisedIds = getSupervisedEmployeeIds();
+        var supervisedIds = getActiveTeamEmployeeIds();
         return employeeRepository.findAll(notHidden()).stream()
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
             .sorted(Comparator.comparing(Employee::getName))
@@ -119,7 +119,7 @@ public class EmployeeDAO {
      * employee like for every other one.
      */
     public List<Employee> getSelectableEmployees(String keepSign) {
-        var supervisedIds = getSupervisedEmployeeIds();
+        var supervisedIds = getActiveTeamEmployeeIds();
         return employeeRepository.findAll(notHiddenOrSign(keepSign)).stream()
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
             .sorted(Comparator.comparing(Employee::getName))
@@ -139,7 +139,7 @@ public class EmployeeDAO {
      * Get a list of Employees fitting to the given filter ordered by name (for the list view).
      */
     public List<Employee> getEmployeesByFilter(String filter, Boolean showHidden) {
-        var supervisedIds = getSupervisedEmployeeIds();
+        var supervisedIds = getActiveTeamEmployeeIds();
         boolean hasFilter = filter != null && !filter.trim().isEmpty();
         boolean excludeHidden = !TRUE.equals(showHidden);
 
@@ -172,10 +172,22 @@ public class EmployeeDAO {
         return value != null && value.toUpperCase().contains(upper);
     }
 
-    public Set<Long> getSupervisedEmployeeIds() {
+    /**
+     * Wessen Stammdaten die angemeldete Teamleitung lesen darf: die Personen ihres Teams, deren
+     * Vertrag nicht abgelaufen ist — laufende und im Voraus angelegte gleichermaßen (#1096,
+     * → ADR-0029).
+     *
+     * <p>Das ist die engere der beiden Antworten auf „wen leite ich". Die weitere —
+     * {@code EmployeecontractService#getTeamEmployeeIdsIncludingExpired} über
+     * {@link EmployeecontractDAO#getTeamContractsIncludingExpired(long)} — trägt die Sichtbarkeit
+     * von Buchungen und reicht über beendete Verträge zurück (#1092, #324): ein Vertrag endet, die
+     * Verantwortung für seine Buchungen endet damit nicht — der Anspruch auf die Stammdaten der
+     * Person schon. Beide liegen auf einer Umsetzung, und die Frage steht im Namen des Aufrufs.
+     */
+    public Set<Long> getActiveTeamEmployeeIds() {
         if (!authorizedUser.isPeopleLead() || authorizedUser.isManager()) return Set.of();
         return employeeRepository.findByLoginname(authorizedUser.getEffectiveLoginSign())
-            .map(emp -> employeecontractDAO.getCurrentTeamContracts(emp.getId()).stream()
+            .map(emp -> employeecontractDAO.getActiveTeamContracts(emp.getId()).stream()
                 .map(ec -> ec.getEmployee().getId())
                 .collect(Collectors.toSet()))
             .orElse(Set.of());
