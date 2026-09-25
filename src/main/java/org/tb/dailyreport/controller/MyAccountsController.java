@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
+import org.tb.common.Validity;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
@@ -176,8 +177,9 @@ public class MyAccountsController {
                     if (budget == null || budget.isZero()) continue;
 
                     // if vacation was not taken in the validity, make budget fit the actual taken time
-                    // because the rest will not be available anymore for the employee
-                    if(order.getValidity().getUntil().isBefore(today())) {
+                    // because the rest will not be available anymore for the employee.
+                    // An open end has not ended, so its budget stays whole (→ ADR-0029).
+                    if(Validity.isInactiveOn(order.getUntilDate(), today)) {
                         budget = Duration.ofMinutes(timereportService.getTotalDurationMinutesForEmployeeOrder(
                                 order.getId(), yearStart, today));
                     } else if (!currentYearSign.equals(order.getSuborder().getSign())) {
