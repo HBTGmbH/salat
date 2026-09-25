@@ -87,8 +87,18 @@ public class CustomerorderDAO {
             Sort.by(new Order(ASC, Customerorder_.SIGN).ignoreCase()));
     }
 
+    /**
+     * Nicht verborgen — und {@code null} zählt als nicht verborgen, so wie
+     * {@link Customerorder#getHide()} es liest. Ein blosses {@code hide <> 1} ist in SQL für
+     * {@code NULL} unbekannt statt wahr und liesse solche Zeilen aus jeder Auswahlliste fallen,
+     * obwohl sie niemand verborgen hat (#1104). Die Spalte ist {@code bit(1)} mit Vorgabe
+     * {@code false}, aber ohne {@code NOT NULL}.
+     */
     private Specification<Customerorder> notHidden() {
-        return (root, query, builder) -> builder.notEqual(root.get(Customerorder_.hide), TRUE);
+        return (root, query, builder) -> builder.or(
+            builder.isNull(root.get(Customerorder_.hide)),
+            builder.isFalse(root.get(Customerorder_.hide))
+        );
     }
 
     private Specification<Customerorder> matchingCustomerId(long customerId) {

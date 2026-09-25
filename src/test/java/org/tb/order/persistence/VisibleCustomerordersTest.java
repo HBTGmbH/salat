@@ -151,6 +151,18 @@ class VisibleCustomerordersTest {
     assertThat(visibleSigns()).containsExactly("Alpha", "beta", "Gamma");
   }
 
+  /**
+   * {@code hide IS NULL} heisst nicht verborgen — so liest es {@code Customerorder.getHide()}, und
+   * so muss es auch die Abfrage lesen. Ein blosses {@code hide <> 1} waere in SQL fuer {@code NULL}
+   * unbekannt und liesse die Zeile aus jeder Auswahlliste fallen (#1104).
+   */
+  @Test
+  void offers_an_order_whose_hide_flag_was_never_set() {
+    orderWithoutHideFlag("hide-never-set");
+
+    assertThat(visibleSigns()).containsExactly("hide-never-set");
+  }
+
   private List<String> visibleSigns() {
     return customerorderDAO.getVisibleCustomerorders().stream()
         .map(Customerorder::getSign)
@@ -175,6 +187,18 @@ class VisibleCustomerordersTest {
     order.setOrderType(OrderType.STANDARD);
     order.setDebithours(Duration.ZERO);
     order.setHide(hidden);
+    customerorderRepository.save(order);
+  }
+
+  /** Wie {@link #order}, laesst {@code hide} aber ungesetzt — die Spalte ist nullable. */
+  private void orderWithoutHideFlag(String sign) {
+    var order = new Customerorder();
+    order.setCustomer(customer);
+    order.setSign(sign);
+    order.setDescription(sign);
+    order.setFromDate(LONG_AGO);
+    order.setOrderType(OrderType.STANDARD);
+    order.setDebithours(Duration.ZERO);
     customerorderRepository.save(order);
   }
 }
