@@ -355,6 +355,17 @@ public class TimereportController {
         }
 
         try {
+            // #1111: resolve the employee order before seeding, not after. Seeding a workingday
+            // commits on its own now, so a failure here would leave the serial days behind without
+            // the bookings they were prepared for — and a missing employee order is an ordinary
+            // validation outcome, not an exceptional one.
+            var eo = employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
+                    ecId, form.getSuborderId(), date);
+            if (eo == null) {
+                throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
+            }
+            long employeeOrderId = eo.getId();
+
             // seed workingday start time for all serial days when not yet set
             if (!isEdit) {
                 boolean useBegin = beginEndMode && form.getBeginTime() != null;
@@ -370,13 +381,6 @@ public class TimereportController {
                     seedWorkingday(ecId, serialDate, beginTime);
                 }
             }
-
-            var eo = employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(
-                    ecId, form.getSuborderId(), date);
-            if (eo == null) {
-                throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
-            }
-            long employeeOrderId = eo.getId();
 
             if (isEdit) {
                 timereportService.updateTimereport(form.getId(), ecId, employeeOrderId, date,
