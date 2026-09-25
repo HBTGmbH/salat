@@ -226,10 +226,6 @@ public class CustomerorderService {
     return customerorderDAO.getVisibleCustomerorders();
   }
 
-  public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(Long responsibleEmployeeId) {
-    return customerorderDAO.getVisibleCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
-  }
-
   @Authorized(requiresManager = true)
   public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);
@@ -249,8 +245,8 @@ public class CustomerorderService {
     customerorderRepository.deleteById(customerOrderId);
   }
 
-  public List<Customerorder> getCustomerordersByFilters(Boolean showInvalid, String filter, Long customerId, Boolean showHidden) {
-    return customerorderDAO.getCustomerordersByFilters(showInvalid, filter, customerId, showHidden);
+  public List<Customerorder> getCustomerordersByFilters(Boolean showInactive, String filter, Long customerId, Boolean showHidden) {
+    return customerorderDAO.getCustomerordersByFilters(showInactive, filter, customerId, showHidden);
   }
 
   @EventListener

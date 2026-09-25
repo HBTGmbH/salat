@@ -19,8 +19,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.tb.common.Validity;
 import org.tb.common.domain.AuditedEntity;
-import org.tb.common.util.DateUtils;
 
 /**
  * A flat rate agreed for an order: an amount that falls due on a date rather than being earned by
@@ -97,7 +97,7 @@ public class OrderFlatRate extends AuditedEntity {
      * thing. A start in the future does not make it invalid but merely not yet due.
      */
     public boolean getCurrentlyValid() {
-        return !DateUtils.today().isAfter(validUntil);
+        return !Validity.isInactive(validUntil);
     }
 
     /** Whether this flat rate applies to the customer order as a whole. */

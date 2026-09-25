@@ -310,13 +310,13 @@ public class EmployeeorderService {
     createOrUpdate(employeeorder, employeeorder.getFromDate(), employeeorder.getUntilDate());
   }
 
-  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerOrderId, Long suborderId, Boolean showHidden) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, null, customerOrderId, suborderId, showHidden);
+  public List<Employeeorder> getEmployeeordersByFilters(Boolean showInactive, String filter, Long employeeContractId, Long customerOrderId, Long suborderId, Boolean showHidden) {
+    return employeeorderDAO.getEmployeeordersByFilters(showInactive, filter, employeeContractId, null, customerOrderId, suborderId, showHidden);
   }
 
-  public List<EmployeeorderListItemDTO> getEmployeeorderListItemsByFilters(Boolean showInvalid, String filter,
+  public List<EmployeeorderListItemDTO> getEmployeeorderListItemsByFilters(Boolean showInactive, String filter,
       Long employeeContractId, Long customerId, Long customerOrderId, Long suborderId, boolean showActualHours, Boolean showHidden) {
-    return employeeorderDAO.getEmployeeordersByFilters(showInvalid, filter, employeeContractId, customerId, customerOrderId, suborderId, showHidden)
+    return employeeorderDAO.getEmployeeordersByFilters(showInactive, filter, employeeContractId, customerId, customerOrderId, suborderId, showHidden)
         .stream()
         .map(eo -> {
           Duration duration = showActualHours ? getTotalDuration(eo.getId()) : null;

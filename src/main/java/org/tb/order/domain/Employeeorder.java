@@ -1,5 +1,6 @@
 package org.tb.order.domain;
 
+import org.tb.common.Validity;
 import static org.tb.common.util.DateUtils.format;
 
 import jakarta.persistence.Column;
@@ -111,11 +112,14 @@ public class Employeeorder extends AuditedEntity implements Serializable {
     }
 
     /**
-     * @return Returns true, if the {@link Employeeorder} is currently valid, false otherwise.
+     * @return Returns true, if the {@link Employeeorder} is not inactive, i.e. its validity has not
+     *     ended before today (→ {@link Validity}).
+     *
+     * <p>Unlike the other entities this reads {@link #getEffectiveUntilDate()}, so a parent that
+     * ended earlier ends the employee order with it.
      */
     public boolean getCurrentlyValid() {
-        LocalDate today = DateUtils.today();
-        return getEffectiveUntilDate() == null || !today.isAfter(getEffectiveUntilDate());
+        return !Validity.isInactive(getEffectiveUntilDate());
     }
 
     /**

@@ -492,14 +492,14 @@ public class EmployeecontractService {
     return employeecontractDAO.getEmployeeContracts();
   }
 
-  public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter,
+  public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInactive, String filter,
       Long filterEmployeeId, Boolean showHidden) {
-    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId, showHidden);
+    return employeecontractDAO.getEmployeeContractsByFilters(showInactive, filter, filterEmployeeId, showHidden);
   }
 
-  public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInvalid, String filter,
+  public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInactive, String filter,
       Long filterEmployeeId, Boolean showHidden) {
-    return employeecontractDAO.getEmployeeContractsByFilters(showInvalid, filter, filterEmployeeId, showHidden).stream()
+    return employeecontractDAO.getEmployeeContractsByFilters(showInactive, filter, filterEmployeeId, showHidden).stream()
         .map(ec -> new EmployeecontractListItemDTO(
             ec.getId(),
             ec.getEmployee().getName(),

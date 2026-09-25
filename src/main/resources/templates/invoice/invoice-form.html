@@ -67,10 +67,10 @@
             </div>
             <input type="hidden" th:field="*{previousOrderBudgetId}"/>
             <div class="form-check mt-1 form-switch">
-              <input class="form-check-input" type="checkbox" id="showOnlyValid" role="switch"
-                     th:field="*{showOnlyValid}" onchange="submitUpdate()">
-              <label class="form-check-label small text-muted" for="showOnlyValid"
-                     th:text="#{main.general.show.only.valid.text}">Nur gültige</label>
+              <input class="form-check-input" type="checkbox" id="showInactive" role="switch"
+                     th:field="*{showInactive}" onchange="submitUpdate()">
+              <label class="form-check-label small text-muted" for="showInactive"
+                     th:text="#{main.general.showinactive.text}">Inaktive anzeigen</label>
             </div>
           </div>
 

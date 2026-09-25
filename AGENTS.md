@@ -753,7 +753,7 @@ The hint travels as its own flash attribute (`toastSuccessHint`) and the toast g
 its own — it is about the list, not about the saving.
 
 Pass only the filters that can **exclude** an entry — search text and selections. `showHidden` and
-`showInvalid` only ever widen a list and can never be the reason something is missing.
+`showInactive` only ever widen a list and can never be the reason something is missing.
 
 **A link to a create form carries no filter parameter either** — the click would rewrite the
 filter, and an *empty* value (the usual case: the link renders whatever the list had) is a
@@ -795,25 +795,73 @@ its whole subtree to the top level.
   that is only in the list because the record stores it has to say so, otherwise the form claims it is
   available for picking.
 
-### Validity Ranges (Time-Bounded Entities)
-Many entities carry a validity range (`fromDate` / `untilDate`) that defines the period during which they are usable. An entity is *currently valid* when today's date falls within its range. Outside that range it is *expired* (or not yet active), and it is often unusable — e.g. you cannot book time on a customer order whose validity ended last month.
+### Gültigkeitszeiträume: aktiv und inaktiv (#950)
 
-This is a separate UX concern from `hide`:
-- `hide` is an explicit, manual decision to remove an entry from dropdowns regardless of its dates.
-- Validity is automatic and time-driven: an order expires when its `untilDate` passes.
+Viele Entitäten tragen einen Gültigkeitszeitraum (`fromDate`/`untilDate` bzw.
+`validFrom`/`validUntil`). Für sie alle ist „aktiv" und „inaktiv" **zeitlich** definiert, und zwar
+allein über das **Ende**:
 
-Default behaviour in dropdowns and service methods: show only currently valid entities (`untilDate` is null or ≥ today). The `show` filter toggle in list views lets managers override this to also see expired or future records for auditing and management purposes.
+- **inaktiv** = der Gültigkeitszeitraum liegt **vollständig in der Vergangenheit**, das Ende liegt
+  also vor dem heutigen Tag.
+- Ein Ende **am heutigen Tag** ist noch aktiv — der Vergleich ist **einschließend** (`>= heute`).
+- Ein **offenes Ende** ist nie inaktiv, gleichgültig ob es als `null` oder als Sentinel `2999-12-31`
+  (`LocalDateRange.FINIT_UNTIL_BOUNDARY`) abgelegt ist. Der Sentinel braucht keinen eigenen Fall:
+  kein wirklicher Tag liegt danach, also kann er nie vor heute liegen.
+- Ein **Beginn in der Zukunft** ist **nicht** inaktiv, sondern noch nicht aktiv. Der Beginn gehört
+  deshalb nicht in das Prädikat. Solche Datensätze bleiben sichtbar: eine im Voraus angelegte
+  Änderung darf nicht aus der Liste verschwinden, sonst wird sie ein zweites Mal angelegt.
 
-Entities with validity ranges (non-exhaustive): `Customerorder`, `Suborder`, `Employeeorder`, `Employeecontract`.
+**Die Regel steht genau einmal im Code: `org.tb.common.Validity`.** Beide Seiten derselben Frage
+liegen dort nebeneinander, damit eine Liste und die Zeile, die sie rendert, nicht auseinanderlaufen
+können:
 
-The `showOnlyValid()` JPA `Specification` (present in the DAO of each such entity) encodes the date check:
 ```java
-builder.or(
-    builder.isNull(root.get(Entity_.untilDate)),
-    builder.greaterThanOrEqualTo(root.get(Entity_.untilDate), today())
-)
+// in Java, auf der Entität
+public boolean getCurrentlyValid() {
+    return !Validity.isInactive(untilDate);
+}
+
+// in der Abfrage, im DAO
+if (!TRUE.equals(showInactive)) {
+    predicates.add(Validity.<Suborder>notInactive(Suborder_.untilDate).toPredicate(root, query, builder));
+}
 ```
-Keep this predicate separate from `notHidden()` — they are independent concerns.
+
+Eine fünfte Kopie des Prädikats ist damit ein Fehler. Wer eine weitere Entität mit
+Gültigkeitszeitraum anlegt, ruft `Validity`, statt `untilDate >= today` noch einmal zu schreiben.
+
+**Davon zu unterscheiden, und ausdrücklich nicht dasselbe:**
+
+- **`hide`** — die manuelle Entscheidung, einen Datensatz aus Auswahllisten zu nehmen, unabhängig
+  von jedem Datum (siehe „The `hide` Flag"). `notHidden()` und `Validity.notInactive(...)` sind zwei
+  Prädikate und werden über zwei Schalter zugeschaltet; sie gehören nie in eine Bedingung. Ein `or`
+  zwischen ihnen macht beide wirkungslos.
+- **Explizite Boolean-Flags** wie `OrderBudget.active`, `JiraReplicationConfig.enabled`,
+  `ScheduledReportJob.enabled`. Sie heißen ebenfalls „aktiv", meinen aber eine gesetzte Entscheidung,
+  kein Datum. Wo beides auf derselben Entität existiert — `OrderBudget` hat `active` **und**
+  `validFrom`/`validUntil` —, sind es zwei unabhängige Kriterien und sie dürfen nicht in einem Filter
+  vermischt werden. `BudgetController.list` meint mit `showInactive` heute das **Flag**; das ist
+  richtig so und sagt nichts über den Zeitraum.
+- **„Gilt am Tag X"** — eine Stichtagsfrage, die den Beginn **mitprüft**
+  (`Suborder.isValidAt(date)`, `Employeeorder.isValidAt(date)`,
+  `Validity.isInactiveOn(untilDate, date)` prüft ihn gerade nicht). Sie ist für
+  Geschäftsregeln richtig („darf an diesem Tag gebucht werden") und als Aktiv-Filter falsch: sie
+  blendet den im Voraus angelegten Datensatz aus. Ein `isValidAt` hinter einem Schalter namens
+  `showInactive` ist ein Fehler.
+
+Entitäten mit Gültigkeitszeitraum: `Customerorder`, `Suborder`, `Employeeorder`,
+`Employeecontract`, `OrderBudget`, `OrderPricing`, `OrderFlatRate` (+ `OrderFlatRateInstalment`),
+`EmployeeCost`, `EmployeeCostAssignment`, `AuthorizationRule`.
+
+Zwei Eigenheiten, die die Erhebung zu #950 zutage gefördert hat und die man kennen muss:
+
+- **Wo das offene Ende als `null` steht und wo als Sentinel, ist nicht einheitlich.** `null` im
+  Auftrags- und Vertragsbereich, Sentinel `2999-12-31` bei `order_pricing`, `order_budget`,
+  `employee_cost` und `employee_cost_employee` (Spaltenvorgabe im Liquibase-Changelog, `NOT NULL`).
+  `Validity` behandelt beide gleich, sonst nichts — eine Ablösung des Sentinels wäre eine
+  Datenmigration.
+- **Die Pauschale kennt kein offenes Ende.** Bei `OrderFlatRate` heißt ein fehlendes „bis" „noch
+  nicht eingegeben", nicht „läuft weiter" (→ Konditionen an einem Budgetplan).
 
 ### Revenue in the Budget Module
 An order earns from two sources, and they add up (#972):
@@ -890,20 +938,32 @@ evaluation reads. Editing the plan therefore has to bring its assignments back i
 
 ### List View Filter Toggles
 List views that support both validity and visibility filtering expose two independent boolean toggles in the advanced filter section:
-- `show` (`Boolean`) — when `true`, includes expired/invalid records; default `null`/`false` shows only currently valid
+- `showInactive` (`Boolean`) — when `true`, includes inactive records; default `null`/`false` leaves them out
 - `showHidden` (`Boolean`) — when `true`, includes records whose `hide` flag is set; default `null`/`false` excludes hidden records
 
-**DAO layer**: these are separate `Specification` predicates — never bundle `notHidden` inside `showOnlyValid()`. Apply each independently:
+**Der Schalter heißt überall `showInactive`** (#950) — im Request-Parameter, im `UiState`-Schlüssel,
+im Modellattribut, im Feld des Templates und im Parameter von Service und DAO. Weder `show` noch
+`showInvalid` noch `showOnlyValid`: „invalid" klingt nach fehlerhaften Daten, und ein Schalter mit
+umgekehrter Bedeutung zwingt jede Schicht, beim Durchreichen nachzudenken. Beide Schalter können
+eine Liste nur **erweitern**; das ist der Grund, warum sie nach ADR-0023 nicht in den Filterhinweis
+einer Erfolgsmeldung gehören.
+
+**DAO layer**: these are separate `Specification` predicates — never bundle `notHidden` into the
+validity predicate. Apply each independently:
 ```java
-if (!TRUE.equals(showInvalid)) predicates.add(showOnlyValid().toPredicate(root, query, builder));
-if (!TRUE.equals(showHidden))  predicates.add(notHidden().toPredicate(root, query, builder));
+if (!TRUE.equals(showInactive)) predicates.add(Validity.<Suborder>notInactive(Suborder_.untilDate).toPredicate(root, query, builder));
+if (!TRUE.equals(showHidden))   predicates.add(notHidden().toPredicate(root, query, builder));
 ```
 
 **Entity without own `hide` field** (e.g. `Employeeorder`): filter on the parent's flag via a join — `notHidden()` checks `suborder.hide` and `suborder.customerorder.hide`.
 
-**Session keys**: store both flags in session alongside other filter state; session key names follow the pattern `<module>.<entity>.show` and `<module>.<entity>.showHidden`.
+**Persistenz des Filters**: über `UiState` (→ ADR-0022), nicht über die Session. Der Parametername
+ist `f` + Entität + `ShowInactive` bzw. `ShowHidden` (`fSuborderShowInactive`,
+`fEmployeeContractShowHidden`) und in einem `UiStateKeyContributor` registriert. Wer ihn umbenennt,
+benennt Request-Parameter, Schlüssel, Modellattribut und Template-Feld gemeinsam um — sonst zeigt
+der Schalter den gemerkten Stand nicht mehr an.
 
-**Template**: add both as `form-check form-switch` checkboxes in the advanced filter row, using `name=”show”` / `name=”showHidden”` with `value=”true”` and `th:checked`; the auto-submit script picks them up automatically.
+**Template**: add both as `form-check form-switch` checkboxes in the advanced filter row, using `name=”fXShowInactive”` / `name=”fXShowHidden”` with `value=”true”` and `th:checked`, each with the hidden `value="false"` twin so switching off sends a value; the auto-submit script picks them up automatically.
 
 ### DTO Pattern
 - Class annotations: `@Builder @Data @Jacksonized @AllArgsConstructor`

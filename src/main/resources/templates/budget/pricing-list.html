@@ -47,9 +47,9 @@
           <div class="col-auto ms-2">
             <!--/* The rate's own validity and its order's are two different things (#957). */-->
             <label class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" name="fPricingShowExpiredOrders" value="true" th:checked="${showExpiredOrders}"/>
-              <input type="hidden" name="fPricingShowExpiredOrders" value="false"/>
-              <span class="form-check-label" th:text="#{main.pricing.filter.showexpiredorders}">Sätze abgelaufener Aufträge anzeigen</span>
+              <input class="form-check-input" type="checkbox" name="fPricingShowInactiveOrders" value="true" th:checked="${showInactiveOrders}"/>
+              <input type="hidden" name="fPricingShowInactiveOrders" value="false"/>
+              <span class="form-check-label" th:text="#{main.pricing.filter.showinactiveorders}">Sätze inaktiver Aufträge anzeigen</span>
             </label>
           </div>
         </div>

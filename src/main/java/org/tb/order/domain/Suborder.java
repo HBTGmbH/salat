@@ -1,5 +1,6 @@
 package org.tb.order.domain;
 
+import org.tb.common.Validity;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 
@@ -199,11 +200,11 @@ public class Suborder extends AuditedEntity implements Serializable {
     }
 
     /**
-     * @return Returns true, if the {@link Suborder} is currently valid, false otherwise.
+     * @return Returns true, if the {@link Suborder} is not inactive, i.e. its validity has not ended
+     *     before today (→ {@link Validity}).
      */
     public boolean getCurrentlyValid() {
-        LocalDate now = DateUtils.today();
-        return untilDate == null || !now.isAfter(untilDate);
+        return !Validity.isInactive(untilDate);
     }
 
     public LocalDateRange getValidity() {

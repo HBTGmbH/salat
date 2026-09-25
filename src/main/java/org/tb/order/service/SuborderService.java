@@ -177,7 +177,7 @@ public class SuborderService {
     var newValidity = customerorder.getValidity();
 
     // adjust suborders
-    List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorder.getId(), false);
+    List<Suborder> suborders = suborderDAO.getSubordersByCustomerorderId(customerorder.getId());
     for (Suborder suborder : suborders) {
       var existingValidity = suborder.getValidity();
       var updating = existingValidity.overlaps(newValidity);
@@ -191,7 +191,7 @@ public class SuborderService {
 
   @EventListener
   void onCustomerorderDelete(CustomerorderDeleteEvent event) {
-    var suborders = suborderDAO.getSubordersByCustomerorderId(event.getId(), false);
+    var suborders = suborderDAO.getSubordersByCustomerorderId(event.getId());
     for (Suborder suborder : suborders) {
       deleteSuborderById(suborder.getId());
     }
@@ -245,21 +245,26 @@ public class SuborderService {
   }
 
   public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
-    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
         .filter(
                 not(Suborder::isHide))
         .toList();
   }
 
-  public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showOnlyValid) {
-    return suborderDAO.getSubordersByCustomerorderId(customerorderId, showOnlyValid).stream()
+  /**
+   * The suborders of a customer order for a select box, optionally including the inactive ones.
+   *
+   * <p>With {@code showInactive} off this asks {@link SuborderDAO#getSubordersByCustomerorderId(long,
+   * LocalDate)}, which answers "applies today" and therefore also drops a suborder that only starts
+   * in the future — see #1095; that is not the rule from #950.
+   */
+  public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean showInactive) {
+    var suborders = showInactive
+        ? suborderDAO.getSubordersByCustomerorderId(customerorderId)
+        : suborderDAO.getSubordersByCustomerorderId(customerorderId, DateUtils.today());
+    return suborders.stream()
         .filter(not(Suborder::isHide))
         .toList();
-  }
-
-  public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(Long employeeContractId, long customerorderId,
-      boolean showOnlyValid) {
-    return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderId(employeeContractId, customerorderId, showOnlyValid);
   }
 
   public Suborder getSuborderById(long suborderId) {
@@ -288,7 +293,7 @@ public class SuborderService {
   }
 
   public List<Suborder> getAllSuborders() {
-    return suborderDAO.getSuborders(false);
+    return suborderDAO.getSuborders();
   }
 
   /** All suborders that are not hidden. */
@@ -304,14 +309,14 @@ public class SuborderService {
       return List.of();
     }
     var signs = Set.copyOf(customerorderSigns);
-    return suborderDAO.getSuborders(false).stream()
+    return suborderDAO.getSuborders().stream()
         .filter(suborder -> suborder.getCustomerorder() != null
             && signs.contains(suborder.getCustomerorder().getSign()))
         .toList();
   }
 
   public List<Suborder> getAllVisibleSuborders() {
-    return suborderDAO.getSuborders(false).stream()
+    return suborderDAO.getSuborders().stream()
         .filter(not(Suborder::isHide))
         .toList();
   }
@@ -322,7 +327,7 @@ public class SuborderService {
    * (#895).
    */
   public List<Suborder> getAllSelectableSuborders(String keepCompleteSign) {
-    return suborderDAO.getSuborders(false).stream()
+    return suborderDAO.getSuborders().stream()
         .filter(suborder -> !suborder.isHide()
             || Objects.equals(suborder.getCompleteOrderSign(), keepCompleteSign))
         .toList();
@@ -334,7 +339,7 @@ public class SuborderService {
    * exception a stored suborder would silently drop off the record the next time it is edited.
    */
   public List<Suborder> getSelectableSubordersByCustomerorderId(long customerorderId, String keepCompleteSign) {
-    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
         .filter(suborder -> !suborder.isHide()
             || Objects.equals(suborder.getCompleteOrderSign(), keepCompleteSign))
         .toList();
@@ -347,7 +352,7 @@ public class SuborderService {
    * form drops it and writes back whatever the browser preselected instead.
    */
   public List<Suborder> getSelectableSubordersByCustomerorderId(long customerorderId, Long keepId) {
-    return suborderDAO.getSubordersByCustomerorderId(customerorderId, false).stream()
+    return suborderDAO.getSubordersByCustomerorderId(customerorderId).stream()
         .filter(suborder -> !suborder.isHide() || Objects.equals(suborder.getId(), keepId))
         .toList();
   }
@@ -385,7 +390,7 @@ public class SuborderService {
    * the order. Asking here is exact where parsing only guesses.
    */
   public Suborder getSuborderByCompleteOrderSign(String completeOrderSign) {
-    return suborderDAO.getSuborders(false).stream()
+    return suborderDAO.getSuborders().stream()
         .filter(suborder -> completeOrderSign.equals(suborder.getCompleteOrderSign()))
         .findFirst()
         .orElse(null);
@@ -418,8 +423,8 @@ public class SuborderService {
     suborderRepository.deleteById(suborderId);
   }
 
-  public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerOrderId, Long customerId, Boolean showHidden) {
-    return suborderDAO.getSubordersByFilters(showInvalid, filter, customerOrderId, customerId, showHidden);
+  public List<Suborder> getSubordersByFilters(Boolean showInactive, String filter, Long customerOrderId, Long customerId, Boolean showHidden) {
+    return suborderDAO.getSubordersByFilters(showInactive, filter, customerOrderId, customerId, showHidden);
   }
 
   public List<Suborder> getSuborderChildren(Long parentSuborderId) {
