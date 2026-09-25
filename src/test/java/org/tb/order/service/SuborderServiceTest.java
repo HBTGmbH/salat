@@ -1,7 +1,6 @@
 package org.tb.order.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -176,7 +175,7 @@ public class SuborderServiceTest {
     child.setHide(true);
     setField(child, "id", 2L);
 
-    when(suborderDAO.getSubordersByCustomerorderId(anyLong(), anyBoolean()))
+    when(suborderDAO.getSubordersByCustomerorderId(anyLong()))
         .thenReturn(List.of(parent, child));
   }
 
@@ -195,7 +194,7 @@ public class SuborderServiceTest {
     child.setSign("02");
 
     when(customerorderService.getCustomerorderBySign("co")).thenReturn(customerorder);
-    when(suborderDAO.getSubordersByCustomerorderId(anyLong(), anyBoolean()))
+    when(suborderDAO.getSubordersByCustomerorderId(anyLong()))
         .thenReturn(List.of(parent, child));
   }
 

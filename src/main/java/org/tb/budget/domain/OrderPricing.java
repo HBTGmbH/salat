@@ -11,8 +11,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.tb.common.Validity;
 import org.tb.common.domain.AuditedEntity;
-import org.tb.common.util.DateUtils;
 
 @Entity
 @Table(name = "order_pricing")
@@ -68,7 +68,7 @@ public class OrderPricing extends AuditedEntity {
      * stays in the list, or a rate entered ahead of time would be entered a second time.
      */
     public boolean getCurrentlyValid() {
-        return !DateUtils.today().isAfter(validUntil);
+        return !Validity.isInactive(validUntil);
     }
 
     /**

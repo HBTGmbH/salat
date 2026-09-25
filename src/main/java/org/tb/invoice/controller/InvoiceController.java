@@ -165,7 +165,6 @@ public class InvoiceController {
         form.setTimereportsbox(true);
         form.setTimereportdescriptionbox(true);
         form.setEmployeesignbox(true);
-        form.setShowOnlyValid(true);
         initColumnHeaders(form);
         return form;
     }
@@ -184,7 +183,7 @@ public class InvoiceController {
     private void addCommonModel(Model model, InvoiceForm form) {
         model.addAttribute("orders", customerorderService.getInvoiceableCustomerorders());
         model.addAttribute("suborders", ofNullable(form.getOrderId())
-            .map(orderId -> suborderService.getSubordersByCustomerorderId(orderId, form.isShowOnlyValid()).stream()
+            .map(orderId -> suborderService.getSubordersByCustomerorderId(orderId, form.isShowInactive()).stream()
                 .sorted(SubOrderComparator.INSTANCE)
                 .toList())
             .orElse(List.of()));

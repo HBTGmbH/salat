@@ -52,7 +52,7 @@ public class OrderPricingController {
     private final MessageSourceAccessor messages;
 
     /**
-     * The parameters are prefixed rather than plain {@code showInactive} / {@code showExpiredOrders}
+     * The parameters are prefixed rather than plain {@code showInactive} / {@code showInactiveOrders}
      * because the UiState mapping is global: the plan list has a switch of the same name that means
      * something else, and both would otherwise share one remembered value (#952).
      *
@@ -63,16 +63,16 @@ public class OrderPricingController {
     @GetMapping
     public String list(@RequestParam(required = false) String fCustomerOrderSign,
                        @RequestParam(required = false) Boolean fPricingShowInactive,
-                       @RequestParam(required = false) Boolean fPricingShowExpiredOrders,
+                       @RequestParam(required = false) Boolean fPricingShowInactiveOrders,
                        Model model) {
         var inactive = Boolean.TRUE.equals(fPricingShowInactive);
-        var expiredOrders = Boolean.TRUE.equals(fPricingShowExpiredOrders);
+        var inactiveOrders = Boolean.TRUE.equals(fPricingShowInactiveOrders);
         // The rows name their order by sign; description, customer and validity hang off the order.
-        model.addAttribute("rows", orderPricingService.getRows(fCustomerOrderSign, inactive, expiredOrders));
+        model.addAttribute("rows", orderPricingService.getRows(fCustomerOrderSign, inactive, inactiveOrders));
         model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
         model.addAttribute("showInactive", inactive);
-        model.addAttribute("showExpiredOrders", expiredOrders);
+        model.addAttribute("showInactiveOrders", inactiveOrders);
         model.addAttribute("isManager", authorizedUser.isManager());
         return "budget/pricing-list";
     }

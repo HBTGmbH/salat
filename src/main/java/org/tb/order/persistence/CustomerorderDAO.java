@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.common.Validity;
 import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -77,14 +78,6 @@ public class CustomerorderDAO {
         return customerorderRepository.findAllValidAtAndNotHidden(today());
     }
 
-    private Specification<Customerorder> showOnlyValid() {
-        LocalDate now = today();
-        return (root, query, builder) -> builder.or(
-            builder.isNull(root.get(Customerorder_.untilDate)),
-            builder.greaterThanOrEqualTo(root.get(Customerorder_.untilDate), now)
-        );
-    }
-
     private Specification<Customerorder> notHidden() {
         return (root, query, builder) -> builder.notEqual(root.get(Customerorder_.hide), TRUE);
     }
@@ -111,13 +104,13 @@ public class CustomerorderDAO {
     /**
      * Get a list of all Customerorders fitting to the given filters ordered by their sign.
      */
-    public List<Customerorder> getCustomerordersByFilters(final Boolean showInvalid, final String filter, final Long customerId, final Boolean showHidden) {
+    public List<Customerorder> getCustomerordersByFilters(final Boolean showInactive, final String filter, final Long customerId, final Boolean showHidden) {
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         var order = new Order(ASC, Customerorder_.SIGN).ignoreCase();
         return customerorderRepository.findAll((Specification<Customerorder>) (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
-            if(!TRUE.equals(showInvalid)) {
-                predicates.add(showOnlyValid().toPredicate(root, query, builder));
+            if(!TRUE.equals(showInactive)) {
+                predicates.add(Validity.<Customerorder>notInactive(Customerorder_.untilDate).toPredicate(root, query, builder));
             }
             if(!TRUE.equals(showHidden)) {
                 predicates.add(notHidden().toPredicate(root, query, builder));
@@ -142,19 +135,6 @@ public class CustomerorderDAO {
      */
     public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
         return customerorderRepository.findAllByResponsibleHbt(responsibleHbtId);
-    }
-
-    /**
-     * Returns a list of all {@link Customerorder}s, where the given {@link Employee} is responsible.
-     */
-    public List<Customerorder> getVisibleCustomerOrdersByResponsibleEmployeeId(long responsibleHbtId) {
-        final var now = today();
-        return customerorderRepository.findAllByResponsibleHbt(responsibleHbtId).stream()
-            .filter(c -> !TRUE.equals(c.getHide()))
-            .filter(c -> !c.getFromDate().isAfter(now))
-            .filter(c -> c.getUntilDate() == null || !c.getUntilDate().isBefore(now))
-            .sorted(Comparator.comparing(Customerorder::getSign))
-            .collect(Collectors.toList());
     }
 
     /**

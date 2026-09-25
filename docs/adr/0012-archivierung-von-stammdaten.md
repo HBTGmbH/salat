@@ -120,6 +120,15 @@ builder.or(
 )
 ```
 
+> **Nachtrag #950.** Die Entscheidung gilt unverändert, ihre Umsetzung hat sich verschoben:
+> Das Prädikat steht nicht mehr je DAO, sondern einmal in `org.tb.common.Validity`
+> (`notInactive(...)` für die Abfrage, `isInactive(...)` für Java), und der Schalter heißt über alle
+> Schichten hinweg `showInactive` statt `show`/`showInvalid`/`showOnlyValid`. Ein offenes Ende kann
+> auch als Sentinel `2999-12-31` abgelegt sein und ist dann ebenfalls nie inaktiv; ein Beginn in der
+> Zukunft macht einen Datensatz **nicht** inaktiv. Der Filter wird über `UiState` gemerkt
+> (→ ADR-0022), nicht in der Session. Einzelheiten in AGENTS.md, „Gültigkeitszeiträume: aktiv und
+> inaktiv".
+
 ### Service- / Controller-Schicht
 
 - Dropdown-Befüllung im Controller: immer `isEdit` und die aktuell gespeicherte ID übergeben,

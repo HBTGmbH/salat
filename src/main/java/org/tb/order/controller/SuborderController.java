@@ -62,13 +62,13 @@ public class SuborderController {
       @RequestParam(required = false) String fSuborderFilter,
       @RequestParam(required = false) Long fCustomerOrderId,
       @RequestParam(required = false) Long fCustomerId,
-      @RequestParam(required = false) Boolean fSuborderShowInvalid,
+      @RequestParam(required = false) Boolean fSuborderShowInactive,
       @RequestParam(required = false) Boolean fSuborderShowActualHours,
       @RequestParam(required = false) Boolean fSuborderShowHidden,
       HttpServletRequest request,
       Model model) {
     var filterSet = (fSuborderFilter != null && !fSuborderFilter.isEmpty()) || fCustomerId != null || fCustomerOrderId != null;
-    var suborders = filterSet ? suborderService.getSubordersByFilters(fSuborderShowInvalid, fSuborderFilter, fCustomerOrderId, fCustomerId, fSuborderShowHidden) : List.<Suborder>of();
+    var suborders = filterSet ? suborderService.getSubordersByFilters(fSuborderShowInactive, fSuborderFilter, fCustomerOrderId, fCustomerId, fSuborderShowHidden) : List.<Suborder>of();
     if (Boolean.TRUE.equals(fSuborderShowActualHours)) {
       List<SuborderViewDecorator> decorators = new LinkedList<>();
       for (Suborder so : suborders) {
@@ -90,7 +90,7 @@ public class SuborderController {
     model.addAttribute("fSuborderFilter", fSuborderFilter);
     model.addAttribute("fCustomerId", fCustomerId);
     model.addAttribute("fCustomerOrderId", fCustomerOrderId);
-    model.addAttribute("fSuborderShowInvalid", fSuborderShowInvalid);
+    model.addAttribute("fSuborderShowInactive", fSuborderShowInactive);
     model.addAttribute("fSuborderShowHidden", fSuborderShowHidden);
     model.addAttribute("fSuborderShowActualHours", Boolean.TRUE.equals(fSuborderShowActualHours));
     model.addAttribute("section", "orders");

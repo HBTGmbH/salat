@@ -20,7 +20,6 @@ public class EmployeeorderForm {
     private String validUntil;
     private String debithours;
     private Byte debithoursunit;
-    private Boolean showOnlyValid = Boolean.TRUE;
 
     public LocalDate getValidFromTyped() {
         return DateUtils.parseOrNull(validFrom);

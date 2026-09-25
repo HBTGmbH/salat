@@ -72,7 +72,7 @@ public class OrderPricingService {
      */
     @Transactional(readOnly = true)
     public List<OrderPricingRow> getRows(String customerorderSign, boolean showInactive,
-                                         boolean showExpiredOrders) {
+                                         boolean showInactiveOrders) {
         var sign = trimToNull(customerorderSign);
         var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
         var ordersBySign = ordersOf(pricings);
@@ -83,7 +83,7 @@ public class OrderPricingService {
             .filter(pricing -> showInactive || pricing.getCurrentlyValid())
             .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage,
                 knownEmployeeSigns, planNames))
-            .filter(row -> showExpiredOrders || orderStillValid(row))
+            .filter(row -> showInactiveOrders || orderStillValid(row))
             .toList();
     }
 

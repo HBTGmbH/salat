@@ -19,7 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.LocalDateRange;
-import org.tb.common.util.DateUtils;
+import org.tb.common.Validity;
 import org.tb.customer.domain.Customer_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.order.auth.EmployeeorderAuthorization;
@@ -161,13 +161,6 @@ public class EmployeeorderDAO {
             .collect(Collectors.toList());
     }
 
-    private Specification<Employeeorder> showOnlyValid(LocalDate date) {
-        return (root, query, builder) -> builder.or(
-            builder.isNull(root.get(Employeeorder_.untilDate)),
-            builder.greaterThanOrEqualTo(root.get(Employeeorder_.untilDate), date)
-        );
-    }
-
     private Specification<Employeeorder> notHidden() {
         return (root, query, builder) -> builder.and(
             builder.notEqual(root.join(Employeeorder_.suborder).get(Suborder_.hide), TRUE),
@@ -231,12 +224,12 @@ public class EmployeeorderDAO {
     /**
      * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, and suborder.
      */
-    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInvalid, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
+    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInactive, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
-                if(!TRUE.equals(showInvalid)) {
-                    predicates.add(showOnlyValid(DateUtils.today()).toPredicate(root, query, builder));
+                if(!TRUE.equals(showInactive)) {
+                    predicates.add(Validity.<Employeeorder>notInactive(Employeeorder_.untilDate).toPredicate(root, query, builder));
                 }
                 if(!TRUE.equals(showHidden)) {
                     predicates.add(notHidden().toPredicate(root, query, builder));
@@ -274,7 +267,7 @@ public class EmployeeorderDAO {
         LocalDate date) {
         return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
                 Set<Predicate> predicates = new HashSet<>();
-                predicates.add(showOnlyValid(date).toPredicate(root, query, builder));
+                predicates.add(Validity.<Employeeorder>notInactiveOn(Employeeorder_.untilDate, date).toPredicate(root, query, builder));
                 predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
                 return builder.and(predicates.toArray(new Predicate[0]));
             }).stream()

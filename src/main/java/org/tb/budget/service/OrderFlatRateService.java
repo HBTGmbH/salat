@@ -74,7 +74,7 @@ public class OrderFlatRateService {
      */
     @Transactional(readOnly = true)
     public List<OrderFlatRateRow> getRows(String customerorderSign, boolean showInactive,
-                                          boolean showExpiredOrders) {
+                                          boolean showInactiveOrders) {
         var sign = trimToNull(customerorderSign);
         var flatRates = sign == null ? getAll() : getByCustomerorderSign(sign);
         var ordersBySign = ordersOf(flatRates);
@@ -85,7 +85,7 @@ public class OrderFlatRateService {
             .map(flatRate -> new OrderFlatRateRow(flatRate, ordersBySign.get(flatRate.getCustomerorderSign()),
                 flatRate.dueAmountsWithin(flatRate.getValidFrom(), flatRate.getValidUntil()),
                 flatRate.getOrderBudgetId() == null ? null : planNames.get(flatRate.getOrderBudgetId())))
-            .filter(row -> showExpiredOrders || orderStillValid(row))
+            .filter(row -> showInactiveOrders || orderStillValid(row))
             .toList();
     }
 

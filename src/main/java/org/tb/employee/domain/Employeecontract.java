@@ -1,5 +1,6 @@
 package org.tb.employee.domain;
 
+import org.tb.common.Validity;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.tb.common.util.DateUtils.format;
 
@@ -124,10 +125,6 @@ public class Employeecontract extends AuditedEntity implements Serializable {
 
     public boolean isValidAt(LocalDate date) {
         return !date.isBefore(validFrom) && (validUntil == null || !date.isAfter(validUntil));
-    }
-
-    public boolean isPast() {
-        return validUntil != null && validUntil.isBefore(DateUtils.today());
     }
 
     public LocalDateRange getValidity() {
@@ -256,11 +253,11 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     }
 
     /**
-     * @return Returns true, if the {@link Employeecontract} is currently valid, false otherwise.
+     * @return Returns true, if the {@link Employeecontract} is not inactive, i.e. its validity has
+     *     not ended before today (→ {@link Validity}).
      */
     public boolean getCurrentlyValid() {
-        LocalDate now = DateUtils.today();
-        return getValidUntil() == null || !now.isAfter(getValidUntil());
+        return !Validity.isInactive(getValidUntil());
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.tb.order.domain;
 
+import org.tb.common.Validity;
 import static org.tb.common.util.DateUtils.format;
 
 import jakarta.persistence.Column;
@@ -28,7 +29,6 @@ import org.hibernate.annotations.FetchMode;
 import org.tb.common.LocalDateRange;
 import org.tb.common.domain.AuditedEntity;
 import org.tb.common.domain.DurationMinutesConverter;
-import org.tb.common.util.DateUtils;
 import org.tb.customer.domain.Customer;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.comparator.SubOrderComparator;
@@ -151,11 +151,11 @@ public class Customerorder extends AuditedEntity implements Serializable {
     }
 
     /**
-     * @return Returns true, if the {@link Customerorder} is currently valid, false otherwise.
+     * @return Returns true, if the {@link Customerorder} is not inactive, i.e. its validity has not
+     *     ended before today (→ {@link Validity}).
      */
     public boolean getCurrentlyValid() {
-        LocalDate now = DateUtils.today();
-        return untilDate == null || !now.isAfter(untilDate);
+        return !Validity.isInactive(untilDate);
     }
 
     public boolean isValidAt(LocalDate date) {

@@ -64,15 +64,15 @@ public class OrderFlatRateController {
     @GetMapping
     public String list(@RequestParam(required = false) String fCustomerOrderSign,
                        @RequestParam(required = false) Boolean flatRateShowInactive,
-                       @RequestParam(required = false) Boolean flatRateShowExpiredOrders,
+                       @RequestParam(required = false) Boolean flatRateShowInactiveOrders,
                        Model model) {
         var inactive = Boolean.TRUE.equals(flatRateShowInactive);
-        var expiredOrders = Boolean.TRUE.equals(flatRateShowExpiredOrders);
-        model.addAttribute("rows", orderFlatRateService.getRows(fCustomerOrderSign, inactive, expiredOrders));
+        var inactiveOrders = Boolean.TRUE.equals(flatRateShowInactiveOrders);
+        model.addAttribute("rows", orderFlatRateService.getRows(fCustomerOrderSign, inactive, inactiveOrders));
         model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
         model.addAttribute("showInactive", inactive);
-        model.addAttribute("showExpiredOrders", expiredOrders);
+        model.addAttribute("showInactiveOrders", inactiveOrders);
         return "budget/flat-rate-list";
     }
 

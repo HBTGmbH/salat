@@ -38,7 +38,7 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
      * Whether the rate list also shows the rates of orders whose validity has expired (#957) — a
      * switch of its own, because it is about the order's validity and not the rate's.
      */
-    public static final UiStateKey PRICING_SHOW_EXPIRED_ORDERS = new UiStateKey("pricingList.ShowExpiredOrders");
+    public static final UiStateKey PRICING_SHOW_INACTIVE_ORDERS = new UiStateKey("pricingList.ShowInactiveOrders");
 
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
@@ -48,7 +48,7 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
         map.put("fCustomerOrderSign", CUSTOMER_ORDER_SIGN);
         map.put("fBudgetShowInactive", BUDGET_SHOW_INACTIVE);
         map.put("fPricingShowInactive", PRICING_SHOW_INACTIVE);
-        map.put("fPricingShowExpiredOrders", PRICING_SHOW_EXPIRED_ORDERS);
+        map.put("fPricingShowInactiveOrders", PRICING_SHOW_INACTIVE_ORDERS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 

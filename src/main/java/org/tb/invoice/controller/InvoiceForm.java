@@ -50,7 +50,7 @@ public class InvoiceForm implements InvoiceColumnHeaders {
     private boolean employeesignbox = true;
     private boolean invoicebox;
     private boolean fixedpricebox;
-    private boolean showOnlyValid = true;
+    private boolean showInactive;
     private List<Long> suborderIdArray = new ArrayList<>();
     private List<Long> timereportIdArray = new ArrayList<>();
     private String titlesubordertext;

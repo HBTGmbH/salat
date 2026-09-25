@@ -17,6 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.common.GlobalConstants;
+import org.tb.common.Validity;
 import org.tb.common.util.DateUtils;
 import org.tb.employee.auth.EmployeecontractAuthorization;
 import org.tb.employee.domain.Employee_;
@@ -74,14 +75,6 @@ public class EmployeecontractDAO {
         return employeecontractRepository.findAllSupervised(supervisorId);
     }
 
-    private Specification<Employeecontract> showOnlyValid() {
-        LocalDate now = DateUtils.today();
-        return (root, query, builder) -> builder.or(
-            builder.isNull(root.get(Employeecontract_.validUntil)),
-            builder.greaterThanOrEqualTo(root.get(Employeecontract_.validUntil), now)
-        );
-    }
-
     private Specification<Employeecontract> notHidden() {
         return (root, query, builder) -> builder.notEqual(root.get(Employeecontract_.hide), TRUE);
     }
@@ -107,12 +100,12 @@ public class EmployeecontractDAO {
      *
      * @return List<Employeecontract>
      */
-    public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInvalid, String filter, Long employeeId, Boolean showHidden) {
+    public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInactive, String filter, Long employeeId, Boolean showHidden) {
         boolean isFilter = filter != null && !filter.trim().isEmpty();
         return employeecontractRepository.findAll((Specification<Employeecontract>) (root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
-            if (!TRUE.equals(showInvalid)) {
-                predicates.add(showOnlyValid().toPredicate(root, query, builder));
+            if (!TRUE.equals(showInactive)) {
+                predicates.add(Validity.<Employeecontract>notInactive(Employeecontract_.validUntil).toPredicate(root, query, builder));
             }
             if (!TRUE.equals(showHidden)) {
                 predicates.add(notHidden().toPredicate(root, query, builder));

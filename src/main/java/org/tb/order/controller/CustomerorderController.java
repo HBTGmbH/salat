@@ -60,13 +60,13 @@ public class CustomerorderController {
   public String list(
       @RequestParam(required = false) String fCustomerOrderFilter,
       @RequestParam(required = false) Long fCustomerId,
-      @RequestParam(required = false) Boolean fCustomerOrderShowInvalid,
+      @RequestParam(required = false) Boolean fCustomerOrderShowInactive,
       @RequestParam(required = false) Boolean fCustomerOrderShowActualHours,
       @RequestParam(required = false) Boolean fCustomerOrderShowHidden,
       HttpServletRequest request,
       Model model) {
     var filterSet = (fCustomerOrderFilter != null && !fCustomerOrderFilter.isEmpty()) || fCustomerId != null;
-    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(fCustomerOrderShowInvalid, fCustomerOrderFilter, fCustomerId, fCustomerOrderShowHidden) : List.<Customerorder>of();
+    var customerorders = filterSet ? customerorderService.getCustomerordersByFilters(fCustomerOrderShowInactive, fCustomerOrderFilter, fCustomerId, fCustomerOrderShowHidden) : List.<Customerorder>of();
     if (Boolean.TRUE.equals(fCustomerOrderShowActualHours)) {
       List<CustomerOrderViewDecorator> decorators = new LinkedList<>();
       for (Customerorder co : customerorders) {
@@ -79,7 +79,7 @@ public class CustomerorderController {
     model.addAttribute("customers", customerService.getCustomersOrderedByShortName());
     model.addAttribute("fCustomerOrderFilter", fCustomerOrderFilter);
     model.addAttribute("fCustomerId", fCustomerId);
-    model.addAttribute("fCustomerOrderShowInvalid", fCustomerOrderShowInvalid);
+    model.addAttribute("fCustomerOrderShowInactive", fCustomerOrderShowInactive);
     model.addAttribute("fCustomerOrderShowHidden", fCustomerOrderShowHidden);
     model.addAttribute("fCustomerOrderShowActualHours", Boolean.TRUE.equals(fCustomerOrderShowActualHours));
     model.addAttribute("section", "orders");

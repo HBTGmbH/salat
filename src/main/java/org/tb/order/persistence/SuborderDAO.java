@@ -6,7 +6,6 @@ import static org.tb.common.util.DateUtils.today;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,12 +18,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.tb.common.Validity;
 import org.tb.customer.domain.Customer_;
 import org.tb.order.domain.Customerorder_;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
 import org.tb.order.domain.Suborder_;
-import org.tb.order.domain.comparator.SubOrderComparator;
 
 @Component
 @RequiredArgsConstructor
@@ -55,26 +54,6 @@ public class SuborderDAO {
     }
 
     /**
-     * Gets a list of Suborders by employee contract id AND customerorder.
-     */
-    public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderId(long employeeContractId, long customerorderId, boolean onlyValid) {
-        List<Suborder> employeeSpecificSuborders = getSubordersByEmployeeContractId(employeeContractId);
-        if (!onlyValid) return employeeSpecificSuborders;
-
-        var allSuborders = new ArrayList<Suborder>();
-        for (Suborder so : employeeSpecificSuborders) {
-            if (so.getCustomerorder().getId().equals(customerorderId)) {
-                if (so.getCurrentlyValid()) {
-                    allSuborders.add(so);
-                }
-            }
-        }
-
-        allSuborders.sort(SubOrderComparator.INSTANCE);
-        return allSuborders;
-    }
-
-    /**
      * Gets all {@link Suborder}s for the given employee, restricted to those that have
      * valid {@link Employeeorder}s.
      *
@@ -93,18 +72,17 @@ public class SuborderDAO {
     /**
      * Gets a list of Suborders by customer order id.
      */
-    public List<Suborder> getSubordersByCustomerorderId(long customerorderId, boolean onlyValid) {
-        if (onlyValid) {
-            return getSubordersByCustomerorderId(customerorderId, today());
-        } else {
-            return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.unsorted()).stream()
-                .sorted(comparing(Suborder::getCompleteOrderSign))
-                .collect(Collectors.toList());
-        }
+    public List<Suborder> getSubordersByCustomerorderId(long customerorderId) {
+        return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.unsorted()).stream()
+            .sorted(comparing(Suborder::getCompleteOrderSign))
+            .collect(Collectors.toList());
     }
 
     /**
-     * Gets a list of Suborders by customer order id.
+     * Gets a list of Suborders by customer order id that are valid on the given date.
+     *
+     * <p>Asks whether the suborder applies on {@code date} — that includes its start and is
+     * therefore <em>not</em> the active/inactive question of {@link org.tb.common.Validity}.
      */
     public List<Suborder> getSubordersByCustomerorderId(long customerorderId, LocalDate date) {
         return suborderRepository.findAllByCustomerorderId(customerorderId, Sort.unsorted()).stream()
@@ -115,35 +93,11 @@ public class SuborderDAO {
 
     /**
      * Get a list of all Suborders ordered by their sign.
-     *
-     * @param onlyValid return only valid suborders
      */
-    public List<Suborder> getSuborders(boolean onlyValid) {
-        if (onlyValid) {
-            return getSuborders(today());
-        } else {
-            return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
-                .sorted(comparing(Suborder::getCompleteOrderSign))
-                .collect(Collectors.toList());
-        }
-    }
-
-    /**
-     * Get a list of all Suborders ordered by their sign.
-     */
-    public List<Suborder> getSuborders(LocalDate date) {
+    public List<Suborder> getSuborders() {
         return StreamSupport.stream(suborderRepository.findAll().spliterator(), false)
-            .filter(s -> s.isValidAt(date))
             .sorted(comparing(Suborder::getCompleteOrderSign))
             .collect(Collectors.toList());
-    }
-
-    private Specification<Suborder> showOnlyValid() {
-        LocalDate now = today();
-        return (root, query, builder) -> builder.or(
-            builder.isNull(root.get(Suborder_.untilDate)),
-            builder.greaterThanOrEqualTo(root.get(Suborder_.untilDate), now)
-        );
     }
 
     private Specification<Suborder> notHidden() {
@@ -162,11 +116,11 @@ public class SuborderDAO {
     /**
      * Get a list of all suborders fitting to the given filters ordered by their sign.
      */
-    public List<Suborder> getSubordersByFilters(Boolean showInvalid, String filter, Long customerorderId, Long customerId, Boolean showHidden) {
+    public List<Suborder> getSubordersByFilters(Boolean showInactive, String filter, Long customerorderId, Long customerId, Boolean showHidden) {
         return suborderRepository.findAll((root, query, builder) -> {
             Set<Predicate> predicates = new HashSet<>();
-            if(!TRUE.equals(showInvalid)) {
-                predicates.add(showOnlyValid().toPredicate(root, query, builder));
+            if(!TRUE.equals(showInactive)) {
+                predicates.add(Validity.<Suborder>notInactive(Suborder_.untilDate).toPredicate(root, query, builder));
             }
             if(!TRUE.equals(showHidden)) {
                 predicates.add(notHidden().toPredicate(root, query, builder));

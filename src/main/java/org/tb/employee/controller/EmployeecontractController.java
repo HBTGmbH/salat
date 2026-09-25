@@ -57,7 +57,7 @@ public class EmployeecontractController {
     public String list(
             @RequestParam(required = false) String fEmployeeContractFilter,
             @RequestParam(required = false) Long fEmployeeId,
-            @RequestParam(required = false) Boolean fEmployeeContractShowInvalid,
+            @RequestParam(required = false) Boolean fEmployeeContractShowInactive,
             @RequestParam(required = false) Boolean fEmployeeContractShowHidden,
             Model model) {
         var employees = employeecontractService.getVisibleEmployeeContracts().stream()
@@ -68,12 +68,12 @@ public class EmployeecontractController {
         if (fEmployeeId == null && employees.size() == 1) {
             fEmployeeId = employees.getFirst().getId();
         }
-        var contracts = employeecontractService.getEmployeeContractViewsByFilters(fEmployeeContractShowInvalid, fEmployeeContractFilter, fEmployeeId, fEmployeeContractShowHidden);
+        var contracts = employeecontractService.getEmployeeContractViewsByFilters(fEmployeeContractShowInactive, fEmployeeContractFilter, fEmployeeId, fEmployeeContractShowHidden);
         model.addAttribute("employeecontracts", contracts);
         model.addAttribute("employees", employees);
         model.addAttribute("fEmployeeContractFilter", fEmployeeContractFilter);
         model.addAttribute("fEmployeeId", fEmployeeId);
-        model.addAttribute("fEmployeeContractShowInvalid", fEmployeeContractShowInvalid);
+        model.addAttribute("fEmployeeContractShowInactive", fEmployeeContractShowInactive);
         model.addAttribute("fEmployeeContractShowHidden", fEmployeeContractShowHidden);
         addListModel(model);
         return "employee/employee-contract-list";

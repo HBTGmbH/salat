@@ -69,7 +69,7 @@ public class EmployeeorderController {
             @RequestParam(required = false) Long fCustomerOrderId,
             @RequestParam(required = false) Long fSuborderId,
             @RequestParam(required = false) String fEmployeeOrderFilter,
-            @RequestParam(required = false) Boolean fEmployeeOrderShowInvalid,
+            @RequestParam(required = false) Boolean fEmployeeOrderShowInactive,
             @RequestParam(required = false) Boolean fEmployeeOrderShowActualHours,
             @RequestParam(required = false) Boolean fEmployeeOrderShowHidden,
             HttpServletRequest request,
@@ -78,7 +78,7 @@ public class EmployeeorderController {
         if (fEmployeeOrderEmployeeContractId == null && employeeContracts.size() == 1) {
             fEmployeeOrderEmployeeContractId = employeeContracts.getFirst().getId();
         }
-        var orders = customerorderService.getCustomerordersByFilters(fEmployeeOrderShowInvalid, fEmployeeOrderFilter, fCustomerId, fEmployeeOrderShowHidden);
+        var orders = customerorderService.getCustomerordersByFilters(fEmployeeOrderShowInactive, fEmployeeOrderFilter, fCustomerId, fEmployeeOrderShowHidden);
 
         var filterSet = (fEmployeeOrderFilter != null && !fEmployeeOrderFilter.isEmpty()) ||
                         fCustomerId != null ||
@@ -89,7 +89,7 @@ public class EmployeeorderController {
         List<EmployeeorderListItemDTO> employeeOrders = List.of();
         if(filterSet) {
             employeeOrders = employeeorderService.getEmployeeorderListItemsByFilters(
-                fEmployeeOrderShowInvalid, fEmployeeOrderFilter, fEmployeeOrderEmployeeContractId, fCustomerId, fCustomerOrderId, fSuborderId, Boolean.TRUE.equals(fEmployeeOrderShowActualHours), fEmployeeOrderShowHidden);
+                fEmployeeOrderShowInactive, fEmployeeOrderFilter, fEmployeeOrderEmployeeContractId, fCustomerId, fCustomerOrderId, fSuborderId, Boolean.TRUE.equals(fEmployeeOrderShowActualHours), fEmployeeOrderShowHidden);
         }
 
         List<Suborder> suborders = List.of();
@@ -106,7 +106,7 @@ public class EmployeeorderController {
         model.addAttribute("fCustomerOrderId", fCustomerOrderId);
         model.addAttribute("fSuborderId", fSuborderId);
         model.addAttribute("fEmployeeOrderFilter", fEmployeeOrderFilter);
-        model.addAttribute("fEmployeeOrderShowInvalid", fEmployeeOrderShowInvalid);
+        model.addAttribute("fEmployeeOrderShowInactive", fEmployeeOrderShowInactive);
         model.addAttribute("fEmployeeOrderShowHidden", fEmployeeOrderShowHidden);
         model.addAttribute("fEmployeeOrderShowActualHours", Boolean.TRUE.equals(fEmployeeOrderShowActualHours));
         addListModel(model, fCustomerId);
@@ -503,7 +503,7 @@ public class EmployeeorderController {
 
         List<Suborder> suborders = List.of();
         if(form.getOrderId() != null) {
-            var filteredSuborders = new ArrayList<>(getVisibleSuborders(form.getOrderId(), true)
+            var filteredSuborders = new ArrayList<>(getVisibleSuborders(form.getOrderId())
                 .stream()
                 .filter(so -> so.getValidity().overlaps(validity))
                 .toList());
@@ -534,10 +534,14 @@ public class EmployeeorderController {
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
     }
 
-    private List<Suborder> getVisibleSuborders(long customerOrderId, boolean showOnlyValid) {
-        return suborderService.getSubordersByCustomerorderId(customerOrderId, false).stream()
-                .filter(so -> !so.isHide())
-                .filter(so -> !showOnlyValid || so.getCurrentlyValid())
+    /**
+     * The suborders offered in the employee order form: everything of the customer order that is
+     * not hidden and not inactive. The {@code hide} filter already sits in the service, the
+     * active/inactive one is this method's own (→ {@link org.tb.common.Validity}).
+     */
+    private List<Suborder> getVisibleSuborders(long customerOrderId) {
+        return suborderService.getSubordersByCustomerorderId(customerOrderId).stream()
+                .filter(Suborder::getCurrentlyValid)
                 .toList();
     }
 
