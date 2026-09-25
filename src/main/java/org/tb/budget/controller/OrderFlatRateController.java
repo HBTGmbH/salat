@@ -57,17 +57,21 @@ public class OrderFlatRateController {
     private final MessageSourceAccessor messages;
 
     /**
-     * The parameters are prefixed for the reason the rate list gives: the UiState mapping is global,
-     * and a switch of the same name on another list would otherwise share one remembered value
-     * (#952).
+     * The parameters carry the prefix {@code f} of every remembered filter (ADR-0022) and are
+     * registered in {@link BudgetUiStateKeyContributor} — without that registration nothing is
+     * remembered and both switches fall back to their default on every page view (#1098).
+     *
+     * <p>Each switch has a key of its own, not the one of the rate list next door: the UiState
+     * mapping is global, so a switch sharing a name with another list would share its remembered
+     * value (#952).
      */
     @GetMapping
     public String list(@RequestParam(required = false) String fCustomerOrderSign,
-                       @RequestParam(required = false) Boolean flatRateShowInactive,
-                       @RequestParam(required = false) Boolean flatRateShowInactiveOrders,
+                       @RequestParam(required = false) Boolean fFlatRateShowInactive,
+                       @RequestParam(required = false) Boolean fFlatRateShowInactiveOrders,
                        Model model) {
-        var inactive = Boolean.TRUE.equals(flatRateShowInactive);
-        var inactiveOrders = Boolean.TRUE.equals(flatRateShowInactiveOrders);
+        var inactive = Boolean.TRUE.equals(fFlatRateShowInactive);
+        var inactiveOrders = Boolean.TRUE.equals(fFlatRateShowInactiveOrders);
         model.addAttribute("rows", orderFlatRateService.getRows(fCustomerOrderSign, inactive, inactiveOrders));
         model.addAttribute("customerorderOptions", filterOptions());
         model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
