@@ -27,18 +27,22 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
     public static final UiStateKey CUSTOMER_ORDER_SIGN = new UiStateKey("budget.CustomerorderSign");
 
     /**
-     * The two "show inactive" switches stay apart: in the plan list the switch means inactive budget
-     * plans, in the rate list expired rates. Because the parameter mapping is global, telling them
-     * apart requires two parameter names — hence the prefixes.
+     * The three "show inactive" switches stay apart: in the plan list the switch means inactive
+     * budget plans, in the rate list expired rates, in the flat-rate list expired flat rates (#1098).
+     * Because the parameter mapping is global, telling them apart requires one parameter name each —
+     * hence the prefixes.
      */
     public static final UiStateKey BUDGET_SHOW_INACTIVE = new UiStateKey("budgetList.ShowInactive");
     public static final UiStateKey PRICING_SHOW_INACTIVE = new UiStateKey("pricingList.ShowInactive");
+    public static final UiStateKey FLAT_RATE_SHOW_INACTIVE = new UiStateKey("flatRateList.ShowInactive");
 
     /**
-     * Whether the rate list also shows the rates of orders whose validity has expired (#957) — a
-     * switch of its own, because it is about the order's validity and not the rate's.
+     * Whether the rate list, respectively the flat-rate list, also shows the entries of orders whose
+     * validity has expired (#957, #1098) — a switch of its own on each list, because it is about the
+     * order's validity and not the rate's.
      */
     public static final UiStateKey PRICING_SHOW_INACTIVE_ORDERS = new UiStateKey("pricingList.ShowInactiveOrders");
+    public static final UiStateKey FLAT_RATE_SHOW_INACTIVE_ORDERS = new UiStateKey("flatRateList.ShowInactiveOrders");
 
     private static final Map<String, UiStateKey> PARAM_TO_KEY;
     static {
@@ -49,6 +53,8 @@ public class BudgetUiStateKeyContributor implements UiStateKeyContributor {
         map.put("fBudgetShowInactive", BUDGET_SHOW_INACTIVE);
         map.put("fPricingShowInactive", PRICING_SHOW_INACTIVE);
         map.put("fPricingShowInactiveOrders", PRICING_SHOW_INACTIVE_ORDERS);
+        map.put("fFlatRateShowInactive", FLAT_RATE_SHOW_INACTIVE);
+        map.put("fFlatRateShowInactiveOrders", FLAT_RATE_SHOW_INACTIVE_ORDERS);
         PARAM_TO_KEY = Collections.unmodifiableMap(map);
     }
 
