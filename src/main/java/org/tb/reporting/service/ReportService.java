@@ -21,7 +21,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
-import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.tb.auth.domain.Authorized;
@@ -196,17 +196,12 @@ public class ReportService {
       }
 
       return resultBuilder.error(false).sql(resolvedSql).build();
-    } catch (BadSqlGrammarException e) {
-      // capture detailed SQL error information in the result to display in UI
-      var sqlEx = e.getSQLException();
-      var msg = e.getMostSpecificCause().getMessage();
-      log.warn("Bad SQL grammar while executing report {}: {}", reportDefinitionId, msg);
-      var errorInfo = ReportResult.ErrorInfo.builder()
-          .errorClass(e.getClass().getSimpleName())
-          .errorMessage(msg)
-          .sqlState(sqlEx != null ? sqlEx.getSQLState() : null)
-          .errorCode(sqlEx != null ? sqlEx.getErrorCode() : null)
-          .build();
+    } catch (DataAccessException e) {
+      // Ein fehlgeschlagener Reportlauf ist ein erwartetes Ergebnis der Reportpflege und wird
+      // angezeigt, gleich welche Ausnahme die Datenbank meldet (#1110). Nicht auf Exception
+      // verbreitern: ein Fehler in der Auswertung der Ergebnismenge bleibt ein Anwendungsfehler.
+      var errorInfo = ReportSqlErrors.describe(e);
+      log.warn("SQL error while executing report {}: {}", reportDefinitionId, errorInfo.getErrorMessage());
       return ReportResult.builder()
           .parameters(parameters)
           .columnHeaders(List.of())

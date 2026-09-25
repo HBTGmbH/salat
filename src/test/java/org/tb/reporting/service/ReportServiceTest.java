@@ -165,6 +165,55 @@ public class ReportServiceTest {
     assertThat(result.getColumnHeaders()).anyMatch(header -> header.getName().equalsIgnoreCase("sign_alias"));
   }
 
+  /**
+   * Ein Report, dessen SQL erst beim Ausführen scheitert, ist genauso ein Ergebnis der
+   * Reportpflege wie ein Syntaxfehler — und keine Ausnahme, die bis zur allgemeinen Fehlerseite
+   * durchläuft (#1110).
+   */
+  @Test
+  public void should_report_an_error_that_occurs_only_while_executing() {
+    loginAsManager("test");
+
+    Employee employee = new Employee();
+    employee.setFirstname("Klaus");
+    employee.setLastname("Richarz");
+    employee.setGender(GlobalConstants.GENDER_MALE);
+    employeeRepository.save(employee);
+
+    // syntaktisch gültig: der Teiler steht erst mit der gelesenen Zeile fest
+    var sql = "select 100 / (id - id) as quotient from employee";
+    var reportDefinition = reportService.create("test", sql);
+
+    var result = reportService.execute(reportDefinition.getId(), List.of());
+
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getErrorInfo()).isNotNull();
+    assertThat(result.getErrorInfo().getErrorClass()).isNotBlank();
+    // der Fall, der vorher ungefangen durchlief — sonst prüft dieser Test den alten Zweig mit
+    assertThat(result.getErrorInfo().getErrorClass()).isNotEqualTo("BadSqlGrammarException");
+    assertThat(result.getErrorInfo().getErrorMessage()).isNotBlank();
+    // die Ansicht bietet „Show failing SQL" an, also muss die Anweisung mitkommen
+    assertThat(result.getSql()).isEqualTo(sql);
+  }
+
+  @Test
+  public void should_report_a_syntax_error_with_sql_state_and_error_code() {
+    loginAsManager("test");
+
+    var sql = "select * from a_table_that_does_not_exist";
+    var reportDefinition = reportService.create("test", sql);
+
+    var result = reportService.execute(reportDefinition.getId(), List.of());
+
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getErrorInfo()).isNotNull();
+    assertThat(result.getErrorInfo().getErrorClass()).isEqualTo("BadSqlGrammarException");
+    assertThat(result.getErrorInfo().getErrorMessage()).containsIgnoringCase("a_table_that_does_not_exist");
+    assertThat(result.getErrorInfo().getSqlState()).isNotBlank();
+    assertThat(result.getErrorInfo().getErrorCode()).isNotNull();
+    assertThat(result.getSql()).isEqualTo(sql);
+  }
+
   @Test
   public void should_execute_report_with_duplicate_column_and_different_alias() {
     loginAsManager("test");

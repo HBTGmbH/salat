@@ -49,4 +49,28 @@ class ReportErrorDisplayE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * The same promise for a statement the database only rejects while running it: which exception
+   * class a broken report falls into is the database's choice, and the answer must not depend on it
+   * (#1110). Such an exception carries no SQL state in every case, so nothing is asserted about it.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_report_failing_while_running_shows_the_error_too(E2EBrowser browser) {
+    var broken = new ReportDefinition();
+    broken.setName("E2E report failing at runtime");
+    // valid syntax, no placeholders — the divisor is only known once a row has been read
+    broken.setSql("select 100 / (id - id) as quotient from employee");
+    var id = reportDefinitionRepository.save(broken).getId();
+
+    runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/reporting/reports/execute?id=" + id, page -> {
+
+      var alert = page.locator(".alert-danger");
+      assertThat(alert).isVisible();
+
+      // the view offers "Show failing SQL" here as well
+      assertThat(page.locator(".alert-danger pre code")).containsText("100 / (id - id)");
+    });
+  }
+
 }
