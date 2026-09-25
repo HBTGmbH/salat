@@ -174,14 +174,8 @@ public class ReportServiceTest {
   public void should_report_an_error_that_occurs_only_while_executing() {
     loginAsManager("test");
 
-    Employee employee = new Employee();
-    employee.setFirstname("Klaus");
-    employee.setLastname("Richarz");
-    employee.setGender(GlobalConstants.GENDER_MALE);
-    employeeRepository.save(employee);
-
     // syntaktisch gültig: der Teiler steht erst mit der gelesenen Zeile fest
-    var sql = "select 100 / (id - id) as quotient from employee";
+    var sql = "select 100 / (t.n - t.n) as quotient from (select 1 as n) t";
     var reportDefinition = reportService.create("test", sql);
 
     var result = reportService.execute(reportDefinition.getId(), List.of());
