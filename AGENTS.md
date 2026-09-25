@@ -772,6 +772,39 @@ Rules:
 - All service/DAO methods that populate dropdowns must exclude hidden records by default (apply `notHidden()` spec or equivalent).
 - The list management view exposes a “Show hidden” toggle so managers can still see and edit hidden records.
 
+**Die Spalte ist nullbar, und `NULL` heißt nicht verborgen** (#1104). `hide` hat drei Zustände —
+`true`, `false` und „nie geschrieben" —, und der dritte ist der, an dem die Frage auseinanderläuft:
+in SQL ist `hide <> 1` für `NULL` *unbekannt* statt wahr, die Zeile fällt also aus dem Ergebnis,
+obwohl niemand sie verborgen hat. Die Detailansicht desselben Datensatzes zeigte ihn weiter als
+nicht verborgen.
+
+**Die Regel steht genau einmal im Code: `org.tb.common.Hiding`** — beide Seiten nebeneinander, wie
+`Validity` es für den Gültigkeitszeitraum tut:
+
+```java
+// in Java, auf der Entität
+public Boolean getHide() {
+    return Hiding.isHidden(hide);
+}
+
+// in der Abfrage, im DAO
+private Specification<Suborder> notHidden() {
+    return Hiding.notHidden(Suborder_.hide);
+}
+
+// wo das Flag über einen Join kommt (Employeeorder hat kein eigenes)
+Hiding.notHidden(builder, root.join(Employeeorder_.suborder).get(Suborder_.hide))
+```
+
+- **`notEqual(hide, TRUE)` und `hide != true` sind Fehler**, gleichgültig ob als Specification oder
+  als JPQL. Beide Schreibweisen verwerfen die `NULL`-Zeile.
+- **In JPQL muss die Schreibweise wiederholt werden**, weil ein `@Query` nur eine Zeichenkette ist
+  und `Hiding` nicht aufrufen kann. Es gibt dafür genau eine Schreibweise, und das ist diese:
+  `(x.hide is null or x.hide = false)`. Sie hält zu `Hiding.notHidden` Schritt.
+- Eine Datenmigration auf `NOT NULL DEFAULT false` ist **nicht** erfolgt und wäre ein eigenes
+  Ticket: der Bestand trägt 25 solcher Zeilen in `suborder`, alle aus 2006/2007, alle abgelaufen und
+  unter verborgenen Kundenaufträgen.
+
 **The one exception: the record a select already stores** (→ #1005). A select box that carries an
 already stored reference must offer the stored record even when it is hidden. Hiding declutters the
 choice of something *new*; it must never make an existing record uneditable, and it must never
@@ -959,7 +992,7 @@ if (!TRUE.equals(showInactive)) predicates.add(Validity.<Suborder>notInactive(Su
 if (!TRUE.equals(showHidden))   predicates.add(notHidden().toPredicate(root, query, builder));
 ```
 
-**Entity without own `hide` field** (e.g. `Employeeorder`): filter on the parent's flag via a join — `notHidden()` checks `suborder.hide` and `suborder.customerorder.hide`.
+**Entity without own `hide` field** (e.g. `Employeeorder`): filter on the parent's flag via a join — `notHidden()` checks `suborder.hide` and `suborder.customerorder.hide`, each through `Hiding.notHidden(builder, path)` so that a never-set flag counts as not hidden there too (→ „The `hide` Flag").
 
 **Persistenz des Filters**: über `UiState` (→ ADR-0022), nicht über die Session. Der Parametername
 ist `f` + Entität + `ShowInactive` bzw. `ShowHidden` (`fSuborderShowInactive`,

@@ -18,6 +18,7 @@ import org.springframework.util.Assert;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.GlobalConstants;
+import org.tb.common.Hiding;
 import org.tb.employee.auth.EmployeeAuthorization;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employee_;
@@ -94,8 +95,12 @@ public class EmployeeDAO {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Nicht verborgen — und {@code null} zählt als nicht verborgen, so wie
+     * {@link Employee#getHide()} es liest. Die Regel steht in {@link Hiding} (#1104).
+     */
     private Specification<Employee> notHidden() {
-        return (root, query, builder) -> builder.notEqual(root.get(Employee_.hide), TRUE);
+        return Hiding.notHidden(Employee_.hide);
     }
 
     /**

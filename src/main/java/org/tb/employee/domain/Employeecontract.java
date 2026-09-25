@@ -1,5 +1,6 @@
 package org.tb.employee.domain;
 
+import org.tb.common.Hiding;
 import org.tb.common.Validity;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.tb.common.util.DateUtils.format;
@@ -85,8 +86,12 @@ public class Employeecontract extends AuditedEntity implements Serializable {
     @Column(nullable = false)
     private int vacationEntitlement;
 
+    /**
+     * @return Returns true, if the {@link Employeecontract} is hidden — {@code null} is not hidden
+     *     (→ {@link Hiding}).
+     */
     public Boolean getHide() {
-        return hide != null && hide;
+        return Hiding.isHidden(hide);
     }
 
     public Boolean getFreelancer() {

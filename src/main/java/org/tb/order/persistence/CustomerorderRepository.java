@@ -40,8 +40,15 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
    * Every employee who is responsible for at least one customer order — the choices of the
    * "responsible" filter. An order may have several responsibles, hence the distinct.
    * Responsible employees for hidden customer orders and hidden employees are left aside.
+   *
+   * <p>{@code hide is null} counts as not hidden, the one spelling of {@link org.tb.common.Hiding}
+   * (#1104) — a {@code hide != true} would drop such a row, although nobody hid it.
    */
-  @Query("select distinct e from Customerorder c join c.responsibleHbt e where c.hide != true and e.hide != true order by e.sign")
+  @Query("""
+      select distinct e from Customerorder c join c.responsibleHbt e
+      where (c.hide is null or c.hide = false) and (e.hide is null or e.hide = false)
+      order by e.sign
+      """)
   List<Employee> findAllVisibleResponsibleHbt();
 
   /**
@@ -51,7 +58,8 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
    */
   @Query("""
       select distinct e from Customerorder c join c.responsibleHbt e
-      where c.hide != true and e.hide != true and c.customer.segment.id = :segmentId
+      where (c.hide is null or c.hide = false) and (e.hide is null or e.hide = false)
+      and c.customer.segment.id = :segmentId
       order by e.sign
       """)
   List<Employee> findVisibleResponsibleHbtByCustomerSegmentId(long segmentId);

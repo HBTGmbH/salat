@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.tb.auth.domain.SalatUser;
+import org.tb.common.Hiding;
 import org.tb.common.domain.AuditedEntity;
 
 import static org.tb.common.GlobalConstants.GENDER_MALE;
@@ -57,8 +58,12 @@ public class Employee extends AuditedEntity implements Serializable {
     )
     private SalatUser salatUser;
 
+    /**
+     * @return Returns true, if the {@link Employee} is hidden — {@code null} is not hidden
+     *     (→ {@link Hiding}).
+     */
     public Boolean getHide() {
-        return hide != null && hide;
+        return Hiding.isHidden(hide);
     }
 
     public String getName() {

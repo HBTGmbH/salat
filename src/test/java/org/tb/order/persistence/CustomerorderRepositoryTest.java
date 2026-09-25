@@ -106,6 +106,18 @@ public class CustomerorderRepositoryTest {
     assertThat(signsOfVisibleResponsibles()).containsExactly("eee");
   }
 
+  /**
+   * Ein nie gesetztes {@code hide} heisst nicht verborgen — auf beiden Seiten der Abfrage (#1104).
+   * Auftrag und Mitarbeiterin tragen hier kein Flag; vor #1104 liess {@code hide != true} beide
+   * Zeilen fallen, und der Filter bot niemanden an, den niemand verborgen hatte.
+   */
+  @Test
+  public void offers_a_responsible_whose_order_never_had_its_hide_flag_set() {
+    orderWithoutHideFlag("co-hide-never-set", employee("fff"));
+
+    assertThat(signsOfVisibleResponsibles()).containsExactly("fff");
+  }
+
   @Test
   public void orders_the_choices_by_sign() {
     order("co-one", false, employee("zzz"));
@@ -192,9 +204,11 @@ public class CustomerorderRepositoryTest {
   }
 
   /**
-   * {@code hide} is set explicitly because the schema defaults the column to {@code false} while a
-   * fresh entity leaves it {@code null} — and {@code hide != true} drops a {@code null} row, here as
-   * in every other select box query of the application ({@code EmployeeDAO.notHidden()}).
+   * {@code hide} bleibt ungesetzt — eine frische Entität lässt die Spalte {@code null}, und das ist
+   * seit #1104 der Normalfall und keine Falle mehr: die Abfrage liest {@code null} als nicht
+   * verborgen, so wie {@link Employee#getHide()} es tut. Bis dahin musste das Fixture das Flag
+   * ausdrücklich setzen, weil das damalige {@code e.hide != true} eine {@code null}-Zeile fallen
+   * liess.
    */
   private Employee employee(String sign) {
     var employee = new Employee();
@@ -202,7 +216,6 @@ public class CustomerorderRepositoryTest {
     employee.setFirstname("Vorname");
     employee.setLastname("Nachname");
     employee.setGender(GlobalConstants.GENDER_FEMALE);
-    employee.setHide(false);
     return employeeRepository.save(employee);
   }
 
@@ -211,6 +224,17 @@ public class CustomerorderRepositoryTest {
   }
 
   private void order(String sign, boolean hidden, Customer orderCustomer, Employee... responsibles) {
+    var order = newOrder(sign, orderCustomer, responsibles);
+    order.setHide(hidden);
+    customerorderRepository.save(order);
+  }
+
+  /** Wie {@link #order}, laesst {@code hide} aber ungesetzt — die Spalte ist nullable. */
+  private void orderWithoutHideFlag(String sign, Employee... responsibles) {
+    customerorderRepository.save(newOrder(sign, customer, responsibles));
+  }
+
+  private Customerorder newOrder(String sign, Customer orderCustomer, Employee... responsibles) {
     var order = new Customerorder();
     order.setCustomer(orderCustomer);
     order.setSign(sign);
@@ -218,8 +242,7 @@ public class CustomerorderRepositoryTest {
     order.setFromDate(LocalDate.of(2026, 1, 1));
     order.setOrderType(OrderType.STANDARD);
     order.setDebithours(Duration.ZERO);
-    order.setHide(hidden);
     order.setResponsibleHbt(List.of(responsibles));
-    customerorderRepository.save(order);
+    return order;
   }
 }

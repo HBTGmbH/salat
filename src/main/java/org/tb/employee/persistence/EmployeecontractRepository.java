@@ -24,15 +24,20 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
     select ec from Employeecontract ec
     join ec.supervisors s
     where s.id = :supervisorId
-    and (ec.hide = false or ec.hide is null)
+    and (ec.hide is null or ec.hide = false)
     order by ec.employee.lastname asc, ec.validFrom asc
   """)
   List<Employeecontract> findAllSupervised(long supervisorId);
 
   List<Employeecontract> findAllByEmployeeId(Long employeeId);
 
+  /**
+   * {@code hide is null} zählt als nicht verborgen — die eine Schreibweise aus
+   * {@link org.tb.common.Hiding} (#1104), hier als JPQL, weil ein {@code @Query} nur eine
+   * Zeichenkette ist und die Klasse nicht aufrufen kann.
+   */
   @Query("""
-      select e from Employeecontract e where e.hide = false or e.hide is null
+      select e from Employeecontract e where e.hide is null or e.hide = false
       """)
   List<Employeecontract> findAllNotHidden();
 
