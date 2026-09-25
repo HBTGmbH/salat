@@ -834,6 +834,23 @@ if (!TRUE.equals(showInactive)) {
 Eine fünfte Kopie des Prädikats ist damit ein Fehler. Wer eine weitere Entität mit
 Gültigkeitszeitraum anlegt, ruft `Validity`, statt `untilDate >= today` noch einmal zu schreiben.
 
+**Nicht jede Liste ist eine Auswahlliste (#1106).** Ob das Zeitkriterium überhaupt gilt, entscheidet
+die Frage, die die Liste beantwortet:
+
+- **Auswahl für Neues** — ein Auswahlfeld eines Formulars: worauf darf jetzt gebucht, was darf jetzt
+  angelegt oder zugeordnet werden. Ein abgelaufener Datensatz ist darauf keine Antwort mehr, also
+  `notHidden()` **und** `Validity.notInactive(...)`. Das ist der Normalfall, und das ist, was
+  `CustomerorderService.getVisibleCustomerorders()` liefert.
+- **Filter über Vorhandenes** — die Auswahl über einer Liste bereits erfasster Daten, etwa die
+  Auftragsauswahl der Buchungsliste. Sie schränkt ein, was es schon gibt, und Vergangenes läuft nicht
+  mit seinem Stammdatensatz ab: eine Buchung auf einem abgelaufenen Auftrag bleibt eine Buchung, die
+  man über ihren Auftrag sucht. Hier gilt **nur** `notHidden()` —
+  `CustomerorderService.getNotHiddenCustomerorders()`, `SuborderService.getNotHiddenSuborders()`.
+
+`hide` gilt in **beiden** Fällen: es ist eine Entscheidung über das Anbieten, nicht über die Zeit.
+Eine Methode darf nicht beide Fragen bedienen — die Methode heißt nach dem, was sie liefert, und wer
+eine weitere Filterliste baut, ruft die passende, statt einer bestehenden einen Filter abzuhängen.
+
 **Davon zu unterscheiden, und ausdrücklich nicht dasselbe:**
 
 - **`hide`** — die manuelle Entscheidung, einen Datensatz aus Auswahllisten zu nehmen, unabhängig

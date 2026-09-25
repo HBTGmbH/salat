@@ -295,7 +295,6 @@ public class SuborderService {
     return suborderDAO.getSuborders();
   }
 
-  /** All suborders that are not hidden. */
   /**
    * The suborders of the given customer orders, hidden ones included — for lists whose rows name
    * their suborder by its complete order sign and need its description next to it (#952).
@@ -314,7 +313,12 @@ public class SuborderService {
         .toList();
   }
 
-  public List<Suborder> getAllVisibleSuborders() {
+  /**
+   * The suborders a filter over existing bookings may offer: not hidden, inactive ones included
+   * (#1106). Named after what it filters, because that is all it filters — „sichtbar" says the same
+   * word as {@code CustomerorderService.getVisibleCustomerorders()} and means one criterion less.
+   */
+  public List<Suborder> getNotHiddenSuborders() {
     return suborderDAO.getSuborders().stream()
         .filter(not(Suborder::isHide))
         .toList();

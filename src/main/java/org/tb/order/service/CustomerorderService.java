@@ -226,6 +226,18 @@ public class CustomerorderService {
     return customerorderDAO.getVisibleCustomerorders();
   }
 
+  /**
+   * The orders a filter over existing bookings may offer: not hidden, inactive ones included
+   * (#1106). A list of what has already happened has to name the orders it happened on, and those
+   * expire while their bookings stay.
+   *
+   * <p>For a select box that picks something new this is the wrong list — that one is
+   * {@link #getVisibleCustomerorders()}.
+   */
+  public List<Customerorder> getNotHiddenCustomerorders() {
+    return customerorderDAO.getNotHiddenCustomerorders();
+  }
+
   @Authorized(requiresManager = true)
   public void deleteCustomerorderById(long customerOrderId) {
     var event = new CustomerorderDeleteEvent(customerOrderId);

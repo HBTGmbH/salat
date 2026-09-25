@@ -150,6 +150,15 @@ public class TimereportListService {
   /**
    * The orders and suborders a dialog shows: what matches the search, capped. Without a search term the orders alone,
    * because a flat list of every suborder helps nobody — the term is what narrows it down.
+   *
+   * <p>Inactive orders belong in here (#1106). This dialog narrows down what has already been booked, and an order
+   * that has ended keeps its bookings — leaving it out would hide them behind a filter that cannot name them. That is
+   * the opposite of what #1094 decided for the select boxes of the master data forms, and deliberately so: those pick
+   * something new, and nothing new is booked onto an order that has ended. {@code hide} is the other question and is
+   * answered the same on both sides — what somebody took out of the select boxes by hand stays out of this one too.
+   *
+   * <p>Both branches therefore filter by {@code hide} alone. Which of them runs decides how <em>much</em> somebody
+   * sees, never by which rule.
    */
   public OrderSearchResult searchOrders(String term, List<Long> selectedCustomerIds, boolean includeOrders,
       boolean includeSuborders, int limit) {
@@ -160,8 +169,8 @@ public class TimereportListService {
     List<Customerorder> orders;
     List<Suborder> suborders;
     if (visibility.unrestricted()) {
-      orders = customerorderService.getVisibleCustomerorders();
-      suborders = suborderService.getAllVisibleSuborders();
+      orders = customerorderService.getNotHiddenCustomerorders();
+      suborders = suborderService.getNotHiddenSuborders();
     } else {
       var values = timereportListDAO.findFilterValues(visibility);
       orders = notHidden(customerorderService.getCustomerordersByIds(values.customerOrderIds()),
@@ -385,8 +394,8 @@ public class TimereportListService {
     if (customerIds.isEmpty() && customerOrderIds.isEmpty() && suborderIds.isEmpty()) {
       var visibility = visibilityService.anyTime();
       if (visibility.unrestricted()) {
-        orders.addAll(customerorderService.getVisibleCustomerorders());
-        suborders.addAll(suborderService.getAllVisibleSuborders());
+        orders.addAll(customerorderService.getNotHiddenCustomerorders());
+        suborders.addAll(suborderService.getNotHiddenSuborders());
       } else {
         var values = timereportListDAO.findFilterValues(visibility);
         orders.addAll(customerorderService.getCustomerordersByIds(values.customerOrderIds()));
@@ -398,7 +407,7 @@ public class TimereportListService {
       suborders.forEach(suborder -> orders.add(suborder.getCustomerorder()));
       if (!customerIds.isEmpty()) {
         var customers = new HashSet<>(customerIds);
-        customerorderService.getVisibleCustomerorders().stream()
+        customerorderService.getNotHiddenCustomerorders().stream()
             .filter(order -> customers.contains(order.getCustomer().getId()))
             .forEach(orders::add);
       }

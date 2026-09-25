@@ -31,6 +31,11 @@ import org.tb.order.domain.OrderType;
  *
  * <p>The time criterion is the one from ADR-0029 and looks at the end alone, so an order beginning
  * in the future stays offered: whoever enters it ahead of time has to find it again.
+ *
+ * <p>Next to it the second path, {@code getNotHiddenCustomerorders} (#1106): the same {@code hide},
+ * without the time criterion. That is what a filter over existing bookings offers, because an order
+ * that has ended keeps its bookings. Both paths are tested here, against the same four
+ * combinations, so the difference between them stays the one difference it is meant to be.
  */
 @DataJpaTest
 @Import({AuthorizedUserAuditorAware.class, CustomerorderDAO.class, SuborderDAO.class})
@@ -163,8 +168,56 @@ class VisibleCustomerordersTest {
     assertThat(visibleSigns()).containsExactly("hide-never-set");
   }
 
+  // --- der zweite Weg: ein Filter ueber Vorhandenes (#1106) ------------------------------------
+
+  /**
+   * Die Auftragsauswahl der Buchungsliste schraenkt Vorhandenes ein, statt Neues auszuwaehlen. Ein
+   * abgelaufener Auftrag behaelt seine Buchungen, also gehoert er dort hinein — genau darin
+   * unterscheiden sich die beiden Wege, und nur darin.
+   */
+  @Test
+  void offers_an_expired_order_to_a_filter_over_existing_data() {
+    order("expired-but-visible", false, LONG_AGO, TODAY.minusDays(1));
+
+    assertThat(notHiddenSigns()).containsExactly("expired-but-visible");
+    assertThat(visibleSigns()).isEmpty();
+  }
+
+  /** {@code hide} bleibt auch hier ein eigenes Kriterium — es haengt an keinem Datum. */
+  @Test
+  void leaves_out_a_hidden_order_in_a_filter_over_existing_data() {
+    order("hidden-but-running", true, LONG_AGO, TODAY.plusYears(1));
+    order("hidden-and-expired", true, LONG_AGO, TODAY.minusDays(1));
+
+    assertThat(notHiddenSigns()).isEmpty();
+  }
+
+  @Test
+  void offers_two_of_the_four_combinations_to_a_filter_over_existing_data() {
+    order("visible-and-running", false, LONG_AGO, TODAY.plusYears(1));
+    order("hidden-but-running", true, LONG_AGO, TODAY.plusYears(1));
+    order("expired-but-visible", false, LONG_AGO, TODAY.minusDays(1));
+    order("hidden-and-expired", true, LONG_AGO, TODAY.minusDays(1));
+
+    assertThat(notHiddenSigns()).containsExactly("expired-but-visible", "visible-and-running");
+  }
+
+  /** Auch hier zaehlt {@code hide IS NULL} als nicht verborgen (#1104). */
+  @Test
+  void offers_an_order_whose_hide_flag_was_never_set_to_a_filter_over_existing_data() {
+    orderWithoutHideFlag("hide-never-set");
+
+    assertThat(notHiddenSigns()).containsExactly("hide-never-set");
+  }
+
   private List<String> visibleSigns() {
     return customerorderDAO.getVisibleCustomerorders().stream()
+        .map(Customerorder::getSign)
+        .toList();
+  }
+
+  private List<String> notHiddenSigns() {
+    return customerorderDAO.getNotHiddenCustomerorders().stream()
         .map(Customerorder::getSign)
         .toList();
   }
