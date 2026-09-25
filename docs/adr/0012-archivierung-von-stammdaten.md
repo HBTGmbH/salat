@@ -71,8 +71,15 @@ aber historisch referenziert bleibt. Beispiele:
 ## Gültigkeitsspannen: Semantik und Zweck
 
 Viele Stammdaten besitzen eine zeitliche Gültigkeitsspanne (`fromDate`/`untilDate` oder
-`validFrom`/`validUntil`). Ein Objekt ist *aktuell gültig*, wenn das heutige Datum innerhalb dieser
-Spanne liegt. Außerhalb der Spanne ist das Objekt abgelaufen (oder noch nicht aktiv).
+`validFrom`/`validUntil`). Ein Objekt ist *inaktiv*, wenn seine Spanne vollständig in der
+Vergangenheit liegt — das Ende also vor heute. Ein Beginn in der Zukunft macht es **nicht** inaktiv,
+sondern noch nicht aktiv, und es bleibt sichtbar.
+
+> Dieser Absatz und die Tabelle darunter sind von
+> [ADR-0029](0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md) präzisiert worden. Bis dahin stand
+> hier „aktuell gültig, wenn das heutige Datum innerhalb dieser Spanne liegt" — was den Beginn
+> mitzählte und damit der Prüfbedingung in derselben Tabelle widersprach. ADR-0029 entscheidet die
+> Frage zugunsten der Prüfbedingung.
 
 | Eigenschaft | Beschreibung |
 |---|---|
@@ -120,21 +127,17 @@ builder.or(
 )
 ```
 
-> **Nachtrag #950.** Die Entscheidung gilt unverändert, ihre Umsetzung hat sich verschoben:
-> Das Prädikat steht nicht mehr je DAO, sondern einmal in `org.tb.common.Validity`
-> (`notInactive(...)` für die Abfrage, `isInactive(...)` für Java), und der Schalter heißt über alle
-> Schichten hinweg `showInactive` statt `show`/`showInvalid`/`showOnlyValid`. Ein offenes Ende kann
-> auch als Sentinel `2999-12-31` abgelegt sein und ist dann ebenfalls nie inaktiv; ein Beginn in der
-> Zukunft macht einen Datensatz **nicht** inaktiv. Der Filter wird über `UiState` gemerkt
-> (→ ADR-0022), nicht in der Session. Einzelheiten in AGENTS.md, „Gültigkeitszeiträume: aktiv und
-> inaktiv".
+> **Präzisiert durch [ADR-0029](0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md).**
+> Das Prädikat steht seit #950 nicht mehr je DAO, sondern einmal in `org.tb.common.Validity`,
+> und der Schalter heißt über alle Schichten hinweg `showInactive`.
 
 ### Service- / Controller-Schicht
 
 - Dropdown-Befüllung im Controller: immer `isEdit` und die aktuell gespeicherte ID übergeben,
   damit der Edit-Pfad den Wert bei Bedarf ergänzen kann.
-- Listen-Views: `show` (Gültigkeit) und `showHidden` als unabhängige Boolean-Toggle-Parameter;
-  Session-Keys nach Schema `<modul>.<entität>.show` / `<modul>.<entität>.showHidden`.
+- Listen-Views: `showInactive` (Gültigkeit) und `showHidden` als unabhängige Boolean-Toggle-Parameter.
+  Gemerkt werden sie über `UiState` (→ ADR-0022) unter einem `f`-präfixten Parameternamen, nicht in
+  der Session (→ ADR-0013); die ursprünglich hier genannten Session-Keys gibt es nicht mehr.
 
 #### Stored-ID-Muster: gespeicherte Fremdschlüssel über Roundtrips hinweg sichern
 
@@ -211,4 +214,5 @@ builder.and(
 ## Verwandte Entscheidungen
 
 - ADR-0011: Klassifizierung der Entitäten in Stammdaten und Bewegungsdaten
+- ADR-0029: Was „inaktiv“ heißt — präzisiert den Abschnitt „Gültigkeitsspannen“ dieses ADR
 - Issue #624: Edit-Dialog — aktuell gespeicherte referenzierte Objekte müssen im Dropdown sichtbar sein

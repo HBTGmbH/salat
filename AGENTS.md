@@ -795,7 +795,7 @@ its whole subtree to the top level.
   that is only in the list because the record stores it has to say so, otherwise the form claims it is
   available for picking.
 
-### Gültigkeitszeiträume: aktiv und inaktiv (#950)
+### Gültigkeitszeiträume: aktiv und inaktiv (→ ADR-0029)
 
 Viele Entitäten tragen einen Gültigkeitszeitraum (`fromDate`/`untilDate` bzw.
 `validFrom`/`validUntil`). Für sie alle ist „aktiv" und „inaktiv" **zeitlich** definiert, und zwar
@@ -810,6 +810,10 @@ allein über das **Ende**:
 - Ein **Beginn in der Zukunft** ist **nicht** inaktiv, sondern noch nicht aktiv. Der Beginn gehört
   deshalb nicht in das Prädikat. Solche Datensätze bleiben sichtbar: eine im Voraus angelegte
   Änderung darf nicht aus der Liste verschwinden, sonst wird sie ein zweites Mal angelegt.
+
+Warum nur das Ende zählt, steht in [ADR-0029](docs/adr/0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md)
+samt der verworfenen Alternative: wer eine Änderung im Voraus anlegt und sie danach nicht mehr
+sieht, legt sie ein zweites Mal an.
 
 **Die Regel steht genau einmal im Code: `org.tb.common.Validity`.** Beide Seiten derselben Frage
 liegen dort nebeneinander, damit eine Liste und die Zeile, die sie rendert, nicht auseinanderlaufen
@@ -833,7 +837,7 @@ Gültigkeitszeitraum anlegt, ruft `Validity`, statt `untilDate >= today` noch ei
 **Davon zu unterscheiden, und ausdrücklich nicht dasselbe:**
 
 - **`hide`** — die manuelle Entscheidung, einen Datensatz aus Auswahllisten zu nehmen, unabhängig
-  von jedem Datum (siehe „The `hide` Flag"). `notHidden()` und `Validity.notInactive(...)` sind zwei
+  von jedem Datum (siehe „The `hide` Flag", → ADR-0012). `notHidden()` und `Validity.notInactive(...)` sind zwei
   Prädikate und werden über zwei Schalter zugeschaltet; sie gehören nie in eine Bedingung. Ein `or`
   zwischen ihnen macht beide wirkungslos.
 - **Explizite Boolean-Flags** wie `OrderBudget.active`, `JiraReplicationConfig.enabled`,
