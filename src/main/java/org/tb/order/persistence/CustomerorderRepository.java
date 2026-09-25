@@ -1,6 +1,5 @@
 package org.tb.order.persistence;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -67,13 +66,6 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
    * still being offered anywhere.
    */
   List<Customerorder> findBySignIn(Collection<String> signs);
-
-  @Query("""
-      select c from Customerorder c where (c.hide is null or c.hide = false)
-      or (c.fromDate <= :date and (c.untilDate is null or c.untilDate >= :date))
-      order by c.sign
-  """)
-  List<Customerorder> findAllValidAtAndNotHidden(LocalDate date);
 
   @Query("""
       select distinct c from Customerorder c inner join fetch c.suborders s where s.invoice = 'Y'

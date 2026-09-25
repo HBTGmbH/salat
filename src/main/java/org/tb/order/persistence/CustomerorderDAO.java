@@ -2,7 +2,6 @@ package org.tb.order.persistence;
 
 import static java.lang.Boolean.TRUE;
 import static org.springframework.data.domain.Sort.Direction.ASC;
-import static org.tb.common.util.DateUtils.today;
 
 import com.google.common.collect.Lists;
 import jakarta.persistence.criteria.Join;
@@ -72,10 +71,20 @@ public class CustomerorderDAO {
     }
 
     /**
-     * Get a list of all vivible Customerorders ordered by their sign.
+     * The orders a select box may offer: neither hidden nor inactive, ordered by sign.
+     *
+     * <p>Two independent criteria, joined with <em>and</em> — {@code hide} is the manual decision to
+     * take an order out of the select boxes, "inactive" is the time criterion (→ ADR-0029). Joining
+     * them with {@code or}, as this did until #1094, makes both of them ineffective.
+     *
+     * <p>The time criterion comes from {@link Validity} and therefore looks at the end alone: an
+     * order beginning in the future is not inactive but merely not yet active and stays offered,
+     * otherwise an order entered ahead of time is entered a second time.
      */
     public List<Customerorder> getVisibleCustomerorders() {
-        return customerorderRepository.findAllValidAtAndNotHidden(today());
+        var notInactive = Validity.<Customerorder>notInactive(Customerorder_.untilDate);
+        return customerorderRepository.findAll(notHidden().and(notInactive),
+            Sort.by(new Order(ASC, Customerorder_.SIGN).ignoreCase()));
     }
 
     private Specification<Customerorder> notHidden() {

@@ -482,9 +482,11 @@ public class EmployeeorderController {
             .map(Employeecontract::getValidity)
             .orElse(null);
 
+        // Kein getCurrentlyValid() mehr: getVisibleCustomerorders() laesst abgelaufene Auftraege seit
+        // #1094 selbst heraus. Die Ueberschneidung mit der Vertragslaufzeit bleibt, sie ist eine
+        // andere Frage.
         var orders = new ArrayList<>(customerorderService.getVisibleCustomerorders().stream()
             .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
-            .filter(Customerorder::getCurrentlyValid)
             .filter(co -> co.getValidity().overlaps(validity))
             .toList());
         // In edit mode, ensure the stored order appears even if hidden or expired
