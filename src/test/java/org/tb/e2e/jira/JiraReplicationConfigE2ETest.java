@@ -55,6 +55,10 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Neue Replikation")).click();
       page.locator("#name").fill(name);
       selectTomSelectOption(page, "customerorderSign", E2ETestData.CUSTOMERORDER_CONTOSO_SIGN);
+      // choosing the order reloads the suborder select out of band. Under Firefox in CI the save
+      // that followed went unsent now and then (#1120) — the cause is not pinned down, but saving
+      // once the select has landed is the state a user sees too, and the test no longer races it
+      assertSubordersLoaded(page);
       page.locator("#baseUrl").fill(UNREACHABLE_BASE_URL);
       page.locator("#username").fill("e2e-user");
       page.locator("#password").fill(PASSWORD);
@@ -159,6 +163,17 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
   private static void save(Page page) {
     page.locator("form.card button[type=submit]").first().click();
+  }
+
+  /**
+   * The suborder select as the chosen order's swap leaves it: enabled, and offering the suborder
+   * the scope is narrowed to later. Before the swap it is disabled and holds the whole-order entry
+   * alone.
+   */
+  private static void assertSubordersLoaded(Page page) {
+    Locator suborders = page.locator("#suborderSign");
+    assertThat(suborders).isEnabled();
+    assertThat(suborders.locator("option[value='" + SUBORDER_SCOPE + "']")).hasCount(1);
   }
 
   /** Re-resolved after every navigation: each action here reloads the list. */
