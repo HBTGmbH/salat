@@ -52,7 +52,7 @@ class ReportErrorDisplayE2ETest extends PlaywrightE2ETestBase {
   /**
    * The same promise for a statement the database only rejects while running it: which exception
    * class a broken report falls into is the database's choice, and the answer must not depend on it
-   * (#1110). Such an exception carries no SQL state in every case, so nothing is asserted about it.
+   * (#1110). Not every such exception carries a SQL state, so nothing is asserted about it.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
