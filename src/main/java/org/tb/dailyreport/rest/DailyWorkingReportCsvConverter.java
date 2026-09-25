@@ -3,6 +3,8 @@ package org.tb.dailyreport.rest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
+import static org.tb.common.exception.ErrorCode.TR_CSV_LINE_NOT_READABLE;
+import static org.tb.common.exception.ErrorCode.TR_CSV_VALUE_FORMAT_INVALID;
 
 import com.google.common.collect.Streams;
 import com.opencsv.bean.AbstractBeanField;
@@ -13,6 +15,7 @@ import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvException;
+import com.opencsv.exceptions.CsvMalformedLineException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
@@ -43,6 +47,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -89,13 +94,69 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         char separator = evalSeparator(contentBytes);
 
         try (InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(contentBytes), UTF_8)) {
-            var rows = new CsvToBeanBuilder<CsvRow>(reader)
+            var csvToBean = new CsvToBeanBuilder<CsvRow>(reader)
                 .withType(CsvRow.class)
                 .withSeparator(separator)
-                .build()
-                .parse();
+                // Sammeln statt werfen (#1112): mit dem werfenden Handler steigt die Ausnahme im
+                // Verarbeitungspool von opencsv auf, der Thread stirbt mit einem Stacktrace auf der
+                // Konsole, und die Meldung, die der Aufrufer bekommt, hat die vollständige Rohzeile
+                // angehängt. Gesammelt wird dieselbe Ausnahme hier ausgewertet.
+                .withThrowExceptions(false)
+                .build();
+            List<CsvRow> rows;
+            try {
+                rows = csvToBean.parse();
+            } catch (RuntimeException e) {
+                // Einen Satz, den opencsv gar nicht zerlegen kann, meldet es weiter als
+                // RuntimeException, deren Meldung die Rohzeile mitführt. Übernommen wird allein die
+                // Zeilennummer, und die aus der Ausnahme, nicht aus ihrem Text (#1112).
+                throw new InvalidDataException(TR_CSV_LINE_NOT_READABLE, lineNumberOf(e));
+            }
+            rejectUnreadableValues(csvToBean.getCapturedExceptions());
             return new ReadResult(fromRows(rows), rows.size());
         }
+    }
+
+    /**
+     * Die Zeilennummer, die in der Ursachenkette einer Ausnahme von opencsv steckt, oder {@code 0},
+     * wo keine zu finden ist. Aus dem Meldungstext gelesen würde sie die Rohzeile mitbringen.
+     */
+    private static long lineNumberOf(Throwable throwable) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof CsvException csvException) {
+                return csvException.getLineNumber();
+            }
+            if (cause instanceof CsvMalformedLineException malformedLine) {
+                return malformedLine.getLineNumber();
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Ein Wert, den opencsv nicht lesen konnte, ist ein Eingabefehler der hochgeladenen Datei und
+     * wird als {@link InvalidDataException} gemeldet, die der Aufrufer bereits behandelt (#1112).
+     *
+     * <p>Weitergereicht werden nur Zeilennummer, Spalte, der einzelne nicht lesbare Wert und die
+     * erwarteten Formate. Die Meldung von opencsv bleibt außen vor: sie führt die vollständige
+     * Rohzeile mit, und die gehört weder in eine Rückmeldung noch ins Log.
+     *
+     * <p>Geworfen wird, bevor irgendetwas gespeichert wurde — eine fehlerhafte Zeile lässt damit
+     * die ganze Datei ungespeichert.
+     */
+    private void rejectUnreadableValues(List<CsvException> capturedExceptions) {
+        if (capturedExceptions.isEmpty()) {
+            return;
+        }
+        var first = capturedExceptions.getFirst();
+        if (first instanceof CsvValueFormatException formatException) {
+            throw new InvalidDataException(TR_CSV_VALUE_FORMAT_INVALID,
+                first.getLineNumber(),
+                formatException.getColumn(),
+                formatException.getValue(),
+                formatException.getExpectedFormats());
+        }
+        throw new InvalidDataException(TR_CSV_LINE_NOT_READABLE, first.getLineNumber());
     }
 
     private char evalSeparator(byte[] content) throws IOException {
@@ -322,9 +383,42 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         private String comment;
     }
 
+    /**
+     * Ein Wert der hochgeladenen Datei, den keines der erwarteten Formate liest (#1112).
+     *
+     * <p>Spalte und erwartete Formate hängen an der Ausnahme, statt nur in ihrem Meldungstext zu
+     * stehen: die Rückmeldung an die hochladende Person setzt sich daraus zusammen, und sie aus
+     * einem Text wieder herauszulesen hieße, die Meldung zweimal zu pflegen.
+     */
+    @Getter
+    public static class CsvValueFormatException extends CsvDataTypeMismatchException {
+
+        private final String column;
+        private final String value;
+        private final String expectedFormats;
+
+        CsvValueFormatException(String column, String value, Class<?> destinationClass, String expectedFormats) {
+            super(value, destinationClass,
+                "column '" + column + "': value '" + value + "' matches none of the expected formats " + expectedFormats);
+            this.column = column;
+            this.value = value;
+            this.expectedFormats = expectedFormats;
+        }
+    }
+
+    /**
+     * Der Name der Spalte, die gerade gelesen wird. opencsv setzt das Feld vor der Umwandlung; wo
+     * es fehlt, ist die Spalte unbekannt — das ist kein Grund, die Meldung ausfallen zu lassen.
+     */
+    private static String columnOf(AbstractBeanField<?, String> beanField) {
+        var field = beanField.getField();
+        return field != null ? field.getName() : "?";
+    }
+
     public static class LocalDateConverter extends AbstractBeanField<LocalDate, String> {
         private static final DateTimeFormatter DE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        static final String EXPECTED_FORMATS = "yyyy-MM-dd, dd.MM.yyyy";
 
 
         @Override
@@ -336,7 +430,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 try {
                     return LocalDate.parse(value, DE);
                 } catch (DateTimeParseException e2) {
-                    throw new CsvDataTypeMismatchException(value, LocalDate.class);
+                    throw new CsvValueFormatException(columnOf(this), value, LocalDate.class, EXPECTED_FORMATS);
                 }
             }
         }
@@ -351,6 +445,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
     public static class LocalTimeConverter extends AbstractBeanField<LocalTime, String> {
         private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
         private static final DateTimeFormatter HH_MM_SS = DateTimeFormatter.ofPattern("HH:mm:ss");
+        static final String EXPECTED_FORMATS = "HH:mm, HH:mm:ss";
 
 
         @Override
@@ -362,7 +457,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 try {
                     return LocalTime.parse(value, HH_MM_SS).truncatedTo(ChronoUnit.MINUTES);
                 } catch (DateTimeParseException e2) {
-                    throw new CsvDataTypeMismatchException(value, LocalTime.class);
+                    throw new CsvValueFormatException(columnOf(this), value, LocalTime.class, EXPECTED_FORMATS);
                 }
             }
         }

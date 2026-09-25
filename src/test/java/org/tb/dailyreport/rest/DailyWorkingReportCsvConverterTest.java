@@ -2,6 +2,7 @@ package org.tb.dailyreport.rest;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -15,8 +16,10 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -28,6 +31,8 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.ErrorCode;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
@@ -140,6 +145,79 @@ class DailyWorkingReportCsvConverterTest {
 
         // then
         assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    /**
+     * Die Datei, an der sich #1112 zeigt: ein einziger Wert passt in keines der erwarteten Formate.
+     * Alles andere an der Zeile ist lesbar - und nichts davon gehört in die Rückmeldung.
+     */
+    private static String csvWithUnreadable(String date, String startTime) {
+        return """
+            date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
+            %s,WORKED,%s,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
+            """.formatted(date, startTime);
+    }
+
+    /* Ein nicht lesbares Datum ist ein Eingabefehler der hochgeladenen Datei, kein Systemfehler:
+       gemeldet werden Zeile, Spalte, der einzelne Wert und die erwarteten Formate (#1112). */
+    @Test
+    void reports_an_unreadable_date_as_an_input_error() {
+        var csv = csvWithUnreadable("04/11/2024", "09:00");
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_FORMAT_INVALID);
+                    assertThat(message.getArguments())
+                        .containsExactly(2L, "date", "04/11/2024", "yyyy-MM-dd, dd.MM.yyyy");
+                }));
+    }
+
+    /* Derselbe Ausgang für eine Uhrzeit - das ist der Wert, der im Betrieb aufgefallen ist. */
+    @Test
+    void reports_an_unreadable_time_as_an_input_error() {
+        var csv = csvWithUnreadable("2024-11-04", "9 Uhr");
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_FORMAT_INVALID);
+                    assertThat(message.getArguments())
+                        .containsExactly(2L, "startTime", "9 Uhr", "HH:mm, HH:mm:ss");
+                }));
+    }
+
+    /* Die Rohzeile bleibt draußen - weder der Kommentar noch die Auftragsbezeichnungen der Zeile
+       dürfen in der Rückmeldung oder im Log stehen (#1112). */
+    @Test
+    void keeps_the_faulty_line_out_of_what_it_hands_on() {
+        var csv = csvWithUnreadable("2024-11-04", "9 Uhr");
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages().getFirst().getArguments())
+                    .doesNotContain("Team-Mittag", "Stuhlpolsterung", "Rumsitzen", "183209"));
+    }
+
+    /**
+     * Der Verarbeitungspool von opencsv reichte die Ausnahme durch seinen Worker-Thread hindurch:
+     * der Thread starb mit einem Stacktrace auf der Konsole, und der Aufrufer bekam denselben
+     * Fehler ein zweites Mal (#1112). Gesammelt statt geworfen, stirbt dort nichts mehr.
+     */
+    @Test
+    void leaves_no_thread_dying_with_an_uncaught_exception() {
+        var uncaught = new CopyOnWriteArrayList<Throwable>();
+        var previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> uncaught.add(throwable));
+        try {
+            var csv = csvWithUnreadable("2024-11-04", "9 Uhr");
+            assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+                .isInstanceOf(InvalidDataException.class);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(previous);
+        }
+
+        assertThat(uncaught).isEmpty();
     }
 
     private static Stream<Arguments> writeCsv() {
