@@ -239,6 +239,15 @@ performance-relevant setting in `application-production.yaml`, it must change
 stating why (currently: actuator `metrics` exposure, Azure auth).
 
 ## GitHub Workflow
+- **No operating environment details in GitHub artifacts**: nothing that describes the concrete
+  runtime environment may end up on GitHub — not in issues, PRs, commit messages, code, comments,
+  documentation or screenshots. This covers resource, subscription, tenant, host and account names,
+  deployment and management URLs, connection strings and secrets, monitoring or log queries against
+  live systems, and the CLI invocations used to reach them. Describe it neutrally instead: „the
+  deployed environment", „the production database", `<host>`, `<resource>`. Such details stay in the
+  local working session. Reason: the repository is visible to a wider circle than the environment
+  itself. A later correction does not help — GitHub keeps the edit history and git keeps the commit;
+  delete and recreate the issue, and coordinate before rewriting already pushed history.
 - **Branch naming**: `feature/<issue-number>-<short-description>` (e.g. `feature/606-move-fromDBtimeToString-to-DurationUtils`)
 - **One issue per branch / PR**: do not bundle unrelated changes.
 - **Commit messages**: every commit message starts with the issue ID, then ` - `, then a short
