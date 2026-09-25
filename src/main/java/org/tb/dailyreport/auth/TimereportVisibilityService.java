@@ -58,7 +58,7 @@ public class TimereportVisibilityService {
       clauses.add(TimereportVisibility.Clause.forEmployees(Set.of(employeeId)));
 
       if (authorizedUser.isPeopleLead()) {
-        var supervised = employeecontractService.getSupervisedEmployeeIds(employeeId);
+        var supervised = employeecontractService.getTeamEmployeeIdsIncludingExpired(employeeId);
         if (!supervised.isEmpty()) {
           clauses.add(TimereportVisibility.Clause.forEmployees(supervised));
         }

@@ -89,7 +89,7 @@ class TimereportVisibilityConsistencyTest {
     when(authorizedUser.getLoginSign()).thenReturn(READER);
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(READER);
     when(authorizedEmployee.getEmployeeId()).thenReturn(READER_EMPLOYEE_ID);
-    when(employeecontractService.getSupervisedEmployeeIds(anyLong())).thenReturn(Set.of());
+    when(employeecontractService.getTeamEmployeeIdsIncludingExpired(anyLong())).thenReturn(Set.of());
     when(customerorderService.getIdsByResponsibleEmployeeId(anyLong())).thenReturn(List.of());
     when(authorizationRuleRepository.findAll()).thenReturn(List.of());
 
