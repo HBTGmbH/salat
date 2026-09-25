@@ -23,8 +23,8 @@ import org.tb.common.util.DateUtils;
  * </ul>
  *
  * <p>This is a different question from {@code hide} and from the explicit {@code active} /
- * {@code enabled} flags — see AGENTS.md, „Gültigkeitszeiträume: aktiv und inaktiv“. Keep those
- * predicates separate from this one.
+ * {@code enabled} flags — see ADR-0029 and AGENTS.md, „Gültigkeitszeiträume: aktiv und inaktiv“.
+ * Keep those predicates separate from this one.
  *
  * <p>Asking "does it apply on day X" is a different question again and does not belong here: that
  * one looks at the start as well (see e.g. {@code Suborder#isValidAt}). Do not use it as an
