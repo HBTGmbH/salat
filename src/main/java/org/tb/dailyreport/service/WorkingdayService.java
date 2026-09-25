@@ -1,5 +1,6 @@
 package org.tb.dailyreport.service;
 
+import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
 import static org.tb.auth.domain.AccessLevel.WRITE;
 import static org.tb.common.exception.ErrorCode.WD_DELETE_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
@@ -16,9 +17,13 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
@@ -38,6 +43,7 @@ import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.service.EmployeecontractService;
 
+@Slf4j
 @Service
 @Transactional
 @AllArgsConstructor
@@ -54,6 +60,7 @@ public class WorkingdayService {
   private final AuthService authService;
   private final EmployeecontractService employeecontractService;
   private final DailyPreferenceService dailyPreferenceService;
+  private final PlatformTransactionManager transactionManager;
 
   /**
    * The time the working day started: the stored value when there is one, otherwise the configured
@@ -91,23 +98,109 @@ public class WorkingdayService {
     return workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontractId).orElse(null);
   }
 
+  /**
+   * Legt den Arbeitstag an oder schreibt den vorhandenen fort.
+   *
+   * <p>Denselben Arbeitstag zweimal anzulegen ist ein harmloser Sonderfall: ein doppelter Klick, ein
+   * nach einem Abbruch erneut abgeschicktes Formular, zwei offene Registerkarten. Zwischen dem
+   * Lesen und dem Schreiben steht nichts, was das abfängt — beide Vorgänge finden nichts und fügen
+   * ein, der zweite verletzt den Unique Key auf Mitarbeitervertrag und Tag. Statt auf der
+   * Fehlerseite zu enden, übernimmt der zweite Vorgang den inzwischen vorhandenen Arbeitstag und
+   * wendet seine Änderung darauf an; der gewünschte Zustand ist zu diesem Zeitpunkt ohnehin
+   * hergestellt (#1111). Eine reine Vorabprüfung („gibt es den schon?") verschiebt dieses Fenster
+   * nur, statt es zu schließen.
+   *
+   * <p>Das Einfügen läuft dafür in einer eigenen Transaktion, und der zweite Versuch ebenso. Beides
+   * ist nötig, nicht Geschmackssache:
+   * <ul>
+   *   <li>Nach der Verletzung ist der Persistenzkontext unbrauchbar und die Transaktion auf
+   *       Rollback gestellt. Ohne eigenen Rahmen nähme der Konflikt die Transaktion des Aufrufers
+   *       mit, und der Aufruf endete trotz Auflösung mit einem Fehler.</li>
+   *   <li>Der zweite Versuch muss den Satz sehen, den der andere Vorgang gerade festgeschrieben
+   *       hat. In der Transaktion, die vorher vergeblich gesucht hat, liegt unter MySQLs
+   *       {@code REPEATABLE READ} derselbe Schnappschuss — sie fände ihn nicht.</li>
+   * </ul>
+   *
+   * <p>Der Preis dafür: ein angelegter Arbeitstag ist festgeschrieben, auch wenn der Aufrufer
+   * danach scheitert. Das ist genau der Satz, den der Aufrufer anlegen wollte, und das erneute
+   * Anlegen trifft ab dann auf den vorhandenen. Für das Fortschreiben eines bereits gespeicherten
+   * Arbeitstags bleibt es beim Rahmen des Aufrufers — dort gibt es keinen Konflikt aufzulösen, und
+   * ein eigener Rahmen brächte nur den zweiten Schreibvorgang auf demselben Datensatz mit sich.
+   */
   public void upsertWorkingday(Workingday workingday) {
-    String employeeSign = workingday.getEmployeecontract().getEmployee().getSign();
+    checkUpsertAllowed(workingday);
+
+    if(!workingday.isNew()) {
+      workingdayRepository.save(workingday);
+      return;
+    }
+
+    try {
+      inOwnTransaction(() -> workingdayRepository.save(workingday));
+    } catch (DataIntegrityViolationException conflict) {
+      inOwnTransaction(() -> takeOverConcurrentlyCreatedWorkingday(workingday, conflict));
+    }
+  }
+
+  /**
+   * Berechtigung, Gültigkeit des Vertrags am Stichtag und der Sonderfall „nicht gearbeitet mit
+   * vorhandenen Buchungen". Die Prüfungen laufen vor jedem Schreibversuch — auch vor dem zweiten,
+   * weil sich die Ausgangslage bis dahin geändert hat.
+   */
+  private void checkUpsertAllowed(Workingday workingday) {
     var employeecontract = workingday.getEmployeecontract();
+    String employeeSign = employeecontract.getEmployee().getSign();
     if(!authorizedUser.isManager() &&
        !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
        !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
       throw new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
     }
 
-    BusinessRuleCheckUtils.isTrue(workingday.getEmployeecontract().isValidAt(workingday.getRefday()), WD_OUTSIDE_CONTRACT);
+    BusinessRuleCheckUtils.isTrue(employeecontract.isValidAt(workingday.getRefday()), WD_OUTSIDE_CONTRACT);
 
     if(workingday.getType() == NOT_WORKED) {
-      var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(workingday.getEmployeecontract().getId(), workingday.getRefday());
+      var timereports = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontract.getId(), workingday.getRefday());
       BusinessRuleCheckUtils.empty(timereports, WD_NOT_WORKED_TIMEREPORTS_FOUND);
     }
+  }
 
-    workingdayRepository.save(workingday);
+  /**
+   * Überträgt die Angaben des nicht angelegten Arbeitstags auf den, der inzwischen da ist.
+   *
+   * <p>Findet sich keiner, war die Verletzung eine andere als die erwartete — dann bleibt es bei
+   * dem ursprünglichen Fehler, statt ihn zu verschlucken.
+   */
+  private void takeOverConcurrentlyCreatedWorkingday(Workingday workingday, DataIntegrityViolationException conflict) {
+    var existing = workingdayRepository
+        .findByRefdayAndEmployeecontractId(workingday.getRefday(), workingday.getEmployeecontract().getId())
+        .orElseThrow(() -> conflict);
+
+    existing.setStarttimehour(workingday.getStarttimehour());
+    existing.setStarttimeminute(workingday.getStarttimeminute());
+    existing.setBreakhours(workingday.getBreakhours());
+    existing.setBreakminutes(workingday.getBreakminutes());
+    existing.setType(workingday.getType());
+
+    checkUpsertAllowed(existing);
+    workingdayRepository.save(existing);
+
+    log.info("Der Arbeitstag am {} war bereits angelegt, die Änderung wurde auf den vorhandenen Satz angewendet.",
+        workingday.getRefday());
+  }
+
+  /**
+   * Ein eigener Transaktionsrahmen für einen Schritt, der die Transaktion des Aufrufers weder
+   * mitreißen noch dessen Schnappschuss erben darf.
+   *
+   * <p>Programmatisch und nicht als {@code @Transactional(REQUIRES_NEW)}: die Methode dahinter
+   * müsste öffentlich und über den Proxy aufgerufen werden, also entweder in einer zweiten Bohne
+   * stehen — die dann als Einzige außerhalb eines {@code @Service} auf ein Repository zugriffe —
+   * oder als Selbstverweis eingespritzt werden.
+   */
+  private void inOwnTransaction(Runnable action) {
+    var ownTransaction = new TransactionTemplate(transactionManager);
+    ownTransaction.setPropagationBehavior(PROPAGATION_REQUIRES_NEW);
+    ownTransaction.executeWithoutResult(status -> action.run());
   }
 
   public Workingday getNextRegularWorkingday(Workingday workingday) {
