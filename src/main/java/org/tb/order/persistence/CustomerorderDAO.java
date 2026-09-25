@@ -88,6 +88,25 @@ public class CustomerorderDAO {
     }
 
     /**
+     * The orders a filter over existing bookings may offer: not hidden, ordered by sign —
+     * <em>inactive ones included</em> (#1106).
+     *
+     * <p>The difference to {@link #getVisibleCustomerorders()} is the question, not the role asking
+     * it. That one answers „worauf darf jetzt etwas Neues gebucht, angelegt, zugeordnet werden" and
+     * an order that has ended is no longer an answer to it. This one answers „über welche Auftraege
+     * laesst sich das Vorhandene einschraenken", and there an order that has ended is exactly what
+     * somebody is looking for — its bookings do not end with it.
+     *
+     * <p>{@code hide} stays a criterion here: it is the manual decision to take an order out of the
+     * select boxes and holds regardless of any date (→ ADR-0029). What drops out is the time
+     * criterion alone.
+     */
+    public List<Customerorder> getNotHiddenCustomerorders() {
+        return customerorderRepository.findAll(notHidden(),
+            Sort.by(new Order(ASC, Customerorder_.SIGN).ignoreCase()));
+    }
+
+    /**
      * Nicht verborgen — und {@code null} zählt als nicht verborgen, so wie
      * {@link Customerorder#getHide()} es liest. Ein blosses {@code hide <> 1} ist in SQL für
      * {@code NULL} unbekannt statt wahr und liesse solche Zeilen aus jeder Auswahlliste fallen,
