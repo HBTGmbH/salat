@@ -176,8 +176,8 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   List<Timereport> findAllByEmployeecontractId(long employeecontractId);
 
   @Query("""
-      select t from Timereport t where t.deleted = false and t.employeeorder.id = :employeeorderId 
-      and t.referenceday.refdate >= coalesce(:begin, t.referenceday.refdate) and t.referenceday.refdate <= coalesce(:end, t.referenceday.refdate)
+      select t from Timereport t where t.deleted = false and t.employeeorder.id = :employeeorderId
+      and t.referenceday.refdate = :refDate
   """)
   List<Timereport> findAllByEmployeeorderIdAndReferencedayRefdate(long employeeorderId, LocalDate refDate);
 
