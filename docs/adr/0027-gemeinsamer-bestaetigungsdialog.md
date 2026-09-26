@@ -12,8 +12,10 @@ Status: Accepted
 > die Vorschau vor dem Umbuchen (`move-timereports-preview.html`), die schon ohne Dialog abschickt.
 > Die drei Stufen nach Umkehrbarkeit bleiben; eine in die Vergangenheit greifende Aktion geht über
 > den gemeinsamen Dialog **oder** über eine Prüfseite, die Person, Zeitraum und Folge nennt. Die
-> Prüfseite muss dafür genau das erfassen, was sie gezeigt hat: ändert sich der Zeitraum zwischen
+> Prüfseite muss dafür genau den Zeitraum erfassen, den sie gezeigt hat: ändert er sich zwischen
 > Anzeigen und Abschicken, weist der Server ab (`RL-0008`), statt still einen anderen zu erfassen.
+> Die Buchungen darin prüft die Aktion unmittelbar vor dem Ausführen erneut, vergleicht sie aber
+> nicht mit der Anzeige.
 
 ## Context and Problem Statement
 
