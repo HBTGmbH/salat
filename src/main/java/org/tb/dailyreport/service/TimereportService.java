@@ -221,7 +221,7 @@ public class TimereportService {
     Map<Long, LocalDate> previousReferencedays = Map.of();
     if (!previousDate.equals(referenceDay)) {
       // a booking moved to another day is treated as if it were created there (#1125)
-      setStatusForNewDate(timereport);
+      setStatus(timereport);
       previousReferencedays = Map.of(timereportId, previousDate);
     }
     checkAndSaveTimereports(Collections.singletonList(timereport), force, previousReferencedays);
@@ -411,6 +411,12 @@ public class TimereportService {
     timereport.setSequencenumber(maxSequencenumber + 1);
   }
 
+  /**
+   * The status the day gives the booking — on creation, and when a change moves it to another day
+   * (#1125). Who released or accepted a moved booking on its old day stays only where the new status
+   * still says so, as {@code ReleaseService.reopenTimereport} drops both when it reopens a booking. A
+   * new booking carries neither.
+   */
   private void setStatus(Timereport timereport) {
     LocalDate acceptanceDate = timereport.getEmployeecontract().getReportAcceptanceDate();
     LocalDate releaseDate = timereport.getEmployeecontract().getReportReleaseDate();
@@ -424,15 +430,7 @@ public class TimereportService {
     } else {
       timereport.setStatus(TIMEREPORT_STATUS_OPEN);
     }
-  }
 
-  /**
-   * The status the new day gives the booking (#1125). Who released or accepted it on the old day
-   * stays only where the new status still says so — as {@code ReleaseService.reopenTimereport} drops
-   * both when it reopens a booking.
-   */
-  private void setStatusForNewDate(Timereport timereport) {
-    setStatus(timereport);
     if (!TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus())) {
       timereport.setAcceptedby(null);
       timereport.setAccepted(null);
