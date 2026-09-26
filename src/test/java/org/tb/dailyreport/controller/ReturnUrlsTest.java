@@ -27,6 +27,64 @@ class ReturnUrlsTest {
     assertThat(ReturnUrls.isSafe(returnUrl)).isTrue();
   }
 
+  /** Die Übersichten vor der Freigabe (#760), wie ReviewLinks sie baut, mit Sprungmarke. */
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "/release/review",
+      "/release/review?until=2026-08",
+      "/release/review?until=2026-08#tr-5",
+      "/release/review?until=2026-08&view=day#day-2026-08-03",
+      "/release/review#review-views",
+      "/acceptance/release/review?contractId=42&until=2026-08",
+      "/acceptance/release/review?contractId=42&until=2026-08&view=day#day-2026-08-03"})
+  void an_overview_before_a_release_is_safe_and_leads_back_to_an_overview(String returnUrl) {
+    assertThat(ReturnUrls.isSafe(returnUrl)).isTrue();
+    assertThat(ReturnUrls.isReviewPage(returnUrl)).isTrue();
+  }
+
+  /**
+   * Eine Übersicht ist ein genauer Pfad, kein Präfix: dahinter darf nur die Abfrage oder die
+   * Sprungmarke kommen. Die Übersicht vor der Abnahme kommt erst mit #1122 dazu.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "/release/reviewer",
+      "/release/review2?until=2026-08",
+      "/release/review/",
+      "/release/review/../../management/employees",
+      "/release/review/x?until=2026-08",
+      "/Release/review?until=2026-08",
+      "/release%2Freview?until=2026-08",
+      "/acceptance/release/reviews",
+      "/acceptance/review?contractId=42",
+      "/acceptance/accept/review?contractId=42&until=2026-08"})
+  void a_path_that_only_begins_like_an_overview_is_dropped(String returnUrl) {
+    assertThat(ReturnUrls.isSafe(returnUrl)).isFalse();
+    assertThat(ReturnUrls.isReviewPage(returnUrl)).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "//release/review?until=2026-08",
+      "https://evil.example.com/release/review?until=2026-08",
+      "/release/review?until=2026-08\\",
+      "/release/review?until=2026-08\r\nSet-Cookie: injected=1",
+      "javascript:alert(1)//release/review"})
+  void an_overview_is_held_to_the_same_form_as_any_other_target(String returnUrl) {
+    assertThat(ReturnUrls.isSafe(returnUrl)).isFalse();
+    assertThat(ReturnUrls.isReviewPage(returnUrl)).isFalse();
+  }
+
+  /** Nur eine Übersicht bekommt in der Tagesansicht einen Weg zurück (#760), nicht die Tagesansicht. */
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {
+      "/dailyreport/daily?mode=daily&date=2026-03-02",
+      "/dailyreport/daily?returnUrl=/release/review"})
+  void the_daily_view_is_safe_but_no_overview(String returnUrl) {
+    assertThat(ReturnUrls.isReviewPage(returnUrl)).isFalse();
+  }
+
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = {

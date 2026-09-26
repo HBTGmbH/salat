@@ -119,7 +119,7 @@ class TimereportFormReturnUrlTest {
   void the_create_form_drops_an_unsafe_return_target(String returnUrl) {
     var model = new ExtendedModelMap();
 
-    controller.createForm(CONTRACT_ID, DATE, null, null, null, null, returnUrl, model);
+    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, returnUrl, model);
 
     assertThat(model.get("returnUrl")).isNull();
   }
@@ -168,6 +168,17 @@ class TimereportFormReturnUrlTest {
     var model = new ExtendedModelMap();
 
     controller.editForm(TIMEREPORT_ID, CONTRACT_ID, returnUrl, model);
+
+    assertThat(model.get("returnUrl")).isEqualTo(returnUrl);
+  }
+
+  /** Die Übersicht vor der Freigabe (#760) ist ein zulässiges Ziel, samt Sicht und Sprungmarke. */
+  @Test
+  void a_return_target_in_an_overview_reaches_the_form_unchanged() {
+    var returnUrl = "/release/review?until=2026-03&view=day#day-2026-03-02";
+    var model = new ExtendedModelMap();
+
+    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, returnUrl, model);
 
     assertThat(model.get("returnUrl")).isEqualTo(returnUrl);
   }

@@ -285,6 +285,20 @@ class ControllerAuthorizationIntegrationTest {
     assertThat(contractOf(owner).getReportReleaseDate()).isNull();
   }
 
+  /**
+   * Ein Tag der Übersicht führt in die Tagesansicht und von dort zurück (#760). Auch das prüft den
+   * gerenderten Weg: eine 200 mit dem Verweis heißt, dass die Tagesansicht ihn gebaut hat.
+   */
+  @Test
+  void a_day_opened_from_the_review_leads_back_to_it() throws Exception {
+    var response = get("/dailyreport/daily?mode=daily&date=2000-01-03"
+        + "&returnUrl=%2Frelease%2Freview%3F" + REVIEW_MONTH.replace("=", "%3D") + "%26view%3Dday%23day-2000-01-03",
+        REGULAR);
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.body()).contains("href=\"/release/review?" + REVIEW_MONTH + "&amp;view=day#day-2000-01-03\"");
+  }
+
   private static Stream<Arguments> reviewAllowed() {
     return Stream.of(
         Arguments.of("/release/review?" + REVIEW_MONTH, REGULAR),
