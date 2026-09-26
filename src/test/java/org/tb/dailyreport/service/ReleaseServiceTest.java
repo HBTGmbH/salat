@@ -46,6 +46,7 @@ import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.OvertimeBalance;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -2148,6 +2149,30 @@ class ReleaseServiceTest {
             assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::withoutBooking).containsOnly(false);
         }
 
+        /**
+         * Wer nur über eine Regel abnimmt und die Buchungen nicht lesen darf, bekommt sie vom
+         * Lesefilter nicht gezeigt — „Keine Buchung" steht trotzdem nur an einem Tag, an dem es keine
+         * gibt: die gebuchten Tage kommen ohne den Filter.
+         */
+        @Test
+        void aDayWithBookingsTheAcceptorMayNotReadIsNoDayWithoutBooking() {
+            acceptableContract();
+            final var readable = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
+            when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(readable);
+            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, FRIDAY)).thenReturn(readable);
+            givenBookedDays(MONDAY, FRIDAY, List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .extracting(DayEntry::date, DayEntry::withoutBooking)
+                .containsExactly(tuple(MONDAY, false), tuple(TUESDAY, false), tuple(WEDNESDAY, false), tuple(THURSDAY, false), tuple(FRIDAY, false));
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .filteredOn(day -> day.date().equals(WEDNESDAY))
+                .singleElement()
+                .satisfies(day -> assertThat(day.timereports()).isEmpty());
+        }
+
         /** Arbeitszeit, Pausen und Ruhezeit hat die Freigabe geprüft; die Abnahme prüft keine Tage. */
         @Test
         void noDayIsCheckedForWorkingTime() {
@@ -2363,6 +2388,19 @@ class ReleaseServiceTest {
         private void givenBookings(LocalDate begin, LocalDate end, List<TimereportDTO> listed, List<TimereportDTO> committed) {
             when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin, end)).thenReturn(listed);
             when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, end)).thenReturn(committed);
+            givenBookedDays(begin, end, listed.stream().map(TimereportDTO::getReferenceday).toList());
+        }
+
+        /** The days the rule sees booked: from the repository, past the read filter of the DAO. */
+        private void givenBookedDays(LocalDate begin, LocalDate end, List<LocalDate> days) {
+            final var bookings = days.stream().map(day -> {
+                final var referenceday = new Referenceday();
+                referenceday.setRefdate(day);
+                final var timereport = new Timereport();
+                timereport.setReferenceday(referenceday);
+                return timereport;
+            }).toList();
+            when(timereportRepository.findAllByEmployeecontractIdAndReferencedayBetween(EMPLOYEE_CONTRACT_ID, begin, end)).thenReturn(bookings);
         }
 
         /** Asks the real rule of {@link TimereportAuthorization} as the given person; it needs no rule of the rule engine. */
