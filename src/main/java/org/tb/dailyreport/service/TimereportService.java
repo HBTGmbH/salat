@@ -31,6 +31,7 @@ import static org.tb.common.exception.ErrorCode.TR_DURATION_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_MINUTES_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_INVALID_REF_DATE;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_INVALID_REF_DATE;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_MONTH_BUDGET_EXCEEDED;
@@ -66,8 +67,10 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -213,18 +216,44 @@ public class TimereportService {
       timereportAuthorization.checkAuthorized(Collections.singletonList(timereport), AccessLevel.WRITE);
     }
     LocalDate previousDate = timereport.getReferenceday().getRefdate();
+    Employeecontract previousContract = timereport.getEmployeecontract();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
+    // across a contract boundary a booking changes its contract, never its person (#1128)
+    BusinessRuleCheckUtils.isTrue(
+        Objects.equals(previousContract.getEmployee().getId(), timereport.getEmployeecontract().getEmployee().getId()),
+        TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE);
     if (applyTicketReference) {
       timereport.setTicketReference(normalizeTicketReference(ticketReference));
     }
-    Map<Long, LocalDate> previousReferencedays = Map.of();
-    if (!previousDate.equals(referenceDay)) {
-      // a booking moved to another day is treated as if it were created there (#1125)
+    boolean dayChanged = !previousDate.equals(referenceDay);
+    boolean contractChanged = !Objects.equals(previousContract.getId(), employeeContractId);
+    if (dayChanged || contractChanged) {
+      // a booking moved to another day or contract is treated as if it were created there (#1125, #1128)
       setStatus(timereport);
-      previousReferencedays = Map.of(timereportId, previousDate);
     }
-    checkAndSaveTimereports(Collections.singletonList(timereport), force, previousReferencedays);
+    Map<Long, LocalDate> previousReferencedays = dayChanged ? Map.of(timereportId, previousDate) : Map.of();
+    Map<Long, Long> previousEmployeecontractIds = contractChanged ? Map.of(timereportId, previousContract.getId()) : Map.of();
+    checkAndSaveTimereports(Collections.singletonList(timereport), force, previousReferencedays, previousEmployeecontractIds);
+  }
+
+  /**
+   * The contract an edited booking belongs to on {@code referenceDay}: the one of its own person valid
+   * on that day (#1128). A remembered selection of another person has no say in it. Where the person
+   * has no contract on that day, the booking keeps its own, and saving reports that it is not valid
+   * there. {@code -1} for a booking the user cannot see, as for an unknown one.
+   */
+  @Transactional(readOnly = true)
+  public long getEmployeecontractIdForUpdate(long timereportId, LocalDate referenceDay) {
+    TimereportDTO timereport = timereportDAO.getTimereportById(timereportId);
+    if (timereport == null) {
+      return -1;
+    }
+    if (referenceDay == null) {
+      return timereport.getEmployeecontractId();
+    }
+    Employeecontract contract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(timereport.getEmployeeId(), referenceDay);
+    return contract != null ? contract.getId() : timereport.getEmployeecontractId();
   }
 
   /**
@@ -298,10 +327,11 @@ public class TimereportService {
   }
 
   private void checkAndSaveTimereports(List<Timereport> timereports) {
-    checkAndSaveTimereports(timereports, false, Map.of());
+    checkAndSaveTimereports(timereports, false, Map.of(), Map.of());
   }
 
-  private void checkAndSaveTimereports(List<Timereport> timereports, boolean force, Map<Long, LocalDate> previousReferencedays) {
+  private void checkAndSaveTimereports(List<Timereport> timereports, boolean force, Map<Long, LocalDate> previousReferencedays,
+      Map<Long, Long> previousEmployeecontractIds) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
     if (!force) {
@@ -319,7 +349,7 @@ public class TimereportService {
     });
 
     var ids = timereports.stream().map(Timereport::getId).toList();
-    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(ids, previousReferencedays));
+    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(ids, previousReferencedays, previousEmployeecontractIds));
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
@@ -412,10 +442,10 @@ public class TimereportService {
   }
 
   /**
-   * The status the day gives the booking — on creation, and when a change moves it to another day
-   * (#1125). Who released or accepted a moved booking on its old day stays only where the new status
-   * still says so, as {@code ReleaseService.reopenTimereport} drops both when it reopens a booking. A
-   * new booking carries neither.
+   * The status the day and the contract give the booking — on creation, and when a change moves it to
+   * another day (#1125) or another contract (#1128). Who released or accepted a moved booking on its
+   * old day stays only where the new status still says so, as {@code ReleaseService.reopenTimereport}
+   * drops both when it reopens a booking. A new booking carries neither.
    */
   private void setStatus(Timereport timereport) {
     LocalDate acceptanceDate = timereport.getEmployeecontract().getReportAcceptanceDate();
@@ -703,18 +733,22 @@ public class TimereportService {
         updatingEmployeeorder.getValidity().isInfiniteUntil() ? FINIT_UNTIL_BOUNDARY : updatingEmployeeorder.getUntilDate()
     );
 
-    // move reports
+    // move reports - the status follows the release and acceptance dates of the new contract (#1128).
+    // The old contract's dates are cut to its new end and do not move along, so a booking accepted
+    // there is open again unless the new contract has accepted that day itself.
+    Map<Long, Long> previousEmployeecontractIds = new HashMap<>();
     timereports.forEach(tr -> {
+      previousEmployeecontractIds.put(tr.getId(), tr.getEmployeecontract().getId());
       tr.setEmployeeorder(updatingEmployeeorder);
-      tr.setStatus(TIMEREPORT_STATUS_OPEN);
       tr.setEmployeecontract(updatingEmployeeorder.getEmployeecontract());
+      setStatus(tr);
       timereportRepository.save(tr);
       event.addLog("Buchung %s, %s, %s verschoben".formatted(tr.getReferenceday().getRefdate(), tr.getSuborder().getCompleteOrderSign(),
           DurationUtils.format(tr.getDuration())));
     });
 
     var timereportIds = timereports.stream().map(Timereport::getId).toList();
-    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(timereportIds));
+    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(timereportIds, Map.of(), previousEmployeecontractIds));
   }
 
   /**

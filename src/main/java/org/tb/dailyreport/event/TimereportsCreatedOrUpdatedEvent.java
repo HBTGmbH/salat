@@ -18,8 +18,19 @@ public class TimereportsCreatedOrUpdatedEvent {
    */
   private final Map<Long, LocalDate> previousReferencedays;
 
+  /**
+   * The contract a booking belonged to before this change, keyed by its id — only for bookings whose
+   * contract changed. A listener that reads the contract from the booking sees only the new one
+   * (#1128).
+   */
+  private final Map<Long, Long> previousEmployeecontractIds;
+
   public TimereportsCreatedOrUpdatedEvent(List<Long> ids) {
     this(ids, Map.of());
+  }
+
+  public TimereportsCreatedOrUpdatedEvent(List<Long> ids, Map<Long, LocalDate> previousReferencedays) {
+    this(ids, previousReferencedays, Map.of());
   }
 
 }

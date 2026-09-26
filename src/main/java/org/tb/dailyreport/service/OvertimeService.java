@@ -2,7 +2,6 @@ package org.tb.dailyreport.service;
 
 import static java.time.DayOfWeek.SATURDAY;
 import static java.time.DayOfWeek.SUNDAY;
-import static java.util.function.Function.identity;
 import static org.tb.common.util.DateUtils.addDays;
 import static org.tb.common.util.DateUtils.getBeginOfMonth;
 import static org.tb.common.util.DateUtils.today;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +25,6 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.common.domain.AuditedEntity;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.domain.OvertimeReportMonth;
@@ -33,7 +32,6 @@ import org.tb.dailyreport.domain.OvertimeReportTotal;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.domain.Publicholiday;
-import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.event.TimereportsCreatedOrUpdatedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent;
 import org.tb.dailyreport.event.TimereportsDeletedEvent.TimereportDeleteId;
@@ -376,28 +374,29 @@ public class OvertimeService {
     var timereports = event.getIds().stream()
         .map(timereportService::getTimereportById)
         .toList();
-    // collect all employee contracts in a map to have better access later
-    var contracts = timereports.stream()
-        .map(TimereportDTO::getEmployeecontractId)
-        .distinct()
-        .map(employeecontractService::getEmployeecontractById)
-        .collect(Collectors.toMap(AuditedEntity::getId, identity()));
     // what employee contracts need to recalculate - only when there are changed time reports before the acceptance date
     // (this is to reduce too many calculations)
-    // a booking that left the accepted period is still part of overtimeStatic, so the day it left counts as well (#1125)
+    // a booking that left the accepted period is still part of overtimeStatic, so the day it left counts as well (#1125),
+    // and that period may belong to the contract it left (#1128)
     var previousReferencedays = event.getPreviousReferencedays();
-    var contractsToRecalculate = timereports.stream()
-        .filter(t -> {
-          var acceptanceDate = contracts.get(t.getEmployeecontractId()).getReportAcceptanceDate();
-          if(acceptanceDate == null) return false;
-          var previousReferenceday = previousReferencedays.get(t.getId());
-          return !t.getReferenceday().isAfter(acceptanceDate)
-              || (previousReferenceday != null && !previousReferenceday.isAfter(acceptanceDate));
-        })
-        .map(TimereportDTO::getEmployeecontractId)
-        .distinct()
-        .toList();
-    recomputeOvertime(contractsToRecalculate);
+    var previousEmployeecontractIds = event.getPreviousEmployeecontractIds();
+    var contractsToRecalculate = new LinkedHashSet<Long>();
+    timereports.forEach(t -> {
+      var previousReferenceday = previousReferencedays.getOrDefault(t.getId(), t.getReferenceday());
+      var previousEmployeecontractId = previousEmployeecontractIds.getOrDefault(t.getId(), t.getEmployeecontractId());
+      if (isWithinAcceptedPeriod(t.getEmployeecontractId(), t.getReferenceday())) {
+        contractsToRecalculate.add(t.getEmployeecontractId());
+      }
+      if (isWithinAcceptedPeriod(previousEmployeecontractId, previousReferenceday)) {
+        contractsToRecalculate.add(previousEmployeecontractId);
+      }
+    });
+    recomputeOvertime(List.copyOf(contractsToRecalculate));
+  }
+
+  private boolean isWithinAcceptedPeriod(long employeecontractId, LocalDate referenceday) {
+    var acceptanceDate = employeecontractService.getEmployeecontractById(employeecontractId).getReportAcceptanceDate();
+    return acceptanceDate != null && !referenceday.isAfter(acceptanceDate);
   }
 
   @EventListener
