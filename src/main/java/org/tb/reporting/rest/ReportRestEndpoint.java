@@ -71,6 +71,12 @@ public class ReportRestEndpoint {
           `von=date,2025-09-01`; ohne Präfix gilt `string`. Der Parametername `report` ist für den
           Reportnamen reserviert.
 
+          Für den heutigen Tag stehen Schlüsselwörter bereit, gerechnet in der Zeitzone der Anwendung:
+          bei `date` etwa `HEUTE`, `GESTERN`, `BOM`, `VORMONAT`, `VORMONATSENDE`
+          (`von=date,VORMONAT`), bei `number` etwa `KW`, `MONAT`, `JAHR` (`kw=number,KW`).
+          Groß- und Kleinschreibung zählt; die englischen Namen (`TODAY`, `LAST_MONTH`, `WEEKNUM`, …)
+          gelten ebenso.
+
           Das Ergebnis hängt am aufrufenden Benutzer: ein Report darf sein Kürzel und das heutige
           Datum verwenden, und es werden nur Reports ausgeführt, für die der Aufrufer die Berechtigung
           EXECUTE hat. Die Ergebnismenge ist nicht begrenzt.

@@ -32,7 +32,7 @@ import org.tb.testutils.WebContextTestExecutionListener;
 
 @DataJpaTest
 @Import({ReportService.class, AuthorizedUser.class, AuthService.class, SalatProperties.class,
-    ReportAuthorization.class, ReportParameterResolver.class, UiState.class,
+    ReportAuthorization.class, UiState.class,
     AuthUiStateKeyContributor.class})
 @DisplayNameGeneration(ReplaceUnderscores.class)
 @EnableJpaRepositories
