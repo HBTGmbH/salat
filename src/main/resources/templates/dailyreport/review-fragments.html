@@ -253,11 +253,12 @@
                  Der Verweis auf die Tagesansicht setzt deren gemerkte Auswahl auf diese Person;
                  kommt die Uebersicht aus der Abnahme, trifft das die Auswahl der Person, die
                  abnimmt. Hingenommen: so arbeitet die Tagesansicht, und dort werden Arbeitsbeginn
-                 und Pause berichtigt. */-->
+                 und Pause berichtigt. Die Ruecksprungadresse gibt ihr den Weg zurueck hierher. */-->
           <tr th:classappend="${day.holiday} ? 'bg-warning-lt' : (${day.weekend} ? 'bg-azure-lt' : '')">
             <th scope="rowgroup" th:colspan="${cols}">
               <div class="d-flex flex-wrap align-items-center gap-2">
-                <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${review.employeecontractId})}"
+                <a th:with="back=${links.currentUrl + '#' + day.anchor}"
+                   th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${review.employeecontractId},returnUrl=${back})}"
                    th:title="#{main.daily.viewday.title}" th:text="${dateText}">Mo. 03.08.2026</a>
                 <span th:if="${day.holiday}" class="badge bg-red-lt" th:text="${day.holidayName}">Feiertag</span>
                 <span th:if="${day.notWorked}" class="badge bg-warning-lt" th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
@@ -273,6 +274,16 @@
           <tr th:if="${day.withoutBooking}">
             <td th:colspan="${cols}">
               <span class="text-muted me-2" th:text="#{main.release.review.day.nobooking.text}">Keine Buchung</span>
+              <!--/* Der Link nennt den Vertrag als Formularfeld employeecontractId, nicht als Filter
+                     (ADR-0023): die Person der Uebersicht ist nicht zwingend die gemerkte, etwa wenn
+                     die Geschaeftsfuehrung ueber die Abnahme freigibt. Ob angelegt werden darf,
+                     hat der Service entschieden (canCreate). */-->
+              <a th:if="${review.canCreate}" class="btn btn-sm btn-outline-success"
+                 th:with="back=${links.currentUrl + '#' + day.anchor}"
+                 th:href="@{/dailyreport/timereports/new(date=${day.date},employeecontractId=${review.employeecontractId},returnUrl=${back})}"
+                 th:aria-label="#{main.release.review.create.aria.text(${dateText})}">
+                <i class="ti ti-plus me-1" aria-hidden="true"></i><span th:text="#{main.release.review.create.text}">Buchung anlegen</span>
+              </a>
             </td>
           </tr>
           <tr th:each="tr : ${day.timereports}" th:id="'tr-' + ${tr.id}">

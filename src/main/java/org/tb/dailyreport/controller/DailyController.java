@@ -1,5 +1,6 @@
 package org.tb.dailyreport.controller;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.tb.common.GlobalConstants.MINUTES_PER_HOUR;
 import static org.tb.common.exception.ErrorCode.TR_DURATION_INVALID_FORMAT;
 import static org.tb.common.util.DateUtils.formatMonth;
@@ -9,6 +10,7 @@ import static org.tb.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -62,6 +64,11 @@ public class DailyController {
     private final ErrorCodeViewHelper errorCodeViewHelper;
     private final DailyPreferenceService dailyPreferenceService;
 
+    /**
+     * @param returnUrl where the view was opened from. Only an overview before a release gets a way
+     *                  back (#760): its days lead here, and the start of work and the break that its
+     *                  findings name are corrected here. Anything else is dropped ({@link ReturnUrls}).
+     */
     @GetMapping
     public String show(
             @RequestParam(required = false) Long fEmployeeContractId,
@@ -69,10 +76,12 @@ public class DailyController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Integer fMonth,
             @RequestParam(required = false) Integer fYear,
+            @RequestParam(required = false) String returnUrl,
             Model model) {
 
         var today = today();
         long ecId = effectiveContractId(fEmployeeContractId);
+        model.addAttribute("reviewReturnUrl", ReturnUrls.isReviewPage(returnUrl) ? returnUrl : null);
 
         String effectiveMode = (mode != null && mode.equals("list")) ? "list" : "daily";
 
@@ -143,9 +152,15 @@ public class DailyController {
         return "dailyreport/daily";
     }
 
+    /**
+     * Saves start, break and the not-worked flag of a day. The view sends it through HTMX and gets
+     * the bookings fragment back, so the page — and with it the way back to an overview — stays. The
+     * plain form post is the fallback without script; its redirect keeps the way back (#760).
+     */
     @PostMapping("/workingday")
     public String saveWorkingday(
             @RequestParam(required = false) Long fEmployeeContractId,
+            @RequestParam(required = false) String returnUrl,
             @ModelAttribute WorkingdayForm form,
             HttpServletRequest request,
             HttpServletResponse response,
@@ -229,7 +244,16 @@ public class DailyController {
             }
             redirectAttributes.addFlashAttribute("toastError", errMsg);
         }
-        return "redirect:/dailyreport/daily?mode=daily&date=" + date;
+        return "redirect:" + dailyViewUrl(date, returnUrl);
+    }
+
+    /** The daily view of {@code date}, with the way back to an overview if there was one (#760). */
+    static String dailyViewUrl(LocalDate date, String returnUrl) {
+        var url = "/dailyreport/daily?mode=daily&date=" + date;
+        if (ReturnUrls.isReviewPage(returnUrl)) {
+            url += "&returnUrl=" + URLEncoder.encode(returnUrl, UTF_8);
+        }
+        return url;
     }
 
     @PostMapping("/timereport/{id}/update-inline")
