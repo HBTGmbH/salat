@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_AFTER_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
 import static org.tb.common.exception.ErrorCode.RL_REVIEWED_PERIOD_CHANGED;
+import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 
 import java.time.LocalDate;
@@ -37,6 +38,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.service.ReleaseService;
@@ -223,6 +225,18 @@ class AcceptanceControllerTest {
   @Test
   void a_finding_leads_back_into_the_acceptance_review_with_a_single_message() throws Exception {
     doThrow(new BusinessRuleException(RL_ACCEPTANCE_DATE_AFTER_RELEASE))
+        .when(releaseService).acceptTimereports(CONTRACT_ID, BEGIN, END);
+
+    mockMvc.perform(post("/acceptance/accept")
+            .param("contractId", "42").param("periodBegin", "2026-08-01").param("periodEnd", "2026-08-31"))
+        .andExpect(redirectedUrl("/acceptance/accept/review?contractId=42&until=2026-08"))
+        .andExpect(flash().attribute("toastError", "Die Buchungen wurden nicht abgenommen."));
+  }
+
+  /** Wie bei der Freigabe: ungültige Daten führen ebenso in die Übersicht zurück, mit derselben Meldung. */
+  @Test
+  void invalid_data_leads_back_into_the_acceptance_review_as_well() throws Exception {
+    doThrow(new InvalidDataException(TR_EMPLOYEE_CONTRACT_NOT_FOUND))
         .when(releaseService).acceptTimereports(CONTRACT_ID, BEGIN, END);
 
     mockMvc.perform(post("/acceptance/accept")
