@@ -380,6 +380,36 @@ class ControllerAuthorizationIntegrationTest {
   }
 
   /**
+   * Ohne Tagesarbeitszeit wird kein Überstundenkonto geführt (#1122): die Übersicht sagt das, und die
+   * Folge der Abnahme verspricht dann auch kein festgeschriebenes Konto.
+   */
+  @Test
+  void the_acceptance_review_of_a_contract_without_overtime_account_fixes_no_account() throws Exception {
+    var contract = contractOf(REGULAR);
+    contract.setDailyWorkingTime(Duration.ZERO);
+    employeecontractRepository.save(contract);
+    releaseJanuary(REGULAR);
+    try {
+      var response = get("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH, MANAGER);
+
+      assertThat(response.statusCode()).isEqualTo(200);
+      assertThat(response.body()).contains("name=\"periodEnd\" value=\"2000-01-31\"");
+      assertThat(response.body()).containsAnyOf(
+          "Für diesen Vertrag wird kein Überstundenkonto geführt.",
+          "No overtime account is kept for this contract.");
+      assertThat(response.body()).containsAnyOf(
+          "Danach kann nur noch die Geschäftsführung die Buchungen ändern.",
+          "Afterwards only a manager can change the bookings.");
+      assertThat(response.body()).doesNotContain("festgeschrieben", "is fixed up to");
+    } finally {
+      unrelease(REGULAR);
+      var restored = contractOf(REGULAR);
+      restored.setDailyWorkingTime(Duration.ofHours(8));
+      employeecontractRepository.save(restored);
+    }
+  }
+
+  /**
    * Ohne Freigabe gibt es nichts abzunehmen (#1122): die gesperrte Übersicht mit ihrem Befund, ohne
    * Sichten und ohne Formular.
    */

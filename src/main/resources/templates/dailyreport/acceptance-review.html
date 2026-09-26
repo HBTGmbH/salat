@@ -16,15 +16,19 @@
          Zeitraum ab (periodBegin/periodEnd); hat er sich inzwischen geaendert, etwa durch eine
          Abnahme in einem zweiten Fenster, weist der Server ab (RL-0008). Die Abnahme prueft keine
          Tage, sie sperrt nur ein Befund ueber den Zeitraum - dann zeigt die Seite ihn statt Bilanz,
-         Buchungen und Knopf. */-->
+         Buchungen und Knopf.
+         Ohne Tagesarbeitszeit wird kein Ueberstundenkonto gefuehrt (die Karte darueber sagt es),
+         also wird auch keines festgeschrieben: die Folge nennt dann nur, wer danach noch aendert. */-->
   <div class="card mb-3 d-print-none" id="review-action"
        th:with="beginText=${#temporals.format(review.begin, 'dd.MM.yyyy')},
                 endText=${#temporals.format(review.end, 'dd.MM.yyyy')}">
     <div class="card-body" th:if="${review.detailed}">
       <p class="mb-1"
          th:text="#{main.release.review.action.accept.text(${review.employeeName}, ${beginText}, ${endText})}">Abgenommen werden die freigegebenen Buchungen von … vom 01.08.2026 bis 31.08.2026.</p>
-      <p class="text-secondary mb-0"
+      <p class="text-secondary mb-0" th:if="${review.overtimeAccount}"
          th:text="#{main.release.review.action.accept.hint.text(${endText})}">Danach ist das Überstundenkonto bis zum 31.08.2026 festgeschrieben, und ändern kann die Buchungen nur noch die Geschäftsführung.</p>
+      <p class="text-secondary mb-0" th:unless="${review.overtimeAccount}"
+         th:text="#{main.release.review.action.accept.noaccount.hint.text}">Danach kann nur noch die Geschäftsführung die Buchungen ändern.</p>
     </div>
     <div class="card-footer d-flex flex-wrap align-items-center gap-2">
       <form th:if="${review.detailed and review.actionAllowed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0">
