@@ -22,7 +22,9 @@ import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
 import static org.tb.common.exception.ErrorCode.RL_REVIEWED_PERIOD_CHANGED;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_BREAK_TOO_SHORT_6;
+import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
+import static org.tb.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
@@ -61,6 +63,7 @@ import org.tb.common.web.UiStateKeyRegistry;
 import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.domain.TimereportReview;
 import org.tb.dailyreport.service.ReleaseService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.ReviewLinks;
 import org.tb.dailyreport.viewhelper.TimereportReviewViewHelper;
 import org.tb.employee.domain.Employee;
@@ -89,15 +92,17 @@ class ReleaseControllerTest {
   @Mock private EmployeecontractService employeecontractService;
   @Mock private EmployeeService employeeService;
   @Mock private ReleaseService releaseService;
+  @Mock private WorkingdayService workingdayService;
   @Mock private LoginSignProvider loginSignProvider;
 
   private ReleaseController controller;
+  private Employeecontract contract;
 
   @BeforeEach
   void setUp() {
     var messages = germanMessages();
     controller = new ReleaseController(employeecontractService, employeeService, releaseService, messages,
-        new ErrorCodeViewHelper(messages));
+        new ErrorCodeViewHelper(messages), workingdayService);
 
     when(loginSignProvider.getEffectiveLoginSign()).thenReturn(LOGIN);
     var loginEmployee = mock(Employee.class);
@@ -107,6 +112,7 @@ class ReleaseControllerTest {
     var contract = mock(Employeecontract.class);
     when(contract.getId()).thenReturn(CONTRACT_ID);
     when(employeecontractService.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
+    this.contract = contract;
     when(releaseService.reviewRelease(anyLong(), any())).thenReturn(review(new ReviewPeriod(BEGIN, END)));
   }
 
@@ -265,6 +271,72 @@ class ReleaseControllerTest {
 
     assertThatThrownBy(() -> perform(release(OTHER_CONTRACT_ID, BEGIN, END).cookie(remembered(CONTRACT_ID))))
         .hasRootCauseInstanceOf(AuthorizationException.class);
+  }
+
+  /** Ein Klick an einem Tag ohne Buchung markiert ihn und führt an denselben Tag zurück. */
+  @Test
+  void a_day_without_booking_is_marked_not_worked_and_the_review_shows_that_day_again() throws Exception {
+    var day = LocalDate.of(2026, 8, 12);
+    var back = "/release/review?until=2026-08&view=day#day-2026-08-12";
+
+    perform(notWorked(CONTRACT_ID, day, back))
+        .andExpect(redirectedUrl(back))
+        .andExpect(flash().attribute("toastSuccess", "12.08.2026 als nicht gearbeitet markiert."));
+
+    verify(workingdayService).markNotWorked(contract, day);
+  }
+
+  /** Auch über die Abnahme: die Geschäftsführung gibt dort für eine andere Person frei. */
+  @Test
+  void the_review_via_the_acceptance_page_is_a_way_back_as_well() throws Exception {
+    var back = "/acceptance/release/review?contractId=42&until=2026-08&view=day#day-2026-08-12";
+
+    perform(notWorked(CONTRACT_ID, LocalDate.of(2026, 8, 12), back))
+        .andExpect(redirectedUrl(back));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"https://evil.example.com", "//evil.example.com", "/dailyreport/daily?date=2026-08-12", "javascript:alert(1)"})
+  void anything_but_a_review_leads_to_the_release_page(String returnUrl) throws Exception {
+    perform(notWorked(CONTRACT_ID, LocalDate.of(2026, 8, 12), returnUrl))
+        .andExpect(redirectedUrl("/release"));
+  }
+
+  /** Eine Buchung, die inzwischen an dem Tag steht, verhindert die Markierung; der Toast sagt warum. */
+  @Test
+  void a_day_with_a_booking_is_not_marked_and_the_message_says_why() throws Exception {
+    var day = LocalDate.of(2026, 8, 12);
+    var back = "/release/review?until=2026-08&view=day#day-2026-08-12";
+    doThrow(new BusinessRuleException(WD_NOT_WORKED_TIMEREPORTS_FOUND)).when(workingdayService).markNotWorked(contract, day);
+
+    perform(notWorked(CONTRACT_ID, day, back))
+        .andExpect(redirectedUrl(back))
+        .andExpect(flash().attribute("toastError", "Es wurden Buchungen gefunden, bitte vorher löschen oder verschieben."));
+  }
+
+  @Test
+  void an_unknown_contract_leads_to_the_release_page() throws Exception {
+    perform(notWorked(OTHER_CONTRACT_ID, LocalDate.of(2026, 8, 12), "/release/review?until=2026-08"))
+        .andExpect(redirectedUrl("/release"));
+
+    verifyNoInteractions(workingdayService);
+  }
+
+  /** Wer den Arbeitstag nicht schreiben darf, bekommt die 403, keinen Toast. */
+  @Test
+  void a_missing_permission_to_mark_is_not_turned_into_a_message() {
+    var day = LocalDate.of(2026, 8, 12);
+    doThrow(new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER)).when(workingdayService).markNotWorked(contract, day);
+
+    assertThatThrownBy(() -> perform(notWorked(CONTRACT_ID, day, "/release/review?until=2026-08")))
+        .hasRootCauseInstanceOf(AuthorizationException.class);
+  }
+
+  private static MockHttpServletRequestBuilder notWorked(long contractId, LocalDate date, String returnUrl) {
+    return post("/release/review/not-worked")
+        .param("contractId", String.valueOf(contractId))
+        .param("date", date.toString())
+        .param("returnUrl", returnUrl);
   }
 
   private static MockHttpServletRequestBuilder release(long contractId, LocalDate begin, LocalDate end) {

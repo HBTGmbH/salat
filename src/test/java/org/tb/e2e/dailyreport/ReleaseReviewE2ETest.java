@@ -146,6 +146,8 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
       // nor to create: the create links carry the contract, the menu's plain form link does not
       assertThat(page.locator("a[href*='/timereports/new?']")).hasCount(0);
       assertThat(page.locator("a[href*='/edit']")).hasCount(0);
+      // nor to mark a day as not worked: that writes the working day of another person
+      assertThat(page.locator("form[action*='/release/review/not-worked']")).hasCount(0);
       assertThat(releaseButton(page)).isDisabled();
     });
   }
@@ -183,7 +185,7 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void the_missing_day_is_booked_a_booking_edited_and_the_period_released_from_the_overview(E2EBrowser browser) {
+  void the_missing_days_are_booked_or_marked_not_worked_a_booking_edited_and_the_period_released(E2EBrowser browser) {
     String employee = E2ETestData.releasingEmployeeSign(browser);
     LocalDate missingDay = E2ETestData.RELEASING_DAY_WITHOUT_BOOKING;
     String addedComment = "Nachgetragen aus der Übersicht";
@@ -213,6 +215,19 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
       assertThat(day(page, missingDay)).containsText(addedComment);
       assertThat(day(page, missingDay)).not().containsText("Keine Buchung");
       assertThat(day(page, missingDay).locator(".text-danger")).hasCount(0);
+      assertThat(releaseButton(page)).isDisabled();
+
+      // mark the other missing day as not worked right in the overview: back at that day, no dialog
+      LocalDate notWorkedDay = E2ETestData.RELEASING_DAY_NOT_WORKED;
+      day(page, notWorkedDay)
+          .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Als nicht gearbeitet markieren: Do. 26.11.2026"))
+          .click();
+      assertThat(page).hasURL(Pattern.compile(".*/release/review\\?until=2026-11&view=day#day-2026-11-26$"));
+      assertThat(page.locator("#confirmModal")).not().isVisible();
+      assertThat(page.locator(".alert-success")).containsText("26.11.2026 als nicht gearbeitet markiert.");
+      assertThat(day(page, notWorkedDay)).containsText("Nicht gearbeitet");
+      assertThat(day(page, notWorkedDay)).not().containsText("Keine Buchung");
+      assertThat(day(page, notWorkedDay).locator(".text-danger")).hasCount(0);
       assertThat(page.locator("#review-findings")).hasCount(0);
       assertThat(releaseButton(page)).isEnabled();
 

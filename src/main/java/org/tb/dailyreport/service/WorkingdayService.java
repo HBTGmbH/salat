@@ -143,6 +143,30 @@ public class WorkingdayService {
   }
 
   /**
+   * Markiert einen Tag als „nicht gearbeitet", wie der Schalter in der Tagesansicht: Beginn und Pause
+   * werden auf null gesetzt, ein fehlender Arbeitstag wird angelegt. Die Übersicht vor der Freigabe
+   * bietet das für jeden Arbeitstag ohne Buchung an (#760).
+   *
+   * <p>Die Prüfungen sind die jedes Schreibens ({@link #upsertWorkingday}): Berechtigung am
+   * Arbeitstag, Tag innerhalb des Vertrags und keine Buchung an diesem Tag.
+   */
+  public void markNotWorked(Employeecontract employeecontract, LocalDate date) {
+    var workingday = workingdayRepository.findByRefdayAndEmployeecontractId(date, employeecontract.getId())
+        .orElseGet(() -> {
+          var created = new Workingday();
+          created.setEmployeecontract(employeecontract);
+          created.setRefday(date);
+          return created;
+        });
+    workingday.setType(NOT_WORKED);
+    workingday.setStarttimehour(0);
+    workingday.setStarttimeminute(0);
+    workingday.setBreakhours(0);
+    workingday.setBreakminutes(0);
+    upsertWorkingday(workingday);
+  }
+
+  /**
    * Berechtigung, Gültigkeit des Vertrags am Stichtag und der Sonderfall „nicht gearbeitet mit
    * vorhandenen Buchungen". Die Prüfungen laufen vor jedem Schreibversuch — auch vor dem zweiten,
    * weil sich die Ausgangslage bis dahin geändert hat.
