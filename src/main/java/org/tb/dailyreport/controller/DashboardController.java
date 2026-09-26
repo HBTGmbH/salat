@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.OvertimeStatus;
@@ -39,6 +41,7 @@ import org.tb.employee.service.EmployeecontractService;
 @Controller
 @RequestMapping("/dailyreport/dashboard")
 @RequiredArgsConstructor
+@Authorized
 public class DashboardController {
 
     @Getter
@@ -190,10 +193,17 @@ public class DashboardController {
         return "redirect:/dailyreport/dashboard";
     }
 
+    /* Ein Vertrag aus fEmployeeContractId, den die angemeldete Person nicht lesen darf, faellt auf
+       ihren eigenen aktuellen Vertrag zurueck statt mit 403 zu antworten: UiState merkt sich den
+       Wert, und ein gemerkter fremder Vertrag sperrte sonst die Startseite (#1134). */
     private Employeecontract currentContract(Long fEmployeeContractId) {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {
-            var contract = employeecontractService.getEmployeecontractById(fEmployeeContractId);
-            if (contract != null) return contract;
+            try {
+                var contract = employeecontractService.getEmployeecontractForView(fEmployeeContractId);
+                if (contract != null) return contract;
+            } catch (AuthorizationException e) {
+                // not readable - fall through to the own contract
+            }
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())
