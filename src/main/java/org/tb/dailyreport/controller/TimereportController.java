@@ -268,7 +268,7 @@ public class TimereportController {
             return "redirect:/dailyreport/daily";
         }
 
-        String redirectTarget = safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + tr.getReferenceday());
+        String redirectTarget = ReturnUrls.orElse(returnUrl, "/dailyreport/daily?mode=daily&date=" + tr.getReferenceday());
 
         if (recipientUserIds == null || recipientUserIds.isEmpty()) {
             redirectAttributes.addFlashAttribute("toastWarning",
@@ -436,7 +436,7 @@ public class TimereportController {
             if (!isEdit && Boolean.TRUE.equals(saveAndNew)) {
                 return "redirect:" + nextBookingUrl(date, fEmployeeContractId, returnUrl);
             }
-            return "redirect:" + safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
+            return "redirect:" + ReturnUrls.orElse(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
 
         } catch (ErrorCodeException ex) {
             var suborders = suborderOptions(ecId, date);
@@ -502,7 +502,9 @@ public class TimereportController {
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         boolean canShare = !isEdit || ecId == effectiveContractId(fEmployeeContractId);
         model.addAttribute("canShare", canShare);
-        model.addAttribute("returnUrl", returnUrl);
+        // the form renders the target as a hidden field and as the link "Abbrechen"; without one,
+        // "Abbrechen" leads to the daily view of the booked day (#1133)
+        model.addAttribute("returnUrl", ReturnUrls.orElse(returnUrl, null));
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
@@ -606,15 +608,6 @@ public class TimereportController {
             .orElseGet(() -> new int[]{0, 0});
     }
 
-    private static String safeReturnUrl(String returnUrl, String fallback) {
-        return isSafeReturnUrl(returnUrl) ? returnUrl : fallback;
-    }
-
-    /** Only the daily view is a legitimate return target; anything else could redirect off-site. */
-    private static boolean isSafeReturnUrl(String returnUrl) {
-        return returnUrl != null && returnUrl.startsWith("/dailyreport/daily");
-    }
-
     /**
      * "Speichern und neu" (#843): back to an empty booking form for the same day instead of the
      * daily view, so several bookings can be entered in a row. Carries over only the context the
@@ -626,7 +619,7 @@ public class TimereportController {
         if (fEmployeeContractId != null && fEmployeeContractId > 0) {
             url.append("&fEmployeeContractId=").append(fEmployeeContractId);
         }
-        if (isSafeReturnUrl(returnUrl)) {
+        if (ReturnUrls.isSafe(returnUrl)) {
             url.append("&returnUrl=").append(encode(returnUrl, UTF_8));
         }
         return url.toString();
