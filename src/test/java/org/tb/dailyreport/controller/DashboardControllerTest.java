@@ -162,7 +162,7 @@ public class DashboardControllerTest {
 
     @Test
     void follows_the_contract_the_page_was_asked_for() {
-      when(employeecontractService.getEmployeecontractById(42L)).thenReturn(contract(42L));
+      when(employeecontractService.getEmployeecontractForView(42L)).thenReturn(contract(42L));
       when(releaseService.getUnbookedWorkingDaysOfPreviousWeek(42L)).thenReturn(DAYS);
       var model = new ExtendedModelMap();
 
@@ -192,7 +192,7 @@ public class DashboardControllerTest {
 
     @Test
     void puts_an_empty_list_when_every_working_day_is_booked() {
-      when(employeecontractService.getEmployeecontractById(42L)).thenReturn(contract(42L));
+      when(employeecontractService.getEmployeecontractForView(42L)).thenReturn(contract(42L));
       when(releaseService.getUnbookedWorkingDaysOfPreviousWeek(42L)).thenReturn(List.of());
       var model = new ExtendedModelMap();
 
