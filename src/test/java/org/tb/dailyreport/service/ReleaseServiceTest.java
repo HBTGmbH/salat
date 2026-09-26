@@ -1131,4 +1131,103 @@ class ReleaseServiceTest {
             verifyNoInteractions(timereportRepository, timereportDAO, workingdayDAO, publicholidayDAO);
         }
     }
+
+    /**
+     * Ein Befund über den ganzen Zeitraum ersetzt die Prüfung der Tage (#760). Einer davon ist der
+     * leere Zeitraum: der gewählte Monat ist schon freigegeben ({@code RL-0009}). Bis #760 scheiterte
+     * die Prüfung an einem Monat vor der letzten Freigabe mit einer {@link IllegalArgumentException}
+     * aus der Regel „Arbeitstag ohne Buchung", und die Freigabe endete auf der Fehlerseite.
+     */
+    @Nested
+    class PeriodFindings {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        private static final LocalDate CONTRACT_START = LocalDate.of(2023, 10, 1);
+        private static final LocalDate RELEASED_UNTIL = LocalDate.of(2024, 2, 29);
+
+        @Test
+        void aMonthBeforeTheLastReleaseIsNothingToRelease() {
+            // given a contract released until the end of February
+            contractReleasedUntil(RELEASED_UNTIL);
+
+            // when releasing until the end of January
+            final var errors = runValidateForRelease(LocalDate.of(2024, 1, 31));
+
+            // then there is nothing to release, and no day is looked at
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_NOTHING_TO_RELEASE);
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, timereportService);
+        }
+
+        @Test
+        void theDayOfTheLastReleaseAgainIsNothingToRelease() {
+            // given a contract released until the end of February
+            contractReleasedUntil(RELEASED_UNTIL);
+
+            // when releasing until the end of February once more
+            final var errors = runValidateForRelease(RELEASED_UNTIL);
+
+            // then there is nothing to release
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_NOTHING_TO_RELEASE);
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, timereportService);
+        }
+
+        @Test
+        void theDayAfterTheLastReleaseIsChecked() {
+            // given a contract released until Thursday, the end of February, and nothing booked since
+            contractReleasedUntil(RELEASED_UNTIL);
+            final var friday = RELEASED_UNTIL.plusDays(1);
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(friday);
+
+            // then the period consists of Friday, and Friday lacks a booking
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().getFirst())
+                .containsExactly(tuple(ErrorCode.WD_NO_TIMEREPORT, friday));
+        }
+
+        @Test
+        void aDateBeforeTheAcceptanceIsReportedInsteadOfNothingToRelease() {
+            // given a contract released until February and accepted until January
+            final var contract = contractReleasedUntil(RELEASED_UNTIL);
+            contract.setReportAcceptanceDate(LocalDate.of(2024, 1, 31));
+
+            // when releasing until the end of December
+            final var errors = runValidateForRelease(LocalDate.of(2023, 12, 31));
+
+            // then the acceptance is what stands in the way
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
+        }
+
+        @Test
+        void aDateBeforeTheContractIsReportedInsteadOfNothingToRelease() {
+            // given a contract released until February
+            contractReleasedUntil(RELEASED_UNTIL);
+
+            // when releasing until a day before the contract began
+            final var errors = runValidateForRelease(CONTRACT_START.minusDays(1));
+
+            // then the date itself is invalid
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
+        }
+
+        private Employeecontract contractReleasedUntil(LocalDate releasedUntil) {
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(CONTRACT_START);
+            contract.setReportReleaseDate(releasedUntil);
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            return contract;
+        }
+
+        private List<ServiceFeedbackMessage> runValidateForRelease(LocalDate releaseDate) {
+            try {
+                classUnderTest.validateForRelease(EMPLOYEE_CONTRACT_ID, releaseDate);
+                return List.of();
+            } catch(ErrorCodeException e) {
+                return e.getMessages();
+            }
+        }
+    }
 }

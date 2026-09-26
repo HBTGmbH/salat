@@ -16,6 +16,7 @@ import static org.tb.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_AFTER_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_MOVED_BACKWARDS;
+import static org.tb.common.exception.ErrorCode.RL_NOTHING_TO_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
@@ -24,6 +25,7 @@ import static org.tb.common.exception.ErrorCode.WD_DAY_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 import static org.tb.common.util.DateTimeUtils.now;
+import static org.tb.common.util.DateUtils.max;
 import static org.tb.common.util.DateUtils.min;
 import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.service.TimereportService.isRelevantForWorkingTimeValidation;
@@ -62,6 +64,7 @@ import org.tb.common.service.MailService.MailContact;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.UnbookedWorkingDays;
@@ -207,32 +210,66 @@ public class ReleaseService {
     employeecontractService.updateOvertimeStatic(employeecontractId, overtimeStatic);
   }
 
+  /**
+   * Die Prüfung vor der Freigabe als Exception: sie wirft, was {@link #collectReleaseFindings}
+   * findet — erst die Befunde über den Zeitraum, dann die der einzelnen Tage nach Datum. Die
+   * Freigabe prüft damit unmittelbar vor dem Freigeben, was die Übersicht schon gezeigt hat (#760).
+   */
   @VisibleForTesting
   protected void validateForRelease(Long employeeContractId, LocalDate releaseDate) {
     var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
+    var findings = collectReleaseFindings(employeeContractId, contract, releaseDate);
+    if (!findings.isEmpty()) {
+      throw new BusinessRuleException(findings.all());
+    }
+  }
 
+  /**
+   * Der Zeitraum, den eine Freigabe bis {@code end} erfasst: vom Tag nach der letzten Freigabe,
+   * ohne Freigabe vom Vertragsbeginn an, bis {@code end} — beides auf die Laufzeit des Vertrags
+   * beschnitten. Liegt {@code end} am oder vor dem Tag der letzten Freigabe, ist er leer.
+   */
+  static ReviewPeriod releasePeriod(Employeecontract contract, LocalDate end) {
+    var currentReleaseDate = contract.getReportReleaseDate();
+    var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
+    return new ReviewPeriod(max(begin, contract.getValidFrom()), limitToContractEnd(contract, end));
+  }
+
+  /**
+   * Die Befunde der Prüfung vor der Freigabe bis {@code releaseDate}, mit ihrem Datum, statt sie zu
+   * werfen (#760). Die Übersicht zeigt sie am betroffenen Tag, die Freigabe wirft sie weiterhin.
+   *
+   * <p>Befunde über den ganzen Zeitraum schließen die Prüfung der Tage aus, sie beantworten die
+   * Frage schon: ein Datum außerhalb des Vertrags ({@code RL-0003}), eines vor der Abnahme
+   * ({@code RL-0004}) und ein leerer Zeitraum ({@code RL-0009}) — der gewählte Monat ist schon
+   * freigegeben. Der leere Zeitraum war bis #760 kein Befund: lag der Monat vor der letzten
+   * Freigabe, scheiterte die Regel „Arbeitstag ohne Buchung" an einem verkehrten Zeitraum, und die
+   * Freigabe endete auf der Fehlerseite; bis zur letzten Freigabe selbst erneut freizugeben tat
+   * nichts und verschickte trotzdem die Mail.
+   *
+   * <p>Die Befunde der Tage sind nach Datum sortiert. Geprüft werden alle offenen Buchungen bis
+   * {@code releaseDate}, denn die gibt die Freigabe frei — auch eine, die vor dem Zeitraum liegt.
+   *
+   * @param employeeContractId die id von {@code contract}; mit ihr fragen die Ladevorgänge
+   */
+  ReleaseFindings collectReleaseFindings(long employeeContractId, Employeecontract contract, LocalDate releaseDate) {
     if (releaseDate == null
         || releaseDate.isBefore(contract.getValidFrom())
         || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))) {
-      throw new BusinessRuleException(RL_RELEASE_DATE_INVALID);
+      return ReleaseFindings.periodWide(RL_RELEASE_DATE_INVALID);
     }
     if (contract.getReportAcceptanceDate() != null && releaseDate.isBefore(contract.getReportAcceptanceDate())) {
-      throw new BusinessRuleException(RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
+      return ReleaseFindings.periodWide(RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
+    }
+    var period = releasePeriod(contract, releaseDate);
+    if (period.isEmpty()) {
+      return ReleaseFindings.periodWide(RL_NOTHING_TO_RELEASE);
     }
 
     final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
 
-    var currentReleaseDate = contract.getReportReleaseDate();
-    var begin = currentReleaseDate != null ? currentReleaseDate.plusDays(1) : contract.getValidFrom();
-    var end = releaseDate;
-
-    // ensure begin and end dates fit to contract
-    if(contract.getValidFrom().isAfter(begin)) {
-      begin = contract.getValidFrom();
-    }
-    if(contract.getValidUntil() != null && contract.getValidUntil().isBefore(end)) {
-      end = contract.getValidUntil();
-    }
+    var begin = period.begin();
+    var end = period.end();
 
     final var workingDays = workingdayDAO
         .getWorkingdaysByEmployeeContractId(employeeContractId, begin.minusDays(1), end)
@@ -279,12 +316,39 @@ public class ReleaseService {
     // check if all working days have been booked correctly; only open bookings count here,
     // because only they get released (the rule leaves that choice to its caller)
     var bookedDays = timereports.stream().map(TimereportDTO::getReferenceday).collect(Collectors.toSet());
-    UnbookedWorkingDays.between(begin, end, contract, bookedDays, workingDays, publicHolidays)
-        .forEach(date -> errors.add(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date))));
+    var daysWithoutBooking = UnbookedWorkingDays.between(begin, end, contract, bookedDays, workingDays, publicHolidays);
+    daysWithoutBooking.forEach(date -> errors.add(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date))));
 
-    var messages = errors.stream().sorted(Comparator.comparing(Pair::getFirst)).map(Pair::getSecond).toList();
-    if(!messages.isEmpty()) {
-      throw new BusinessRuleException(messages);
+    var dayFindings = errors.stream().sorted(Comparator.comparing(Pair::getFirst)).toList();
+    return new ReleaseFindings(List.of(), dayFindings, daysWithoutBooking);
+  }
+
+  /**
+   * Was die Prüfung vor der Freigabe findet (#760).
+   *
+   * @param periodFindings     Befunde über den ganzen Zeitraum; gibt es welche, sind die Tage nicht
+   *                           geprüft
+   * @param dayFindings        Befunde einzelner Tage, nach Datum sortiert
+   * @param daysWithoutBooking die Arbeitstage ohne offene Buchung, aufsteigend — die Tage der
+   *                           Befunde {@code WD_NO_TIMEREPORT}
+   */
+  record ReleaseFindings(List<ServiceFeedbackMessage> periodFindings,
+                         List<Pair<LocalDate, ServiceFeedbackMessage>> dayFindings,
+                         List<LocalDate> daysWithoutBooking) {
+
+    static ReleaseFindings periodWide(ErrorCode errorCode) {
+      return new ReleaseFindings(List.of(ServiceFeedbackMessage.error(errorCode)), List.of(), List.of());
+    }
+
+    boolean isEmpty() {
+      return periodFindings.isEmpty() && dayFindings.isEmpty();
+    }
+
+    /** Alle Befunde: die über den Zeitraum zuerst, dann die der Tage nach Datum. */
+    List<ServiceFeedbackMessage> all() {
+      var all = new ArrayList<>(periodFindings);
+      dayFindings.forEach(finding -> all.add(finding.getSecond()));
+      return all;
     }
   }
 

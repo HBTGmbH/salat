@@ -46,10 +46,10 @@ public final class UnbookedWorkingDays {
      * <p>{@code until == from - 1} ist ein leerer Zeitraum und ergibt eine leere Liste. Liegt
      * {@code until} weiter zurück, wirft {@link LocalDate#datesUntil} eine
      * {@link IllegalArgumentException} — so wie die Schleife in {@code validateForRelease}, aus der
-     * diese Regel stammt. Dorthin gerät heute die Freigabe eines Monats vor der letzten Freigabe.
-     * Die Regel fängt das bewusst nicht ab: ein verkehrter Zeitraum ist ein Befund über den
-     * Zeitraum, nicht über einen Tag, und gehört zum Aufrufer — die Übersicht vor der Freigabe
-     * (#760) meldet ihn als eigenen Befund und fragt die Regel dann gar nicht erst.
+     * diese Regel stammt. Dorthin geriet bis #760 die Freigabe eines Monats vor der letzten
+     * Freigabe. Die Regel fängt das bewusst nicht ab: ein verkehrter Zeitraum ist ein Befund über
+     * den Zeitraum, nicht über einen Tag, und gehört zum Aufrufer — die Prüfung vor der Freigabe
+     * meldet ihn als eigenen Befund ({@code RL-0009}) und fragt die Regel dann gar nicht erst.
      *
      * @param bookedDays     die Tage, an denen eine Buchung zählt — welche, entscheidet der Aufrufer
      * @param workingDays    die Arbeitstage des Vertrags im Zeitraum, nach Datum
