@@ -4,13 +4,15 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.tb.common.test.FixedClock;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
 import org.tb.e2e.PlaywrightE2ETestBase;
+import org.tb.employee.persistence.EmployeeRepository;
+import org.tb.employee.persistence.EmployeecontractRepository;
 
 /**
  * Verifies the dailyreport dashboard (the post-login landing page, see the
@@ -18,6 +20,11 @@ import org.tb.e2e.PlaywrightE2ETestBase;
  * widgets for a logged-in employee.
  */
 class DashboardE2ETest extends PlaywrightE2ETestBase {
+
+  @Autowired
+  private EmployeeRepository employeeRepository;
+  @Autowired
+  private EmployeecontractRepository employeecontractRepository;
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
@@ -88,8 +95,9 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
       var days = hint.locator("a");
       assertThat(days).hasText(new String[]{
           "Mittwoch, 10.06.2026", "Donnerstag, 11.06.2026", "Freitag, 12.06.2026"});
+      // the contract the dashboard shows, not just any id
       assertThat(days.first()).hasAttribute("href",
-          Pattern.compile("^/dailyreport/daily\\?mode=daily&date=2026-06-10&fEmployeeContractId=\\d+$"));
+          "/dailyreport/daily?mode=daily&date=2026-06-10&fEmployeeContractId=" + contractIdWithoutBookings());
 
       page.navigate(urlWithLogin(days.first().getAttribute("href"), E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN));
       assertThat(page.locator("#daily-mode-nav h3")).hasText("Mittwoch, 10. Juni 2026");
@@ -108,6 +116,14 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("body")).containsText("Diese Woche");
       assertThat(page.locator("#unbooked-days-hint")).not().isAttached();
     });
+  }
+
+  private long contractIdWithoutBookings() {
+    var employee = employeeRepository.findBySign(E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN).orElseThrow();
+    return employeecontractRepository
+        .findByEmployeeIdAndValidAt(employee.getId(), E2ETestData.WITHOUT_BOOKINGS_CONTRACT_START)
+        .orElseThrow()
+        .getId();
   }
 
   private static Locator cardOf(Page page, String text) {
