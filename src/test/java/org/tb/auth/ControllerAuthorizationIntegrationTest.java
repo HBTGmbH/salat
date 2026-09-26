@@ -19,6 +19,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -122,6 +123,17 @@ class ControllerAuthorizationIntegrationTest {
   private static final List<String> PEOPLE_LEAD_VIEWS = List.of(
       "/acceptance",
       "/reporting/jobs");
+
+  /** Platzhalter für die id des Vertrags einer Anmeldung, etwa {@code {reg}}. */
+  private static final Pattern CONTRACT_OF = Pattern.compile("\\{([a-z]+)}");
+
+  /**
+   * Der Monat, den die Übersicht vor der Freigabe zeigt (#760). Die Verträge beginnen am
+   * 01.01.2000 und sind nie freigegeben, der Zeitraum ist also der ganze Januar 2000 — ohne eine
+   * einzige Buchung: jeder Arbeitstag ist ein Befund, die Bilanz hat ein Soll, und beide Sichten
+   * haben zu zeigen.
+   */
+  private static final String REVIEW_MONTH = "until=2000-01";
 
   @LocalServerPort
   private int port;
@@ -227,7 +239,78 @@ class ControllerAuthorizationIntegrationTest {
         Arguments.of("/customers", RESTRICTED),
         Arguments.of("/customers/create", REGULAR),
         Arguments.of("/invoice", REGULAR),
-        Arguments.of("/acceptance", REGULAR));
+        Arguments.of("/acceptance", REGULAR),
+        // die Ablehnung kommt hier aus dem Service, nicht aus dem Aspekt des Controllers
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={mgr}", REGULAR));
+  }
+
+  /**
+   * Die Übersicht vor der Freigabe (#760) sieht, wer den Vertrag freigeben darf: die Person selbst —
+   * auch eine eingeschränkte, sie gibt ihre eigenen Stunden frei —, die Geschäftsführung und die
+   * zuständige People Lead. Eine 200 heißt dabei zugleich, dass die Seite mit allen ihren Bausteinen
+   * gerendert wurde, in beiden Sichten.
+   */
+  @ParameterizedTest(name = "{1} -> {0}")
+  @MethodSource("reviewAllowed")
+  void a_login_that_may_release_the_contract_sees_its_review(String path, String login) throws Exception {
+    var response = get(path, login);
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.body()).contains("id=\"review-findings\"", "id=\"review-action\"");
+  }
+
+  /**
+   * Wer den Vertrag nicht freigeben darf, sieht auch seine Übersicht nicht (#760) — über die eigene
+   * Freigabe so wenig wie über die Abnahme. Den Vertrag nennt die Anfrage selbst; die Prüfung liegt
+   * deshalb im Service, bei der Abnahme zusätzlich am Controller.
+   */
+  @ParameterizedTest(name = "{1} -> {0}")
+  @MethodSource("reviewDenied")
+  void a_login_that_may_not_release_the_contract_does_not_see_its_review(String path, String login)
+      throws Exception {
+    assertThat(get(path, login).statusCode()).isEqualTo(FORBIDDEN.value());
+  }
+
+  /**
+   * Das Freigeben selbst: die Handler fangen nur fachliche Ausnahmen, eine fehlende Berechtigung
+   * bleibt eine 403 und wird nicht zum Toast nach einer Umleitung.
+   */
+  @ParameterizedTest(name = "{1} -> POST {0} for {2}")
+  @MethodSource("releaseDenied")
+  void a_login_that_may_not_release_the_contract_cannot_release_it(String path, String login, String owner)
+      throws Exception {
+    var form = "contractId={" + owner + "}&periodBegin=2000-01-01&periodEnd=2000-01-31";
+
+    assertThat(post(path, login, form).statusCode()).isEqualTo(FORBIDDEN.value());
+    assertThat(contractOf(owner).getReportReleaseDate()).isNull();
+  }
+
+  private static Stream<Arguments> reviewAllowed() {
+    return Stream.of(
+        Arguments.of("/release/review?" + REVIEW_MONTH, REGULAR),
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&view=day", REGULAR),
+        Arguments.of("/release/review?" + REVIEW_MONTH, RESTRICTED),
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={reg}", MANAGER),
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={reg}&view=day", MANAGER),
+        Arguments.of("/acceptance/release/review?contractId={reg}&" + REVIEW_MONTH, MANAGER),
+        Arguments.of("/acceptance/release/review?contractId={reg}&" + REVIEW_MONTH + "&view=day", MANAGER));
+  }
+
+  private static Stream<Arguments> reviewDenied() {
+    return Stream.of(
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={mgr}", REGULAR),
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={reg}", RESTRICTED),
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={reg}", PEOPLE_LEAD),
+        Arguments.of("/acceptance/release/review?contractId={mgr}&" + REVIEW_MONTH, REGULAR),
+        Arguments.of("/acceptance/release/review?contractId={reg}&" + REVIEW_MONTH, PEOPLE_LEAD));
+  }
+
+  private static Stream<Arguments> releaseDenied() {
+    return Stream.of(
+        Arguments.of("/release", REGULAR, MANAGER),
+        Arguments.of("/release", RESTRICTED, REGULAR),
+        Arguments.of("/acceptance/release", REGULAR, REGULAR),
+        Arguments.of("/acceptance/release", PEOPLE_LEAD, REGULAR));
   }
 
   private static Stream<Arguments> pairs(List<String> paths, String... logins) {
@@ -235,8 +318,7 @@ class ControllerAuthorizationIntegrationTest {
   }
 
   private HttpResponse<String> get(String path, String login) throws Exception {
-    assertThat(ALL_LOGINS).contains(login);
-    var uri = URI.create("http://localhost:" + port + path + "?login-name=" + login);
+    var uri = URI.create("http://localhost:" + port + withLogin(path, login));
     return HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri).GET().build(), BodyHandlers.ofString());
   }
 
@@ -245,13 +327,30 @@ class ControllerAuthorizationIntegrationTest {
    * die Antwort auf den POST selbst ist die Aussage, nicht die Seite danach.
    */
   private HttpResponse<String> post(String path, String login, String form) throws Exception {
-    assertThat(ALL_LOGINS).contains(login);
-    var uri = URI.create("http://localhost:" + port + path + "?login-name=" + login);
+    var uri = URI.create("http://localhost:" + port + withLogin(path, login));
     var request = HttpRequest.newBuilder(uri)
         .header("Content-Type", "application/x-www-form-urlencoded")
-        .POST(BodyPublishers.ofString(form))
+        .POST(BodyPublishers.ofString(withContractIds(form)))
         .build();
     return HttpClient.newHttpClient().send(request, BodyHandlers.ofString());
+  }
+
+  /**
+   * Die Anmeldung reist als Parameter mit — an einen Pfad, der schon eine Abfrage trägt, mit
+   * {@code &}. Platzhalter wie {@code {reg}} werden zur id des Vertrags dieser Anmeldung.
+   */
+  private String withLogin(String path, String login) {
+    assertThat(ALL_LOGINS).contains(login);
+    return withContractIds(path) + (path.contains("?") ? "&" : "?") + "login-name=" + login;
+  }
+
+  private String withContractIds(String text) {
+    return CONTRACT_OF.matcher(text).replaceAll(sign -> String.valueOf(contractOf(sign.group(1)).getId()));
+  }
+
+  private Employeecontract contractOf(String sign) {
+    var employee = employeeRepository.findBySign(sign).orElseThrow();
+    return employeecontractRepository.findAllByEmployeeId(employee.getId()).getFirst();
   }
 
   private void employeeWithContract(String sign, String status) {
