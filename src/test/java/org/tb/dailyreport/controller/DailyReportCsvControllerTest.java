@@ -116,6 +116,26 @@ class DailyReportCsvControllerTest {
     assertThat(result.getFlashMap().get("toastError").toString()).contains("nichts gespeichert");
   }
 
+  /* A ticket reference longer than a booking can store is named with line and column, like an
+     unreadable value, and the import saves nothing (#1140). */
+  @Test
+  void names_line_and_column_of_a_too_long_ticket_reference() throws Exception {
+    var csv = """
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+        2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s
+        """.formatted("X".repeat(65));
+
+    var result = mockMvc.perform(multipart("/dailyreport/csv/import")
+            .file(new MockMultipartFile("file", "report.csv", "text/csv", csv.getBytes(UTF_8)))
+            .param("fEmployeeContractId", "7"))
+        .andExpect(status().is3xxRedirection())
+        .andReturn();
+
+    verifyNoInteractions(dailyWorkingReportService);
+    assertThat(result.getFlashMap().get("toastError").toString())
+        .contains("Zeile 2", "ticketReference", "64 Zeichen", "nichts gespeichert");
+  }
+
   private static MockMultipartFile csvFile() {
     return new MockMultipartFile("file", "report.csv", "text/csv",
         CSV_WITH_UNREADABLE_TIME.getBytes(UTF_8));

@@ -1,7 +1,11 @@
 package org.tb.dailyreport.rest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.tb.dailyreport.domain.TimereportDTO;
 import tools.jackson.databind.ObjectMapper;
 
 class DailyReportDataTest {
@@ -21,6 +25,7 @@ class DailyReportDataTest {
         .orderSign("17")
         .suborderSign("17/01")
         .training(true)
+        .ticketReference("ERP-1")
         .build();
     ObjectMapper mapper = new ObjectMapper();
 
@@ -30,6 +35,27 @@ class DailyReportDataTest {
 
     // then
     assert timereport.equals(readTinmereport);
+  }
+
+  /* A client that does not know the field sends none; that is not the same as an empty text (#1140). */
+  @Test
+  void tellsAMissingTicketReferenceFromAnEmptyOne() {
+    ObjectMapper mapper = new ObjectMapper();
+
+    var required = "\"employeeorderId\":1,\"hours\":1,\"minutes\":0,\"training\":false";
+
+    var missing = mapper.readValue("{" + required + "}", DailyReportData.class);
+    var empty = mapper.readValue("{" + required + ",\"ticketReference\":\"\"}", DailyReportData.class);
+
+    assertThat(missing.getTicketReference()).isNull();
+    assertThat(empty.getTicketReference()).isEmpty();
+  }
+
+  @Test
+  void takesTheTicketReferenceFromTheBooking() {
+    var booking = TimereportDTO.builder().duration(Duration.ofMinutes(90)).ticketReference("ERP-1").build();
+
+    assertThat(DailyReportData.valueOf(booking).getTicketReference()).isEqualTo("ERP-1");
   }
 
 }

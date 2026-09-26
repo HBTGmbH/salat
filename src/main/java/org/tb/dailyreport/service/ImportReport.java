@@ -14,7 +14,8 @@ public record ImportReport(List<DayResult> days, int linesRead) implements Seria
         String suborderLabel,
         long hours,
         long minutes,
-        String comment
+        String comment,
+        String ticketReference
     ) implements Serializable {}
 
     public record UpdatedBookingDetail(

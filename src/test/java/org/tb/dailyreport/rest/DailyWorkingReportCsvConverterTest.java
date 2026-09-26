@@ -10,6 +10,7 @@ import static org.mockito.quality.Strictness.LENIENT;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_EMPLOYEE_ORDER;
 import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_NO_START_BREAK_TIME;
+import static org.tb.dailyreport.rest.DailyWorkingReportCsvConverterTest.DailyWorkingReportDataFixtures.TWO_BOOKINGS_WITH_TICKET_REFERENCE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +30,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCode;
@@ -112,6 +115,15 @@ class DailyWorkingReportCsvConverterTest {
                     """,
                 List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
                 true
+            ),
+            Arguments.of(
+                """
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
+                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1
+                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
+                    """,
+                List.of(TWO_BOOKINGS_WITH_TICKET_REFERENCE),
+                false
             )
         );
     }
@@ -220,25 +232,109 @@ class DailyWorkingReportCsvConverterTest {
         assertThat(uncaught).isEmpty();
     }
 
+    /* A file without the column says nothing about the reference; the service must be able to tell
+       that from an empty column (#1140). */
+    @Test
+    void leaves_the_reference_unknown_when_the_column_is_missing() throws IOException {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag
+            """;
+        when(employeeorderService.getEmployeeorderById(eq(183209L))).thenReturn(employeeorder());
+
+        var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)).reports();
+
+        assertThat(result).singleElement().satisfies(day ->
+            assertThat(day.getDailyReports()).singleElement().satisfies(booking ->
+                assertThat(booking.getTicketReference()).isNull()));
+    }
+
+    /* A reference longer than a booking can store is reported like an unreadable value, with line
+       and column, before anything is saved (#1140). */
+    @Test
+    void reports_a_too_long_ticket_reference_with_line_and_column() {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s
+            """.formatted("X".repeat(65));
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_TOO_LONG);
+                    assertThat(message.getArguments()).containsExactly(2L, "ticketReference", 64);
+                }));
+    }
+
+    /* The length that counts is the one stored: surrounding blanks are trimmed away first. */
+    @Test
+    void accepts_a_reference_that_only_exceeds_the_length_by_surrounding_blanks() throws IOException {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,"  %s  "
+            """.formatted("X".repeat(64));
+        when(employeeorderService.getEmployeeorderById(eq(183209L))).thenReturn(employeeorder());
+
+        var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)).reports();
+
+        assertThat(result.getFirst().getDailyReports().getFirst().getTicketReference().trim()).hasSize(64);
+    }
+
+    /* Over the REST API the same faulty file is the caller's error, answered with 400 (#1140). */
+    @Test
+    void answers_a_too_long_reference_over_the_api_as_not_readable() throws IOException {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,%s
+            """.formatted("X".repeat(65));
+        var inputMessage = new MockHttpInputMessage(csv.getBytes(UTF_8));
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(null, inputMessage))
+            .isInstanceOf(HttpMessageNotReadableException.class);
+    }
+
+    private static Employeeorder employeeorder() {
+        var customerorder = new Customerorder();
+        customerorder.setSign("111");
+        customerorder.setDescription("Rumsitzen");
+        var suborder = new Suborder();
+        suborder.setSign("01");
+        suborder.setDescription("Stuhlpolsterung");
+        suborder.setCustomerorder(customerorder);
+        var employeeorder = new Employeeorder();
+        ReflectionTestUtils.setField(employeeorder, "id", 183209L);
+        employeeorder.setSuborder(suborder);
+        return employeeorder;
+    }
+
     private static Stream<Arguments> writeCsv() {
         return Stream.of(
             Arguments.of(
                     List.of(TWO_BOOKINGS),
                     """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
-                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
-                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
+                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,
+                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
                     """,
                     false
             ),
             Arguments.of(
                 List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment
-                2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag
-                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
+                2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,
+                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
                 """,
                 true
+            ),
+            Arguments.of(
+                List.of(TWO_BOOKINGS_WITH_TICKET_REFERENCE),
+                """
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
+                2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1
+                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
+                """,
+                false
             )
         );
     }
@@ -307,6 +403,16 @@ class DailyWorkingReportCsvConverterTest {
                   .comment("Daily")
                   .build()
           ))
+          .build();
+      /* read from a file with the column: the empty one is "no reference", not a missing one (#1140) */
+      static DailyWorkingReportData TWO_BOOKINGS_WITH_TICKET_REFERENCE = DailyWorkingReportData.builder()
+          .type(TWO_BOOKINGS.getType())
+          .date(TWO_BOOKINGS.getDate())
+          .startTime(TWO_BOOKINGS.getStartTime())
+          .breakDuration(TWO_BOOKINGS.getBreakDuration())
+          .dailyReports(List.of(
+              TWO_BOOKINGS.getDailyReports().get(0).withTicketReference("ERP-1"),
+              TWO_BOOKINGS.getDailyReports().get(1).withTicketReference("")))
           .build();
         static DailyWorkingReportData TWO_BOOKINGS_NO_START_BREAK_TIME = DailyWorkingReportData.builder()
             .type(Workingday.WorkingDayType.WORKED)

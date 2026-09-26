@@ -3,8 +3,10 @@ package org.tb.dailyreport.rest;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
+import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static org.tb.common.exception.ErrorCode.TR_CSV_LINE_NOT_READABLE;
 import static org.tb.common.exception.ErrorCode.TR_CSV_VALUE_FORMAT_INVALID;
+import static org.tb.common.exception.ErrorCode.TR_CSV_VALUE_TOO_LONG;
 
 import com.google.common.collect.Streams;
 import com.opencsv.bean.AbstractBeanField;
@@ -13,6 +15,7 @@ import com.opencsv.bean.CsvCustomBindByName;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
+import com.opencsv.exceptions.CsvConstraintViolationException;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvMalformedLineException;
@@ -156,6 +159,12 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 formatException.getValue(),
                 formatException.getExpectedFormats());
         }
+        if (first instanceof CsvValueTooLongException tooLongException) {
+            throw new InvalidDataException(TR_CSV_VALUE_TOO_LONG,
+                first.getLineNumber(),
+                tooLongException.getColumn(),
+                tooLongException.getMaxLength());
+        }
         throw new InvalidDataException(TR_CSV_LINE_NOT_READABLE, first.getLineNumber());
     }
 
@@ -193,6 +202,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         }
         try {
             return read(inputMessage.getBody()).reports();
+        } catch (InvalidDataException e) {
+            // eine fehlerhafte Datei ist ein Fehler des Aufrufers: 400, nicht 500 (#1140)
+            throw new HttpMessageNotReadableException(e.getMessage(), e, inputMessage);
         } catch (Exception e){
             throw new RuntimeException(e);
         }
@@ -273,6 +285,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                         .hours(row.getWorkingTime().getHour())
                         .minutes(row.getWorkingTime().getMinute())
                         .comment(row.getComment())
+                        .ticketReference(row.getTicketReference())
                         .build();
                 })
                 .toList();
@@ -292,7 +305,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment"
+                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference"
                 });
             }
         };
@@ -335,7 +348,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getSuborderSign(),
             row.getSuborderLabel(),
             row.getWorkingTime(),
-            row.getComment()
+            row.getComment(),
+            row.getTicketReference()
         );
     }
 
@@ -351,7 +365,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             reportData.getSuborderSign(),
             reportData.getSuborderLabel(),
             LocalTime.of((int)reportData.getHours(), (int)reportData.getMinutes()),
-            reportData.getComment()
+            reportData.getComment(),
+            reportData.getTicketReference()
         );
     }
 
@@ -381,6 +396,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         private LocalTime workingTime;
         @CsvBindByName
         private String comment;
+        /** {@code null} where the file has no such column, empty where the column is empty (#1140). */
+        @CsvCustomBindByName(converter = TicketReferenceConverter.class)
+        private String ticketReference;
     }
 
     /**
@@ -403,6 +421,23 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             this.column = column;
             this.value = value;
             this.expectedFormats = expectedFormats;
+        }
+    }
+
+    /**
+     * Ein Wert der hochgeladenen Datei, der länger ist, als die Buchung ihn speichern kann (#1140).
+     * Gemeldet wird er wie ein nicht lesbarer Wert, mit Zeile und Spalte.
+     */
+    @Getter
+    public static class CsvValueTooLongException extends CsvConstraintViolationException {
+
+        private final String column;
+        private final int maxLength;
+
+        CsvValueTooLongException(String column, int maxLength) {
+            super("column '" + column + "': value exceeds " + maxLength + " characters");
+            this.column = column;
+            this.maxLength = maxLength;
         }
     }
 
@@ -439,6 +474,22 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         protected String convertToWrite(Object value) {
             if (value == null) return "";
             return ((LocalDate)value).format(ISO);
+        }
+    }
+
+    /**
+     * Prüft die Länge schon beim Lesen, weil nur hier Zeile und Spalte bekannt sind. Gespeichert wird
+     * der Wert wie in der Buchungsmaske über {@code TimereportService.normalizeTicketReference}, die
+     * dieselbe Grenze noch einmal zieht; ein leerer Wert bleibt leer und heißt „keine Referenz“.
+     */
+    public static class TicketReferenceConverter extends AbstractBeanField<String, String> {
+
+        @Override
+        protected String convert(String value) throws CsvConstraintViolationException {
+            if (value != null && value.trim().length() > TICKET_REFERENCE_MAX_LENGTH) {
+                throw new CsvValueTooLongException(columnOf(this), TICKET_REFERENCE_MAX_LENGTH);
+            }
+            return value;
         }
     }
 

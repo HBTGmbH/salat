@@ -2,6 +2,7 @@ package org.tb.dailyreport.rest;
 
 import static org.apache.commons.io.IOUtils.toInputStream;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -49,14 +50,36 @@ class DailyReportCsvConverterTest {
 
         // then
         assertThat(result).hasSize(1).contains(dailyReport1);
+        assertThat(result.getFirst().getTicketReference()).isNull();
+    }
+
+    /* The reference is a new column at the end (#1140): positions 0-8 stay where existing clients
+       expect them, and a file without it still reads as before. */
+    @Test
+    void shouldReadTicketReferenceFromTheLastColumn() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","ERP-1"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","2","0","test2",""
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when
+        var result = dailyReportCsvConverter.read(null, inputMessage);
+
+        // then
+        assertThat(result).extracting(DailyReportData::getComment, DailyReportData::getTicketReference)
+                .containsExactly(tuple("test1", "ERP-1"), tuple("test2", ""));
     }
 
     @Test
     void shouldWriteToCsv() throws IOException {
         // given
         var rawData = """
-                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1"
+                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1",""
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1"
                 """;
         var dailyReport1 = DailyReportData.builder()
                 .date("2024-10-29").employeeorderId(183209)
@@ -69,7 +92,8 @@ class DailyReportCsvConverterTest {
         when(outputMessage.getBody()).thenReturn(outputStream);
 
         // when
-        dailyReportCsvConverter.write(List.of(dailyReport1), null, outputMessage);
+        dailyReportCsvConverter.write(List.of(dailyReport1,
+                dailyReport1.toBuilder().comment("test2").ticketReference("ERP-1").build()), null, outputMessage);
 
         // then
         assertThat(IOUtils.toString(outputStream.toByteArray(), "UTF-8")).isEqualTo(rawData);
