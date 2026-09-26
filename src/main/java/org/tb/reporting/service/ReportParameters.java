@@ -24,6 +24,11 @@ import org.tb.reporting.domain.ReportParameter;
  * als <code>:name</code> im SQL; ein Wert trägt seinen Typ als Präfix (<code>date,2025-09-01</code>),
  * ohne Präfix gilt <code>string</code>.
  *
+ * <p>Bei <code>date</code> und <code>number</code> darf der Wert auch ein Schlüsselwort sein, das für den
+ * heutigen Tag steht (<code>date,VORMONAT</code>, <code>number,KW</code>); welche es gibt und was sie
+ * bedeuten, steht in {@link ReportParameterResolver}. Ein <code>string</code> bleibt, wie er ist — wer
+ * nach dem Wort „HEUTE" sucht, soll es auch finden.
+ *
  * <p>Diese Logik lag als statische Methoden im {@code ReportController}. Seit es neben der Weboberfläche
  * auch einen API-Zugang gibt, wird sie von zwei Seiten gebraucht und liegt deshalb hier.
  */
@@ -80,15 +85,24 @@ public final class ReportParameters {
       value = value.replace('*', '%'); // make it SQL compatible
       switch (parameter.getType()) {
         case "date" -> result.put(name, toDate(name, value));
+        case "number" -> result.put(name, toNumber(value));
         default -> result.put(name, value);
       }
     }
     return result;
   }
 
+  /**
+   * Ein Datumsschlüsselwort wird zum Datum am heutigen Tag, alles andere wird als Datum gelesen. Ein
+   * Zahlenschlüsselwort wie {@code KW} ist hier so unbrauchbar wie jeder andere Text, der kein Datum ist.
+   */
   private static LocalDate toDate(String name, String value) {
-    if (value.equals("TODAY") || value.equals("HEUTE")) {
-      return today();
+    var keywordValue = ReportParameterResolver.resolveValue(value, today());
+    if (keywordValue.isPresent()) {
+      if (keywordValue.get() instanceof LocalDate date) {
+        return date;
+      }
+      throw new InvalidDataException(RP_REPORT_PARAMETER_INVALID, name, value);
     }
     if (value.isBlank()) {
       return null;
@@ -100,6 +114,17 @@ public final class ReportParameters {
       // schlägt die Ausführung erst tief im JDBC-Template fehl.
       throw new InvalidDataException(RP_REPORT_PARAMETER_INVALID, name, value);
     }
+  }
+
+  /**
+   * Ein Zahlenschlüsselwort wie {@code KW} wird zur Zahl am heutigen Tag. Jeder andere Wert geht
+   * unverändert weiter, wie bisher: die Datenbank wandelt ihn selbst, und ein Datumsschlüsselwort ist
+   * bei einer Zahl kein Schlüsselwort.
+   */
+  private static Object toNumber(String value) {
+    return ReportParameterResolver.resolveValue(value, today())
+        .filter(Integer.class::isInstance)
+        .orElse(value);
   }
 
   private static ReportParameter toReportParameter(String key, String value) {

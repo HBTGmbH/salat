@@ -21,7 +21,7 @@
 
         <div th:replace="~{fragments/form-fields :: textareaInputHelp(
           field='reportParameters', label='Report Parameters (JSON)', required=false,
-          rows=5, helpText=${'Example: {&quot;startDate&quot;: &quot;2024-01-01&quot;, &quot;endDate&quot;: &quot;2024-12-31&quot;}'}, monospace=true
+          rows=5, helpText=#{reporting.scheduledjob.reportParameters.help}, monospace=true
         )}"></div>
 
         <div th:replace="~{fragments/form-fields :: textareaInputHelp(

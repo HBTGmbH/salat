@@ -51,7 +51,6 @@ public class ReportService {
   private final DataSource dataSource;
   private final ReportAuthorization reportAuthorization;
   private final AuthorizedUser authorizedUser;
-  private final ReportParameterResolver reportParameterResolver;
 
   public List<ReportDefinition> getReportDefinitions() {
     return IteratorUtils.toList(
@@ -163,7 +162,7 @@ public class ReportService {
       }
       // Resolve reporting placeholders based only on today's date (no FROM/UNTIL)
       LocalDate today = DateUtils.today();
-      resolvedSql = reportParameterResolver.resolve(resolvedSql, today);
+      resolvedSql = ReportParameterResolver.resolve(resolvedSql, today);
     }
 
     try {

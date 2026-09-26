@@ -43,6 +43,7 @@
             </tbody>
           </table>
         </div>
+        <p class="form-text" th:text="#{reporting.parameters.keywords.hint}">Keywords for today</p>
 
         <div class="alert alert-info" th:if="${missingParameters}">
           Missing parameters: <span th:text="${#strings.listJoin(missingParameters, ', ')}">param1,param2</span>

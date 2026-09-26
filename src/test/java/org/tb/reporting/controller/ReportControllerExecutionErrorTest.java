@@ -27,7 +27,6 @@ import org.tb.reporting.domain.ReportDefinition;
 import org.tb.reporting.domain.ReportResult;
 import org.tb.reporting.persistence.ReportDefinitionRepository;
 import org.tb.reporting.service.ExcelExportService;
-import org.tb.reporting.service.ReportParameterResolver;
 import org.tb.reporting.service.ReportService;
 
 /**
@@ -55,7 +54,7 @@ class ReportControllerExecutionErrorTest {
     when(reportAuthorization.isAuthorized(any(), any())).thenReturn(true);
 
     var reportService = new ReportService(reportDefinitionRepository, database, reportAuthorization,
-        mock(AuthorizedUser.class), new ReportParameterResolver());
+        mock(AuthorizedUser.class));
     var reportController = new ReportController(reportService, reportAuthorization,
         mock(ExcelExportService.class), mock(FilterHintViewHelper.class));
 
