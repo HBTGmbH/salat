@@ -87,6 +87,15 @@ class MatrixServiceFillNotWorkedTest {
   private static final YearMonth MONTH = YearMonth.of(2026, 3);
   private static final int WEEKDAYS_OF_MONTH = 22;
 
+  /**
+   * April 2026: der 1. ist ein Mittwoch, der 30. ein Donnerstag, beide Ränder sind also Arbeitstage
+   * — 22 Wochentage. Hier liegen die Fälle an den Monatsgrenzen: im März fiele ein um einen Tag
+   * verschobener Beginn nicht auf, weil der 1. ein Sonntag ist.
+   */
+  private static final YearMonth APRIL = YearMonth.of(2026, 4);
+  private static final LocalDate APRIL_FIRST = APRIL.atDay(1);
+  private static final LocalDate APRIL_LAST = APRIL.atEndOfMonth();
+
   private static final AtomicInteger PERSONS = new AtomicInteger();
 
   @Autowired
@@ -257,6 +266,48 @@ class MatrixServiceFillNotWorkedTest {
   }
 
   @Test
+  void marks_the_first_and_the_last_day_of_the_month_as_well() {
+    fillNotWorked(APRIL);
+
+    assertThat(notWorkedDays()).hasSize(22).startsWith(APRIL_FIRST).endsWith(APRIL_LAST);
+  }
+
+  @Test
+  void leaves_a_booking_on_the_first_or_the_last_day_of_the_month_alone() {
+    book(APRIL_FIRST, GlobalConstants.TIMEREPORT_STATUS_OPEN);
+    book(APRIL_LAST, GlobalConstants.TIMEREPORT_STATUS_OPEN);
+
+    fillNotWorked(APRIL);
+
+    assertThat(storedDays()).doesNotContain(APRIL_FIRST, APRIL_LAST).contains(APRIL.atDay(2), APRIL.atDay(29));
+  }
+
+  @Test
+  void leaves_a_public_holiday_on_the_first_or_the_last_day_of_the_month_alone() {
+    publicholidayRepository.save(new Publicholiday(APRIL_FIRST, "Testfeiertag am Monatsanfang"));
+    publicholidayRepository.save(new Publicholiday(APRIL_LAST, "Testfeiertag am Monatsende"));
+
+    fillNotWorked(APRIL);
+
+    assertThat(storedDays()).hasSize(20).doesNotContain(APRIL_FIRST, APRIL_LAST);
+  }
+
+  @Test
+  void does_not_save_a_day_marked_as_not_worked_on_the_first_or_the_last_day_again() {
+    var onTheFirst = workingday(APRIL_FIRST, NOT_WORKED, 7, 15, 0, 30);
+    var onTheLast = workingday(APRIL_LAST, NOT_WORKED, 7, 15, 0, 30);
+
+    fillNotWorked(APRIL);
+
+    for (var before : List.of(onTheFirst, onTheLast)) {
+      var stored = storedWorkingday(before.getRefday());
+      assertThat(stored.getUpdatecounter()).as("am %s", before.getRefday()).isEqualTo(before.getUpdatecounter());
+      assertThat(List.of(stored.getStarttimehour(), stored.getStarttimeminute(), stored.getBreakhours(),
+          stored.getBreakminutes())).as("am %s", before.getRefday()).containsExactly(7, 15, 0, 30);
+    }
+  }
+
+  @Test
   void the_management_may_fill_the_month_of_someone_else() {
     logInAs("gf" + PERSONS.incrementAndGet(), "ROLE_MANAGER");
 
@@ -295,7 +346,11 @@ class MatrixServiceFillNotWorkedTest {
   }
 
   private void fillNotWorked() {
-    matrixService.fillNotWorked(MONTH, contract.getId());
+    fillNotWorked(MONTH);
+  }
+
+  private void fillNotWorked(YearMonth month) {
+    matrixService.fillNotWorked(month, contract.getId());
   }
 
   private static LocalDate day(int dayOfMonth) {
