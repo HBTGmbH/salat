@@ -73,7 +73,8 @@ Zwei bewusste Ausnahmen, beide im Profil kommentiert:
   `innodb_buffer_pool_size=128M`; Produktion läuft mit `536870912` (512 MB). Mit einem
   Produktionsdatenabzug ist das der dominierende lokale Verfälschungsfaktor. Die Parity-Regel
   gilt hier sinngemäß: für Messläufe den Produktionswert setzen, nicht mehr — sonst ist lokal
-  schneller als Produktion. Siehe README.
+  schneller als Produktion. Siehe README. *Nachtrag (#1127):* Die Compose-Dateien setzen den
+  Produktionswert inzwischen selbst.
 * **devtools-Restart-Classloader**: `spring.devtools.restart.enabled` wird ausgewertet, bevor
   Config-Dateien geladen sind, und muss als JVM-Argument gesetzt werden. Siehe README.
 
