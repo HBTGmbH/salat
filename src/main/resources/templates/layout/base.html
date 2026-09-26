@@ -190,6 +190,13 @@
                      th:text="#{main.general.mainmenu.dashboard.text}">
                     Dashboard
                   </a>
+                  <a class="dropdown-item" th:href="@{/my-accounts}"
+                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}"
+                     th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
+                     th:text="#{main.my.accounts.title}">
+                    Meine Konten
+                  </a>
+                  <div class="dropdown-divider"></div>
                   <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}"
                      th:text="#{main.general.mainmenu.newreport.text}">
                     Neue Buchung
@@ -209,6 +216,7 @@
                     <span th:text="#{main.general.mainmenu.timereportlist.text}">Buchungsliste</span>
                     <span class="badge bg-azure-lt ms-1" th:text="#{main.beta.badge}">Beta</span>
                   </a>
+                  <div class="dropdown-divider"></div>
                   <a class="dropdown-item" th:href="@{/dailyreport/csv}"
                      th:classappend="${subSection == 'csv'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.csv.text}">
@@ -224,12 +232,6 @@
                      th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.acceptance.text}">
                     Abnahme
-                  </a>
-                  <a class="dropdown-item" th:href="@{/my-accounts}"
-                     th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}"
-                     th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
-                     th:text="#{main.my.accounts.title}">
-                    Meine Konten
                   </a>
                 </div>
               </div>
