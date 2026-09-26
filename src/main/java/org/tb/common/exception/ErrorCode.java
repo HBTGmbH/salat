@@ -101,6 +101,8 @@ public enum ErrorCode {
   RL_ACCEPTANCE_DATE_MOVED_BACKWARDS("RL-0007", "acceptance date must not move backwards"),
   RL_REVIEWED_PERIOD_CHANGED("RL-0008", "the period changed since it was reviewed"),
   RL_NOTHING_TO_RELEASE("RL-0009", "everything up to the release date has already been released"),
+  RL_NOTHING_TO_ACCEPT("RL-0010", "everything up to the acceptance date has already been accepted"),
+  RL_ACCEPTANCE_WITHOUT_RELEASE("RL-0011", "nothing has been released that could be accepted"),
 
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),
   WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER("WD-0004", "you can only save your own working days or you must be a manager!"),
