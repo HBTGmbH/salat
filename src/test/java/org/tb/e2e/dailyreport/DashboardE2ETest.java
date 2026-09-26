@@ -4,8 +4,10 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.tb.common.test.FixedClock;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
 import org.tb.e2e.PlaywrightE2ETestBase;
@@ -64,6 +66,47 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
       assertThat(cardOf(page, "gesamt").getByText("in Ordnung")).not().isVisible();
       assertThat(page.locator(".overtime-legend-popover")).not().isAttached();
+    });
+  }
+
+  /**
+   * The hint on working days of the previous week without a booking (#1124), for a person of its
+   * own whose contract begins on Wednesday of that week: it names each remaining weekday, and each
+   * day leads into the daily view of that date, for that contract. The clock stands on Monday,
+   * 2026-06-15 — {@code @FixedClock} is not inherited, and without its own the method would run a
+   * week and a half later, at the extension's default.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  @FixedClock("2026-06-15T09:00:00")
+  void names_each_working_day_of_the_previous_week_without_a_booking(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN, "/dailyreport/dashboard", page -> {
+      var hint = page.locator("#unbooked-days-hint");
+      assertThat(hint).containsText("3 Arbeitstage der Vorwoche ohne Buchung");
+
+      // Monday and Tuesday lie before the contract, the weekend is no working day
+      var days = hint.locator("a");
+      assertThat(days).hasText(new String[]{
+          "Mittwoch, 10.06.2026", "Donnerstag, 11.06.2026", "Freitag, 12.06.2026"});
+      assertThat(days.first()).hasAttribute("href",
+          Pattern.compile("^/dailyreport/daily\\?mode=daily&date=2026-06-10&fEmployeeContractId=\\d+$"));
+
+      page.navigate(urlWithLogin(days.first().getAttribute("href"), E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN));
+      assertThat(page.locator("#daily-mode-nav h3")).hasText("Mittwoch, 10. Juni 2026");
+    });
+  }
+
+  /**
+   * On the first day of the contract the previous week lies entirely before it: no working day is
+   * missing, and the page shows no hint rather than an empty one.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  @FixedClock("2026-06-10T09:00:00")
+  void shows_no_hint_when_no_working_day_is_missing(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN, "/dailyreport/dashboard", page -> {
+      assertThat(page.locator("body")).containsText("Diese Woche");
+      assertThat(page.locator("#unbooked-days-hint")).not().isAttached();
     });
   }
 

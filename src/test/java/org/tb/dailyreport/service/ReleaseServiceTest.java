@@ -3,7 +3,9 @@ package org.tb.dailyreport.service;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
@@ -19,16 +21,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
+import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
+import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
@@ -43,6 +48,8 @@ class ReleaseServiceTest {
     private ReleaseService classUnderTest;
     @Mock
     private TimereportDAO timereportDAO;
+    @Mock
+    private TimereportRepository timereportRepository;
     @Mock
     private WorkingdayDAO workingdayDAO;
     @Mock
@@ -909,6 +916,219 @@ class ReleaseServiceTest {
             } catch(ErrorCodeException e) {
                 return e.getMessages();
             }
+        }
+    }
+
+    /**
+     * Der Hinweis im Dashboard auf Arbeitstage der Vorwoche ohne Buchung (#1124). Die Uhr steht auf
+     * Montag, den 28.09.2026: die Vorwoche ist der 21. bis 27.09., eine Woche ohne Feiertag.
+     *
+     * <p>Welche Buchungen zählen, prüft {@code TimereportRepositoryBookedDaysTest} an der echten
+     * Abfrage; hier liefert sie nur die Tage.
+     */
+    @Nested
+    @FixedClock("2026-09-28T08:00:00")
+    class UnbookedWorkingDaysOfPreviousWeek {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 7L;
+        private static final LocalDate MONDAY = LocalDate.of(2026, 9, 21);
+        private static final LocalDate TUESDAY = MONDAY.plusDays(1);
+        private static final LocalDate WEDNESDAY = MONDAY.plusDays(2);
+        private static final LocalDate THURSDAY = MONDAY.plusDays(3);
+        private static final LocalDate FRIDAY = MONDAY.plusDays(4);
+        private static final LocalDate SUNDAY = MONDAY.plusDays(6);
+
+        @Test
+        void namesTheWeekdaysWithoutAnyBooking() {
+            // given bookings on Monday and Wednesday
+            authorized(contractFrom(MONDAY.minusYears(1)));
+            givenLoads(MONDAY, SUNDAY, List.of(MONDAY, WEDNESDAY), List.of(), List.of());
+
+            // when asking for the hint
+            final var days = classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID);
+
+            // then the other weekdays are named, and each load covered the week once
+            assertThat(days).containsExactly(TUESDAY, THURSDAY, FRIDAY);
+            verify(timereportRepository).findBookedDaysBetween(EMPLOYEE_CONTRACT_ID, MONDAY, SUNDAY);
+            verify(workingdayDAO).getWorkingdaysByEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY, SUNDAY);
+            verify(publicholidayDAO).getPublicHolidaysBetween(MONDAY, SUNDAY);
+        }
+
+        @Test
+        @FixedClock("2026-09-27T20:00:00")
+        void onSundayThePreviousWeekIsStillTheWeekBefore() {
+            // given the clock stands on Sunday evening, the last day of the current week
+            authorized(contractFrom(MONDAY.minusYears(1)));
+            givenLoads(MONDAY.minusWeeks(1), SUNDAY.minusWeeks(1), List.of(), List.of(), List.of());
+
+            // when asking for the hint
+            final var days = classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID);
+
+            // then it is about the 14th to the 20th
+            assertThat(days).containsExactly(MONDAY.minusWeeks(1), TUESDAY.minusWeeks(1),
+                WEDNESDAY.minusWeeks(1), THURSDAY.minusWeeks(1), FRIDAY.minusWeeks(1));
+        }
+
+        @Test
+        @FixedClock("2026-09-28T00:05:00")
+        void fromMondayOnTheWindowMovesOn() {
+            // given the clock stands five minutes into Monday
+            authorized(contractFrom(MONDAY.minusYears(1)));
+            givenLoads(MONDAY, SUNDAY, List.of(), List.of(), List.of());
+
+            // when asking for the hint
+            final var days = classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID);
+
+            // then the week just ended is the previous week
+            assertThat(days).containsExactly(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void aPublicHolidayIsNotNamed() {
+            authorized(contractFrom(MONDAY.minusYears(1)));
+            givenLoads(MONDAY, SUNDAY, List.of(), List.of(), List.of(new Publicholiday(THURSDAY, "Feiertag")));
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID))
+                .containsExactly(MONDAY, TUESDAY, WEDNESDAY, FRIDAY);
+        }
+
+        @Test
+        void aDayMarkedNotWorkedIsNotNamed() {
+            authorized(contractFrom(MONDAY.minusYears(1)));
+            givenLoads(MONDAY, SUNDAY, List.of(), List.of(workingday(FRIDAY, NOT_WORKED)), List.of());
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID))
+                .containsExactly(MONDAY, TUESDAY, WEDNESDAY, THURSDAY);
+        }
+
+        @Test
+        void aContractBeginningMidweekIsCheckedFromItsBeginning() {
+            authorized(contractFrom(WEDNESDAY));
+            givenLoads(MONDAY, SUNDAY, List.of(), List.of(), List.of());
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID))
+                .containsExactly(WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void aContractEndingMidweekIsCheckedUntilItsEnd() {
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            contract.setValidUntil(WEDNESDAY);
+            authorized(contract);
+            givenLoads(MONDAY, SUNDAY, List.of(), List.of(), List.of());
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID))
+                .containsExactly(MONDAY, TUESDAY, WEDNESDAY);
+        }
+
+        @Test
+        void aWeekReleasedUpToMidweekCountsItsReleasedBookingsAsBooked() {
+            // given the month ended on Thursday and was released, and every weekday is booked
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            contract.setReportReleaseDate(THURSDAY);
+            authorized(contract);
+            givenLoads(MONDAY, SUNDAY, List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY), List.of(), List.of());
+
+            // when asking for the hint
+            final var days = classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID);
+
+            // then there is no gap, and the open bookings the release looks at were never asked for
+            assertThat(days).isEmpty();
+            verifyNoInteractions(timereportDAO);
+        }
+
+        @Test
+        void aFreelancerGetsNoHint() {
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            contract.setFreelancer(true);
+            authorized(contract);
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID)).isEmpty();
+            verifyNothingLoaded();
+        }
+
+        @Test
+        void aRestrictedPersonGetsNoHint() {
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            contract.getEmployee().getSalatUser().setStatus(GlobalConstants.EMPLOYEE_STATUS_RESTRICTED);
+            authorized(contract);
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID)).isEmpty();
+            verifyNothingLoaded();
+        }
+
+        @Test
+        void aContractWithoutDailyWorkingTimeGetsNoHint() {
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            contract.setDailyWorkingTime(Duration.ZERO);
+            authorized(contract);
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID)).isEmpty();
+            verifyNothingLoaded();
+        }
+
+        @Test
+        void whoMayNotReleaseTheContractGetsNoHint() {
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(false);
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID)).isEmpty();
+            verifyNothingLoaded();
+        }
+
+        @Test
+        void aRightToReadTheReleaseIsNotEnough() {
+            // given a release rule that grants reading only
+            final var contract = contractFrom(MONDAY.minusYears(1));
+            lenient().when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.READ)).thenReturn(true);
+            lenient().when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(false);
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID)).isEmpty();
+            verifyNothingLoaded();
+        }
+
+        @Test
+        void anUnknownContractGetsNoHint() {
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(null);
+
+            assertThat(classUnderTest.getUnbookedWorkingDaysOfPreviousWeek(EMPLOYEE_CONTRACT_ID)).isEmpty();
+            verifyNoInteractions(releaseAuthorization);
+            verifyNothingLoaded();
+        }
+
+        private Employeecontract contractFrom(LocalDate validFrom) {
+            final var salatUser = new SalatUser();
+            salatUser.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var employee = new Employee();
+            employee.setSalatUser(salatUser);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(validFrom);
+            contract.setDailyWorkingTime(Duration.ofHours(8));
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            return contract;
+        }
+
+        private void authorized(Employeecontract contract) {
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+        }
+
+        private void givenLoads(LocalDate monday, LocalDate sunday, List<LocalDate> bookedDays,
+                                List<Workingday> workingdays, List<Publicholiday> publicHolidays) {
+            when(timereportRepository.findBookedDaysBetween(EMPLOYEE_CONTRACT_ID, monday, sunday)).thenReturn(bookedDays);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(EMPLOYEE_CONTRACT_ID, monday, sunday)).thenReturn(workingdays);
+            when(publicholidayDAO.getPublicHolidaysBetween(monday, sunday)).thenReturn(publicHolidays);
+        }
+
+        private Workingday workingday(LocalDate date, Workingday.WorkingDayType type) {
+            final var workingday = new Workingday();
+            workingday.setRefday(date);
+            workingday.setType(type);
+            return workingday;
+        }
+
+        private void verifyNothingLoaded() {
+            verifyNoInteractions(timereportRepository, timereportDAO, workingdayDAO, publicholidayDAO);
         }
     }
 }

@@ -33,6 +33,32 @@
   }
 </style>
 
+  <!-- Previous week: working days without booking -->
+  <!--/* Jeder Arbeitstag der Vorwoche ohne Buchung, mit Link in seine Tagesansicht (#1124). Welche
+         Tage das sind, entscheidet allein der Service (UnbookedWorkingDays); hier wird nur gezeigt.
+         Der Vertrag steht ausdruecklich im Link: die Tagesansicht soll genau den Vertrag zeigen,
+         dessen Luecke hier steht, auch wenn das Dashboard ihn nur ueber den Login gefunden hat.
+         Ein .alert und keine .card: die Karten darunter werden im E2E-Test ueber ihren Text
+         gefunden. Farben: Schrift, alert-heading (color: inherit) und alert-link tragen alle
+         --tblr-alert-color, den salat.css fuer .alert-warning in beiden Modi gemessen setzt. */-->
+  <div th:if="${not #lists.isEmpty(unbookedDays)}" id="unbooked-days-hint" class="alert alert-warning mb-3">
+    <div class="d-flex align-items-start gap-2">
+      <i class="bi bi-calendar-x mt-1" aria-hidden="true"></i>
+      <div class="flex-fill">
+        <h4 class="alert-heading mb-1"
+            th:text="#{main.welcome.unbooked.title(${#lists.size(unbookedDays)})}">2 Arbeitstage der Vorwoche ohne Buchung</h4>
+        <div th:text="#{main.welcome.unbooked.text}">An diesen Arbeitstagen ist nichts gebucht.</div>
+        <ul class="mb-0 mt-2 ps-3">
+          <li th:each="day : ${unbookedDays}">
+            <a class="alert-link"
+               th:href="@{/dailyreport/daily(mode='daily',date=${day},fEmployeeContractId=${shownContractId})}"
+               th:text="${#temporals.format(day, 'EEEE, dd.MM.yyyy')}">Dienstag, 22.09.2026</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <!-- KPI row: week hours, month hours, last log, reports status -->
   <div class="row g-3 mb-3">
 
