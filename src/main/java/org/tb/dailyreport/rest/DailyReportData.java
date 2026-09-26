@@ -3,7 +3,10 @@ package org.tb.dailyreport.rest;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import com.opencsv.bean.CsvBindByPosition;
+import com.opencsv.bean.CsvCustomBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -84,9 +87,17 @@ public class DailyReportData {
         nullable = true)
     private String ticketReference;
 
-    @Schema(description = "Gibt an, ob in dieser Zeit eine besondere Lernleistung ähnlich einer Schulung stattgefunden hat",
+    /**
+     * Optional in JSON and CSV: a missing or empty value is {@code false} (#1140). Jackson 3 builds
+     * this class through its constructor, not through the builder, so the fallback has to sit on the
+     * property: without it a missing primitive is rejected.
+     */
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    @CsvCustomBindByPosition(position = 10, converter = DailyWorkingReportCsvConverter.TrainingFlagConverter.class)
+    @Schema(description = "Gibt an, ob in dieser Zeit eine besondere Lernleistung ähnlich einer Schulung stattgefunden hat. "
+        + "Fehlt das Feld oder ist es null, gilt false.",
         example = "false",
-        requiredMode = REQUIRED)
+        nullable = true)
     private boolean training;
 
     public static DailyReportData valueOf(TimereportDTO timeReport) {

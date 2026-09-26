@@ -15,7 +15,8 @@ public record ImportReport(List<DayResult> days, int linesRead) implements Seria
         long hours,
         long minutes,
         String comment,
-        String ticketReference
+        String ticketReference,
+        boolean training
     ) implements Serializable {}
 
     public record UpdatedBookingDetail(

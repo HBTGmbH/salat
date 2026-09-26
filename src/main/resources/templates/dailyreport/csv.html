@@ -72,7 +72,10 @@
             </thead>
             <tbody>
             <tr th:each="b : ${day.bookingsCreated()}">
-              <td class="text-nowrap font-monospace small" th:text="${b.suborderSign()}">ALPHA-DEV</td>
+              <td class="text-nowrap font-monospace small">
+                <th:block th:text="${b.suborderSign()}">ALPHA-DEV</th:block>
+                <span th:if="${b.training()}" class="badge bg-purple-lt ms-1" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+              </td>
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
               <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">initial setup</td>
@@ -95,7 +98,11 @@
             </thead>
             <tbody>
             <tr th:each="u : ${day.bookingsUpdated()}">
-              <td class="text-nowrap font-monospace small" th:text="${u.to().suborderSign()}">ALPHA-DEV</td>
+              <td class="text-nowrap font-monospace small">
+                <th:block th:text="${u.to().suborderSign()}">ALPHA-DEV</th:block>
+                <span th:if="${u.to().training()}" class="badge bg-purple-lt ms-1" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+                <span th:if="${u.from().training() and !u.to().training()}" class="badge bg-purple-lt ms-1 text-decoration-line-through" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+              </td>
               <td class="small" th:text="${u.to().suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small">
                   <span th:if="${u.from().hours() != u.to().hours() or u.from().minutes() != u.to().minutes()}"
@@ -134,7 +141,10 @@
             </thead>
             <tbody>
             <tr th:each="b : ${day.bookingsDeleted()}">
-              <td class="text-nowrap font-monospace small" th:text="${b.suborderSign()}">ALPHA-DEV</td>
+              <td class="text-nowrap font-monospace small">
+                <th:block th:text="${b.suborderSign()}">ALPHA-DEV</th:block>
+                <span th:if="${b.training()}" class="badge bg-purple-lt ms-1" th:title="#{main.suborder.trainingflag.text}"><i class="bi bi-mortarboard"></i></span>
+              </td>
               <td class="small" th:text="${b.suborderLabel()}">Backend Development</td>
               <td class="text-nowrap small" th:text="${#numbers.formatInteger(b.hours(),2,'NONE') + ':' + #numbers.formatInteger(b.minutes(),2,'NONE')}">03:00</td>
               <td class="small text-muted" style="white-space: pre-wrap" th:text="${b.comment()}">initial setup</td>
@@ -388,15 +398,23 @@
               <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.ticketreference.notes.text}">Ticket reference; empty means none</td>
             </tr>
+            <tr>
+              <td class="text-muted">12</td>
+              <td class="fw-medium">training</td>
+              <td class="text-muted">true · false</td>
+              <td class="font-monospace small">false</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.training.notes.text}">Training booking; empty or missing means false</td>
+            </tr>
           </tbody>
         </table>
       </div>
       <p class="text-muted small mb-1 mt-3" th:text="#{main.dailyreport.csv.format.example.two.bookings.text}">Example &mdash; day with two bookings:</p>
-      <pre class="rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
-2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,DEV-BACKEND,Backend Development,03:00,initial setup,PROJ-123
-2026-06-02,,,,78,ALPHA,Alpha Projekt,DEV-FRONTEND,Frontend Development,01:30,refactoring,</pre>
+      <pre class="rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
+2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,DEV-BACKEND,Backend Development,03:00,initial setup,PROJ-123,false
+2026-06-02,,,,78,ALPHA,Alpha Projekt,DEV-FRONTEND,Frontend Development,01:30,refactoring,,true</pre>
       <p class="text-muted small mb-1" th:text="#{main.dailyreport.csv.format.example.not.worked.text}">Example &mdash; not-worked day (no bookings):</p>
-      <pre class="rounded p-3 small mb-0">2026-06-09,NOT_WORKED,,,,,,,,,,</pre>
+      <pre class="rounded p-3 small mb-0">2026-06-09,NOT_WORKED,,,,,,,,,,,</pre>
     </div>
   </div>
 
