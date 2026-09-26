@@ -27,6 +27,7 @@ import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.dailyreport.service.OvertimeService;
+import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.VacationService;
 import org.tb.dailyreport.viewhelper.OvertimeScale;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
@@ -59,6 +60,7 @@ public class DashboardController {
     private final VacationService vacationService;
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
+    private final ReleaseService releaseService;
     private final MessageSourceAccessor messageSourceAccessor;
     @GetMapping
     public String dashboard(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
@@ -83,6 +85,9 @@ public class DashboardController {
         model.addAttribute("acceptanceColorClass", employeecontract.getAcceptanceWarning() ? "danger" : "success");
         addOvertimeAttributes(model, overtimeStatus);
         model.addAttribute("vacations", vacations);
+        // the hint follows the contract the page shows, and its links name it (#1124)
+        model.addAttribute("unbookedDays", releaseService.getUnbookedWorkingDaysOfPreviousWeek(employeecontract.getId()));
+        model.addAttribute("shownContractId", employeecontract.getId());
 
         calculateEmployeeInfo(model, employeecontract);
 

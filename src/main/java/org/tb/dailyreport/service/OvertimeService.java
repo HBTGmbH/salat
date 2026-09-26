@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.domain.OvertimeBalance;
 import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.domain.OvertimeReportMonth;
 import org.tb.dailyreport.domain.OvertimeReportTotal;
@@ -58,12 +59,23 @@ public class OvertimeService {
   private final EmployeeorderService employeeorderService;
 
   public Optional<Duration> calculateOvertime(long employeecontractId, LocalDate begin, LocalDate end) {
+    return calculateOvertimeBalance(employeecontractId, begin, end).map(OvertimeBalance::diff);
+  }
+
+  /**
+   * Die Bilanz von {@code begin} bis {@code end}, aus derselben Rechnung wie das Überstundenkonto
+   * (#760): Soll, gebuchte Arbeitszeit, Anpassungen und die Differenz, um die sich das Konto über
+   * den Zeitraum ändert. Leer, wenn der Vertrag keine Tagesarbeitszeit hat — dann wird kein
+   * Überstundenkonto geführt.
+   */
+  public Optional<OvertimeBalance> calculateOvertimeBalance(long employeecontractId, LocalDate begin, LocalDate end) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
     if(employeecontract.getDailyWorkingTime().isZero()) {
       return Optional.empty();
     }
 
-    return Optional.of(calculateOvertime(begin, end, employeecontract, true).getDiff());
+    var overtime = calculateOvertime(begin, end, employeecontract, true);
+    return Optional.of(new OvertimeBalance(overtime.getTarget(), overtime.getActual(), overtime.getAdjustment(), overtime.getDiff()));
   }
 
   public Optional<OvertimeStatus> calculateOvertime(long employeecontractId, boolean includeToday) {

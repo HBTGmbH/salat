@@ -10,6 +10,13 @@ public class TimereportForm {
 
     private Long id;
 
+    /**
+     * The contract a new booking is for, when the form was opened for one (#760); {@code null}
+     * otherwise, and then the remembered selection applies. An edited booking ignores it: it stays
+     * with its own person (#1128).
+     */
+    private Long employeecontractId;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate referenceday;
 

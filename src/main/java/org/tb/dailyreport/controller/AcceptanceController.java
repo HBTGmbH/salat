@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +23,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.ReleaseService;
+import org.tb.dailyreport.viewhelper.ReviewLinks;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -34,6 +39,8 @@ import org.tb.employee.service.EmployeecontractService;
 @RequiredArgsConstructor
 @Authorized(requiresPeopleLead = true)
 public class AcceptanceController {
+
+    private static final String RELEASE_REVIEW_PATH = "/acceptance/release/review";
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
@@ -90,18 +97,56 @@ public class AcceptanceController {
         return "dailyreport/acceptance";
     }
 
+    /**
+     * Die Übersicht vor der Freigabe für die gewählte Person (#760) — dieselbe wie bei der eigenen
+     * Freigabe. Anders als dort nennt die Adresse den Vertrag, denn hier ist nicht die gemerkte
+     * Auswahl der Tagesansicht gemeint, sondern die der Abnahme. Ohne Vertrag oder Monat geht es
+     * zurück zur Abnahme; wer für den Vertrag nicht freigeben darf, bekommt 403 (Service).
+     */
+    @GetMapping("/release/review")
+    public String releaseReview(@RequestParam(required = false) Long contractId,
+                                @RequestParam(required = false) String until,
+                                @RequestParam(required = false) String view,
+                                Model model) {
+        var month = ReviewPage.month(until);
+        if (contractId == null || month.isEmpty()
+            || employeecontractService.getEmployeecontractById(contractId) == null) {
+            return "redirect:/acceptance";
+        }
+        var effectiveView = ReviewLinks.viewOf(view);
+        var review = releaseService.reviewRelease(contractId, month.get().atEndOfMonth());
+        var links = ReviewLinks.of(RELEASE_REVIEW_PATH, contractId, month.get(), effectiveView,
+            "/acceptance/release", "/acceptance");
+        ReviewPage.addReview(model, review, links, effectiveView, errorCodeViewHelper);
+        model.addAttribute("section", "backoffice");
+        model.addAttribute("subSection", "acceptance");
+        model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.release.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
+        return ReviewPage.VIEW_NAME;
+    }
+
+    /**
+     * Gibt genau den Zeitraum frei, den die Übersicht gezeigt hat (#760). Nach dem Freigeben geht es
+     * ohne Filterparameter zurück: die Auswahl der Abnahme ist gemerkt, und Speichern ändert den
+     * Filter nicht (ADR-0023). Scheitert es, geht es zurück in die Übersicht derselben Person.
+     */
     @PostMapping("/release")
-    public String release(@RequestParam Long contractId,
-                          @RequestParam(required = false) String releaseDate,
+    public String release(@RequestParam long contractId,
+                          @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate periodBegin,
+                          @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate periodEnd,
+                          @RequestParam(required = false) String view,
                           RedirectAttributes redirectAttributes) {
         try {
-            releaseService.releaseTimereports(contractId, parseEndOfMonth(releaseDate));
+            releaseService.releaseTimereports(contractId, periodBegin, periodEnd);
             redirectAttributes.addFlashAttribute("toastSuccess",
-                messages.getMessage("main.release.releasetimeperiod.text"));
-        } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
+                ReviewPage.releasedMessage(messages, periodBegin, periodEnd));
+            return "redirect:/acceptance";
+        } catch (BusinessRuleException | InvalidDataException ex) {
+            redirectAttributes.addFlashAttribute("toastError", ReviewPage.failureMessage(ex, errorCodeViewHelper,
+                messages, "main.release.review.notreleased.text"));
+            return "redirect:" + ReviewLinks.of(RELEASE_REVIEW_PATH, contractId, YearMonth.from(periodEnd),
+                ReviewLinks.viewOf(view), "/acceptance/release", "/acceptance").currentUrl();
         }
-        return "redirect:/acceptance?contractId=" + contractId;
     }
 
     @PostMapping("/accept")

@@ -7,9 +7,10 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,18 +19,36 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
-import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.exception.BusinessRuleException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.ReleaseService;
+import org.tb.dailyreport.viewhelper.ReviewLinks;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 
+/**
+ * Die eigene Freigabe (#760): der Monat wird gewählt, die Übersicht zeigt die Buchungen des
+ * Zeitraums, und aus ihr heraus wird genau dieser Zeitraum freigegeben. Die Übersicht ersetzt den
+ * Bestätigungsdialog, den das Freigeben bis dahin hatte (ADR-0027, Nachtrag #760).
+ *
+ * <p>Die Klasse trägt bewusst ein nacktes {@code @Authorized}, also nur „angemeldet", und nicht
+ * {@code requireUnrestricted = true}, wie AGENTS.md es für Controller verlangt: auch Externe und
+ * Praktikanten buchen und geben ihre eigenen Stunden frei. Ob jemand einen <em>bestimmten</em>
+ * Vertrag sehen und freigeben darf — die eigene Person, die Geschäftsführung, die zuständige People
+ * Lead oder eine Regel der Kategorie {@code RELEASE_TIMEREPORTS} —, entscheidet
+ * {@link ReleaseService} je Vertrag, für die Übersicht wie für das Freigeben. Der Vertrag kommt aus
+ * der gemerkten Auswahl {@code fEmployeeContractId} und damit aus der Anfrage; eine Prüfung hier
+ * wäre deshalb keine.
+ */
 @Controller
 @RequestMapping("/release")
 @RequiredArgsConstructor
 @Authorized
 public class ReleaseController {
+
+    private static final String REVIEW_PATH = "/release/review";
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
@@ -59,23 +78,68 @@ public class ReleaseController {
         return "dailyreport/release";
     }
 
-    @PostMapping
-    public String release(@RequestParam(required = false) Long fEmployeeContractId,
-                          @RequestParam(required = false) String selfReleaseDate,
-                          RedirectAttributes redirectAttributes) {
-        var effectiveContractId = effectiveContractId(fEmployeeContractId);
-        var contract = employeecontractService.getEmployeecontractById(effectiveContractId);
+    /**
+     * Die Übersicht über den Zeitraum, den eine Freigabe bis zum Ende von {@code until} erfasst. Der
+     * Vertrag kommt wie auf der Seite davor aus der gemerkten Auswahl. Ohne Monat oder ohne Vertrag
+     * gibt es nichts zu zeigen, dann geht es zurück zur Auswahl.
+     *
+     * @param view {@code day} für die Sicht nach Tag, sonst nach Auftrag
+     */
+    @GetMapping("/review")
+    public String review(@RequestParam(required = false) Long fEmployeeContractId,
+                         @RequestParam(required = false) String until,
+                         @RequestParam(required = false) String view,
+                         Model model) {
+        var month = ReviewPage.month(until);
+        if (month.isEmpty()) {
+            return "redirect:/release";
+        }
+        var contract = employeecontractService.getEmployeecontractById(effectiveContractId(fEmployeeContractId));
         if (contract == null) {
             return "redirect:/release";
         }
+        var effectiveView = ReviewLinks.viewOf(view);
+        var review = releaseService.reviewRelease(contract.getId(), month.get().atEndOfMonth());
+        var links = ReviewLinks.of(REVIEW_PATH, null, month.get(), effectiveView, "/release", "/release");
+        ReviewPage.addReview(model, review, links, effectiveView, errorCodeViewHelper);
+        model.addAttribute("section", "dailyreport");
+        model.addAttribute("subSection", "release");
+        model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.release.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
+        return ReviewPage.VIEW_NAME;
+    }
+
+    /**
+     * Gibt genau den Zeitraum frei, den die Übersicht gezeigt hat: Vertrag, Anfang und Ende kommen
+     * aus ihrem Formular, nicht aus der gemerkten Auswahl, die sich in einem zweiten Fenster geändert
+     * haben kann. Ob sich der Zeitraum inzwischen geändert hat, prüft der Service.
+     *
+     * <p>Scheitert es, geht es zurück in die Übersicht, die die Befunde zeigt — außer die gemerkte
+     * Auswahl nennt inzwischen einen anderen Vertrag: dann zeigte die Übersicht eine andere Person,
+     * und es geht zurück zur Auswahl. Eine fehlende Berechtigung wird nicht abgefangen, sie endet als
+     * 403 auf der Fehlerseite.
+     */
+    @PostMapping
+    public String release(@RequestParam(required = false) Long fEmployeeContractId,
+                          @RequestParam long contractId,
+                          @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate periodBegin,
+                          @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate periodEnd,
+                          @RequestParam(required = false) String view,
+                          RedirectAttributes redirectAttributes) {
         try {
-            releaseService.releaseTimereports(contract.getId(), parseEndOfMonth(selfReleaseDate));
+            releaseService.releaseTimereports(contractId, periodBegin, periodEnd);
             redirectAttributes.addFlashAttribute("toastSuccess",
-                messages.getMessage("main.release.releasetimeperiod.text"));
-        } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
+                ReviewPage.releasedMessage(messages, periodBegin, periodEnd));
+            return "redirect:/release";
+        } catch (BusinessRuleException | InvalidDataException ex) {
+            redirectAttributes.addFlashAttribute("toastError", ReviewPage.failureMessage(ex, errorCodeViewHelper,
+                messages, "main.release.review.notreleased.text"));
+            if (contractId != effectiveContractId(fEmployeeContractId)) {
+                return "redirect:/release";
+            }
+            return "redirect:" + ReviewLinks.of(REVIEW_PATH, null, YearMonth.from(periodEnd),
+                ReviewLinks.viewOf(view), "/release", "/release").currentUrl();
         }
-        return "redirect:/release";
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {
@@ -101,12 +165,10 @@ public class ReleaseController {
         return YearMonth.from(contract.getValidUntil()).toString();
     }
 
-    private List<String> allMessages(ErrorCodeException ex) {
-        var msgs = errorCodeViewHelper.toViewMessages(ex);
-        if (msgs.isEmpty()) return List.of("Error");
-        return msgs.stream().map(m -> m.resolved()).toList();
-    }
-
+    /**
+     * Das Ende des gewählten Monats; ein leeres Feld heißt „bis heute". Nur noch für die Abnahme,
+     * bis auch sie eine Übersicht bekommt (#1122).
+     */
     static LocalDate parseEndOfMonth(String s) {
         if (s == null || s.isBlank()) return today();
         return YearMonth.parse(s).atEndOfMonth();

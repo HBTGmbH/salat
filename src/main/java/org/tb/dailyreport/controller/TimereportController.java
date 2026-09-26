@@ -74,8 +74,16 @@ public class TimereportController {
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
 
+    /**
+     * The empty booking form. It books on the remembered selection, unless the link names the
+     * contract itself ({@code employeecontractId}, #760) — the overview before a release does, since
+     * the person it shows need not be the one remembered, for instance when a manager releases for
+     * someone via the acceptance page. The name is the form field's, not the filter's, so opening
+     * the form changes no selection (ADR-0023).
+     */
     @GetMapping("/new")
     public String createForm(@RequestParam(required = false) Long fEmployeeContractId,
+                             @RequestParam(required = false) Long employeecontractId,
                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                              @RequestParam(required = false) Long suborderId,
                              @RequestParam(required = false) String duration,
@@ -85,7 +93,7 @@ public class TimereportController {
             Model model) {
 
         LocalDate effectiveDate = date != null ? date : today();
-        long ecId = effectiveContractId(fEmployeeContractId);
+        long ecId = contractIdForNew(employeecontractId, fEmployeeContractId);
 
         var suborders = suborderOptions(ecId, effectiveDate);
         var preferences = timereportPreferenceService.getForCurrentUser();
@@ -97,6 +105,7 @@ public class TimereportController {
                 .orElse(suborders.isEmpty() ? null : suborders.get(0).id());
 
         var form = new TimereportForm();
+        form.setEmployeecontractId(isSet(employeecontractId) ? employeecontractId : null);
         form.setReferenceday(effectiveDate);
         form.setSuborderId(defaultSuborderId);
         // #844: preset the entry mode the user prefers. Stays empty while they have no preference
@@ -268,7 +277,7 @@ public class TimereportController {
             return "redirect:/dailyreport/daily";
         }
 
-        String redirectTarget = safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + tr.getReferenceday());
+        String redirectTarget = ReturnUrls.orElse(returnUrl, "/dailyreport/daily?mode=daily&date=" + tr.getReferenceday());
 
         if (recipientUserIds == null || recipientUserIds.isEmpty()) {
             redirectAttributes.addFlashAttribute("toastWarning",
@@ -315,10 +324,10 @@ public class TimereportController {
             Boolean shareWithColleagues, List<Long> recipientUserIds, String returnUrl,
             Boolean saveAndNew, RedirectAttributes redirectAttributes, Model model) {
 
-        // an edited booking stays with its own person (#1128)
+        // an edited booking stays with its own person (#1128); the write check stays the service's
         long ecId = isEdit
                 ? timereportService.getEmployeecontractIdForUpdate(form.getId(), form.getReferenceday())
-                : effectiveContractId(fEmployeeContractId);
+                : contractIdForNew(form.getEmployeecontractId(), fEmployeeContractId);
         LocalDate date = form.getReferenceday();
 
         boolean beginEndMode = DurationInputMode.ofFormValue(form.getDurationMode()) == BEGIN_END;
@@ -434,9 +443,9 @@ public class TimereportController {
                     ? "main.timereport.update.success.text"
                     : "main.timereport.create.success.text"));
             if (!isEdit && Boolean.TRUE.equals(saveAndNew)) {
-                return "redirect:" + nextBookingUrl(date, fEmployeeContractId, returnUrl);
+                return "redirect:" + nextBookingUrl(date, fEmployeeContractId, form.getEmployeecontractId(), returnUrl);
             }
-            return "redirect:" + safeReturnUrl(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
+            return "redirect:" + ReturnUrls.orElse(returnUrl, "/dailyreport/daily?mode=daily&date=" + date);
 
         } catch (ErrorCodeException ex) {
             var suborders = suborderOptions(ecId, date);
@@ -502,7 +511,9 @@ public class TimereportController {
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         boolean canShare = !isEdit || ecId == effectiveContractId(fEmployeeContractId);
         model.addAttribute("canShare", canShare);
-        model.addAttribute("returnUrl", returnUrl);
+        // the form renders the target as a hidden field and as the link "Abbrechen"; without one,
+        // "Abbrechen" leads to the daily view of the booked day (#1133)
+        model.addAttribute("returnUrl", ReturnUrls.orElse(returnUrl, null));
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "timereports");
         model.addAttribute("sectionTitle",
@@ -575,13 +586,31 @@ public class TimereportController {
     /**
      * The contract the form offers orders and bookings for. The hidden id is only rendered when a
      * booking is edited, and an edited booking stays with its own person (#1128); a new one follows
-     * the remembered selection.
+     * the contract the form was opened for.
      */
     private long contractIdFor(Long fEmployeeContractId, TimereportForm form) {
         if (form.getId() != null) {
             return timereportService.getEmployeecontractIdForUpdate(form.getId(), form.getReferenceday());
         }
+        return contractIdForNew(form.getEmployeecontractId(), fEmployeeContractId);
+    }
+
+    /**
+     * The contract a new booking is for: the one the form was opened for (#760), otherwise the
+     * remembered selection. The named contract is read with the READ check, so a link cannot open
+     * the form — its orders and recent bookings — for a contract the user may not see; whether they
+     * may book on it is still decided when saving ({@code TimereportService}, WRITE).
+     */
+    private long contractIdForNew(Long employeecontractId, Long fEmployeeContractId) {
+        if (isSet(employeecontractId)) {
+            var contract = employeecontractService.getEmployeecontractForView(employeecontractId);
+            return contract != null ? contract.getId() : -1L;
+        }
         return effectiveContractId(fEmployeeContractId);
+    }
+
+    private static boolean isSet(Long contractId) {
+        return contractId != null && contractId > 0;
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {
@@ -606,27 +635,21 @@ public class TimereportController {
             .orElseGet(() -> new int[]{0, 0});
     }
 
-    private static String safeReturnUrl(String returnUrl, String fallback) {
-        return isSafeReturnUrl(returnUrl) ? returnUrl : fallback;
-    }
-
-    /** Only the daily view is a legitimate return target; anything else could redirect off-site. */
-    private static boolean isSafeReturnUrl(String returnUrl) {
-        return returnUrl != null && returnUrl.startsWith("/dailyreport/daily");
-    }
-
     /**
      * "Speichern und neu" (#843): back to an empty booking form for the same day instead of the
      * daily view, so several bookings can be entered in a row. Carries over only the context the
      * next booking needs — the day, the contract being booked on, and where "Abbrechen" leads;
-     * suborder, duration and comment are deliberately left empty for the next entry.
+     * suborder, duration and comment are deliberately left empty for the next entry. A form opened
+     * for a named contract (#760) opens the next one for it as well.
      */
-    static String nextBookingUrl(LocalDate date, Long fEmployeeContractId, String returnUrl) {
+    static String nextBookingUrl(LocalDate date, Long fEmployeeContractId, Long employeecontractId, String returnUrl) {
         var url = new StringBuilder("/dailyreport/timereports/new?date=").append(date);
-        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
+        if (isSet(employeecontractId)) {
+            url.append("&employeecontractId=").append(employeecontractId);
+        } else if (isSet(fEmployeeContractId)) {
             url.append("&fEmployeeContractId=").append(fEmployeeContractId);
         }
-        if (isSafeReturnUrl(returnUrl)) {
+        if (ReturnUrls.isSafe(returnUrl)) {
             url.append("&returnUrl=").append(encode(returnUrl, UTF_8));
         }
         return url.toString();
