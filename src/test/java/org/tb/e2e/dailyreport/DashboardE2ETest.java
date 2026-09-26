@@ -4,11 +4,15 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
 import org.tb.e2e.PlaywrightE2ETestBase;
+import org.tb.employee.persistence.EmployeeRepository;
+import org.tb.employee.persistence.EmployeecontractRepository;
 
 /**
  * Verifies the dailyreport dashboard (the post-login landing page, see the
@@ -16,6 +20,11 @@ import org.tb.e2e.PlaywrightE2ETestBase;
  * widgets for a logged-in employee.
  */
 class DashboardE2ETest extends PlaywrightE2ETestBase {
+
+  @Autowired
+  private EmployeeRepository employeeRepository;
+  @Autowired
+  private EmployeecontractRepository employeecontractRepository;
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
@@ -65,6 +74,51 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
       assertThat(cardOf(page, "gesamt").getByText("in Ordnung")).not().isVisible();
       assertThat(page.locator(".overtime-legend-popover")).not().isAttached();
     });
+  }
+
+  /**
+   * {@code fEmployeeContractId} of a contract the login may not read shows the own contract, not the
+   * foreign one (#1134). The release date tells the two apart: the regular employee's contract is
+   * released, the restricted one's is not. Comparing against the own dashboard instead of a fixed
+   * date keeps the test independent of other tests that release bookings. The restricted login also
+   * shows that the controller's {@code @Authorized} still admits status {@code restricted}.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_foreign_contract_shows_the_own_one(E2EBrowser browser) {
+    var foreignContractId = contractIdOf(E2ETestData.EMPLOYEE_MA_SIGN);
+    runAsUser(browser, E2ETestData.EMPLOYEE_RESTRICTED_SIGN, "/dailyreport/dashboard", page -> {
+      var ownRelease = releaseCardOf(page).innerText();
+
+      page.navigate(urlWithLogin("/dailyreport/dashboard?fEmployeeContractId=" + foreignContractId,
+          E2ETestData.EMPLOYEE_RESTRICTED_SIGN));
+
+      assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/dashboard.*"));
+      assertThat(releaseCardOf(page)).hasText(ownRelease);
+    });
+  }
+
+  /** A people lead reads the contract of their team member, as before #1134. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_people_lead_sees_the_contract_of_the_team_member(E2EBrowser browser) {
+    var teamContractId = contractIdOf(E2ETestData.EMPLOYEE_MA_SIGN);
+    var teamRelease = new AtomicReference<String>();
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard",
+        page -> teamRelease.set(releaseCardOf(page).innerText()));
+
+    runAsUser(browser, E2ETestData.EMPLOYEE_PV_SIGN,
+        "/dailyreport/dashboard?fEmployeeContractId=" + teamContractId,
+        page -> assertThat(releaseCardOf(page)).hasText(teamRelease.get()));
+  }
+
+  private long contractIdOf(String employeeSign) {
+    var employee = employeeRepository.findBySign(employeeSign).orElseThrow();
+    return employeecontractRepository.findAllByEmployeeId(employee.getId()).getFirst().getId();
+  }
+
+  private static Locator releaseCardOf(Page page) {
+    return cardOf(page, "Freigegeben bis").locator(".badge");
   }
 
   private static Locator cardOf(Page page, String text) {
