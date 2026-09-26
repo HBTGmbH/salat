@@ -1,5 +1,6 @@
 package org.tb.dailyreport.service;
 
+import static java.lang.Boolean.TRUE;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.function.Function.identity;
@@ -24,12 +25,14 @@ import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 import static org.tb.common.util.DateTimeUtils.now;
 import static org.tb.common.util.DateUtils.min;
+import static org.tb.common.util.DateUtils.today;
 import static org.tb.dailyreport.service.TimereportService.isRelevantForWorkingTimeValidation;
 import static org.tb.dailyreport.service.TimereportService.noTimeReportsFound;
 import static org.tb.dailyreport.service.TimereportService.validateBeginOfWorkingDay;
 import static org.tb.dailyreport.service.TimereportService.validateBreakTime;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -282,6 +286,65 @@ public class ReleaseService {
     if(!messages.isEmpty()) {
       throw new BusinessRuleException(messages);
     }
+  }
+
+  /**
+   * Die Arbeitstage der Vorwoche ohne Buchung, für den Hinweis im Dashboard (#1124). Vorwoche heißt
+   * Montag bis Sonntag vor der laufenden Woche; ab Montag rückt sie weiter. Was ein Arbeitstag ohne
+   * Buchung ist, entscheidet {@link UnbookedWorkingDays}, dieselbe Regel wie bei der Freigabe.
+   *
+   * <p>Anders als bei der Freigabe zählt eine Buchung jedes Status: ein Monatsende mitten in der
+   * Woche lässt Tage zurück, die schon freigegeben und trotzdem gebucht sind — mit nur den offenen
+   * Buchungen erschienen sie als Lücke.
+   *
+   * <p>Keinen Hinweis bekommen Freelancer, Personen mit Status {@code restricted} und Verträge ohne
+   * Sollarbeitszeit (entschieden in #1123). Die Ausnahmen gehören zum Hinweis, nicht zur Regel: die
+   * Freigabe prüft auch diese Verträge.
+   *
+   * <p>Die Buchungstage kommen ohne den zeilenweisen READ-Filter von {@code TimereportDAO}. Der ist
+   * hier entbehrlich, weil vorher das Schreibrecht auf die Freigabe verlangt wird, und das beruht auf
+   * drei Voraussetzungen:
+   * <ul>
+   *   <li>{@link ReleaseAuthorization#isReleaseAuthorized} lässt die Person selbst, die
+   *       Geschäftsführung, die zuständige Personalverantwortung, Admins und Inhaber einer
+   *       Freigaberegel mit Schreibrecht zu;</li>
+   *   <li>die ersten vier dürfen nach {@code TimereportAuthorization} jede Buchung des Vertrags
+   *       lesen;</li>
+   *   <li>wer über eine Regel freigibt, bekommt genau diese Lücken bei der Freigabe ohnehin als
+   *       {@code WD_NO_TIMEREPORT} gemeldet. Deshalb {@code WRITE}: wer die Freigabe nur lesen darf,
+   *       kann nicht freigeben, und für ihn trüge diese Voraussetzung nicht.</li>
+   * </ul>
+   * Wer nicht freigeben darf, bekommt eine leere Liste statt einer Ausnahme — ein gemerkter fremder
+   * Vertrag soll die Startseite nicht sperren.
+   *
+   * <p>Die Startseite ruft das bei jedem Aufruf: Buchungstage, Arbeitstage und Feiertage werden je
+   * einmal für die ganze Woche geladen, nie je Tag, und für einen ausgenommenen Vertrag gar nicht.
+   */
+  @Transactional(readOnly = true)
+  public List<LocalDate> getUnbookedWorkingDaysOfPreviousWeek(long employeecontractId) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    if (contract == null || !releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)) {
+      return List.of();
+    }
+    if (TRUE.equals(contract.getFreelancer())
+        || contract.getEmployee().isRestricted()
+        || contract.getDailyWorkingTime().isZero()) {
+      return List.of();
+    }
+
+    var monday = today().with(DayOfWeek.MONDAY).minusWeeks(1);
+    var sunday = monday.plusDays(6);
+
+    var bookedDays = Set.copyOf(timereportRepository.findBookedDaysBetween(employeecontractId, monday, sunday));
+    var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, monday, sunday)
+        .stream()
+        .collect(toMap(Workingday::getRefday, identity()));
+    var publicHolidays = publicholidayDAO.getPublicHolidaysBetween(monday, sunday)
+        .stream()
+        .map(Publicholiday::getRefdate)
+        .collect(Collectors.toSet());
+
+    return UnbookedWorkingDays.between(monday, sunday, contract, bookedDays, workingDays, publicHolidays);
   }
 
   private void releaseTimereport(long timereportId, String releasedBy) {

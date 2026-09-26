@@ -118,6 +118,21 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
       """)
   List<String> findDistinctCustomerorderSignsBetween(LocalDate from, LocalDate until);
 
+  /**
+   * The days in {@code [from, until]} on which the contract has at least one booking (#1124), each
+   * once. Every status and every order type counts, an absence as much as project work: the
+   * question is whether anything was booked, not what. Dates rather than bookings, because the
+   * caller only asks which days are empty — and without the per-row READ filter of
+   * {@code TimereportDAO}, under which a booking the viewer may not read would look like a gap.
+   * Whoever calls this answers for the authorization.
+   */
+  @Query("""
+      select distinct t.referenceday.refdate from Timereport t
+      where t.deleted = false and t.employeecontract.id = :employeecontractId
+        and t.referenceday.refdate between :from and :until
+      """)
+  List<LocalDate> findBookedDaysBetween(long employeecontractId, LocalDate from, LocalDate until);
+
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
       + "where tr.deleted = false and tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId")
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);
