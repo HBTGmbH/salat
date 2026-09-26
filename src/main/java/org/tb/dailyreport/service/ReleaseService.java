@@ -1,7 +1,5 @@
 package org.tb.dailyreport.service;
 
-import static java.time.DayOfWeek.SATURDAY;
-import static java.time.DayOfWeek.SUNDAY;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.function.Function.identity;
@@ -26,8 +24,6 @@ import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 import static org.tb.common.util.DateTimeUtils.now;
 import static org.tb.common.util.DateUtils.min;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
-import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 import static org.tb.dailyreport.service.TimereportService.isRelevantForWorkingTimeValidation;
 import static org.tb.dailyreport.service.TimereportService.noTimeReportsFound;
 import static org.tb.dailyreport.service.TimereportService.validateBeginOfWorkingDay;
@@ -64,6 +60,7 @@ import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.UnbookedWorkingDays;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -275,27 +272,11 @@ public class ReleaseService {
         .map(Publicholiday::getRefdate)
         .collect(Collectors.toSet());
 
-    final var timeReportsByDate = timereports
-        .stream()
-        .collect(groupingBy(TimereportDTO::getReferenceday));
-
-    // check if all working days have been booked correctly
-    begin.datesUntil(end.plusDays(1))
-        .filter(date -> date.getDayOfWeek() != SATURDAY && date.getDayOfWeek() != SUNDAY)
-        .filter(date -> !publicHolidays.contains(date))
-        .map(date -> {
-          Optional<Pair<LocalDate, ServiceFeedbackMessage>> result = empty();
-          var workingDay = workingDays.get(date);
-          var workingDayType = WORKED; // this is the default
-          if(workingDay != null) workingDayType = workingDay.getType();
-          if(workingDayType != NOT_WORKED && noTimeReportsFound(timeReportsByDate, date)) {
-            result = of(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date)));
-          }
-          return result;
-        })
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .forEach(errors::add);
+    // check if all working days have been booked correctly; only open bookings count here,
+    // because only they get released (the rule leaves that choice to its caller)
+    var bookedDays = timereports.stream().map(TimereportDTO::getReferenceday).collect(Collectors.toSet());
+    UnbookedWorkingDays.between(begin, end, contract, bookedDays, workingDays, publicHolidays)
+        .forEach(date -> errors.add(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date))));
 
     var messages = errors.stream().sorted(Comparator.comparing(Pair::getFirst)).map(Pair::getSecond).toList();
     if(!messages.isEmpty()) {

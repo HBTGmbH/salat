@@ -1,10 +1,12 @@
 package org.tb.dailyreport.service;
 
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -22,6 +24,7 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
+import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
@@ -698,6 +701,210 @@ class ReleaseServiceTest {
         private List<ServiceFeedbackMessage> runValidateForRelease(long employeeContractId, LocalDate date) {
             try {
                 classUnderTest.validateForRelease(employeeContractId, date);
+                return List.of();
+            } catch(ErrorCodeException e) {
+                return e.getMessages();
+            }
+        }
+    }
+
+    /**
+     * Jeder Arbeitstag des Freigabezeitraums braucht eine offene Buchung, sonst meldet die Freigabe
+     * {@code WD_NO_TIMEREPORT} mit dem Datum. Die Tests halten das Verhalten fest, bevor die Regel
+     * nach {@code UnbookedWorkingDays} umzieht (#1124), und stubben die drei Ladevorgänge mit genau
+     * den Argumenten, die {@code validateForRelease} heute verwendet — die strikten Stubs melden
+     * jede Abweichung.
+     *
+     * <p>Die Woche vom 04.03.2024 (Montag) bis 10.03.2024 hat keinen Feiertag; der 01.01.2024 der
+     * übrigen Tests ist einer, nur eben nicht im Mock.
+     */
+    @Nested
+    class WorkingDaysWithoutBooking {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        private static final LocalDate MONDAY = LocalDate.of(2024, 3, 4);
+        private static final LocalDate TUESDAY = MONDAY.plusDays(1);
+        private static final LocalDate WEDNESDAY = MONDAY.plusDays(2);
+        private static final LocalDate THURSDAY = MONDAY.plusDays(3);
+        private static final LocalDate FRIDAY = MONDAY.plusDays(4);
+        private static final LocalDate SUNDAY = MONDAY.plusDays(6);
+
+        @Test
+        void everyWeekdayWithoutBookingIsReportedInDateOrder() {
+            // given a contract starting on Monday and nothing booked
+            contractFrom(MONDAY);
+            givenLoads(MONDAY, FRIDAY, List.of(), List.of(), List.of());
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then each weekday is reported once, in date order
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().getFirst())
+                .containsExactly(
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, MONDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, TUESDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, WEDNESDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, THURSDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, FRIDAY));
+        }
+
+        @Test
+        void theWeekendIsNeverReported() {
+            // given nothing booked
+            contractFrom(MONDAY);
+            givenLoads(MONDAY, SUNDAY, List.of(), List.of(), List.of());
+
+            // when releasing until Sunday
+            final var errors = runValidateForRelease(SUNDAY);
+
+            // then Saturday and Sunday are not among the reported days
+            assertThat(reportedDays(errors)).containsExactly(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void aPublicHolidayIsNotReported() {
+            // given a public holiday on Wednesday, loaded for exactly the period
+            contractFrom(MONDAY);
+            givenLoads(MONDAY, FRIDAY, List.of(), List.of(), List.of(new Publicholiday(WEDNESDAY, "Feiertag")));
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then Wednesday is skipped
+            assertThat(reportedDays(errors)).containsExactly(MONDAY, TUESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void aDayMarkedNotWorkedIsNotReportedButAWorkedDayWithoutBookingIs() {
+            // given Thursday has a working day of type WORKED and Friday one of type NOT_WORKED
+            contractFrom(MONDAY);
+            givenLoads(MONDAY, FRIDAY, List.of(), List.of(workingday(THURSDAY, WORKED), workingday(FRIDAY, NOT_WORKED)), List.of());
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then only Friday is skipped: a working day without a booking is still a gap
+            assertThat(reportedDays(errors)).containsExactly(MONDAY, TUESDAY, WEDNESDAY, THURSDAY);
+        }
+
+        @Test
+        void anOpenAbsenceCountsAsBooked() {
+            // given an open absence booked on Tuesday
+            contractFrom(MONDAY);
+            final var absence = TimereportDTO.builder()
+                .orderType(OrderType.KRANK_URLAUB_ABWESEND)
+                .referenceday(TUESDAY)
+                .duration(Duration.ofHours(8))
+                .build();
+            givenLoads(MONDAY, FRIDAY, List.of(absence), List.of(), List.of());
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then Tuesday is booked
+            assertThat(reportedDays(errors)).containsExactly(MONDAY, WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void onlyTheDaysAfterTheLastReleaseAreChecked() {
+            // given a contract released until Tuesday
+            final var contract = contractFrom(MONDAY.minusDays(3));
+            contract.setReportReleaseDate(TUESDAY);
+            givenLoads(WEDNESDAY, FRIDAY, List.of(), List.of(), List.of());
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then the check starts on Wednesday
+            assertThat(reportedDays(errors)).containsExactly(WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void theCheckStartsAtTheBeginOfTheContract() {
+            // given a contract beginning on Wednesday
+            contractFrom(WEDNESDAY);
+            givenLoads(WEDNESDAY, FRIDAY, List.of(), List.of(), List.of());
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then Monday and Tuesday lie before the contract
+            assertThat(reportedDays(errors)).containsExactly(WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        @Test
+        void theCheckEndsAtTheEndOfTheContract() {
+            // given a contract ending on Wednesday
+            final var contract = contractFrom(MONDAY);
+            contract.setValidUntil(WEDNESDAY);
+            givenLoads(MONDAY, WEDNESDAY, List.of(), List.of(), List.of());
+
+            // when releasing until the contract end
+            final var errors = runValidateForRelease(WEDNESDAY);
+
+            // then Thursday and Friday lie after the contract
+            assertThat(reportedDays(errors)).containsExactly(MONDAY, TUESDAY, WEDNESDAY);
+        }
+
+        @Test
+        void findingsOfAllChecksAreSortedByDate() {
+            // given the working hours law applies and Tuesday has work booked without a start of work
+            contractFrom(MONDAY);
+            final var work = TimereportDTO.builder()
+                .orderType(OrderType.STANDARD)
+                .referenceday(TUESDAY)
+                .duration(Duration.ofHours(4))
+                .build();
+            givenLoads(MONDAY, FRIDAY, List.of(work), List.of(), List.of());
+            when(timereportService.needsWorkingHoursLawValidation(EMPLOYEE_CONTRACT_ID)).thenReturn(true);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY)).thenReturn(List.of());
+
+            // when releasing until Friday
+            final var errors = runValidateForRelease(FRIDAY);
+
+            // then the missing start of Tuesday stands between the days without booking
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().getFirst())
+                .containsExactly(
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, MONDAY),
+                    tuple(ErrorCode.WD_BEGIN_TIME_MISSING, TUESDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, WEDNESDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, THURSDAY),
+                    tuple(ErrorCode.WD_NO_TIMEREPORT, FRIDAY));
+        }
+
+        private Employeecontract contractFrom(LocalDate validFrom) {
+            final var employee = new Employee();
+            employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var contract = new Employeecontract();
+            contract.setEmployee(employee);
+            contract.setValidFrom(validFrom);
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            return contract;
+        }
+
+        /** The three loads, each with exactly the arguments {@code validateForRelease} passes today. */
+        private void givenLoads(LocalDate begin, LocalDate end, List<TimereportDTO> openTimereports,
+                                List<Workingday> workingdays, List<Publicholiday> publicHolidays) {
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin.minusDays(1), end)).thenReturn(workingdays);
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, end)).thenReturn(openTimereports);
+            when(publicholidayDAO.getPublicHolidaysBetween(begin, end)).thenReturn(publicHolidays);
+        }
+
+        private Workingday workingday(LocalDate date, Workingday.WorkingDayType type) {
+            final var workingday = new Workingday();
+            workingday.setRefday(date);
+            workingday.setType(type);
+            return workingday;
+        }
+
+        private List<LocalDate> reportedDays(List<ServiceFeedbackMessage> errors) {
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsOnly(ErrorCode.WD_NO_TIMEREPORT);
+            return errors.stream().map(message -> (LocalDate) message.getArguments().getFirst()).toList();
+        }
+
+        private List<ServiceFeedbackMessage> runValidateForRelease(LocalDate releaseDate) {
+            try {
+                classUnderTest.validateForRelease(EMPLOYEE_CONTRACT_ID, releaseDate);
                 return List.of();
             } catch(ErrorCodeException e) {
                 return e.getMessages();
