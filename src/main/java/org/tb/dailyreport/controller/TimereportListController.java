@@ -30,7 +30,8 @@ import org.tb.dailyreport.service.TimereportListService;
  * <p>The period is always set, so every call searches — there is no state in which the page shows nothing but a
  * filter. Should that first call ever turn out to be too expensive, the way out is the one of #1009: a hidden field
  * tells a submit from a mere page call, never the presence of a filter parameter, which the UiState fallback supplies
- * on every request anyway.
+ * on every request anyway. #1127 looked into exactly that and found the search innocent: the slow first calls ran with
+ * the default filter, and what cost the time were the filter lists, which a page call computes and a submit did too.
  *
  * <p>Every filter travels as one request parameter, the multi-valued ones as a comma separated list. A list per value
  * would be the more usual form, but {@code UiState} remembers one string per key — and a filter that is forgotten the
@@ -84,8 +85,15 @@ public class TimereportListController {
         period.from(), period.until(), billable, order.sort(), order.descending(),
         limit == 0 ? TimereportListFilter.UNLIMITED : limit);
 
+    // Ein Filterwechsel tauscht nur den Ergebnisbereich. Die Seite selbst bleibt stehen — mit ihr das
+    // offene Modal, das ein Seitenwechsel mitgerissen haette, und die Auswahllisten, die das Fragment
+    // nicht rendert und die deshalb auch nicht neu berechnet werden.
+    var fragment = "true".equals(request.getHeader("HX-Request"));
+
     model.addAttribute("result", timereportListService.search(filter));
-    model.addAttribute("options", timereportListService.getFilterOptions(orderIds, suborderIds, ticketKeys));
+    if (!fragment) {
+      model.addAttribute("options", timereportListService.getFilterOptions(orderIds, suborderIds, ticketKeys));
+    }
 
     model.addAttribute("selectedEmployeeIds", employeeIds);
     model.addAttribute("selectedCustomerIds", customerIds);
@@ -109,11 +117,7 @@ public class TimereportListController {
     model.addAttribute("pageTitle", messages.getMessage("main.timereportlist.title"));
     model.addAttribute("title", messages.getMessage("main.timereportlist.title"));
 
-    // Ein Filterwechsel tauscht nur den Ergebnisbereich. Die Seite selbst bleibt stehen — mit ihr das
-    // offene Modal, das ein Seitenwechsel mitgerissen haette.
-    return "true".equals(request.getHeader("HX-Request"))
-        ? "dailyreport/timereport-list :: results"
-        : "dailyreport/timereport-list";
+    return fragment ? "dailyreport/timereport-list :: results" : "dailyreport/timereport-list";
   }
 
   /**
