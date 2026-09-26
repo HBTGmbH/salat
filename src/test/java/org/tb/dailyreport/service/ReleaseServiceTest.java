@@ -4,8 +4,12 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -15,6 +19,7 @@ import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,16 +34,19 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
+import org.tb.common.service.MailService;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.OvertimeBalance;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.ReviewPeriod;
+import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.TimereportReview;
 import org.tb.dailyreport.domain.TimereportReview.DayEntry;
@@ -53,6 +61,7 @@ import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.preferences.EmployeePreferenceService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.OrderType;
 
@@ -83,6 +92,10 @@ class ReleaseServiceTest {
     private AuthorizedUser authorizedUser;
     @Mock
     private TimereportAuthorization timereportAuthorization;
+    @Mock
+    private MailService mailService;
+    @Mock
+    private EmployeePreferenceService employeePreferenceService;
 
     /**
      * Ein Vertrag endet mitten im Monat, das Formular kennt aber nur Monate: der Monatsletzte
@@ -103,10 +116,12 @@ class ReleaseServiceTest {
             final var contract = endedContract();
             when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
 
-            // when releasing the whole month
-            classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, END_OF_MONTH);
+            // when reviewing the whole month and releasing what the review shows
+            final var period = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, END_OF_MONTH).period();
+            classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, period.begin(), period.end());
 
-            // then the contract end is what gets released and stored
+            // then the contract end is what gets shown, released and stored
+            assertThat(period).isEqualTo(new ReviewPeriod(CONTRACT_START, CONTRACT_END));
             verify(timereportDAO, atLeastOnce()).getOpenTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, CONTRACT_END, null);
         }
@@ -132,6 +147,7 @@ class ReleaseServiceTest {
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
             employee.setSign("xx");
             final var contract = new Employeecontract();
+            setField(contract, "id", EMPLOYEE_CONTRACT_ID);
             contract.setEmployee(employee);
             contract.setValidFrom(CONTRACT_START);
             contract.setValidUntil(CONTRACT_END);
@@ -1701,6 +1717,228 @@ class ReleaseServiceTest {
             workingday.setStarttimehour(startHour);
             workingday.setStarttimeminute(startMinute);
             return workingday;
+        }
+    }
+
+    /**
+     * Die Freigabe aus der Übersicht (#760) gibt genau den gezeigten Zeitraum frei. Freigegeben ist
+     * bis Donnerstag, 28.03.2024; die Übersicht über den März zeigt also Freitag bis Sonntag, und
+     * nur der Freitag ist ein Arbeitstag.
+     */
+    @Nested
+    class ReleaseReviewedPeriod {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        private static final long TIMEREPORT_ID = 7L;
+        private static final String OWNER = "xx";
+        private static final String PEOPLE_LEAD = "pl";
+        private static final LocalDate CONTRACT_START = LocalDate.of(2024, 1, 1);
+        private static final LocalDate RELEASED_UNTIL = LocalDate.of(2024, 3, 28);
+        private static final LocalDate FRIDAY = LocalDate.of(2024, 3, 29);
+        private static final LocalDate END_OF_MONTH = LocalDate.of(2024, 3, 31);
+
+        @Test
+        void releasesWhatTheReviewShowedAndStoresItsEnd() {
+            releasableContract();
+            givenAnOpenBookingOnFriday();
+            when(authorizedUser.getLoginSign()).thenReturn(PEOPLE_LEAD);
+
+            final var period = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, END_OF_MONTH).period();
+            classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, period.begin(), period.end());
+
+            assertThat(period).isEqualTo(new ReviewPeriod(FRIDAY, END_OF_MONTH));
+            verify(timereportService).updateReleaseData(eq(TIMEREPORT_ID), eq(GlobalConstants.TIMEREPORT_STATUS_COMMITED),
+                eq(PEOPLE_LEAD), any(LocalDateTime.class), isNull(), isNull());
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, END_OF_MONTH, null);
+            verify(mailService).sendEmail(anyString(), anyString(), any(), any());
+        }
+
+        /** Etwa in einem zweiten Fenster: die Übersicht zeigte ab Freitag, freigegeben ist inzwischen bis Monatsende. */
+        @Test
+        void rejectsWhenTheReleaseDateMovedSinceTheReview() {
+            final var contract = releasableContract();
+            contract.setReportReleaseDate(END_OF_MONTH);
+
+            final var errors = runRelease(FRIDAY, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasReleased();
+        }
+
+        /** Zweimal hintereinander abgeschickt: die zweite Freigabe findet den Zeitraum schon freigegeben. */
+        @Test
+        void rejectsTheSecondOfTwoSubmits() {
+            final var contract = releasableContract();
+            givenAnOpenBookingOnFriday();
+            when(authorizedUser.getLoginSign()).thenReturn(OWNER);
+            classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, FRIDAY, END_OF_MONTH);
+            contract.setReportReleaseDate(END_OF_MONTH);
+
+            final var errors = runRelease(FRIDAY, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, END_OF_MONTH, null);
+            verify(mailService).sendEmail(anyString(), anyString(), any(), any());
+        }
+
+        @Test
+        void rejectsWhenTheContractEndMovedBeforeTheReviewedEnd() {
+            final var contract = releasableContract();
+            contract.setValidUntil(FRIDAY);
+
+            final var errors = runRelease(FRIDAY, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasReleased();
+        }
+
+        /** Die Übersicht endete am Vertragsende mitten im Monat; verlängert endet der Monat jetzt später. */
+        @Test
+        void rejectsWhenAContractEndingInTheMonthWasExtended() {
+            final var contract = releasableContract();
+            contract.setValidUntil(null);
+
+            final var errors = runRelease(FRIDAY, FRIDAY);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasReleased();
+        }
+
+        /** Endete die Übersicht am Monatsende, ändert eine Verlängerung des Vertrags an ihr nichts. */
+        @Test
+        void keepsTheReviewedEndWhenTheContractWasExtendedBeyondIt() {
+            final var contract = releasableContract();
+            contract.setValidUntil(LocalDate.of(2024, 6, 30));
+            givenAnOpenBookingOnFriday();
+
+            classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, FRIDAY, END_OF_MONTH);
+
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, END_OF_MONTH, null);
+        }
+
+        /** Die Übersicht endet an einem Monatsletzten oder am Vertragsende — ein anderes Ende hat sie nie gezeigt. */
+        @Test
+        void rejectsAnEndInTheMiddleOfTheMonth() {
+            releasableContract();
+
+            final var errors = runRelease(FRIDAY, FRIDAY);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasReleased();
+        }
+
+        @Test
+        void rejectsABeginTheReviewCannotHaveShown() {
+            releasableContract();
+
+            final var errors = runRelease(CONTRACT_START, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasReleased();
+        }
+
+        @Test
+        void stillThrowsTheFindings() {
+            releasableContract();
+
+            final var errors = runRelease(FRIDAY, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().getFirst())
+                .containsExactly(tuple(ErrorCode.WD_NO_TIMEREPORT, FRIDAY));
+            verify(employeecontractService, never()).updateReportReleaseData(any(), any(), any());
+            verifyNoInteractions(timereportRepository, mailService);
+        }
+
+        /**
+         * Die Übersicht über einen Monat vor der letzten Freigabe zeigt einen leeren Zeitraum. Ihn
+         * freizugeben verschob bis #760 das Freigabedatum zurück.
+         */
+        @Test
+        void aMonthBeforeTheLastReleaseIsNothingToRelease() {
+            final var contract = releasableContract();
+            final var endOfFebruary = LocalDate.of(2024, 2, 29);
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, endOfFebruary);
+
+            final var errors = runRelease(review.period().begin(), review.period().end());
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(FRIDAY, endOfFebruary));
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_NOTHING_TO_RELEASE);
+            assertThat(contract.getReportReleaseDate()).isEqualTo(RELEASED_UNTIL);
+            assertThatNothingWasReleased();
+        }
+
+        @Test
+        void rejectsWithoutReleaseAuthorization() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(false);
+
+            final var denial = catchThrowableOfType(AuthorizationException.class,
+                () -> classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, FRIDAY, END_OF_MONTH));
+
+            assertThat(denial.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_NOT_ALLOWED);
+            assertThatNothingWasReleased();
+        }
+
+        @Test
+        void anUnknownContractIsInvalidData() {
+            final var thrown = catchThrowableOfType(InvalidDataException.class,
+                () -> classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, FRIDAY, END_OF_MONTH));
+
+            assertThat(thrown.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+            verifyNoInteractions(releaseAuthorization, employeecontractService);
+        }
+
+        private List<ServiceFeedbackMessage> runRelease(LocalDate reviewedBegin, LocalDate reviewedEnd) {
+            final var thrown = catchThrowableOfType(BusinessRuleException.class,
+                () -> classUnderTest.releaseTimereports(EMPLOYEE_CONTRACT_ID, reviewedBegin, reviewedEnd));
+            assertThat(thrown).as("the release is refused").isNotNull();
+            return thrown.getMessages();
+        }
+
+        private void assertThatNothingWasReleased() {
+            verifyNoInteractions(timereportDAO, timereportRepository, employeecontractService, mailService);
+        }
+
+        private void givenAnOpenBookingOnFriday() {
+            final var booking = TimereportDTO.builder()
+                .id(TIMEREPORT_ID)
+                .referenceday(FRIDAY)
+                .status(GlobalConstants.TIMEREPORT_STATUS_OPEN)
+                .orderType(OrderType.STANDARD)
+                .duration(Duration.ofHours(8))
+                .build();
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, END_OF_MONTH)).thenReturn(List.of(booking));
+            when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(new Timereport()));
+        }
+
+        private Employeecontract releasableContract() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+            return contract;
+        }
+
+        private Employeecontract contract() {
+            final var contract = new Employeecontract();
+            setField(contract, "id", EMPLOYEE_CONTRACT_ID);
+            contract.setEmployee(employee(OWNER));
+            contract.setSupervisors(new ArrayList<>(List.of(employee(PEOPLE_LEAD))));
+            contract.setValidFrom(CONTRACT_START);
+            contract.setReportReleaseDate(RELEASED_UNTIL);
+            return contract;
+        }
+
+        private Employee employee(String sign) {
+            final var salatUser = new SalatUser();
+            salatUser.setLoginname(sign);
+            salatUser.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var employee = new Employee();
+            employee.setSalatUser(salatUser);
+            employee.setSign(sign);
+            employee.setFirstname("Vorname");
+            employee.setLastname(sign);
+            return employee;
         }
     }
 }
