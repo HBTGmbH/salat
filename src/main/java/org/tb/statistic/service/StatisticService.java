@@ -8,6 +8,7 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -49,12 +50,15 @@ public class StatisticService {
         .map(timereportService::getTimereportById)
         .filter(Objects::nonNull) // because of async, object may no longer be available
         .toList();
-    var minDate = timereports.stream()
-        .map(TimereportDTO::getReferenceday)
+    // the month a booking left has lost its minutes and needs recalculating as well (#1125)
+    var referencedDays = Stream.concat(
+            timereports.stream().map(TimereportDTO::getReferenceday),
+            event.getPreviousReferencedays().values().stream())
+        .toList();
+    var minDate = referencedDays.stream()
         .min(LocalDate::compareTo)
         .orElse(DateUtils.today());
-    var maxDate = timereports.stream()
-        .map(TimereportDTO::getReferenceday)
+    var maxDate = referencedDays.stream()
         .max(LocalDate::compareTo)
         .orElse(DateUtils.today());
 
