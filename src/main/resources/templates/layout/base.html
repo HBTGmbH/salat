@@ -219,6 +219,12 @@
                      th:text="#{main.general.mainmenu.release.text}">
                     Freigabe
                   </a>
+                  <a class="dropdown-item" th:href="@{/acceptance}"
+                     th:if="${#authorization.expression('hasRole(''PEOPLE_LEAD'')')}"
+                     th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
+                     th:text="#{main.general.mainmenu.acceptance.text}">
+                    Abnahme
+                  </a>
                   <a class="dropdown-item" th:href="@{/my-accounts}"
                      th:if="${not #authorization.expression('hasRole(''RESTRICTED'')')}"
                      th:classappend="${subSection == 'my-accounts'} ? 'active' : ''"
@@ -420,12 +426,6 @@
                      th:if="${#authorization.expression('hasRole(''BACKOFFICE'')')}">
                     Rechnungsanlage
                   </a>
-                  <a class="dropdown-item" th:href="@{/acceptance}"
-                     th:if="${#authorization.expression('hasRole(''PEOPLE_LEAD'')')}"
-                     th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
-                     th:text="#{main.general.mainmenu.acceptance.text}">
-                    Abnahme
-                  </a>
                   <a class="dropdown-item" th:href="@{/dailyreports/move}"
                      th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
                      th:classappend="${subSection == 'move-timereports'} ? 'active' : ''">
@@ -512,7 +512,7 @@
           <!-- Page title actions -->
           <div class="col-auto ms-auto d-print-none">
             <div class="d-flex align-items-center gap-2">
-              <div class="d-none d-md-flex align-items-center gap-2" th:if="${section == 'dailyreport' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
+              <div class="d-none d-md-flex align-items-center gap-2" th:if="${section == 'dailyreport' and subSection != 'acceptance' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
                 <th:block th:if="${@employeeContractSelectorViewHelper.multiContractEmployee}"
                           th:with="sel=${@employeeContractSelectorViewHelper.selectedContract}">
                   <span th:class="'w-100' + ${sel.past ? 'badge bg-warning-lt text-nowrap' : 'badge bg-secondary-lt text-nowrap'}"

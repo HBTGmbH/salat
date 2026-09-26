@@ -92,10 +92,10 @@ public class AcceptanceController {
         model.addAttribute("acceptAllowed", selected != null && releaseService.isAcceptAllowed(selected.getId()));
         model.addAttribute("reopenDateStr", defaultReleaseDateStr(selected));
         model.addAttribute("lastMonthStr", lastMonthStr(selected));
-        model.addAttribute("section", "backoffice");
+        model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "acceptance");
         model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.acceptance.text"));
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         return "dailyreport/acceptance";
     }
 
@@ -120,10 +120,10 @@ public class AcceptanceController {
         var links = ReviewLinks.of(RELEASE_REVIEW_PATH, contractId, month.get(), effectiveView,
             "/acceptance/release", "/acceptance");
         ReviewPage.addReview(model, review, links, effectiveView, errorCodeViewHelper);
-        model.addAttribute("section", "backoffice");
+        model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "acceptance");
         model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.release.text"));
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         return ReviewPage.RELEASE_VIEW_NAME;
     }
 
@@ -171,10 +171,10 @@ public class AcceptanceController {
         var links = ReviewLinks.of(ACCEPT_REVIEW_PATH, contractId, month.get(), effectiveView,
             "/acceptance/accept", "/acceptance");
         ReviewPage.addReview(model, review, links, effectiveView, errorCodeViewHelper);
-        model.addAttribute("section", "backoffice");
+        model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "acceptance");
         model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.accept.text"));
-        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
         return ReviewPage.ACCEPTANCE_VIEW_NAME;
     }
 

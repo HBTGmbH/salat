@@ -114,7 +114,7 @@ class AcceptanceControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("dailyreport/release-review"))
         .andExpect(model().attribute("reviewView", "day"))
-        .andExpect(model().attribute("section", "backoffice"))
+        .andExpect(model().attribute("section", "dailyreport"))
         .andExpect(model().attribute("subSection", "acceptance"))
         .andReturn();
 
@@ -183,7 +183,7 @@ class AcceptanceControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("dailyreport/acceptance-review"))
         .andExpect(model().attribute("reviewView", "day"))
-        .andExpect(model().attribute("section", "backoffice"))
+        .andExpect(model().attribute("section", "dailyreport"))
         .andExpect(model().attribute("subSection", "acceptance"))
         .andExpect(model().attribute("pageTitle", "Abnahme prüfen"))
         .andReturn();
