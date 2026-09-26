@@ -219,9 +219,12 @@ public class ReleaseService {
    * sperrt.
    *
    * <p>Die Buchungen kommen über die Leseprüfung von {@link TimereportDAO}, die Bilanz über eine
-   * Summe ohne sie. Wer nur über eine Regel der Kategorie RELEASE_TIMEREPORTS freigibt und die
-   * Buchungen nicht lesen darf, sieht deshalb eine richtige Bilanz zu einer unvollständigen Liste;
-   * die Person selbst, die Geschäftsführung und die zuständige People Lead lesen alle.
+   * Summe ohne sie. Wer nur über eine Regel der Kategorie RELEASE_TIMEREPORTS freigibt oder über
+   * eine der Kategorie ACCEPT_TIMEREPORTS abnimmt und die Buchungen nicht lesen darf, sieht deshalb
+   * eine richtige Bilanz zu einer unvollständigen Liste; die Person selbst, die Geschäftsführung und
+   * die zuständige People Lead lesen alle. Welche Tage ohne Buchung sind, bringt der Aufrufer mit
+   * ({@code daysWithoutBooking}) — die Abnahme bestimmt sie ohne Lesefilter, ein Tag mit Buchungen,
+   * die man nicht lesen darf, steht dann ohne Buchung, aber nicht als „Keine Buchung" da.
    *
    * @param dayFindings        Befunde einzelner Tage, nach Datum sortiert
    * @param daysWithoutBooking die Arbeitstage ohne Buchung, wie {@link UnbookedWorkingDays} sie
@@ -299,8 +302,15 @@ public class ReleaseService {
    * <p>Die Abnahme prüft keine Tage: Arbeitszeit, Pausen und Ruhezeit hat die Freigabe geprüft. Ein
    * Arbeitstag ohne Buchung ist deshalb kein Befund, sondern steht nur als solcher da — nach der
    * Regel {@link UnbookedWorkingDays} über die Buchungen jeden Status, denn an einem Tag mit einer
-   * Buchung fehlt keine. Angelegt wird aus dieser Übersicht nichts: an Stelle der Person
-   * nachzubuchen gehört nicht zur Abnahme.
+   * Buchung fehlt keine, auch mit einer, die man nicht lesen darf
+   * ({@code workingDaysWithoutAnyBooking}). Angelegt wird aus dieser Übersicht nichts: an Stelle
+   * der Person nachzubuchen gehört nicht zur Abnahme.
+   *
+   * <p>Die Liste dagegen geht wie bei der Freigabe durch den Lesefilter ({@code buildReview}),
+   * ebenso die freigegebenen Buchungen, die {@link #acceptTimereports} abschließt. Wer nur über eine
+   * Regel der Kategorie ACCEPT_TIMEREPORTS abnimmt und die Buchungen nicht lesen darf, sieht also
+   * nicht alle, und die Abnahme schließt nur die ab, die er lesen darf — das Abnahmedatum setzt sie
+   * trotzdem. So war es schon vor #1122.
    *
    * <p>Die Regel braucht die Buchungen, Arbeitstage und Feiertage des Zeitraums, die die Übersicht
    * danach noch einmal lädt — je Zeitraum ein fester Aufwand, keine Abfrage je Tag, auch wenn eine
@@ -342,12 +352,22 @@ public class ReleaseService {
     return contract != null && releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE);
   }
 
-  /** Die Arbeitstage des Zeitraums, an denen es keine Buchung gibt, gleich welchen Status (#1122). */
+  /**
+   * Die Arbeitstage des Zeitraums, an denen es keine Buchung gibt, gleich welchen Status (#1122).
+   *
+   * <p>Die gebuchten Tage kommen am Lesefilter von {@link TimereportDAO} vorbei aus dem Repository:
+   * wer nur über eine Regel der Kategorie ACCEPT_TIMEREPORTS abnimmt und die Buchungen nicht lesen
+   * darf, sähe sonst „Keine Buchung" an Tagen, die gebucht sind. Der Filter ist hier entbehrlich,
+   * weil nur Tage herausgehen, kein Inhalt einer Buchung, und nur an jemanden, den
+   * {@link #reviewAcceptance} als abnahmeberechtigt für diesen Vertrag geprüft hat — dem die Bilanz
+   * ohnehin die gebuchte Zeit des Zeitraums ohne Filter zeigt. Gelöschte Buchungen lässt die Abfrage
+   * aus.
+   */
   private List<LocalDate> workingDaysWithoutAnyBooking(Employeecontract contract, ReviewPeriod period) {
     long employeecontractId = contract.getId();
-    var bookedDays = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, period.begin(), period.end())
+    var bookedDays = timereportRepository.findAllByEmployeecontractIdAndReferencedayBetween(employeecontractId, period.begin(), period.end())
         .stream()
-        .map(TimereportDTO::getReferenceday)
+        .map(timereport -> timereport.getReferenceday().getRefdate())
         .collect(Collectors.toSet());
     var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, period.begin(), period.end())
         .stream()
