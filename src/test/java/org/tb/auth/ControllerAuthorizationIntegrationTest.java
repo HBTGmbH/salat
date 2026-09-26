@@ -1,5 +1,6 @@
 package org.tb.auth;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -11,6 +12,7 @@ import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_PV;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_RESTRICTED;
 
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.tb.auth.domain.SalatUser;
 import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.GlobalConstants;
@@ -330,16 +333,31 @@ class ControllerAuthorizationIntegrationTest {
 
   /**
    * Ein Tag der Übersicht führt in die Tagesansicht und von dort zurück (#760). Auch das prüft den
-   * gerenderten Weg: eine 200 mit dem Verweis heißt, dass die Tagesansicht ihn gebaut hat.
+   * gerenderten Weg: eine 200 mit dem Verweis heißt, dass die Tagesansicht ihn gebaut hat. Eine
+   * Buchung, die dort angelegt wird, kehrt in den Tag zurück und behält den Weg in die Übersicht —
+   * die Adresse der Übersicht steckt verschachtelt in der des Tages.
    */
   @Test
   void a_day_opened_from_the_review_leads_back_to_it() throws Exception {
+    var review = "/release/review?" + REVIEW_MONTH + "&view=day#day-2000-01-03";
     var response = get("/dailyreport/daily?mode=daily&date=2000-01-03"
         + "&returnUrl=%2Frelease%2Freview%3F" + REVIEW_MONTH.replace("=", "%3D") + "%26view%3Dday%23day-2000-01-03",
         REGULAR);
 
     assertThat(response.statusCode()).isEqualTo(200);
     assertThat(response.body()).contains("href=\"/release/review?" + REVIEW_MONTH + "&amp;view=day#day-2000-01-03\"");
+
+    var newBooking = Pattern.compile("href=\"(/dailyreport/timereports/new\\?[^\"]*)\"").matcher(response.body());
+    assertThat(newBooking.find()).as("the day offers to create a booking").isTrue();
+    var day = queryParam(newBooking.group(1).replace("&amp;", "&"), "returnUrl");
+    assertThat(day).startsWith("/dailyreport/daily?mode=daily&date=2000-01-03&returnUrl=");
+    assertThat(queryParam(day, "returnUrl")).isEqualTo(review);
+  }
+
+  /** Ein Parameter einer Adresse, einmal dekodiert — so, wie der Server ihn liest. */
+  private static String queryParam(String url, String name) {
+    var value = UriComponentsBuilder.fromUriString(url).build().getQueryParams().getFirst(name);
+    return value != null ? URLDecoder.decode(value, UTF_8) : null;
   }
 
   private static Stream<Arguments> reviewAllowed() {

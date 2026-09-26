@@ -265,11 +265,19 @@
       </div>
 
       <!-- ─── Inline-edit refresh target ─────────────────────── -->
-      <div id="daily-bookings-area" th:fragment="dailyBookings">
+      <!--/* dayReturnUrl: wohin Anlegen und Bearbeiten zurueckkehren - in diesen Tag, und kam er aus
+             einer Uebersicht vor der Freigabe, mit deren Adresse, damit der Weg zurueck dorthin
+             bleibt (#760). Verschachtelt, deshalb escapeQueryParam: & = # der Uebersicht gehoeren
+             zu ihr und nicht zur Adresse des Tages. Zusammengesetzt ausserhalb von SpEL: dort
+             formatierte der Konversionsdienst das Datum als dd.MM.yy statt ISO. */-->
+      <div id="daily-bookings-area" th:fragment="dailyBookings"
+           th:with="dayReturnUrl=${reviewReturnUrl != null}
+                      ? |/dailyreport/daily?mode=daily&date=${date}&returnUrl=${#uris.escapeQueryParam(reviewReturnUrl)}|
+                      : |/dailyreport/daily?mode=daily&date=${date}|">
 
       <!-- Add booking + Apply previous + Apply favourite -->
       <div class="d-flex gap-2 mb-3" th:if="${dailyData != null and dailyData.canCreateTimereport and !dailyData.notWorked}">
-        <a th:href="@{/dailyreport/timereports/new(date=${date},returnUrl='/dailyreport/daily?mode=daily&date='+${date})}" class="btn btn-success flex-fill">
+        <a th:href="@{/dailyreport/timereports/new(date=${date},returnUrl=${dayReturnUrl})}" class="btn btn-success flex-fill">
           <i class="ti ti-plus me-1"></i><span th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
         </a>
         <!--/* What the days before this one carried (#1017). It stands before the favourites
@@ -394,7 +402,7 @@
                 </td>
                 <td>
                   <div th:if="${dailyData.editableTimereportIds.contains(tr.id)}" class="text-nowrap">
-                    <a th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id},returnUrl='/dailyreport/daily?mode=daily&date='+${date})}" class="btn btn-outline-primary"
+                    <a th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id},returnUrl=${dayReturnUrl})}" class="btn btn-outline-primary"
                        style="padding:1px 5px; font-size:0.7rem"
                        th:title="#{main.timereport.action.edit.tooltip}">
                       <i class="icon ti ti-pencil m-0"></i>
@@ -421,6 +429,8 @@
                       <input type="hidden" name="timereportId" th:value="${tr.id}"/>
                       <input type="hidden" name="date" th:value="${date}"/>
                       <input type="hidden" name="mode" value="daily"/>
+                      <!--/* das Loeschen laedt die Seite neu; der Weg zurueck in die Uebersicht bleibt (#760) */-->
+                      <input type="hidden" name="returnUrl" th:if="${reviewReturnUrl != null}" th:value="${reviewReturnUrl}"/>
                       <button type="submit" class="btn btn-outline-danger"
                               style="padding:1px 5px; font-size:0.7rem"
                               th:title="#{main.timereport.action.delete.tooltip}">

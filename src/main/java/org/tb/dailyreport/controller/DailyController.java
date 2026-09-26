@@ -10,6 +10,7 @@ import static org.tb.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.common.exception.InvalidDataException;
@@ -65,6 +67,14 @@ public class DailyController {
     private final DailyPreferenceService dailyPreferenceService;
 
     /**
+     * The daily or the list view.
+     *
+     * <p>A day opened from an overview before a release keeps the way back while it is worked on
+     * (#760): through the saving of start and break, through the HTMX refreshes of its bookings
+     * ({@link #reviewReturnUrlOf}), through deleting a booking and through the booking form, whose
+     * return target leads back into this day with the overview's address. Navigating to another
+     * day drops it — the overview's day links lead to one day each.
+     *
      * @param returnUrl where the view was opened from. Only an overview before a release gets a way
      *                  back (#760): its days lead here, and the start of work and the break that its
      *                  findings name are corrected here. Anything else is dropped ({@link ReturnUrls}).
@@ -215,6 +225,7 @@ public class DailyController {
                 model.addAttribute("selectedContractId", effEmployeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
+                model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
                 addBookingOffers(model, effEmployeeContractId, date);
                 return "dailyreport/daily :: dailyBookings";
             }
@@ -239,6 +250,7 @@ public class DailyController {
                 model.addAttribute("selectedContractId", effEmployeeContractId);
                 model.addAttribute("isHtmxRequest", true);
                 model.addAttribute("isDailyMode", true);
+                model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
                 addBookingOffers(model, effEmployeeContractId, date);
                 return "dailyreport/daily :: dailyBookings";
             }
@@ -254,6 +266,27 @@ public class DailyController {
             url += "&returnUrl=" + URLEncoder.encode(returnUrl, UTF_8);
         }
         return url;
+    }
+
+    /**
+     * The way back to an overview for the bookings fragment that HTMX swaps into the page (#760).
+     * The request carries no return target of its own, but the page the fragment lands in has one
+     * in its address, and the fragment's links to create, edit and delete a booking hand it on —
+     * without it they would lead back to the plain day. Anything but an overview is dropped
+     * ({@link ReturnUrls#isReviewPage}).
+     */
+    static String reviewReturnUrlOf(HttpServletRequest request) {
+        var currentUrl = request.getHeader("HX-Current-URL");
+        if (currentUrl == null) {
+            return null;
+        }
+        try {
+            var returnUrl = UriComponentsBuilder.fromUriString(currentUrl).build().getQueryParams().getFirst("returnUrl");
+            var decoded = returnUrl != null ? URLDecoder.decode(returnUrl, UTF_8) : null;
+            return ReturnUrls.isReviewPage(decoded) ? decoded : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @PostMapping("/timereport/{id}/update-inline")
@@ -318,10 +351,11 @@ public class DailyController {
             model.addAttribute("selectedContractId", ecId);
             model.addAttribute("isHtmxRequest", true);
             model.addAttribute("isDailyMode", true);
+            model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
             addBookingOffers(model, ecId, date);
             return "dailyreport/daily :: dailyBookings";
         }
-        return "redirect:/dailyreport/daily?mode=daily&date=" + date;
+        return "redirect:" + dailyViewUrl(date, reviewReturnUrlOf(request));
     }
 
     @PostMapping("/apply-favourite")
@@ -329,6 +363,7 @@ public class DailyController {
             @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest request,
             HttpServletResponse response,
             Model model) {
         long ecId = effectiveContractId(fEmployeeContractId);
@@ -358,6 +393,7 @@ public class DailyController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("isHtmxRequest", true);
         model.addAttribute("isDailyMode", true);
+        model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
         addBookingOffers(model, ecId, date);
         model.addAttribute("oobFavourites", true);
         return "dailyreport/daily :: dailyBookings";
@@ -380,6 +416,7 @@ public class DailyController {
             @RequestParam(required = false) String ticketReference,
             @RequestParam long durationMinutes,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest request,
             HttpServletResponse response,
             Model model) {
         long ecId = effectiveContractId(fEmployeeContractId);
@@ -407,6 +444,7 @@ public class DailyController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("isHtmxRequest", true);
         model.addAttribute("isDailyMode", true);
+        model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
         addBookingOffers(model, ecId, date);
         return "dailyreport/daily :: dailyBookings";
     }
@@ -416,6 +454,7 @@ public class DailyController {
             @RequestParam(required = false) Long fEmployeeContractId,
             @RequestParam Long favoriteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            HttpServletRequest request,
             Model model) {
         long ecId = effectiveContractId(fEmployeeContractId);
         try {
@@ -436,6 +475,7 @@ public class DailyController {
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("isHtmxRequest", true);
         model.addAttribute("isDailyMode", true);
+        model.addAttribute("reviewReturnUrl", reviewReturnUrlOf(request));
         addBookingOffers(model, ecId, date);
         model.addAttribute("oobFavourites", true);
         return "dailyreport/daily :: dailyBookings";
@@ -518,6 +558,10 @@ public class DailyController {
             .orElseGet(() -> new int[]{defaultHour, defaultMinute});
     }
 
+    /**
+     * @param returnUrl the overview the day was opened from, if any; the daily view it redirects to
+     *                  keeps the way back (#760)
+     */
     @PostMapping("/delete-timereport")
     public String deleteTimereport(
             @RequestParam Long timereportId,
@@ -525,6 +569,7 @@ public class DailyController {
             @RequestParam String mode,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String returnUrl,
             RedirectAttributes redirectAttributes) {
         try {
             timereportService.deleteTimereportById(timereportId);
@@ -538,7 +583,7 @@ public class DailyController {
         if ("list".equals(mode) && month != null && year != null) {
             return "redirect:/dailyreport/daily?mode=list&fMonth=" + month + "&fYear=" + year;
         }
-        return "redirect:/dailyreport/daily?mode=daily&date=" + date;
+        return "redirect:" + dailyViewUrl(date, returnUrl);
     }
 
     @PostMapping("/fill-not-worked")
