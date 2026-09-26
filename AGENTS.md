@@ -75,7 +75,7 @@ Bestätigungsdialog: einmal als Fragment (`fragments/confirm-dialog.html`) in `l
 ausgelöst über `data-confirm`-Attribute am Formular oder an einem einzelnen Submit-Knopf, gefüllt
 vom delegierten Handler in `static/js/salat.js`. Kein Template bringt dafür eigenes JavaScript mit,
 und kein zweiter handgeschriebener Bestätigungsdialog kommt daneben.
-Eine Prüfseite, die Person, Zeitraum und Folge nennt, ersetzt den Dialog für ihre Aktion (Freigabe, #760; ADR-0027, Nachtrag).
+Eine Prüfseite, die Person, Zeitraum und Folge nennt, ersetzt den Dialog für ihre Aktion (Freigabe, #760; Abnahme, #1122; ADR-0027, Nachtrag).
 
 ```html
 <form th:action="@{/customers/delete}" method="post"
