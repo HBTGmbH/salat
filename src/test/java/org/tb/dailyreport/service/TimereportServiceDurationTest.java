@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.persistence.ReferencedayRepository;
@@ -53,6 +54,8 @@ class TimereportServiceDurationTest {
   private ReferencedayRepository referencedayRepository;
   @Mock
   private TimereportRepository timereportRepository;
+  @Mock
+  private TimereportAuthorization timereportAuthorization;
 
   private void givenValidMasterData() {
     when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID))
@@ -61,7 +64,9 @@ class TimereportServiceDurationTest {
     var referenceday = new Referenceday();
     referenceday.setRefdate(DATE);
     when(referencedayRepository.findByRefdate(DATE)).thenReturn(Optional.of(referenceday));
-    when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(new Timereport()));
+    var storedTimereport = new Timereport();
+    storedTimereport.setReferenceday(referenceday);
+    when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(storedTimereport));
   }
 
   @Test

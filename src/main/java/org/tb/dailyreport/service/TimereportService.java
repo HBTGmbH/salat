@@ -208,12 +208,23 @@ public class TimereportService {
     }
     Timereport timereport = timereportRepository.findById(timereportId).orElse(null);
     DataValidationUtils.notNull(timereport, TR_TIME_REPORT_NOT_FOUND);
+    if (!force) {
+      // the booking as it stands must be writable, not only the one it becomes (#1125)
+      timereportAuthorization.checkAuthorized(Collections.singletonList(timereport), AccessLevel.WRITE);
+    }
+    LocalDate previousDate = timereport.getReferenceday().getRefdate();
     validateParametersAndFillTimereport(employeeContractId, employeeOrderId, referenceDay, taskDescription, trainingFlag, durationHours,
         durationMinutes, timereport);
     if (applyTicketReference) {
       timereport.setTicketReference(normalizeTicketReference(ticketReference));
     }
-    checkAndSaveTimereports(Collections.singletonList(timereport), force);
+    Map<Long, LocalDate> previousReferencedays = Map.of();
+    if (!previousDate.equals(referenceDay)) {
+      // a booking moved to another day is treated as if it were created there (#1125)
+      setStatusForNewDate(timereport);
+      previousReferencedays = Map.of(timereportId, previousDate);
+    }
+    checkAndSaveTimereports(Collections.singletonList(timereport), force, previousReferencedays);
   }
 
   /**
@@ -287,10 +298,10 @@ public class TimereportService {
   }
 
   private void checkAndSaveTimereports(List<Timereport> timereports) {
-    checkAndSaveTimereports(timereports, false);
+    checkAndSaveTimereports(timereports, false, Map.of());
   }
 
-  private void checkAndSaveTimereports(List<Timereport> timereports, boolean force) {
+  private void checkAndSaveTimereports(List<Timereport> timereports, boolean force, Map<Long, LocalDate> previousReferencedays) {
     timereports.forEach(t -> log.debug("checking Timereport {}", t.getTimeReportAsString()));
 
     if (!force) {
@@ -308,7 +319,7 @@ public class TimereportService {
     });
 
     var ids = timereports.stream().map(Timereport::getId).toList();
-    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(ids));
+    eventPublisher.publishEvent(new TimereportsCreatedOrUpdatedEvent(ids, previousReferencedays));
   }
 
   private void validateParametersAndFillTimereport(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
@@ -412,6 +423,23 @@ public class TimereportService {
       timereport.setStatus(TIMEREPORT_STATUS_COMMITED);
     } else {
       timereport.setStatus(TIMEREPORT_STATUS_OPEN);
+    }
+  }
+
+  /**
+   * The status the new day gives the booking (#1125). Who released or accepted it on the old day
+   * stays only where the new status still says so — as {@code ReleaseService.reopenTimereport} drops
+   * both when it reopens a booking.
+   */
+  private void setStatusForNewDate(Timereport timereport) {
+    setStatus(timereport);
+    if (!TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus())) {
+      timereport.setAcceptedby(null);
+      timereport.setAccepted(null);
+    }
+    if (TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus())) {
+      timereport.setReleasedby(null);
+      timereport.setReleased(null);
     }
   }
 
