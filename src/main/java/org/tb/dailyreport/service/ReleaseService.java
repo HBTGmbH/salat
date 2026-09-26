@@ -405,6 +405,9 @@ public class ReleaseService {
    * Freigabe endete auf der Fehlerseite; bis zur letzten Freigabe selbst erneut freizugeben tat
    * nichts und verschickte trotzdem die Mail.
    *
+   * <p>Ungültig ist auch ein Datum nach {@link #latestReleaseDate()}: ein Vertrag ohne Ende setzt
+   * der Freigabe keine Grenze, und der Monat kommt aus der Anfrage.
+   *
    * <p>Die Befunde der Tage sind nach Datum sortiert. Geprüft werden alle offenen Buchungen bis
    * {@code releaseDate}, denn die gibt die Freigabe frei — auch eine, die vor dem Zeitraum liegt.
    *
@@ -413,7 +416,8 @@ public class ReleaseService {
   ReleaseFindings collectReleaseFindings(long employeeContractId, Employeecontract contract, LocalDate releaseDate) {
     if (releaseDate == null
         || releaseDate.isBefore(contract.getValidFrom())
-        || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))) {
+        || (contract.getValidUntil() != null && releaseDate.isAfter(contract.getValidUntil()))
+        || releaseDate.isAfter(latestReleaseDate())) {
       return ReleaseFindings.periodWide(RL_RELEASE_DATE_INVALID);
     }
     if (contract.getReportAcceptanceDate() != null && releaseDate.isBefore(contract.getReportAcceptanceDate())) {
@@ -482,6 +486,18 @@ public class ReleaseService {
         .filter(timereport -> timereport.getReferenceday().isBefore(begin))
         .toList();
     return new ReleaseFindings(List.of(), dayFindings, daysWithoutBooking, openBeforePeriod);
+  }
+
+  /**
+   * Wie weit eine Freigabe höchstens reicht: bis zum Ende des Monats in einem Jahr. Die Übersicht
+   * steht unter einer Adresse, die jeder Angemeldete mit einem beliebigen Monat aufrufen kann, und
+   * für einen Vertrag ohne Ende bestimmte ein Aufruf mit {@code until=9999-12} sonst Befunde, Tage
+   * und Bilanz über Jahrtausende — genug, um den Speicher der Anwendung zu erschöpfen (#760). Eine
+   * echte Freigabe kommt der Grenze nicht nahe: sie verlangt jeden Arbeitstag bis zu ihrem Ende
+   * gebucht oder als nicht gearbeitet markiert.
+   */
+  static LocalDate latestReleaseDate() {
+    return YearMonth.from(today()).plusYears(1).atEndOfMonth();
   }
 
   /**

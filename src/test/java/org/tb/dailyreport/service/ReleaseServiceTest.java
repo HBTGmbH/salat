@@ -1243,6 +1243,40 @@ class ReleaseServiceTest {
             assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
         }
 
+        /**
+         * Ein Vertrag ohne Ende setzt der Freigabe keine Grenze, und der Monat kommt aus der Anfrage.
+         * Weiter als bis zum Ende des Monats in einem Jahr reicht sie deshalb nicht — dahinter ist das
+         * Datum ungültig, und kein Tag wird angesehen.
+         */
+        @Test
+        @FixedClock("2024-03-15T10:00:00")
+        void aDateAfterTheEndOfTheMonthAYearAheadIsInvalid() {
+            // given a contract without end, released until February
+            contractReleasedUntil(RELEASED_UNTIL);
+
+            // when releasing until the day after the end of March next year
+            final var errors = runValidateForRelease(LocalDate.of(2025, 4, 1));
+
+            // then the date itself is invalid, and no day is looked at
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, timereportService);
+        }
+
+        @Test
+        @FixedClock("2024-03-15T10:00:00")
+        void theEndOfTheMonthAYearAheadIsStillChecked() {
+            // given a contract without end, released until February, and nothing booked since
+            contractReleasedUntil(RELEASED_UNTIL);
+
+            // when releasing until the end of March next year
+            final var errors = runValidateForRelease(LocalDate.of(2025, 3, 31));
+
+            // then the days are checked: the first working day of the period lacks a booking
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).doesNotContain(ErrorCode.RL_RELEASE_DATE_INVALID);
+            assertThat(errors.getFirst().getErrorCode()).isEqualTo(ErrorCode.WD_NO_TIMEREPORT);
+            assertThat(errors.getFirst().getArguments()).containsExactly(RELEASED_UNTIL.plusDays(1));
+        }
+
         private Employeecontract contractReleasedUntil(LocalDate releasedUntil) {
             final var employee = new Employee();
             employee.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
@@ -1524,6 +1558,22 @@ class ReleaseServiceTest {
             releasableContract();
 
             final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, CONTRACT_START.minusDays(1));
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        /**
+         * Der Monat steht in der Adresse der Übersicht. Ohne Grenze stellte ein einziger Aufruf für
+         * einen Vertrag ohne Ende Befunde und Tage über Jahrzehnte zusammen — die Übersicht bleibt bei
+         * dem einen Befund über den Zeitraum.
+         */
+        @Test
+        @FixedClock("2024-03-15T10:00:00")
+        void aMonthFarAheadIsPeriodWide() {
+            releasableContract();
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, LocalDate.of(2099, 12, 31));
 
             assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
             assertThatTheReviewShowsNothingButItsFindings(review);
@@ -1866,6 +1916,18 @@ class ReleaseServiceTest {
             assertThat(review.period()).isEqualTo(new ReviewPeriod(FRIDAY, endOfFebruary));
             assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_NOTHING_TO_RELEASE);
             assertThat(contract.getReportReleaseDate()).isEqualTo(RELEASED_UNTIL);
+            assertThatNothingWasReleased();
+        }
+
+        /** Das Freigeben selbst hält dieselbe Grenze wie die Übersicht, auch mit einem Zeitraum von Hand. */
+        @Test
+        @FixedClock("2024-03-15T10:00:00")
+        void aPeriodFarAheadIsNotReleased() {
+            releasableContract();
+
+            final var errors = runRelease(FRIDAY, LocalDate.of(2099, 12, 31));
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
             assertThatNothingWasReleased();
         }
 
