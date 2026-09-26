@@ -663,7 +663,7 @@ drei Dinge beantworten, und nur das erste davon kann ein Repository:
 |---|---|
 | Die Zeilen | **ja** — `JpaSpecificationExecutor.findAll(Specification, Pageable)` kann dynamisches Prädikat, Sortierung und Obergrenze |
 | Die Summen über alle Treffer (`count`, `sum`, `sum(case …)`, zweimal `count(distinct)`) | **nein** — `Specification` selektiert immer die Entität; `JpaSpecificationExecutor` kennt nur `count(Specification)`, keine eigenen Aggregate |
-| Die Werte der Filter (fünf `distinct`-Projektionen unter demselben Prädikat) | **nein** — die Fluent-API von `findBy` projiziert auf Entitäten, nicht auf einzelne Spalten, und kennt kein `distinct` |
+| Die Werte der Filter (eine `distinct`-Projektion unter derselben Sichtbarkeit, über `employeeorder` statt `timereport`, #1127) | **nein** — die Fluent-API von `findBy` projiziert auf Entitäten, nicht auf einzelne Spalten, und kennt kein `distinct` |
 
 Die Zeilenabfrage bleibt trotzdem hier, statt als einzige ins Repository zu wandern: sonst stünde
 dieselbe Bedingung zweimal im Code, einmal als `Specification` und einmal als `Predicate`. Ein

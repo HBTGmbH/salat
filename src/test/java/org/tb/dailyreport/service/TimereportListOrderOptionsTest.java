@@ -146,7 +146,7 @@ class TimereportListOrderOptionsTest {
     var orderIds = List.of(bookedOn).stream().map(Customerorder::getId).toList();
     when(visibilityService.anyTime()).thenReturn(visibility);
     when(timereportListDAO.findFilterValues(visibility))
-        .thenReturn(new FilterValues(List.of(7L), List.of(customer.getId()), orderIds, List.of(), List.of()));
+        .thenReturn(new FilterValues(List.of(7L), List.of(customer.getId()), orderIds, List.of()));
     when(customerorderService.getCustomerordersByIds(orderIds)).thenReturn(List.of(bookedOn));
     when(suborderService.getSubordersByIds(List.of())).thenReturn(List.of());
   }

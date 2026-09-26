@@ -140,7 +140,30 @@ und Mittelwert immer mit Standardfehler angeben.
 Hier reichten 10 Messungen für die Ausgangslage: bei sd ≈ 2 s ist ein Faktor 28 kein Rauschen.
 Das ist die Ausnahme, nicht die Regel — je kleiner der erwartete Effekt, desto näher an n=30.
 
-## 8. Lokale Verfälschungsfaktoren
+## 8. Ein `or` über zwei Dimensionen liest die ganze Tabelle
+
+Eine Sichtbarkeit aus mehreren Klauseln — „eigene Buchungen **oder** Buchungen auf meinen
+Aufträgen", „eigene **oder** fakturierbare" — ist ein `or` über zwei verschiedene Spalten. Dafür
+nimmt MySQL keinen der beiden Indizes, sondern liest die Tabelle ganz. Solange die Abfrage zugleich
+auf einen Zeitraum eingeschränkt ist, fällt das nicht auf; ohne ihn sind es alle Buchungen seit 2006.
+
+Gemessener Fall (#1127): die Auswahllisten der Buchungsliste, fünf `distinct`-Abfragen über
+`timereport` ohne Zeitraum. Betroffen war jede Person mit Auftragsverantwortung und das Backoffice,
+im Abzug 37 von 70 aktiven Nicht-Manager-Logins.
+
+| je n=30, Person mit 22 verantworteten Aufträgen | vorher | nachher |
+|---|---|---|
+| Seitenaufruf | 2,734 s ± 0,005 | **0,324 s ± 0,002** |
+| Filterwechsel (HTMX) | 2,637 s ± 0,007 | **0,083 s ± 0,000** |
+| Auftragsdialog | 2,679 s ± 0,004 | **0,306 s ± 0,001** |
+
+**Regel:** Wo nur die *Werte* gefragt sind, die in den Buchungen vorkommen, dieselbe Bedingung auf
+die kleinere Tabelle anwenden, die dieselben Dimensionen trägt — hier `employeeorder` (20 Tsd.
+statt 480 Tsd. Zeilen), mit `exists` auf eine Buchung, damit die Antwort exakt bleibt — und die
+Projektionen in einem Durchlauf holen statt in einem je Spalte. Ein Wert, den niemand liest, wird
+nicht abgefragt: die fünfte der Abfragen lieferte Ticketnummern, die nirgends verwendet wurden.
+
+## 9. Lokale Verfälschungsfaktoren
 
 * Der `testdb`-Container läuft wie die Produktion mit `innodb_buffer_pool_size=512M` (gesetzt
   im `db`-Dienst beider Compose-Dateien). Mit dem `mysql:8`-Default von 128 MB wäre das bei
