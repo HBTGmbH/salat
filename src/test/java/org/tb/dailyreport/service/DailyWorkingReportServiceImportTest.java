@@ -1,6 +1,7 @@
 package org.tb.dailyreport.service;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +12,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_AMBIGUOUS_EMPLOYEE_ORDER;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_NO_CONTRACT;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_NO_EMPLOYEE_ORDER;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_OF_OTHER_EMPLOYEE;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_ORDER_CONTRADICTS_SIGN;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,7 +32,6 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -36,6 +41,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -44,8 +50,11 @@ import org.tb.dailyreport.rest.DailyReportData;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
 import org.tb.dailyreport.rest.DailyWorkingReportData;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.Employeeorder;
 import org.tb.order.domain.Suborder;
@@ -72,6 +81,7 @@ class DailyWorkingReportServiceImportTest {
   private static final LocalDate DAY = LocalDate.of(2024, 11, 4);
   private static final long CONTRACT_ID = 7L;
   private static final long ORDER_ID = 183209L;
+  private static final long EMPLOYEE_ID = 42L;
 
   @Mock
   private EmployeecontractDAO employeecontractDAO;
@@ -89,36 +99,38 @@ class DailyWorkingReportServiceImportTest {
   @Mock
   private EmployeeorderService employeeorderService;
   @Mock
+  private EmployeeService employeeService;
+  @Mock
+  private EmployeecontractService employeecontractService;
+  @Mock
   private AuthorizedUser authorizedUser;
   @Mock
   private AuthorizedEmployee authorizedEmployee;
 
-  @InjectMocks
   private DailyWorkingReportService service;
-
   private DailyWorkingReportCsvConverter converter;
+  private Employee employee;
+  private Employeecontract contract;
   private Employeeorder employeeorder;
 
   @BeforeEach
   void setUp() {
-    var contract = new Employeecontract();
-    ReflectionTestUtils.setField(contract, "id", CONTRACT_ID);
-    var customerorder = new Customerorder();
-    customerorder.setSign("111");
-    customerorder.setDescription("Rumsitzen");
-    var suborder = new Suborder();
-    suborder.setSign("01");
-    suborder.setDescription("Stuhlpolsterung");
-    suborder.setCustomerorder(customerorder);
-    employeeorder = new Employeeorder();
-    ReflectionTestUtils.setField(employeeorder, "id", ORDER_ID);
-    employeeorder.setSuborder(suborder);
-    employeeorder.setEmployeecontract(contract);
+    employee = employee(EMPLOYEE_ID, "testuser");
+    contract = contract(CONTRACT_ID, employee);
+    employeeorder = employeeorder(ORDER_ID, contract, suborder("111", "Rumsitzen", "01", "Stuhlpolsterung"));
 
+    when(employeeService.getEmployeeBySign("testuser")).thenReturn(employee);
     when(employeecontractDAO.getEmployeecontractById(CONTRACT_ID)).thenReturn(contract);
+    when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(EMPLOYEE_ID, DAY)).thenReturn(contract);
+    when(employeecontractService.getEmployeeContractValidAt(EMPLOYEE_ID, DAY)).thenReturn(contract);
     when(employeeorderDAO.getEmployeeorderById(ORDER_ID)).thenReturn(employeeorder);
     when(employeeorderService.getEmployeeorderById(ORDER_ID)).thenReturn(employeeorder);
-    converter = new DailyWorkingReportCsvConverter(employeeorderService, authorizedUser, authorizedEmployee);
+    when(employeeorderService.getEmployeeordersByCompleteOrderSignValidAt(CONTRACT_ID, "111/01", DAY)).thenReturn(List.of(employeeorder));
+
+    var resolver = new BookingOrderResolver(employeeService, employeecontractService, employeeorderService, authorizedEmployee);
+    service = new DailyWorkingReportService(employeecontractDAO, employeeorderDAO, workingdayDAO, workingdayService,
+        timereportService, timereportDAO, resolver);
+    converter = new DailyWorkingReportCsvConverter(resolver, authorizedUser);
   }
 
   @Test
@@ -126,11 +138,11 @@ class DailyWorkingReportServiceImportTest {
     stored(booking(1L, "Team-Mittag", 30, "ERP-1"), trainingBooking(2L, "Daily", 450, null));
 
     var csv = export();
-    var report = service.updateReports(converter.read(new ByteArrayInputStream(csv.getBytes(UTF_8))).reports(), CONTRACT_ID);
+    var report = service.updateReports(read(csv), employee);
 
     assertThat(csv).startsWith("date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
-        + "workingTime,comment,ticketReference,training\n");
-    assertThat(csv).contains(",00:30,Team-Mittag,ERP-1,false\n", ",07:30,Daily,,true\n");
+        + "workingTime,comment,ticketReference,training,employeeSign\n");
+    assertThat(csv).contains(",111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false,testuser\n", ",07:30,Daily,,true,testuser\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
@@ -143,7 +155,7 @@ class DailyWorkingReportServiceImportTest {
         date,type,startTime,breakTime,employeeorderId,workingTime,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag
         2024-11-04,,,,183209,07:30,Daily
-        """), CONTRACT_ID);
+        """), employee);
 
     assertNothingCreatedOrDeleted();
   }
@@ -156,7 +168,7 @@ class DailyWorkingReportServiceImportTest {
         date,type,startTime,breakTime,employeeorderId,workingTime,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:15,Daily
         2024-11-04,,,,183209,00:15,Daily
-        """), CONTRACT_ID);
+        """), employee);
 
     assertNothingCreatedOrDeleted();
   }
@@ -170,7 +182,7 @@ class DailyWorkingReportServiceImportTest {
     service.updateReports(read("""
         date,type,startTime,breakTime,employeeorderId,workingTime,comment
         2024-11-04,WORKED,09:00,00:30,183209,00:45,Team-Mittag
-        """), CONTRACT_ID);
+        """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", null, false, 0, 45, 1);
@@ -183,7 +195,7 @@ class DailyWorkingReportServiceImportTest {
     var report = service.updateReports(read("""
         date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag, ERP-2\s
-        """), CONTRACT_ID);
+        """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", "ERP-2", false, 0, 30, 1);
@@ -202,7 +214,7 @@ class DailyWorkingReportServiceImportTest {
     service.updateReports(read("""
         date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,
-        """), CONTRACT_ID);
+        """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", null, false, 0, 30, 1);
@@ -215,7 +227,7 @@ class DailyWorkingReportServiceImportTest {
     service.createReports(read("""
         date,type,startTime,breakTime,employeeorderId,workingTime,comment,ticketReference
         2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ERP-1
-        """), CONTRACT_ID);
+        """), employee);
 
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", "ERP-1", false, 0, 30, 1);
   }
@@ -232,7 +244,7 @@ class DailyWorkingReportServiceImportTest {
             .build()))
         .build();
 
-    assertThatThrownBy(() -> service.updateReports(List.of(report), CONTRACT_ID))
+    assertThatThrownBy(() -> service.updateReports(List.of(report), employee))
         .isInstanceOfSatisfying(InvalidDataException.class, ex ->
             assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH));
     assertNothingCreatedOrDeleted();
@@ -268,7 +280,7 @@ class DailyWorkingReportServiceImportTest {
     service.createReports(read("""
         date,type,startTime,breakTime,employeeorderId,workingTime,comment,training
         2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung,true
-        """), CONTRACT_ID);
+        """), employee);
 
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", null, true, 1, 0, 1);
   }
@@ -282,7 +294,7 @@ class DailyWorkingReportServiceImportTest {
     var report = service.updateReports(read("""
         date,type,startTime,breakTime,employeeorderId,workingTime,comment
         2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung
-        """), CONTRACT_ID);
+        """), employee);
 
     verify(timereportService).deleteTimereportsById(List.of(1L));
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", null, false, 1, 0, 1);
@@ -293,11 +305,249 @@ class DailyWorkingReportServiceImportTest {
         }));
   }
 
+  /* The readable way to name an order (#1142): complete suborder sign, the employee of the selected
+     contract, and the day. */
+  @Test
+  void imports_a_booking_named_by_its_signs_only() throws IOException {
+    stored();
+
+    service.createReports(read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment,employeeSign
+        2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag,testuser
+        """), employee);
+
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", null, false, 0, 30, 1);
+  }
+
+  /* The order is resolved before the bookings are grouped and compared: a file naming the orders by
+     their signs only changes nothing in the mode "replace", where each booking would otherwise count as
+     new, be deleted and be created again. */
+  @Test
+  void a_round_trip_without_the_id_column_creates_and_deletes_nothing() throws IOException {
+    stored(booking(1L, "Team-Mittag", 30, "ERP-1"), trainingBooking(2L, "Daily", 450, null));
+
+    var withoutIds = export().lines()
+        // the header stays, the id of every booking goes
+        .map(line -> line.replaceFirst("^(\\d[^,]*,[^,]*,[^,]*,[^,]*,)[^,]*,", "$1,"))
+        .collect(joining("\n", "", "\n"));
+    var report = service.updateReports(read(withoutIds), employee);
+
+    assertThat(withoutIds).doesNotContain(String.valueOf(ORDER_ID));
+    assertNothingCreatedOrDeleted();
+    assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
+  }
+
+  /* Variant (a): the id keeps working and takes precedence - but a suborder sign in the same line has to
+     agree with it. Copying a line and changing its sign must not book on the order the id names. */
+  @Test
+  void rejects_a_line_whose_id_contradicts_its_suborder_sign() {
+    stored();
+
+    assertThatThrownBy(() -> read("""
+        date,type,startTime,breakTime,employeeorderId,suborderSign,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,183209,111/02,00:30,Team-Mittag
+        """))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_ORDER_CONTRADICTS_SIGN));
+    assertNothingCreatedOrDeleted();
+  }
+
+  /* A file spanning a change of contract books each day on the contract valid then (#1142). */
+  @Test
+  void books_each_day_on_the_contract_valid_that_day() throws IOException {
+    var nextDay = DAY.plusDays(1);
+    var nextContract = contract(8L, employee);
+    var nextOrder = employeeorder(183210L, nextContract, employeeorder.getSuborder());
+    when(employeecontractDAO.getEmployeecontractById(8L)).thenReturn(nextContract);
+    when(employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(EMPLOYEE_ID, nextDay)).thenReturn(nextContract);
+    when(employeecontractService.getEmployeeContractValidAt(EMPLOYEE_ID, nextDay)).thenReturn(nextContract);
+    when(employeeorderDAO.getEmployeeorderById(183210L)).thenReturn(nextOrder);
+    when(employeeorderService.getEmployeeorderById(183210L)).thenReturn(nextOrder);
+    when(employeeorderService.getEmployeeordersByCompleteOrderSignValidAt(8L, "111/01", nextDay)).thenReturn(List.of(nextOrder));
+    stored();
+
+    service.createReports(read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,111/01,00:30,alter Vertrag
+        2024-11-05,WORKED,09:00,00:30,111/01,00:45,neuer Vertrag
+        """), employee);
+
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "alter Vertrag", null, false, 0, 30, 1);
+    verify(timereportService).createTimereports(8L, 183210L, nextDay, "neuer Vertrag", null, false, 0, 45, 1);
+  }
+
+  @Test
+  void rejects_a_suborder_sign_without_a_matching_order_with_its_line() {
+    stored();
+
+    assertThatThrownBy(() -> read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
+        2024-11-04,,,,111/1,00:15,Daily
+        """))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 3L, TR_BOOKING_NO_EMPLOYEE_ORDER));
+    assertNothingCreatedOrDeleted();
+  }
+
+  @Test
+  void rejects_a_day_without_a_contract_with_its_line() {
+    stored();
+
+    assertThatThrownBy(() -> read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        2024-11-06,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
+        """))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_NO_CONTRACT));
+  }
+
+  /* Several matching orders are not resolved silently. */
+  @Test
+  void rejects_a_suborder_sign_matching_several_orders() {
+    var second = employeeorder(183211L, contract, employeeorder.getSuborder());
+    when(employeeorderService.getEmployeeordersByCompleteOrderSignValidAt(CONTRACT_ID, "111/01", DAY))
+        .thenReturn(List.of(employeeorder, second));
+
+    assertThatThrownBy(() -> read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
+        """))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_AMBIGUOUS_EMPLOYEE_ORDER));
+  }
+
+  /* The file belongs to the employee of the selected contract, not to whoever is logged in. */
+  @Test
+  void imports_for_the_employee_of_the_selected_contract_rather_than_the_one_logged_in() throws IOException {
+    when(authorizedEmployee.getSign()).thenReturn("chef");
+    when(employeeService.getEmployeeBySign("chef")).thenReturn(employee(43L, "chef"));
+    stored();
+
+    service.createReports(read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag
+        """), employee);
+
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", null, false, 0, 30, 1);
+  }
+
+  @Test
+  void rejects_an_employee_sign_that_does_not_belong_to_the_selected_contract() {
+    when(employeeService.getEmployeeBySign("chef")).thenReturn(employee(43L, "chef"));
+
+    assertThatThrownBy(() -> read("""
+        date,type,startTime,breakTime,suborderSign,workingTime,comment,employeeSign
+        2024-11-04,WORKED,09:00,00:30,111/01,00:30,Team-Mittag,chef
+        """))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_OF_OTHER_EMPLOYEE));
+  }
+
+  /* An id is no way around the selected contract either. */
+  @Test
+  void rejects_an_id_whose_order_belongs_to_another_employee() {
+    var other = employeeorder(999L, contract(9L, employee(43L, "chef")), employeeorder.getSuborder());
+    when(employeeorderService.getEmployeeorderById(999L)).thenReturn(other);
+
+    assertThatThrownBy(() -> read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,999,00:30,Team-Mittag
+        """))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex -> assertRejected(ex, 2L, TR_BOOKING_OF_OTHER_EMPLOYEE));
+  }
+
+  /* The REST API keeps its rule: the id wins, and signs that do not fit it are not evaluated (#1142). */
+  @Test
+  void the_api_books_on_the_id_even_where_its_signs_do_not_fit() {
+    stored();
+    var report = DailyWorkingReportData.builder()
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .dailyReports(List.of(DailyReportData.builder()
+            .date("2024-11-04").employeeorderId(ORDER_ID).suborderSign("999/99").employeeSign("niemand")
+            .hours(0).minutes(30).comment("Team-Mittag")
+            .build()))
+        .build();
+
+    service.createReports(List.of(report));
+
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", null, false, 0, 30, 1);
+  }
+
+  /* Without an id the API names the order by its signs; a missing employee sign is the one logged in. */
+  @Test
+  void the_api_books_a_booking_named_by_its_signs() {
+    when(authorizedEmployee.getSign()).thenReturn("testuser");
+    stored(booking(1L, "Team-Mittag", 30, null));
+    var report = DailyWorkingReportData.builder()
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .dailyReports(List.of(DailyReportData.builder()
+            .suborderSign("111/01").hours(0).minutes(30).comment("Team-Mittag")
+            .build()))
+        .build();
+
+    service.updateReports(List.of(report));
+
+    assertNothingCreatedOrDeleted();
+  }
+
+  @Test
+  void the_api_rejects_a_suborder_sign_without_a_matching_order() {
+    var report = DailyWorkingReportData.builder()
+        .date(DAY).type(WorkingDayType.WORKED).startTime(LocalTime.of(9, 0)).breakDuration(LocalTime.of(0, 30))
+        .dailyReports(List.of(DailyReportData.builder()
+            .suborderSign("111/1").employeeSign("testuser").hours(0).minutes(30).comment("Team-Mittag")
+            .build()))
+        .build();
+
+    assertThatThrownBy(() -> service.createReports(List.of(report)))
+        .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+            assertThat(ex.getMessages().getFirst().getErrorCode()).isEqualTo(TR_BOOKING_NO_EMPLOYEE_ORDER));
+    assertNothingCreatedOrDeleted();
+  }
+
   // fixtures
+
+  private static void assertRejected(InvalidDataException ex, long line, ErrorCode reason) {
+    assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+      assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_LINE_REJECTED);
+      assertThat(message.getArguments().getFirst()).isEqualTo(line);
+      assertThat(message.getArguments().get(1)).isInstanceOfSatisfying(ServiceFeedbackMessage.class, nested ->
+          assertThat(nested.getErrorCode()).isEqualTo(reason));
+    });
+  }
+
+  private static Employee employee(long id, String sign) {
+    var employee = new Employee();
+    ReflectionTestUtils.setField(employee, "id", id);
+    employee.setSign(sign);
+    return employee;
+  }
+
+  private static Employeecontract contract(long id, Employee employee) {
+    var contract = new Employeecontract();
+    ReflectionTestUtils.setField(contract, "id", id);
+    contract.setEmployee(employee);
+    return contract;
+  }
+
+  private static Suborder suborder(String customerorderSign, String customerorderDescription, String sign, String description) {
+    var customerorder = new Customerorder();
+    customerorder.setSign(customerorderSign);
+    customerorder.setDescription(customerorderDescription);
+    var suborder = new Suborder();
+    suborder.setSign(sign);
+    suborder.setDescription(description);
+    suborder.setCustomerorder(customerorder);
+    return suborder;
+  }
+
+  private static Employeeorder employeeorder(long id, Employeecontract contract, Suborder suborder) {
+    var employeeorder = new Employeeorder();
+    ReflectionTestUtils.setField(employeeorder, "id", id);
+    employeeorder.setSuborder(suborder);
+    employeeorder.setEmployeecontract(contract);
+    return employeeorder;
+  }
 
 
   private List<DailyWorkingReportData> read(String csv) throws IOException {
-    return converter.read(new ByteArrayInputStream(csv.getBytes(UTF_8))).reports();
+    return converter.read(new ByteArrayInputStream(csv.getBytes(UTF_8)), employee).reports();
   }
 
   private String export() throws IOException {
@@ -333,6 +583,7 @@ class DailyWorkingReportServiceImportTest {
         .referenceday(DAY)
         .employeeorderId(ORDER_ID)
         .employeecontractId(CONTRACT_ID)
+        .employeeSign("testuser")
         .customerorderSign("111")
         .customerorderDescription("Rumsitzen")
         .completeOrderSign("111/01")

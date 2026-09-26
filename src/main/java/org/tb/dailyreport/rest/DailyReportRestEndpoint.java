@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.service.BookingOrderResolver;
 import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -58,6 +60,7 @@ public class DailyReportRestEndpoint {
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
     private final DailyWorkingReportService dailyWorkingReportService;
+    private final BookingOrderResolver bookingOrderResolver;
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
 
@@ -214,9 +217,10 @@ public class DailyReportRestEndpoint {
         checkAuthenticated();
         try {
             bookings.stream().collect(groupingBy(DailyReportData::getDate))
-                    .forEach((day, bookingsOfDay)-> bookingsOfDay.stream().collect(groupingBy(DailyReportData::getEmployeeorderId))
-                            .forEach((employeeOrderId, bookingsOfOrder) ->
-                                    replaceDailyReports(DateUtils.parse(day), employeeOrderId, bookingsOfOrder))
+                    .forEach((day, bookingsOfDay) -> bookingsOfDay.stream()
+                            .collect(groupingBy(booking -> employeeorderOf(booking, DateUtils.parse(day)), LinkedHashMap::new, toList()))
+                            .forEach((employeeorder, bookingsOfOrder) ->
+                                    dailyWorkingReportService.replaceDailyReports(DateUtils.parse(day), employeeorder, bookingsOfOrder))
                     );
         } catch (AuthorizationException e) {
             throw new ResponseStatusException(FORBIDDEN, "Could not create timereports. " + e);
@@ -225,20 +229,24 @@ public class DailyReportRestEndpoint {
         }
     }
 
-    private void replaceDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings) {
-        var employeeorder = employeeorderService.getEmployeeorderById(employeeOrderId);
-        if (employeeorder == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
-        }
-        dailyWorkingReportService.replaceDailyReports(day, employeeorder, bookings);
+    private void createDailyReport(DailyReportData booking) throws AuthorizationException, InvalidDataException, BusinessRuleException {
+        doCreateDailyReport(booking, employeeorderOf(booking, DateUtils.parse(booking.getDate())));
     }
 
-    private void createDailyReport(DailyReportData booking) throws AuthorizationException, InvalidDataException, BusinessRuleException {
-        var employeeorder = employeeorderService.getEmployeeorderById(booking.getEmployeeorderId());
-        if (employeeorder == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + booking.getEmployeeorderId());
+    /**
+     * The order a booking names (#1142). An id takes precedence and answers 404 where it matches none, as
+     * it always has; without an id, suborder and employee sign name the order, and a booking they do not
+     * name unambiguously is the caller's error.
+     */
+    private Employeeorder employeeorderOf(DailyReportData booking, LocalDate day) {
+        if (booking.getEmployeeorderId() != null) {
+            var employeeorder = employeeorderService.getEmployeeorderById(booking.getEmployeeorderId());
+            if (employeeorder == null) {
+                throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + booking.getEmployeeorderId());
+            }
+            return employeeorder;
         }
-        doCreateDailyReport(booking, employeeorder);
+        return bookingOrderResolver.resolve(booking, day);
     }
 
     private void doCreateDailyReport(DailyReportData booking, Employeeorder employeeorder) {

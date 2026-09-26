@@ -24,10 +24,16 @@ public class ErrorCodeViewHelper {
    * Die einzelne Meldung, aufgelöst. Nicht jede Meldung kommt aus einer Ausnahme: eine Bedingung,
    * die festgehalten und später beantwortet wird, trägt dieselbe {@link ServiceFeedbackMessage}
    * ohne je geworfen worden zu sein (#1054).
+   *
+   * <p>Ein Argument, das selbst eine Meldung ist, wird vorher aufgelöst: so setzt der CSV-Import die
+   * Zeilennummer vor eine Meldung, die ohne Zeile formuliert ist, weil die REST-API sie ebenso
+   * wirft (#1142).
    */
   public ViewMessage toViewMessage(ServiceFeedbackMessage message) {
     String key = toErrorKey(message.getErrorCode());
-    Object[] args = message.getArguments().toArray();
+    Object[] args = message.getArguments().stream()
+        .map(arg -> arg instanceof ServiceFeedbackMessage nested ? toViewMessage(nested).resolved() : arg)
+        .toArray();
     String resolved = messages.getMessage(key, args, "???" + key + "???");
     return new ViewMessage(key, args, resolved);
   }

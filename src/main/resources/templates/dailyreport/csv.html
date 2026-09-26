@@ -340,7 +340,7 @@
               <td class="text-muted">integer</td>
               <td class="font-monospace small">78</td>
               <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.one.of.text}">One of 4/7</td>
-              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeeorderid.notes.text}">Order ID; if absent, suborderSign is used</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeeorderid.notes.text}">ID of the employee order, optional; takes precedence</td>
             </tr>
             <tr>
               <td class="text-muted">5</td>
@@ -362,9 +362,9 @@
               <td class="text-muted">7</td>
               <td class="fw-medium">suborderSign</td>
               <td class="text-muted">text</td>
-              <td class="font-monospace small">DEV-BACKEND</td>
+              <td class="font-monospace small">ALPHA/BE</td>
               <td class="text-nowrap small" th:text="#{main.dailyreport.csv.format.import.one.of.text}">One of 4/7</td>
-              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.subordersign.notes.text}">Task key; used to look up the order if employeeorderId is absent</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.subordersign.notes.text}">Complete suborder sign, compared exactly</td>
             </tr>
             <tr>
               <td class="text-muted">8</td>
@@ -406,15 +406,23 @@
               <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
               <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.training.notes.text}">Training booking; empty or missing means false</td>
             </tr>
+            <tr>
+              <td class="text-muted">13</td>
+              <td class="fw-medium">employeeSign</td>
+              <td class="text-muted">text</td>
+              <td class="font-monospace small">abc</td>
+              <td class="text-nowrap small text-muted" th:text="#{main.dailyreport.csv.format.import.optional.text}">Optional</td>
+              <td class="text-muted small" th:text="#{main.dailyreport.csv.format.col.employeesign.notes.text}">Employee sign; if absent, the employee of the selected contract</td>
+            </tr>
           </tbody>
         </table>
       </div>
       <p class="text-muted small mb-1 mt-3" th:text="#{main.dailyreport.csv.format.example.two.bookings.text}">Example &mdash; day with two bookings:</p>
-      <pre class="rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
-2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,DEV-BACKEND,Backend Development,03:00,initial setup,PROJ-123,false
-2026-06-02,,,,78,ALPHA,Alpha Projekt,DEV-FRONTEND,Frontend Development,01:30,refactoring,,true</pre>
+      <pre class="rounded p-3 small mb-2">date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training,employeeSign
+2026-06-02,WORKED,08:00,00:30,78,ALPHA,Alpha Projekt,ALPHA/BE,Backend Development,03:00,initial setup,PROJ-123,false,abc
+2026-06-02,,,,,,,ALPHA/FE,,01:30,refactoring,,true,abc</pre>
       <p class="text-muted small mb-1" th:text="#{main.dailyreport.csv.format.example.not.worked.text}">Example &mdash; not-worked day (no bookings):</p>
-      <pre class="rounded p-3 small mb-0">2026-06-09,NOT_WORKED,,,,,,,,,,,</pre>
+      <pre class="rounded p-3 small mb-0">2026-06-09,NOT_WORKED,,,,,,,,,,,,</pre>
     </div>
   </div>
 

@@ -10,10 +10,8 @@ import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.EM
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,7 +31,6 @@ import org.tb.employee.event.EmployeecontractChangedEvent;
 import org.tb.employee.event.EmployeecontractConflictResolutionEvent;
 import org.tb.employee.event.EmployeecontractDeleteEvent;
 import org.tb.employee.event.EmployeecontractUpdateEvent;
-import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Employeeorder;
@@ -60,7 +57,6 @@ public class EmployeeorderService {
   private final SuborderService suborderService;
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
-  private final EmployeeService employeeService;
 
   @Authorized(requiresManager = true)
   public void create(Employeeorder employeeorder) {
@@ -476,24 +472,24 @@ public class EmployeeorderService {
     employeeorderRepository.save(employeeorder);
   }
 
-  public Employeeorder getEmployeeorderByEmployeeAndSuborder(String employeeSign, String suborderSign, LocalDate date) {
-    var employee = employeeService.getEmployeeBySign(employeeSign);
-    if(employee == null) {
-      return null;
-    }
-    var contract = employeecontractService.getEmployeeContractValidAt(employee.getId(), date);
-    if(contract == null) {
-      return null;
-    }
-    var orders = employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(contract.getId(), date);
-    var mapped = orders.stream().collect(Collectors.toMap(order -> normalizeSign(order.getSuborder().getCompleteOrderSign()), order -> order));
-    var suborderSignNormalized = normalizeSign(suborderSign);
-    var match = mapped.keySet().stream().sorted(Comparator.comparing(String::length)).filter(sign -> sign.contains(suborderSignNormalized)).findFirst();
-    return match.map(mapped::get).orElse(null);
-  }
-
-  private String normalizeSign(String orderSign) {
-    return orderSign.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+  /**
+   * The employee orders of the contract that are valid on the day and whose suborder carries exactly
+   * this complete order sign, e.g. {@code 4711/01} (#1142). Import and REST API name a booking's order
+   * that way when they leave out its id.
+   *
+   * <p>The sign is compared as it is, apart from surrounding blanks: {@code 4711/1} does not find
+   * {@code 4711/10}. Neither the database nor the forms keep a complete sign unique, and a contract can
+   * hold several orders on the same suborder, so this answers with all matches; the caller decides what
+   * none or several mean.
+   */
+  public List<Employeeorder> getEmployeeordersByCompleteOrderSignValidAt(long employeecontractId, String completeOrderSign,
+      LocalDate date) {
+    var sign = completeOrderSign.strip();
+    return employeeorderDAO.getEmployeeordersByEmployeeContractIdAndValidAt(employeecontractId, date).stream()
+        // the DAO leaves out orders that ended before the day, but not those that begin after it
+        .filter(order -> order.isValidAt(date))
+        .filter(order -> sign.equals(order.getSuborder().getCompleteOrderSign()))
+        .toList();
   }
 
 }

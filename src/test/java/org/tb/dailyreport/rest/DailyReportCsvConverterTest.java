@@ -38,7 +38,7 @@ class DailyReportCsvConverterTest {
                     "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1"
                 """;
         var dailyReport1 = DailyReportData.builder()
-                .date("2024-10-29").employeeorderId(183209)
+                .date("2024-10-29").employeeorderId(183209L)
                 .orderSign("111").orderLabel("Rumsitzen")
                 .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
                 .hours(1).minutes(0).comment("test1")
@@ -91,16 +91,35 @@ class DailyReportCsvConverterTest {
                 .containsExactly(tuple("test1", "ERP-1", true), tuple("test2", "", false));
     }
 
+    /* The employee sign is a new column at the end (#1142); with it and the suborder sign a line needs no
+       order id, and position 1 may stay empty. */
+    @Test
+    void shouldReadABookingNamedBySignsWithoutAnId() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign"
+                    "2024-10-29","","","","111/01","","1","0","test1","","","abc"
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when
+        var result = dailyReportCsvConverter.read(null, inputMessage);
+
+        // then
+        assertThat(result).extracting(DailyReportData::getEmployeeorderId, DailyReportData::getSuborderSign, DailyReportData::getEmployeeSign)
+                .containsExactly(tuple(null, "111/01", "abc"));
+    }
+
     @Test
     void shouldWriteToCsv() throws IOException {
         // given
         var rawData = """
-                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true"
+                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training","employeeSign"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false",""
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true","abc"
                 """;
         var dailyReport1 = DailyReportData.builder()
-                .date("2024-10-29").employeeorderId(183209)
+                .date("2024-10-29").employeeorderId(183209L)
                 .orderSign("111").orderLabel("Rumsitzen")
                 .suborderSign("111.01").suborderLabel("Stuhlpolsterung")
                 .hours(1).minutes(0).comment("test1")
@@ -111,7 +130,7 @@ class DailyReportCsvConverterTest {
 
         // when
         dailyReportCsvConverter.write(List.of(dailyReport1,
-                dailyReport1.toBuilder().comment("test2").ticketReference("ERP-1").training(true).build()), null, outputMessage);
+                dailyReport1.toBuilder().comment("test2").ticketReference("ERP-1").training(true).employeeSign("abc").build()), null, outputMessage);
 
         // then
         assertThat(IOUtils.toString(outputStream.toByteArray(), "UTF-8")).isEqualTo(rawData);

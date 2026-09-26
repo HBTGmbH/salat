@@ -10,8 +10,12 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_NO_EMPLOYEE_ORDER;
+import static org.tb.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
 import static org.tb.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
 import static org.tb.dailyreport.rest.DailyReportData.valueOf;
 
@@ -28,9 +32,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.service.BookingOrderResolver;
 import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.AuthorizedEmployee;
@@ -59,6 +65,9 @@ class DailyReportRestEndpointTest {
 
     @Mock
     AuthorizedUser authorizedUser;
+
+    @Mock
+    BookingOrderResolver bookingOrderResolver;
 
     @Captor
     ArgumentCaptor<LocalDate> dateArgumentCaptor;
@@ -296,6 +305,118 @@ class DailyReportRestEndpointTest {
         assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))
                 .isInstanceOfSatisfying(ResponseStatusException.class, ex ->
                         assertThat(ex.getStatusCode()).isEqualTo(BAD_REQUEST));
+    }
+
+    /* Without an id, complete suborder sign and employee sign name the order (#1142). */
+    @Test
+    void shouldCreateBookingNamedBySigns() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var booking = DailyReportData.builder()
+                .date("2024-07-06").suborderSign("4711/01").employeeSign("abc")
+                .hours(1).minutes(0).comment("test")
+                .build();
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(bookingOrderResolver.resolve(booking, day)).thenReturn(employeeOrder);
+
+        // when
+        dailyReportRestEndpoint.createBooking(booking);
+
+        // then
+        verify(timereportService).createTimereports(
+                employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
+                null, false, 1, 0, 1);
+    }
+
+    /* A client that sends the id together with signs of an older read keeps working: the id wins, and the
+       signs are not evaluated at all (#1142). */
+    @Test
+    void shouldBookOnTheIdEvenWhereTheSignsDoNotFit() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var booking = DailyReportData.builder()
+                .date("2024-07-06").employeeorderId(1L).orderSign("999").suborderSign("999/99").employeeSign("niemand")
+                .hours(1).minutes(0).comment("test")
+                .build();
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeeorderService.getEmployeeorderById(1L)).thenReturn(employeeOrder);
+
+        // when
+        dailyReportRestEndpoint.createBooking(booking);
+
+        // then
+        verify(timereportService).createTimereports(
+                employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
+                null, false, 1, 0, 1);
+        verifyNoInteractions(bookingOrderResolver);
+    }
+
+    /* No order, no contract or several orders are the caller's error: 400, not a NullPointerException. */
+    @Test
+    void shouldAnswerSignsWithoutAMatchingOrderWithBadRequest() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var booking = DailyReportData.builder()
+                .date("2024-07-06").suborderSign("4711/1").employeeSign("abc").hours(1).minutes(0)
+                .build();
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(bookingOrderResolver.resolve(booking, day))
+                .thenThrow(new InvalidDataException(TR_BOOKING_NO_EMPLOYEE_ORDER, "4711/1", "abc", "2024-07-06"));
+
+        // when / then
+        assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))
+                .isInstanceOfSatisfying(ResponseStatusException.class, ex ->
+                        assertThat(ex.getStatusCode()).isEqualTo(BAD_REQUEST));
+        verifyNoInteractions(timereportService);
+    }
+
+    /* Naming the order by signs opens nothing: the booking goes through the same service, and the same guard,
+       as one named by its id (#1142). */
+    @Test
+    void shouldAnswerABookingBySignsForSomeoneNotPermittedWithForbidden() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var booking = DailyReportData.builder()
+                .date("2024-07-06").suborderSign("4711/01").employeeSign("fremd").hours(1).minutes(0).comment("test")
+                .build();
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(bookingOrderResolver.resolve(booking, day)).thenReturn(employeeOrder);
+        doThrow(new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE)).when(timereportService).createTimereports(
+                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), anyLong(), anyLong(), anyInt());
+
+        // when / then
+        assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))
+                .isInstanceOfSatisfying(ResponseStatusException.class, ex ->
+                        assertThat(ex.getStatusCode()).isEqualTo(FORBIDDEN));
+    }
+
+    /* Replacing groups by the order the bookings name, whether by id or by signs (#1142). */
+    @Test
+    void shouldUpdateBookingsNamedByIdAndBySignsTogether() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var byId = DailyReportData.builder().date("2024-07-06").employeeorderId(employeeOrder.getId())
+                .hours(1).minutes(0).comment("test1").build();
+        var bySigns = DailyReportData.builder().date("2024-07-06").suborderSign("4711/01").employeeSign("abc")
+                .hours(2).minutes(0).comment("test2").build();
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeeorderService.getEmployeeorderById(employeeOrder.getId())).thenReturn(employeeOrder);
+        when(bookingOrderResolver.resolve(bySigns, day)).thenReturn(employeeOrder);
+
+        // when
+        dailyReportRestEndpoint.updateBookings(List.of(byId, bySigns));
+
+        // then
+        verify(dailyWorkingReportService, times(1)).replaceDailyReports(day, employeeOrder, List.of(byId, bySigns));
     }
 
     // fixtures

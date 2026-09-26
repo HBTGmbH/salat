@@ -5,6 +5,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static org.tb.common.exception.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_NO_CONTRACT;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
 import static org.tb.dailyreport.service.TimereportService.normalizeTicketReference;
@@ -17,6 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
@@ -26,12 +28,14 @@ import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
+import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.persistence.TimereportDAO;
 import org.tb.dailyreport.persistence.WorkingdayDAO;
 import org.tb.dailyreport.rest.DailyReportData;
 import org.tb.dailyreport.rest.DailyWorkingReportData;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.order.domain.Employeeorder;
@@ -48,6 +52,7 @@ public class DailyWorkingReportService {
     private final WorkingdayService workingdayService;
     private final TimereportService timereportService;
     private final TimereportDAO timereportDAO;
+    private final BookingOrderResolver bookingOrderResolver;
 
     @Transactional(readOnly = true)
     public List<DailyWorkingReportData> getReportsForMonth(YearMonth month, long employeeContractId) {
@@ -74,26 +79,44 @@ public class DailyWorkingReportService {
         return builder.build();
     }
 
-    public ImportReport createReports(List<DailyWorkingReportData> reports, long contractId)
+    /**
+     * The CSV import of the UI (#1142): the file belongs to {@code employee}, the employee of the contract
+     * the page has selected. Which of their contracts a day goes to follows from the day, so a file spanning
+     * a change of contract books each day on the contract valid then.
+     */
+    public ImportReport createReports(List<DailyWorkingReportData> reports, Employee employee)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return importReport(reports.stream()
-            .sorted(Comparator.comparing(DailyWorkingReportData::getDate))
-            .map(r -> doCreateReport(r, false, contractId)).toList());
+        return importReportOf(reports, employee, false);
     }
 
-    public ImportReport updateReports(List<DailyWorkingReportData> reports, long contractId)
+    /** As {@link #createReports(List, Employee)}, replacing the bookings of each day and order in the file. */
+    public ImportReport updateReports(List<DailyWorkingReportData> reports, Employee employee)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
+        return importReportOf(reports, employee, true);
+    }
+
+    private ImportReport importReportOf(List<DailyWorkingReportData> reports, Employee employee, boolean upsert) {
         return importReport(reports.stream()
             .sorted(Comparator.comparing(DailyWorkingReportData::getDate))
-            .map(r -> doCreateReport(r, true, contractId)).toList());
+            .map(r -> withAssignedOrders(r, booking -> bookingOrderResolver.resolveFor(employee, booking, r.getDate())))
+            .map(r -> doCreateReport(r, upsert, contractIdOf(employee, r.getDate())))
+            .toList());
+    }
+
+    private long contractIdOf(Employee employee, LocalDate day) {
+        var contract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employee.getId(), day);
+        if (contract == null) {
+            throw new InvalidDataException(TR_BOOKING_NO_CONTRACT, employee.getSign(), DateUtils.format(day));
+        }
+        return contract.getId();
     }
 
     public ImportReport createReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return importReport(groupByContractId(reports).entrySet().stream()
+        return importReport(groupByContractId(withAssignedOrders(reports)).entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(r -> doCreateReport(r, false, e.getKey())))
             .sorted(Comparator.comparing(ImportReport.DayResult::date))
             .toList());
@@ -102,10 +125,31 @@ public class DailyWorkingReportService {
     public ImportReport updateReports(List<DailyWorkingReportData> reports)
             throws AuthorizationException, InvalidDataException, BusinessRuleException
     {
-        return importReport(groupByContractId(reports).entrySet().stream()
+        return importReport(groupByContractId(withAssignedOrders(reports)).entrySet().stream()
             .flatMap(e -> e.getValue().stream().map(r -> doCreateReport(r, true, e.getKey())))
             .sorted(Comparator.comparing(ImportReport.DayResult::date))
             .toList());
+    }
+
+    /** The REST API: an id takes precedence, the signs name the order only without one (#1142). */
+    private List<DailyWorkingReportData> withAssignedOrders(List<DailyWorkingReportData> reports) {
+        return reports.stream()
+            .map(r -> withAssignedOrders(r, booking -> bookingOrderResolver.resolve(booking, r.getDate())))
+            .toList();
+    }
+
+    /**
+     * Assigns every booking of the day its employee order and takes over what follows from the order
+     * (#1142). This has to happen before the bookings are grouped by order and compared with the stored
+     * ones: a booking named by its signs has no id yet, and one with stale labels would never equal the
+     * booking it stands for — in the mode "replace" each would be deleted and created again.
+     */
+    private static DailyWorkingReportData withAssignedOrders(DailyWorkingReportData report,
+            Function<DailyReportData, Employeeorder> orderOf) {
+        var bookings = ofNullable(report.getDailyReports()).orElse(List.of()).stream()
+            .map(booking -> booking.assignedTo(orderOf.apply(booking), report.getDate()))
+            .toList();
+        return report.toBuilder().dailyReports(bookings).build();
     }
 
     private static ImportReport importReport(List<ImportReport.DayResult> days) {
@@ -246,7 +290,8 @@ public class DailyWorkingReportService {
      */
     public void replaceDailyReports(LocalDate day, Employeeorder employeeorder, List<DailyReportData> bookings) {
         var employeeOrderId = requireNonNull(employeeorder.getId(), "ID of order is required");
-        var resolved = withResolvedTicketReferences(bookings, storedBookings(day, employeeOrderId));
+        var assigned = bookings.stream().map(booking -> booking.assignedTo(employeeorder, day)).toList();
+        var resolved = withResolvedTicketReferences(assigned, storedBookings(day, employeeOrderId));
         timereportService.deleteTimeReports(day, employeeOrderId);
         resolved.forEach(booking -> doCreateDailyReport(day, booking, employeeorder, employeeorder.getEmployeecontract()));
     }
