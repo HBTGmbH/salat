@@ -216,6 +216,23 @@ class MatrixServiceFillNotWorkedTest {
     assertThat(stored.getType()).isEqualTo(NOT_WORKED);
   }
 
+  /**
+   * Die Regel zählt einen als nicht gearbeitet markierten Tag nicht als Arbeitstag, also bleibt er
+   * unberührt. Bis #1124 wurde er erneut gespeichert und verlor dabei Beginn und Pause — in Kauf
+   * genommen, als die Aktion auf die Regel umgestellt wurde.
+   */
+  @Test
+  void does_not_save_a_day_already_marked_as_not_worked_again() {
+    var notWorked = workingday(day(10), NOT_WORKED, 7, 15, 0, 30);
+
+    fillNotWorked();
+
+    var stored = storedWorkingday(day(10));
+    assertThat(stored.getUpdatecounter()).isEqualTo(notWorked.getUpdatecounter());
+    assertThat(List.of(stored.getStarttimehour(), stored.getStarttimeminute(), stored.getBreakhours(),
+        stored.getBreakminutes())).containsExactly(7, 15, 0, 30);
+  }
+
   @Test
   void the_management_may_fill_the_month_of_someone_else() {
     logInAs("gf" + PERSONS.incrementAndGet(), "ROLE_MANAGER");
