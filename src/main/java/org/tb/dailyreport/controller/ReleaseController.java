@@ -3,7 +3,6 @@ package org.tb.dailyreport.controller;
 import static org.tb.common.util.DateUtils.addMonths;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.min;
-import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -106,7 +105,7 @@ public class ReleaseController {
         model.addAttribute("subSection", "release");
         model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.release.text"));
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.timereports.text"));
-        return ReviewPage.VIEW_NAME;
+        return ReviewPage.RELEASE_VIEW_NAME;
     }
 
     /**
@@ -163,14 +162,5 @@ public class ReleaseController {
     private String lastMonthStr(Employeecontract contract) {
         if (contract == null || contract.getValidUntil() == null) return null;
         return YearMonth.from(contract.getValidUntil()).toString();
-    }
-
-    /**
-     * Das Ende des gewählten Monats; ein leeres Feld heißt „bis heute". Nur noch für die Abnahme,
-     * bis auch sie eine Übersicht bekommt (#1122).
-     */
-    static LocalDate parseEndOfMonth(String s) {
-        if (s == null || s.isBlank()) return today();
-        return YearMonth.parse(s).atEndOfMonth();
     }
 }

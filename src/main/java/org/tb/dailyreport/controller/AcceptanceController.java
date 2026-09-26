@@ -4,7 +4,6 @@ import static org.tb.common.util.DateUtils.addMonths;
 import static org.tb.common.util.DateUtils.format;
 import static org.tb.common.util.DateUtils.min;
 import static org.tb.common.util.DateUtils.today;
-import static org.tb.dailyreport.controller.ReleaseController.parseEndOfMonth;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -41,6 +40,7 @@ import org.tb.employee.service.EmployeecontractService;
 public class AcceptanceController {
 
     private static final String RELEASE_REVIEW_PATH = "/acceptance/release/review";
+    private static final String ACCEPT_REVIEW_PATH = "/acceptance/accept/review";
 
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
@@ -88,6 +88,8 @@ public class AcceptanceController {
         model.addAttribute("acceptedUntil", selected != null ? format(selected.getReportAcceptanceDate()) : "");
         model.addAttribute("releaseDateStr", defaultReleaseDateStr(selected));
         model.addAttribute("acceptanceDateStr", defaultAcceptanceDateStr(selected));
+        model.addAttribute("acceptanceMaxMonthStr", acceptanceMaxMonthStr(selected));
+        model.addAttribute("acceptAllowed", selected != null && releaseService.isAcceptAllowed(selected.getId()));
         model.addAttribute("reopenDateStr", defaultReleaseDateStr(selected));
         model.addAttribute("lastMonthStr", lastMonthStr(selected));
         model.addAttribute("section", "backoffice");
@@ -122,7 +124,7 @@ public class AcceptanceController {
         model.addAttribute("subSection", "acceptance");
         model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.release.text"));
         model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
-        return ReviewPage.VIEW_NAME;
+        return ReviewPage.RELEASE_VIEW_NAME;
     }
 
     /**
@@ -149,20 +151,56 @@ public class AcceptanceController {
         }
     }
 
+    /**
+     * Die Übersicht vor der Abnahme für die gewählte Person (#1122): dieselben Bausteine wie vor der
+     * Freigabe, dazu die Folge der Abnahme. Ohne Vertrag oder Monat geht es zurück zur Abnahme; wer
+     * den Vertrag nicht abnehmen darf, bekommt 403 (Service) — auch für den eigenen.
+     */
+    @GetMapping("/accept/review")
+    public String acceptReview(@RequestParam(required = false) Long contractId,
+                               @RequestParam(required = false) String until,
+                               @RequestParam(required = false) String view,
+                               Model model) {
+        var month = ReviewPage.month(until);
+        if (contractId == null || month.isEmpty()
+            || employeecontractService.getEmployeecontractById(contractId) == null) {
+            return "redirect:/acceptance";
+        }
+        var effectiveView = ReviewLinks.viewOf(view);
+        var review = releaseService.reviewAcceptance(contractId, month.get().atEndOfMonth());
+        var links = ReviewLinks.of(ACCEPT_REVIEW_PATH, contractId, month.get(), effectiveView,
+            "/acceptance/accept", "/acceptance");
+        ReviewPage.addReview(model, review, links, effectiveView, errorCodeViewHelper);
+        model.addAttribute("section", "backoffice");
+        model.addAttribute("subSection", "acceptance");
+        model.addAttribute("pageTitle", messages.getMessage("main.release.review.title.accept.text"));
+        model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.backoffice.text"));
+        return ReviewPage.ACCEPTANCE_VIEW_NAME;
+    }
+
+    /**
+     * Nimmt genau den Zeitraum ab, den die Übersicht gezeigt hat (#1122). Danach geht es ohne
+     * Filterparameter zurück: die Auswahl der Abnahme ist gemerkt, und Speichern ändert den Filter
+     * nicht (ADR-0023). Scheitert es, geht es zurück in die Übersicht derselben Person; eine fehlende
+     * Berechtigung wird nicht abgefangen, sie endet als 403 auf der Fehlerseite.
+     */
     @PostMapping("/accept")
-    public String accept(@RequestParam Long contractId,
-                         @RequestParam(required = false) String acceptanceDate,
+    public String accept(@RequestParam long contractId,
+                         @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate periodBegin,
+                         @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate periodEnd,
+                         @RequestParam(required = false) String view,
                          RedirectAttributes redirectAttributes) {
         try {
-            // until the review page takes over (#1122): accept the period its review shows
-            var period = releaseService.reviewAcceptance(contractId, parseEndOfMonth(acceptanceDate)).period();
-            releaseService.acceptTimereports(contractId, period.begin(), period.end());
+            releaseService.acceptTimereports(contractId, periodBegin, periodEnd);
             redirectAttributes.addFlashAttribute("toastSuccess",
-                messages.getMessage("main.release.accepttimeperiod.text"));
-        } catch (ErrorCodeException ex) {
-            redirectAttributes.addFlashAttribute("toastErrors", allMessages(ex));
+                ReviewPage.acceptedMessage(messages, periodBegin, periodEnd));
+            return "redirect:/acceptance";
+        } catch (BusinessRuleException | InvalidDataException ex) {
+            redirectAttributes.addFlashAttribute("toastError", ReviewPage.failureMessage(ex, errorCodeViewHelper,
+                messages, "main.release.review.notaccepted.text"));
+            return "redirect:" + ReviewLinks.of(ACCEPT_REVIEW_PATH, contractId, YearMonth.from(periodEnd),
+                ReviewLinks.viewOf(view), "/acceptance/accept", "/acceptance").currentUrl();
         }
-        return "redirect:/acceptance?contractId=" + contractId;
     }
 
     @PostMapping("/reopen")
@@ -223,15 +261,31 @@ public class AcceptanceController {
         return monthStr(min(defaultDate, contract.getValidUntil()));
     }
 
-    private String defaultAcceptanceDateStr(Employeecontract contract) {
+    /**
+     * Der Monat, den die Abnahme vorschlägt (#1122): der der Freigabe — abgenommen wird, was
+     * freigegeben ist. Bis dahin war es der Monat der letzten Abnahme, und dessen Übersicht wäre leer.
+     * Ist noch nichts freigegeben, bleibt der frühere Vorschlag; die Übersicht sagt dann, warum es
+     * nichts abzunehmen gibt.
+     */
+    private static String defaultAcceptanceDateStr(Employeecontract contract) {
         if (contract == null) return "";
+        if (contract.getReportReleaseDate() != null) return monthStr(contract.getReportReleaseDate());
         LocalDate ad = contract.getReportAcceptanceDate();
         LocalDate defaultDate = ad == null ? contract.getValidFrom() : ad;
         return monthStr(min(defaultDate, contract.getValidUntil()));
     }
 
+    /**
+     * Der späteste Monat, den die Abnahme anbietet (#1122): der der Freigabe, denn weiter reicht keine
+     * Abnahme. Ohne Freigabe das Vertragsende, wie bisher.
+     */
+    private static String acceptanceMaxMonthStr(Employeecontract contract) {
+        if (contract != null && contract.getReportReleaseDate() != null) return monthStr(contract.getReportReleaseDate());
+        return lastMonthStr(contract);
+    }
+
     /** Der letzte Monat, in dem es etwas freizugeben oder abzunehmen gibt (#324). */
-    private String lastMonthStr(Employeecontract contract) {
+    private static String lastMonthStr(Employeecontract contract) {
         if (contract == null || contract.getValidUntil() == null) return null;
         return monthStr(contract.getValidUntil());
     }

@@ -75,6 +75,14 @@ class TimereportControllerTest {
             + "&returnUrl=%2Frelease%2Freview%3Funtil%3D2026-06%26view%3Dday%23day-2026-06-18");
   }
 
+  /** Aus der Übersicht vor der Abnahme (#1122) ebenso. */
+  @Test
+  void the_acceptance_review_is_a_safe_return_target() {
+    assertThat(nextBookingUrl(DATE, null, null, "/acceptance/accept/review?contractId=42&until=2026-06#tr-5"))
+        .isEqualTo("/dailyreport/timereports/new?date=2026-06-18"
+            + "&returnUrl=%2Facceptance%2Faccept%2Freview%3FcontractId%3D42%26until%3D2026-06%23tr-5");
+  }
+
   /**
    * Ein Formular für einen genannten Vertrag (#760) öffnet das nächste für denselben — über das
    * Formularfeld, nicht über die gemerkte Auswahl, die eine andere Person nennen kann.
