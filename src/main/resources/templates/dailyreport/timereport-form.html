@@ -17,6 +17,10 @@
               th:object="${timereportForm}">
 
           <input type="hidden" th:if="${timereportForm.id != null}" th:field="*{id}"/>
+          <!--/* nur wenn das Formular fuer einen genannten Vertrag geoeffnet wurde (#760); die
+                 Aktualisierungen per HTMX nehmen das Feld ueber hx-include mit */-->
+          <input type="hidden" th:if="${timereportForm.id == null and timereportForm.employeecontractId != null}"
+                 th:field="*{employeecontractId}"/>
           <input type="hidden" th:field="*{durationMode}" id="durationModeField"/>
           <input type="hidden" id="saveAsFavField" name="saveAsFavorite" value="false"/>
           <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>

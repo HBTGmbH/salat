@@ -103,6 +103,16 @@
   <div class="row align-items-start">
     <div class="col-lg-8">
 
+      <!--/* Der Weg zurueck in die Uebersicht vor der Freigabe, aus der dieser Tag geoeffnet wurde
+             (#760): dort stehen die Befunde, die hier berichtigt werden. Er steht vor allem anderen,
+             damit er auch in der Tab-Reihenfolge der erste ist. Ausserhalb von #daily-bookings-area,
+             denn nur dieser Bereich wird nach dem Speichern von Beginn und Pause ausgetauscht. */-->
+      <div th:if="${reviewReturnUrl != null}" class="mb-3 d-print-none">
+        <a class="btn btn-outline-secondary" th:href="@{${reviewReturnUrl}}">
+          <i class="ti ti-arrow-left me-1" aria-hidden="true"></i><span th:text="#{main.release.review.backtoreview.text}">Zurück zur Übersicht</span>
+        </a>
+      </div>
+
       <!-- Date navigation -->
       <div class="card mb-3" id="daily-mode-nav">
         <div class="card-body text-center py-3">
@@ -141,6 +151,8 @@
                 hx-target="#daily-bookings-area"
                 hx-swap="outerHTML">
             <input type="hidden" name="date" th:value="${date}"/>
+            <!--/* nur fuer das Absenden ohne Skript, dessen Umleitung den Weg zurueck behaelt (#760) */-->
+            <input type="hidden" name="returnUrl" th:if="${reviewReturnUrl != null}" th:value="${reviewReturnUrl}"/>
 
             <!--/* flex-wrap: three field groups plus their steppers overflow a phone viewport,
                    so they stack there and stay in one row from md upwards */-->
