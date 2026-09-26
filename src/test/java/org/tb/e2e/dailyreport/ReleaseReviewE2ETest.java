@@ -22,7 +22,8 @@ import org.tb.e2e.PlaywrightE2ETestBase;
  *
  * <p>Every case runs on people of its own, seeded with their bookings by {@link E2ETestData}, so
  * no other class sees their periods and ema's June stays untouched. The first four cases only look
- * at {@link E2ETestData#EMPLOYEE_REVIEWED_SIGN}'s September and October; the last one books,
+ * at {@link E2ETestData#EMPLOYEE_REVIEWED_SIGN}'s September and October, the fifth at
+ * {@link E2ETestData#EMPLOYEE_STRAY_SIGN}'s September; the last one books,
  * edits and releases, on a person of its own per browser, because a period can be released only
  * once. The clock stands after all of these periods — at the class default the months would lie
  * in the future.
@@ -146,6 +147,37 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("a[href*='/timereports/new?']")).hasCount(0);
       assertThat(page.locator("a[href*='/edit']")).hasCount(0);
       assertThat(releaseButton(page)).isDisabled();
+    });
+  }
+
+  /**
+   * The release takes every open booking up to its end, also one before the period. The overview
+   * shows such a booking apart, above both views, so that nothing is released that it did not show;
+   * the owner gets its edit link, which leads back to it. Only looked at, never released or edited:
+   * both browsers share the person.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void an_open_booking_before_the_period_is_shown_apart(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_STRAY_SIGN, "/release/review?until=" + E2ETestData.STRAY_MONTH, page -> {
+      assertThat(page.locator("#review-summary"))
+          .containsText(E2ETestData.EMPLOYEE_STRAY_NAME + " | " + E2ETestData.EMPLOYEE_STRAY_SIGN);
+      assertThat(page.locator("#review-summary")).containsText("01.09.2026 – 30.09.2026");
+
+      Locator before = page.locator("#review-before-period");
+      assertThat(before.getByRole(AriaRole.HEADING)).hasText("Weitere Buchungen vor dem Zeitraum");
+      assertThat(before).containsText("1 Buchung");
+      Locator stray = before.locator("tr").filter(new Locator.FilterOptions().setHasText(E2ETestData.STRAY_COMMENT));
+      assertThat(stray).containsText("Mo. 31.08.2026");
+      assertThat(stray).containsText(ALPHA_DEV);
+      assertThat(stray).containsText("2:00");
+      assertThat(stray.locator("a[href*='/edit']"))
+          .hasAttribute("href", Pattern.compile(".*/edit\\?returnUrl=.*review-before-period$"));
+
+      // the period itself is all not worked and has no booking; the release would take the one above
+      assertThat(page.locator("#review-views")).containsText("Keine Buchungen");
+      assertThat(page.locator("#review-findings")).hasCount(0);
+      assertThat(releaseButton(page)).isEnabled();
     });
   }
 

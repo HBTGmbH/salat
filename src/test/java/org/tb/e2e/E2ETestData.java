@@ -128,6 +128,18 @@ public class E2ETestData {
   private static final LocalDate REVIEWED_RELEASED_UNTIL = LocalDate.of(2026, 8, 31);
 
   /**
+   * The person with an open booking before her period (#760), only looked at: released until the
+   * end of August, but one booking of that day is still open, as data from before the release
+   * marked every booking can be. The release sweeps it along, so {@code until=2026-09} shows it
+   * apart from September, whose working days are all marked as not worked.
+   */
+  public static final String EMPLOYEE_STRAY_SIGN = "erb";
+  public static final String EMPLOYEE_STRAY_NAME = "Berta Bestand";
+  public static final String STRAY_MONTH = "2026-09";
+  public static final LocalDate STRAY_DAY = LocalDate.of(2026, 8, 31);
+  public static final String STRAY_COMMENT = "Offen geblieben vor der letzten Freigabe";
+
+  /**
    * Released until the Sunday before, so {@code until=2026-11} shows the last week of November
    * 2026: two bookings, one working day without a booking, the rest not worked.
    */
@@ -267,6 +279,15 @@ public class E2ETestData {
     bookings.book(reviewedGlobex, LocalDate.of(2026, 10, 6), Duration.ofHours(5), "Abstimmung nach dem Feiertag");
     bookings.notWorkedExcept(reviewedContract, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31),
         Set.of(REVIEWED_DAY_WITHOUT_BOOKING));
+
+    Employee stray = employee(employeeRepository, salatUserRepository, EMPLOYEE_STRAY_SIGN,
+        "Berta", "Bestand", GlobalConstants.EMPLOYEE_STATUS_MA);
+    Employeecontract strayContract = employeecontract(employeecontractRepository, stray, peopleLead);
+    strayContract.setReportReleaseDate(STRAY_DAY);
+    strayContract = employeecontractRepository.save(strayContract);
+    Employeeorder strayAlpha = employeeorder(employeeorderRepository, strayContract, alphaDev);
+    bookings.book(strayAlpha, STRAY_DAY, Duration.ofHours(2), STRAY_COMMENT);
+    bookings.notWorkedExcept(strayContract, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), Set.of());
 
     for (E2EBrowser browser : E2EBrowser.values()) {
       Employee releasing = employee(employeeRepository, salatUserRepository, releasingEmployeeSign(browser),
