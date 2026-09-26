@@ -260,6 +260,49 @@ class ControllerAuthorizationIntegrationTest {
   }
 
   /**
+   * Die gesperrte Übersicht (#760): ein Befund über den ganzen Zeitraum, keine Sichten und kein
+   * Formular zum Freigeben. Auch sie muss mit allen Bausteinen rendern — die Tests des Service und
+   * des ViewHelpers rendern kein Template. Der Dezember 1999 liegt vor dem Vertragsbeginn; ein Monat
+   * in ferner Zukunft liegt hinter der Grenze der Freigabe, und die Seite steht, ohne die Tage bis
+   * dorthin zu bestimmen.
+   */
+  @ParameterizedTest(name = "{1} -> {0}")
+  @MethodSource("reviewBlocked")
+  void a_blocked_review_shows_its_period_finding_without_the_release_form(String path, String login)
+      throws Exception {
+    assertThatTheReviewIsBlocked(get(path, login));
+  }
+
+  /**
+   * Ein Monat, der schon freigegeben ist, war bis #760 eine {@code IllegalArgumentException} auf der
+   * Fehlerseite. Jetzt ist er der Befund {@code RL-0009} der gesperrten Übersicht.
+   */
+  @Test
+  void a_month_already_released_is_a_blocked_review() throws Exception {
+    var contract = contractOf(BACKOFFICE);
+    contract.setReportReleaseDate(LocalDate.of(2000, 1, 31));
+    employeecontractRepository.save(contract);
+    try {
+      var response = get("/release/review?" + REVIEW_MONTH, BACKOFFICE);
+
+      assertThatTheReviewIsBlocked(response);
+      assertThat(response.body()).containsAnyOf(
+          "Bis zum gewählten Monat ist bereits alles freigegeben.",
+          "Everything up to the selected month has already been released.");
+    } finally {
+      var released = contractOf(BACKOFFICE);
+      released.setReportReleaseDate(null);
+      employeecontractRepository.save(released);
+    }
+  }
+
+  private static void assertThatTheReviewIsBlocked(HttpResponse<String> response) {
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.body()).contains("id=\"review-period-errors\"", "id=\"review-action\"");
+    assertThat(response.body()).doesNotContain("name=\"periodBegin\"", "id=\"review-views\"", "id=\"review-findings\"");
+  }
+
+  /**
    * Wer den Vertrag nicht freigeben darf, sieht auch seine Übersicht nicht (#760) — über die eigene
    * Freigabe so wenig wie über die Abnahme. Den Vertrag nennt die Anfrage selbst; die Prüfung liegt
    * deshalb im Service, bei der Abnahme zusätzlich am Controller.
@@ -308,6 +351,15 @@ class ControllerAuthorizationIntegrationTest {
         Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={reg}&view=day", MANAGER),
         Arguments.of("/acceptance/release/review?contractId={reg}&" + REVIEW_MONTH, MANAGER),
         Arguments.of("/acceptance/release/review?contractId={reg}&" + REVIEW_MONTH + "&view=day", MANAGER));
+  }
+
+  private static Stream<Arguments> reviewBlocked() {
+    return Stream.of(
+        Arguments.of("/release/review?until=1999-12", REGULAR),
+        Arguments.of("/release/review?until=1999-12&view=day", REGULAR),
+        Arguments.of("/acceptance/release/review?contractId={reg}&until=1999-12", MANAGER),
+        Arguments.of("/release/review?until=9999-12", REGULAR),
+        Arguments.of("/release/review?until=%2B99999-12&view=day", RESTRICTED));
   }
 
   private static Stream<Arguments> reviewDenied() {
