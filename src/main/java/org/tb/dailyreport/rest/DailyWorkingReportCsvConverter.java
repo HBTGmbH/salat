@@ -31,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -286,6 +287,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                         .minutes(row.getWorkingTime().getMinute())
                         .comment(row.getComment())
                         .ticketReference(row.getTicketReference())
+                        .training(Boolean.TRUE.equals(row.getTraining()))
                         .build();
                 })
                 .toList();
@@ -305,7 +307,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference"
+                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training"
                 });
             }
         };
@@ -349,7 +351,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getSuborderLabel(),
             row.getWorkingTime(),
             row.getComment(),
-            row.getTicketReference()
+            row.getTicketReference(),
+            row.getTraining()
         );
     }
 
@@ -366,7 +369,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             reportData.getSuborderLabel(),
             LocalTime.of((int)reportData.getHours(), (int)reportData.getMinutes()),
             reportData.getComment(),
-            reportData.getTicketReference()
+            reportData.getTicketReference(),
+            reportData.isTraining()
         );
     }
 
@@ -399,6 +403,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         /** {@code null} where the file has no such column, empty where the column is empty (#1140). */
         @CsvCustomBindByName(converter = TicketReferenceConverter.class)
         private String ticketReference;
+        /** {@code null} on a row without a booking and where the file has no such column (#1140). */
+        @CsvCustomBindByName(converter = TrainingFlagConverter.class)
+        private Boolean training;
     }
 
     /**
@@ -490,6 +497,30 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 throw new CsvValueTooLongException(columnOf(this), TICKET_REFERENCE_MAX_LENGTH);
             }
             return value;
+        }
+    }
+
+    /**
+     * {@code true} oder {@code false}, gleich in welcher Schreibung; leer heißt {@code false} (#1140).
+     * Jeder andere Wert wird gemeldet statt als {@code false} gelesen — ein Tippfehler darf eine
+     * Schulungsbuchung nicht still zu einer gewöhnlichen machen.
+     */
+    public static class TrainingFlagConverter extends AbstractBeanField<Boolean, String> {
+        static final String EXPECTED_FORMATS = "true, false";
+
+        @Override
+        protected Boolean convert(String value) throws CsvDataTypeMismatchException {
+            if (value == null || value.isBlank()) return null;
+            return switch (value.trim().toLowerCase(Locale.ROOT)) {
+                case "true" -> Boolean.TRUE;
+                case "false" -> Boolean.FALSE;
+                default -> throw new CsvValueFormatException(columnOf(this), value, Boolean.class, EXPECTED_FORMATS);
+            };
+        }
+
+        @Override
+        protected String convertToWrite(Object value) {
+            return value == null ? "" : value.toString();
         }
     }
 

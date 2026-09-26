@@ -118,9 +118,9 @@ class DailyWorkingReportCsvConverterTest {
             ),
             Arguments.of(
                 """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
-                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1
-                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
+                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,
+                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,TRUE
                     """,
                 List.of(TWO_BOOKINGS_WITH_TICKET_REFERENCE),
                 false
@@ -246,7 +246,9 @@ class DailyWorkingReportCsvConverterTest {
 
         assertThat(result).singleElement().satisfies(day ->
             assertThat(day.getDailyReports()).singleElement().satisfies(booking ->
-                assertThat(booking.getTicketReference()).isNull()));
+                assertThat(booking).satisfies(
+                    b -> assertThat(b.getTicketReference()).isNull(),
+                    b -> assertThat(b.isTraining()).isFalse())));
     }
 
     /* A reference longer than a booking can store is reported like an unreadable value, with line
@@ -278,6 +280,23 @@ class DailyWorkingReportCsvConverterTest {
         var result = dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)).reports();
 
         assertThat(result.getFirst().getDailyReports().getFirst().getTicketReference().trim()).hasSize(64);
+    }
+
+    /* A value that is neither true nor false is reported, not read as false - a typo must not turn
+       a training booking into an ordinary one (#1140). */
+    @Test
+    void reports_an_unreadable_training_flag_as_an_input_error() {
+        var csv = """
+            date,type,startTime,breakTime,employeeorderId,workingTime,comment,training
+            2024-11-04,WORKED,09:00,00:30,183209,00:30,Team-Mittag,ja
+            """;
+
+        assertThatThrownBy(() -> dailyWorkingReportCsvConverter.read(IOUtils.toInputStream(csv, UTF_8)))
+            .isInstanceOfSatisfying(InvalidDataException.class, ex ->
+                assertThat(ex.getMessages()).singleElement().satisfies(message -> {
+                    assertThat(message.getErrorCode()).isEqualTo(ErrorCode.TR_CSV_VALUE_FORMAT_INVALID);
+                    assertThat(message.getArguments()).containsExactly(2L, "training", "ja", "true, false");
+                }));
     }
 
     /* Over the REST API the same faulty file is the caller's error, answered with 400 (#1140). */
@@ -312,27 +331,27 @@ class DailyWorkingReportCsvConverterTest {
             Arguments.of(
                     List.of(TWO_BOOKINGS),
                     """
-                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
-                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,
-                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
+                    date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
+                    2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,,false
+                    2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false
                     """,
                     false
             ),
             Arguments.of(
                 List.of(TWO_BOOKINGS_NO_START_BREAK_TIME),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
-                2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,
-                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
+                2024-11-04,WORKED,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,,false
+                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,false
                 """,
                 true
             ),
             Arguments.of(
                 List.of(TWO_BOOKINGS_WITH_TICKET_REFERENCE),
                 """
-                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference
-                2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1
-                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,
+                date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,workingTime,comment,ticketReference,training
+                2024-11-04,WORKED,09:00,00:30,183209,111,Rumsitzen,111/01,Stuhlpolsterung,00:30,Team-Mittag,ERP-1,false
+                2024-11-04,,,,183209,111,Rumsitzen,111/01,Stuhlpolsterung,07:30,Daily,,true
                 """,
                 false
             )
@@ -404,7 +423,8 @@ class DailyWorkingReportCsvConverterTest {
                   .build()
           ))
           .build();
-      /* read from a file with the column: the empty one is "no reference", not a missing one (#1140) */
+      /* read from a file with both columns: the empty reference is "no reference", not a missing one;
+         an empty training flag is false (#1140) */
       static DailyWorkingReportData TWO_BOOKINGS_WITH_TICKET_REFERENCE = DailyWorkingReportData.builder()
           .type(TWO_BOOKINGS.getType())
           .date(TWO_BOOKINGS.getDate())
@@ -412,7 +432,7 @@ class DailyWorkingReportCsvConverterTest {
           .breakDuration(TWO_BOOKINGS.getBreakDuration())
           .dailyReports(List.of(
               TWO_BOOKINGS.getDailyReports().get(0).withTicketReference("ERP-1"),
-              TWO_BOOKINGS.getDailyReports().get(1).withTicketReference("")))
+              TWO_BOOKINGS.getDailyReports().get(1).toBuilder().ticketReference("").training(true).build()))
           .build();
         static DailyWorkingReportData TWO_BOOKINGS_NO_START_BREAK_TIME = DailyWorkingReportData.builder()
             .type(Workingday.WorkingDayType.WORKED)

@@ -292,7 +292,7 @@ public class DailyWorkingReportService {
 
     private static ImportReport.BookingDetail toBookingDetail(DailyReportData b) {
         return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment(),
-            b.getTicketReference());
+            b.getTicketReference(), b.isTraining());
     }
 
     private record BookingCounts(List<ImportReport.BookingDetail> created, List<ImportReport.BookingDetail> deleted, List<ImportReport.UpdatedBookingDetail> updated) {

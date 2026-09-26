@@ -53,18 +53,21 @@ import org.tb.order.persistence.EmployeeorderDAO;
 import org.tb.order.service.EmployeeorderService;
 
 /**
- * The ticket reference in the import and in {@code PUT /list} (#1140). Import and export run
+ * Ticket reference and training flag in the import and in {@code PUT /list} (#1140). Import and export run
  * through the real CSV converter, so that "the file has no such column" and "the column is empty"
  * are what the converter actually produces, not what a test assumes it does.
  *
  * <p>The import compares incoming and stored bookings by {@link DailyReportData#equals}; once the
  * reference is part of it, a file without the column must not make every booking with a reference
  * look changed — in the mode "replace" that would delete it and create it again without one.
+ *
+ * <p>The training flag has no such carry-over: a missing column means {@code false}, as a missing
+ * field does in the REST API.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = LENIENT)
 @DisplayNameGeneration(ReplaceUnderscores.class)
-class DailyWorkingReportServiceTicketReferenceTest {
+class DailyWorkingReportServiceImportTest {
 
   private static final LocalDate DAY = LocalDate.of(2024, 11, 4);
   private static final long CONTRACT_ID = 7L;
@@ -120,14 +123,14 @@ class DailyWorkingReportServiceTicketReferenceTest {
 
   @Test
   void a_round_trip_without_changes_creates_and_deletes_nothing() throws IOException {
-    stored(booking(1L, "Team-Mittag", 30, "ERP-1"), booking(2L, "Daily", 450, null));
+    stored(booking(1L, "Team-Mittag", 30, "ERP-1"), trainingBooking(2L, "Daily", 450, null));
 
     var csv = export();
     var report = service.updateReports(converter.read(new ByteArrayInputStream(csv.getBytes(UTF_8))).reports(), CONTRACT_ID);
 
     assertThat(csv).startsWith("date,type,startTime,breakTime,employeeorderId,orderSign,orderLabel,suborderSign,suborderLabel,"
-        + "workingTime,comment,ticketReference\n");
-    assertThat(csv).contains(",00:30,Team-Mittag,ERP-1\n", ",07:30,Daily,\n");
+        + "workingTime,comment,ticketReference,training\n");
+    assertThat(csv).contains(",00:30,Team-Mittag,ERP-1,false\n", ",07:30,Daily,,true\n");
     assertNothingCreatedOrDeleted();
     assertThat(report.totalBookingsCreated() + report.totalBookingsDeleted() + report.totalBookingsUpdated()).isZero();
   }
@@ -258,7 +261,40 @@ class DailyWorkingReportServiceTicketReferenceTest {
     verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Team-Mittag", null, false, 0, 30, 1);
   }
 
+  @Test
+  void adding_a_training_booking_passes_the_flag_on() throws IOException {
+    stored();
+
+    service.createReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment,training
+        2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung,true
+        """), CONTRACT_ID);
+
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", null, true, 1, 0, 1);
+  }
+
+  /* The agreed fallback: without the column a booking is an ordinary one, so replacing turns a
+     stored training booking into an ordinary one - and the import report says so. */
+  @Test
+  void a_file_without_the_training_column_replaces_a_training_booking_with_an_ordinary_one() throws IOException {
+    stored(trainingBooking(1L, "Schulung", 60, null));
+
+    var report = service.updateReports(read("""
+        date,type,startTime,breakTime,employeeorderId,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,183209,01:00,Schulung
+        """), CONTRACT_ID);
+
+    verify(timereportService).deleteTimereportsById(List.of(1L));
+    verify(timereportService).createTimereports(CONTRACT_ID, ORDER_ID, DAY, "Schulung", null, false, 1, 0, 1);
+    assertThat(report.days()).singleElement().satisfies(day ->
+        assertThat(day.bookingsUpdated()).singleElement().satisfies(updated -> {
+          assertThat(updated.from().training()).isTrue();
+          assertThat(updated.to().training()).isFalse();
+        }));
+  }
+
   // fixtures
+
 
   private List<DailyWorkingReportData> read(String csv) throws IOException {
     return converter.read(new ByteArrayInputStream(csv.getBytes(UTF_8))).reports();
@@ -284,6 +320,14 @@ class DailyWorkingReportServiceTicketReferenceTest {
   }
 
   private static TimereportDTO booking(long id, String comment, int minutes, String ticketReference) {
+    return booking(id, comment, minutes, ticketReference, false);
+  }
+
+  private static TimereportDTO trainingBooking(long id, String comment, int minutes, String ticketReference) {
+    return booking(id, comment, minutes, ticketReference, true);
+  }
+
+  private static TimereportDTO booking(long id, String comment, int minutes, String ticketReference, boolean training) {
     return TimereportDTO.builder()
         .id(id)
         .referenceday(DAY)
@@ -296,6 +340,7 @@ class DailyWorkingReportServiceTicketReferenceTest {
         .duration(Duration.ofMinutes(minutes))
         .taskdescription(comment)
         .ticketReference(ticketReference)
+        .training(training)
         .build();
   }
 

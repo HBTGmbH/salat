@@ -42,13 +42,29 @@ class DailyReportDataTest {
   void tellsAMissingTicketReferenceFromAnEmptyOne() {
     ObjectMapper mapper = new ObjectMapper();
 
-    var required = "\"employeeorderId\":1,\"hours\":1,\"minutes\":0,\"training\":false";
+    var required = "\"employeeorderId\":1,\"hours\":1,\"minutes\":0";
 
     var missing = mapper.readValue("{" + required + "}", DailyReportData.class);
     var empty = mapper.readValue("{" + required + ",\"ticketReference\":\"\"}", DailyReportData.class);
 
     assertThat(missing.getTicketReference()).isNull();
     assertThat(empty.getTicketReference()).isEmpty();
+  }
+
+  /* The training flag is optional: a client that leaves it out or sends null books an ordinary
+     booking instead of being rejected (#1140). */
+  @Test
+  void readsAMissingOrNullTrainingFlagAsFalse() {
+    ObjectMapper mapper = new ObjectMapper();
+    var required = "\"employeeorderId\":1,\"hours\":1,\"minutes\":0";
+
+    var missing = mapper.readValue("{" + required + "}", DailyReportData.class);
+    var explicitNull = mapper.readValue("{" + required + ",\"training\":null}", DailyReportData.class);
+    var set = mapper.readValue("{" + required + ",\"training\":true}", DailyReportData.class);
+
+    assertThat(missing.isTraining()).isFalse();
+    assertThat(explicitNull.isTraining()).isFalse();
+    assertThat(set.isTraining()).isTrue();
   }
 
   @Test

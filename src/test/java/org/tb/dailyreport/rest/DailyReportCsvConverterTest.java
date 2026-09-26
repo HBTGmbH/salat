@@ -2,6 +2,7 @@ package org.tb.dailyreport.rest;
 
 import static org.apache.commons.io.IOUtils.toInputStream;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 @ExtendWith(MockitoExtension.class)
 class DailyReportCsvConverterTest {
@@ -51,17 +53,33 @@ class DailyReportCsvConverterTest {
         // then
         assertThat(result).hasSize(1).contains(dailyReport1);
         assertThat(result.getFirst().getTicketReference()).isNull();
+        assertThat(result.getFirst().isTraining()).isFalse();
     }
 
-    /* The reference is a new column at the end (#1140): positions 0-8 stay where existing clients
+    /* A value that is neither true nor false is the caller's error: 400, not 500 (#1140). */
+    @Test
+    void shouldRejectAnUnreadableTrainingFlag() throws IOException {
+        // given
+        var rawData = """
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","ja"
+                """;
+        when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
+
+        // when / then
+        assertThatThrownBy(() -> dailyReportCsvConverter.read(null, inputMessage))
+                .isInstanceOf(HttpMessageNotReadableException.class);
+    }
+
+    /* Reference and training flag are new columns at the end (#1140): positions 0-8 stay where existing clients
        expect them, and a file without it still reads as before. */
     @Test
     void shouldReadTicketReferenceFromTheLastColumn() throws IOException {
         // given
         var rawData = """
-                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","ERP-1"
-                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","2","0","test2",""
+                    "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","ERP-1","true"
+                    "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","2","0","test2","",""
                 """;
         when(inputMessage.getBody()).thenReturn(toInputStream(rawData, "UTF-8"));
 
@@ -69,17 +87,17 @@ class DailyReportCsvConverterTest {
         var result = dailyReportCsvConverter.read(null, inputMessage);
 
         // then
-        assertThat(result).extracting(DailyReportData::getComment, DailyReportData::getTicketReference)
-                .containsExactly(tuple("test1", "ERP-1"), tuple("test2", ""));
+        assertThat(result).extracting(DailyReportData::getComment, DailyReportData::getTicketReference, DailyReportData::isTraining)
+                .containsExactly(tuple("test1", "ERP-1", true), tuple("test2", "", false));
     }
 
     @Test
     void shouldWriteToCsv() throws IOException {
         // given
         var rawData = """
-                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference"
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1",""
-                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1"
+                "date","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","hours","minutes","comment","ticketReference","training"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test1","","false"
+                "2024-10-29","183209","111","Rumsitzen","111.01","Stuhlpolsterung","1","0","test2","ERP-1","true"
                 """;
         var dailyReport1 = DailyReportData.builder()
                 .date("2024-10-29").employeeorderId(183209)
@@ -93,7 +111,7 @@ class DailyReportCsvConverterTest {
 
         // when
         dailyReportCsvConverter.write(List.of(dailyReport1,
-                dailyReport1.toBuilder().comment("test2").ticketReference("ERP-1").build()), null, outputMessage);
+                dailyReport1.toBuilder().comment("test2").ticketReference("ERP-1").training(true).build()), null, outputMessage);
 
         // then
         assertThat(IOUtils.toString(outputStream.toByteArray(), "UTF-8")).isEqualTo(rawData);

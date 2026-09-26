@@ -50,12 +50,21 @@ public class DailyReportCsvConverter implements HttpMessageConverter<List<DailyR
             return List.of();
         }
         try (InputStreamReader reader = new InputStreamReader(inputMessage.getBody(), "UTF-8")) {
-            return new CsvToBeanBuilder<DailyReportData>(reader)
+            var csvToBean = new CsvToBeanBuilder<DailyReportData>(reader)
                     .withSeparator(COLUMN_SEPARATOR)
                     .withMappingStrategy(new PositionAwareColumnMappingStrategy<>(DailyReportData.class, () -> DailyReportData.builder().build()))
                     .withSkipLines(1)
-                    .build()
-                    .parse();
+                    // collect instead of throw, as in DailyWorkingReportCsvConverter (#1112): thrown, the
+                    // exception kills a worker thread of opencsv with a stack trace on the console
+                    .withThrowExceptions(false)
+                    .build();
+            var bookings = csvToBean.parse();
+            if (!csvToBean.getCapturedExceptions().isEmpty()) {
+                // a value that cannot be read is the caller's error: 400, not 500 (#1140)
+                var first = csvToBean.getCapturedExceptions().getFirst();
+                throw new HttpMessageNotReadableException("unable to read CSV line " + first.getLineNumber(), first, inputMessage);
+            }
+            return bookings;
         }
     }
 
