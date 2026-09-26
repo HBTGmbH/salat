@@ -696,6 +696,15 @@ body {
   transform: none;
 }
 
+/* Das Benutzermenue haengt am Listeneintrag des Ausloesers. In der mobilen Kopfzeile ist der nur so
+   breit wie das Bild, und das absolut gesetzte Menue schrumpft dann auf seine min-width - die
+   Rollen-Badge ragte ueber den Rand. max-content richtet die Breite nach dem Inhalt, max-width
+   haelt einen langen Namen im Bildschirm. */
+.navbar-footer .dropdown-menu {
+  width: max-content;
+  max-width: calc(100vw - 1rem);
+}
+
 /* Der Seiteninhalt haelt mehr Abstand zur Sidebar als Tablers Vorgabe. Global und nicht
    sidebar-spezifisch: die Regel betrifft Kopfzeile, Inhalt, Meldungen und Fussleiste gleichermassen.
    Tablers eigene Regel dafuer greift hier nicht, weil das <aside> innerhalb von .page liegt und

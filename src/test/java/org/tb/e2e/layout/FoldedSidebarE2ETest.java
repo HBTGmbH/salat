@@ -108,6 +108,37 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
+   * On a phone the open user menu shrank to its {@code min-width}, because it hangs off the list
+   * item of the trigger, which there is only as wide as the picture. The column with name and role
+   * badge then claimed the room: the flex row squeezed the gravatar link, and the picture inside
+   * with it ({@code max-width: 100%}), to a narrow strip of full height, and the badge still ran
+   * past the edge of the menu. Geschaeftsfuehrung is the longest role label, the shorter ones fit
+   * into the {@code min-width} and would not show the overflow.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_user_menu_fits_its_content_on_a_phone(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_BL_SIGN, "/dailyreport/dashboard", page -> {
+      page.setViewportSize(390, 844);
+      Locator footer = page.locator("#salat-nav .navbar-footer");
+      footer.locator("[data-bs-toggle='dropdown']").click();
+
+      Locator picture = page.locator("#gravatar-sidebar-link img.avatar");
+      assertThat(picture).isVisible();
+      assertEquals(true, picture.evaluate("""
+          el => {
+            const box = el.getBoundingClientRect();
+            return box.width > 0 && box.width === box.height;
+          }"""));
+
+      Locator badge = footer.locator(".dropdown-menu .badge");
+      assertEquals(true, badge.evaluate("""
+          el => el.getBoundingClientRect().right
+              <= el.closest('.dropdown-menu').getBoundingClientRect().right"""));
+    });
+  }
+
+  /**
    * Folded, the user block is reduced to the picture - the role badge rides along with the
    * {@code nav-link-title} that Tabler collapses, so it must not stand next to the rail.
    */

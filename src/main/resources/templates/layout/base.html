@@ -108,8 +108,11 @@
                 <!--/* id und data-Attribute unveraendert: die Probe am Seitenende sucht genau
                        diesen Link und tauscht Titel und Ziel, wenn zur Adresse kein Gravatar
                        hinterlegt ist. Ein <a> im <a> waere ungueltig, deshalb bleibt der Link hier
-                       im Menue und wandert nicht auf den Ausloeser darueber. */-->
-                <a th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
+                       im Menue und wandert nicht auf den Ausloeser darueber.
+                       flex-shrink-0: auf dem Telefon ist das Menue nur so breit wie seine
+                       min-width, sonst quetscht die Spalte daneben das Bild zum Streifen. */-->
+                <a class="flex-shrink-0"
+                   th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
                    href="https://gravatar.com"
                    target="_blank"
                    rel="noopener noreferrer"
