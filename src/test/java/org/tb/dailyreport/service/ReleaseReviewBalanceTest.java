@@ -23,16 +23,22 @@ import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
 import org.tb.common.command.CommandPublisher;
+import org.tb.common.service.MailService;
 import org.tb.common.test.FixedClock;
 import org.tb.common.util.ClockProvider;
 import org.tb.common.web.UiState;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.persistence.CustomerDAO;
 import org.tb.customer.persistence.CustomerRepository;
+import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.OvertimeBalance;
 import org.tb.dailyreport.domain.OvertimeReportMonth;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.ReviewPeriod;
+import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.TimereportReview.MonthGroup;
+import org.tb.dailyreport.domain.TimereportReview.OrderGroup;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
@@ -47,6 +53,7 @@ import org.tb.employee.domain.Overtime;
 import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.employee.persistence.EmployeecontractDAO;
 import org.tb.employee.persistence.OvertimeRepository;
+import org.tb.employee.preferences.EmployeePreferenceService;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.notification.service.NotificationService;
@@ -87,7 +94,7 @@ import org.tb.testutils.EmployeeTestUtils;
     SuborderService.class, SuborderDAO.class, CustomerorderService.class, CustomerorderDAO.class,
     CustomerDAO.class, CommandPublisher.class,
     TimereportService.class, TimereportDAO.class, TimereportAuthorization.class, PublicholidayDAO.class,
-    WorkingdayDAO.class, OvertimeService.class})
+    WorkingdayDAO.class, OvertimeService.class, ReleaseService.class, ReleaseAuthorization.class})
 class ReleaseReviewBalanceTest {
 
   private static final Duration DAILY_WORKING_TIME = Duration.ofHours(8);
@@ -111,6 +118,8 @@ class ReleaseReviewBalanceTest {
   @Autowired
   private OvertimeService overtimeService;
   @Autowired
+  private ReleaseService releaseService;
+  @Autowired
   private WorkingdayRepository workingdayRepository;
   @Autowired
   private PublicholidayRepository publicholidayRepository;
@@ -131,6 +140,10 @@ class ReleaseReviewBalanceTest {
   private UiState uiState;
   @MockitoBean
   private NotificationService notificationService;
+  @MockitoBean
+  private MailService mailService;
+  @MockitoBean
+  private EmployeePreferenceService employeePreferenceService;
 
   private final Set<LocalDate> workingdays = new HashSet<>();
   private Employee employee;
@@ -219,6 +232,40 @@ class ReleaseReviewBalanceTest {
     long withoutTarget = contract(another, Duration.ZERO);
 
     assertThat(overtimeService.calculateOvertimeBalance(withoutTarget, BEGIN, END)).isEmpty();
+  }
+
+  @Test
+  void the_review_shows_the_balance_of_the_period() {
+    var review = releaseService.reviewRelease(contract, END);
+
+    assertThat(review.period()).isEqualTo(new ReviewPeriod(BEGIN, END));
+    assertThat(review.balance()).isEqualTo(overtimeService.calculateOvertimeBalance(contract, BEGIN, END).orElseThrow());
+    assertThat(review.balance().diff()).isEqualTo(overtimeAccountAt(END).minus(overtimeAccountAt(BEGIN.minusDays(1))));
+  }
+
+  /** Gelistet sind dieselben Buchungen, die die Bilanz summiert — nach Auftrag wie nach Tag. */
+  @Test
+  void the_listed_bookings_add_up_to_the_booked_working_time_and_the_standby() {
+    var review = releaseService.reviewRelease(contract, END);
+
+    var byOrder = review.byOrder().stream().flatMap(group -> group.timereports().stream()).toList();
+    assertThat(TimereportReviewGrouping.sum(byOrder, TimereportDTO::getWorkingTime)).isEqualTo(WORKING_TIME);
+    assertThat(review.byMonth()).extracting(MonthGroup::month).containsExactly(YearMonth.from(BEGIN), YearMonth.from(END));
+    assertThat(TimereportReviewGrouping.sum(review.byMonth(), MonthGroup::workingTime)).isEqualTo(review.balance().workingTime());
+    assertThat(review.standby()).isEqualTo(STANDBY);
+    assertThat(TimereportReviewGrouping.sum(review.byMonth(), MonthGroup::standby)).isEqualTo(STANDBY);
+    assertThat(review.timereportCount()).isEqualTo(4);
+  }
+
+  /** Die Buchung vor dem Zeitraum ist freigegeben — sie zählt im Konto davor und steht nirgends in der Übersicht. */
+  @Test
+  void the_released_booking_before_the_period_is_not_listed() {
+    var review = releaseService.reviewRelease(contract, END);
+
+    assertThat(review.byOrder()).flatExtracting(OrderGroup::timereports)
+        .extracting(TimereportDTO::getReferenceday)
+        .allMatch(day -> !day.isBefore(BEGIN));
+    assertThat(review.beforePeriod()).isEmpty();
   }
 
   /** The total of the overtime account as it reads on the day after {@code date}, i.e. up to {@code date}. */

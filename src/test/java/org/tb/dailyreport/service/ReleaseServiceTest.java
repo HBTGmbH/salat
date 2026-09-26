@@ -1,18 +1,23 @@
 package org.tb.dailyreport.service;
 
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,13 +28,23 @@ import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.SalatUser;
 import org.tb.common.GlobalConstants;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
+import org.tb.dailyreport.auth.TimereportAuthorization;
+import org.tb.dailyreport.domain.OvertimeBalance;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.TimereportReview;
+import org.tb.dailyreport.domain.TimereportReview.DayEntry;
+import org.tb.dailyreport.domain.TimereportReview.DayFinding;
+import org.tb.dailyreport.domain.TimereportReview.MonthGroup;
+import org.tb.dailyreport.domain.TimereportReview.OrderGroup;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -66,6 +81,8 @@ class ReleaseServiceTest {
     private OvertimeService overtimeService;
     @Mock
     private AuthorizedUser authorizedUser;
+    @Mock
+    private TimereportAuthorization timereportAuthorization;
 
     /**
      * Ein Vertrag endet mitten im Monat, das Formular kennt aber nur Monate: der Monatsletzte
@@ -1228,6 +1245,462 @@ class ReleaseServiceTest {
             } catch(ErrorCodeException e) {
                 return e.getMessages();
             }
+        }
+    }
+
+    /**
+     * Die Übersicht vor der Freigabe (#760): welchen Zeitraum sie zeigt, welcher Befund an welchem
+     * Tag steht und wer darin bearbeiten und anlegen darf. Freigegeben ist bis Sonntag, 03.03.2024;
+     * die Woche danach hat keinen Feiertag, und jeder ihrer Arbeitstage ist gebucht, wo ein Test
+     * nichts anderes sagt.
+     */
+    @Nested
+    class ReviewRelease {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        private static final String OWNER = "xx";
+        private static final String PEOPLE_LEAD = "pl";
+        private static final String MANAGER = "gf";
+        private static final LocalDate CONTRACT_START = LocalDate.of(2024, 1, 1);
+        private static final LocalDate RELEASED_UNTIL = LocalDate.of(2024, 3, 3);
+        private static final LocalDate MONDAY = LocalDate.of(2024, 3, 4);
+        private static final LocalDate TUESDAY = MONDAY.plusDays(1);
+        private static final LocalDate WEDNESDAY = MONDAY.plusDays(2);
+        private static final LocalDate THURSDAY = MONDAY.plusDays(3);
+        private static final LocalDate FRIDAY = MONDAY.plusDays(4);
+
+        @Test
+        void thePeriodStartsTheDayAfterTheLastRelease() {
+            releasableContract();
+            givenBookings(MONDAY, FRIDAY, week());
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(MONDAY, FRIDAY));
+            assertThat(review.releasedUntil()).isEqualTo(RELEASED_UNTIL);
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        @Test
+        void thePeriodStartsAtTheContractBeginWithoutRelease() {
+            final var contract = releasableContract();
+            contract.setValidFrom(WEDNESDAY);
+            contract.setReportReleaseDate(null);
+            givenBookings(WEDNESDAY, FRIDAY, week().subList(2, 5));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(WEDNESDAY, FRIDAY));
+            assertThat(review.releasedUntil()).isNull();
+        }
+
+        /** Der Monat reicht über das Vertragsende hinaus — gezeigt wird bis zum Vertragsende, ohne Befund (#324). */
+        @Test
+        void thePeriodIsLimitedToTheContractEnd() {
+            final var contract = releasableContract();
+            contract.setValidUntil(WEDNESDAY);
+            givenBookings(MONDAY, WEDNESDAY, week().subList(0, 3));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, LocalDate.of(2024, 3, 31));
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(MONDAY, WEDNESDAY));
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.actionAllowed()).isTrue();
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::date)
+                .containsExactly(MONDAY, TUESDAY, WEDNESDAY);
+        }
+
+        /**
+         * Die Ruhezeit am ersten Tag des Zeitraums rechnet mit dem Vortag, den die Prüfung dafür
+         * nachlädt. Der Befund steht am ersten Tag, der Vortag selbst gehört nicht zur Übersicht.
+         */
+        @Test
+        void theDayBeforeIsUsedForTheRestTimeButNotShown() {
+            final var contract = releasableContract();
+            contract.setReportReleaseDate(MONDAY);
+            final var tuesday = booking(2, TUESDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(6));
+            final var monday = booking(1, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(1));
+            givenBookings(TUESDAY, TUESDAY, List.of(tuesday));
+            when(timereportService.needsWorkingHoursLawValidation(EMPLOYEE_CONTRACT_ID)).thenReturn(true);
+            when(timereportDAO.getTimereportsByDateAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY)).thenReturn(List.of(monday));
+            givenWorkingdays(TUESDAY, TUESDAY, List.of(workingday(MONDAY, 18, 1), workingday(TUESDAY, 6, 0)));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, TUESDAY);
+
+            assertThat(review.dayFindings()).extracting(DayFinding::date, finding -> finding.message().getErrorCode())
+                .containsExactly(tuple(TUESDAY, ErrorCode.WD_REST_TIME_TOO_SHORT));
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::date).containsExactly(TUESDAY);
+            assertThat(review.byOrder()).flatExtracting(OrderGroup::timereports).containsExactly(tuesday);
+            assertThat(review.beforePeriod()).isEmpty();
+            assertThat(review.actionAllowed()).isFalse();
+        }
+
+        @Test
+        void findingsAreAttachedToTheirDay() {
+            releasableContract();
+            final var standby = booking(6, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.BEREITSCHAFT, Duration.ofHours(16).plusMinutes(1));
+            final var bookings = new ArrayList<>(week());
+            bookings.add(standby);
+            givenBookings(MONDAY, FRIDAY, bookings);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.dayFindings()).extracting(DayFinding::date, finding -> finding.message().getErrorCode())
+                .containsExactly(tuple(WEDNESDAY, ErrorCode.WD_DAY_LENGTH_TOO_LONG));
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .extracting(DayEntry::date, day -> day.findings().size())
+                .containsExactly(tuple(MONDAY, 0), tuple(TUESDAY, 0), tuple(WEDNESDAY, 1), tuple(THURSDAY, 0), tuple(FRIDAY, 0));
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.actionAllowed()).isFalse();
+        }
+
+        /**
+         * Eine offene Buchung vor dem Zeitraum gibt die Freigabe mit frei. Ihr Befund steht bei denen
+         * über den Zeitraum, denn ihr Tag ist nicht Teil der Übersicht — er sperrt trotzdem.
+         */
+        @Test
+        void aFindingOutsideThePeriodIsReportedPeriodWide() {
+            releasableContract();
+            final var stray = booking(9, RELEASED_UNTIL.minusDays(1), GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(25));
+            final var open = new ArrayList<>(week());
+            open.add(stray);
+            givenBookings(MONDAY, FRIDAY, open, week());
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode, message -> message.getArguments().getFirst())
+                .containsExactly(tuple(ErrorCode.WD_DAY_LENGTH_TOO_LONG, stray.getReferenceday()));
+            assertThat(review.dayFindings()).isEmpty();
+            assertThat(review.beforePeriod()).containsExactly(stray);
+            assertThat(review.byOrder()).isNotEmpty();
+            assertThat(review.actionAllowed()).isFalse();
+        }
+
+        @Test
+        void openBookingsBeforeThePeriodAreListedApart() {
+            releasableContract();
+            final var stray = booking(9, RELEASED_UNTIL.minusDays(1), GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(2));
+            final var open = new ArrayList<>(week());
+            open.add(stray);
+            givenBookings(MONDAY, FRIDAY, open, week());
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.beforePeriod()).containsExactly(stray);
+            assertThat(review.byOrder()).flatExtracting(OrderGroup::timereports).doesNotContain(stray);
+            assertThat(review.timereportCount()).isEqualTo(5);
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        @Test
+        void aWorkingDayWithoutBookingIsAFinding() {
+            releasableContract();
+            final var withoutWednesday = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
+            givenBookings(MONDAY, FRIDAY, withoutWednesday);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.dayFindings()).extracting(DayFinding::date, finding -> finding.message().getErrorCode())
+                .containsExactly(tuple(WEDNESDAY, ErrorCode.WD_NO_TIMEREPORT));
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .extracting(DayEntry::date, DayEntry::withoutBooking)
+                .containsExactly(tuple(MONDAY, false), tuple(TUESDAY, false), tuple(WEDNESDAY, true), tuple(THURSDAY, false), tuple(FRIDAY, false));
+            assertThat(review.actionAllowed()).isFalse();
+        }
+
+        /** Nur eine offene Buchung macht einen Tag zu einem gebuchten, denn nur sie gibt die Freigabe frei. */
+        @Test
+        void aDayWithOnlyAReleasedBookingIsWithoutBooking() {
+            releasableContract();
+            final var committed = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(8));
+            final var open = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
+            final var listed = new ArrayList<>(open);
+            listed.add(committed);
+            givenBookings(MONDAY, FRIDAY, open, listed);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            final var wednesday = review.byMonth().getFirst().days().get(2);
+            assertThat(wednesday.timereports()).containsExactly(committed);
+            assertThat(wednesday.withoutBooking()).isTrue();
+        }
+
+        @Test
+        void aShortDayIsNotAFinding() {
+            releasableContract();
+            final var bookings = week().stream()
+                .map(booking -> booking.getReferenceday().equals(THURSDAY)
+                    ? booking(booking.getId(), THURSDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofMinutes(30))
+                    : booking)
+                .toList();
+            givenBookings(MONDAY, FRIDAY, bookings);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.dayFindings()).isEmpty();
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        @Test
+        void theListsShowEveryBookingOfThePeriodAndTheStandbyApart() {
+            releasableContract();
+            final var standby = booking(6, FRIDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.BEREITSCHAFT, Duration.ofHours(3));
+            final var bookings = new ArrayList<>(week());
+            bookings.add(standby);
+            givenBookings(MONDAY, FRIDAY, bookings);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.timereportCount()).isEqualTo(6);
+            assertThat(review.standby()).isEqualTo(Duration.ofHours(3));
+            assertThat(review.byOrder()).extracting(OrderGroup::suborderId, OrderGroup::standby, OrderGroup::duration)
+                .containsExactly(tuple(10L, false, Duration.ofHours(40)), tuple(30L, true, Duration.ofHours(3)));
+            assertThat(review.byMonth()).extracting(MonthGroup::workingTime, MonthGroup::standby)
+                .containsExactly(tuple(Duration.ofHours(40), Duration.ofHours(3)));
+        }
+
+        /** Ein Tag, der als nicht gearbeitet markiert ist, ist kein Tag ohne Buchung, und die Übersicht sagt, warum. */
+        @Test
+        void aDayMarkedNotWorkedIsShownAsSuch() {
+            releasableContract();
+            final var withoutWednesday = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
+            givenBookings(MONDAY, FRIDAY, withoutWednesday);
+            final var notWorked = workingday(WEDNESDAY, 0, 0);
+            notWorked.setType(NOT_WORKED);
+            givenWorkingdays(MONDAY, FRIDAY, List.of(notWorked));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            final var wednesday = review.byMonth().getFirst().days().get(2);
+            assertThat(wednesday.notWorked()).isTrue();
+            assertThat(wednesday.withoutBooking()).isFalse();
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        @Test
+        void aMonthBeforeTheLastReleaseIsNothingToRelease() {
+            final var contract = releasableContract();
+            contract.setReportReleaseDate(LocalDate.of(2024, 3, 31));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, LocalDate.of(2024, 2, 29));
+
+            assertThat(review.period().isEmpty()).isTrue();
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_NOTHING_TO_RELEASE);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        @Test
+        void aReleaseDateBeforeTheAcceptanceIsPeriodWide() {
+            final var contract = releasableContract();
+            contract.setReportReleaseDate(LocalDate.of(2024, 3, 31));
+            contract.setReportAcceptanceDate(LocalDate.of(2024, 3, 15));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, LocalDate.of(2024, 2, 29));
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE);
+            assertThat(review.acceptedUntil()).isEqualTo(LocalDate.of(2024, 3, 15));
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        @Test
+        void aMonthBeforeTheContractIsPeriodWide() {
+            releasableContract();
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, CONTRACT_START.minusDays(1));
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_DATE_INVALID);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        @Test
+        void theReviewRequiresTheReleaseAuthorization() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(false);
+
+            final var denial = catchThrowableOfType(AuthorizationException.class,
+                () -> classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY));
+
+            assertThat(denial.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_RELEASE_NOT_ALLOWED);
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, overtimeService);
+        }
+
+        @Test
+        void anUnknownContractIsInvalidData() {
+            final var thrown = catchThrowableOfType(InvalidDataException.class,
+                () -> classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY));
+
+            assertThat(thrown.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+            verifyNoInteractions(releaseAuthorization);
+        }
+
+        /** Offene Buchungen einer anderen Person bearbeitet nur die Geschäftsführung (#760, Fallstrick). */
+        @Test
+        void aPeopleLeadGetsNoEditOrCreateLinksForOpenBookings() {
+            releasableContract();
+            givenBookings(MONDAY, FRIDAY, week());
+            loggedInAs(PEOPLE_LEAD, false, true);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).isEmpty();
+            assertThat(review.canCreate()).isFalse();
+            assertThat(review.ownContract()).isFalse();
+        }
+
+        @Test
+        void theManagerGetsEditAndCreateLinks() {
+            releasableContract();
+            final var committed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(1));
+            final var listed = new ArrayList<>(week());
+            listed.add(committed);
+            givenBookings(MONDAY, FRIDAY, week(), listed);
+            loggedInAs(MANAGER, true, true);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L);
+            assertThat(review.canCreate()).isTrue();
+        }
+
+        @Test
+        void theOwnerGetsEditAndCreateLinksForOpenBookings() {
+            releasableContract();
+            final var committed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(1));
+            final var listed = new ArrayList<>(week());
+            listed.add(committed);
+            givenBookings(MONDAY, FRIDAY, week(), listed);
+            loggedInAs(OWNER, false, false);
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L);
+            assertThat(review.canCreate()).isTrue();
+            assertThat(review.ownContract()).isTrue();
+        }
+
+        @Test
+        void theBalanceComesFromTheOvertimeCalculation() {
+            final var contract = releasableContract();
+            contract.setDailyWorkingTime(Duration.ofHours(8));
+            givenBookings(MONDAY, FRIDAY, week());
+            final var balance = new OvertimeBalance(Duration.ofHours(40), Duration.ofHours(40), Duration.ZERO, Duration.ZERO);
+            when(overtimeService.calculateOvertimeBalance(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(Optional.of(balance));
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.balance()).isEqualTo(balance);
+            assertThat(review.overtimeAccount()).isTrue();
+        }
+
+        @Test
+        void aContractWithoutDailyWorkingTimeHasNoBalance() {
+            releasableContract();
+            givenBookings(MONDAY, FRIDAY, week());
+
+            final var review = classUnderTest.reviewRelease(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.balance()).isNull();
+            assertThat(review.overtimeAccount()).isFalse();
+            assertThat(review.byOrder()).isNotEmpty();
+            verifyNoInteractions(overtimeService);
+        }
+
+        private void assertThatTheReviewShowsNothingButItsFindings(TimereportReview review) {
+            assertThat(review.balance()).isNull();
+            assertThat(review.byOrder()).isEmpty();
+            assertThat(review.byMonth()).isEmpty();
+            assertThat(review.beforePeriod()).isEmpty();
+            assertThat(review.dayFindings()).isEmpty();
+            assertThat(review.timereportCount()).isZero();
+            assertThat(review.actionAllowed()).isFalse();
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, overtimeService);
+        }
+
+        /** The loads of the check and of the overview; the check reads the open bookings, the overview all of the period. */
+        private void givenBookings(LocalDate begin, LocalDate end, List<TimereportDTO> open) {
+            givenBookings(begin, end, open, open);
+        }
+
+        private void givenBookings(LocalDate begin, LocalDate end, List<TimereportDTO> open, List<TimereportDTO> listed) {
+            when(timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, end)).thenReturn(open);
+            when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin, end)).thenReturn(listed);
+        }
+
+        /** The check loads the working days from the day before, the overview those of the period. */
+        private void givenWorkingdays(LocalDate begin, LocalDate end, List<Workingday> fromTheDayBefore) {
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin.minusDays(1), end)).thenReturn(fromTheDayBefore);
+            when(workingdayDAO.getWorkingdaysByEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin, end))
+                .thenReturn(fromTheDayBefore.stream().filter(workingday -> !workingday.getRefday().isBefore(begin)).toList());
+        }
+
+        /** Asks the real rule of {@link TimereportAuthorization} as the given person; it needs no rule of the rule engine. */
+        private void loggedInAs(String sign, boolean manager, boolean peopleLead) {
+            lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(sign);
+            lenient().when(authorizedUser.isManager()).thenReturn(manager);
+            lenient().when(authorizedUser.isPeopleLead()).thenReturn(peopleLead);
+            final var rule = new TimereportAuthorization(authorizedUser, null);
+            when(timereportAuthorization.isWriteAllowed(any(), any()))
+                .thenAnswer(invocation -> rule.isWriteAllowed(invocation.getArgument(0), invocation.getArgument(1)));
+        }
+
+        private Employeecontract releasableContract() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+            return contract;
+        }
+
+        private Employeecontract contract() {
+            final var contract = new Employeecontract();
+            setField(contract, "id", EMPLOYEE_CONTRACT_ID);
+            contract.setEmployee(employee(OWNER));
+            contract.setSupervisors(new ArrayList<>(List.of(employee(PEOPLE_LEAD))));
+            contract.setValidFrom(CONTRACT_START);
+            contract.setReportReleaseDate(RELEASED_UNTIL);
+            return contract;
+        }
+
+        private Employee employee(String sign) {
+            final var salatUser = new SalatUser();
+            salatUser.setLoginname(sign);
+            salatUser.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var employee = new Employee();
+            employee.setSalatUser(salatUser);
+            employee.setSign(sign);
+            employee.setFirstname("Vorname");
+            employee.setLastname(sign);
+            return employee;
+        }
+
+        /** Eight open hours on each weekday, ids 1 to 5. */
+        private List<TimereportDTO> week() {
+            return List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY).stream()
+                .map(day -> booking(day.getDayOfWeek().getValue(), day, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(8)))
+                .toList();
+        }
+
+        private TimereportDTO booking(long id, LocalDate date, String status, OrderType orderType, Duration duration) {
+            final var standby = orderType == OrderType.BEREITSCHAFT;
+            return TimereportDTO.builder()
+                .id(id)
+                .referenceday(date)
+                .status(status)
+                .orderType(orderType)
+                .suborderId(standby ? 30L : 10L)
+                .completeOrderSign(standby ? "ALPHA/09" : "ALPHA/01")
+                .customerorderSign("ALPHA")
+                .duration(duration)
+                .build();
+        }
+
+        private Workingday workingday(LocalDate date, int startHour, int startMinute) {
+            final var workingday = new Workingday();
+            workingday.setRefday(date);
+            workingday.setStarttimehour(startHour);
+            workingday.setStarttimeminute(startMinute);
+            return workingday;
         }
     }
 }

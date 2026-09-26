@@ -20,6 +20,7 @@ import static org.tb.common.exception.ErrorCode.RL_NOTHING_TO_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
+import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_DAY_LENGTH_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.WD_LENGTH_TOO_LONG;
@@ -28,6 +29,7 @@ import static org.tb.common.util.DateTimeUtils.now;
 import static org.tb.common.util.DateUtils.max;
 import static org.tb.common.util.DateUtils.min;
 import static org.tb.common.util.DateUtils.today;
+import static org.tb.dailyreport.domain.Workingday.WorkingDayType.NOT_WORKED;
 import static org.tb.dailyreport.service.TimereportService.isRelevantForWorkingTimeValidation;
 import static org.tb.dailyreport.service.TimereportService.noTimeReportsFound;
 import static org.tb.dailyreport.service.TimereportService.validateBeginOfWorkingDay;
@@ -43,12 +45,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.AccessLevel;
@@ -63,10 +66,13 @@ import org.tb.common.service.MailService;
 import org.tb.common.service.MailService.MailContact;
 import org.tb.common.util.DataValidationUtils;
 import org.tb.dailyreport.auth.ReleaseAuthorization;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.TimereportReview;
+import org.tb.dailyreport.domain.TimereportReview.DayFinding;
 import org.tb.dailyreport.domain.UnbookedWorkingDays;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayDAO;
@@ -99,6 +105,7 @@ public class ReleaseService {
   private final TimereportService timereportService;
   private final ReleaseAuthorization releaseAuthorization;
   private final EmployeePreferenceService employeePreferenceService;
+  private final TimereportAuthorization timereportAuthorization;
 
   public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
     // check authorization
@@ -124,6 +131,119 @@ public class ReleaseService {
     employeecontractService.updateReportReleaseData(employeecontractId, effectiveReleaseDate, employeecontract.getReportAcceptanceDate());
 
     sendTimeReportsReleasedMail(employeecontract);
+  }
+
+  /**
+   * Die Übersicht über den Zeitraum, den eine Freigabe bis {@code requestedEnd} erfasst (#760):
+   * seine Buchungen, seine Bilanz und die Befunde der Prüfung, an ihrem Tag. Sehen darf sie, wer
+   * freigeben darf.
+   *
+   * <p>Das Ende wird zuerst auf das Vertragsende beschnitten, erst dann wird geprüft — so bleibt
+   * der letzte Monat eines Vertrags freigebbar (#324). Die Arbeitstage ohne Buchung sind die Tage
+   * der Befunde {@code WD_NO_TIMEREPORT}, also die Regel {@link UnbookedWorkingDays} über die
+   * offenen Buchungen. Anlegen darf an einem solchen Tag, wer eine offene Buchung schreiben darf.
+   *
+   * @throws AuthorizationException ohne Freigabeberechtigung für den Vertrag
+   */
+  @Transactional(readOnly = true)
+  public TimereportReview reviewRelease(long employeecontractId, LocalDate requestedEnd) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    DataValidationUtils.notNull(contract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+    if(!releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE)) {
+      throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
+    }
+    DataValidationUtils.notNull(requestedEnd, RL_RELEASE_DATE_INVALID);
+
+    var end = limitToContractEnd(contract, requestedEnd);
+    var period = releasePeriod(contract, end);
+    var findings = collectReleaseFindings(employeecontractId, contract, end);
+    return buildReview(contract, period,
+        findings.periodFindings(),
+        findings.dayFindings(),
+        findings.daysWithoutBooking(),
+        findings.openBeforePeriod(),
+        timereportAuthorization.isWriteAllowed(contract, TIMEREPORT_STATUS_OPEN),
+        !period.isEmpty() && findings.isEmpty());
+  }
+
+  /**
+   * Stellt die Übersicht über einen Zeitraum zusammen, dessen Grenzen und Befunde der Aufrufer
+   * schon kennt — Freigabe (#760) und Abnahme (#1122) gleichermaßen. Den Zeitraum bestimmt und
+   * prüft sie nicht selbst.
+   *
+   * <p>Ist der Zeitraum leer oder gibt es einen Befund über ihn, bleibt es bei den Befunden: keine
+   * Bilanz, keine Buchungen, und weder die Regel noch die Gliederung sehen einen verkehrten
+   * Zeitraum. Sonst stehen darin alle Buchungen des Zeitraums, gleich welchen Status — dieselben,
+   * die die Bilanz summiert, so gehen Liste und Bilanz auf. Einen Befund zu einem Tag außerhalb
+   * des Zeitraums führt sie bei den Befunden über den Zeitraum, damit er gezeigt wird und weiter
+   * sperrt.
+   *
+   * <p>Die Buchungen kommen über die Leseprüfung von {@link TimereportDAO}, die Bilanz über eine
+   * Summe ohne sie. Wer nur über eine Regel der Kategorie RELEASE_TIMEREPORTS freigibt und die
+   * Buchungen nicht lesen darf, sieht deshalb eine richtige Bilanz zu einer unvollständigen Liste;
+   * die Person selbst, die Geschäftsführung und die zuständige People Lead lesen alle.
+   *
+   * @param dayFindings        Befunde einzelner Tage, nach Datum sortiert
+   * @param daysWithoutBooking die Arbeitstage ohne Buchung, wie {@link UnbookedWorkingDays} sie
+   *                           für diese Aktion bestimmt hat
+   * @param beforePeriod       Buchungen vor dem Zeitraum, die die Aktion ebenfalls erfasst
+   * @param canCreate          an einem Tag ohne Buchung darf eine angelegt werden
+   * @param actionAllowed      die Aktion ist möglich
+   */
+  private TimereportReview buildReview(Employeecontract contract, ReviewPeriod period,
+      List<ServiceFeedbackMessage> periodFindings, List<DayFinding> dayFindings,
+      List<LocalDate> daysWithoutBooking, List<TimereportDTO> beforePeriod,
+      boolean canCreate, boolean actionAllowed) {
+    var employee = contract.getEmployee();
+    var ownContract = Objects.equals(authorizedUser.getEffectiveLoginSign(), employee.getLoginname());
+    var overtimeAccount = !contract.getDailyWorkingTime().isZero();
+
+    if(period.isEmpty() || !periodFindings.isEmpty()) {
+      var findings = new ArrayList<>(periodFindings);
+      dayFindings.forEach(finding -> findings.add(finding.message()));
+      return new TimereportReview(contract.getId(), employee.getName(), employee.getSign(), ownContract,
+          contract.getReportReleaseDate(), contract.getReportAcceptanceDate(), period,
+          null, overtimeAccount, Duration.ZERO,
+          List.copyOf(findings), List.of(), List.of(), List.of(), List.of(), Set.of(),
+          canCreate, actionAllowed, 0);
+    }
+
+    long employeecontractId = contract.getId();
+    var timereports = timereportDAO.getTimereportsByDatesAndEmployeeContractId(employeecontractId, period.begin(), period.end());
+    var notWorkedDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, period.begin(), period.end())
+        .stream()
+        .filter(workingday -> workingday.getType() == NOT_WORKED)
+        .map(Workingday::getRefday)
+        .collect(Collectors.toSet());
+    var publicHolidayNames = publicholidayDAO.getPublicHolidaysBetween(period.begin(), period.end())
+        .stream()
+        .collect(toMap(Publicholiday::getRefdate, Publicholiday::getName, (first, second) -> first));
+    var balance = overtimeAccount
+        ? overtimeService.calculateOvertimeBalance(employeecontractId, period.begin(), period.end()).orElse(null)
+        : null;
+
+    var findings = new ArrayList<>(periodFindings);
+    dayFindings.stream()
+        .filter(finding -> !period.contains(finding.date()))
+        .forEach(finding -> findings.add(finding.message()));
+    var dayFindingsInPeriod = dayFindings.stream()
+        .filter(finding -> period.contains(finding.date()))
+        .toList();
+    var editableTimereportIds = Stream.concat(timereports.stream(), beforePeriod.stream())
+        .filter(timereport -> timereportAuthorization.isWriteAllowed(contract, timereport.getStatus()))
+        .map(TimereportDTO::getId)
+        .collect(Collectors.toSet());
+
+    return new TimereportReview(employeecontractId, employee.getName(), employee.getSign(), ownContract,
+        contract.getReportReleaseDate(), contract.getReportAcceptanceDate(), period,
+        balance, overtimeAccount,
+        TimereportReviewGrouping.sum(timereports, TimereportReviewGrouping::standbyOf),
+        List.copyOf(findings), dayFindingsInPeriod,
+        TimereportReviewGrouping.byOrder(timereports),
+        TimereportReviewGrouping.byMonth(period, timereports, notWorkedDays, publicHolidayNames,
+            dayFindingsInPeriod, Set.copyOf(daysWithoutBooking)),
+        List.copyOf(beforePeriod), Set.copyOf(editableTimereportIds),
+        canCreate, actionAllowed, timereports.size());
   }
 
   public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
@@ -266,7 +386,7 @@ public class ReleaseService {
       return ReleaseFindings.periodWide(RL_NOTHING_TO_RELEASE);
     }
 
-    final List<Pair<LocalDate, ServiceFeedbackMessage>> errors = new ArrayList<>();
+    final List<DayFinding> errors = new ArrayList<>();
 
     var begin = period.begin();
     var end = period.end();
@@ -292,10 +412,10 @@ public class ReleaseService {
         extendedTimeReportsByDate.put(theDayBefore, timereportDAO.getTimereportsByDateAndEmployeeContractId(employeeContractId, theDayBefore));
 
         for(var date : dates) {
-          validateBeginOfWorkingDay(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
-          validateBreakTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
-          validateRestTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(Pair.of(date, error)));
-          validateWorkingDayLength(date, extendedTimeReportsByDate).ifPresent(error -> errors.add(Pair.of(date, error)));
+          validateBeginOfWorkingDay(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(new DayFinding(date, error)));
+          validateBreakTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(new DayFinding(date, error)));
+          validateRestTime(date, extendedTimeReportsByDate, workingDays).ifPresent(error -> errors.add(new DayFinding(date, error)));
+          validateWorkingDayLength(date, extendedTimeReportsByDate).ifPresent(error -> errors.add(new DayFinding(date, error)));
         }
       }
     }
@@ -306,7 +426,7 @@ public class ReleaseService {
     timereports.stream()
         .collect(groupingBy(TimereportDTO::getReferenceday))
         .forEach((date, reportsOfDay) -> validateDayLength(date, reportsOfDay)
-            .ifPresent(error -> errors.add(Pair.of(date, error))));
+            .ifPresent(error -> errors.add(new DayFinding(date, error))));
 
     var publicHolidays = publicholidayDAO.getPublicHolidaysBetween(begin, end)
         .stream()
@@ -317,10 +437,13 @@ public class ReleaseService {
     // because only they get released (the rule leaves that choice to its caller)
     var bookedDays = timereports.stream().map(TimereportDTO::getReferenceday).collect(Collectors.toSet());
     var daysWithoutBooking = UnbookedWorkingDays.between(begin, end, contract, bookedDays, workingDays, publicHolidays);
-    daysWithoutBooking.forEach(date -> errors.add(Pair.of(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date))));
+    daysWithoutBooking.forEach(date -> errors.add(new DayFinding(date, ServiceFeedbackMessage.error(WD_NO_TIMEREPORT, date))));
 
-    var dayFindings = errors.stream().sorted(Comparator.comparing(Pair::getFirst)).toList();
-    return new ReleaseFindings(List.of(), dayFindings, daysWithoutBooking);
+    var dayFindings = errors.stream().sorted(Comparator.comparing(DayFinding::date)).toList();
+    var openBeforePeriod = timereports.stream()
+        .filter(timereport -> timereport.getReferenceday().isBefore(begin))
+        .toList();
+    return new ReleaseFindings(List.of(), dayFindings, daysWithoutBooking, openBeforePeriod);
   }
 
   /**
@@ -331,13 +454,16 @@ public class ReleaseService {
    * @param dayFindings        Befunde einzelner Tage, nach Datum sortiert
    * @param daysWithoutBooking die Arbeitstage ohne offene Buchung, aufsteigend — die Tage der
    *                           Befunde {@code WD_NO_TIMEREPORT}
+   * @param openBeforePeriod   offene Buchungen vor dem Zeitraum; die Freigabe erfasst sie mit,
+   *                           denn sie gibt alle offenen Buchungen bis zu ihrem Ende frei
    */
   record ReleaseFindings(List<ServiceFeedbackMessage> periodFindings,
-                         List<Pair<LocalDate, ServiceFeedbackMessage>> dayFindings,
-                         List<LocalDate> daysWithoutBooking) {
+                         List<DayFinding> dayFindings,
+                         List<LocalDate> daysWithoutBooking,
+                         List<TimereportDTO> openBeforePeriod) {
 
     static ReleaseFindings periodWide(ErrorCode errorCode) {
-      return new ReleaseFindings(List.of(ServiceFeedbackMessage.error(errorCode)), List.of(), List.of());
+      return new ReleaseFindings(List.of(ServiceFeedbackMessage.error(errorCode)), List.of(), List.of(), List.of());
     }
 
     boolean isEmpty() {
@@ -347,7 +473,7 @@ public class ReleaseService {
     /** Alle Befunde: die über den Zeitraum zuerst, dann die der Tage nach Datum. */
     List<ServiceFeedbackMessage> all() {
       var all = new ArrayList<>(periodFindings);
-      dayFindings.forEach(finding -> all.add(finding.getSecond()));
+      dayFindings.forEach(finding -> all.add(finding.message()));
       return all;
     }
   }
