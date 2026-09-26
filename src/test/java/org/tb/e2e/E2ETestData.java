@@ -48,6 +48,15 @@ public class E2ETestData {
   public static final String EMPLOYEE_BO_SIGN = "ebo";
   public static final String EMPLOYEE_RESTRICTED_SIGN = "ers";
 
+  /**
+   * A person without a single booking whose contract begins on Wednesday, 2026-06-10 — for the
+   * dashboard hint on working days of the previous week without a booking (#1124): in the week of
+   * 2026-06-15 it names exactly the 10th to the 12th. A person of its own, because what the other
+   * seeded people have booked depends on which E2E classes ran before.
+   */
+  public static final String EMPLOYEE_WITHOUT_BOOKINGS_SIGN = "evw";
+  public static final LocalDate WITHOUT_BOOKINGS_CONTRACT_START = LocalDate.of(2026, 6, 10);
+
   public static final String CUSTOMERORDER_CONTOSO_SIGN = "CONTOSO-01";
   public static final String SUBORDER_ALPHA_DEV_SIGN = "ALPHA-DEV";
   public static final String CUSTOMERORDER_GLOBEX_SIGN = "GLOBEX-01";
@@ -149,6 +158,8 @@ public class E2ETestData {
         "Rita", "Strictedt", GlobalConstants.EMPLOYEE_STATUS_RESTRICTED);
     Employee regular = employee(employeeRepository, salatUserRepository, EMPLOYEE_MA_SIGN,
         "Manuela", "Angestellt", GlobalConstants.EMPLOYEE_STATUS_MA);
+    Employee withoutBookings = employee(employeeRepository, salatUserRepository, EMPLOYEE_WITHOUT_BOOKINGS_SIGN,
+        "Vera", "Vorwoche", GlobalConstants.EMPLOYEE_STATUS_MA);
 
     employeecontract(employeecontractRepository, peopleLead, null);
     employeecontract(employeecontractRepository, manager, null);
@@ -162,6 +173,10 @@ public class E2ETestData {
     employeeorder(employeeorderRepository, regularContract, alphaDev);
     employeeorder(employeeorderRepository, regularContract, globexConsult);
     employeeorder(employeeorderRepository, regularContract, standby);
+
+    Employeecontract withoutBookingsContract = employeecontract(employeecontractRepository, withoutBookings, null);
+    withoutBookingsContract.setValidFrom(WITHOUT_BOOKINGS_CONTRACT_START);
+    employeecontractRepository.save(withoutBookingsContract);
 
   }
 

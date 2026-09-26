@@ -1,14 +1,36 @@
 package org.tb.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
+import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import org.tb.dailyreport.service.OvertimeService;
+import org.tb.dailyreport.service.PublicholidayService;
+import org.tb.dailyreport.service.ReleaseService;
+import org.tb.dailyreport.service.TimereportService;
+import org.tb.dailyreport.service.VacationService;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
+import org.tb.employee.service.EmployeeService;
+import org.tb.employee.service.EmployeecontractService;
 
 public class DashboardControllerTest {
 
@@ -104,6 +126,89 @@ public class DashboardControllerTest {
 
     assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("0:00");
     assertThat(model.getAttribute("overtimeMonth")).isEqualTo("2026-09");
+  }
+
+  /* Der Hinweis auf Arbeitstage der Vorwoche ohne Buchung bezieht sich auf den Vertrag, den das
+     Dashboard zeigt: den aus fEmployeeContractId, sonst den aktuellen der angemeldeten Person. Die
+     Links des Hinweises nennen denselben Vertrag (#1124). Die Mocks sind nachsichtig, weil die
+     uebrigen Kennzahlen der Seite hier keine Rolle spielen und mit ihren Leerwerten auskommen. */
+  @Nested
+  @FixedClock("2026-09-28T08:00:00")
+  @ExtendWith(MockitoExtension.class)
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  class UnbookedDaysHint {
+
+    private static final List<LocalDate> DAYS = List.of(LocalDate.parse("2026-09-22"), LocalDate.parse("2026-09-24"));
+
+    @Mock
+    private EmployeecontractService employeecontractService;
+    @Mock
+    private EmployeeService employeeService;
+    @Mock
+    private OvertimeService overtimeService;
+    @Mock
+    private VacationService vacationService;
+    @Mock
+    private TimereportService timereportService;
+    @Mock
+    private PublicholidayService publicholidayService;
+    @Mock
+    private ReleaseService releaseService;
+    @Mock
+    private MessageSourceAccessor messageSourceAccessor;
+
+    @InjectMocks
+    private DashboardController dashboardController;
+
+    @Test
+    void follows_the_contract_the_page_was_asked_for() {
+      when(employeecontractService.getEmployeecontractById(42L)).thenReturn(contract(42L));
+      when(releaseService.getUnbookedWorkingDaysOfPreviousWeek(42L)).thenReturn(DAYS);
+      var model = new ExtendedModelMap();
+
+      var view = dashboardController.dashboard(42L, model);
+
+      assertThat(view).isEqualTo("dailyreport/dashboard");
+      verify(releaseService).getUnbookedWorkingDaysOfPreviousWeek(42L);
+      assertThat(model.getAttribute("unbookedDays")).isEqualTo(DAYS);
+      assertThat(model.getAttribute("shownContractId")).isEqualTo(42L);
+    }
+
+    @Test
+    void without_a_selection_follows_the_current_contract_of_the_login() {
+      var loginEmployee = new Employee();
+      setField(loginEmployee, "id", 5L);
+      when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
+      when(employeecontractService.getCurrentContract(5L)).thenReturn(Optional.of(contract(43L)));
+      when(releaseService.getUnbookedWorkingDaysOfPreviousWeek(43L)).thenReturn(DAYS);
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(null, model);
+
+      verify(releaseService).getUnbookedWorkingDaysOfPreviousWeek(43L);
+      assertThat(model.getAttribute("unbookedDays")).isEqualTo(DAYS);
+      assertThat(model.getAttribute("shownContractId")).isEqualTo(43L);
+    }
+
+    @Test
+    void puts_an_empty_list_when_every_working_day_is_booked() {
+      when(employeecontractService.getEmployeecontractById(42L)).thenReturn(contract(42L));
+      when(releaseService.getUnbookedWorkingDaysOfPreviousWeek(42L)).thenReturn(List.of());
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("unbookedDays")).isEqualTo(List.of());
+    }
+
+    private Employeecontract contract(long id) {
+      var contract = new Employeecontract();
+      setField(contract, "id", id);
+      contract.setEmployee(new Employee());
+      contract.setValidFrom(LocalDate.parse("2020-01-01"));
+      contract.setDailyWorkingTime(Duration.ofHours(8));
+      return contract;
+    }
   }
 
   private static Optional<OvertimeStatus> status(long totalHours, long monthHours) {
