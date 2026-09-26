@@ -26,11 +26,12 @@ import org.tb.employee.domain.Employeecontract;
  * </ul>
  *
  * <p>Welche Buchungen einen Tag zu einem gebuchten machen, entscheidet der Aufrufer, und nur darin
- * unterscheiden sich die Aufrufer: die Freigabe zählt allein die offenen Buchungen, denn nur die
- * gibt sie frei; für den Hinweis im Dashboard und für „Rest nicht gearbeitet" zählt jede Buchung,
- * gleich welchen Status. Ebenfalls nicht Teil der Regel sind die Ausnahmen für Freelancer, Personen
- * mit Status {@code restricted} und Verträge ohne Sollarbeitszeit: sie gelten nur für den Hinweis
- * (#1123), die Freigabe prüft auch diese Verträge.
+ * unterscheiden sich die Aufrufer: die Freigabe zählt allein die offenen Buchungen, die der
+ * Freigebende lesen darf, denn nur die gibt sie frei; für den Hinweis im Dashboard und für
+ * „Rest nicht gearbeitet" zählt jede Buchung, gleich welchen Status und gleich, ob der Aufrufer sie
+ * lesen darf. Ebenfalls nicht Teil der Regel sind die Ausnahmen für Freelancer, Personen mit Status
+ * {@code restricted} und Verträge ohne Sollarbeitszeit: sie gelten nur für den Hinweis (#1123), die
+ * Freigabe prüft auch diese Verträge.
  *
  * <p>Den Vertrag schneidet die Regel selbst zu, der Zeitraum darf also über ihn hinausreichen.
  */
