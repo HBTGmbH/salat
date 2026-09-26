@@ -95,7 +95,9 @@ public class AcceptanceController {
                           @RequestParam(required = false) String releaseDate,
                           RedirectAttributes redirectAttributes) {
         try {
-            releaseService.releaseTimereports(contractId, parseEndOfMonth(releaseDate));
+            // until the review page takes over (#760): release the period its review shows
+            var period = releaseService.reviewRelease(contractId, parseEndOfMonth(releaseDate)).period();
+            releaseService.releaseTimereports(contractId, period.begin(), period.end());
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.releasetimeperiod.text"));
         } catch (ErrorCodeException ex) {

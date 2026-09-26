@@ -99,6 +99,7 @@ public enum ErrorCode {
   RL_ACCEPTANCE_DATE_INVALID("RL-0005", "acceptance date is null or outside contract validity range"),
   RL_ACCEPTANCE_DATE_AFTER_RELEASE("RL-0006", "acceptance date must not be after the release date"),
   RL_ACCEPTANCE_DATE_MOVED_BACKWARDS("RL-0007", "acceptance date must not move backwards"),
+  RL_REVIEWED_PERIOD_CHANGED("RL-0008", "the period changed since it was reviewed"),
   RL_NOTHING_TO_RELEASE("RL-0009", "everything up to the release date has already been released"),
 
   WD_NOT_WORKED_TIMEREPORTS_FOUND("WD-0001","time reports found, please move or delete first!"),

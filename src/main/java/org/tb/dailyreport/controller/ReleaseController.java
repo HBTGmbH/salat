@@ -69,7 +69,9 @@ public class ReleaseController {
             return "redirect:/release";
         }
         try {
-            releaseService.releaseTimereports(contract.getId(), parseEndOfMonth(selfReleaseDate));
+            // until the review page takes over (#760): release the period its review shows
+            var period = releaseService.reviewRelease(contract.getId(), parseEndOfMonth(selfReleaseDate)).period();
+            releaseService.releaseTimereports(contract.getId(), period.begin(), period.end());
             redirectAttributes.addFlashAttribute("toastSuccess",
                 messages.getMessage("main.release.releasetimeperiod.text"));
         } catch (ErrorCodeException ex) {

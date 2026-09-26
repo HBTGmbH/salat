@@ -20,6 +20,7 @@ import static org.tb.common.exception.ErrorCode.RL_NOTHING_TO_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_NOT_ALLOWED;
+import static org.tb.common.exception.ErrorCode.RL_REVIEWED_PERIOD_CHANGED;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_TIME_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_DAY_LENGTH_TOO_LONG;
@@ -40,6 +41,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -107,28 +109,64 @@ public class ReleaseService {
   private final EmployeePreferenceService employeePreferenceService;
   private final TimereportAuthorization timereportAuthorization;
 
-  public void releaseTimereports(long employeecontractId, LocalDate releaseDate) {
-    // check authorization
+  /**
+   * Gibt genau den Zeitraum frei, den die Übersicht gezeigt hat ({@link #reviewRelease}, #760):
+   * alle offenen Buchungen bis {@code reviewedEnd}, speichert das Ende als Freigabedatum und
+   * benachrichtigt die People Leads.
+   *
+   * <p>Hat sich der Zeitraum seit dem Anzeigen geändert, gibt die Freigabe nichts frei und meldet
+   * {@code RL-0008}, statt stillschweigend einen anderen Zeitraum freizugeben. Das Ende muss ein
+   * Ende sein, das die Übersicht zeigen kann — ein Monatsletzter oder das Vertragsende in diesem
+   * Monat, nie ein Tag mitten im Monat. Anfang und Ende werden neu bestimmt und müssen dem
+   * gezeigten Zeitraum gleichen. Damit fällt auf, wenn inzwischen freigegeben wurde, etwa in einem
+   * zweiten Fenster, wenn sich der Vertragsbeginn verschoben hat oder das Vertragsende so, dass der
+   * gewählte Monat jetzt an einem anderen Tag endet. Den Inhalt der Buchungen vergleicht die
+   * Freigabe nicht: die Anforderung spricht vom Zeitraum, und die Prüfung läuft unmittelbar vor dem
+   * Freigeben ohnehin noch einmal ({@link #validateForRelease}) — ihre Befunde wirft sie, die über
+   * den Zeitraum zuerst, dann die der Tage nach Datum.
+   *
+   * <p>Zweimal hintereinander abgeschickt, trifft die zweite Freigabe auf den schon freigegebenen
+   * Zeitraum und meldet {@code RL-0008}. Laufen zwei Freigaben wirklich gleichzeitig durch den
+   * Vergleich, scheitert die zweite beim Schreiben an der Versionsnummer von Vertrag und Buchungen
+   * ({@code @Version} in {@link org.tb.common.domain.AuditedEntity}) und wird zurückgerollt; die
+   * Mail verschickt diese Methode aber innerhalb der Transaktion, sie kann dann doppelt ankommen.
+   * Eine eigene Sperre gibt es dafür bewusst nicht.
+   *
+   * @throws AuthorizationException ohne Freigabeberechtigung für den Vertrag
+   * @throws BusinessRuleException  {@code RL-0008}, wenn sich der Zeitraum geändert hat, sonst die
+   *                                Befunde der Prüfung
+   */
+  public void releaseTimereports(long employeecontractId, LocalDate reviewedBegin, LocalDate reviewedEnd) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
     if(!releaseAuthorization.isReleaseAuthorized(employeecontract, AccessLevel.WRITE)) {
       throw new AuthorizationException(RL_RELEASE_NOT_ALLOWED);
     }
+    DataValidationUtils.notNull(reviewedBegin, RL_RELEASE_DATE_INVALID);
+    DataValidationUtils.notNull(reviewedEnd, RL_RELEASE_DATE_INVALID);
 
-    var effectiveReleaseDate = limitToContractEnd(employeecontract, releaseDate);
+    // only an end the overview can show: the end of a month, or the contract end within it
+    if(!reviewedEnd.equals(limitToContractEnd(employeecontract, YearMonth.from(reviewedEnd).atEndOfMonth()))) {
+      throw new BusinessRuleException(RL_REVIEWED_PERIOD_CHANGED);
+    }
+    var period = releasePeriod(employeecontract, reviewedEnd);
+    if(!period.begin().equals(reviewedBegin) || !period.end().equals(reviewedEnd)) {
+      throw new BusinessRuleException(RL_REVIEWED_PERIOD_CHANGED);
+    }
 
-    validateForRelease(employeecontractId, effectiveReleaseDate);
+    validateForRelease(employeecontractId, reviewedEnd);
 
     // set status in timereports
     var timereports = timereportDAO.getOpenTimereportsByEmployeeContractIdBeforeDate(
         employeecontractId,
-        effectiveReleaseDate
+        reviewedEnd
     );
     for (var timereport : timereports) {
       releaseTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // store new release date in employee contract
-    employeecontractService.updateReportReleaseData(employeecontractId, effectiveReleaseDate, employeecontract.getReportAcceptanceDate());
+    employeecontractService.updateReportReleaseData(employeecontractId, reviewedEnd, employeecontract.getReportAcceptanceDate());
 
     sendTimeReportsReleasedMail(employeecontract);
   }
