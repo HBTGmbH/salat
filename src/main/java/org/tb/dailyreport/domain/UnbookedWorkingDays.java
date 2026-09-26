@@ -11,8 +11,9 @@ import org.tb.employee.domain.Employeecontract;
 
 /**
  * Die Regel „Arbeitstag ohne Buchung" — es gibt sie genau einmal im Code (#1124). Die Freigabe
- * meldet solche Tage als {@code WD_NO_TIMEREPORT}, das Dashboard weist auf die der Vorwoche hin;
- * beide fragen diese Klasse.
+ * meldet solche Tage als {@code WD_NO_TIMEREPORT}, das Dashboard weist auf die der Vorwoche hin,
+ * und „Rest nicht gearbeitet" markiert die eines Monats als nicht gearbeitet; alle drei fragen
+ * diese Klasse.
  *
  * <p>Ein Tag ist ein Arbeitstag ohne Buchung, wenn er
  * <ul>
@@ -26,10 +27,10 @@ import org.tb.employee.domain.Employeecontract;
  *
  * <p>Welche Buchungen einen Tag zu einem gebuchten machen, entscheidet der Aufrufer, und nur darin
  * unterscheiden sich die Aufrufer: die Freigabe zählt allein die offenen Buchungen, denn nur die
- * gibt sie frei; für den Hinweis im Dashboard zählt jede Buchung, gleich welchen Status. Ebenfalls
- * nicht Teil der Regel sind die Ausnahmen für Freelancer, Personen mit Status {@code restricted}
- * und Verträge ohne Sollarbeitszeit: sie gelten für den Hinweis (#1123), die Freigabe prüft auch
- * diese Verträge.
+ * gibt sie frei; für den Hinweis im Dashboard und für „Rest nicht gearbeitet" zählt jede Buchung,
+ * gleich welchen Status. Ebenfalls nicht Teil der Regel sind die Ausnahmen für Freelancer, Personen
+ * mit Status {@code restricted} und Verträge ohne Sollarbeitszeit: sie gelten nur für den Hinweis
+ * (#1123), die Freigabe prüft auch diese Verträge.
  *
  * <p>Den Vertrag schneidet die Regel selbst zu, der Zeitraum darf also über ihn hinausreichen.
  */

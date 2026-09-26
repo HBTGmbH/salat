@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,9 @@ import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.MatrixData;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.UnbookedWorkingDays;
 import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.persistence.TimereportRepository;
 import org.tb.employee.service.EmployeecontractService;
 
 @Service
@@ -37,6 +40,7 @@ public class MatrixService {
     private final OvertimeService overtimeService;
     private final WorkingdayService workingdayService;
     private final EmployeecontractService employeecontractService;
+    private final TimereportRepository timereportRepository;
 
     @Transactional(readOnly = true)
     public MatrixData buildMatrix(YearMonth yearMonth, long employeeContractId) {
@@ -164,38 +168,47 @@ public class MatrixService {
         return new MatrixData(dayHeaders, rows, standbyRows, footerDays, totalString, targetString, diffString, diffNegative, prevDayDiffString, prevDayDiffNegative);
     }
 
+    /**
+     * "Rest nicht gearbeitet": marks every working day of the month without a booking as not worked.
+     * Which days those are is decided by {@link UnbookedWorkingDays}, the same rule the release and
+     * the dashboard hint apply (#1124); it also keeps to the validity of the contract.
+     *
+     * <p>A booking of any status makes a day booked, read without the per-row READ filter of
+     * {@code TimereportDAO}: all that matters is whether something is booked on the day, and a day
+     * with a booking cannot be saved as not worked anyway ({@code WD_NOT_WORKED_TIMEREPORTS_FOUND}).
+     * The working days are loaded first because that is where the right to read the working days of
+     * the contract is checked; only then are the booked days read.
+     *
+     * <p>Booked days, working days and public holidays are loaded once for the whole month. A day
+     * already marked as not worked is left as it is and not saved again.
+     */
     public void fillNotWorked(YearMonth yearMonth, long employeeContractId) {
         var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
         LocalDate first = yearMonth.atDay(1);
         LocalDate last = yearMonth.atEndOfMonth();
-        if (first.isBefore(employeecontract.getValidFrom())) {
-            first = employeecontract.getValidFrom();
-        }
-        if (employeecontract.getValidUntil() != null && last.isAfter(employeecontract.getValidUntil())) {
-            last = employeecontract.getValidUntil();
-        }
-        if (first.isAfter(last)) return;
-        LocalDate effectiveFirst = first;
-        LocalDate effectiveLast = last;
-        effectiveFirst.datesUntil(effectiveLast.plusDays(1)).forEach(day -> {
-            if (workingdayService.isRegularWorkingday(day)) {
-                boolean hasBookings = !timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, day).isEmpty();
-                if (!hasBookings) {
-                    var workingday = workingdayService.getWorkingday(employeeContractId, day);
-                    if (workingday == null) {
-                        workingday = new Workingday();
-                        workingday.setEmployeecontract(employeecontract);
-                        workingday.setRefday(day);
-                    }
-                    workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
-                    workingday.setStarttimehour(0);
-                    workingday.setStarttimeminute(0);
-                    workingday.setBreakhours(0);
-                    workingday.setBreakminutes(0);
-                    workingdayService.upsertWorkingday(workingday);
+
+        Map<LocalDate, Workingday> workingdays = workingdayService
+            .getWorkingdaysByEmployeeContractId(employeeContractId, first, last)
+            .stream().collect(toMap(Workingday::getRefday, Function.identity()));
+        Set<LocalDate> bookedDays = Set.copyOf(timereportRepository.findBookedDaysBetween(employeeContractId, first, last));
+        Set<LocalDate> publicHolidays = publicholidayService.getPublicHolidaysBetween(first, last)
+            .stream().map(Publicholiday::getRefdate).collect(Collectors.toSet());
+
+        UnbookedWorkingDays.between(first, last, employeecontract, bookedDays, workingdays, publicHolidays)
+            .forEach(day -> {
+                var workingday = workingdays.get(day);
+                if (workingday == null) {
+                    workingday = new Workingday();
+                    workingday.setEmployeecontract(employeecontract);
+                    workingday.setRefday(day);
                 }
-            }
-        });
+                workingday.setType(Workingday.WorkingDayType.NOT_WORKED);
+                workingday.setStarttimehour(0);
+                workingday.setStarttimeminute(0);
+                workingday.setBreakhours(0);
+                workingday.setBreakminutes(0);
+                workingdayService.upsertWorkingday(workingday);
+            });
     }
 
     private List<MatrixData.Row> buildRows(
