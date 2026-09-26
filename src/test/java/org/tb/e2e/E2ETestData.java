@@ -141,10 +141,12 @@ public class E2ETestData {
 
   /**
    * Released until the Sunday before, so {@code until=2026-11} shows the last week of November
-   * 2026: two bookings, one working day without a booking, the rest not worked.
+   * 2026: two bookings, two working days without a booking — one to book, one to mark as not
+   * worked from the overview —, the rest not worked.
    */
   public static final String RELEASING_MONTH = "2026-11";
   public static final LocalDate RELEASING_DAY_WITHOUT_BOOKING = LocalDate.of(2026, 11, 25);
+  public static final LocalDate RELEASING_DAY_NOT_WORKED = LocalDate.of(2026, 11, 26);
   public static final String RELEASING_EDITED_COMMENT = "Freigabe vorbereitet";
   private static final LocalDate RELEASING_RELEASED_UNTIL = LocalDate.of(2026, 11, 22);
 
@@ -299,7 +301,7 @@ public class E2ETestData {
       bookings.book(releasingAlpha, LocalDate.of(2026, 11, 23), Duration.ofHours(5), RELEASING_EDITED_COMMENT);
       bookings.book(releasingAlpha, LocalDate.of(2026, 11, 24), Duration.ofHours(4), "Tests ergänzt");
       bookings.notWorkedExcept(releasingContract, LocalDate.of(2026, 11, 23), LocalDate.of(2026, 11, 30),
-          Set.of(RELEASING_DAY_WITHOUT_BOOKING));
+          Set.of(RELEASING_DAY_WITHOUT_BOOKING, RELEASING_DAY_NOT_WORKED));
     }
   }
 

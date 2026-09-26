@@ -66,6 +66,11 @@ final class ReviewPage {
    * Die eine Meldung, wenn das Abschicken scheitert: die geänderte Übersicht beim Namen, alles andere
    * unter {@code genericKey} — die Übersicht zeigt es ohnehin.
    */
+  /** Ein Tag, wie die Meldungen der Übersicht ihn nennen. */
+  static String formatDate(LocalDate date) {
+    return DATE.format(date);
+  }
+
   static String failureMessage(ErrorCodeException ex, ErrorCodeViewHelper errorCodeViewHelper,
       MessageSourceAccessor messages, String genericKey) {
     return ex.getMessages().stream()

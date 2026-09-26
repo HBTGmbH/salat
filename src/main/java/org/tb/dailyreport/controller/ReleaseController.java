@@ -23,6 +23,7 @@ import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.ReleaseService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.ReviewLinks;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -55,6 +56,7 @@ public class ReleaseController {
     private final ReleaseService releaseService;
     private final MessageSourceAccessor messages;
     private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final WorkingdayService workingdayService;
 
     @GetMapping
     public String show(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
@@ -140,6 +142,38 @@ public class ReleaseController {
             return "redirect:" + ReviewLinks.of(REVIEW_PATH, null, YearMonth.from(periodEnd),
                 ReviewLinks.viewOf(view), "/release", "/release").currentUrl();
         }
+    }
+
+    /**
+     * Markiert einen Arbeitstag ohne Buchung aus der Übersicht heraus als „nicht gearbeitet" (#760)
+     * und führt an denselben Tag der Übersicht zurück, die jetzt ohne den Befund ist. Dasselbe ginge
+     * in der Tagesansicht; hier spart es den Umweg für den häufigsten Fall einer Lücke.
+     *
+     * <p>Der Vertrag kommt als Formularfeld, nicht aus der gemerkten Auswahl: über die Abnahme gibt
+     * die Geschäftsführung für eine andere Person frei. Ob geschrieben werden darf, prüft
+     * {@link WorkingdayService#markNotWorked} wie bei jedem Arbeitstag. Ein Bestätigungsdialog gibt es
+     * nicht — die Markierung lässt sich in der Tagesansicht zurücknehmen (ADR-0027). Zurück geht es
+     * nur in eine Übersicht; jedes andere Ziel führt auf die Seite der Freigabe.
+     */
+    @PostMapping("/review/not-worked")
+    public String markNotWorked(@RequestParam long contractId,
+                                @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate date,
+                                @RequestParam(required = false) String returnUrl,
+                                RedirectAttributes redirectAttributes) {
+        String back = ReturnUrls.isReviewPage(returnUrl) ? returnUrl : "/release";
+        var contract = employeecontractService.getEmployeecontractById(contractId);
+        if (contract == null) {
+            return "redirect:/release";
+        }
+        try {
+            workingdayService.markNotWorked(contract, date);
+            redirectAttributes.addFlashAttribute("toastSuccess",
+                messages.getMessage("main.release.review.notworked.success.text", new Object[] {ReviewPage.formatDate(date)}));
+        } catch (BusinessRuleException | InvalidDataException ex) {
+            redirectAttributes.addFlashAttribute("toastError", errorCodeViewHelper.toViewMessages(ex).stream()
+                .map(ErrorCodeViewHelper.ViewMessage::resolved).findFirst().orElse(""));
+        }
+        return "redirect:" + back;
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {

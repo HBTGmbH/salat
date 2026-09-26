@@ -292,6 +292,19 @@
                  th:aria-label="#{main.release.review.create.aria.text(${dateText})}">
                 <i class="ti ti-plus me-1" aria-hidden="true"></i><span th:text="#{main.release.review.create.text}">Buchung anlegen</span>
               </a>
+              <!--/* Der zweite haeufige Grund einer Luecke: der Tag wurde nicht gearbeitet. Ein Klick
+                     markiert ihn, ohne Rueckfrage, denn die Tagesansicht nimmt es zurueck (ADR-0027).
+                     Wer anlegen darf, darf auch das; der Service prueft es wie jeden Arbeitstag. */-->
+              <form th:if="${review.canCreate}" method="post" th:action="@{/release/review/not-worked}"
+                    class="d-inline" th:with="back=${links.currentUrl + '#' + day.anchor}">
+                <input type="hidden" name="contractId" th:value="${review.employeecontractId}"/>
+                <input type="hidden" name="date" th:value="${day.date}"/>
+                <input type="hidden" name="returnUrl" th:value="${back}"/>
+                <button type="submit" class="btn btn-sm btn-outline-secondary ms-1"
+                        th:aria-label="#{main.release.review.notworked.aria.text(${dateText})}">
+                  <i class="ti ti-moon me-1" aria-hidden="true"></i><span th:text="#{main.release.review.notworked.text}">Nicht gearbeitet</span>
+                </button>
+              </form>
             </td>
           </tr>
           <tr th:each="tr : ${day.timereports}" th:id="'tr-' + ${tr.id}">
