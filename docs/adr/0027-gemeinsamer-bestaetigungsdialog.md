@@ -5,17 +5,18 @@ Status: Accepted
 
 > **Nachtrag 2026-09-26 (#760):** Neben den Dialog tritt die Prüfseite. Vor der Freigabe steht eine
 > eigene Seite (#1122: ebenso die Abnahme): sie nennt die Person, den Zeitraum und die Folge der
-> Aktion und zeigt jede Buchung, die die Aktion erfasst; ihr Knopf „Freigeben" handelt ohne Dialog.
-> Eine solche Seite ersetzt den Dialog für ihre Aktion, weil sie leistet, was Regel **F** vom Dialog
-> verlangt — das Objekt so zu benennen, dass man es ohne Blick auf die Seite dahinter
-> wiedererkennt —, und mehr: sie *ist* die Seite, an der man gegenprüft. Ein Dialog darüber
-> wiederholte nur ihren letzten Absatz. Vorbild ist die Vorschau vor dem Umbuchen
+> Aktion und zeigt jede Buchung, die die Aktion erfasst; ihr Knopf („Freigeben", „Abnehmen")
+> handelt ohne Dialog. Eine solche Seite ersetzt den Dialog für ihre Aktion, weil sie leistet, was
+> Regel **F** vom Dialog verlangt — das Objekt so zu benennen, dass man es ohne Blick auf die Seite
+> dahinter wiedererkennt —, und mehr: sie *ist* die Seite, an der man gegenprüft. Ein Dialog
+> darüber wiederholte nur ihren letzten Absatz. Vorbild ist die Vorschau vor dem Umbuchen
 > (`move-timereports-preview.html`), die schon ohne Dialog abschickt. Die drei Stufen nach
 > Umkehrbarkeit bleiben; eine in die Vergangenheit greifende Aktion geht über den gemeinsamen Dialog
 > **oder** über eine Prüfseite, die Person, Zeitraum und Folge nennt. Die Prüfseite muss dafür genau
 > den Zeitraum erfassen, den sie gezeigt hat: ändert er sich zwischen Anzeigen und Abschicken, weist
-> der Server ab (`RL-0008`), statt still einen anderen zu erfassen. Die Buchungen darin prüft die
-> Aktion unmittelbar vor dem Ausführen erneut, vergleicht sie aber nicht mit der Anzeige.
+> der Server ab (`RL-0008`), statt still einen anderen zu erfassen. Die Freigabe prüft die Buchungen
+> darin unmittelbar vor dem Ausführen erneut, die Abnahme nur den Zeitraum; keine von beiden
+> vergleicht sie mit der Anzeige.
 
 ## Context and Problem Statement
 
