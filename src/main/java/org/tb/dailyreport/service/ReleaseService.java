@@ -359,29 +359,62 @@ public class ReleaseService {
     return UnbookedWorkingDays.between(period.begin(), period.end(), contract, bookedDays, workingDays, publicHolidays);
   }
 
-  public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
-    // check authorization
+  /**
+   * Nimmt genau den Zeitraum ab, den die Übersicht gezeigt hat ({@link #reviewAcceptance}, #1122):
+   * alle freigegebenen Buchungen bis {@code reviewedEnd}, speichert das Ende als Abnahmedatum und
+   * schreibt das Überstundenkonto bis dahin fest.
+   *
+   * <p>Hat sich der Zeitraum seit dem Anzeigen geändert, nimmt die Abnahme nichts ab und meldet
+   * {@code RL-0008}, wie die Freigabe ({@link #releaseTimereports}): das Ende muss eines sein, das
+   * die Übersicht zeigen kann — ein Monatsletzter oder das Vertragsende in diesem Monat —, und
+   * Anfang und Ende werden neu bestimmt und müssen dem gezeigten Zeitraum gleichen. So fällt auf,
+   * wenn inzwischen abgenommen wurde, etwa in einem zweiten Fenster, oder wenn sich Vertragsbeginn
+   * oder Vertragsende verschoben haben. Eine inzwischen geöffnete Freigabe ändert den Zeitraum nicht,
+   * die Befunde fallen aber anders aus ({@code RL-0006}); sie werden unmittelbar vor dem Abnehmen
+   * erneut bestimmt und geworfen. Den Inhalt der Buchungen vergleicht die Abnahme nicht, die
+   * Anforderung spricht vom Zeitraum.
+   *
+   * <p>Zweimal hintereinander abgeschickt, trifft die zweite Abnahme auf den schon abgenommenen
+   * Zeitraum und meldet {@code RL-0008}. Laufen zwei Abnahmen wirklich gleichzeitig durch den
+   * Vergleich, scheitert die zweite beim Schreiben an der Versionsnummer von Vertrag und Buchungen
+   * ({@code @Version} in {@link org.tb.common.domain.AuditedEntity}) und wird zurückgerollt. Eine
+   * eigene Sperre gibt es dafür bewusst nicht.
+   *
+   * @throws AuthorizationException ohne Abnahmeberechtigung für den Vertrag
+   * @throws BusinessRuleException  {@code RL-0008}, wenn sich der Zeitraum geändert hat, sonst der
+   *                                Befund über den Zeitraum
+   */
+  public void acceptTimereports(long employeecontractId, LocalDate reviewedBegin, LocalDate reviewedEnd) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
     if(!releaseAuthorization.isAcceptAuthorized(employeecontract, AccessLevel.WRITE)) {
       throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
     }
-    DataValidationUtils.notNull(acceptanceDate, RL_ACCEPTANCE_DATE_INVALID);
+    DataValidationUtils.notNull(reviewedBegin, RL_ACCEPTANCE_DATE_INVALID);
+    DataValidationUtils.notNull(reviewedEnd, RL_ACCEPTANCE_DATE_INVALID);
 
-    var effectiveAcceptanceDate = limitToContractEnd(employeecontract, acceptanceDate);
+    // only an end the overview can show: the end of a month, or the contract end within it
+    if(!reviewedEnd.equals(limitToContractEnd(employeecontract, YearMonth.from(reviewedEnd).atEndOfMonth()))) {
+      throw new BusinessRuleException(RL_REVIEWED_PERIOD_CHANGED);
+    }
+    var period = acceptancePeriod(employeecontract, reviewedEnd);
+    if(!period.begin().equals(reviewedBegin) || !period.end().equals(reviewedEnd)) {
+      throw new BusinessRuleException(RL_REVIEWED_PERIOD_CHANGED);
+    }
 
-    var findings = acceptanceFindings(employeecontract, acceptancePeriod(employeecontract, effectiveAcceptanceDate));
+    var findings = acceptanceFindings(employeecontract, period);
     if (!findings.isEmpty()) {
       throw new BusinessRuleException(findings);
     }
 
     // set status in timereports
-    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, effectiveAcceptanceDate);
+    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, reviewedEnd);
     for (var timereport : timereports) {
       acceptTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // set new acceptance date in employee contract
-    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), effectiveAcceptanceDate);
+    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), reviewedEnd);
 
     // compute overtimeStatic and set it in employee contract
     overtimeService.updateOvertimeStatic(employeecontractId);
