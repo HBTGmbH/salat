@@ -20,7 +20,7 @@ import org.tb.employee.persistence.EmployeecontractRepository;
 
 /**
  * The overview before an acceptance (#1122): the people lead chooses the person on
- * {@code /acceptance}, the month of the release is proposed, and the overview shows the released
+ * {@code /acceptance}, no month after the release can be chosen, and the overview shows the released
  * bookings of the acceptance period — by order with their comments first, by day on request. The
  * acceptance happens from there, without a confirmation dialog. Whoever may not accept a contract —
  * a regular employee, or anybody for their own — gets neither the accept form nor the overview.
@@ -56,7 +56,9 @@ class AcceptanceReviewE2ETest extends PlaywrightE2ETestBase {
     runAsUser(browser, E2ETestData.EMPLOYEE_PV_SIGN, "/acceptance", page -> {
       selectTomSelectOption(page, "employee-contract-select", name);
       assertThat(page).hasURL(Pattern.compile(".*/acceptance\\?.*fAcceptanceEmployeeContractId=\\d+.*"));
-      // the month of the release is proposed, and none after it can be chosen
+      // no month after the release can be chosen. The proposal is March either way: here the last
+      // acceptance and the release fall into the same month, so that the month of the release is
+      // proposed shows AcceptanceControllerTest, not this test
       Locator month = page.locator("#acceptance-accept-until");
       assertThat(month).hasValue(E2ETestData.ACCEPTING_MONTH);
       assertThat(month).hasAttribute("max", E2ETestData.ACCEPTING_MONTH);
