@@ -157,7 +157,7 @@ class AcceptanceReviewE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("#acceptance-accept-until")).hasCount(0);
       assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Abnahme prüfen"))).hasCount(0);
       assertThat(page.locator("#acceptance-accept-not-allowed"))
-          .hasText("Die Buchungen dieses Vertrags kannst du nicht abnehmen. Eigene Buchungen nimmt die "
+          .hasText("Die Buchungen dieses Vertrags kannst du nicht abnehmen. Eigene Buchungen nimmt der "
               + "zuständige People Lead oder die Geschäftsführung ab.");
       assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Freigabe prüfen"))).isVisible();
 
