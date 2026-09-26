@@ -32,6 +32,7 @@
     max-width: min(21rem, calc(100vw - 2rem));
   }
 </style>
+<th:block th:replace="~{fragments/matrix-table :: matrixStyles}"></th:block>
 
   <!-- Previous week: working days without booking -->
   <!--/* Jeder Arbeitstag der Vorwoche ohne Buchung, mit Link in seine Tagesansicht (#1124). Welche
@@ -247,33 +248,27 @@
 
   </div>
 
-  <!-- Hours by order this month -->
-  <div class="card mb-3" th:if="${orderHours != null and not #lists.isEmpty(orderHours)}">
+  <!-- Matrix of the running month -->
+  <!--/* Steht an der Stelle von "Stunden nach Auftrag (Monat)" (#878): die Summenspalte der Matrix
+         traegt dieselben Monatsstunden je Auftrag, dazu kommen die Tage - Buchungen und
+         Ueberstundenkonto auf einer Seite. Nur Anzeige: Monatswahl und "Rest nicht gearbeitet"
+         bleiben auf der Matrix-Seite. Der Link nennt Monat, Jahr und Vertrag ausdruecklich, weil die
+         Matrix alle drei als UiState merkt und sonst einen anderen Monat oder Vertrag zeigen koennte
+         als diese Karte (#923). */-->
+  <div class="card mb-3" id="dashboard-matrix">
     <div class="card-header">
       <h3 class="card-title">
-        <i class="bi bi-bar-chart-line me-2 text-muted"></i>
-        <span th:text="#{main.welcome.orderhours.text}">Stunden nach Auftrag (Monat)</span>
+        <i class="bi bi-grid-3x3-gap me-2 text-muted"></i>
+        <span th:text="#{main.general.mainmenu.matrixmenu.text}">Matrixübersicht</span>
+        <span class="text-secondary ms-1"
+              th:text="${#temporals.format(matrixMonth.atDay(1), 'MMMM yyyy')}">Juni 2026</span>
       </h3>
+      <div class="card-actions">
+        <a th:href="@{/dailyreport/matrix(fMonth=${matrixMonth.monthValue},fYear=${matrixMonth.year},fEmployeeContractId=${shownContractId})}"
+           th:text="#{main.welcome.action.matrix.subtitle.text}">Buchungsmatrix anzeigen</a>
+      </div>
     </div>
-    <div class="table-responsive">
-      <table class="table table-vcenter card-table">
-        <thead>
-          <tr>
-            <th th:text="#{main.matrixoverview.table.order}">Auftrag</th>
-            <th class="text-end" th:text="#{main.timereport.hours.text}">Stunden</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:each="o : ${orderHours}">
-            <td>
-              <div class="text-muted small" th:text="|${o.customerOrderSign} · ${o.orderDescription} · ${o.customer}|"></div>
-              <div class="fw-medium" th:text="|${o.orderSign} · ${o.suborderDescription}|"></div>
-            </td>
-            <td class="text-end"><span class="badge bg-blue-lt" th:text="${o.hoursString}"></span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <th:block th:replace="~{fragments/matrix-table :: matrixTable(${matrixData}, ${showBeginBreakEnd}, true)}"></th:block>
   </div>
 
   <!-- Quick Actions -->
@@ -347,7 +342,9 @@
 
 </section>
 
-<script layout:fragment="scripts">
+<th:block layout:fragment="scripts">
+<th:block th:replace="~{fragments/matrix-table :: matrixScript}"></th:block>
+<script>
   /* Die Legende haengt an einem Popover statt in der Karte zu stehen: die Erklaerung ist beim
      Nachschlagen gefragt, nicht bei jedem Blick auf den Wert, und die Karte bleibt so hoch wie ihre
      Nachbarn (#1030). Aufgebaut wie die Tagesdetails der Matrix - Inhalt aus einem verborgenen
@@ -365,4 +362,5 @@
     });
   });
 </script>
+</th:block>
 </html>

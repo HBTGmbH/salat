@@ -68,12 +68,13 @@ class EnglishLocaleE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
-   * The hours-by-order card on the dashboard only renders when the current month holds at least one
-   * booking, so the test books its own hours for {@link #BOOKING_DATE} first.
+   * The matrix card on the dashboard (#878, before it the hours-by-order card): title, column
+   * headers and the booked suborder in English. The test books its own hours for
+   * {@link #BOOKING_DATE} so the table holds a row it can rely on.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void dashboard_order_hours_table_is_translated(E2EBrowser browser) {
+  void dashboard_matrix_is_translated(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN,
         "/dailyreport/timereports/new?date=" + BOOKING_DATE, ENGLISH, page -> {
 
@@ -85,15 +86,15 @@ class EnglishLocaleE2ETest extends PlaywrightE2ETestBase {
 
       page.navigate(urlWithLogin("/dailyreport/dashboard", E2ETestData.EMPLOYEE_MA_SIGN));
 
-      Locator orderHoursCard = page.locator("div.card")
-          .filter(new Locator.FilterOptions().setHasText("Hours by Order"))
-          .first();
+      Locator card = page.locator("#dashboard-matrix");
+      assertThat(card.locator(".card-title")).containsText("Matrix overview");
+      assertThat(card.locator(".card-title")).containsText("June 2026");
       // Tabler renders table headers with text-transform: uppercase, so match case-insensitively
-      Locator header = orderHoursCard.locator("thead");
+      Locator header = card.locator("#matrix thead");
       assertThat(header).containsText(Pattern.compile("order", Pattern.CASE_INSENSITIVE));
-      assertThat(header).containsText(Pattern.compile("hours", Pattern.CASE_INSENSITIVE));
+      assertThat(header).containsText(Pattern.compile("sum", Pattern.CASE_INSENSITIVE));
       assertThat(header).not().containsText(Pattern.compile("auftrag", Pattern.CASE_INSENSITIVE));
-      assertThat(header).not().containsText(Pattern.compile("stunden", Pattern.CASE_INSENSITIVE));
+      assertThat(card.locator("#matrix tbody")).containsText(E2ETestData.SUBORDER_GLOBEX_CONSULT_SIGN);
     });
   }
 

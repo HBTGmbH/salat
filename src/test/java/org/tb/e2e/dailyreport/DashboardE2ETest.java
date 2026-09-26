@@ -1,9 +1,11 @@
 package org.tb.e2e.dailyreport;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,6 +23,9 @@ import org.tb.employee.persistence.EmployeecontractRepository;
  * widgets for a logged-in employee.
  */
 class DashboardE2ETest extends PlaywrightE2ETestBase {
+
+  private static final LocalDate MATRIX_BOOKING_DATE = LocalDate.parse("2026-06-18");
+  private static final String MATRIX_BOOKING_COMMENT = "E2E-Dashboard-Matrix-Testbuchung";
 
   @Autowired
   private EmployeeRepository employeeRepository;
@@ -178,6 +183,65 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
 
   private static Locator legendToggleOf(Page page, String cardText) {
     return cardOf(page, cardText).locator(".overtime-legend-toggle");
+  }
+
+  /**
+   * The matrix of the running month replaced the card "Stunden nach Auftrag (Monat)" (#878). The
+   * clock stands at the extension's default, 2026-06-25, so the booking lands in the month the
+   * dashboard shows. The cell is found by the test's own comment: other test classes book in June
+   * too (see PlaywrightE2ETestBase).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void shows_the_matrix_of_the_running_month_with_an_own_booking(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN,
+        "/dailyreport/timereports/new?date=" + MATRIX_BOOKING_DATE, page -> {
+      page.fill("#durationTime", "02:00");
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_GLOBEX_CONSULT_SIGN);
+      page.fill("#commentField", MATRIX_BOOKING_COMMENT);
+      page.click("button[type=submit]");
+      page.waitForLoadState();
+
+      page.navigate(urlWithLogin("/dailyreport/dashboard", E2ETestData.EMPLOYEE_MA_SIGN));
+
+      Locator card = page.locator("#dashboard-matrix");
+      assertThat(card.locator(".card-title")).containsText("Juni 2026");
+      assertThat(card.locator("#matrix tbody td:has(.matrix-cell-detail)")
+          .filter(new Locator.FilterOptions().setHasText(MATRIX_BOOKING_COMMENT))).hasCount(1);
+      assertThat(page.locator("body")).not().containsText("Stunden nach Auftrag");
+      // display only: the action that changes every open day of the month stays on the matrix page
+      assertThat(page.locator("#matrix-fill-not-worked")).not().isAttached();
+    });
+  }
+
+  /**
+   * The link names month, year and contract: the matrix remembers all three as UiState and would
+   * otherwise open whatever was selected there last (#923).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_matrix_card_leads_to_the_same_month_and_contract(E2EBrowser browser) {
+    var contractId = contractIdOf(E2ETestData.EMPLOYEE_MA_SIGN);
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      Locator link = page.locator("#dashboard-matrix .card-actions a");
+      assertThat(link).hasAttribute("href",
+          "/dailyreport/matrix?fMonth=6&fYear=2026&fEmployeeContractId=" + contractId);
+    });
+  }
+
+  /** On a phone the table scrolls inside its card; the page itself keeps the width of the screen. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void on_a_phone_the_matrix_scrolls_inside_its_card(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      page.setViewportSize(390, 844);
+      Locator scroller = page.locator("#dashboard-matrix .table-responsive");
+      assertThat(scroller).isVisible();
+
+      assertEquals(true, scroller.evaluate("el => el.scrollWidth > el.clientWidth"));
+      assertEquals(true, page.evaluate(
+          "() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+    });
   }
 
   @ParameterizedTest(name = "{0}")
