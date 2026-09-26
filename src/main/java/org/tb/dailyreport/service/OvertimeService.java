@@ -384,11 +384,15 @@ public class OvertimeService {
         .collect(Collectors.toMap(AuditedEntity::getId, identity()));
     // what employee contracts need to recalculate - only when there are changed time reports before the acceptance date
     // (this is to reduce too many calculations)
+    // a booking that left the accepted period is still part of overtimeStatic, so the day it left counts as well (#1125)
+    var previousReferencedays = event.getPreviousReferencedays();
     var contractsToRecalculate = timereports.stream()
         .filter(t -> {
-          var contract = contracts.get(t.getEmployeecontractId());
-          if(contract.getReportAcceptanceDate() == null) return false;
-          return !t.getReferenceday().isAfter(contract.getReportAcceptanceDate());
+          var acceptanceDate = contracts.get(t.getEmployeecontractId()).getReportAcceptanceDate();
+          if(acceptanceDate == null) return false;
+          var previousReferenceday = previousReferencedays.get(t.getId());
+          return !t.getReferenceday().isAfter(acceptanceDate)
+              || (previousReferenceday != null && !previousReferenceday.isAfter(acceptanceDate));
         })
         .map(TimereportDTO::getEmployeecontractId)
         .distinct()
