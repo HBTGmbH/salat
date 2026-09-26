@@ -263,17 +263,15 @@
                  abnimmt. Hingenommen: so arbeitet die Tagesansicht, und dort werden Arbeitsbeginn
                  und Pause berichtigt. Die Ruecksprungadresse gibt ihr den Weg zurueck hierher. */-->
           <tr th:classappend="${day.holiday} ? 'bg-warning-lt' : (${day.weekend} ? 'bg-azure-lt' : '')">
-            <th scope="rowgroup">
-              <div class="d-flex flex-wrap align-items-center gap-2">
-                <a th:with="back=${links.currentUrl + '#' + day.anchor}"
-                   th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${review.employeecontractId},returnUrl=${back})}"
-                   th:title="#{main.daily.viewday.title}" th:text="${dateText}">Mo. 03.08.2026</a>
-                <span th:if="${day.holiday}" class="badge bg-red-lt" th:text="${day.holidayName}">Feiertag</span>
-              </div>
+            <th scope="rowgroup" class="text-nowrap">
+              <a th:with="back=${links.currentUrl + '#' + day.anchor}"
+                 th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${review.employeecontractId},returnUrl=${back})}"
+                 th:title="#{main.daily.viewday.title}" th:text="${dateText}">Mo. 03.08.2026</a>
             </th>
-            <!--/* „Nicht gearbeitet" steht in der Spalte, in der sonst der Kommentar sagt, was an dem
-                   Tag war; die Tagessumme unter den Dauern, mit denen sie sich vergleicht. */-->
+            <!--/* Feiertag und „Nicht gearbeitet" stehen in der Spalte, in der sonst der Kommentar sagt,
+                   was an dem Tag war; die Tagessumme unter den Dauern, mit denen sie sich vergleicht. */-->
             <td>
+              <span th:if="${day.holiday}" class="badge bg-red-lt me-1" th:text="${day.holidayName}">Feiertag</span>
               <span th:if="${day.notWorked}" class="badge bg-warning-lt" th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
             </td>
             <td class="text-end fw-bold text-nowrap">
