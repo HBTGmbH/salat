@@ -183,7 +183,7 @@ public class TimereportController {
     @PostMapping("/refresh-orders")
     @Authorized
     public String refreshOrders(@RequestParam(required = false) Long fEmployeeContractId, @ModelAttribute TimereportForm form, Model model) {
-        long ecId = effectiveContractId(fEmployeeContractId);
+        long ecId = contractIdFor(fEmployeeContractId, form);
         LocalDate date = form.getReferenceday();
 
         List<SuborderOption> suborders = List.of();
@@ -216,7 +216,7 @@ public class TimereportController {
     @PostMapping("/refresh-sidebar")
     @Authorized
     public String refreshSidebar(@RequestParam(required = false) Long fEmployeeContractId, @ModelAttribute TimereportForm form, Model model) {
-        long ecId = effectiveContractId(fEmployeeContractId);
+        long ecId = contractIdFor(fEmployeeContractId, form);
         model.addAttribute("timereportForm", form);
         model.addAttribute("selectedContractId", ecId);
         if (ecId > 0 && form.getReferenceday() != null) {
@@ -315,7 +315,10 @@ public class TimereportController {
             Boolean shareWithColleagues, List<Long> recipientUserIds, String returnUrl,
             Boolean saveAndNew, RedirectAttributes redirectAttributes, Model model) {
 
-        long ecId = effectiveContractId(fEmployeeContractId);
+        // an edited booking stays with its own person (#1128)
+        long ecId = isEdit
+                ? timereportService.getEmployeecontractIdForUpdate(form.getId(), form.getReferenceday())
+                : effectiveContractId(fEmployeeContractId);
         LocalDate date = form.getReferenceday();
 
         boolean beginEndMode = DurationInputMode.ofFormValue(form.getDurationMode()) == BEGIN_END;
@@ -528,7 +531,7 @@ public class TimereportController {
 
     private List<RecentBooking> loadRecentBookings(Long fEmployeeContractId, TimereportForm form) {
         if (form.getSuborderId() != null) {
-            long ecId = effectiveContractId(fEmployeeContractId);
+            long ecId = contractIdFor(fEmployeeContractId, form);
             if (ecId > 0) {
                 return timereportService.getRecentBookings(ecId, form.getSuborderId());
             }
@@ -567,6 +570,18 @@ public class TimereportController {
             .findFirst()
             .map(SuborderOption::trainingFlag)
             .orElse(false);
+    }
+
+    /**
+     * The contract the form offers orders and bookings for. The hidden id is only rendered when a
+     * booking is edited, and an edited booking stays with its own person (#1128); a new one follows
+     * the remembered selection.
+     */
+    private long contractIdFor(Long fEmployeeContractId, TimereportForm form) {
+        if (form.getId() != null) {
+            return timereportService.getEmployeecontractIdForUpdate(form.getId(), form.getReferenceday());
+        }
+        return effectiveContractId(fEmployeeContractId);
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {
