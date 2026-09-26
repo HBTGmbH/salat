@@ -11,3 +11,6 @@
 /.claude/onboarding-status.md
 /.claude/settings.local.json
 /.claude/worktrees/
+
+# macOS Finder metadata, in every directory
+.DS_Store
