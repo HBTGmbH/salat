@@ -2,13 +2,20 @@ package org.tb.dailyreport.controller;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
+import static org.tb.common.exception.ErrorCode.TR_BOOKING_NO_EMPLOYEE_ORDER;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,15 +27,19 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
+import org.tb.dailyreport.service.BookingOrderResolver;
 import org.tb.dailyreport.service.DailyWorkingReportService;
-import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.dailyreport.service.ImportReport;
+import org.tb.employee.domain.Employee;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
-import org.tb.order.service.EmployeeorderService;
 
 /**
  * Der Ausgang, an dem #1112 hing: ein Uhrzeitfeld der hochgeladenen Datei passte in keines der
@@ -51,23 +62,30 @@ class DailyReportCsvControllerTest {
   @Mock
   private EmployeeService employeeService;
   @Mock
-  private EmployeeorderService employeeorderService;
+  private BookingOrderResolver bookingOrderResolver;
   @Mock
   private AuthorizedUser authorizedUser;
-  @Mock
-  private AuthorizedEmployee authorizedEmployee;
 
   private MockMvc mockMvc;
+  private Employee employee;
 
   @BeforeEach
   void setUp() {
+    employee = new Employee();
+    ReflectionTestUtils.setField(employee, "id", 42L);
+    employee.setSign("testuser");
+    var contract = new Employeecontract();
+    ReflectionTestUtils.setField(contract, "id", 7L);
+    contract.setEmployee(employee);
+    when(employeecontractService.getEmployeecontractById(7L)).thenReturn(contract);
+
     var messageSource = new ResourceBundleMessageSource();
     messageSource.setBasename("org/tb/web/MessageResources");
     messageSource.setDefaultEncoding("UTF-8");
     messageSource.setFallbackToSystemLocale(false);
     var messages = new MessageSourceAccessor(messageSource, Locale.GERMANY);
     var controller = new DailyReportCsvController(
-        new DailyWorkingReportCsvConverter(employeeorderService, authorizedUser, authorizedEmployee),
+        new DailyWorkingReportCsvConverter(bookingOrderResolver, authorizedUser),
         dailyWorkingReportService,
         employeecontractService,
         employeeService,
@@ -134,6 +152,46 @@ class DailyReportCsvControllerTest {
     verifyNoInteractions(dailyWorkingReportService);
     assertThat(result.getFlashMap().get("toastError").toString())
         .contains("Zeile 2", "ticketReference", "64 Zeichen", "nichts gespeichert");
+  }
+
+  /* A booking that cannot be assigned is named with its line, the reason, and that nothing was saved (#1142). */
+  @Test
+  void names_the_line_of_a_booking_without_a_matching_order() throws Exception {
+    var csv = """
+        date,type,startTime,breakTime,suborderSign,workingTime,comment
+        2024-11-04,WORKED,09:00,00:30,111/1,00:30,Team-Mittag
+        """;
+    when(bookingOrderResolver.resolveFor(eq(employee), any(), eq(LocalDate.of(2024, 11, 4))))
+        .thenThrow(new InvalidDataException(TR_BOOKING_NO_EMPLOYEE_ORDER, "111/1", "testuser", "2024-11-04"));
+
+    var result = mockMvc.perform(multipart("/dailyreport/csv/import")
+            .file(new MockMultipartFile("file", "report.csv", "text/csv", csv.getBytes(UTF_8)))
+            .param("fEmployeeContractId", "7"))
+        .andExpect(status().is3xxRedirection())
+        .andReturn();
+
+    verifyNoInteractions(dailyWorkingReportService);
+    assertThat(result.getFlashMap().get("toastError").toString())
+        .isEqualTo("Zeile 2: Für testuser gibt es am 2024-11-04 keinen gültigen Mitarbeiterauftrag zum Unterauftrag „111/1“. "
+            + "Das Kürzel wird vollständig und exakt verglichen, etwa 4711/01. Es wurde nichts gespeichert.");
+  }
+
+  /* The file goes to the employee of the selected contract, whoever is logged in (#1142). */
+  @Test
+  void imports_for_the_employee_of_the_selected_contract() throws Exception {
+    var csv = """
+        date,type,startTime,breakTime
+        2024-11-04,NOT_WORKED,,
+        """;
+    when(dailyWorkingReportService.updateReports(any(), eq(employee))).thenReturn(new ImportReport(List.of()));
+
+    mockMvc.perform(multipart("/dailyreport/csv/import")
+            .file(new MockMultipartFile("file", "report.csv", "text/csv", csv.getBytes(UTF_8)))
+            .param("importMode", "replace")
+            .param("fEmployeeContractId", "7"))
+        .andExpect(status().is3xxRedirection());
+
+    verify(dailyWorkingReportService).updateReports(any(), eq(employee));
   }
 
   private static MockMultipartFile csvFile() {

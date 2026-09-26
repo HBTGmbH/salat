@@ -5,13 +5,17 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static org.tb.common.exception.ErrorCode.TR_CSV_LINE_NOT_READABLE;
+import static org.tb.common.exception.ErrorCode.TR_CSV_LINE_REJECTED;
 import static org.tb.common.exception.ErrorCode.TR_CSV_VALUE_FORMAT_INVALID;
 import static org.tb.common.exception.ErrorCode.TR_CSV_VALUE_TOO_LONG;
 
 import com.google.common.collect.Streams;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.bean.AbstractBeanField;
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvCustomBindByName;
+import com.opencsv.bean.CsvIgnore;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
@@ -19,6 +23,7 @@ import com.opencsv.exceptions.CsvConstraintViolationException;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvMalformedLineException;
+import com.opencsv.exceptions.CsvValidationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +35,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -54,9 +60,8 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
-import org.tb.employee.domain.AuthorizedEmployee;
-import org.tb.order.domain.Employeeorder;
-import org.tb.order.service.EmployeeorderService;
+import org.tb.dailyreport.service.BookingOrderResolver;
+import org.tb.employee.domain.Employee;
 
 @Component
 @AllArgsConstructor
@@ -70,9 +75,8 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             TEXT_CSV_DAILY_WORKING_REPORT_VALUE.split("/")[1]
     );
 
-    private final EmployeeorderService employeeorderService;
+    private final BookingOrderResolver bookingOrderResolver;
     private final AuthorizedUser authorizedUser;
-    private final AuthorizedEmployee authorizedEmployee;
 
     @Override
     public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
@@ -92,7 +96,40 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
 
     public record ReadResult(List<DailyWorkingReportData> reports, int linesRead) {}
 
+    /**
+     * Liest die Buchungen, wie die Datei sie nennt: mit der ID des Mitarbeiterauftrags oder mit Kürzeln,
+     * ohne sie einem Auftrag zuzuordnen. So kommt eine Datei über die REST-API herein; zugeordnet wird
+     * dort im {@link org.tb.dailyreport.service.DailyWorkingReportService}, nach den Regeln der API.
+     */
     public ReadResult read(InputStream inputStream) throws IOException {
+        var rows = readRows(inputStream);
+        return new ReadResult(fromRows(rows, (row, booking) -> booking), rows.size());
+    }
+
+    /**
+     * Liest die Datei des CSV-Imports der Oberfläche, die dem Mitarbeiter des ausgewählten Vertrags gehört,
+     * und ordnet jede Buchung schon hier ihrem Mitarbeiterauftrag zu (#1142). Nur hier ist die Zeile
+     * bekannt: eine Buchung, die sich nicht zuordnen lässt, wird mit ihrer Zeile gemeldet, bevor
+     * irgendetwas gespeichert ist.
+     *
+     * <p>Der Service ordnet dieselben Buchungen beim Speichern noch einmal zu, dann über die ID, die hier
+     * gesetzt wurde. Die Regel hängt damit nicht daran, dass jeder Aufrufer die Datei über diesen Weg liest.
+     */
+    public ReadResult read(InputStream inputStream, Employee employee) throws IOException {
+        var rows = readRows(inputStream);
+        return new ReadResult(fromRows(rows, (row, booking) -> assignedFor(employee, row, booking)), rows.size());
+    }
+
+    private DailyReportData assignedFor(Employee employee, CsvRow row, DailyReportData booking) {
+        var day = row.getDate();
+        try {
+            return booking.assignedTo(bookingOrderResolver.resolveFor(employee, booking, day), day);
+        } catch (InvalidDataException e) {
+            throw new InvalidDataException(TR_CSV_LINE_REJECTED, row.getLine(), e.getMessages().getFirst());
+        }
+    }
+
+    private List<CsvRow> readRows(InputStream inputStream) throws IOException {
         // copy input stream intro byte array
         var contentBytes = IOUtils.toByteArray(inputStream);
         char separator = evalSeparator(contentBytes);
@@ -117,8 +154,36 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
                 throw new InvalidDataException(TR_CSV_LINE_NOT_READABLE, lineNumberOf(e));
             }
             rejectUnreadableValues(csvToBean.getCapturedExceptions());
-            return new ReadResult(fromRows(rows), rows.size());
+            var startLines = recordStartLines(contentBytes, separator);
+            for (int i = 0; i < rows.size(); i++) {
+                rows.get(i).setLine(i < startLines.size() ? startLines.get(i) : 0);
+            }
+            return rows;
         }
+    }
+
+    /**
+     * Die Zeile, in der jeder Datensatz der Datei beginnt, in der Reihenfolge, in der opencsv sie zu
+     * Zeilen macht (#1142). Ein Kommentar in Anführungszeichen darf über mehrere Zeilen gehen; die Nummer
+     * aus der Position abzuzählen, nennte danach jede Zeile falsch. Gelesen wird erst, wenn opencsv die
+     * Datei ohne Fehler zerlegt hat, und mit demselben Trennzeichen: dann gibt es zu jeder Zeile einen
+     * Datensatz.
+     */
+    private static List<Long> recordStartLines(byte[] content, char separator) throws IOException {
+        var startLines = new ArrayList<Long>();
+        try (var reader = new CSVReaderBuilder(new InputStreamReader(new ByteArrayInputStream(content), UTF_8))
+                .withCSVParser(new CSVParserBuilder().withSeparator(separator).build())
+                .build()) {
+            reader.readNextSilently(); // header
+            long start = reader.getLinesRead() + 1;
+            while (reader.readNext() != null) {
+                startLines.add(start);
+                start = reader.getLinesRead() + 1;
+            }
+        } catch (CsvValidationException e) {
+            throw new IOException(e);
+        }
+        return startLines;
     }
 
     /**
@@ -211,18 +276,25 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         }
     }
 
+    /** What becomes of a booking once it is read: nothing over the REST API, its order in the UI import. */
+    private interface BookingAssignment {
+        DailyReportData assign(CsvRow row, DailyReportData booking);
+    }
+
     @SneakyThrows
-    private List<DailyWorkingReportData> fromRows(List<CsvRow> rows) {
+    private List<DailyWorkingReportData> fromRows(List<CsvRow> rows, BookingAssignment assignment) {
         return rows.stream()
                 .filter(not(DailyWorkingReportCsvConverter::isEmptyRow))
                 .collect(groupingBy(CsvRow::getDate)).entrySet().stream()
+                // day by day, so that of several faulty lines the one reported is the same on every run
+                .sorted(Map.Entry.comparingByKey())
                 .map(entry -> Map.entry(getUniqueWorkingDayRow(entry.getKey(), entry.getValue()), entry.getValue()))
                 .map(entry ->  DailyWorkingReportData.builder()
                     .date(entry.getKey().getDate())
                     .startTime(entry.getKey().getStartTime())
                     .type(entry.getKey().getType())
                     .breakDuration(entry.getKey().getBreakTime())
-                    .dailyReports(timeReportsFromRows(entry.getKey().getDate(), entry.getValue()))
+                    .dailyReports(timeReportsFromRows(entry.getKey().getDate(), entry.getValue(), assignment))
                     .build()
         ).toList();
     }
@@ -251,51 +323,34 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         return row.getStartTime() == null || row.getBreakTime() == null;
     }
 
-    private List<DailyReportData> timeReportsFromRows(LocalDate date, List<CsvRow> rows){
+    private List<DailyReportData> timeReportsFromRows(LocalDate date, List<CsvRow> rows, BookingAssignment assignment){
         return rows.stream()
                 .filter(not(DailyWorkingReportCsvConverter::isEmptyTimeReport))
-                .map(row -> {
-                    long employeeorderId = -1;
-                    String customerorderSign;
-                    String customerorderLabel;
-                    String suborderSign;
-                    String suborderLabel;
-
-                    Employeeorder employeeorder;
-
-                    if(row.getEmployeeorderId() != null) {
-                        employeeorder = employeeorderService.getEmployeeorderById(row.employeeorderId);
-                    } else {
-                        employeeorder = employeeorderService.getEmployeeorderByEmployeeAndSuborder(authorizedEmployee.getSign(), row.getSuborderSign(), date);
-                    }
-
-                    employeeorderId = employeeorder.getId();
-                    customerorderSign = employeeorder.getSuborder().getCustomerorder().getSign();
-                    customerorderLabel = employeeorder.getSuborder().getCustomerorder().getShortdescription();
-                    suborderSign = employeeorder.getSuborder().getCompleteOrderSign();
-                    suborderLabel = employeeorder.getSuborder().getShortdescription();
-
-                    return DailyReportData
+                .map(row -> assignment.assign(row, DailyReportData
                         .builder()
                         .date(DateUtils.format(date))
-                        .employeeorderId(employeeorderId)
-                        .orderSign(customerorderSign)
-                        .orderLabel(customerorderLabel)
-                        .suborderSign(suborderSign)
-                        .suborderLabel(suborderLabel)
+                        .employeeorderId(row.getEmployeeorderId())
+                        .orderSign(row.getOrderSign())
+                        .orderLabel(row.getOrderLabel())
+                        .suborderSign(row.getSuborderSign())
+                        .suborderLabel(row.getSuborderLabel())
+                        .employeeSign(row.getEmployeeSign())
                         .hours(row.getWorkingTime().getHour())
                         .minutes(row.getWorkingTime().getMinute())
                         .comment(row.getComment())
                         .ticketReference(row.getTicketReference())
                         .training(Boolean.TRUE.equals(row.getTraining()))
-                        .build();
-                })
+                        .build()))
                 .toList();
     }
 
+    /**
+     * A row without a duration books nothing: it carries the working day only. A row with a duration is
+     * a booking, even where it names no order (#1142) — dropping it would lose it without a word, so the
+     * assignment rejects it instead.
+     */
     private static boolean isEmptyTimeReport(CsvRow row){
-        return (row.getEmployeeorderId() == null && row.getSuborderSign() == null)
-            || row.getWorkingTime() == null;
+        return row.getWorkingTime() == null;
     }
 
     @Override
@@ -307,7 +362,7 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         var strategy = new HeaderColumnNameMappingStrategy() {
             {
                 headerIndex.initializeHeaderIndex(new String[] {
-                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training"
+                    "date","type","startTime","breakTime","employeeorderId","orderSign","orderLabel","suborderSign","suborderLabel","workingTime","comment","ticketReference","training","employeeSign"
                 });
             }
         };
@@ -352,7 +407,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             row.getWorkingTime(),
             row.getComment(),
             row.getTicketReference(),
-            row.getTraining()
+            row.getTraining(),
+            row.getEmployeeSign(),
+            row.getLine()
         );
     }
 
@@ -370,7 +427,9 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
             LocalTime.of((int)reportData.getHours(), (int)reportData.getMinutes()),
             reportData.getComment(),
             reportData.getTicketReference(),
-            reportData.isTraining()
+            reportData.isTraining(),
+            reportData.getEmployeeSign(),
+            0
         );
     }
 
@@ -406,6 +465,12 @@ public class DailyWorkingReportCsvConverter implements HttpMessageConverter<List
         /** {@code null} on a row without a booking and where the file has no such column (#1140). */
         @CsvCustomBindByName(converter = TrainingFlagConverter.class)
         private Boolean training;
+        /** A new column at the end (#1142); {@code null} where the file has none. */
+        @CsvBindByName
+        private String employeeSign;
+        /** The line of the file the row begins in, for messages; not a column. */
+        @CsvIgnore
+        private long line;
     }
 
     /**

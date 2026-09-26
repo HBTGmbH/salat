@@ -1,6 +1,7 @@
 package org.tb.dailyreport.controller;
 
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.tb.common.exception.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.util.DateUtils.today;
 
 import java.io.ByteArrayOutputStream;
@@ -32,6 +33,7 @@ import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.rest.DailyWorkingReportCsvConverter;
 import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.ImportReport;
+import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.employee.service.EmployeeService;
@@ -88,10 +90,12 @@ public class DailyReportCsvController {
         }
         long ecId = fEmployeeContractId != null ? fEmployeeContractId : effectiveContractId(fEmployeeContractId);
         try {
-            var readResult = csvConverter.read(file.getInputStream());
+            // the file belongs to the employee of the selected contract, not to whoever is logged in (#1142)
+            var employee = employeeOfContract(ecId);
+            var readResult = csvConverter.read(file.getInputStream(), employee);
             var importReport = "replace".equals(importMode)
-                ? dailyWorkingReportService.updateReports(readResult.reports(), ecId)
-                : dailyWorkingReportService.createReports(readResult.reports(), ecId);
+                ? dailyWorkingReportService.updateReports(readResult.reports(), employee)
+                : dailyWorkingReportService.createReports(readResult.reports(), employee);
             redirectAttributes.addFlashAttribute("importReport",
                 new ImportReport(importReport.days(), readResult.linesRead()));
             redirectAttributes.addFlashAttribute("toastSuccess",
@@ -123,6 +127,14 @@ public class DailyReportCsvController {
             .header(CONTENT_DISPOSITION, "attachment; filename=" + month + ".csv")
             .contentType(MediaType.parseMediaType("text/csv"))
             .body(baos.toByteArray());
+    }
+
+    private Employee employeeOfContract(long employeecontractId) {
+        var employeecontract = employeecontractService.getEmployeecontractById(employeecontractId);
+        if (employeecontract == null) {
+            throw new AuthorizationException(EC_EMPLOYEE_CONTRACT_NOT_FOUND);
+        }
+        return employeecontract.getEmployee();
     }
 
     private long effectiveContractId(Long fEmployeeContractId) {

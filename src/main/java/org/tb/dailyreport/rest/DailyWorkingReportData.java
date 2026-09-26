@@ -18,7 +18,7 @@ import lombok.extern.jackson.Jacksonized;
 import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @Jacksonized
 @AllArgsConstructor
 @EqualsAndHashCode

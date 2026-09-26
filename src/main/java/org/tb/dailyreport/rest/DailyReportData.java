@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.Nulls;
 import com.opencsv.bean.CsvBindByPosition;
 import com.opencsv.bean.CsvCustomBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,7 @@ import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.order.domain.Employeeorder;
 
 @Getter
 @Builder(toBuilder = true)
@@ -35,24 +37,36 @@ public class DailyReportData {
         requiredMode = REQUIRED)
     private String date;
 
+    /**
+     * Optional since #1142: without it, {@link #suborderSign} and {@link #employeeSign} name the order.
+     * Where it is given it takes precedence, and the signs are not evaluated — a client that sends
+     * both, as before, keeps working even when its signs are stale.
+     */
     @CsvBindByPosition(position = 1)
-    @Schema(description = "ID des Mitarbeiterauftrags",
+    @Schema(description = "ID des Mitarbeiterauftrags. Optional: fehlt sie, bestimmen suborderSign und employeeSign "
+        + "zusammen mit dem Datum den Mitarbeiterauftrag. Ist sie angegeben, hat sie Vorrang, und die Kürzel werden "
+        + "beim Schreiben nicht ausgewertet.",
         example = "78",
-        requiredMode = REQUIRED)
-    private long employeeorderId;
+        nullable = true)
+    private Long employeeorderId;
 
     @CsvBindByPosition(position = 2)
-    @Schema(description = "Kürzel des Kundenauftrags", example = "4711")
+    @Schema(description = "Kürzel des Kundenauftrags. Beim Schreiben ignoriert.", example = "4711")
     private String orderSign;
     @CsvBindByPosition(position = 3)
-    @Schema(description = "Bezeichnung des Kundenauftrags", example = "Softwareentwicklung ERP-System")
+    @Schema(description = "Bezeichnung des Kundenauftrags. Beim Schreiben ignoriert.", example = "Softwareentwicklung ERP-System")
     private String orderLabel;
 
     @CsvBindByPosition(position = 4)
-    @Schema(description = "Kürzel des Unterauftrags", example = "4711/01")
+    @Schema(description = "Vollständiges Kürzel des Unterauftrags. Beim Schreiben ohne employeeorderId wird unter den "
+        + "am Leistungsdatum gültigen Mitarbeiteraufträgen des am Leistungsdatum gültigen Vertrags von employeeSign der "
+        + "gewählt, dessen Unterauftrag genau dieses Kürzel trägt; passt keiner oder passen mehrere, wird die Buchung "
+        + "abgelehnt. Kürzel können sich ändern: Daten, die vor einer Umbenennung gelesen wurden, passen danach nicht "
+        + "mehr oder auf einen anderen Auftrag, der das alte Kürzel inzwischen trägt. Die ID bleibt dagegen gleich.",
+        example = "4711/01")
     private String suborderSign;
     @CsvBindByPosition(position = 5)
-    @Schema(description = "Bezeichnung des Unterauftrags", example = "API-Entwicklung")
+    @Schema(description = "Bezeichnung des Unterauftrags. Beim Schreiben ignoriert.", example = "API-Entwicklung")
     private String suborderLabel;
 
     @CsvBindByPosition(position = 6)
@@ -100,6 +114,15 @@ public class DailyReportData {
         nullable = true)
     private boolean training;
 
+    /** A new column at the end (#1142): positions 0-10 stay where existing clients expect them. */
+    @CsvBindByPosition(position = 11)
+    @Schema(description = "Kürzel des Mitarbeiters, dem die Buchung gehört. Beim Schreiben ohne employeeorderId "
+        + "bestimmt es zusammen mit suborderSign und dem Leistungsdatum den Mitarbeiterauftrag; fehlt es, gilt der "
+        + "angemeldete Mitarbeiter. Gebucht werden darf nur, wofür die Berechtigung auch über die ID reicht.",
+        example = "abc",
+        nullable = true)
+    private String employeeSign;
+
     public static DailyReportData valueOf(TimereportDTO timeReport) {
         return DailyReportData.builder()
                 .id(timeReport.getId())
@@ -114,6 +137,27 @@ public class DailyReportData {
                 .suborderSign(timeReport.getCompleteOrderSign())
                 .orderSign(timeReport.getCustomerorderSign())
                 .ticketReference(timeReport.getTicketReference())
+                .employeeSign(timeReport.getEmployeeSign())
+                .build();
+    }
+
+    /**
+     * This booking as {@link #valueOf} renders a stored one on {@code employeeorder} and {@code day}: every
+     * value that follows from the order is taken from it, whatever the booking said (#1142). Import and REST
+     * API compare incoming with stored bookings by {@link #equals}; a booking named by its signs, or carrying
+     * stale labels, would otherwise never equal the one it stands for and count as new.
+     */
+    public DailyReportData assignedTo(Employeeorder employeeorder, LocalDate day) {
+        var suborder = employeeorder.getSuborder();
+        return toBuilder()
+                .id(null)
+                .date(DateUtils.format(day))
+                .employeeorderId(employeeorder.getId())
+                .orderSign(suborder.getCustomerorder().getSign())
+                .orderLabel(suborder.getCustomerorder().getShortdescription())
+                .suborderSign(suborder.getCompleteOrderSign())
+                .suborderLabel(suborder.getShortdescription())
+                .employeeSign(employeeorder.getEmployeecontract().getEmployee().getSign())
                 .build();
     }
 
