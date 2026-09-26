@@ -83,7 +83,8 @@ class DailyViewReturnTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {OVERVIEW, "/acceptance/release/review?contractId=42&until=2026-03"})
+  @ValueSource(strings = {OVERVIEW, "/acceptance/release/review?contractId=42&until=2026-03",
+      "/acceptance/accept/review?contractId=42&until=2026-03&view=day#day-2026-03-02"})
   void a_day_opened_from_an_overview_offers_the_way_back(String returnUrl) {
     var model = new ExtendedModelMap();
 

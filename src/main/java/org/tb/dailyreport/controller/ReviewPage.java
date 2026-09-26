@@ -16,18 +16,20 @@ import org.tb.dailyreport.viewhelper.ReviewLinks;
 import org.tb.dailyreport.viewhelper.TimereportReviewViewHelper;
 
 /**
- * Was die Übersicht vor der Freigabe in {@link ReleaseController} und {@link AcceptanceController}
- * gleich macht (#760): den gewählten Monat lesen, die Seite befüllen und nach dem Abschicken die
- * eine Meldung wählen.
+ * Was die Übersichten vor der Freigabe (#760) und vor der Abnahme (#1122) in
+ * {@link ReleaseController} und {@link AcceptanceController} gleich machen: den gewählten Monat
+ * lesen, die Seite befüllen und nach dem Abschicken die eine Meldung wählen.
  *
  * <p>Scheitert das Abschicken, landet die Person wieder in der Übersicht, und die zeigt die Befunde
- * an ihrem Tag. Ein Toast je Befund wiederholte sie nur (#760: nicht als Toast); er sagt deshalb
- * nur, dass nichts freigegeben wurde. Einzig die geänderte Übersicht ({@code RL-0008}) nennt er
- * selbst — sie erklärt, warum die Seite jetzt anders aussieht als vor dem Klick.
+ * an ihrem Tag oder über dem Zeitraum. Ein Toast je Befund wiederholte sie nur (#760: nicht als
+ * Toast); er sagt deshalb nur, dass nichts freigegeben oder abgenommen wurde. Einzig die geänderte
+ * Übersicht ({@code RL-0008}) nennt er selbst — sie erklärt, warum die Seite jetzt anders aussieht
+ * als vor dem Klick.
  */
 final class ReviewPage {
 
-  static final String VIEW_NAME = "dailyreport/release-review";
+  static final String RELEASE_VIEW_NAME = "dailyreport/release-review";
+  static final String ACCEPTANCE_VIEW_NAME = "dailyreport/acceptance-review";
 
   private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
@@ -59,6 +61,12 @@ final class ReviewPage {
   /** Die Meldung nach dem Freigeben: der Zeitraum, der freigegeben wurde. */
   static String releasedMessage(MessageSourceAccessor messages, LocalDate begin, LocalDate end) {
     return messages.getMessage("main.release.review.success.release.text",
+        new Object[] {DATE.format(begin), DATE.format(end)});
+  }
+
+  /** Die Meldung nach dem Abnehmen: der Zeitraum, der abgenommen wurde (#1122). */
+  static String acceptedMessage(MessageSourceAccessor messages, LocalDate begin, LocalDate end) {
+    return messages.getMessage("main.release.review.success.accept.text",
         new Object[] {DATE.format(begin), DATE.format(end)});
   }
 

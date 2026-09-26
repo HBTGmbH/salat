@@ -91,28 +91,27 @@
       </form>
 
       <!-- Accept form -->
-      <form method="post" th:action="@{/acceptance/accept}" class="mb-3"
-            data-confirm
-            th:data-confirm-title="#{main.release.accept.confirm.title}"
-            th:data-confirm-text="#{main.general.confirmacceptance.text}"
-            th:data-confirm-detail="${selectedContract.employee.name}"
-            th:data-confirm-detail-secondary="#{main.release.accept.until.text}"
-            data-confirm-detail-input="input[name=acceptanceDate]"
-            th:data-confirm-label="#{main.general.button.accept.text}"
-            data-confirm-variant="success">
+      <!--/* Oeffnet die Uebersicht vor der Abnahme fuer die gewaehlte Person (#1122); abgenommen wird
+             dort, ohne Bestaetigungsdialog (ADR-0027, Nachtrag). Vorgeschlagen und hoechstens
+             waehlbar ist der Monat der Freigabe, denn weiter reicht keine Abnahme. Die eigenen
+             Buchungen nimmt niemand ab: statt eines Formulars, das in eine 403 fuehrte, steht dann
+             ein Hinweis. */-->
+      <form th:if="${acceptAllowed}" method="get" th:action="@{/acceptance/accept/review}" class="mb-3">
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
-        <label class="form-label fw-semibold" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
+        <label class="form-label fw-semibold" for="acceptance-accept-until" th:text="#{main.release.accept.until.text}">Buchungen abnehmen bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <input type="month" class="form-control" name="acceptanceDate" th:value="${acceptanceDateStr}"
-                   th:max="${lastMonthStr}" />
+            <input type="month" class="form-control" id="acceptance-accept-until" name="until" required
+                   th:value="${acceptanceDateStr}" th:max="${acceptanceMaxMonthStr}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-success"
-                    th:text="#{main.general.button.accept.text}">Abnehmen</button>
+                    th:text="#{main.release.review.open.accept.text}">Abnahme prüfen</button>
           </div>
         </div>
       </form>
+      <p th:unless="${acceptAllowed}" class="text-secondary mb-3" id="acceptance-accept-not-allowed"
+         th:text="#{main.release.review.open.accept.notallowed.text}">Die Buchungen dieses Vertrags kannst du nicht abnehmen. Eigene Buchungen nimmt die zuständige People Lead oder die Geschäftsführung ab.</p>
 
       <!-- Reopen form (admin only) -->
       <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"

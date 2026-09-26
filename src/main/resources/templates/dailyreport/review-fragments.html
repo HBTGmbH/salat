@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<!--/* Bausteine der Uebersicht vor der Freigabe (#760), gebaut fuer die Abnahme (#1122) gleich mit.
+<!--/* Bausteine der Uebersichten vor der Freigabe (#760) und vor der Abnahme (#1122).
        Sie kennen weder Status noch Aktion: was abgeschickt wird und wie der Zeitraum heisst, steht
        in der Seite, die sie einbindet, und kommt als Parameter herein. Welche Tage ohne Buchung
        sind, wer bearbeiten oder anlegen darf und ob die Aktion gesperrt ist, hat der Service
        entschieden - die Bausteine lesen es nur ab (TimereportReviewViewHelper). */-->
 
-<th:block th:fragment="overview(review, links, view, periodLabel, periodErrorTitle, findingsTitle)">
-  <div th:replace="~{dailyreport/review-fragments :: summaryCard(${review}, ${periodLabel})}"></div>
+<th:block th:fragment="overview(review, links, view, periodLabel, periodErrorTitle, findingsTitle, differenceHint)">
+  <div th:replace="~{dailyreport/review-fragments :: summaryCard(${review}, ${periodLabel}, ${differenceHint})}"></div>
   <th:block th:replace="~{dailyreport/review-fragments :: problems(${review}, ${links}, ${periodErrorTitle}, ${findingsTitle})}"></th:block>
   <th:block th:if="${review.detailed}">
     <th:block th:replace="~{dailyreport/review-fragments :: beforePeriod(${review}, ${links})}"></th:block>
@@ -24,9 +24,10 @@
 
 <!--/* Die Differenz ist bewusst ungefaerbt: ein kurzer Tag ist nicht automatisch falsch (#760), und
        fuer einen Zeitraum beliebiger Laenge gibt es keine Ampelskala (OvertimeScale kennt nur Monat
-       und Gesamtsaldo). Der Zeitraum steht auf jeder Breite; nur freigegeben/abgenommen bis weicht
-       wie auf der Seite davor unter sm. */-->
-<div th:fragment="summaryCard(review, periodLabel)" class="card mb-3" id="review-summary">
+       und Gesamtsaldo). Was die Differenz fuer das Konto heisst, sagt die Seite: vor der Abnahme
+       (#1122) aendert sich um sie das festgeschriebene Konto. Der Zeitraum steht auf jeder Breite;
+       nur freigegeben/abgenommen bis weicht wie auf der Seite davor unter sm. */-->
+<div th:fragment="summaryCard(review, periodLabel, differenceHint)" class="card mb-3" id="review-summary">
   <div class="card-header">
     <div>
       <h3 class="card-title" th:text="${review.employeeName + ' | ' + review.employeeSign}">Name | Kürzel</h3>
@@ -64,7 +65,7 @@
         <dt class="subheader" th:text="#{main.release.review.balance.difference.text}">Differenz</dt>
         <dd class="mb-0">
           <span class="h2 fw-bold d-block mb-0" th:text="${review.differenceText}">-4:00</span>
-          <span class="text-muted small" th:text="#{main.release.review.balance.difference.hint.text}">Veränderung des Überstundenkontos im Zeitraum</span>
+          <span class="text-muted small" th:text="${differenceHint}">Veränderung des Überstundenkontos im Zeitraum</span>
         </dd>
       </div>
     </dl>
