@@ -30,6 +30,9 @@ import org.tb.common.test.FixedClock;
 import org.tb.common.util.ClockProvider;
 import org.tb.customer.persistence.CustomerRepository;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
+import org.tb.dailyreport.persistence.ReferencedayRepository;
+import org.tb.dailyreport.persistence.TimereportRepository;
+import org.tb.dailyreport.persistence.WorkingdayRepository;
 import org.tb.employee.persistence.EmployeeRepository;
 import org.tb.employee.persistence.EmployeecontractRepository;
 import org.tb.order.persistence.CustomerorderRepository;
@@ -109,6 +112,12 @@ public abstract class PlaywrightE2ETestBase {
   private SalatUserRepository salatUserRepository;
   @Autowired
   private PublicholidayRepository publicholidayRepository;
+  @Autowired
+  private ReferencedayRepository referencedayRepository;
+  @Autowired
+  private TimereportRepository timereportRepository;
+  @Autowired
+  private WorkingdayRepository workingdayRepository;
 
   // no SMTP server is available in the E2E environment; release/acceptance/sharing flows send
   // mail as a side effect, so the sender is stubbed out rather than left to fail with a raw
@@ -128,7 +137,7 @@ public abstract class PlaywrightE2ETestBase {
     ClockProvider.useFixedClock(LocalDateTime.parse(FIXED_NOW));
     E2ETestData.seedIfNeeded(customerRepository, customerorderRepository, suborderRepository,
         employeeRepository, employeecontractRepository, employeeorderRepository, salatUserRepository,
-        publicholidayRepository);
+        publicholidayRepository, referencedayRepository, timereportRepository, workingdayRepository);
   }
 
   @AfterAll
