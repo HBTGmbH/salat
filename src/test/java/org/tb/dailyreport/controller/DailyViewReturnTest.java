@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.controller.DailyController.dailyViewUrl;
+import static org.tb.dailyreport.controller.DailyController.reviewReturnUrlOf;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,6 +29,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
+import org.tb.dailyreport.domain.DailyViewData;
 import org.tb.dailyreport.preferences.DailyPreferenceService;
 import org.tb.dailyreport.preferences.DailyPreferences;
 import org.tb.dailyreport.service.DailyService;
@@ -53,6 +55,9 @@ class DailyViewReturnTest {
 
   private static final LocalDate DATE = LocalDate.of(2026, 3, 2);
   private static final String OVERVIEW = "/release/review?until=2026-03&view=day#day-2026-03-02";
+  /** The day of {@link #OVERVIEW}, opened from it. */
+  private static final String OVERVIEW_DAY = "/dailyreport/daily?mode=daily&date=2026-03-02"
+      + "&returnUrl=%2Frelease%2Freview%3Funtil%3D2026-03%26view%3Dday%23day-2026-03-02";
 
   @Mock private DailyService dailyService;
   @Mock private MatrixService matrixService;
@@ -113,8 +118,54 @@ class DailyViewReturnTest {
     var view = controller.saveWorkingday(null, OVERVIEW, form, new MockHttpServletRequest(),
         new MockHttpServletResponse(), new ExtendedModelMap(), new RedirectAttributesModelMap());
 
-    assertThat(view).isEqualTo("redirect:/dailyreport/daily?mode=daily&date=2026-03-02"
-        + "&returnUrl=%2Frelease%2Freview%3Funtil%3D2026-03%26view%3Dday%23day-2026-03-02");
+    assertThat(view).isEqualTo("redirect:" + OVERVIEW_DAY);
+  }
+
+  /** Das Löschen lädt die Seite neu; die Umleitung behält den Weg zurück. */
+  @Test
+  void deleting_a_booking_keeps_the_way_back() {
+    var view = controller.deleteTimereport(7L, DATE, "daily", null, null, OVERVIEW, new RedirectAttributesModelMap());
+
+    assertThat(view).isEqualTo("redirect:" + OVERVIEW_DAY);
+  }
+
+  @Test
+  void deleting_a_booking_without_an_overview_leads_to_the_plain_day() {
+    var view = controller.deleteTimereport(7L, DATE, "daily", null, null, "https://evil.example.com",
+        new RedirectAttributesModelMap());
+
+    assertThat(view).isEqualTo("redirect:/dailyreport/daily?mode=daily&date=2026-03-02");
+  }
+
+  /**
+   * HTMX tauscht die Buchungen des Tages aus, ohne die Seite neu zu laden. Die Anfrage selbst trägt
+   * keinen Rücksprung, die Seite, in die das Fragment kommt, aber in ihrer Adresse — und die Verweise
+   * darin auf Anlegen, Bearbeiten und Löschen geben ihn weiter.
+   */
+  @Test
+  void a_refreshed_list_of_bookings_keeps_the_way_back() {
+    when(dailyService.buildDailyView(DATE, -1L)).thenReturn(mock(DailyViewData.class));
+    var model = new ExtendedModelMap();
+
+    controller.deleteFavourite(null, 5L, DATE, htmxRequestFrom("http://localhost:8080" + OVERVIEW_DAY), model);
+
+    assertThat(model.get("reviewReturnUrl")).isEqualTo(OVERVIEW);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "http://localhost:8080/dailyreport/daily?mode=daily&date=2026-03-02",
+      "http://localhost:8080/dailyreport/daily?mode=daily&date=2026-03-02&returnUrl=%2Fdailyreport%2Fdaily%3Fmode%3Dlist",
+      "http://localhost:8080/dailyreport/daily?mode=daily&date=2026-03-02&returnUrl=https%3A%2F%2Fevil.example.com",
+      "http://localhost:8080/dailyreport/daily?mode=daily&date=2026-03-02&returnUrl=%zz",
+      "not a url at all"})
+  void a_refreshed_list_of_bookings_offers_no_other_way_back(String currentUrl) {
+    assertThat(reviewReturnUrlOf(htmxRequestFrom(currentUrl))).isNull();
+  }
+
+  @Test
+  void a_request_without_a_current_page_offers_no_way_back() {
+    assertThat(reviewReturnUrlOf(new MockHttpServletRequest())).isNull();
   }
 
   @Test
@@ -122,5 +173,12 @@ class DailyViewReturnTest {
     assertThat(dailyViewUrl(DATE, null)).isEqualTo("/dailyreport/daily?mode=daily&date=2026-03-02");
     assertThat(dailyViewUrl(DATE, "/dailyreport/daily?mode=list")).isEqualTo("/dailyreport/daily?mode=daily&date=2026-03-02");
     assertThat(dailyViewUrl(DATE, "https://evil.example.com")).isEqualTo("/dailyreport/daily?mode=daily&date=2026-03-02");
+  }
+
+  private static MockHttpServletRequest htmxRequestFrom(String currentUrl) {
+    var request = new MockHttpServletRequest();
+    request.addHeader("HX-Request", "true");
+    request.addHeader("HX-Current-URL", currentUrl);
+    return request;
   }
 }
