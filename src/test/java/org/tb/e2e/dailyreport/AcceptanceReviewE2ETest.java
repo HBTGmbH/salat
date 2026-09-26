@@ -73,7 +73,7 @@ class AcceptanceReviewE2ETest extends PlaywrightE2ETestBase {
       assertThat(summary).containsText("24:00");
       assertThat(summary).containsText("14:00");
       assertThat(summary).containsText("-10:00");
-      assertThat(summary).containsText("Das festgeschriebene Überstundenkonto ändert sich um die Differenz.");
+      assertThat(summary).containsText("Die Differenz geht in das Überstundenkonto ein");
 
       // by order is the default view, with the comments
       assertThat(viewLink(page, "Nach Auftrag")).hasAttribute("aria-current", "page");

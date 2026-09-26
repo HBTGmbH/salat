@@ -25,8 +25,10 @@
 <!--/* Die Differenz ist bewusst ungefaerbt: ein kurzer Tag ist nicht automatisch falsch (#760), und
        fuer einen Zeitraum beliebiger Laenge gibt es keine Ampelskala (OvertimeScale kennt nur Monat
        und Gesamtsaldo). Was die Differenz fuer das Konto heisst, sagt die Seite: vor der Abnahme
-       (#1122) aendert sich um sie das festgeschriebene Konto. Der Zeitraum steht auf jeder Breite;
-       nur freigegeben/abgenommen bis weicht wie auf der Seite davor unter sm. */-->
+       (#1122) geht sie in das Konto ein, das die Abnahme vom Vertragsbeginn an neu berechnet. Ein
+       "aendert sich genau um" verspraeche zu viel: ein gespeicherter Stand kann veraltet sein. Der
+       Zeitraum steht auf jeder Breite; nur freigegeben/abgenommen bis weicht wie auf der Seite davor
+       unter sm. */-->
 <div th:fragment="summaryCard(review, periodLabel, differenceHint)" class="card mb-3" id="review-summary">
   <div class="card-header">
     <div>
