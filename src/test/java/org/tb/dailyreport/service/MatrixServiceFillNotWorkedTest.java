@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +26,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.tb.auth.domain.AccessLevel;
+import org.tb.auth.domain.AuthorizationRule;
 import org.tb.auth.domain.SalatUser;
+import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.auth.persistence.SalatUserRepository;
+import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCodeException;
@@ -108,6 +113,10 @@ class MatrixServiceFillNotWorkedTest {
   private SuborderRepository suborderRepository;
   @Autowired
   private EmployeeorderRepository employeeorderRepository;
+  @Autowired
+  private AuthorizationRuleRepository authorizationRuleRepository;
+  @Autowired
+  private AuthService authService;
 
   private Employeecontract contract;
 
@@ -256,6 +265,24 @@ class MatrixServiceFillNotWorkedTest {
     assertThat(notWorkedDays()).hasSize(WEEKDAYS_OF_MONTH);
   }
 
+  /**
+   * Wer die Arbeitstage der Person über eine Regel schreiben darf, ihre Buchungen aber nicht lesen,
+   * lässt den gebuchten Tag trotzdem frei. Die Prüfung beim Speichern
+   * ({@code WD_NOT_WORKED_TIMEREPORTS_FOUND}) liest die Buchungen durch den READ-Filter, sieht für
+   * ihn keine und hielte den Tag nicht auf; bis #1124 wurde er so als nicht gearbeitet gespeichert.
+   */
+  @Test
+  void leaves_a_booked_day_alone_for_a_rule_holder_who_cannot_read_the_booking() {
+    book(day(3), GlobalConstants.TIMEREPORT_STATUS_OPEN);
+    var ruleHolder = signOf(contract(LocalDate.of(2000, 1, 1), null));
+    grantWorkingdayWrite(ruleHolder, signOf(contract));
+    logInAs(ruleHolder);
+
+    fillNotWorked();
+
+    assertThat(storedDays()).doesNotContain(day(3)).contains(day(2), day(4));
+  }
+
   @Test
   void another_employee_may_not_and_nothing_is_written() {
     logInAs(signOf(contract(LocalDate.of(2000, 1, 1), null)));
@@ -306,6 +333,25 @@ class MatrixServiceFillNotWorkedTest {
 
   private static String signOf(Employeecontract employeecontract) {
     return employeecontract.getEmployee().getSign();
+  }
+
+  /**
+   * Eine Regel der Kategorie {@code WORKINGDAY}: {@code grantee} darf die Arbeitstage von
+   * {@code employeeSign} schreiben, sonst nichts. Die Regeln liegen in einem Zwischenspeicher, den
+   * nur die Geschäftsführung leeren darf — ohne das griffe die neue Regel erst nach dessen Ablauf.
+   * Dafür ist danach die Geschäftsführung angemeldet; der Aufrufer meldet sich selbst wieder an.
+   */
+  private void grantWorkingdayWrite(String grantee, String employeeSign) {
+    var rule = new AuthorizationRule();
+    rule.setCategory("WORKINGDAY");
+    rule.setGranteeId(Set.of(grantee));
+    rule.setObjectId(Set.of(employeeSign));
+    rule.setAccessLevels(Set.of(AccessLevel.WRITE));
+    rule.setValidFrom(LocalDate.of(2000, 1, 1));
+    authorizationRuleRepository.save(rule);
+
+    logInAs("gf" + PERSONS.incrementAndGet(), "ROLE_MANAGER");
+    authService.clearCache();
   }
 
   private Workingday workingday(LocalDate date, Workingday.WorkingDayType type, int startHour, int startMinute,
@@ -360,6 +406,9 @@ class MatrixServiceFillNotWorkedTest {
     customerorder.setDebithours(Duration.ZERO);
     customerorder.setOrderType(OrderType.STANDARD);
     customerorder.setHide(false);
+    // vertraglich verantwortet die Person den Auftrag selbst, so liest niemand sonst über den
+    // Auftrag ihre Buchungen
+    customerorder.setRespEmpHbtContract(contract.getEmployee());
     customerorder = customerorderRepository.save(customerorder);
 
     var suborder = new Suborder();
