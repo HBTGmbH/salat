@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -137,11 +138,13 @@ class ReleaseServiceTest {
 
             // when reviewing the whole month and accepting what the review shows
             final var period = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, END_OF_MONTH).period();
+            // the review loads the released bookings up to the same end; only the acceptance counts here
+            clearInvocations(timereportDAO);
             classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, period.begin(), period.end());
 
             // then the contract end is what gets shown, accepted and stored
             assertThat(period).isEqualTo(new ReviewPeriod(CONTRACT_START, CONTRACT_END));
-            verify(timereportDAO, atLeastOnce()).getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
+            verify(timereportDAO).getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, CONTRACT_END, CONTRACT_END);
             verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
         }
@@ -2058,6 +2061,25 @@ class ReleaseServiceTest {
             assertThat(review.acceptedUntil()).isNull();
         }
 
+        /**
+         * Der Vertragsbeginn liegt inzwischen hinter der letzten Abnahme: der Zeitraum beginnt am
+         * Vertragsbeginn, nicht am Tag nach der Abnahme, und zeigt keinen Tag vor dem Vertrag.
+         */
+        @Test
+        void thePeriodBeginsAtTheContractStartWhenItLiesAfterTheLastAcceptance() {
+            final var contract = acceptableContract();
+            contract.setValidFrom(WEDNESDAY);
+            givenBookings(WEDNESDAY, FRIDAY, week().subList(2, 5));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(WEDNESDAY, FRIDAY));
+            assertThat(review.acceptedUntil()).isEqualTo(ACCEPTED_UNTIL);
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::date)
+                .containsExactly(WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
         /** Der Monat reicht über das Vertragsende hinaus — gezeigt wird bis zum Vertragsende, ohne Befund (#324). */
         @Test
         void thePeriodEndsAtTheContractEndWithinTheMonth() {
@@ -2494,6 +2516,19 @@ class ReleaseServiceTest {
             assertThat(period).isEqualTo(new ReviewPeriod(BEGIN, END_OF_MONTH));
             verify(timereportService).updateReleaseData(eq(TIMEREPORT_ID), eq(GlobalConstants.TIMEREPORT_STATUS_CLOSED),
                 isNull(), isNull(), eq(PEOPLE_LEAD), any(LocalDateTime.class));
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, RELEASED_UNTIL, END_OF_MONTH);
+            verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
+        }
+
+        /** Der Vertragsbeginn liegt hinter der letzten Abnahme: abgenommen wird ab dem Vertragsbeginn, wie die Übersicht ihn zeigt. */
+        @Test
+        void acceptsFromTheContractStartWhenItLiesAfterTheLastAcceptance() {
+            final var contract = acceptableContract();
+            final var contractStart = LocalDate.of(2024, 3, 11);
+            contract.setValidFrom(contractStart);
+
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, contractStart, END_OF_MONTH);
+
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, RELEASED_UNTIL, END_OF_MONTH);
             verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
         }
