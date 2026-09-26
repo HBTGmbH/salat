@@ -1851,7 +1851,9 @@ class ReleaseServiceTest {
 
         /**
          * Die Übersicht über einen Monat vor der letzten Freigabe zeigt einen leeren Zeitraum. Ihn
-         * freizugeben verschob bis #760 das Freigabedatum zurück.
+         * freizugeben scheiterte bis #760 mit einer {@link IllegalArgumentException} und endete auf
+         * der Fehlerseite; jetzt ist es der Befund {@code RL-0009}, und das Freigabedatum bleibt
+         * stehen.
          */
         @Test
         void aMonthBeforeTheLastReleaseIsNothingToRelease() {
