@@ -470,10 +470,12 @@ gerade dreht.
   nicht in den Text. Gibt es kein einzelnes Objekt, benennt der Text den **Umfang** der Aktion —
   „Rest nicht gearbeitet" nennt den Monat, das Öffnen den Monat, ab dem geöffnet wird.
 
-- **Prüfseite statt Dialog** (#760, → ADR-0027, Nachtrag): Vor der Freigabe steht eine eigene
-  Seite, die Person, Zeitraum und Folge nennt und jede erfasste Buchung zeigt; ihr Knopf handelt
-  ohne Dialog, wie schon die Vorschau vor dem Umbuchen. Gesperrt ist er, solange es Befunde gibt —
-  `disabled` mit sichtbarem Grund daneben (`aria-describedby`); die Sperre selbst liegt im Service.
+- **Prüfseite statt Dialog** (#760, #1122, → ADR-0027, Nachtrag): Vor der Freigabe und vor der
+  Abnahme steht eine eigene Seite, die Person, Zeitraum und Folge nennt und jede erfasste Buchung
+  zeigt; ihr Knopf handelt ohne Dialog, wie schon die Vorschau vor dem Umbuchen. Gesperrt ist er,
+  solange es Befunde an Tagen gibt — `disabled` mit sichtbarem Grund daneben (`aria-describedby`).
+  Ein Befund über den ganzen Zeitraum steht an Stelle von Bilanz, Buchungen und Knopf; die Abnahme
+  kennt nur solche. Die Sperre selbst liegt im Service.
 
 - **Eigenständige modale Dialoge** bleiben, wo mehr als eine Bestätigung verlangt wird:
   Benutzerwechsel (`layout/base.html`, die Auswahl findet im Dialog selbst statt), Teilen

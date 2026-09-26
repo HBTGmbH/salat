@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -244,7 +245,8 @@ class ControllerAuthorizationIntegrationTest {
         Arguments.of("/invoice", REGULAR),
         Arguments.of("/acceptance", REGULAR),
         // die Ablehnung kommt hier aus dem Service, nicht aus dem Aspekt des Controllers
-        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={mgr}", REGULAR));
+        Arguments.of("/release/review?" + REVIEW_MONTH + "&fEmployeeContractId={mgr}", REGULAR),
+        Arguments.of("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH, PEOPLE_LEAD));
   }
 
   /**
@@ -352,6 +354,151 @@ class ControllerAuthorizationIntegrationTest {
     var day = queryParam(newBooking.group(1).replace("&amp;", "&"), "returnUrl");
     assertThat(day).startsWith("/dailyreport/daily?mode=daily&date=2000-01-03&returnUrl=");
     assertThat(queryParam(day, "returnUrl")).isEqualTo(review);
+  }
+
+  /**
+   * Die Übersicht vor der Abnahme (#1122) über einen freigegebenen Monat: Bilanz, Sichten und das
+   * Formular zum Abnehmen, aber kein Anlegen an einem Tag ohne Buchung. Eine 200 heißt auch hier,
+   * dass die Seite mit allen Bausteinen gerendert wurde, in beiden Sichten.
+   */
+  @ParameterizedTest(name = "view [{0}]")
+  @ValueSource(strings = {"", "&view=day"})
+  void a_manager_sees_the_acceptance_review_of_a_released_month(String view) throws Exception {
+    releaseJanuary(REGULAR);
+    try {
+      var response = get("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH + view, MANAGER);
+
+      assertThat(response.statusCode()).isEqualTo(200);
+      assertThat(response.body()).contains("id=\"review-summary\"", "id=\"review-views\"", "id=\"review-action\"",
+          "action=\"/acceptance/accept\"", "name=\"periodBegin\" value=\"2000-01-01\"",
+          "name=\"periodEnd\" value=\"2000-01-31\"");
+      assertThat(response.body()).doesNotContain("id=\"review-period-errors\"", "id=\"review-findings\"",
+          "/dailyreport/timereports/new?date=");
+    } finally {
+      unrelease(REGULAR);
+    }
+  }
+
+  /**
+   * Ohne Tagesarbeitszeit wird kein Überstundenkonto geführt (#1122): die Übersicht sagt das, und die
+   * Folge der Abnahme verspricht dann auch kein festgeschriebenes Konto.
+   */
+  @Test
+  void the_acceptance_review_of_a_contract_without_overtime_account_fixes_no_account() throws Exception {
+    var contract = contractOf(REGULAR);
+    contract.setDailyWorkingTime(Duration.ZERO);
+    employeecontractRepository.save(contract);
+    releaseJanuary(REGULAR);
+    try {
+      var response = get("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH, MANAGER);
+
+      assertThat(response.statusCode()).isEqualTo(200);
+      assertThat(response.body()).contains("name=\"periodEnd\" value=\"2000-01-31\"");
+      assertThat(response.body()).containsAnyOf(
+          "Für diesen Vertrag wird kein Überstundenkonto geführt.",
+          "No overtime account is kept for this contract.");
+      assertThat(response.body()).containsAnyOf(
+          "Danach kann nur noch die Geschäftsführung die Buchungen ändern.",
+          "Afterwards only a manager can change the bookings.");
+      assertThat(response.body()).doesNotContain("festgeschrieben", "is fixed up to");
+    } finally {
+      unrelease(REGULAR);
+      var restored = contractOf(REGULAR);
+      restored.setDailyWorkingTime(Duration.ofHours(8));
+      employeecontractRepository.save(restored);
+    }
+  }
+
+  /**
+   * Ohne Freigabe gibt es nichts abzunehmen (#1122): die gesperrte Übersicht mit ihrem Befund, ohne
+   * Sichten und ohne Formular.
+   */
+  @Test
+  void the_acceptance_review_of_a_contract_never_released_is_blocked() throws Exception {
+    var response = get("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH, MANAGER);
+
+    assertThatTheReviewIsBlocked(response);
+    assertThat(response.body()).containsAnyOf(
+        "Es ist noch nichts freigegeben, was abgenommen werden könnte.",
+        "Nothing has been released yet that could be accepted.");
+  }
+
+  /**
+   * Wer den Vertrag nicht abnehmen darf, sieht auch seine Übersicht nicht (#1122): wer keine People
+   * Lead ist, scheitert am Controller, die People Lead, die nicht zuständig ist, am Service — und
+   * die eigenen Buchungen nimmt niemand ab, auch die Geschäftsführung nicht.
+   */
+  @ParameterizedTest(name = "{1} -> {0}")
+  @MethodSource("acceptanceReviewDenied")
+  void a_login_that_may_not_accept_the_contract_does_not_see_its_review(String path, String login)
+      throws Exception {
+    releaseJanuary(REGULAR);
+    releaseJanuary(MANAGER);
+    try {
+      assertThat(get(path, login).statusCode()).isEqualTo(FORBIDDEN.value());
+    } finally {
+      unrelease(REGULAR);
+      unrelease(MANAGER);
+    }
+  }
+
+  /**
+   * Das Abnehmen selbst: auch hier fängt der Handler nur fachliche Ausnahmen, eine fehlende
+   * Berechtigung bleibt eine 403, und das Abnahmedatum bleibt stehen.
+   */
+  @ParameterizedTest(name = "{0} -> POST /acceptance/accept for {1}")
+  @MethodSource("acceptDenied")
+  void a_login_that_may_not_accept_the_contract_cannot_accept_it(String login, String owner) throws Exception {
+    releaseJanuary(owner);
+    try {
+      var form = "contractId={" + owner + "}&periodBegin=2000-01-01&periodEnd=2000-01-31";
+
+      assertThat(post("/acceptance/accept", login, form).statusCode()).isEqualTo(FORBIDDEN.value());
+      assertThat(contractOf(owner).getReportAcceptanceDate()).isNull();
+    } finally {
+      unrelease(owner);
+    }
+  }
+
+  /** Den eigenen Vertrag bietet die Seite der Abnahme nicht zum Abnehmen an, sondern sagt, warum (#1122). */
+  @Test
+  void the_acceptance_page_offers_no_review_of_the_own_contract() throws Exception {
+    var own = get("/acceptance?fAcceptanceEmployeeContractId={mgr}", MANAGER);
+    var other = get("/acceptance?fAcceptanceEmployeeContractId={reg}", MANAGER);
+
+    assertThat(own.statusCode()).isEqualTo(200);
+    assertThat(own.body()).contains("id=\"acceptance-accept-not-allowed\"").doesNotContain("id=\"acceptance-accept-until\"");
+    assertThat(other.statusCode()).isEqualTo(200);
+    assertThat(other.body()).contains("id=\"acceptance-accept-until\"").doesNotContain("id=\"acceptance-accept-not-allowed\"");
+  }
+
+  private static Stream<Arguments> acceptanceReviewDenied() {
+    return Stream.of(
+        Arguments.of("/acceptance/accept/review?contractId={mgr}&" + REVIEW_MONTH, REGULAR),
+        Arguments.of("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH, RESTRICTED),
+        Arguments.of("/acceptance/accept/review?contractId={reg}&" + REVIEW_MONTH, PEOPLE_LEAD),
+        Arguments.of("/acceptance/accept/review?contractId={mgr}&" + REVIEW_MONTH, MANAGER));
+  }
+
+  private static Stream<Arguments> acceptDenied() {
+    return Stream.of(
+        Arguments.of(REGULAR, REGULAR),
+        Arguments.of(PEOPLE_LEAD, REGULAR),
+        Arguments.of(MANAGER, MANAGER));
+  }
+
+  /** Gibt den Januar 2000 des Vertrags frei, wie es die Freigabe täte — ohne Buchungen ist nichts umzustellen. */
+  private void releaseJanuary(String sign) {
+    var contract = contractOf(sign);
+    contract.setReportReleaseDate(LocalDate.of(2000, 1, 31));
+    employeecontractRepository.save(contract);
+  }
+
+  private void unrelease(String sign) {
+    var contract = contractOf(sign);
+    contract.setReportReleaseDate(null);
+    contract.setReportAcceptanceDate(null);
+    employeecontractRepository.save(contract);
   }
 
   /** Ein Parameter einer Adresse, einmal dekodiert — so, wie der Server ihn liest. */

@@ -167,6 +167,40 @@ public class E2ETestData {
     };
   }
 
+  /**
+   * Accepted until Thursday, 26.03.2026, and released until 31.03.2026, so {@code until=2026-03}
+   * shows Friday, 27.03., to Tuesday, 31.03.2026: two released bookings, and the Friday without one.
+   */
+  public static final String ACCEPTING_MONTH = "2026-03";
+  public static final LocalDate ACCEPTING_DAY_WITHOUT_BOOKING = LocalDate.of(2026, 3, 27);
+  public static final String ACCEPTING_EDITED_COMMENT = "Datenübernahme vorbereitet";
+  public static final String ACCEPTING_OTHER_COMMENT = "Abstimmung mit dem Kunden";
+  private static final LocalDate ACCEPTING_ACCEPTED_UNTIL = LocalDate.of(2026, 3, 26);
+  private static final LocalDate ACCEPTING_RELEASED_UNTIL = LocalDate.of(2026, 3, 31);
+
+  /**
+   * The person whose released bookings {@link #EMPLOYEE_PV_SIGN} reviews, corrects and accepts
+   * (#1122), one per browser: a period can be accepted only once, and without
+   * {@code -De2e.browsers} both browsers run against the same database.
+   */
+  public static String acceptedEmployeeSign(E2EBrowser browser) {
+    return switch (browser) {
+      case CHROME -> "eac";
+      case FIREFOX -> "eaf";
+    };
+  }
+
+  public static String acceptedEmployeeName(E2EBrowser browser) {
+    return acceptedEmployeeFirstname(browser) + " Abnahme";
+  }
+
+  private static String acceptedEmployeeFirstname(E2EBrowser browser) {
+    return switch (browser) {
+      case CHROME -> "Carla";
+      case FIREFOX -> "Fenja";
+    };
+  }
+
   public static void seedIfNeeded(
       CustomerRepository customerRepository,
       CustomerorderRepository customerorderRepository,
@@ -301,6 +335,22 @@ public class E2ETestData {
       bookings.notWorkedExcept(releasingContract, LocalDate.of(2026, 11, 23), LocalDate.of(2026, 11, 30),
           Set.of(RELEASING_DAY_WITHOUT_BOOKING));
     }
+
+    // --- The overview before an acceptance (#1122): released bookings, one person per browser ---
+    for (E2EBrowser browser : E2EBrowser.values()) {
+      Employee accepted = employee(employeeRepository, salatUserRepository, acceptedEmployeeSign(browser),
+          acceptedEmployeeFirstname(browser), "Abnahme", GlobalConstants.EMPLOYEE_STATUS_MA);
+      Employeecontract acceptedContract = employeecontract(employeecontractRepository, accepted, peopleLead);
+      acceptedContract.setReportReleaseDate(ACCEPTING_RELEASED_UNTIL);
+      acceptedContract.setReportAcceptanceDate(ACCEPTING_ACCEPTED_UNTIL);
+      acceptedContract = employeecontractRepository.save(acceptedContract);
+      Employeeorder acceptedAlpha = employeeorder(employeeorderRepository, acceptedContract, alphaDev);
+      Employeeorder acceptedGlobex = employeeorder(employeeorderRepository, acceptedContract, globexConsult);
+      bookings.book(acceptedAlpha, LocalDate.of(2026, 3, 30), Duration.ofHours(8), ACCEPTING_EDITED_COMMENT,
+          GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+      bookings.book(acceptedGlobex, LocalDate.of(2026, 3, 31), Duration.ofHours(6), ACCEPTING_OTHER_COMMENT,
+          GlobalConstants.TIMEREPORT_STATUS_COMMITED);
+    }
   }
 
   private static Customer customer(CustomerRepository repository, String name, String shortname) {
@@ -365,9 +415,10 @@ public class E2ETestData {
   }
 
   /**
-   * Bookings straight into the database, as {@code TimereportService} would store them: open, on the
-   * shared reference day of their date, numbered per day, and with a working day that starts at nine
-   * — a project booking needs a start of work, otherwise the check before a release reports it.
+   * Bookings straight into the database, as {@code TimereportService} would store them: open unless
+   * a status is given, on the shared reference day of their date, numbered per day, and with a
+   * working day that starts at nine — a project booking needs a start of work, otherwise the check
+   * before a release reports it.
    */
   private static final class Bookings {
 
@@ -384,6 +435,10 @@ public class E2ETestData {
     }
 
     void book(Employeeorder employeeorder, LocalDate day, Duration duration, String comment) {
+      book(employeeorder, day, duration, comment, GlobalConstants.TIMEREPORT_STATUS_OPEN);
+    }
+
+    void book(Employeeorder employeeorder, LocalDate day, Duration duration, String comment, String status) {
       var contract = employeeorder.getEmployeecontract();
       if (workingdays.findByRefdayAndEmployeecontractId(day, contract.getId()).isEmpty()) {
         workingday(contract, day, WORKED);
@@ -398,7 +453,7 @@ public class E2ETestData {
       timereport.setDurationhours((int) duration.toHours());
       timereport.setDurationminutes(duration.toMinutesPart());
       timereport.setTaskdescription(comment);
-      timereport.setStatus(GlobalConstants.TIMEREPORT_STATUS_OPEN);
+      timereport.setStatus(status);
       timereport.setTraining(false);
       timereport.setSequencenumber(sequence);
       timereports.save(timereport);

@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -45,6 +47,7 @@ import org.tb.dailyreport.auth.ReleaseAuthorization;
 import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.OvertimeBalance;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.Referenceday;
 import org.tb.dailyreport.domain.ReviewPeriod;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
@@ -133,10 +136,14 @@ class ReleaseServiceTest {
             contract.setReportReleaseDate(CONTRACT_END);
             when(releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
 
-            // when accepting the whole month
-            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, END_OF_MONTH);
+            // when reviewing the whole month and accepting what the review shows
+            final var period = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, END_OF_MONTH).period();
+            // the review loads the released bookings up to the same end; only the acceptance counts here
+            clearInvocations(timereportDAO);
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, period.begin(), period.end());
 
-            // then the contract end is what gets accepted and stored
+            // then the contract end is what gets shown, accepted and stored
+            assertThat(period).isEqualTo(new ReviewPeriod(CONTRACT_START, CONTRACT_END));
             verify(timereportDAO).getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, CONTRACT_END);
             verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, CONTRACT_END, CONTRACT_END);
             verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
@@ -2003,6 +2010,722 @@ class ReleaseServiceTest {
             employee.setFirstname("Vorname");
             employee.setLastname(sign);
             return employee;
+        }
+    }
+
+    /**
+     * Die Übersicht vor der Abnahme (#1122). Abgenommen ist bis Sonntag, 03.03.2024, freigegeben bis
+     * Freitag, 08.03.2024: die Übersicht bis zur Freigabe zeigt also die Woche vom 04.03.2024.
+     */
+    @Nested
+    class AcceptanceReview {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        private static final String OWNER = "xx";
+        private static final String PEOPLE_LEAD = "pl";
+        private static final String OTHER_PEOPLE_LEAD = "ol";
+        private static final String MANAGER = "gf";
+        private static final LocalDate CONTRACT_START = LocalDate.of(2024, 1, 1);
+        private static final LocalDate ACCEPTED_UNTIL = LocalDate.of(2024, 3, 3);
+        private static final LocalDate MONDAY = LocalDate.of(2024, 3, 4);
+        private static final LocalDate TUESDAY = MONDAY.plusDays(1);
+        private static final LocalDate WEDNESDAY = MONDAY.plusDays(2);
+        private static final LocalDate THURSDAY = MONDAY.plusDays(3);
+        private static final LocalDate FRIDAY = MONDAY.plusDays(4);
+        private static final LocalDate RELEASED_UNTIL = FRIDAY;
+
+        @Test
+        void thePeriodBeginsTheDayAfterTheLastAcceptance() {
+            acceptableContract();
+            givenBookings(MONDAY, FRIDAY, week());
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(MONDAY, FRIDAY));
+            assertThat(review.acceptedUntil()).isEqualTo(ACCEPTED_UNTIL);
+            assertThat(review.releasedUntil()).isEqualTo(RELEASED_UNTIL);
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        @Test
+        void thePeriodBeginsAtTheContractStartWithoutAcceptance() {
+            final var contract = acceptableContract();
+            contract.setValidFrom(WEDNESDAY);
+            contract.setReportAcceptanceDate(null);
+            givenBookings(WEDNESDAY, FRIDAY, week().subList(2, 5));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(WEDNESDAY, FRIDAY));
+            assertThat(review.acceptedUntil()).isNull();
+        }
+
+        /**
+         * Der Vertragsbeginn liegt inzwischen hinter der letzten Abnahme: der Zeitraum beginnt am
+         * Vertragsbeginn, nicht am Tag nach der Abnahme, und zeigt keinen Tag vor dem Vertrag.
+         */
+        @Test
+        void thePeriodBeginsAtTheContractStartWhenItLiesAfterTheLastAcceptance() {
+            final var contract = acceptableContract();
+            contract.setValidFrom(WEDNESDAY);
+            givenBookings(WEDNESDAY, FRIDAY, week().subList(2, 5));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(WEDNESDAY, FRIDAY));
+            assertThat(review.acceptedUntil()).isEqualTo(ACCEPTED_UNTIL);
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::date)
+                .containsExactly(WEDNESDAY, THURSDAY, FRIDAY);
+        }
+
+        /** Der Monat reicht über das Vertragsende hinaus — gezeigt wird bis zum Vertragsende, ohne Befund (#324). */
+        @Test
+        void thePeriodEndsAtTheContractEndWithinTheMonth() {
+            final var contract = acceptableContract();
+            contract.setValidUntil(WEDNESDAY);
+            contract.setReportReleaseDate(WEDNESDAY);
+            givenBookings(MONDAY, WEDNESDAY, week().subList(0, 3));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, LocalDate.of(2024, 3, 31));
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(MONDAY, WEDNESDAY));
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.actionAllowed()).isTrue();
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::date)
+                .containsExactly(MONDAY, TUESDAY, WEDNESDAY);
+        }
+
+        /**
+         * Gelistet ist, was die Bilanz summiert: jede Buchung des Zeitraums, gleich welchen Status —
+         * auch eine, die schon abgenommen ist, und eine, die noch offen ist.
+         */
+        @Test
+        void theListsShowEveryBookingOfThePeriodWhateverItsStatus() {
+            acceptableContract();
+            final var closed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_CLOSED, OrderType.STANDARD, Duration.ofHours(1));
+            final var open = booking(7, TUESDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(1));
+            final var listed = new ArrayList<>(week());
+            listed.add(closed);
+            listed.add(open);
+            givenBookings(MONDAY, FRIDAY, listed);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.byOrder()).flatExtracting(OrderGroup::timereports).containsExactlyInAnyOrderElementsOf(listed);
+            assertThat(review.timereportCount()).isEqualTo(7);
+            verify(timereportDAO, atLeastOnce()).getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY);
+        }
+
+        /** Die Abnahme schließt alle freigegebenen Buchungen bis zu ihrem Ende ab, auch eine vor dem Zeitraum. */
+        @Test
+        void releasedBookingsBeforeThePeriodAreListedApart() {
+            acceptableContract();
+            final var stray = booking(9, ACCEPTED_UNTIL.minusDays(1), GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(2));
+            final var committed = new ArrayList<>(week());
+            committed.add(stray);
+            givenBookings(MONDAY, FRIDAY, week(), committed);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.beforePeriod()).containsExactly(stray);
+            assertThat(review.byOrder()).flatExtracting(OrderGroup::timereports).doesNotContain(stray);
+            assertThat(review.timereportCount()).isEqualTo(5);
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        /** Ein Tag ohne Buchung steht als solcher da, ist aber kein Befund und bietet kein Anlegen an. */
+        @Test
+        void aWorkingDayWithoutAnyBookingIsShownButIsNoFinding() {
+            acceptableContract();
+            final var withoutWednesday = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
+            givenBookings(MONDAY, FRIDAY, withoutWednesday);
+            loggedInAs(MANAGER, true, true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .extracting(DayEntry::date, DayEntry::withoutBooking)
+                .containsExactly(tuple(MONDAY, false), tuple(TUESDAY, false), tuple(WEDNESDAY, true), tuple(THURSDAY, false), tuple(FRIDAY, false));
+            assertThat(review.dayFindings()).isEmpty();
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).flatExtracting(DayEntry::findings).isEmpty();
+            assertThat(review.canCreate()).isFalse();
+            assertThat(review.actionAllowed()).isTrue();
+        }
+
+        /** Anders als bei der Freigabe zählt jede Buchung: an einem Tag mit einer Buchung fehlt keine. */
+        @Test
+        void aBookingOfAnyStatusMakesADayBooked() {
+            acceptableContract();
+            final var open = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(8));
+            final var closed = booking(4, THURSDAY, GlobalConstants.TIMEREPORT_STATUS_CLOSED, OrderType.STANDARD, Duration.ofHours(8));
+            final var listed = week().stream()
+                .map(booking -> booking.getReferenceday().equals(WEDNESDAY) ? open
+                    : booking.getReferenceday().equals(THURSDAY) ? closed : booking)
+                .toList();
+            givenBookings(MONDAY, FRIDAY, listed);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days).extracting(DayEntry::withoutBooking).containsOnly(false);
+        }
+
+        /**
+         * Wer nur über eine Regel abnimmt und die Buchungen nicht lesen darf, bekommt sie vom
+         * Lesefilter nicht gezeigt — „Keine Buchung" steht trotzdem nur an einem Tag, an dem es keine
+         * gibt: die gebuchten Tage kommen ohne den Filter.
+         */
+        @Test
+        void aDayWithBookingsTheAcceptorMayNotReadIsNoDayWithoutBooking() {
+            acceptableContract();
+            final var readable = week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList();
+            when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(readable);
+            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, FRIDAY)).thenReturn(readable);
+            givenBookedDays(MONDAY, FRIDAY, List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .extracting(DayEntry::date, DayEntry::withoutBooking)
+                .containsExactly(tuple(MONDAY, false), tuple(TUESDAY, false), tuple(WEDNESDAY, false), tuple(THURSDAY, false), tuple(FRIDAY, false));
+            assertThat(review.byMonth()).flatExtracting(MonthGroup::days)
+                .filteredOn(day -> day.date().equals(WEDNESDAY))
+                .singleElement()
+                .satisfies(day -> assertThat(day.timereports()).isEmpty());
+        }
+
+        /** Arbeitszeit, Pausen und Ruhezeit hat die Freigabe geprüft; die Abnahme prüft keine Tage. */
+        @Test
+        void noDayIsCheckedForWorkingTime() {
+            acceptableContract();
+            final var longDay = booking(3, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(11));
+            final var standby = booking(6, WEDNESDAY, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.BEREITSCHAFT, Duration.ofHours(14));
+            final var listed = new ArrayList<>(week().stream().filter(booking -> !booking.getReferenceday().equals(WEDNESDAY)).toList());
+            listed.add(longDay);
+            listed.add(standby);
+            givenBookings(MONDAY, FRIDAY, listed);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.dayFindings()).isEmpty();
+            assertThat(review.periodFindings()).isEmpty();
+            assertThat(review.actionAllowed()).isTrue();
+            verifyNoInteractions(timereportService);
+            verify(timereportDAO, never()).getOpenTimereportsByEmployeeContractIdBeforeDate(anyLong(), any());
+        }
+
+        @Test
+        void aMonthAfterTheReleaseIsAPeriodFindingWithoutBookings() {
+            acceptableContract();
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, LocalDate.of(2024, 3, 31));
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode)
+                .containsExactly(ErrorCode.RL_ACCEPTANCE_DATE_AFTER_RELEASE);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        /** Ohne Freigabe ist nichts abzunehmen — bis #1122 schrieb die Abnahme dann das Überstundenkonto über offene Buchungen fest. */
+        @Test
+        void aContractNeverReleasedCannotBeAccepted() {
+            final var contract = acceptableContract();
+            contract.setReportReleaseDate(null);
+            contract.setReportAcceptanceDate(null);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(CONTRACT_START, FRIDAY));
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode)
+                .containsExactly(ErrorCode.RL_ACCEPTANCE_WITHOUT_RELEASE);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        @Test
+        void theMonthOfTheLastAcceptanceIsNothingToAccept() {
+            acceptableContract();
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, ACCEPTED_UNTIL);
+
+            assertThat(review.period().isEmpty()).isTrue();
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode)
+                .containsExactly(ErrorCode.RL_NOTHING_TO_ACCEPT);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        /**
+         * Die Abnahme geht für niemanden zurück, auch nicht für die Administration: bis #1122 durfte
+         * sie das (#652) und ließ die Buchungen dazwischen abgenommen stehen. Zurück geht es mit
+         * „Öffnen".
+         */
+        @Test
+        void anAdminCannotMoveTheAcceptanceBackwards() {
+            acceptableContract();
+            lenient().when(authorizedUser.isAdmin()).thenReturn(true);
+            lenient().when(authorizedUser.isManager()).thenReturn(true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, LocalDate.of(2024, 2, 29));
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode)
+                .containsExactly(ErrorCode.RL_ACCEPTANCE_DATE_MOVED_BACKWARDS);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        @Test
+        void aMonthBeforeTheContractIsInvalid() {
+            acceptableContract();
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, CONTRACT_START.minusDays(1));
+
+            assertThat(review.periodFindings()).extracting(ServiceFeedbackMessage::getErrorCode)
+                .containsExactly(ErrorCode.RL_ACCEPTANCE_DATE_INVALID);
+            assertThatTheReviewShowsNothingButItsFindings(review);
+        }
+
+        /** Seine eigenen Buchungen nimmt niemand ab, auch die Geschäftsführung nicht — die Übersicht sieht sie deshalb nicht. */
+        @Test
+        void theOwnContractIsRefused() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(OWNER);
+            lenient().when(authorizedUser.isManager()).thenReturn(true);
+            final var rule = new ReleaseAuthorization(authorizedUser, null);
+            when(releaseAuthorization.isAcceptAuthorized(any(), any()))
+                .thenAnswer(invocation -> rule.isAcceptAuthorized(invocation.getArgument(0), invocation.getArgument(1)));
+
+            final var denial = catchThrowableOfType(AuthorizationException.class,
+                () -> classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY));
+
+            assertThat(denial.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_ACCEPT_NOT_ALLOWED);
+            assertThat(classUnderTest.isAcceptAllowed(EMPLOYEE_CONTRACT_ID)).isFalse();
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, overtimeService);
+        }
+
+        @Test
+        void theReviewRequiresTheAcceptAuthorization() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)).thenReturn(false);
+
+            final var denial = catchThrowableOfType(AuthorizationException.class,
+                () -> classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY));
+
+            assertThat(denial.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_ACCEPT_NOT_ALLOWED);
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, overtimeService);
+        }
+
+        @Test
+        void anUnknownContractIsInvalidData() {
+            final var thrown = catchThrowableOfType(InvalidDataException.class,
+                () -> classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY));
+
+            assertThat(thrown.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+            assertThat(classUnderTest.isAcceptAllowed(EMPLOYEE_CONTRACT_ID)).isFalse();
+            verifyNoInteractions(releaseAuthorization);
+        }
+
+        @Test
+        void acceptingIsAllowedWhereTheAcceptAuthorizationSaysSo() {
+            acceptableContract();
+
+            assertThat(classUnderTest.isAcceptAllowed(EMPLOYEE_CONTRACT_ID)).isTrue();
+        }
+
+        /** Freigegebene Buchungen bearbeitet die zuständige People Lead; eine noch offene nicht. */
+        @Test
+        void theSupervisingPeopleLeadMayEditTheReleasedBookings() {
+            acceptableContract();
+            final var open = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_OPEN, OrderType.STANDARD, Duration.ofHours(1));
+            final var listed = new ArrayList<>(week());
+            listed.add(open);
+            givenBookings(MONDAY, FRIDAY, listed);
+            loggedInAs(PEOPLE_LEAD, false, true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L);
+            assertThat(review.canCreate()).isFalse();
+            assertThat(review.ownContract()).isFalse();
+        }
+
+        /** Wer nur über eine Regel abnimmt, ohne zuständig zu sein, bearbeitet nichts. */
+        @Test
+        void aPeopleLeadWhoIsNotTheSupervisorMayEditNothing() {
+            acceptableContract();
+            givenBookings(MONDAY, FRIDAY, week());
+            loggedInAs(OTHER_PEOPLE_LEAD, false, true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).isEmpty();
+            assertThat(review.canCreate()).isFalse();
+        }
+
+        @Test
+        void theManagerMayEditTheReleasedAndTheAcceptedBookingsButCreatesNone() {
+            acceptableContract();
+            final var closed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_CLOSED, OrderType.STANDARD, Duration.ofHours(1));
+            final var listed = new ArrayList<>(week());
+            listed.add(closed);
+            givenBookings(MONDAY, FRIDAY, listed);
+            loggedInAs(MANAGER, true, true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L);
+            assertThat(review.canCreate()).isFalse();
+        }
+
+        @Test
+        void theBalanceComesFromTheOvertimeCalculation() {
+            final var contract = acceptableContract();
+            contract.setDailyWorkingTime(Duration.ofHours(8));
+            givenBookings(MONDAY, FRIDAY, week());
+            final var balance = new OvertimeBalance(Duration.ofHours(40), Duration.ofHours(40), Duration.ZERO, Duration.ZERO);
+            when(overtimeService.calculateOvertimeBalance(EMPLOYEE_CONTRACT_ID, MONDAY, FRIDAY)).thenReturn(Optional.of(balance));
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.balance()).isEqualTo(balance);
+            assertThat(review.overtimeAccount()).isTrue();
+        }
+
+        private void assertThatTheReviewShowsNothingButItsFindings(TimereportReview review) {
+            assertThat(review.balance()).isNull();
+            assertThat(review.byOrder()).isEmpty();
+            assertThat(review.byMonth()).isEmpty();
+            assertThat(review.beforePeriod()).isEmpty();
+            assertThat(review.dayFindings()).isEmpty();
+            assertThat(review.timereportCount()).isZero();
+            assertThat(review.canCreate()).isFalse();
+            assertThat(review.actionAllowed()).isFalse();
+            verifyNoInteractions(timereportDAO, workingdayDAO, publicholidayDAO, overtimeService);
+        }
+
+        /** The loads of the overview: all bookings of the period, and the released ones up to its end that the acceptance closes. */
+        private void givenBookings(LocalDate begin, LocalDate end, List<TimereportDTO> listed) {
+            givenBookings(begin, end, listed, listed);
+        }
+
+        private void givenBookings(LocalDate begin, LocalDate end, List<TimereportDTO> listed, List<TimereportDTO> committed) {
+            when(timereportDAO.getTimereportsByDatesAndEmployeeContractId(EMPLOYEE_CONTRACT_ID, begin, end)).thenReturn(listed);
+            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, end)).thenReturn(committed);
+            givenBookedDays(begin, end, listed.stream().map(TimereportDTO::getReferenceday).toList());
+        }
+
+        /** The days the rule sees booked: from the repository, past the read filter of the DAO. */
+        private void givenBookedDays(LocalDate begin, LocalDate end, List<LocalDate> days) {
+            final var bookings = days.stream().map(day -> {
+                final var referenceday = new Referenceday();
+                referenceday.setRefdate(day);
+                final var timereport = new Timereport();
+                timereport.setReferenceday(referenceday);
+                return timereport;
+            }).toList();
+            when(timereportRepository.findAllByEmployeecontractIdAndReferencedayBetween(EMPLOYEE_CONTRACT_ID, begin, end)).thenReturn(bookings);
+        }
+
+        /** Asks the real rule of {@link TimereportAuthorization} as the given person; it needs no rule of the rule engine. */
+        private void loggedInAs(String sign, boolean manager, boolean peopleLead) {
+            lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(sign);
+            lenient().when(authorizedUser.isManager()).thenReturn(manager);
+            lenient().when(authorizedUser.isPeopleLead()).thenReturn(peopleLead);
+            final var rule = new TimereportAuthorization(authorizedUser, null);
+            when(timereportAuthorization.isWriteAllowed(any(), any()))
+                .thenAnswer(invocation -> rule.isWriteAllowed(invocation.getArgument(0), invocation.getArgument(1)));
+        }
+
+        private Employeecontract acceptableContract() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+            return contract;
+        }
+
+        private Employeecontract contract() {
+            final var contract = new Employeecontract();
+            setField(contract, "id", EMPLOYEE_CONTRACT_ID);
+            contract.setEmployee(employee(OWNER));
+            contract.setSupervisors(new ArrayList<>(List.of(employee(PEOPLE_LEAD))));
+            contract.setValidFrom(CONTRACT_START);
+            contract.setReportReleaseDate(RELEASED_UNTIL);
+            contract.setReportAcceptanceDate(ACCEPTED_UNTIL);
+            return contract;
+        }
+
+        private Employee employee(String sign) {
+            final var salatUser = new SalatUser();
+            salatUser.setLoginname(sign);
+            salatUser.setStatus(GlobalConstants.EMPLOYEE_STATUS_MA);
+            final var employee = new Employee();
+            employee.setSalatUser(salatUser);
+            employee.setSign(sign);
+            employee.setFirstname("Vorname");
+            employee.setLastname(sign);
+            return employee;
+        }
+
+        /** Eight released hours on each weekday, ids 1 to 5. */
+        private List<TimereportDTO> week() {
+            return List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY).stream()
+                .map(day -> booking(day.getDayOfWeek().getValue(), day, GlobalConstants.TIMEREPORT_STATUS_COMMITED, OrderType.STANDARD, Duration.ofHours(8)))
+                .toList();
+        }
+
+        private TimereportDTO booking(long id, LocalDate date, String status, OrderType orderType, Duration duration) {
+            final var standby = orderType == OrderType.BEREITSCHAFT;
+            return TimereportDTO.builder()
+                .id(id)
+                .referenceday(date)
+                .status(status)
+                .orderType(orderType)
+                .suborderId(standby ? 30L : 10L)
+                .completeOrderSign(standby ? "ALPHA/09" : "ALPHA/01")
+                .customerorderSign("ALPHA")
+                .duration(duration)
+                .build();
+        }
+    }
+
+    /**
+     * Die Abnahme aus der Übersicht (#1122) nimmt genau den gezeigten Zeitraum ab. Abgenommen ist bis
+     * 29.02.2024, freigegeben bis 31.03.2024; die Übersicht über den März zeigt also den ganzen März.
+     */
+    @Nested
+    class AcceptShownPeriod {
+
+        private static final long EMPLOYEE_CONTRACT_ID = 1L;
+        private static final long TIMEREPORT_ID = 7L;
+        private static final String OWNER = "xx";
+        private static final String PEOPLE_LEAD = "pl";
+        private static final LocalDate CONTRACT_START = LocalDate.of(2024, 1, 1);
+        private static final LocalDate ACCEPTED_UNTIL = LocalDate.of(2024, 2, 29);
+        private static final LocalDate BEGIN = LocalDate.of(2024, 3, 1);
+        private static final LocalDate END_OF_MONTH = LocalDate.of(2024, 3, 31);
+        private static final LocalDate RELEASED_UNTIL = END_OF_MONTH;
+
+        @Test
+        void acceptsWhatTheReviewShowedAndFixesTheOvertimeAccount() {
+            acceptableContract();
+            givenAReleasedBookingInMarch();
+            when(authorizedUser.getLoginSign()).thenReturn(PEOPLE_LEAD);
+
+            final var period = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, END_OF_MONTH).period();
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, period.begin(), period.end());
+
+            assertThat(period).isEqualTo(new ReviewPeriod(BEGIN, END_OF_MONTH));
+            verify(timereportService).updateReleaseData(eq(TIMEREPORT_ID), eq(GlobalConstants.TIMEREPORT_STATUS_CLOSED),
+                isNull(), isNull(), eq(PEOPLE_LEAD), any(LocalDateTime.class));
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, RELEASED_UNTIL, END_OF_MONTH);
+            verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
+        }
+
+        /** Der Vertragsbeginn liegt hinter der letzten Abnahme: abgenommen wird ab dem Vertragsbeginn, wie die Übersicht ihn zeigt. */
+        @Test
+        void acceptsFromTheContractStartWhenItLiesAfterTheLastAcceptance() {
+            final var contract = acceptableContract();
+            final var contractStart = LocalDate.of(2024, 3, 11);
+            contract.setValidFrom(contractStart);
+
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, contractStart, END_OF_MONTH);
+
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, RELEASED_UNTIL, END_OF_MONTH);
+            verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
+        }
+
+        /** Etwa in einem zweiten Fenster: die Übersicht zeigte ab März, abgenommen ist inzwischen bis Monatsende. */
+        @Test
+        void refusesWhenTheAcceptanceDateMovedSinceTheReview() {
+            final var contract = acceptableContract();
+            contract.setReportAcceptanceDate(END_OF_MONTH);
+
+            final var errors = runAccept(BEGIN, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasAccepted();
+        }
+
+        /** Zweimal hintereinander abgeschickt: die zweite Abnahme findet den Zeitraum schon abgenommen. */
+        @Test
+        void refusesTheSecondOfTwoSubmits() {
+            final var contract = acceptableContract();
+            givenAReleasedBookingInMarch();
+            when(authorizedUser.getLoginSign()).thenReturn(PEOPLE_LEAD);
+            classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, BEGIN, END_OF_MONTH);
+            contract.setReportAcceptanceDate(END_OF_MONTH);
+
+            final var errors = runAccept(BEGIN, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            verify(employeecontractService).updateReportReleaseData(EMPLOYEE_CONTRACT_ID, RELEASED_UNTIL, END_OF_MONTH);
+            verify(overtimeService).updateOvertimeStatic(EMPLOYEE_CONTRACT_ID);
+        }
+
+        @Test
+        void refusesWhenTheContractEndMovedBeforeTheReviewedEnd() {
+            final var contract = acceptableContract();
+            contract.setValidUntil(LocalDate.of(2024, 3, 15));
+
+            final var errors = runAccept(BEGIN, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasAccepted();
+        }
+
+        @Test
+        void refusesWhenTheContractStartMovedSinceTheReview() {
+            final var contract = acceptableContract();
+            contract.setReportAcceptanceDate(null);
+            contract.setValidFrom(LocalDate.of(2024, 3, 11));
+
+            final var errors = runAccept(CONTRACT_START, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasAccepted();
+        }
+
+        /** Die Übersicht endet an einem Monatsletzten oder am Vertragsende — ein anderes Ende hat sie nie gezeigt. */
+        @Test
+        void refusesAnEndInTheMiddleOfTheMonth() {
+            acceptableContract();
+
+            final var errors = runAccept(BEGIN, LocalDate.of(2024, 3, 15));
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasAccepted();
+        }
+
+        @Test
+        void refusesABeginTheReviewCannotHaveShown() {
+            acceptableContract();
+
+            final var errors = runAccept(CONTRACT_START, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_REVIEWED_PERIOD_CHANGED);
+            assertThatNothingWasAccepted();
+        }
+
+        /**
+         * Inzwischen hat die Administration ab dem 16.03. geöffnet: der Zeitraum der Abnahme bleibt
+         * derselbe, aber sein Ende liegt jetzt hinter der Freigabe.
+         */
+        @Test
+        void refusesWhenTheReleaseWasReopenedSinceTheReview() {
+            final var contract = acceptableContract();
+            contract.setReportReleaseDate(LocalDate.of(2024, 3, 15));
+
+            final var errors = runAccept(BEGIN, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_ACCEPTANCE_DATE_AFTER_RELEASE);
+            assertThatNothingWasAccepted();
+        }
+
+        /** Bis #1122 schrieb diese Abnahme das Überstundenkonto fest und schloss keine einzige Buchung ab. */
+        @Test
+        void aContractNeverReleasedIsNotAccepted() {
+            final var contract = acceptableContract();
+            contract.setReportReleaseDate(null);
+
+            final var errors = runAccept(BEGIN, END_OF_MONTH);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_ACCEPTANCE_WITHOUT_RELEASE);
+            assertThatNothingWasAccepted();
+        }
+
+        /** Auch ein Zeitraum von Hand setzt die Abnahme nicht zurück, auch nicht für die Administration (bis #1122: #652). */
+        @Test
+        void anAdminCannotMoveTheAcceptanceBackwards() {
+            final var contract = acceptableContract();
+            lenient().when(authorizedUser.isAdmin()).thenReturn(true);
+            lenient().when(authorizedUser.isManager()).thenReturn(true);
+            final var endOfJanuary = LocalDate.of(2024, 1, 31);
+
+            final var errors = runAccept(BEGIN, endOfJanuary);
+
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_ACCEPTANCE_DATE_MOVED_BACKWARDS);
+            assertThat(contract.getReportAcceptanceDate()).isEqualTo(ACCEPTED_UNTIL);
+            assertThatNothingWasAccepted();
+        }
+
+        /** Den schon abgenommenen Monat noch einmal abzunehmen tat bis #1122 nichts und schrieb das Konto neu fest. */
+        @Test
+        void theMonthOfTheLastAcceptanceIsNothingToAccept() {
+            acceptableContract();
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, ACCEPTED_UNTIL);
+
+            final var errors = runAccept(review.period().begin(), review.period().end());
+
+            assertThat(review.period()).isEqualTo(new ReviewPeriod(BEGIN, ACCEPTED_UNTIL));
+            assertThat(errors).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_NOTHING_TO_ACCEPT);
+            assertThatNothingWasAccepted();
+        }
+
+        @Test
+        void rejectsWithoutAcceptAuthorization() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)).thenReturn(false);
+
+            final var denial = catchThrowableOfType(AuthorizationException.class,
+                () -> classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, BEGIN, END_OF_MONTH));
+
+            assertThat(denial.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.RL_ACCEPT_NOT_ALLOWED);
+            assertThatNothingWasAccepted();
+        }
+
+        @Test
+        void anUnknownContractIsInvalidData() {
+            final var thrown = catchThrowableOfType(InvalidDataException.class,
+                () -> classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, BEGIN, END_OF_MONTH));
+
+            assertThat(thrown.getMessages()).extracting(ServiceFeedbackMessage::getErrorCode).containsExactly(ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+            verifyNoInteractions(releaseAuthorization, employeecontractService, overtimeService);
+        }
+
+        private List<ServiceFeedbackMessage> runAccept(LocalDate reviewedBegin, LocalDate reviewedEnd) {
+            final var thrown = catchThrowableOfType(BusinessRuleException.class,
+                () -> classUnderTest.acceptTimereports(EMPLOYEE_CONTRACT_ID, reviewedBegin, reviewedEnd));
+            assertThat(thrown).as("the acceptance is refused").isNotNull();
+            return thrown.getMessages();
+        }
+
+        private void assertThatNothingWasAccepted() {
+            verifyNoInteractions(timereportService, timereportRepository, employeecontractService, overtimeService);
+            verify(timereportDAO, never()).getCommitedTimereportsByEmployeeContractIdBeforeDate(anyLong(), any());
+        }
+
+        private void givenAReleasedBookingInMarch() {
+            final var booking = TimereportDTO.builder()
+                .id(TIMEREPORT_ID)
+                .referenceday(LocalDate.of(2024, 3, 4))
+                .status(GlobalConstants.TIMEREPORT_STATUS_COMMITED)
+                .orderType(OrderType.STANDARD)
+                .duration(Duration.ofHours(8))
+                .build();
+            when(timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(EMPLOYEE_CONTRACT_ID, END_OF_MONTH)).thenReturn(List.of(booking));
+            when(timereportRepository.findById(TIMEREPORT_ID)).thenReturn(Optional.of(new Timereport()));
+        }
+
+        private Employeecontract acceptableContract() {
+            final var contract = contract();
+            when(employeecontractDAO.getEmployeecontractById(EMPLOYEE_CONTRACT_ID)).thenReturn(contract);
+            when(releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)).thenReturn(true);
+            return contract;
+        }
+
+        private Employeecontract contract() {
+            final var contract = new Employeecontract();
+            setField(contract, "id", EMPLOYEE_CONTRACT_ID);
+            final var salatUser = new SalatUser();
+            salatUser.setLoginname(OWNER);
+            final var employee = new Employee();
+            employee.setSalatUser(salatUser);
+            employee.setSign(OWNER);
+            contract.setEmployee(employee);
+            contract.setValidFrom(CONTRACT_START);
+            contract.setReportReleaseDate(RELEASED_UNTIL);
+            contract.setReportAcceptanceDate(ACCEPTED_UNTIL);
+            return contract;
         }
     }
 }

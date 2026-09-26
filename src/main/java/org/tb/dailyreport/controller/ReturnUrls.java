@@ -19,11 +19,12 @@ import java.util.Set;
  *       {@code //}, which a browser reads as another host;</li>
  *   <li>no backslash, which a browser treats like a slash ({@code /\host} is {@code //host});</li>
  *   <li>no control character, since a line break would inject a header into the redirect;</li>
- *   <li>it leads into the daily view, or it is one of the overviews before a release (#760). The
- *       daily view is a prefix, as the controller had it before, so every target the application
- *       builds itself still passes, including the list view with {@code fMonth}/{@code fYear} and
- *       the {@code pathname + search} the share dialog sends. An overview is an exact path — what
- *       comes after it can only be the query or the fragment, never a further path segment.</li>
+ *   <li>it leads into the daily view, or it is one of the overviews before a release (#760) or an
+ *       acceptance (#1122). The daily view is a prefix, as the controller had it before, so every
+ *       target the application builds itself still passes, including the list view with
+ *       {@code fMonth}/{@code fYear} and the {@code pathname + search} the share dialog sends. An
+ *       overview is an exact path — what comes after it can only be the query or the fragment, never
+ *       a further path segment.</li>
  * </ul>
  *
  * <p>The daily view offers a way back to an overview only (#760, {@link #isReviewPage}): that is
@@ -34,8 +35,12 @@ final class ReturnUrls {
 
   private static final String DAILY_VIEW = "/dailyreport/daily";
 
-  /** The overviews before a release (#760): of one's own contract and via the acceptance page. */
-  private static final Set<String> REVIEW_PAGES = Set.of("/release/review", "/acceptance/release/review");
+  /**
+   * The overviews before a release (#760) — of one's own contract and via the acceptance page — and
+   * the one before an acceptance (#1122).
+   */
+  private static final Set<String> REVIEW_PAGES =
+      Set.of("/release/review", "/acceptance/release/review", "/acceptance/accept/review");
 
   private ReturnUrls() {
   }

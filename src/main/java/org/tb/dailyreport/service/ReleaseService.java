@@ -16,6 +16,8 @@ import static org.tb.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_AFTER_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_INVALID;
 import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_DATE_MOVED_BACKWARDS;
+import static org.tb.common.exception.ErrorCode.RL_ACCEPTANCE_WITHOUT_RELEASE;
+import static org.tb.common.exception.ErrorCode.RL_NOTHING_TO_ACCEPT;
 import static org.tb.common.exception.ErrorCode.RL_NOTHING_TO_RELEASE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_BEFORE_ACCEPTANCE;
 import static org.tb.common.exception.ErrorCode.RL_RELEASE_DATE_INVALID;
@@ -217,9 +219,12 @@ public class ReleaseService {
    * sperrt.
    *
    * <p>Die Buchungen kommen über die Leseprüfung von {@link TimereportDAO}, die Bilanz über eine
-   * Summe ohne sie. Wer nur über eine Regel der Kategorie RELEASE_TIMEREPORTS freigibt und die
-   * Buchungen nicht lesen darf, sieht deshalb eine richtige Bilanz zu einer unvollständigen Liste;
-   * die Person selbst, die Geschäftsführung und die zuständige People Lead lesen alle.
+   * Summe ohne sie. Wer nur über eine Regel der Kategorie RELEASE_TIMEREPORTS freigibt oder über
+   * eine der Kategorie ACCEPT_TIMEREPORTS abnimmt und die Buchungen nicht lesen darf, sieht deshalb
+   * eine richtige Bilanz zu einer unvollständigen Liste; die Person selbst, die Geschäftsführung und
+   * die zuständige People Lead lesen alle. Welche Tage ohne Buchung sind, bringt der Aufrufer mit
+   * ({@code daysWithoutBooking}) — die Abnahme bestimmt sie ohne Lesefilter, ein Tag mit Buchungen,
+   * die man nicht lesen darf, steht dann ohne Buchung, aber nicht als „Keine Buchung" da.
    *
    * @param dayFindings        Befunde einzelner Tage, nach Datum sortiert
    * @param daysWithoutBooking die Arbeitstage ohne Buchung, wie {@link UnbookedWorkingDays} sie
@@ -284,25 +289,152 @@ public class ReleaseService {
         canCreate, actionAllowed, timereports.size());
   }
 
-  public void acceptTimereports(long employeecontractId, LocalDate acceptanceDate) {
-    // check authorization
+  /**
+   * Die Übersicht über den Zeitraum, den eine Abnahme bis {@code requestedEnd} erfasst (#1122):
+   * seine Buchungen, seine Bilanz und die Befunde über den Zeitraum. Sehen darf sie, wer abnehmen
+   * darf — seine eigenen Buchungen nimmt niemand ab, auch die Geschäftsführung nicht.
+   *
+   * <p>Das Ende wird zuerst auf das Vertragsende beschnitten (#324). Gelistet sind wie bei der
+   * Freigabe alle Buchungen des Zeitraums, gleich welchen Status; die Abnahme schließt davon die
+   * freigegebenen ab. Freigegebene Buchungen vor dem Zeitraum erfasst sie ebenfalls, sie stehen
+   * deshalb für sich.
+   *
+   * <p>Die Abnahme prüft keine Tage: Arbeitszeit, Pausen und Ruhezeit hat die Freigabe geprüft. Ein
+   * Arbeitstag ohne Buchung ist deshalb kein Befund, sondern steht nur als solcher da — nach der
+   * Regel {@link UnbookedWorkingDays} über die Buchungen jeden Status, denn an einem Tag mit einer
+   * Buchung fehlt keine, auch mit einer, die man nicht lesen darf
+   * ({@code workingDaysWithoutAnyBooking}). Angelegt wird aus dieser Übersicht nichts: an Stelle
+   * der Person nachzubuchen gehört nicht zur Abnahme.
+   *
+   * <p>Die Liste dagegen geht wie bei der Freigabe durch den Lesefilter ({@code buildReview}),
+   * ebenso die freigegebenen Buchungen, die {@link #acceptTimereports} abschließt. Wer nur über eine
+   * Regel der Kategorie ACCEPT_TIMEREPORTS abnimmt und die Buchungen nicht lesen darf, sieht also
+   * nicht alle, und die Abnahme schließt nur die ab, die er lesen darf — das Abnahmedatum setzt sie
+   * trotzdem. So war es schon vor #1122.
+   *
+   * <p>Die Regel braucht die Buchungen, Arbeitstage und Feiertage des Zeitraums, die die Übersicht
+   * danach noch einmal lädt — je Zeitraum ein fester Aufwand, keine Abfrage je Tag, auch wenn eine
+   * erste Abnahme über Jahre reicht.
+   *
+   * @throws AuthorizationException ohne Abnahmeberechtigung für den Vertrag
+   */
+  @Transactional(readOnly = true)
+  public TimereportReview reviewAcceptance(long employeecontractId, LocalDate requestedEnd) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    DataValidationUtils.notNull(contract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+    if(!releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE)) {
+      throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
+    }
+    DataValidationUtils.notNull(requestedEnd, RL_ACCEPTANCE_DATE_INVALID);
+
+    var period = acceptancePeriod(contract, requestedEnd);
+    var findings = acceptanceFindings(contract, period);
+    if (!findings.isEmpty()) {
+      return buildReview(contract, period, findings, List.of(), List.of(), List.of(), false, false);
+    }
+    var committedBeforePeriod = timereportDAO
+        .getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, period.end())
+        .stream()
+        .filter(timereport -> timereport.getReferenceday().isBefore(period.begin()))
+        .toList();
+    return buildReview(contract, period, List.of(), List.of(),
+        workingDaysWithoutAnyBooking(contract, period), committedBeforePeriod, false, true);
+  }
+
+  /**
+   * Ob der angemeldete Benutzer die Buchungen dieses Vertrags abnehmen darf (#1122). Die Seite der
+   * Abnahme bietet die Übersicht nur dann an, statt in eine 403 zu führen — wählt jemand aus der
+   * Geschäftsführung dort den eigenen Vertrag, sagt sie, dass er nicht abzunehmen ist.
+   */
+  @Transactional(readOnly = true)
+  public boolean isAcceptAllowed(long employeecontractId) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    return contract != null && releaseAuthorization.isAcceptAuthorized(contract, AccessLevel.WRITE);
+  }
+
+  /**
+   * Die Arbeitstage des Zeitraums, an denen es keine Buchung gibt, gleich welchen Status (#1122).
+   *
+   * <p>Die gebuchten Tage kommen am Lesefilter von {@link TimereportDAO} vorbei aus dem Repository:
+   * wer nur über eine Regel der Kategorie ACCEPT_TIMEREPORTS abnimmt und die Buchungen nicht lesen
+   * darf, sähe sonst „Keine Buchung" an Tagen, die gebucht sind. Der Filter ist hier entbehrlich,
+   * weil nur Tage herausgehen, kein Inhalt einer Buchung, und nur an jemanden, den
+   * {@link #reviewAcceptance} als abnahmeberechtigt für diesen Vertrag geprüft hat — dem die Bilanz
+   * ohnehin die gebuchte Zeit des Zeitraums ohne Filter zeigt. Gelöschte Buchungen lässt die Abfrage
+   * aus.
+   */
+  private List<LocalDate> workingDaysWithoutAnyBooking(Employeecontract contract, ReviewPeriod period) {
+    long employeecontractId = contract.getId();
+    var bookedDays = timereportRepository.findAllByEmployeecontractIdAndReferencedayBetween(employeecontractId, period.begin(), period.end())
+        .stream()
+        .map(timereport -> timereport.getReferenceday().getRefdate())
+        .collect(Collectors.toSet());
+    var workingDays = workingdayDAO.getWorkingdaysByEmployeeContractId(employeecontractId, period.begin(), period.end())
+        .stream()
+        .collect(toMap(Workingday::getRefday, identity(), (first, second) -> first));
+    var publicHolidays = publicholidayDAO.getPublicHolidaysBetween(period.begin(), period.end())
+        .stream()
+        .map(Publicholiday::getRefdate)
+        .collect(Collectors.toSet());
+    return UnbookedWorkingDays.between(period.begin(), period.end(), contract, bookedDays, workingDays, publicHolidays);
+  }
+
+  /**
+   * Nimmt genau den Zeitraum ab, den die Übersicht gezeigt hat ({@link #reviewAcceptance}, #1122):
+   * alle freigegebenen Buchungen bis {@code reviewedEnd}, speichert das Ende als Abnahmedatum und
+   * schreibt das Überstundenkonto bis dahin fest.
+   *
+   * <p>Hat sich der Zeitraum seit dem Anzeigen geändert, nimmt die Abnahme nichts ab und meldet
+   * {@code RL-0008}, wie die Freigabe ({@link #releaseTimereports}): das Ende muss eines sein, das
+   * die Übersicht zeigen kann — ein Monatsletzter oder das Vertragsende in diesem Monat —, und
+   * Anfang und Ende werden neu bestimmt und müssen dem gezeigten Zeitraum gleichen. So fällt auf,
+   * wenn inzwischen abgenommen wurde, etwa in einem zweiten Fenster, oder wenn sich Vertragsbeginn
+   * oder Vertragsende verschoben haben. Eine inzwischen geöffnete Freigabe ändert den Zeitraum nicht,
+   * die Befunde fallen aber anders aus ({@code RL-0006}); sie werden unmittelbar vor dem Abnehmen
+   * erneut bestimmt und geworfen. Den Inhalt der Buchungen vergleicht die Abnahme nicht, die
+   * Anforderung spricht vom Zeitraum.
+   *
+   * <p>Zweimal hintereinander abgeschickt, trifft die zweite Abnahme auf den schon abgenommenen
+   * Zeitraum und meldet {@code RL-0008}. Laufen zwei Abnahmen wirklich gleichzeitig durch den
+   * Vergleich, scheitert die zweite beim Schreiben an der Versionsnummer von Vertrag und Buchungen
+   * ({@code @Version} in {@link org.tb.common.domain.AuditedEntity}) und wird zurückgerollt. Eine
+   * eigene Sperre gibt es dafür bewusst nicht.
+   *
+   * @throws AuthorizationException ohne Abnahmeberechtigung für den Vertrag
+   * @throws BusinessRuleException  {@code RL-0008}, wenn sich der Zeitraum geändert hat, sonst der
+   *                                Befund über den Zeitraum
+   */
+  public void acceptTimereports(long employeecontractId, LocalDate reviewedBegin, LocalDate reviewedEnd) {
     var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
     if(!releaseAuthorization.isAcceptAuthorized(employeecontract, AccessLevel.WRITE)) {
       throw new AuthorizationException(RL_ACCEPT_NOT_ALLOWED);
     }
+    DataValidationUtils.notNull(reviewedBegin, RL_ACCEPTANCE_DATE_INVALID);
+    DataValidationUtils.notNull(reviewedEnd, RL_ACCEPTANCE_DATE_INVALID);
 
-    var effectiveAcceptanceDate = limitToContractEnd(employeecontract, acceptanceDate);
+    // only an end the overview can show: the end of a month, or the contract end within it
+    if(!reviewedEnd.equals(limitToContractEnd(employeecontract, YearMonth.from(reviewedEnd).atEndOfMonth()))) {
+      throw new BusinessRuleException(RL_REVIEWED_PERIOD_CHANGED);
+    }
+    var period = acceptancePeriod(employeecontract, reviewedEnd);
+    if(!period.begin().equals(reviewedBegin) || !period.end().equals(reviewedEnd)) {
+      throw new BusinessRuleException(RL_REVIEWED_PERIOD_CHANGED);
+    }
 
-    validateForAcceptance(employeecontractId, effectiveAcceptanceDate);
+    var findings = acceptanceFindings(employeecontract, period);
+    if (!findings.isEmpty()) {
+      throw new BusinessRuleException(findings);
+    }
 
     // set status in timereports
-    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, effectiveAcceptanceDate);
+    var timereports = timereportDAO.getCommitedTimereportsByEmployeeContractIdBeforeDate(employeecontractId, reviewedEnd);
     for (var timereport : timereports) {
       acceptTimereport(timereport.getId(), authorizedUser.getLoginSign());
     }
 
     // set new acceptance date in employee contract
-    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), effectiveAcceptanceDate);
+    employeecontractService.updateReportReleaseData(employeecontractId, employeecontract.getReportReleaseDate(), reviewedEnd);
 
     // compute overtimeStatic and set it in employee contract
     overtimeService.updateOvertimeStatic(employeecontractId);
@@ -728,21 +860,57 @@ public class ReleaseService {
     }
   }
 
-  private void validateForAcceptance(long employeeContractId, LocalDate acceptanceDate) {
-    var contract = employeecontractDAO.getEmployeecontractById(employeeContractId);
-    if (acceptanceDate == null
-        || acceptanceDate.isBefore(contract.getValidFrom())
-        || (contract.getValidUntil() != null && acceptanceDate.isAfter(contract.getValidUntil()))) {
-      throw new BusinessRuleException(RL_ACCEPTANCE_DATE_INVALID);
+  /**
+   * Der Zeitraum, den eine Abnahme bis {@code end} erfasst (#1122): vom Tag nach der letzten
+   * Abnahme, ohne Abnahme vom Vertragsbeginn an, bis {@code end} — beides auf die Laufzeit des
+   * Vertrags beschnitten. Liegt {@code end} am oder vor dem Tag der letzten Abnahme, ist er leer.
+   */
+  static ReviewPeriod acceptancePeriod(Employeecontract contract, LocalDate end) {
+    var currentAcceptanceDate = contract.getReportAcceptanceDate();
+    var begin = currentAcceptanceDate != null ? currentAcceptanceDate.plusDays(1) : contract.getValidFrom();
+    return new ReviewPeriod(max(begin, contract.getValidFrom()), limitToContractEnd(contract, end));
+  }
+
+  /**
+   * Die Befunde über den Zeitraum einer Abnahme (#1122), gesammelt statt geworfen: die Übersicht
+   * zeigt sie, die Abnahme wirft sie. Es gilt der erste, der zutrifft, denn jeder beantwortet die
+   * Frage schon:
+   *
+   * <ol>
+   *   <li>{@code RL-0005}: das Ende liegt außerhalb des Vertrags.</li>
+   *   <li>{@code RL-0011}: es ist nichts freigegeben. Bis #1122 ließ sich ein nie freigegebener
+   *       Vertrag abnehmen: das Überstundenkonto wurde festgeschrieben, die Buchungen blieben offen,
+   *       und keine davon wurde abgenommen.</li>
+   *   <li>{@code RL-0006}: das Ende liegt hinter der Freigabe.</li>
+   *   <li>{@code RL-0007}: das Ende liegt vor der letzten Abnahme — für jeden. Bis #1122 durfte die
+   *       Administration die Abnahme so zurücksetzen (#652); die Buchungen dazwischen blieben
+   *       abgenommen, obwohl sie nun hinter dem Abnahmedatum lagen, und das festgeschriebene
+   *       Überstundenkonto zählte sie nicht mehr. Zurück geht es mit „Öffnen", das Freigabe,
+   *       Abnahme und Buchungen gemeinsam zurücksetzt.</li>
+   *   <li>{@code RL-0010}: der Zeitraum ist leer, der Monat ist schon abgenommen.</li>
+   * </ol>
+   *
+   * <p>Die Tage prüft die Abnahme nicht: das hat die Freigabe getan.
+   */
+  private static List<ServiceFeedbackMessage> acceptanceFindings(Employeecontract contract, ReviewPeriod period) {
+    var end = period.end();
+    if (end.isBefore(contract.getValidFrom())
+        || (contract.getValidUntil() != null && end.isAfter(contract.getValidUntil()))) {
+      return List.of(ServiceFeedbackMessage.error(RL_ACCEPTANCE_DATE_INVALID));
     }
-    if (contract.getReportReleaseDate() != null && acceptanceDate.isAfter(contract.getReportReleaseDate())) {
-      throw new BusinessRuleException(RL_ACCEPTANCE_DATE_AFTER_RELEASE);
+    if (contract.getReportReleaseDate() == null) {
+      return List.of(ServiceFeedbackMessage.error(RL_ACCEPTANCE_WITHOUT_RELEASE));
     }
-    if (!authorizedUser.isAdmin()
-        && contract.getReportAcceptanceDate() != null
-        && acceptanceDate.isBefore(contract.getReportAcceptanceDate())) {
-      throw new BusinessRuleException(RL_ACCEPTANCE_DATE_MOVED_BACKWARDS);
+    if (end.isAfter(contract.getReportReleaseDate())) {
+      return List.of(ServiceFeedbackMessage.error(RL_ACCEPTANCE_DATE_AFTER_RELEASE));
     }
+    if (contract.getReportAcceptanceDate() != null && end.isBefore(contract.getReportAcceptanceDate())) {
+      return List.of(ServiceFeedbackMessage.error(RL_ACCEPTANCE_DATE_MOVED_BACKWARDS));
+    }
+    if (period.isEmpty()) {
+      return List.of(ServiceFeedbackMessage.error(RL_NOTHING_TO_ACCEPT));
+    }
+    return List.of();
   }
 
   private Optional<ServiceFeedbackMessage> validateRestTime(LocalDate date,

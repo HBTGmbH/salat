@@ -27,7 +27,7 @@ class ReturnUrlsTest {
     assertThat(ReturnUrls.isSafe(returnUrl)).isTrue();
   }
 
-  /** Die Übersichten vor der Freigabe (#760), wie ReviewLinks sie baut, mit Sprungmarke. */
+  /** Die Übersichten vor der Freigabe (#760) und vor der Abnahme (#1122), wie ReviewLinks sie baut, mit Sprungmarke. */
   @ParameterizedTest
   @ValueSource(strings = {
       "/release/review",
@@ -36,15 +36,18 @@ class ReturnUrlsTest {
       "/release/review?until=2026-08&view=day#day-2026-08-03",
       "/release/review#review-views",
       "/acceptance/release/review?contractId=42&until=2026-08",
-      "/acceptance/release/review?contractId=42&until=2026-08&view=day#day-2026-08-03"})
-  void an_overview_before_a_release_is_safe_and_leads_back_to_an_overview(String returnUrl) {
+      "/acceptance/release/review?contractId=42&until=2026-08&view=day#day-2026-08-03",
+      "/acceptance/accept/review?contractId=42&until=2026-08",
+      "/acceptance/accept/review?contractId=42&until=2026-08#tr-5",
+      "/acceptance/accept/review?contractId=42&until=2026-08&view=day#day-2026-08-03"})
+  void an_overview_before_a_release_or_an_acceptance_is_safe_and_leads_back_to_an_overview(String returnUrl) {
     assertThat(ReturnUrls.isSafe(returnUrl)).isTrue();
     assertThat(ReturnUrls.isReviewPage(returnUrl)).isTrue();
   }
 
   /**
    * Eine Übersicht ist ein genauer Pfad, kein Präfix: dahinter darf nur die Abfrage oder die
-   * Sprungmarke kommen. Die Übersicht vor der Abnahme kommt erst mit #1122 dazu.
+   * Sprungmarke kommen.
    */
   @ParameterizedTest
   @ValueSource(strings = {
@@ -57,7 +60,9 @@ class ReturnUrlsTest {
       "/release%2Freview?until=2026-08",
       "/acceptance/release/reviews",
       "/acceptance/review?contractId=42",
-      "/acceptance/accept/review?contractId=42&until=2026-08"})
+      "/acceptance/accept/reviews?contractId=42&until=2026-08",
+      "/acceptance/accept/review/x?contractId=42",
+      "/acceptance/accept?contractId=42"})
   void a_path_that_only_begins_like_an_overview_is_dropped(String returnUrl) {
     assertThat(ReturnUrls.isSafe(returnUrl)).isFalse();
     assertThat(ReturnUrls.isReviewPage(returnUrl)).isFalse();

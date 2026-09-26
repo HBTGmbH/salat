@@ -8,7 +8,8 @@
   <th:block th:replace="~{dailyreport/review-fragments :: overview(${review}, ${reviewLinks}, ${reviewView},
                           #{main.release.review.period.release.text},
                           #{main.release.review.perioderror.title.release.text},
-                          #{main.release.review.findings.title.release.text})}"></th:block>
+                          #{main.release.review.findings.title.release.text},
+                          #{main.release.review.balance.difference.hint.text})}"></th:block>
 
   <!--/* Kein data-confirm (#760, ADR-0027 Nachtrag): die Uebersicht darueber ist die Rueckfrage,
          und die Karte nennt Person, Zeitraum und Folge. Der Knopf gibt genau den gezeigten

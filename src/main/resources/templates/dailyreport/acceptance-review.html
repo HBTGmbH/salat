@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=${sectionTitle}">
+<section layout:fragment="content">
+
+  <th:block th:replace="~{dailyreport/review-fragments :: overview(${review}, ${reviewLinks}, ${reviewView},
+                          #{main.release.review.period.accept.text},
+                          #{main.release.review.perioderror.title.accept.text},
+                          #{main.release.review.findings.title.accept.text},
+                          #{main.release.review.balance.difference.accept.hint.text})}"></th:block>
+
+  <!--/* Kein data-confirm (#1122, ADR-0027 Nachtrag): die Uebersicht darueber ist die Rueckfrage,
+         und die Karte nennt Person, Zeitraum und Folge. Der Knopf nimmt genau den gezeigten
+         Zeitraum ab (periodBegin/periodEnd); hat er sich inzwischen geaendert, etwa durch eine
+         Abnahme in einem zweiten Fenster, weist der Server ab (RL-0008). Die Abnahme prueft keine
+         Tage, sie sperrt nur ein Befund ueber den Zeitraum - dann zeigt die Seite ihn statt Bilanz,
+         Buchungen und Knopf.
+         Ohne Tagesarbeitszeit wird kein Ueberstundenkonto gefuehrt (die Karte darueber sagt es),
+         also wird auch keines festgeschrieben: die Folge nennt dann nur, wer danach noch aendert. */-->
+  <div class="card mb-3 d-print-none" id="review-action"
+       th:with="beginText=${#temporals.format(review.begin, 'dd.MM.yyyy')},
+                endText=${#temporals.format(review.end, 'dd.MM.yyyy')}">
+    <div class="card-body" th:if="${review.detailed}">
+      <p class="mb-1"
+         th:text="#{main.release.review.action.accept.text(${review.employeeName}, ${beginText}, ${endText})}">Abgenommen werden die freigegebenen Buchungen von … vom 01.08.2026 bis 31.08.2026.</p>
+      <p class="text-secondary mb-0" th:if="${review.overtimeAccount}"
+         th:text="#{main.release.review.action.accept.hint.text(${endText})}">Danach ist das Überstundenkonto bis zum 31.08.2026 festgeschrieben, und ändern kann die Buchungen nur noch die Geschäftsführung.</p>
+      <p class="text-secondary mb-0" th:unless="${review.overtimeAccount}"
+         th:text="#{main.release.review.action.accept.noaccount.hint.text}">Danach kann nur noch die Geschäftsführung die Buchungen ändern.</p>
+    </div>
+    <div class="card-footer d-flex flex-wrap align-items-center gap-2">
+      <form th:if="${review.detailed and review.actionAllowed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0">
+        <input type="hidden" name="contractId" th:value="${review.employeecontractId}"/>
+        <input type="hidden" name="periodBegin" th:value="${review.begin}"/>
+        <input type="hidden" name="periodEnd" th:value="${review.end}"/>
+        <input type="hidden" name="view" th:value="${reviewView}"/>
+        <button type="submit" class="btn btn-success"
+                th:text="#{main.general.button.accept.text}">Abnehmen</button>
+      </form>
+      <a class="btn btn-secondary" th:href="@{${reviewLinks.backUrl}}"
+         th:text="#{main.general.button.back.text}">Zurück</a>
+    </div>
+  </div>
+
+</section>
+</html>
