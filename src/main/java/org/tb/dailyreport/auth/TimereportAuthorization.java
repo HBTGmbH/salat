@@ -15,12 +15,14 @@ import static org.tb.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employeecontract;
 
@@ -110,24 +112,9 @@ public class TimereportAuthorization {
 
       // pre qualify write access rules
       if(accessLevel == DELETE || accessLevel == AccessLevel.WRITE) {
-        var isOwner = Objects.equals(authorizedUser.getEffectiveLoginSign(), timereport.getEmployeecontract().getEmployee().getSalatUser().getLoginname());
-        if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus()) &&
-           (!authorizedUser.isManager() || isOwner)) {
-          throw new AuthorizationException(TR_CLOSED_TIME_REPORT_REQ_MANAGER);
-        }
-        if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) &&
-           !authorizedUser.isManager() &&
-           !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(timereport.getEmployeecontract()))) {
-          throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
-        }
-        if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus()) && isOwner) {
-          throw new AuthorizationException(TR_COMMITTED_TIME_REPORT_NOT_SELF);
-        }
-        if(TIMEREPORT_STATUS_OPEN.equals(timereport.getStatus()) &&
-           !authorizedUser.isManager() &&
-           !isOwner) {
-          throw new AuthorizationException(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
-        }
+        writeDenial(timereport.getEmployeecontract(), timereport.getStatus()).ifPresent(denial -> {
+          throw new AuthorizationException(denial);
+        });
       }
 
       // ensure isAuthorized checks are made
@@ -135,6 +122,45 @@ public class TimereportAuthorization {
         throw new AuthorizationException(AA_NOT_ATHORIZED);
       }
     });
+  }
+
+  /**
+   * Ob der angemeldete Benutzer Buchungen dieses Vertrags mit diesem Status schreiben oder löschen
+   * darf. Die Frage braucht keine Buchung: so zeigt eine Seite den Link zum Bearbeiten oder Anlegen
+   * nur dort, wo er nicht in einen Berechtigungsfehler führt (#760).
+   *
+   * <p>Es ist die Vorprüfung nach dem Status, die {@link #checkAuthorized} selbst aufruft, keine
+   * Kopie davon: offene Buchungen schreiben die Person selbst und die Geschäftsführung, freigegebene
+   * die Geschäftsführung und die zuständige People Lead, aber nie die Person selbst, abgenommene nur
+   * die Geschäftsführung, und auch sie nicht die eigenen. Besteht eine Buchung mit einem dieser drei
+   * Status die Vorprüfung, lässt {@link #isAuthorized} sie über seine ausdrücklichen Zweige ebenfalls
+   * zu, und keine Regel ändert daran noch etwas — die Antwort ist dieselbe wie die von
+   * {@code checkAuthorized}.
+   */
+  public boolean isWriteAllowed(Employeecontract contract, String status) {
+    return writeDenial(contract, status).isEmpty();
+  }
+
+  private Optional<ErrorCode> writeDenial(Employeecontract contract, String status) {
+    var isOwner = Objects.equals(authorizedUser.getEffectiveLoginSign(), contract.getEmployee().getSalatUser().getLoginname());
+    if(TIMEREPORT_STATUS_CLOSED.equals(status) &&
+       (!authorizedUser.isManager() || isOwner)) {
+      return Optional.of(TR_CLOSED_TIME_REPORT_REQ_MANAGER);
+    }
+    if(TIMEREPORT_STATUS_COMMITED.equals(status) &&
+       !authorizedUser.isManager() &&
+       !(authorizedUser.isPeopleLead() && isSupervisedByCurrentUser(contract))) {
+      return Optional.of(TR_COMMITTED_TIME_REPORT_REQ_MANAGER);
+    }
+    if(TIMEREPORT_STATUS_COMMITED.equals(status) && isOwner) {
+      return Optional.of(TR_COMMITTED_TIME_REPORT_NOT_SELF);
+    }
+    if(TIMEREPORT_STATUS_OPEN.equals(status) &&
+       !authorizedUser.isManager() &&
+       !isOwner) {
+      return Optional.of(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
+    }
+    return Optional.empty();
   }
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {
