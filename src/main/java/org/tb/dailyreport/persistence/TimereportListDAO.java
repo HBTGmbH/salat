@@ -8,12 +8,14 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.dailyreport.auth.TimereportVisibility;
@@ -25,6 +27,8 @@ import org.tb.employee.domain.Employee_;
 import org.tb.employee.domain.Employeecontract_;
 import org.tb.customer.domain.Customer_;
 import org.tb.order.domain.Customerorder_;
+import org.tb.order.domain.Employeeorder;
+import org.tb.order.domain.Employeeorder_;
 import org.tb.order.domain.Suborder_;
 
 /**
@@ -34,10 +38,12 @@ import org.tb.order.domain.Suborder_;
  * than through a Spring Data repository. The reason is the shape of the question, not a preference: the condition is
  * assembled at runtime from filter <em>and</em> visibility, and the same condition has to answer three different
  * things — the rows, the sums over all hits, and the values the filters may offer. A repository method can express
- * neither a dynamic disjunction nor a {@code distinct} projection under one.
+ * neither a dynamic disjunction nor a {@code distinct} projection under one. The third is asked of the employee orders
+ * rather than of the bookings (#1127, see {@link #findFilterValues}), under the very same visibility condition.
  *
- * <p>Both the filter and the visibility go into the {@code where} of every one of them. Nothing is filtered in Java
- * afterwards; a list that checked its rows one by one would load the month of every employee to throw most of it away.
+ * <p>The visibility goes into the {@code where} of every one of them, the filter into those of the rows and the sums.
+ * Nothing is filtered in Java afterwards; a list that checked its rows one by one would load the month of every
+ * employee to throw most of it away.
  */
 @Component
 @RequiredArgsConstructor
@@ -133,49 +139,60 @@ public class TimereportListDAO {
   }
 
   /**
-   * The values the filters may offer: everything that occurs in a booking the user is allowed to read. Deliberately
-   * <em>not</em> restricted to the chosen period — the lists would empty themselves while somebody pages through the
-   * months. A value offered here can therefore still have no hit in the period that is currently shown.
+   * The values the filters may offer: every employee, customer, order and suborder that occurs in a booking the user is
+   * allowed to read. Deliberately <em>not</em> restricted to the chosen period — the lists would empty themselves while
+   * somebody pages through the months. A value offered here can therefore still have no hit in the period that is
+   * currently shown.
+   *
+   * <p>Asked of the employee orders, not of the bookings (#1127). Every booking hangs on an employee order with the same
+   * employee and the same suborder, so the visibility holds for it unchanged, and the {@code exists} keeps out an
+   * employee order nobody has booked on — the answer stays the one the bookings give. Over the bookings themselves a
+   * visibility that spans two dimensions — my own bookings <em>or</em> those on my orders, my own <em>or</em> the
+   * billable ones — reads the whole table, because no single index serves an {@code or} across both. That is the
+   * position of everybody responsible for an order, and it cost more than a second per list on every call.
+   *
+   * <p>One known exception: a few legacy bookings carry a suborder other than the one of their employee order, within
+   * the same order. Such a suborder can be missing from the order dialog; its order is not, and it still finds them.
    */
   public FilterValues findFilterValues(TimereportVisibility visibility) {
-    return new FilterValues(
-        distinctLongs(visibility, (root, builder) ->
-            root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.id)),
-        distinctLongs(visibility, (root, builder) ->
-            root.join(Timereport_.suborder).join(Suborder_.customerorder).join(Customerorder_.customer).get(Customer_.id)),
-        distinctLongs(visibility, (root, builder) ->
-            root.join(Timereport_.suborder).join(Suborder_.customerorder).get(Customerorder_.id)),
-        distinctLongs(visibility, (root, builder) ->
-            root.join(Timereport_.suborder).get(Suborder_.id)),
-        distinctTicketReferences(visibility));
-  }
-
-  private List<Long> distinctLongs(TimereportVisibility visibility, Projection<Long> projection) {
     var builder = entityManager.getCriteriaBuilder();
-    CriteriaQuery<Long> query = builder.createQuery(Long.class);
-    var root = query.from(Timereport.class);
-    query.select(projection.of(root, builder)).distinct(true);
-    query.where(visibleAndAlive(visibility, root, builder));
-    return entityManager.createQuery(query).getResultList();
-  }
+    CriteriaQuery<FilterValueRow> query = builder.createQuery(FilterValueRow.class);
+    var root = query.from(Employeeorder.class);
+    var suborder = root.join(Employeeorder_.suborder);
+    var customerorder = suborder.join(Suborder_.customerorder);
+    var dimensions = new Dimensions(
+        root.join(Employeeorder_.employeecontract).join(Employeecontract_.employee).get(Employee_.id),
+        customerorder.get(Customerorder_.id),
+        suborder.get(Suborder_.id),
+        suborder.get(Suborder_.invoice));
 
-  private List<String> distinctTicketReferences(TimereportVisibility visibility) {
-    var builder = entityManager.getCriteriaBuilder();
-    CriteriaQuery<String> query = builder.createQuery(String.class);
-    var root = query.from(Timereport.class);
-    query.select(root.get(Timereport_.ticketReference)).distinct(true);
-    query.where(builder.and(
-        visibleAndAlive(visibility, root, builder),
-        builder.isNotNull(root.get(Timereport_.ticketReference)),
-        builder.notEqual(root.get(Timereport_.ticketReference), "")));
-    return entityManager.createQuery(query).getResultList();
-  }
+    query.select(builder.construct(FilterValueRow.class,
+        dimensions.employeeId(),
+        customerorder.join(Customerorder_.customer).get(Customer_.id),
+        dimensions.customerOrderId(),
+        dimensions.suborderId())).distinct(true);
 
-  private Predicate visibleAndAlive(TimereportVisibility visibility, Root<Timereport> root, CriteriaBuilder builder) {
+    var booking = query.subquery(Long.class);
+    var timereport = booking.from(Timereport.class);
+    booking.select(timereport.get(Timereport_.id)).where(
+        builder.equal(timereport.get(Timereport_.employeeorder), root),
+        builder.isFalse(timereport.get(Timereport_.deleted)));
+
     var predicates = new ArrayList<Predicate>();
-    predicates.add(builder.isFalse(root.get(Timereport_.deleted)));
-    visibilityCondition(visibility, root, builder).ifPresent(predicates::add);
-    return builder.and(predicates.toArray(Predicate[]::new));
+    predicates.add(builder.exists(booking));
+    visibilityCondition(visibility, dimensions, builder).ifPresent(predicates::add);
+    query.where(predicates.toArray(Predicate[]::new));
+
+    var rows = entityManager.createQuery(query).getResultList();
+    return new FilterValues(
+        distinct(rows, FilterValueRow::employeeId),
+        distinct(rows, FilterValueRow::customerId),
+        distinct(rows, FilterValueRow::customerOrderId),
+        distinct(rows, FilterValueRow::suborderId));
+  }
+
+  private static List<Long> distinct(List<FilterValueRow> rows, Function<FilterValueRow, Long> value) {
+    return rows.stream().map(value).distinct().toList();
   }
 
   private Predicate conditions(TimereportListFilter filter, TimereportVisibility visibility,
@@ -190,10 +207,14 @@ public class TimereportListDAO {
 
     var suborder = root.join(Timereport_.suborder);
     var customerorder = suborder.join(Suborder_.customerorder);
+    var dimensions = new Dimensions(
+        root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.id),
+        customerorder.get(Customerorder_.id),
+        suborder.get(Suborder_.id),
+        suborder.get(Suborder_.invoice));
 
     if (!filter.employeeIds().isEmpty()) {
-      predicates.add(root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.id)
-          .in(filter.employeeIds()));
+      predicates.add(dimensions.employeeId().in(filter.employeeIds()));
     }
     if (!filter.customerIds().isEmpty()) {
       predicates.add(customerorder.join(Customerorder_.customer).get(Customer_.id).in(filter.customerIds()));
@@ -203,10 +224,10 @@ public class TimereportListDAO {
     if (!filter.customerOrderIds().isEmpty() || !filter.suborderIds().isEmpty()) {
       var alternatives = new ArrayList<Predicate>();
       if (!filter.customerOrderIds().isEmpty()) {
-        alternatives.add(customerorder.get(Customerorder_.id).in(filter.customerOrderIds()));
+        alternatives.add(dimensions.customerOrderId().in(filter.customerOrderIds()));
       }
       if (!filter.suborderIds().isEmpty()) {
-        alternatives.add(suborder.get(Suborder_.id).in(filter.suborderIds()));
+        alternatives.add(dimensions.suborderId().in(filter.suborderIds()));
       }
       predicates.add(builder.or(alternatives.toArray(Predicate[]::new)));
     }
@@ -214,21 +235,24 @@ public class TimereportListDAO {
       predicates.add(builder.upper(root.get(Timereport_.ticketReference)).in(filter.ticketKeys()));
     }
     switch (filter.billable()) {
-      case BILLABLE -> predicates.add(builder.equal(suborder.get(Suborder_.invoice), YESNO_YES));
-      case NOT_BILLABLE -> predicates.add(builder.notEqual(suborder.get(Suborder_.invoice), YESNO_YES));
+      case BILLABLE -> predicates.add(builder.equal(dimensions.invoice(), YESNO_YES));
+      case NOT_BILLABLE -> predicates.add(builder.notEqual(dimensions.invoice(), YESNO_YES));
       case ALL -> { /* no restriction */ }
     }
 
-    visibilityCondition(visibility, root, builder).ifPresent(predicates::add);
+    visibilityCondition(visibility, dimensions, builder).ifPresent(predicates::add);
     return builder.and(predicates.toArray(Predicate[]::new));
   }
 
   /**
    * The visibility as a condition: an {@code or} over the clauses, each of them an {@code and} over the dimensions it
    * restricts. Never a cross product of all employees with all orders — that would grant more than any single clause.
+   *
+   * <p>It is asked of a booking and of an employee order alike, which is why it takes the paths rather than a root: the
+   * condition stays in one place, whichever of the two it restricts.
    */
-  private Optional<Predicate> visibilityCondition(TimereportVisibility visibility,
-      Root<Timereport> root, CriteriaBuilder builder) {
+  private Optional<Predicate> visibilityCondition(TimereportVisibility visibility, Dimensions dimensions,
+      CriteriaBuilder builder) {
 
     if (visibility.unrestricted()) return Optional.empty();
     if (visibility.isEmpty()) return Optional.of(builder.disjunction());
@@ -237,23 +261,25 @@ public class TimereportListDAO {
     for (var clause : visibility.clauses()) {
       var parts = new ArrayList<Predicate>();
       if (!clause.employeeIds().isEmpty()) {
-        parts.add(root.join(Timereport_.employeecontract).join(Employeecontract_.employee).get(Employee_.id)
-            .in(clause.employeeIds()));
+        parts.add(dimensions.employeeId().in(clause.employeeIds()));
       }
       if (!clause.customerOrderIds().isEmpty()) {
-        parts.add(root.join(Timereport_.suborder).join(Suborder_.customerorder).get(Customerorder_.id)
-            .in(clause.customerOrderIds()));
+        parts.add(dimensions.customerOrderId().in(clause.customerOrderIds()));
       }
       if (!clause.suborderIds().isEmpty()) {
-        parts.add(root.join(Timereport_.suborder).get(Suborder_.id).in(clause.suborderIds()));
+        parts.add(dimensions.suborderId().in(clause.suborderIds()));
       }
       if (clause.billableOnly()) {
-        parts.add(builder.equal(root.join(Timereport_.suborder).get(Suborder_.invoice), YESNO_YES));
+        parts.add(builder.equal(dimensions.invoice(), YESNO_YES));
       }
       clauses.add(parts.isEmpty() ? builder.conjunction() : builder.and(parts.toArray(Predicate[]::new)));
     }
     return Optional.of(builder.or(clauses.toArray(Predicate[]::new)));
   }
+
+  /** Where the four dimensions of a visibility clause sit — on a booking, or on an employee order. */
+  private record Dimensions(Path<Long> employeeId, Path<Long> customerOrderId, Path<Long> suborderId,
+                            Path<Character> invoice) {}
 
   private static long toLong(Object value) {
     return value == null ? 0L : ((Number) value).longValue();
@@ -261,11 +287,6 @@ public class TimereportListDAO {
 
   private static Duration minutesToDuration(Object value) {
     return Duration.ofMinutes(toLong(value));
-  }
-
-  @FunctionalInterface
-  private interface Projection<T> {
-    Expression<T> of(Root<Timereport> root, CriteriaBuilder builder);
   }
 
   /** @param count how many bookings, over all hits rather than over the rows shown */
@@ -276,9 +297,12 @@ public class TimereportListDAO {
     }
   }
 
-  /** The values the filters offer, as ids and as the ticket references they were typed as. */
+  /** The values the filters offer, as ids. */
   public record FilterValues(List<Long> employeeIds, List<Long> customerIds, List<Long> customerOrderIds,
-                             List<Long> suborderIds, List<String> ticketReferences) {
+                             List<Long> suborderIds) {
 
   }
+
+  /** One combination the query finds; the four lists are taken apart from these in Java. */
+  public record FilterValueRow(Long employeeId, Long customerId, Long customerOrderId, Long suborderId) {}
 }

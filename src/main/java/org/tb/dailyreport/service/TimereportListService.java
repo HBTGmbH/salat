@@ -97,11 +97,11 @@ public class TimereportListService {
    * thirty-six thousand tickets. Rendered into the page they make a document nobody can load and a dialog nobody can
    * scroll; they are searched for in {@link #searchOrders} and {@link #searchTickets} when their dialog opens.
    *
-   * <p>Two roads to the employees and customers, and which is cheaper depends on who asks. A manager reads
-   * everything, so the answer is the master data and the {@code distinct} over the bookings is not needed —
-   * unrestricted it costs about a second on half a million rows. Everybody else carries a condition the index on the
-   * employee contract serves, and there the exact answer costs milliseconds. Exactness matters: without it, whoever is
-   * responsible for a single order would be offered the name of every employee in the house.
+   * <p>Two roads to the employees and customers. A manager reads everything, so the answer is the master data.
+   * Everybody else is offered what occurs in the bookings they may read — asked of the employee orders, because over
+   * the bookings themselves the condition of anybody responsible for an order reads the whole table (#1127, see
+   * {@link TimereportListDAO#findFilterValues}). Exactness matters: without it, whoever is responsible for a single
+   * order would be offered the name of every employee in the house.
    *
    * <p>The lists do not depend on the period being shown — they would empty themselves while somebody pages through
    * the months. A value offered here can therefore have no hit in the period currently displayed.
