@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
 import org.tb.dailyreport.domain.DailyViewData;
@@ -100,8 +101,8 @@ class ApplyFavouriteTicketReferenceTest {
   }
 
   private void applyIt() {
-    classUnderTest.applyFavourite(CONTRACT_ID, FAVOURITE_ID, DATE, new MockHttpServletResponse(),
-        new ExtendedModelMap());
+    classUnderTest.applyFavourite(CONTRACT_ID, FAVOURITE_ID, DATE, new MockHttpServletRequest(),
+        new MockHttpServletResponse(), new ExtendedModelMap());
   }
 
   private static Favorite favourite(String ticketReference) {
