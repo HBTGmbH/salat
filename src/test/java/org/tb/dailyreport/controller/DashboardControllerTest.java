@@ -22,6 +22,7 @@ import org.springframework.ui.ExtendedModelMap;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import org.tb.dailyreport.service.MatrixService;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.ReleaseService;
@@ -154,6 +155,8 @@ public class DashboardControllerTest {
     private PublicholidayService publicholidayService;
     @Mock
     private ReleaseService releaseService;
+    @Mock
+    private MatrixService matrixService;
     @Mock
     private MessageSourceAccessor messageSourceAccessor;
 

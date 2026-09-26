@@ -6,11 +6,9 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import lombok.Getter;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -28,6 +26,7 @@ import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.VacationInfo;
+import org.tb.dailyreport.service.MatrixService;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.VacationService;
@@ -45,18 +44,6 @@ import org.tb.employee.service.EmployeecontractService;
 @Authorized
 public class DashboardController {
 
-    @Getter
-    @AllArgsConstructor
-    static class OrderHourSummary {
-        private final String customer;
-        private final String customerOrderSign;
-        private final String orderSign;
-        private final String orderDescription;
-        private final String suborderDescription;
-        private final String hoursString;
-        private final long minutes;
-    }
-
     private final EmployeecontractService employeecontractService;
     private final EmployeeService employeeService;
     private final OvertimeService overtimeService;
@@ -64,6 +51,7 @@ public class DashboardController {
     private final TimereportService timereportService;
     private final PublicholidayService publicholidayService;
     private final ReleaseService releaseService;
+    private final MatrixService matrixService;
     private final MessageSourceAccessor messageSourceAccessor;
     @GetMapping
     public String dashboard(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
@@ -91,6 +79,12 @@ public class DashboardController {
         // the hint follows the contract the page shows, and its links name it (#1124)
         model.addAttribute("unbookedDays", releaseService.getUnbookedWorkingDaysOfPreviousWeek(employeecontract.getId()));
         model.addAttribute("shownContractId", employeecontract.getId());
+        // the matrix of the running month for the contract resolved above - never for the id from
+        // the request, which may name a contract the login is not allowed to read (#1134, #878)
+        var matrixMonth = YearMonth.from(today());
+        model.addAttribute("matrixMonth", matrixMonth);
+        model.addAttribute("matrixData", matrixService.buildMatrix(matrixMonth, employeecontract.getId()));
+        model.addAttribute("showBeginBreakEnd", displayEmployeeInfo);
 
         calculateEmployeeInfo(model, employeecontract);
 
@@ -160,25 +154,6 @@ public class DashboardController {
             return (int) Math.max(0L, rawDays - holidaysBetween);
         }).orElse(99);
 
-        // Hours by order this month, sorted by logged hours desc
-        var orderHours = recentReports.stream()
-            .filter(r -> month.contains(r.getReferenceday()))
-            .collect(Collectors.groupingBy(TimereportDTO::getCompleteOrderSign, Collectors.toList()))
-            .entrySet().stream()
-            .map(e -> {
-                var sum = e.getValue().stream()
-                    .map(TimereportDTO::getDuration)
-                    .reduce(Duration.ZERO, Duration::plus);
-                var first = e.getValue().getFirst();
-                var customer = first.getCustomerShortname();
-                var customerOrderSign = first.getCustomerorderSign();
-                var orderDescription = first.getCustomerorderDescription();
-                var suborderDescription = first.getSuborderDescription();
-                return new OrderHourSummary(customer, customerOrderSign, e.getKey(), orderDescription, suborderDescription, DurationUtils.format(sum), sum.toMinutes());
-            })
-            .sorted(Comparator.comparingLong(OrderHourSummary::getMinutes).reversed())
-            .toList();
-
         model.addAttribute("weekLogged", DurationUtils.format(weekLogged));
         model.addAttribute("weekTarget", DurationUtils.format(weekTarget));
         model.addAttribute("weekPercent", weekPercent);
@@ -190,7 +165,6 @@ public class DashboardController {
         model.addAttribute("lastLogDate", lastLogOpt.orElse(null));
         model.addAttribute("businessDaysLagging", businessDaysLagging);
         model.addAttribute("lastLogIsLagging", businessDaysLagging > 1);
-        model.addAttribute("orderHours", orderHours);
     }
 
     @PostMapping(params = "task=refresh")

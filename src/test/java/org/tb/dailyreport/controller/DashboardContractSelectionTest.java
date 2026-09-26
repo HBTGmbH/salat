@@ -24,6 +24,7 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.dailyreport.service.MatrixService;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.ReleaseService;
@@ -63,6 +64,7 @@ class DashboardContractSelectionTest {
   @Mock private PublicholidayService publicholidayService;
   @Mock private MessageSourceAccessor messageSourceAccessor;
   @Mock private ReleaseService releaseService;
+  @Mock private MatrixService matrixService;
 
   @InjectMocks private DashboardController dashboardController;
 
@@ -95,6 +97,9 @@ class DashboardContractSelectionTest {
     verify(overtimeService, never()).calculateOvertime(OTHER_CONTRACT_ID, false);
     verify(timereportService, never())
         .getTimereportsByDatesAndEmployeeContractId(eq(OTHER_CONTRACT_ID), any(), any());
+    // the matrix on the dashboard (#878) follows the same contract, it reads bookings as well
+    verify(matrixService).buildMatrix(any(), eq(OWN_CONTRACT_ID));
+    verify(matrixService, never()).buildMatrix(any(), eq(OTHER_CONTRACT_ID));
   }
 
   /** Manager und zuständige People Leads dürfen den Vertrag lesen; für sie ändert sich nichts. */
@@ -107,6 +112,7 @@ class DashboardContractSelectionTest {
 
     assertThat(model.getAttribute("releasedUntil")).isEqualTo(OTHER_RELEASE);
     verify(overtimeService).calculateOvertime(OTHER_CONTRACT_ID, false);
+    verify(matrixService).buildMatrix(any(), eq(OTHER_CONTRACT_ID));
   }
 
   @Test
