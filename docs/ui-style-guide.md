@@ -473,8 +473,9 @@ gerade dreht.
 - **Prüfseite statt Dialog** (#760, #1122, → ADR-0027, Nachtrag): Vor der Freigabe und vor der
   Abnahme steht eine eigene Seite, die Person, Zeitraum und Folge nennt und jede erfasste Buchung
   zeigt; ihr Knopf handelt ohne Dialog, wie schon die Vorschau vor dem Umbuchen. Gesperrt ist er,
-  solange es Befunde gibt — `disabled` mit sichtbarem Grund daneben (`aria-describedby`); die
-  Sperre selbst liegt im Service.
+  solange es Befunde an Tagen gibt — `disabled` mit sichtbarem Grund daneben (`aria-describedby`).
+  Ein Befund über den ganzen Zeitraum steht an Stelle von Bilanz, Buchungen und Knopf; die Abnahme
+  kennt nur solche. Die Sperre selbst liegt im Service.
   Einen Arbeitstag ohne Buchung markiert „Nicht gearbeitet" in der Übersicht vor der Freigabe an
   seinem Tag ebenfalls ohne Dialog: die Tagesansicht nimmt die Markierung zurück.
 
