@@ -26,6 +26,7 @@ import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
+import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
 import org.tb.employee.domain.Employee;
@@ -61,6 +62,7 @@ class DashboardContractSelectionTest {
   @Mock private TimereportService timereportService;
   @Mock private PublicholidayService publicholidayService;
   @Mock private MessageSourceAccessor messageSourceAccessor;
+  @Mock private ReleaseService releaseService;
 
   @InjectMocks private DashboardController dashboardController;
 
