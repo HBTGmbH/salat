@@ -177,9 +177,9 @@ public class MatrixService {
      * <p>A booking of any status makes a day booked, read without the per-row READ filter of
      * {@code TimereportDAO}: all that matters is whether something is booked on the day. Who passes
      * the working-day check below is the owner, the Geschäftsführung (admins included), the
-     * supervising people lead or a holder of a {@code WORKINGDAY}/{@code WRITE} rule. The first three
-     * read every booking of the contract anyway. A rule holder may not, and for him the unfiltered
-     * read is what keeps a day with a booking he cannot see from being marked: the
+     * supervising people lead or a holder of a {@code WORKINGDAY}/{@code WRITE} rule. The first
+     * three read every booking of the contract anyway. A rule holder may not, and for him the
+     * unfiltered read is what keeps a day with a booking he cannot see from being marked: the
      * {@code WD_NOT_WORKED_TIMEREPORTS_FOUND} check in {@link WorkingdayService#upsertWorkingday}
      * reads through the READ filter, finds nothing for him and would let the day pass. Until #1124
      * this action read through the filter as well and marked such days. Do not bring that read
@@ -190,11 +190,11 @@ public class MatrixService {
      * of the contract is checked; only then are the booked days read. A month the contract does not
      * reach ends the action before anything is read or checked: there is nothing to fill, and
      * whoever may not fill the month gets no error then, as before #1124. In a month the contract
-     * reaches, the right is checked whether or not a day is left to
-     * fill. Before #1124 it was only checked at the first day without a booking the caller could
-     * see, so someone who could read every booking of a fully booked month, but not its working
-     * days, got the success message; now he gets {@code WD_READ_REQ_EMPLOYEE_OR_MANAGER}. That
-     * difference is intended: whether a caller is refused should not depend on what is booked.
+     * reaches, the right is checked whether or not a day is left to fill. Before #1124 it was only
+     * checked at the first day without a booking the caller could see, so someone who could read
+     * every booking of a fully booked month, but not its working days, got the success message; now
+     * he gets {@code WD_READ_REQ_EMPLOYEE_OR_MANAGER}. That difference is intended: whether a
+     * caller is refused should not depend on what is booked.
      *
      * <p>Booked days, working days and public holidays are loaded once for the whole month. A day
      * already marked as not worked is left as it is and not saved again.

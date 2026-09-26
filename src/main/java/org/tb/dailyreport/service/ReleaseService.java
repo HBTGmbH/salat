@@ -301,18 +301,27 @@ public class ReleaseService {
    * Sollarbeitszeit (entschieden in #1123). Die Ausnahmen gehören zum Hinweis, nicht zur Regel: die
    * Freigabe prüft auch diese Verträge.
    *
-   * <p>Die Buchungstage kommen ohne den zeilenweisen READ-Filter von {@code TimereportDAO}. Der ist
-   * hier entbehrlich, weil vorher das Schreibrecht auf die Freigabe verlangt wird, und das beruht auf
-   * drei Voraussetzungen:
+   * <p>Die Buchungstage kommen ohne den zeilenweisen READ-Filter von {@code TimereportDAO}; die
+   * Arbeitstage kommen, wie in {@link #validateForRelease}, über {@code WorkingdayDAO} an der
+   * Leseprüfung von {@code WorkingdayService} vorbei. Vorher wird das Schreibrecht auf die Freigabe
+   * verlangt, und was der Hinweis damit preisgibt, beruht auf drei Voraussetzungen:
    * <ul>
    *   <li>{@link ReleaseAuthorization#isReleaseAuthorized} lässt die Person selbst, die
    *       Geschäftsführung, die zuständige Personalverantwortung, Admins und Inhaber einer
    *       Freigaberegel mit Schreibrecht zu;</li>
    *   <li>die ersten vier dürfen nach {@code TimereportAuthorization} jede Buchung des Vertrags
-   *       lesen;</li>
-   *   <li>wer über eine Regel freigibt, bekommt genau diese Lücken bei der Freigabe ohnehin als
-   *       {@code WD_NO_TIMEREPORT} gemeldet. Deshalb {@code WRITE}: wer die Freigabe nur lesen darf,
-   *       kann nicht freigeben, und für ihn trüge diese Voraussetzung nicht.</li>
+   *       lesen, für sie ist der Filter wirkungslos;</li>
+   *   <li>wer nur über eine Freigaberegel zugelassen ist, darf die Buchungen der Person nicht
+   *       unbedingt lesen. Er erfährt hier, an welchen Arbeitstagen der Vorwoche weder etwas
+   *       gebucht noch der Tag als nicht gearbeitet markiert ist, im Umkehrschluss also, dass an
+   *       den übrigen eins von beidem zutrifft; Inhalt und Status einer Buchung erfährt er nicht.
+   *       Die Freigabe verrät ihm das nicht in dieser Form: sie liest die offenen Buchungen durch
+   *       den READ-Filter, meldet ihm ohne Leserecht jeden Arbeitstag des Zeitraums als Lücke und
+   *       prüft nur die Tage nach der letzten Freigabe, während der Hinweis auch schon freigegebene
+   *       Tage der Vorwoche umfasst. Dass an einem Tag etwas gebucht ist, ist für jemanden, der die
+   *       Buchungen dieser Person freigeben darf, hingenommen (#1124). Deshalb {@code WRITE}: wer
+   *       die Freigabe nur lesen darf, kann nicht freigeben, und für ihn gälte diese Abwägung
+   *       nicht.</li>
    * </ul>
    * Wer nicht freigeben darf, bekommt eine leere Liste statt einer Ausnahme — ein gemerkter fremder
    * Vertrag soll die Startseite nicht sperren.
