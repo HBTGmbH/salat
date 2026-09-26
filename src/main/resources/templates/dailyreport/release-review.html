@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      th:with="title=${pageTitle},sectionTitle=${sectionTitle}">
+<section layout:fragment="content">
+
+  <th:block th:replace="~{dailyreport/review-fragments :: overview(${review}, ${reviewLinks}, ${reviewView},
+                          #{main.release.review.period.release.text},
+                          #{main.release.review.perioderror.title.release.text},
+                          #{main.release.review.findings.title.release.text})}"></th:block>
+
+  <!--/* Kein data-confirm (#760, ADR-0027 Nachtrag): die Uebersicht darueber ist die Rueckfrage,
+         und die Karte nennt Person, Zeitraum und Folge. Der Knopf gibt genau den gezeigten
+         Zeitraum frei (periodBegin/periodEnd); hat er sich inzwischen geaendert, etwa durch eine
+         Freigabe in einem zweiten Fenster, weist der Server ab (RL-0008). Der gesperrte Knopf ist
+         Hoeflichkeit, nicht die Sperre: releaseTimereports prueft vor dem Freigeben erneut. */-->
+  <div class="card mb-3 d-print-none" id="review-action"
+       th:with="beginText=${#temporals.format(review.begin, 'dd.MM.yyyy')},
+                endText=${#temporals.format(review.end, 'dd.MM.yyyy')}">
+    <div class="card-body" th:if="${review.detailed}">
+      <p class="mb-1" th:if="${review.ownContract}"
+         th:text="#{main.release.review.action.release.self.text(${beginText}, ${endText})}">Freigegeben werden deine offenen Buchungen vom 01.08.2026 bis 31.08.2026.</p>
+      <p class="mb-1" th:unless="${review.ownContract}"
+         th:text="#{main.release.review.action.release.other.text(${review.employeeName}, ${beginText}, ${endText})}">Freigegeben werden die offenen Buchungen von … vom 01.08.2026 bis 31.08.2026.</p>
+      <p class="text-secondary mb-0" th:if="${review.ownContract}"
+         th:text="#{main.release.review.action.release.self.hint.text}">Danach kannst du diese Buchungen nicht mehr selbst ändern.</p>
+      <p class="text-secondary mb-0" th:unless="${review.ownContract}"
+         th:text="#{main.release.review.action.release.other.hint.text(${review.employeeName})}">Danach kann … diese Buchungen nicht mehr selbst ändern.</p>
+      <p th:unless="${review.actionAllowed}" id="review-action-blocked" class="text-secondary mb-0 mt-2">
+        <i class="ti ti-lock me-1" aria-hidden="true"></i>
+        <span th:text="#{main.release.review.action.release.blocked.text}">Freigeben ist möglich, sobald keine Befunde mehr offen sind.</span>
+        <a th:href="|#${review.blockedTarget}|" th:text="#{main.release.review.findings.link.text}">Zu den Befunden</a>
+      </p>
+    </div>
+    <div class="card-footer d-flex flex-wrap align-items-center gap-2">
+      <form th:if="${review.detailed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0">
+        <input type="hidden" name="contractId" th:value="${review.employeecontractId}"/>
+        <input type="hidden" name="periodBegin" th:value="${review.begin}"/>
+        <input type="hidden" name="periodEnd" th:value="${review.end}"/>
+        <input type="hidden" name="view" th:value="${reviewView}"/>
+        <button type="submit" class="btn btn-primary" th:disabled="${!review.actionAllowed}"
+                th:aria-describedby="${review.actionAllowed} ? null : 'review-action-blocked'"
+                th:text="#{main.general.button.release.text}">Freigeben</button>
+      </form>
+      <a class="btn btn-secondary" th:href="@{${reviewLinks.backUrl}}"
+         th:text="#{main.general.button.back.text}">Zurück</a>
+    </div>
+  </div>
+
+</section>
+</html>

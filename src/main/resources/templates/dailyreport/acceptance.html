@@ -73,24 +73,19 @@
     <div class="card-body">
 
       <!-- Release form -->
-      <form method="post" th:action="@{/acceptance/release}" class="mb-3"
-            data-confirm
-            th:data-confirm-title="#{main.release.release.confirm.title}"
-            th:data-confirm-text="#{main.general.confirmrelease.text}"
-            th:data-confirm-detail="${selectedContract.employee.name}"
-            th:data-confirm-detail-secondary="#{main.release.release.until.text}"
-            data-confirm-detail-input="input[name=releaseDate]"
-            th:data-confirm-label="#{main.general.button.release.text}">
+      <!--/* Oeffnet die Uebersicht vor der Freigabe fuer die gewaehlte Person (#760); freigegeben wird
+             dort, ohne Bestaetigungsdialog (ADR-0027, Nachtrag). */-->
+      <form method="get" th:action="@{/acceptance/release/review}" class="mb-3">
         <input type="hidden" name="contractId" th:value="${selectedContract.id}" />
-        <label class="form-label fw-semibold" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
+        <label class="form-label fw-semibold" for="acceptance-release-until" th:text="#{main.release.release.until.text}">Buchungen freigeben bis (incl.)</label>
         <div class="row g-2 align-items-center">
           <div class="col-auto">
-            <input type="month" class="form-control" name="releaseDate" th:value="${releaseDateStr}"
-                   th:max="${lastMonthStr}" />
+            <input type="month" class="form-control" id="acceptance-release-until" name="until" required
+                   th:value="${releaseDateStr}" th:max="${lastMonthStr}" />
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary"
-                    th:text="#{main.general.button.release.text}">Freigeben</button>
+                    th:text="#{main.release.review.open.release.text}">Freigabe prüfen</button>
           </div>
         </div>
       </form>
