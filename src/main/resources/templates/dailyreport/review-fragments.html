@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* Bausteine der Uebersicht vor der Freigabe (#760), gebaut fuer die Abnahme (#1122) gleich mit.
+       Sie kennen weder Status noch Aktion: was abgeschickt wird und wie der Zeitraum heisst, steht
+       in der Seite, die sie einbindet, und kommt als Parameter herein. Welche Tage ohne Buchung
+       sind, wer bearbeiten oder anlegen darf und ob die Aktion gesperrt ist, hat der Service
+       entschieden - die Bausteine lesen es nur ab (TimereportReviewViewHelper). */-->
+
+<th:block th:fragment="overview(review, links, view, periodLabel, periodErrorTitle, findingsTitle)">
+  <div th:replace="~{dailyreport/review-fragments :: summaryCard(${review}, ${periodLabel})}"></div>
+  <th:block th:replace="~{dailyreport/review-fragments :: problems(${review}, ${links}, ${periodErrorTitle}, ${findingsTitle})}"></th:block>
+  <th:block th:if="${review.detailed}">
+    <th:block th:replace="~{dailyreport/review-fragments :: beforePeriod(${review}, ${links})}"></th:block>
+    <div th:replace="~{dailyreport/review-fragments :: viewSwitch(${review}, ${links}, ${view})}"></div>
+    <th:block th:if="${view == 'day'}">
+      <th:block th:replace="~{dailyreport/review-fragments :: byDay(${review}, ${links})}"></th:block>
+    </th:block>
+    <th:block th:unless="${view == 'day'}">
+      <th:block th:replace="~{dailyreport/review-fragments :: byOrder(${review}, ${links})}"></th:block>
+    </th:block>
+  </th:block>
+</th:block>
+
+<!--/* Die Differenz ist bewusst ungefaerbt: ein kurzer Tag ist nicht automatisch falsch (#760), und
+       fuer einen Zeitraum beliebiger Laenge gibt es keine Ampelskala (OvertimeScale kennt nur Monat
+       und Gesamtsaldo). Der Zeitraum steht auf jeder Breite; nur freigegeben/abgenommen bis weicht
+       wie auf der Seite davor unter sm. */-->
+<div th:fragment="summaryCard(review, periodLabel)" class="card mb-3" id="review-summary">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title" th:text="${review.employeeName + ' | ' + review.employeeSign}">Name | Kürzel</h3>
+      <div class="text-muted" th:unless="${review.periodEmpty}">
+        <span th:text="${periodLabel}">Freigabezeitraum</span>:
+        <strong th:text="|${#temporals.format(review.begin, 'dd.MM.yyyy')} – ${#temporals.format(review.end, 'dd.MM.yyyy')}|">01.08.2026 – 31.08.2026</strong>
+      </div>
+    </div>
+    <div class="card-actions text-muted small d-none d-sm-block">
+      <span th:text="#{main.release.released.until.text}">freigegeben bis</span>:
+      <strong th:text="${review.releasedUntil != null} ? ${#temporals.format(review.releasedUntil, 'dd.MM.yyyy')} : #{main.release.released.never.text}">31.07.2026</strong>
+      &nbsp;|&nbsp;
+      <span th:text="#{main.release.accepted.until.text}">abgenommen bis</span>:
+      <strong th:text="${review.acceptedUntil != null} ? ${#temporals.format(review.acceptedUntil, 'dd.MM.yyyy')} : #{main.release.released.never.text}">30.06.2026</strong>
+    </div>
+  </div>
+  <div class="card-body" th:if="${review.detailed}">
+    <!--/* Gebucht - Soll + Ueberstundenanpassung = Differenz: die Anpassung steht nur da, wo es eine
+           gibt, und macht die Rechnung dann sichtbar. Die Zahlen kommen aus der Berechnung des
+           Ueberstundenkontos, nicht aus den Buchungen darunter. */-->
+    <dl class="row g-3 mb-0">
+      <div class="col-6 col-md-3" th:if="${review.hasBalance}">
+        <dt class="subheader" th:text="#{main.release.review.balance.target.text}">Soll</dt>
+        <dd class="h2 mb-0" th:text="${review.targetText}">160:00</dd>
+      </div>
+      <div class="col-6 col-md-3">
+        <dt class="subheader" th:text="#{main.release.review.balance.booked.text}">Gebucht</dt>
+        <dd class="h2 mb-0" th:text="${review.bookedText}">152:00</dd>
+      </div>
+      <div class="col-6 col-md-3" th:if="${review.hasAdjustment}">
+        <dt class="subheader" th:text="#{main.release.review.balance.adjustment.text}">Überstundenanpassung</dt>
+        <dd class="h2 mb-0" th:text="${review.adjustmentText}">+4:00</dd>
+      </div>
+      <div class="col-6 col-md-3" th:if="${review.hasBalance}">
+        <dt class="subheader" th:text="#{main.release.review.balance.difference.text}">Differenz</dt>
+        <dd class="mb-0">
+          <span class="h2 fw-bold d-block mb-0" th:text="${review.differenceText}">-4:00</span>
+          <span class="text-muted small" th:text="#{main.release.review.balance.difference.hint.text}">Veränderung des Überstundenkontos im Zeitraum</span>
+        </dd>
+      </div>
+    </dl>
+    <p th:if="${review.hasStandby}" class="text-muted small mb-0 mt-3"
+       th:text="#{main.release.review.balance.standby.text(${review.standbyText})}">Bereitschaft (nicht angerechnet): 8:00</p>
+    <p th:unless="${review.overtimeAccount}" class="text-muted mb-0 mt-3"
+       th:text="#{main.release.review.balance.notarget.text}">Für diesen Vertrag wird kein Überstundenkonto geführt.</p>
+  </div>
+</div>
+
+<!--/* Befunde ueber den Zeitraum und Befunde an Tagen stehen ueber beiden Sichten: sonst waeren die
+       Befunde aus der Sicht nach Auftrag, dem Standard, nicht zu erreichen. Die Befunde der Tage
+       stehen hier nur als Verweis; zu lesen sind sie am Tag (#760: nicht als Toast). */-->
+<th:block th:fragment="problems(review, links, periodErrorTitle, findingsTitle)">
+  <div th:unless="${#lists.isEmpty(review.periodErrors)}" class="alert alert-danger align-items-start gap-3 mb-3"
+       id="review-period-errors">
+    <div class="icon"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
+    <div class="flex-fill">
+      <h4 class="alert-title mb-1" th:text="${periodErrorTitle}">Dieser Zeitraum kann nicht freigegeben werden</h4>
+      <div class="text-secondary" th:each="msg : ${review.periodErrors}" th:text="${msg}">Bis zum gewählten Monat ist bereits alles freigegeben.</div>
+    </div>
+  </div>
+  <div th:unless="${#lists.isEmpty(review.findingDays)}" class="alert alert-danger align-items-start gap-3 mb-3"
+       id="review-findings">
+    <div class="icon"><i class="ti ti-alert-circle" aria-hidden="true"></i></div>
+    <div class="flex-fill">
+      <h4 class="alert-title mb-1" th:text="${findingsTitle}">Freigeben ist noch nicht möglich</h4>
+      <p class="text-secondary mb-1"
+         th:text="#{main.release.review.findings.text(${review.findingCount}, ${#lists.size(review.findingDays)})}">3 Befunde an 2 Tagen:</p>
+      <ul class="mb-0 ps-3">
+        <li th:each="fd : ${review.firstFindingDays}">
+          <th:block th:replace="~{dailyreport/review-fragments :: findingItem(${fd}, ${links})}"></th:block>
+        </li>
+      </ul>
+      <!--/* wie die Fehler-Toasts in base.html: die ersten stehen offen, der Rest ist aufklappbar */-->
+      <details th:unless="${#lists.isEmpty(review.moreFindingDays)}" class="mt-1">
+        <summary class="text-secondary small"
+                 th:text="#{main.release.review.findings.more.text(${#lists.size(review.moreFindingDays)})}">3 weitere Tage</summary>
+        <ul class="mt-1 mb-0 ps-3">
+          <li th:each="fd : ${review.moreFindingDays}">
+            <th:block th:replace="~{dailyreport/review-fragments :: findingItem(${fd}, ${links})}"></th:block>
+          </li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</th:block>
+
+<!--/* Jeder Befund beginnt mit seinem Datum; der Verweis auf den Tag ist deshalb der Befund selbst. */-->
+<th:block th:fragment="findingItem(fd, links)">
+  <a th:href="@{${links.byDayUrl + '#' + fd.anchor}}"><th:block th:each="msg, m : ${fd.messages}"><th:block th:text="${msg}">03.08.2026: Es fehlen Buchungen für den Arbeitstag.</th:block><br th:unless="${m.last}"/></th:block></a>
+</th:block>
+
+<!--/* Buchungen vor dem Zeitraum, die die Aktion trotzdem erfasst - Altbestand, normalerweise gibt
+       es keine. Sie stehen hier, damit nichts erfasst wird, was die Uebersicht nicht gezeigt hat. */-->
+<th:block th:fragment="beforePeriod(review, links)">
+  <div th:unless="${#lists.isEmpty(review.beforePeriod)}" class="card mb-3" id="review-before-period">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title" id="review-before-period-title" th:text="#{main.release.review.beforeperiod.title.text}">Weitere Buchungen vor dem Zeitraum</h3>
+        <div class="text-muted small" th:text="#{main.release.review.beforeperiod.hint.text}">Sie liegen vor dem Zeitraum und werden trotzdem mit erfasst.</div>
+      </div>
+      <div class="card-actions text-muted text-nowrap"
+           th:text="#{main.release.review.count.text(${#lists.size(review.beforePeriod)})}">2 Buchungen</div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table" aria-labelledby="review-before-period-title">
+        <thead><tr>
+          <th class="w-1" th:text="#{main.timereportlist.column.date}">Datum</th>
+          <th th:text="#{main.timereportlist.column.order}">Auftrag</th>
+          <th style="min-width:16rem" th:text="#{main.timereport.form.comment.label}">Kommentar</th>
+          <th class="w-1 text-end" th:text="#{main.timereportlist.column.duration}">Dauer</th>
+          <th class="w-1" th:if="${review.anyEditable}"><span class="visually-hidden" th:text="#{main.timereport.action.edit.tooltip}">Bearbeiten</span></th>
+        </tr></thead>
+        <tbody>
+          <tr th:each="tr : ${review.beforePeriod}" th:id="'tr-' + ${tr.id}"
+              th:with="dateText=${#temporals.format(tr.referenceday, 'EEE dd.MM.yyyy')}">
+            <td class="text-nowrap" th:text="${dateText}">Mo. 03.08.2026</td>
+            <td th:replace="~{dailyreport/review-fragments :: orderCell(${tr})}"></td>
+            <td th:replace="~{dailyreport/review-fragments :: commentCell(${tr})}"></td>
+            <td class="text-end text-nowrap"><span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}">1:30</span></td>
+            <th:block th:if="${review.anyEditable}">
+              <td th:replace="~{dailyreport/review-fragments :: editCell(${review}, ${tr}, ${links.currentUrl + '#review-before-period'}, ${dateText})}"></td>
+            </th:block>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</th:block>
+
+<!--/* Umschalten ist ein Seitenaufruf, kein Reiter: nur so traegt die Ruecksprungadresse der
+       Bearbeitung die Sicht mit, die Sprungmarke der bearbeiteten Zeile bleibt frei, und gerendert
+       wird nur die Sicht, die zu sehen ist. Die Sprungmarke #review-views setzt die Seite nach dem
+       Umschalten dorthin zurueck, wo geklickt wurde (wie mode in daily.html). */-->
+<div th:fragment="viewSwitch(review, links, view)" id="review-views"
+     class="d-flex flex-wrap align-items-center gap-2 mb-3 d-print-none">
+  <div class="btn-group" role="group" th:aria-label="#{main.release.review.view.label.text}">
+    <a class="btn btn-outline-secondary" th:classappend="${view != 'day'} ? 'active'"
+       th:aria-current="${view != 'day'} ? 'page' : null"
+       th:href="@{${links.byOrderUrl + '#review-views'}}">
+      <i class="ti ti-folders me-1" aria-hidden="true"></i><span th:text="#{main.release.review.view.order.text}">Nach Auftrag</span>
+    </a>
+    <a class="btn btn-outline-secondary" th:classappend="${view == 'day'} ? 'active'"
+       th:aria-current="${view == 'day'} ? 'page' : null"
+       th:href="@{${links.byDayUrl + '#review-views'}}">
+      <i class="ti ti-calendar-event me-1" aria-hidden="true"></i><span th:text="#{main.release.review.view.day.text}">Nach Tag</span>
+    </a>
+  </div>
+  <span class="text-muted ms-auto" th:text="#{main.release.review.count.text(${review.timereportCount})}">42 Buchungen</span>
+</div>
+
+<!--/* Gruppen in der Reihenfolge der Matrix (Auftrag, dann Unterauftrag), damit derselbe Auftrag
+       jeden Monat an derselben Stelle steht; darin nach Datum. Ein Kommentar, der nicht zu den
+       uebrigen seiner Gruppe passt, soll beim Durchlesen auffallen - deshalb ungekuerzt. */-->
+<th:block th:fragment="byOrder(review, links)">
+  <div th:if="${#lists.isEmpty(review.groups)}" class="card mb-3">
+    <div class="card-body text-center text-muted py-4" th:text="#{main.release.review.empty.text}">Im Zeitraum gibt es keine Buchungen.</div>
+  </div>
+  <div th:each="g : ${review.groups}" class="card mb-3" th:id="${g.anchor}">
+    <div class="card-header">
+      <div>
+        <div class="text-muted small"
+             th:text="|${g.customerorderSign} · ${g.customerorderDescription} · ${g.customerShortname}|">HBT · Interne Zeiten · HBT</div>
+        <h3 class="card-title" th:id="${g.anchor + '-title'}"
+            th:text="|${g.completeOrderSign} · ${g.suborderDescription}|">HBT/01 · Fortbildung</h3>
+      </div>
+      <div class="card-actions d-flex align-items-center gap-2 text-nowrap">
+        <span th:if="${g.standby}" class="badge bg-orange-lt" th:title="#{main.daily.standby.hint}">
+          <i class="ti ti-bell me-1" aria-hidden="true"></i><span th:text="#{main.release.review.standby.text}">Bereitschaft</span>
+        </span>
+        <span class="text-muted" th:text="#{main.daily.week.bookings.text(${#lists.size(g.timereports)})}">3 Buchungen</span>
+        <span class="fw-bold" th:text="${g.sumText}">12:30</span>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table" th:aria-labelledby="${g.anchor + '-title'}">
+        <thead><tr>
+          <th class="w-1" th:text="#{main.timereportlist.column.date}">Datum</th>
+          <th style="min-width:16rem" th:text="#{main.timereport.form.comment.label}">Kommentar</th>
+          <th class="w-1 text-end" th:text="#{main.timereportlist.column.duration}">Dauer</th>
+          <th class="w-1" th:if="${review.anyEditable}"><span class="visually-hidden" th:text="#{main.timereport.action.edit.tooltip}">Bearbeiten</span></th>
+        </tr></thead>
+        <tbody>
+          <tr th:each="tr : ${g.timereports}" th:id="'tr-' + ${tr.id}"
+              th:with="dateText=${#temporals.format(tr.referenceday, 'EEE dd.MM.yyyy')}">
+            <td class="text-nowrap" th:text="${dateText}">Mo. 03.08.2026</td>
+            <td th:replace="~{dailyreport/review-fragments :: commentCell(${tr})}"></td>
+            <td class="text-end text-nowrap"><span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}">1:30</span></td>
+            <th:block th:if="${review.anyEditable}">
+              <td th:replace="~{dailyreport/review-fragments :: editCell(${review}, ${tr}, ${links.currentUrl + '#tr-' + tr.id}, ${dateText})}"></td>
+            </th:block>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</th:block>
+
+<!--/* Jeder Tag des Zeitraums steht da, auch Wochenende und Feiertag, damit ein fehlender Freitag
+       auffaellt; der Vortag, den die Pruefung der Ruhezeit nachlaedt, gehoert nicht dazu. */-->
+<th:block th:fragment="byDay(review, links)">
+  <div th:each="m : ${review.months}" class="card mb-3">
+    <div class="card-header">
+      <h3 class="card-title" th:id="|review-month-${#temporals.format(m.firstDay, 'yyyy-MM')}|"
+          th:text="${#temporals.format(m.firstDay, 'MMMM yyyy')}">August 2026</h3>
+      <div class="card-actions text-nowrap">
+        <span class="text-muted me-1" th:text="#{main.timereportlist.table.sum}">Summe</span>
+        <span class="fw-bold" th:text="${m.sumText}">152:00</span>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table"
+             th:aria-labelledby="|review-month-${#temporals.format(m.firstDay, 'yyyy-MM')}|">
+        <thead><tr>
+          <th th:text="#{main.timereportlist.column.order}">Auftrag</th>
+          <th style="min-width:16rem" th:text="#{main.timereport.form.comment.label}">Kommentar</th>
+          <th class="w-1 text-end" th:text="#{main.timereportlist.column.duration}">Dauer</th>
+          <th class="w-1" th:if="${review.anyEditable}"><span class="visually-hidden" th:text="#{main.timereport.action.edit.tooltip}">Bearbeiten</span></th>
+        </tr></thead>
+        <tbody th:each="day : ${m.days}" th:id="${day.anchor}"
+               th:with="cols=${review.anyEditable ? 4 : 3}, dateText=${#temporals.format(day.date, 'EEE dd.MM.yyyy')}">
+          <!--/* Getoent wird nur die Kopfzeile des Tages: text-danger faellt auf einer Toenung unter
+                 4,5:1, deshalb stehen die Befunde darunter auf ungetoentem Grund. Die Tagessumme
+                 steht ohne Vergleich mit dem Soll - kurze Tage sind kein Befund (#760).
+                 Der Verweis auf die Tagesansicht setzt deren gemerkte Auswahl auf diese Person;
+                 kommt die Uebersicht aus der Abnahme, trifft das die Auswahl der Person, die
+                 abnimmt. Hingenommen: so arbeitet die Tagesansicht, und dort werden Arbeitsbeginn
+                 und Pause berichtigt. */-->
+          <tr th:classappend="${day.holiday} ? 'bg-warning-lt' : (${day.weekend} ? 'bg-azure-lt' : '')">
+            <th scope="rowgroup" th:colspan="${cols}">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${review.employeecontractId})}"
+                   th:title="#{main.daily.viewday.title}" th:text="${dateText}">Mo. 03.08.2026</a>
+                <span th:if="${day.holiday}" class="badge bg-red-lt" th:text="${day.holidayName}">Feiertag</span>
+                <span th:if="${day.notWorked}" class="badge bg-warning-lt" th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
+                <span th:unless="${#lists.isEmpty(day.timereports)}" class="ms-auto fw-bold text-nowrap" th:text="${day.sumText}">7:30</span>
+              </div>
+            </th>
+          </tr>
+          <tr th:each="msg : ${day.messages}">
+            <td th:colspan="${cols}" class="text-danger">
+              <i class="ti ti-alert-circle me-1" aria-hidden="true"></i><span th:text="${msg}">03.08.2026: Es fehlen Buchungen für den Arbeitstag.</span>
+            </td>
+          </tr>
+          <tr th:if="${day.withoutBooking}">
+            <td th:colspan="${cols}">
+              <span class="text-muted me-2" th:text="#{main.release.review.day.nobooking.text}">Keine Buchung</span>
+            </td>
+          </tr>
+          <tr th:each="tr : ${day.timereports}" th:id="'tr-' + ${tr.id}">
+            <td th:replace="~{dailyreport/review-fragments :: orderCell(${tr})}"></td>
+            <td th:replace="~{dailyreport/review-fragments :: commentCell(${tr})}"></td>
+            <td class="text-end text-nowrap"><span class="badge bg-blue-lt" th:text="${@durationUtils.format(tr.duration)}">1:30</span></td>
+            <th:block th:if="${review.anyEditable}">
+              <td th:replace="~{dailyreport/review-fragments :: editCell(${review}, ${tr}, ${links.currentUrl + '#' + day.anchor}, ${dateText})}"></td>
+            </th:block>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</th:block>
+
+<td th:fragment="orderCell(tr)">
+  <div class="fw-medium" th:text="|${tr.completeOrderSign} · ${tr.suborderDescription}|">HBT/01 · Fortbildung</div>
+  <div class="text-muted small" th:text="|${tr.customerorderSign} · ${tr.customerShortname}|">HBT · HBT</div>
+</td>
+
+<!--/* Der Kommentar steht ungekuerzt und behaelt seine Zeilenumbrueche: an ihm erkennt man den
+       falschen Auftrag (#760). Ein leerer Kommentar ist selbst ein Hinweis und wird benannt. */-->
+<td th:fragment="commentCell(tr)" class="text-break">
+  <span th:unless="${#strings.isEmpty(tr.ticketReference)}" class="badge bg-secondary-lt me-1"
+        th:title="#{main.daily.timereport.ticketreference.title}" th:text="${tr.ticketReference}">PROJ-1</span>
+  <span th:if="${tr.training}" class="badge bg-purple-lt me-1" th:text="#{main.my.accounts.tab.training}">Fortbildung</span>
+  <span th:if="${tr.standby}" class="badge bg-orange-lt me-1" th:title="#{main.daily.standby.hint}">
+    <i class="ti ti-bell me-1" aria-hidden="true"></i><span th:text="#{main.release.review.standby.text}">Bereitschaft</span>
+  </span>
+  <span th:unless="${#strings.isEmpty(tr.taskdescription)}" style="white-space: pre-wrap" th:text="${tr.taskdescription}">Kommentar</span>
+  <span th:if="${#strings.isEmpty(tr.taskdescription)}" class="text-muted fst-italic" th:text="#{main.release.review.nocomment.text}">ohne Kommentar</span>
+</td>
+
+<td th:fragment="editCell(review, tr, back, dateText)" class="w-1">
+  <a th:if="${review.editableIds.contains(tr.id)}" class="btn btn-outline-primary btn-sm"
+     th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id},returnUrl=${back})}"
+     th:title="#{main.timereport.action.edit.tooltip}"
+     th:aria-label="#{main.release.review.edit.aria.text(${dateText}, ${tr.completeOrderSign})}">
+    <i class="ti ti-pencil m-0" aria-hidden="true"></i>
+  </a>
+</td>
+</body>
+</html>
