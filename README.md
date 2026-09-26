@@ -75,17 +75,17 @@ The endpoint sits behind the authenticated filter chain, so it needs a valid `lo
 become readable once a scraping registry (e.g. Prometheus) is added — the `/actuator/metrics`
 endpoint itself does not render them.
 
-Two things `local-qa` cannot fix, which matter a lot when you have imported a production
-data dump into your local MySQL:
+Two things outside the application profile, which matter a lot when you have imported a
+production data dump into your local MySQL:
 
-- **InnoDB buffer pool.** The `testdb` container runs `mysql:8` with defaults, i.e.
-  `innodb_buffer_pool_size=128M`, while production runs `536870912` (512 MB). With a
-  production-sized dataset the local default alone dominates every measurement. For
-  measurement runs, start the db container with the production value — **not more**, or local
-  becomes faster than production and the parity rule is broken:
-
-      # docker-compose-infra.yml, service db:
-      #   command: --lower_case_table_names=1 --innodb-buffer-pool-size=512M
+- **InnoDB buffer pool.** Production runs `innodb_buffer_pool_size=536870912` (512 MB). The
+  `db` service in `docker-compose-infra.yml` and `docker-compose.yml` starts the `testdb`
+  container with the same value (`--innodb-buffer-pool-size=512M`); the `mysql:8` default of
+  128 MB alone would dominate every measurement against a production-sized dataset. Keep it at
+  the production value — **not more**, or local becomes faster than production and the parity
+  rule is broken. A container created before this setting keeps its old command until it is
+  recreated (`docker compose -f docker-compose-infra.yml up -d db`); check with
+  `SELECT @@innodb_buffer_pool_size`.
 
 - **JVM warm-up.** The first requests measure JIT compilation, not the application. Discard
   them and repeat the request a dozen times before reading the percentiles.

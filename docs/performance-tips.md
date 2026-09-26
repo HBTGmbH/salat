@@ -142,8 +142,10 @@ Das ist die Ausnahme, nicht die Regel — je kleiner der erwartete Effekt, desto
 
 ## 8. Lokale Verfälschungsfaktoren
 
-* Der `testdb`-Container läuft mit `innodb_buffer_pool_size=128M` — bei ~485 MB
-  Produktionsdaten der größte lokale Störfaktor.
+* Der `testdb`-Container läuft wie die Produktion mit `innodb_buffer_pool_size=512M` (gesetzt
+  im `db`-Dienst beider Compose-Dateien). Mit dem `mysql:8`-Default von 128 MB wäre das bei
+  ~485 MB Produktionsdaten der größte lokale Störfaktor — ein älterer Container behält ihn, bis
+  er neu erzeugt wird; prüfen mit `SELECT @@innodb_buffer_pool_size`.
 * Ohne Profil `local-qa` fehlen Asset-Caching und Thymeleaf-Template-Cache, und der
   Autorisierungs-Cache läuft im Sekundentakt statt stündlich ab.
 * Die ersten Requests nach dem Start messen JIT-Compilation, nicht die Anwendung.
