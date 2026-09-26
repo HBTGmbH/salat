@@ -2,10 +2,17 @@ package org.tb.dailyreport.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.tb.common.exception.ErrorCode.TR_TICKET_REFERENCE_INVALID_LENGTH;
 import static org.tb.dailyreport.rest.DailyReportData.valueOf;
 
 import java.time.Duration;
@@ -19,9 +26,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.domain.Employee;
@@ -43,6 +53,9 @@ class DailyReportRestEndpointTest {
 
     @Mock
     TimereportService timereportService;
+
+    @Mock
+    DailyWorkingReportService dailyWorkingReportService;
 
     @Mock
     AuthorizedUser authorizedUser;
@@ -151,7 +164,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                false,1, 0, 1);
+                null, false,1, 0, 1);
     }
 
     @Test
@@ -186,7 +199,7 @@ class DailyReportRestEndpointTest {
         // then
         verify(timereportService, times(1)).createTimereports(
                 employeeContract.getId(), employeeOrder.getId(), day, "test",
-                false,1, 0, 1);
+                null, false,1, 0, 1);
     }
 
     @Test
@@ -234,17 +247,55 @@ class DailyReportRestEndpointTest {
         ));
 
         // then
-        verify(timereportService, times(1)).deleteTimeReports(day, 1L);
+        verify(dailyWorkingReportService, times(1)).replaceDailyReports(day, employeeOrder1, List.of(valueOf(timeReport1)));
+        verify(dailyWorkingReportService, times(1)).replaceDailyReports(day, employeeOrder2,
+                List.of(valueOf(timeReport2), valueOf(timeReport3)));
+    }
+
+    @Test
+    void shouldCreateBookingWithTicketReference() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var booking = valueOf(TimereportDTO.builder()
+                .employeeorderId(1L).referenceday(day)
+                .taskdescription("test").duration(Duration.ofHours(1))
+                .ticketReference("ERP-1")
+                .build());
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeeorderService.getEmployeeorderById(1L)).thenReturn(employeeOrder);
+
+        // when
+        dailyReportRestEndpoint.createBooking(booking);
+
+        // then
         verify(timereportService, times(1)).createTimereports(
-                employeeContract.getId(), employeeOrder1.getId(), day, "test1",
-                false,1, 0, 1);
-        verify(timereportService, times(1)).deleteTimeReports(day, 2L);
-        verify(timereportService, times(1)).createTimereports(
-                employeeContract.getId(), employeeOrder2.getId(), day, "test2",
-                false,1, 0, 1);
-        verify(timereportService, times(1)).createTimereports(
-                employeeContract.getId(), employeeOrder2.getId(), day, "test3",
-                false,1, 0, 1);
+                employeeOrder.getEmployeecontract().getId(), employeeOrder.getId(), day, "test",
+                "ERP-1", false, 1, 0, 1);
+    }
+
+    /* The length check sits in the service; over the API its rejection is the caller's error (#1140). */
+    @Test
+    void shouldAnswerATooLongTicketReferenceWithBadRequest() {
+        // given
+        var day = DateUtils.parse("2024-07-06");
+        var employeeOrder = employeeOrder(employeeContract(employee()));
+        var booking = valueOf(TimereportDTO.builder()
+                .employeeorderId(1L).referenceday(day)
+                .taskdescription("test").duration(Duration.ofHours(1))
+                .ticketReference("X".repeat(65))
+                .build());
+
+        when(authorizedUser.isAuthenticated()).thenReturn(true);
+        when(employeeorderService.getEmployeeorderById(1L)).thenReturn(employeeOrder);
+        doThrow(new InvalidDataException(TR_TICKET_REFERENCE_INVALID_LENGTH)).when(timereportService).createTimereports(
+                anyLong(), anyLong(), any(), any(), any(), anyBoolean(), anyLong(), anyLong(), anyInt());
+
+        // when
+        assertThatThrownBy(() -> dailyReportRestEndpoint.createBooking(booking))
+                .isInstanceOfSatisfying(ResponseStatusException.class, ex ->
+                        assertThat(ex.getStatusCode()).isEqualTo(BAD_REQUEST));
     }
 
     // fixtures

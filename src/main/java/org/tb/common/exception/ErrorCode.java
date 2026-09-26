@@ -91,6 +91,7 @@ public enum ErrorCode {
   TR_CSV_VALUE_FORMAT_INVALID("TR-0034", "a value of the uploaded CSV file matches none of the expected formats"),
   TR_CSV_LINE_NOT_READABLE("TR-0035", "a line of the uploaded CSV file could not be read"),
   TR_EMPLOYEE_CONTRACT_OTHER_EMPLOYEE("TR-0036", "a booking cannot move to another employee when it is edited"),
+  TR_CSV_VALUE_TOO_LONG("TR-0037", "a value of the uploaded CSV file exceeds the maximum length"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),

@@ -1,8 +1,8 @@
 package org.tb.dailyreport.rest;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.opencsv.bean.CsvBindByPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -68,6 +68,22 @@ public class DailyReportData {
     @Schema(description = "Kommentar oder Beschreibung der durchgeführten Arbeit", example = "ERP-3032 Implementierung der REST-API für Zeiterfassung")
     private String comment;
 
+    /**
+     * {@code null} is not the same as "no reference" (#1140): it is what a file without the column
+     * and a client that does not know the field send, and neither of them has changed a reference
+     * they never saw. {@link org.tb.dailyreport.service.DailyWorkingReportService} resolves it against
+     * the stored booking; an empty text is what says "no reference".
+     */
+    @CsvBindByPosition(position = 9)
+    @Schema(description = "Referenz auf ein Ticket, etwa ein JIRA-Schlüssel, höchstens "
+        + TICKET_REFERENCE_MAX_LENGTH + " Zeichen. Beim Lesen null, wenn die Buchung keine hat. "
+        + "Beim Schreiben heißt ein leerer Text \"keine Referenz\"; fehlt das Feld oder ist es null, behält "
+        + "eine vorhandene Buchung, die der übergebenen bis auf die Referenz gleicht, ihre Referenz.",
+        example = "ERP-3032",
+        maxLength = TICKET_REFERENCE_MAX_LENGTH,
+        nullable = true)
+    private String ticketReference;
+
     @Schema(description = "Gibt an, ob in dieser Zeit eine besondere Lernleistung ähnlich einer Schulung stattgefunden hat",
         example = "false",
         requiredMode = REQUIRED)
@@ -86,11 +102,16 @@ public class DailyReportData {
                 .minutes(timeReport.getDuration().toMinutesPart())
                 .suborderSign(timeReport.getCompleteOrderSign())
                 .orderSign(timeReport.getCustomerorderSign())
+                .ticketReference(timeReport.getTicketReference())
                 .build();
     }
 
     public DailyReportData withoutId(){
         return toBuilder().id(null).build();
+    }
+
+    public DailyReportData withTicketReference(String ticketReference) {
+        return toBuilder().ticketReference(ticketReference).build();
     }
 
 }

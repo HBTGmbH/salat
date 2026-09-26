@@ -7,10 +7,12 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.tb.common.exception.ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.TR_EMPLOYEE_ORDER_NOT_FOUND;
+import static org.tb.dailyreport.service.TimereportService.normalizeTicketReference;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -199,7 +201,7 @@ public class DailyWorkingReportService {
 
     private record WorkingDayResult(boolean created, boolean dataChanged, LocalTime startTime, LocalTime breakDuration) {}
 
-    private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> bookings, boolean upsert, long contractId) {
+    private BookingCounts doCreateDailyReports(LocalDate day, Long employeeOrderId, List<DailyReportData> incomingBookings, boolean upsert, long contractId) {
         var employeeOrder = employeeorderDAO.getEmployeeorderById(employeeOrderId);
         if (employeeOrder == null) {
             throw new InvalidDataException(TR_EMPLOYEE_ORDER_NOT_FOUND);
@@ -213,10 +215,10 @@ public class DailyWorkingReportService {
             throw new InvalidDataException(TR_EMPLOYEE_CONTRACT_NOT_FOUND);
         }
 
-        var existingBookings = timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId)
-                .stream().map(DailyReportData::valueOf).toList();
+        var existingBookings = storedBookings(day, employeeOrderId);
         var existingBookingsWithoutId = existingBookings
                 .stream().map(DailyReportData::withoutId).toList();
+        var bookings = withResolvedTicketReferences(incomingBookings, existingBookings);
 
         var newBookings = bookings.stream().filter(not(existingBookingsWithoutId::contains)).toList();
         var oldBookings = existingBookings.stream().filter(booking -> !bookings.contains(booking.withoutId())).toList();
@@ -237,8 +239,60 @@ public class DailyWorkingReportService {
         return new BookingCounts(pureCreated, pureDeleted, updatedDetails);
     }
 
+    /**
+     * Replaces the bookings of one employee order on one day with {@code bookings} — the
+     * {@code PUT /list} of the REST API. A booking that does not say anything about its ticket
+     * reference keeps the one stored for it, exactly as the import does (#1140).
+     */
+    public void replaceDailyReports(LocalDate day, Employeeorder employeeorder, List<DailyReportData> bookings) {
+        var employeeOrderId = requireNonNull(employeeorder.getId(), "ID of order is required");
+        var resolved = withResolvedTicketReferences(bookings, storedBookings(day, employeeOrderId));
+        timereportService.deleteTimeReports(day, employeeOrderId);
+        resolved.forEach(booking -> doCreateDailyReport(day, booking, employeeorder, employeeorder.getEmployeecontract()));
+    }
+
+    private List<DailyReportData> storedBookings(LocalDate day, long employeeOrderId) {
+        return timereportDAO.getTimereportsByDateAndEmployeeOrderId(day, employeeOrderId)
+                .stream().map(DailyReportData::valueOf).toList();
+    }
+
+    /**
+     * Settles what each incoming booking says about its ticket reference (#1140), so that it can be
+     * compared with the stored bookings of the same day and employee order by plain equality.
+     *
+     * <p>A given reference is normalized as in the booking form, an empty one means "no reference".
+     * A missing one ({@code null}: a file without the column, a client that does not know the field)
+     * says nothing about the reference, and dropping a stored one for that reason would lose it on
+     * every import of an older file. Such a booking therefore takes over the reference of a stored
+     * booking that equals it apart from the reference, preferring one not taken yet, so that two
+     * stored bookings differing only in their reference both keep theirs.
+     *
+     * <p>Where no stored booking matches, the booking is new or changed, and it stays without a
+     * reference: several bookings per order and day are normal, so which stored one a changed booking
+     * replaces cannot be told — the pairing in the import report is a display aid, not a decision.
+     */
+    private static List<DailyReportData> withResolvedTicketReferences(List<DailyReportData> bookings, List<DailyReportData> stored) {
+        var taken = new ArrayList<DailyReportData>();
+        var resolved = new ArrayList<DailyReportData>();
+        for (var booking : bookings) {
+            if (booking.getTicketReference() != null) {
+                resolved.add(booking.withTicketReference(normalizeTicketReference(booking.getTicketReference())));
+                continue;
+            }
+            var matching = stored.stream()
+                .filter(candidate -> candidate.withoutId().withTicketReference(null).equals(booking.withoutId()))
+                .toList();
+            var chosen = matching.stream().filter(not(taken::contains)).findFirst()
+                .or(() -> matching.stream().findFirst());
+            chosen.ifPresent(taken::add);
+            resolved.add(booking.withTicketReference(chosen.map(DailyReportData::getTicketReference).orElse(null)));
+        }
+        return resolved;
+    }
+
     private static ImportReport.BookingDetail toBookingDetail(DailyReportData b) {
-        return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment());
+        return new ImportReport.BookingDetail(b.getSuborderSign(), b.getSuborderLabel(), b.getHours(), b.getMinutes(), b.getComment(),
+            b.getTicketReference());
     }
 
     private record BookingCounts(List<ImportReport.BookingDetail> created, List<ImportReport.BookingDetail> deleted, List<ImportReport.UpdatedBookingDetail> updated) {
@@ -257,6 +311,7 @@ public class DailyWorkingReportService {
                 requireNonNull(employeeorder.getId(), "ID of order is required"),
                 day,
                 booking.getComment(),
+                booking.getTicketReference(),
                 booking.isTraining(),
                 booking.getHours(),
                 booking.getMinutes(),

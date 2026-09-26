@@ -41,6 +41,7 @@ import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.BusinessRuleException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.service.DailyWorkingReportService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.employee.domain.AuthorizedEmployee;
 import org.tb.employee.service.EmployeecontractService;
@@ -56,6 +57,7 @@ public class DailyReportRestEndpoint {
     private final EmployeecontractService employeecontractService;
     private final EmployeeorderService employeeorderService;
     private final TimereportService timereportService;
+    private final DailyWorkingReportService dailyWorkingReportService;
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
 
@@ -194,7 +196,7 @@ public class DailyReportRestEndpoint {
     @PutMapping(path = "/list", consumes = {APPLICATION_JSON_VALUE, TEXT_CSV_DAILY_REPORT_VALUE})
     @ResponseStatus(CREATED)
     @Operation(summary = "Aktualisiert mehrere Zeitbuchungen", 
-              description = "Aktualisiert mehrere Zeitbuchungen, gruppiert nach Datum und Mitarbeiterauftrag. Bestehende Buchungen für die gleiche Kombination aus Datum und Mitarbeiterauftrag werden gelöscht und durch die neuen ersetzt. Der Benutzer muss authentifiziert sein und Zugriffsrechte für die zugehörigen Mitarbeiteraufträge haben.",
+              description = "Aktualisiert mehrere Zeitbuchungen, gruppiert nach Datum und Mitarbeiterauftrag. Bestehende Buchungen für die gleiche Kombination aus Datum und Mitarbeiterauftrag werden gelöscht und durch die neuen ersetzt. Eine Buchung ohne ticketReference übernimmt die Referenz einer bestehenden Buchung, der sie bis auf die Referenz gleicht. Der Benutzer muss authentifiziert sein und Zugriffsrechte für die zugehörigen Mitarbeiteraufträge haben.",
               responses = {
                   @ApiResponse(responseCode = "201", description = "Zeitbuchungen erfolgreich aktualisiert"),
                   @ApiResponse(responseCode = "400", description = "Ungültige Daten oder Geschäftsregel verletzt"),
@@ -228,8 +230,7 @@ public class DailyReportRestEndpoint {
         if (employeeorder == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find employeeorder with id " + employeeOrderId);
         }
-        timereportService.deleteTimeReports(day, employeeOrderId);
-        bookings.forEach(booking -> doCreateDailyReport(booking, employeeorder));
+        dailyWorkingReportService.replaceDailyReports(day, employeeorder, bookings);
     }
 
     private void createDailyReport(DailyReportData booking) throws AuthorizationException, InvalidDataException, BusinessRuleException {
@@ -246,6 +247,7 @@ public class DailyReportRestEndpoint {
                 employeeorder.getId(),
                 DateUtils.parse(booking.getDate()),
                 booking.getComment(),
+                booking.getTicketReference(),
                 booking.isTraining(),
                 booking.getHours(),
                 booking.getMinutes(),
