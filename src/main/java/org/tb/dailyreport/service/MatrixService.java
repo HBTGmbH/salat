@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.LocalDateRange;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.MatrixData;
 import org.tb.dailyreport.domain.Publicholiday;
@@ -179,11 +180,22 @@ public class MatrixService {
      * The working days are loaded first because that is where the right to read the working days of
      * the contract is checked; only then are the booked days read.
      *
+     * <p>A month the contract does not reach ends the action before anything is read or checked:
+     * there is nothing to fill, and whoever may not fill the month gets no error then, as before
+     * #1124. In a month the contract reaches, the right is checked whether or not a day is left to
+     * fill. Before #1124 it was only checked at the first day without a booking the caller could
+     * see, so someone who could read every booking of a fully booked month, but not its working
+     * days, got the success message; now he gets {@code WD_READ_REQ_EMPLOYEE_OR_MANAGER}. That
+     * difference is intended: whether a caller is refused should not depend on what is booked.
+     *
      * <p>Booked days, working days and public holidays are loaded once for the whole month. A day
      * already marked as not worked is left as it is and not saved again.
      */
     public void fillNotWorked(YearMonth yearMonth, long employeeContractId) {
         var employeecontract = employeecontractService.getEmployeecontractById(employeeContractId);
+        if (!employeecontract.getValidity().overlaps(new LocalDateRange(yearMonth))) {
+            return;
+        }
         LocalDate first = yearMonth.atDay(1);
         LocalDate last = yearMonth.atEndOfMonth();
 

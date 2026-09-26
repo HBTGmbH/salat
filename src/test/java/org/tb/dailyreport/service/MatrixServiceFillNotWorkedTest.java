@@ -191,6 +191,20 @@ class MatrixServiceFillNotWorkedTest {
     assertThat(storedDays()).isEmpty();
   }
 
+  /**
+   * Reicht der Vertrag nicht in den Monat, gibt es nichts zu tun, und die Aktion endet, bevor sie
+   * ein Recht prüft — auch für jemanden, der den Monat nicht füllen dürfte. So war es vor #1124.
+   */
+  @Test
+  void asks_for_no_right_in_a_month_the_contract_does_not_reach() {
+    contract = contract(MONTH.plusMonths(1).atDay(1), null);
+    logInAs(signOf(contract(LocalDate.of(2000, 1, 1), null)));
+
+    fillNotWorked();
+
+    assertThat(storedDays()).isEmpty();
+  }
+
   /** Der vorhandene Satz wird umgeschrieben, kein zweiter angelegt. */
   @Test
   void turns_a_worked_day_without_booking_into_a_not_worked_one() {
