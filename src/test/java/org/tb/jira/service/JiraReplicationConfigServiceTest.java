@@ -515,9 +515,80 @@ class JiraReplicationConfigServiceTest {
     stored.setLastMaxUpdated(watermark);
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
 
-    classUnderTest.update(ID, withScope("  ALPHA  ", null));
+    classUnderTest.update(ID, withScope("ALPHA", null));
 
     assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
+  }
+
+  @Test
+  void an_order_whose_sign_begins_or_ends_with_a_space_is_stored_as_chosen() {
+    // the sign is an option value of the select, not typed text (#1171): trimmed, it names no
+    // order at all, and the replication could not be created for this scope
+    when(customerorderService.getCustomerorderBySign(" ALPHA ")).thenReturn(new Customerorder());
+    when(customerorderService.getCustomerorderBySign("ALPHA")).thenReturn(null);
+    when(suborderService.existsSuborderWithCompleteOrderSign("ALPHA")).thenReturn(false);
+
+    classUnderTest.create(withScope(" ALPHA ", "token"));
+
+    assertThat(saved().getScopeSign()).isEqualTo(" ALPHA ");
+  }
+
+  @Test
+  void a_suborder_whose_complete_sign_ends_with_a_space_is_stored_as_chosen() {
+    when(customerorderService.getCustomerorderBySign(any())).thenReturn(null);
+    when(suborderService.existsSuborderWithCompleteOrderSign(any())).thenReturn(false);
+    when(suborderService.existsSuborderWithCompleteOrderSign("ALPHA/01 ")).thenReturn(true);
+
+    classUnderTest.create(withScope("ALPHA/01 ", "token"));
+
+    assertThat(saved().getScopeSign()).isEqualTo("ALPHA/01 ");
+  }
+
+  @Test
+  void of_two_orders_that_differ_only_by_a_space_the_chosen_one_is_bound() {
+    // trimmed, " X" would silently become the other order "X"
+    when(customerorderService.getCustomerorderBySign("X")).thenReturn(new Customerorder());
+    when(customerorderService.getCustomerorderBySign(" X")).thenReturn(new Customerorder());
+
+    classUnderTest.create(withScope(" X", "token"));
+
+    assertThat(saved().getScopeSign()).isEqualTo(" X");
+  }
+
+  @Test
+  void a_scope_that_gains_a_space_is_another_scope_and_resets_the_watermark() {
+    var stored = existingConfig();
+    stored.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0));
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withScope("ALPHA ", null));
+
+    assertThat(saved().getScopeSign()).isEqualTo("ALPHA ");
+    assertThat(saved().getLastMaxUpdated()).isNull();
+  }
+
+  @Test
+  void a_second_worklog_sync_on_a_suborder_whose_sign_ends_with_a_space_is_refused() {
+    // trimmed, the new scope would be compared as "ALPHA/01" and miss the replication that already
+    // writes worklogs for exactly this suborder
+    givenSuborderScope("ALPHA/01 ", "ALPHA");
+    givenOtherReplication("ALPHA/01 ", "https://jira.example.com", true);
+
+    assertThatThrownBy(() -> classUnderTest.create(withWorklogSync("ALPHA/01 ", true, null)))
+        .isInstanceOf(InvalidDataException.class)
+        .extracting(ex -> firstCode((ErrorCodeException) ex))
+        .isEqualTo(ErrorCode.JI_REPLICATION_WORKLOG_SCOPE_OVERLAP);
+  }
+
+  @Test
+  void two_suborders_that_differ_only_by_a_space_are_not_an_overlap() {
+    givenSuborderScope("ALPHA/01", "ALPHA");
+    givenSuborderScope("ALPHA/01 ", "ALPHA");
+    givenOtherReplication("ALPHA/01", "https://jira.example.com", true);
+
+    classUnderTest.create(withWorklogSync("ALPHA/01 ", true, null));
+
+    assertThat(saved().getWorklogSyncEnabled()).isTrue();
   }
 
   @Test

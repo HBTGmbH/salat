@@ -269,9 +269,13 @@ public class JiraReplicationConfigService {
    * watermark in place the search would only ever find what JIRA has touched since. The tickets
    * already replicated stay where they are — under the old scope, no longer kept up to date, just as
    * they stay when the config is deleted. The field help says so.
+   *
+   * <p>Unlike the text fields, the scope is not trimmed (#1171). It is an option value of the order
+   * and suborder selects, hence exactly the sign of the record, and signs may begin or end with a
+   * space: trimmed, the scope names no record, or silently another one.
    */
   private void applyScope(JiraReplicationConfigData data, JiraReplicationConfig config) {
-    var scopeSign = data.scopeSign().trim();
+    var scopeSign = data.scopeSign();
     if (!Objects.equals(scopeSign, config.getScopeSign())) {
       log.info("Scope of JIRA replication {} changed from {} to {}, resetting the watermark so the "
           + "tickets of the new scope are fetched", config.getName(), config.getScopeSign(), scopeSign);
@@ -306,7 +310,7 @@ public class JiraReplicationConfigService {
     requireText(data.username(), JI_REPLICATION_USERNAME_REQUIRED);
     // The replication insists on a JQL query, so a config without one can only ever fail.
     requireText(data.jql(), JI_REPLICATION_JQL_REQUIRED);
-    checkScopeExists(data.scopeSign().trim());
+    checkScopeExists(data.scopeSign());
 
     var baseUrl = data.baseUrl().trim().toLowerCase();
     if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
@@ -332,7 +336,7 @@ public class JiraReplicationConfigService {
     if (!data.worklogSyncEnabled()) {
       return;
     }
-    var scopeSign = data.scopeSign().trim();
+    var scopeSign = data.scopeSign();
     var baseUrl = normalizedBaseUrl(data.baseUrl());
     var customerorderSign = customerorderSignOf(scopeSign);
     for (var other : configRepository.findAllByOrderByNameAsc()) {
