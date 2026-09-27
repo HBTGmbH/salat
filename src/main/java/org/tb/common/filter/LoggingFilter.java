@@ -23,6 +23,12 @@ import org.springframework.stereotype.Component;
 @Order(101)
 public class LoggingFilter extends HttpFilter {
 
+  /**
+   * Die Werte der {@link MdcDataSource}s, wie sie nach der Anfrage stehen. {@link RequestLogFilter}
+   * läuft außerhalb der Sicherheitskette und kennt den Nutzer dort nicht mehr.
+   */
+  public static final String MDC_DATA_ATTRIBUTE = LoggingFilter.class.getName() + ".mdcData";
+
   private final Set<MdcDataSource> mdcDataSources;
 
   @Override
@@ -32,17 +38,26 @@ public class LoggingFilter extends HttpFilter {
     MDC.put("request-uri", request.getRequestURI());
     MDC.put("request-method", request.getMethod());
     MDC.put("request-query-string", ofNullable(request.getQueryString()).orElse("<empty>"));
-    var data = mdcDataSources.stream()
-        .flatMap(ds -> ds.getData().entrySet().stream())
-        .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+    var data = collectMdcData();
     data.forEach(MDC::put);
 
-    super.doFilter(request, response, chain);
+    try {
+      super.doFilter(request, response, chain);
+    } finally {
+      data.keySet().forEach(MDC::remove);
+      MDC.remove("request-query-string");
+      MDC.remove("request-method");
+      MDC.remove("request-uri");
+      // Neu gelesen statt data: den Sichtwechsel lädt erst UiStateFilter aus dem Cookie, und die
+      // Anfrage selbst kann ihn ändern.
+      request.setAttribute(MDC_DATA_ATTRIBUTE, collectMdcData());
+    }
+  }
 
-    data.keySet().forEach(MDC::remove);
-    MDC.remove("request-query-string");
-    MDC.remove("request-method");
-    MDC.remove("request-uri");
+  private Map<String, String> collectMdcData() {
+    return mdcDataSources.stream()
+        .flatMap(ds -> ds.getData().entrySet().stream())
+        .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public interface MdcDataSource {
