@@ -1071,8 +1071,47 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 
 /* Auf der getoenten Flaeche kaeme der Bereich in Sekundaerfarbe hell nur auf 4,10:1; in der
    gewaehlten Zeile steht er deshalb in der Schriftfarbe. */
-.command-palette-option[aria-selected="true"] .command-palette-kind {
+.command-palette-option[aria-selected="true"] .command-palette-kind,
+.command-palette-option[aria-selected="true"] .command-palette-more {
   color: var(--tblr-body-color);
+}
+
+/* Ein Objekt vom Server (#1157) traegt rechts Hinweise wie "beendet · Vertrag seit …"; die duerfen
+   den Namen nicht verdraengen, deshalb werden sie gekuerzt statt die Zeile zu sprengen. */
+.command-palette-kind {
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Der Pfeil zu den weiteren Zielen eines Objekts - fuer Maus und Finger, was → fuer die Tastatur
+   ist. Er ist Text und steht in der Sekundaerfarbe wie der Bereich daneben. */
+.command-palette-more {
+  flex-shrink: 0;
+  padding: 0 .25rem;
+  color: var(--tblr-secondary);
+}
+
+/* Woher die Ziele eines Objekts kommen: Suche › Treffer, vor dem Eingabefeld. */
+.command-palette-crumb {
+  display: flex;
+  align-items: center;
+  gap: .375rem;
+  min-width: 0;
+  max-width: 60%;
+  white-space: nowrap;
+}
+
+.command-palette-crumb-object {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: var(--tblr-font-weight-medium);
+}
+
+.command-palette-back {
+  flex-shrink: 0;
+  margin: -.375rem 0 -.375rem -.5rem;
 }
 
 /* Der Teil, der zur Eingabe passt: dieselbe Hervorhebung wie in den Auswahlfeldern (TomSelect,

@@ -14,12 +14,17 @@
        und Einstellungsseite in der Kopfzeile, der Faltknopf der Sidebar). Hier stehen nur die
        Texte, die es auf der Seite sonst nicht gibt - die Woerter fuer die Tagesspruenge, die
        Gruppen und die Bedienhinweise. Heute ist der Tag des Servers, damit "gestern" denselben Tag
-       meint wie die Einzeluebersicht: die Seite bringt Uhrzeit und Zeitzone des Servers mit. */-->
+       meint wie die Einzeluebersicht: die Seite bringt Uhrzeit und Zeitzone des Servers mit.
+
+       Nur die Geschaeftsobjekte kommen vom Server (#1157, ADR-0031): data-search-url ist die
+       Objektsuche, deren Fragment salat.js unter die Treffer der Seite haengt. */-->
 <dialog th:fragment="commandPalette" id="commandPalette" class="command-palette p-0"
         aria-labelledby="commandPaletteTitle"
         th:with="now=${@serverTimeHelper.epochMillis}, zone=${@serverTimeHelper.timeZone}"
         th:data-now="${now}"
         th:data-time-zone="${zone}"
+        th:data-search-url="@{/palette/search}"
+        th:data-targets-more="#{main.palette.targets.more}"
         th:data-daily-url="@{/dailyreport/daily}"
         th:data-label-daily="#{main.general.mainmenu.daily.text}"
         th:data-kind-day="#{main.palette.kind.day}"
@@ -34,6 +39,17 @@
   <h2 class="visually-hidden" id="commandPaletteTitle" th:text="#{main.palette.title}">Befehlspalette</h2>
   <div class="command-palette-search">
     <i class="ti ti-search text-secondary" aria-hidden="true"></i>
+    <!--/* Die Ziele eines Objekts (#1157): die Zeile sagt, von welcher Suche und welchem Treffer sie
+           kommen; der Knopf fuehrt zurueck wie ←. */-->
+    <span class="command-palette-crumb" id="commandPaletteCrumb" hidden>
+      <button type="button" class="btn btn-ghost-secondary btn-icon command-palette-back" data-palette-back
+              th:aria-label="#{main.palette.targets.back}" th:title="#{main.palette.targets.back}">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>
+      </button>
+      <span class="text-secondary" data-part="query"></span>
+      <span class="text-secondary" aria-hidden="true">›</span>
+      <span class="command-palette-crumb-object" data-part="object"></span>
+    </span>
     <input type="text" class="command-palette-input" id="commandPaletteInput"
            role="combobox" aria-autocomplete="list" aria-expanded="true"
            aria-controls="commandPaletteList"
@@ -59,6 +75,7 @@
   <div class="command-palette-footer text-secondary small" aria-hidden="true">
     <span><kbd>↑</kbd> <kbd>↓</kbd> <span th:text="#{main.palette.hint.select}">auswählen</span></span>
     <span><kbd>↵</kbd> <span th:text="#{main.palette.hint.run}">ausführen</span></span>
+    <span><kbd>→</kbd> <span th:text="#{main.palette.hint.targets}">Ziele</span></span>
     <span><kbd>Esc</kbd> <span th:text="#{main.palette.hint.close}">schließen</span></span>
   </div>
 </dialog>

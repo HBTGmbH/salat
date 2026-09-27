@@ -13,6 +13,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
@@ -21,6 +22,8 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
+import org.tb.common.palette.PaletteQuery;
+import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.customer.event.CustomerDeleteEvent;
 import org.tb.customer.persistence.CustomerDAO;
@@ -29,6 +32,7 @@ import org.tb.employee.persistence.EmployeeDAO;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.Customerorder;
 import org.tb.order.domain.CustomerorderDTO;
+import org.tb.order.domain.CustomerorderSearchRow;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.persistence.CustomerorderDAO;
@@ -46,6 +50,17 @@ public class CustomerorderService {
   private final CustomerDAO customerDAO;
   private final EmployeeDAO employeeDAO;
   private final CustomerorderRepository customerorderRepository;
+
+  /**
+   * The orders the command palette considers for a query (#1157), hidden and ended ones last. There
+   * is no rule per order: whoever is not restricted sees every order on the list pages, so no filter
+   * applies here beyond the query — the palette's provider keeps restricted users out.
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerorderSearchRow> getPaletteCandidates(PaletteQuery query) {
+    return customerorderRepository.findPaletteCandidates(query.likeWord(0), query.likeWord(1),
+        query.likeWord(2), DateUtils.today(), PageRequest.of(0, PaletteQuery.CANDIDATE_LIMIT));
+  }
 
   public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final LocalDate date) {
     return customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeeContractId, date);

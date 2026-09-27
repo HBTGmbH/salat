@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.tb.budget.domain.BudgetPlanPresence;
 import org.tb.budget.domain.OrderBudget;
 
 @Repository
@@ -46,6 +47,20 @@ public interface OrderBudgetRepository
     List<OrderBudget> findAllActiveWithAdjustmentsBySigns(@Param("signs") Collection<String> signs);
 
     List<OrderBudget> findByActiveAndAlertThresholdPercentIsNotNull(Boolean active);
+
+    /**
+     * The given customer orders that have plans at all, each with whether one of them is active —
+     * one grouped query for the targets of the command palette (#1157). Callers must not pass an
+     * empty collection.
+     */
+    @Query("""
+        SELECT new org.tb.budget.domain.BudgetPlanPresence(b.customerorderSign,
+            max(case when b.active = true then 1 else 0 end))
+        FROM OrderBudget b
+        WHERE b.customerorderSign IN :signs
+        GROUP BY b.customerorderSign
+        """)
+    List<BudgetPlanPresence> findPlanPresenceBySigns(@Param("signs") Collection<String> signs);
 
     /**
      * The customer orders that have at least one active plan — the only orders a backfill run
