@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Seitenformat, Kopf und Fuss eines Ausdrucks (#1147, #1148): A4 quer, oben Logo, Titel und eine
+       Angabe dazu, unten der Stand mit Uhrzeit und "Seite X von Y". Chrome und Edge ersetzen damit
+       Datum, Seitentitel und URL, die sie sonst selbst in den Rand drucken - aber nur zusammen: ohne
+       eigenes Feld unten druckt Chrome dort weiter seine eigene Fusszeile.
+
+       Die Werte gehoeren in CSS-Zeichenketten, also in Anfuehrungszeichen. Ohne sie schreibt
+       Thymeleaf einen Ausdruck als CSS-Bezeichner ("September\ 2026"), und Chrome verwirft das
+       Randfeld ohne Meldung.
+
+       Logo und Text stehen in getrennten Feldern, weil der Text in einem gemeinsamen Feld auf der
+       Unterkante des Bildes saesse. Das Logo ist Inhalt und kein Hintergrund - Hintergrundgrafiken
+       laesst der Druckdialog in der Voreinstellung weg -, und es hat die vierfache Aufloesung der
+       Groesse, in der es erscheint: die 32 Pixel der Navigationsleiste drucken verpixelt.
+
+       Firefox und Safari stellen die Randfelder nicht dar; was ein Ausdruck unbedingt sagen muss,
+       steht deshalb zusaetzlich im Dokument selbst. */-->
+<style th:fragment="page(title, detail, asOf)" th:inline="css">
+  @page {
+    size: A4 landscape;
+    margin: 15mm 8mm 12mm;
+    @top-left {
+      content: image-set(url("[[@{/images/logo-salat-print.png}]]") 4x);
+    }
+    @top-center {
+      content: "[[${title}]]";
+      font: 600 9pt var(--tblr-font-sans-serif);
+    }
+    @top-right {
+      content: "[[${detail}]]";
+      font: 8pt var(--tblr-font-sans-serif);
+    }
+    @bottom-left {
+      content: "[[#{main.general.print.asof(${asOf})}]]";
+      font: 8pt var(--tblr-font-sans-serif);
+    }
+    @bottom-right {
+      content: "[[#{main.general.print.page}]] " counter(page) " [[#{main.general.print.of}]] " counter(pages);
+      font: 8pt var(--tblr-font-sans-serif);
+    }
+  }
+</style>
+
+</body>
+</html>

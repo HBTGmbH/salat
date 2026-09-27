@@ -23,6 +23,7 @@ import org.tb.dailyreport.domain.TimereportFilterOptions.EmployeeOption;
 import org.tb.dailyreport.domain.TimereportFilterOptions.OrderOption;
 import org.tb.dailyreport.domain.TimereportFilterOptions.SuborderOption;
 import org.tb.dailyreport.domain.TimereportFilterOptions.TicketOption;
+import org.tb.dailyreport.domain.TimereportFilterSummary;
 import org.tb.dailyreport.domain.TimereportListFilter;
 import org.tb.dailyreport.domain.TimereportListResult;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -145,6 +146,45 @@ public class TimereportListService {
         selectedSuborders.stream().map(TimereportListService::toOption).toList(),
         List.copyOf(selectedTicketKeys),
         includedSuborderCount(selectedOrders, selectedSuborders));
+  }
+
+  /**
+   * What the filter names, with names instead of ids — the block a printout of the list starts with (#1147).
+   *
+   * <p>The ids come from the request, so they are not taken on trust. An employee is named only if the user may see
+   * bookings of that person, by the same rule that fills the select box; otherwise a hand-written URL would read
+   * names out one id at a time. Whoever is left out has no hit in the list either, because the search runs under that
+   * very visibility. Customers, orders and suborders are master data every unrestricted user reads anyway.
+   */
+  public TimereportFilterSummary describe(TimereportListFilter filter) {
+    var orders = customerorderService.getCustomerordersByIds(filter.customerOrderIds());
+    var suborders = suborderService.getSubordersByIds(filter.suborderIds());
+    return new TimereportFilterSummary(
+        visibleEmployees(filter.employeeIds()).stream()
+            .sorted(Comparator.comparing(Employee::getName))
+            .map(employee -> new EmployeeOption(employee.getId(), employee.getName(), employee.getSign()))
+            .toList(),
+        filter.customerIds().stream()
+            .map(customerService::getCustomerEntityById)
+            .filter(java.util.Objects::nonNull)
+            .sorted(Comparator.comparing(Customer::getShortname))
+            .map(customer -> new CustomerOption(customer.getId(), customer.getShortname(), customer.getName()))
+            .toList(),
+        orders.stream().sorted(Comparator.comparing(Customerorder::getSign)).map(this::toOption).toList(),
+        suborders.stream().sorted(Comparator.comparing(Suborder::getCompleteOrderSign))
+            .map(TimereportListService::toOption).toList(),
+        includedSuborderCount(orders, suborders),
+        List.copyOf(filter.ticketKeys()),
+        filter.ticketDescendants());
+  }
+
+  private List<Employee> visibleEmployees(List<Long> employeeIds) {
+    if (employeeIds.isEmpty()) return List.of();
+    var visibility = visibilityService.anyTime();
+    if (visibility.isEmpty()) return List.of();
+    if (visibility.unrestricted()) return employeeService.getEmployeesByIds(employeeIds);
+    var visible = new HashSet<>(timereportListDAO.findFilterValues(visibility).employeeIds());
+    return employeeService.getEmployeesByIds(employeeIds.stream().filter(visible::contains).toList());
   }
 
   /**
