@@ -45,7 +45,7 @@ import org.tb.employee.persistence.EmployeecontractRepository;
 public class PersonSearchService {
 
   /** How many persons are checked and passed on; the palette shows the best of them. */
-  private static final int PERSONS_CHECKED = 2 * PaletteQuery.HITS_PER_KIND;
+  static final int PERSONS_CHECKED = 2 * PaletteQuery.HITS_PER_KIND;
 
   private final EmployeecontractRepository employeecontractRepository;
   private final EmployeeDAO employeeDAO;
@@ -67,8 +67,8 @@ public class PersonSearchService {
     var kept = representatives.values().stream()
         .sorted(Comparator.comparing((PersonSearchRow row) -> hidden(row))
             .thenComparing(row -> Validity.isInactive(row.validUntil()))
-            .thenComparing(Comparator.comparingInt((PersonSearchRow row) -> query.match(name(row), row.sign(),
-                row.lastname())).reversed()))
+            .thenComparing(Comparator.comparingInt((PersonSearchRow row) -> query.matchWithKey(row.sign(),
+                name(row), row.lastname())).reversed()))
         .limit(PERSONS_CHECKED)
         .toList();
     if (kept.isEmpty()) {

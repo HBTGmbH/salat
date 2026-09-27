@@ -48,23 +48,98 @@ class CommandPaletteObjectsE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
-   * "con" is a page of the sidebar ("Controlling") and several objects. The page's hits are there at
-   * once and one of them is selected; the objects arriving later go below and leave it selected.
+   * "de" is several hits of the page ("Dunkles Design", "Kundensegmente", …) and the suborder
+   * ALPHA-DEV. The page's hits are there at once; the answer is held back until the second of them
+   * is selected, and the objects arriving then go below and leave it selected — the first row would
+   * be selected after a reset as well.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void arriving_objects_do_not_move_the_selected_row(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
+      page.evaluate("() => { const fetchNow = window.fetch; let release;"
+          + " const held = new Promise(resolve => release = resolve); window.releaseObjects = release;"
+          + " window.fetch = (url, options) => String(url).includes('/palette/search')"
+          + "   ? held.then(() => fetchNow(url, options)) : fetchNow(url, options); }");
       page.keyboard().press(SHORTCUT);
-      input(page).fill("con");
+      input(page).fill("de");
+      assertThat(options(page).nth(1)).isVisible();
+      page.keyboard().press("ArrowDown");
       Locator selected = page.locator("#commandPaletteList [aria-selected=true]");
+      assertThat(selected).hasAttribute("data-index", "1");
       String before = selected.getAttribute("data-command-key");
-      assertEquals("nav", selected.getAttribute("data-command-type"));
 
-      assertThat(option(page, "CUSTOMERORDER:" + ORDER)).isVisible();
+      page.evaluate("() => window.releaseObjects()");
+      assertThat(page.locator("#commandPaletteList [data-command-type=object]")
+          .filter(new Locator.FilterOptions().setHasText(E2ETestData.SUBORDER_ALPHA_DEV_SIGN)).first()).isVisible();
 
-      assertEquals(before, selected.getAttribute("data-command-key"));
+      assertThat(selected).hasAttribute("data-command-key", before);
       assertEquals(input(page).getAttribute("aria-activedescendant"), selected.getAttribute("id"));
+    });
+  }
+
+  /**
+   * An object of the last answer is selected while the next one is on its way, and that one fails:
+   * the objects go, and the selection falls back to the first hit of the page instead of to none.
+   * The trailing space makes it a new query the old objects still match.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_selected_object_gone_with_a_failed_answer_leaves_the_first_hit_selected(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
+      page.keyboard().press(SHORTCUT);
+      input(page).fill("de");
+      Locator objects = page.locator("#commandPaletteList [data-command-type=object]");
+      assertThat(objects.first()).isVisible();
+      page.evaluate("() => { const fetchNow = window.fetch; let fail;"
+          + " const failed = new Promise((resolve, reject) => fail = reject);"
+          + " window.failObjects = () => fail(new TypeError('offline'));"
+          + " window.fetch = (url, options) => String(url).includes('/palette/search')"
+          + "   ? failed : fetchNow(url, options); }");
+
+      input(page).fill("de ");
+      Locator selected = page.locator("#commandPaletteList [aria-selected=true]");
+      for (var i = 0; i < 10 && !"object".equals(selected.getAttribute("data-command-type")); i++) {
+        page.keyboard().press("ArrowDown");
+      }
+      assertThat(selected).hasAttribute("data-command-type", "object");
+
+      page.evaluate("() => window.failObjects()");
+
+      assertThat(objects).hasCount(0);
+      assertThat(selected).hasAttribute("data-index", "0");
+      assertEquals(selected.getAttribute("id"), input(page).getAttribute("aria-activedescendant"));
+    });
+  }
+
+  /**
+   * A held key goes into the targets or out of them once. Held to empty the filter, Backspace stays
+   * in the targets; held to leave them, it does not go on deleting the query that was put back.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_held_key_changes_between_hits_and_targets_only_once(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
+      page.keyboard().press(SHORTCUT);
+      input(page).fill("contoso");
+      assertThat(option(page, "CUSTOMERORDER:" + ORDER)).hasAttribute("aria-selected", "true");
+      page.keyboard().press("ArrowRight");
+      page.keyboard().type("co");
+
+      // a second keyboard().down() of the same key is a repeat, as a held key sends it
+      for (var i = 0; i < 4; i++) {
+        page.keyboard().down("Backspace");
+      }
+      page.keyboard().up("Backspace");
+      assertThat(input(page)).hasValue("");
+      assertThat(page.locator("#commandPaletteCrumb")).isVisible();
+
+      for (var i = 0; i < 4; i++) {
+        page.keyboard().down("Backspace");
+      }
+      page.keyboard().up("Backspace");
+      assertThat(page.locator("#commandPaletteCrumb")).isHidden();
+      assertThat(input(page)).hasValue("contoso");
     });
   }
 

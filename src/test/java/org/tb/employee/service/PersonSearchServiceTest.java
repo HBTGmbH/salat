@@ -149,6 +149,27 @@ class PersonSearchServiceTest {
         .containsExactly(tuple(supervised.getId(), false));
   }
 
+  /**
+   * The limits of the query and of the persons checked count readable rows only, because the query
+   * decides the visibility itself. More unreadable names than both limits, all sorting before the
+   * own one, must not push it out; the check afterwards could not bring it back.
+   */
+  @Test
+  void persons_the_user_may_not_read_do_not_count_for_the_limits() {
+    var lead = person("ppp", "Person", "Muster-Z", false);
+    running(lead);
+    for (var i = 0; i < PaletteQuery.CANDIDATE_LIMIT + 1; i++) {
+      running(person(String.format("a%02d", i), "Person", String.format("Muster-A%02d", i), false));
+    }
+    running(person("zzz", "Person", "Muster-ZZ", false), lead);
+
+    loginAsEmployee("ppp");
+    assertThat(signsFound("muster")).containsExactly("ppp");
+
+    loginAsPeopleLead("ppp");
+    assertThat(signsFound("muster")).containsExactlyInAnyOrder("ppp", "zzz");
+  }
+
   @Test
   void a_restricted_user_finds_only_themselves() {
     var self = person("rrr");
@@ -229,6 +250,21 @@ class PersonSearchServiceTest {
     namedPersons();
 
     assertThat(signsFound("tbb")).containsExactly("tbb");
+  }
+
+  /**
+   * A short sign is the beginning of many names, and those names begin like the title. Its owner
+   * comes first all the same, and is among the persons checked at all.
+   */
+  @Test
+  void the_owner_of_a_sign_comes_before_every_name_beginning_with_it() {
+    for (var i = 0; i < PersonSearchService.PERSONS_CHECKED + 2; i++) {
+      running(person("x" + (char) ('a' + i), "Kristin", "Muster-" + i, false));
+    }
+    running(person("kr", "Anna", "Zander", false));
+    loginAsManager();
+
+    assertThat(signsFound("kr")).first().isEqualTo("kr");
   }
 
   @Test

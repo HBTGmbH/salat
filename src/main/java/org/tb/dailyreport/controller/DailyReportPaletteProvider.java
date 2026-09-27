@@ -10,7 +10,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.stereotype.Component;
-import org.tb.common.exception.AuthorizationException;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
 import org.tb.common.palette.PaletteLink;
@@ -88,7 +87,7 @@ public class DailyReportPaletteProvider implements PaletteProvider {
   private Map<String, List<PaletteTarget>> viewTargets(List<PaletteHit> hits) {
     var targets = new HashMap<String, List<PaletteTarget>>();
     for (var hit : hits) {
-      if (readable(Long.parseLong(hit.key())).isPresent()) {
+      if (employeecontractService.getReadableEmployeecontract(Long.parseLong(hit.key())).isPresent()) {
         targets.put(hit.key(), List.of(
             new PaletteTarget(PaletteText.of("main.palette.target.person.daily"),
                 PaletteLink.to("/dailyreport/daily").param("fEmployeeContractId", hit.key()).build(), 10),
@@ -102,7 +101,7 @@ public class DailyReportPaletteProvider implements PaletteProvider {
   private Optional<Employeecontract> selectedContract() {
     var selected = uiState.getLongValue(DailyReportUiStateKeyContributor.EMPLOYEE_CONTRACT_ID);
     if (selected != null && selected > 0) {
-      var readable = readable(selected);
+      var readable = employeecontractService.getReadableEmployeecontract(selected);
       if (readable.isPresent()) {
         return readable;
       }
@@ -115,14 +114,6 @@ public class DailyReportPaletteProvider implements PaletteProvider {
       return employeecontractService.getCurrentContract(employeeId);
     } catch (IncorrectResultSizeDataAccessException e) {
       // no running contract and more than one to come: the form would not know either
-      return Optional.empty();
-    }
-  }
-
-  private Optional<Employeecontract> readable(long contractId) {
-    try {
-      return Optional.ofNullable(employeecontractService.getEmployeecontractForView(contractId));
-    } catch (AuthorizationException e) {
       return Optional.empty();
     }
   }

@@ -77,7 +77,12 @@ Daraus folgen die Regeln, nach denen `PaletteSearchService` die Beiträge zusamm
   deshalb der Anbieter — mit denselben Klassen, die die Zielseite fragt (`EmployeecontractAuthorization`,
   `BudgetAuthorization`, `TimereportAuthorization`), nicht mit einer Kopie ihrer Regeln.
 * Ein Anbieter, dessen Entscheidung in einer `AuthorizationException` endet, trägt nichts bei; sie
-  beantwortete sonst die ganze Suche mit 403.
+  beantwortete sonst die ganze Suche mit 403. Das trägt nur, weil die Suche ihre eine, lesende
+  Transaktion **immer zurückrollt**: eine Ausnahme, die einen Service verlässt, setzt die umgebende
+  auf Rollback, auch wenn sie danach gefangen wird, und ein Commit beantwortete die Suche mit 500.
+  Ohne eigene Transaktion öffnete jeder Service-Aufruf eine, und die Suche dauerte 10 bis 24 ms
+  länger (gemessen, PR zu #1157). Wer „nicht lesbar" übergehen will, fragt trotzdem nicht werfend
+  (`EmployeecontractService#getReadableEmployeecontract`).
 
 Die Suche selbst: je Art eine JPQL-Abfrage mit Konstruktor-Projektion auf einen Record
 (ADR-0021), `lower(spalte) like :wort escape '!'` für bis zu drei Wörter, die alle vorkommen müssen,

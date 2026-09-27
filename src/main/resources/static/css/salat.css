@@ -1088,8 +1088,24 @@ body:not(.salat-confirm-ready) button[data-confirm] {
    ist. Er ist Text und steht in der Sekundaerfarbe wie der Bereich daneben. */
 .command-palette-more {
   flex-shrink: 0;
-  padding: 0 .25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 24 x 24 px Trefferflaeche (WCAG 2.5.8); ein knapper Fehlgriff traefe die Zeile und oeffnete
+     das erste Ziel. Die negativen Raender halten die Zeilenhoehe. */
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  margin: -.125rem -.25rem;
   color: var(--tblr-secondary);
+}
+
+/* Fuer den Finger reicht der Pfeil ueber die ganze Zeilenhoehe bis an ihren rechten Rand. */
+@media (pointer: coarse) {
+  .command-palette-more {
+    min-width: 2.75rem;
+    min-height: 2.25rem;
+    margin: -.5rem -1rem -.5rem 0;
+  }
 }
 
 /* ohne Hinweis rechts steht der Pfeil trotzdem am rechten Rand */
@@ -1105,6 +1121,15 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   min-width: 0;
   max-width: 60%;
   white-space: nowrap;
+}
+
+/* Die Suche weicht dem Treffer: nur er sagt, wessen Ziele darunter stehen. Ohne min-width
+   schrumpfte sie nie, ein langer Suchtext drueckte den Treffer auf null und lief ueber das Feld. */
+.command-palette-crumb-query {
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .command-palette-crumb-object {
