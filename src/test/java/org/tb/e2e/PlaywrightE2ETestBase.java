@@ -9,6 +9,8 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
@@ -132,6 +134,11 @@ public abstract class PlaywrightE2ETestBase {
 
   private Playwright playwright;
 
+  // one browser per E2EBrowser and class, launched on first use: without -De2e.browsers a class
+  // runs both browsers, and launching one per test cost Firefox about 2 s each (#1169); every test
+  // still gets a fresh BrowserContext, which shares no cookies, storage or cache with another
+  private final Map<E2EBrowser, Browser> launchedBrowsers = new EnumMap<>(E2EBrowser.class);
+
   @BeforeAll
   void startPlaywrightAndSeedData() {
     when(mailSender.createMimeMessage()).thenReturn(new JavaMailSenderImpl().createMimeMessage());
@@ -146,6 +153,8 @@ public abstract class PlaywrightE2ETestBase {
 
   @AfterAll
   void stopPlaywright() {
+    launchedBrowsers.values().forEach(Browser::close);
+    launchedBrowsers.clear();
     playwright.close();
   }
 
@@ -155,7 +164,7 @@ public abstract class PlaywrightE2ETestBase {
   }
 
   /**
-   * Launches the given browser, logs in as {@code employeeSign} by navigating to
+   * Opens a fresh context in the given browser, logs in as {@code employeeSign} by navigating to
    * {@code startPath} with {@code ?login-name=...}, and runs {@code testBody} against the
    * resulting page. Every subsequent {@code page.navigate(...)} call in the test body should
    * keep appending {@code login-name} (see {@link #urlFor}) rather than relying solely on the
@@ -192,8 +201,8 @@ public abstract class PlaywrightE2ETestBase {
 
   private void runInContext(E2EBrowser browser, String employeeSign, String startPath,
       Browser.NewContextOptions contextOptions, Consumer<Page> testBody) {
-    try (Browser b = browser.launch(playwright)) {
-      BrowserContext context = b.newContext(contextOptions);
+    Browser b = launchedBrowsers.computeIfAbsent(browser, it -> it.launch(playwright));
+    try (BrowserContext context = b.newContext(contextOptions)) {
       Page page = context.newPage();
       page.navigate(urlFor(startPath, employeeSign));
       testBody.accept(page);
