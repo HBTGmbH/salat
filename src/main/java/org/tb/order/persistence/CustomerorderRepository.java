@@ -1,8 +1,10 @@
 package org.tb.order.persistence;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -10,6 +12,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import org.tb.employee.domain.Employee;
 import org.tb.order.domain.Customerorder;
+import org.tb.order.domain.CustomerorderSearchRow;
 
 @Repository
 public interface CustomerorderRepository extends PagingAndSortingRepository<Customerorder, Long>,
@@ -80,5 +83,35 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
       order by c.sign
   """)
   List<Customerorder> findAllInvoiceable();
+
+  /**
+   * Candidates for the object search of the command palette (#1157): every order whose sign,
+   * descriptions or customer contain each of the words — hidden and ended ones included, because
+   * the palette shows them, ranked lower and marked. A missing word is {@code null} and no condition.
+   *
+   * <p>The order puts hidden orders and ended ones last, so that the limit cuts those first. It is an
+   * order, not a filter; whether a row counts as hidden or ended is decided in Java again, by
+   * {@link org.tb.common.Hiding} and {@link org.tb.common.Validity} — {@code hide = true} is false
+   * for {@code null}, and an open end is never before today.
+   */
+  @Query("""
+      select new org.tb.order.domain.CustomerorderSearchRow(c.id, c.sign, c.shortdescription,
+          c.description, cu.id, cu.shortname, cu.name, c.hide, c.untilDate)
+      from Customerorder c join c.customer cu
+      where (lower(c.sign) like :word1 escape '!' or lower(c.shortdescription) like :word1 escape '!'
+          or lower(c.description) like :word1 escape '!' or lower(cu.shortname) like :word1 escape '!'
+          or lower(cu.name) like :word1 escape '!')
+      and (:word2 is null or lower(c.sign) like :word2 escape '!'
+          or lower(c.shortdescription) like :word2 escape '!' or lower(c.description) like :word2 escape '!'
+          or lower(cu.shortname) like :word2 escape '!' or lower(cu.name) like :word2 escape '!')
+      and (:word3 is null or lower(c.sign) like :word3 escape '!'
+          or lower(c.shortdescription) like :word3 escape '!' or lower(c.description) like :word3 escape '!'
+          or lower(cu.shortname) like :word3 escape '!' or lower(cu.name) like :word3 escape '!')
+      order by case when c.hide = true then 1 else 0 end,
+          case when c.untilDate < :today then 1 else 0 end,
+          c.sign
+      """)
+  List<CustomerorderSearchRow> findPaletteCandidates(String word1, String word2, String word3,
+      LocalDate today, Pageable page);
 
 }

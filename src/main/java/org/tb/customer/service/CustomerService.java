@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
@@ -23,8 +24,10 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
+import org.tb.common.palette.PaletteQuery;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.domain.CustomerDTO;
+import org.tb.customer.domain.CustomerSearchRow;
 import org.tb.customer.event.CustomerDeleteEvent;
 import org.tb.customer.persistence.CustomerDAO;
 import org.tb.customer.persistence.CustomerRepository;
@@ -42,6 +45,17 @@ public class CustomerService {
   private final CustomerSegmentRepository customerSegmentRepository;
   private final AuthorizedUser authorizedUser;
   private final CustomerDAO customerDAO;
+
+  /**
+   * The customers the command palette considers for a query (#1157), hidden ones last. Whoever is
+   * not restricted sees every customer on the list page; the palette's provider keeps restricted
+   * users out.
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerSearchRow> getPaletteCandidates(PaletteQuery query) {
+    return customerRepository.findPaletteCandidates(query.likeWord(0), query.likeWord(1),
+        query.likeWord(2), PageRequest.of(0, PaletteQuery.CANDIDATE_LIMIT));
+  }
 
   @Transactional(readOnly = true)
   public List<CustomerDTO> getAllCustomerDTOsByFilter(String filter, boolean showHidden) {

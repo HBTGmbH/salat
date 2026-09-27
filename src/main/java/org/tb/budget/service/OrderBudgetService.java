@@ -3,12 +3,15 @@ package org.tb.budget.service;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.domain.BudgetLevel;
+import org.tb.budget.domain.BudgetPlanPresence;
 import org.tb.budget.domain.BudgetScope;
 import org.tb.budget.domain.OrderBudget;
 import org.tb.budget.domain.OrderBudgetAdjustment;
@@ -54,6 +57,24 @@ public class OrderBudgetService {
     @Transactional(readOnly = true)
     public List<OrderBudget> getAllActive() {
         return orderBudgetRepository.findAllActiveWithAdjustments();
+    }
+
+    /**
+     * Which of the given customer orders have plans, each with whether an active one is among them
+     * — the target "Budget" of the command palette (#1157) opens the list of plans, the inactive ones
+     * included where no active one exists. Orders whose plans the current user may not see are left
+     * out, like orders without any plan.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Boolean> getPlanPresence(Collection<String> customerorderSigns) {
+        var visible = customerorderSigns.stream()
+            .filter(budgetAuthorization::isAuthorizedForCustomerorder)
+            .toList();
+        if (visible.isEmpty()) {
+            return Map.of();
+        }
+        return orderBudgetRepository.findPlanPresenceBySigns(visible).stream()
+            .collect(Collectors.toMap(BudgetPlanPresence::customerorderSign, BudgetPlanPresence::hasActivePlan));
     }
 
     /** All plans the current user may see, ordered like {@link #getAll()}. */

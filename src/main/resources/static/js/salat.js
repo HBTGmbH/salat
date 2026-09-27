@@ -820,7 +820,9 @@ focusEntryField();
  *   data-palette-label-pressed          the label while the control is aria-pressed
  *
  * Day jumps into the daily view are read in the browser, against the server's today carried by
- * the dialog (see paletteToday). Neither opening the palette nor any hit it shows sends a request.
+ * the dialog (see paletteToday). Neither opening the palette nor any of these hits sends a request;
+ * only the business objects — orders, suborders, customers, persons — come from the server (#1157,
+ * see "Objects from the server" below), and every module decides there what the user may see.
  * -------------------------------------------------------------------------- */
 
 const PALETTE_RECENT_KEY = 'salat-command-palette-recent';
@@ -843,7 +845,16 @@ const PALETTE_TIER_SECTION = 0.5;
 // wiredDialog is kept here and not as an attribute: the history cache of htmx restores the page
 // from a copy of its markup, and a copied attribute would claim listeners the new dialog lacks
 const paletteState = { origin: null, commands: [], items: [], active: -1, wiredDialog: null,
-  clockSkew: null, pressedOnBackdrop: false };
+  clockSkew: null, pressedOnBackdrop: false,
+  // the object search (#1157): items before localCount are the page's own, the rest came from the
+  // server; token discards an answer overtaken by the next keystroke; objects is the last answer
+  localCount: 0, objectToken: 0, objectTimer: null, objects: null,
+  // the targets of one object, opened with → ({ item, query })
+  drill: null };
+
+// the object search asks the server from two characters on, once the typing pauses (#1157)
+const PALETTE_OBJECT_MIN_LENGTH = 2;
+const PALETTE_OBJECT_DELAY = 150;
 
 /**
  * Lower case without diacritics, so that "ubersicht" finds "Übersicht". The map leads every
@@ -1202,7 +1213,7 @@ function paletteHighlight(target, text, ranges) {
   if (at < text.length) target.append(text.slice(at));
 }
 
-function paletteOption(hit, index) {
+function paletteOption(hit, index, dialog) {
   const option = document.createElement('div');
   option.className = 'command-palette-option';
   option.id = 'commandPaletteOption' + index;
@@ -1222,39 +1233,65 @@ function paletteOption(hit, index) {
     kind.textContent = hit.command.kind;
     option.append(kind);
   }
+  // An object with more than one target: → on the keyboard, a click or tap on the arrow for the
+  // pointer. The arrow is no button of its own — the row is the option, and focus stays in the field.
+  if (hit.command.type === 'object' && hit.command.targets.length > 1) {
+    const more = document.createElement('span');
+    more.className = 'command-palette-more';
+    more.dataset.paletteMore = '';
+    more.title = dialog.dataset.targetsMore;
+    more.setAttribute('aria-hidden', 'true');
+    more.textContent = '→';
+    option.append(more);
+  }
   return option;
 }
 
-function paletteRender(groups) {
+/** A group of hits with its heading, appended to the list; returns the element the hits go into. */
+function paletteGroupContainer(list, label, id) {
+  if (!label) return list;
+  const container = document.createElement('div');
+  container.setAttribute('role', 'group');
+  const heading = document.createElement('div');
+  heading.className = 'command-palette-group';
+  heading.id = id;
+  heading.setAttribute('role', 'presentation');
+  heading.textContent = label;
+  container.setAttribute('aria-labelledby', heading.id);
+  container.append(heading);
+  list.append(container);
+  return container;
+}
+
+/**
+ * Shows the hits of the page. With {@code pending} the server is still to answer: then the list is
+ * not announced as empty yet — "Keine Treffer" before the objects arrive would be a false alarm.
+ */
+function paletteRender(groups, pending) {
   const input = document.getElementById('commandPaletteInput');
   const list = document.getElementById('commandPaletteList');
   list.replaceChildren();
   paletteState.items = [];
   groups.forEach((group, groupIndex) => {
-    let container = list;
-    if (group.label && group.hits.length) {
-      container = document.createElement('div');
-      container.setAttribute('role', 'group');
-      const heading = document.createElement('div');
-      heading.className = 'command-palette-group';
-      heading.id = 'commandPaletteGroup' + groupIndex;
-      heading.setAttribute('role', 'presentation');
-      heading.textContent = group.label;
-      container.setAttribute('aria-labelledby', heading.id);
-      container.append(heading);
-      list.append(container);
-    }
+    const container = group.hits.length
+      ? paletteGroupContainer(list, group.label, 'commandPaletteGroup' + groupIndex) : list;
     group.hits.forEach(hit => {
       container.append(paletteOption(hit, paletteState.items.length));
       paletteState.items.push(hit.command);
     });
   });
+  paletteState.localCount = paletteState.items.length;
+  paletteAnnounce(pending);
+  paletteSetActive(paletteState.items.length ? 0 : -1, true);
+}
+
+function paletteAnnounce(pending) {
+  const input = document.getElementById('commandPaletteInput');
   // the status region stays in the page and only changes its text: a region that appears together
   // with its content is not announced
   const empty = document.getElementById('commandPaletteEmpty');
-  empty.textContent = paletteState.items.length ? '' : empty.dataset.text;
+  empty.textContent = paletteState.items.length || pending ? '' : empty.dataset.text;
   input.setAttribute('aria-expanded', String(paletteState.items.length > 0));
-  paletteSetActive(paletteState.items.length ? 0 : -1, true);
 }
 
 function paletteSetActive(index, scroll) {
@@ -1279,10 +1316,13 @@ function paletteUpdate(dialog) {
   const query = document.getElementById('commandPaletteInput').value;
   const today = paletteToday(dialog);
   const vocabulary = paletteVocabulary(dialog);
+  const asksServer = query.trim().length >= PALETTE_OBJECT_MIN_LENGTH;
   if (query.trim()) {
-    paletteRender([{ hits: paletteSearch(dialog, paletteState.commands, query, today, vocabulary) }]);
+    paletteRender([{ hits: paletteSearch(dialog, paletteState.commands, query, today, vocabulary) }], asksServer);
+    paletteRequestObjects(dialog, query);
     return;
   }
+  paletteRequestObjects(dialog, query);
   const recent = paletteRecentItems(dialog, paletteState.commands, today, vocabulary);
   if (recent.length) {
     paletteRender([{ label: dialog.dataset.groupRecent, hits: recent.map(command => ({ command })) }]);
@@ -1300,9 +1340,155 @@ function paletteUpdate(dialog) {
 function paletteRun(index) {
   const command = paletteState.items[index];
   if (!command) return;
-  paletteRemember({ t: command.type, k: command.key });
+  // An object is not remembered: whether it may still be opened is the server's question, and a
+  // remembered entry is shown without asking it.
+  if (command.type !== 'object' && command.type !== 'target') {
+    paletteRemember({ t: command.type, k: command.key });
+  }
   document.getElementById('commandPalette').close();
   command.run();
+}
+
+/* ─── Objects from the server (#1157, ADR-0031) ───
+ *
+ * From two characters on, the palette asks /palette/search once the typing pauses, and appends the
+ * answer below the page's own hits: the selected row does not move. An answer the next keystroke has
+ * overtaken is dropped. Until the new answer is there, the previous one stays, narrowed to what still
+ * matches, so that the objects do not blink away with every letter.
+ */
+
+function paletteRequestObjects(dialog, query) {
+  clearTimeout(paletteState.objectTimer);
+  const token = ++paletteState.objectToken;
+  if (query.trim().length < PALETTE_OBJECT_MIN_LENGTH) {
+    paletteState.objects = null;
+    return;
+  }
+  if (paletteState.objects) {
+    const same = paletteState.objects.query === query;
+    paletteShowObjects(dialog, paletteState.objects.root, query, !same, !same);
+    if (same) return;
+  }
+  paletteState.objectTimer = setTimeout(() => {
+    fetch(dialog.dataset.searchUrl + '?q=' + encodeURIComponent(query), { headers: { 'HX-Request': 'true' } })
+      .then(response => (response.ok && !response.redirected ? response.text() : null))
+      .catch(() => null)
+      .then(html => {
+        // overtaken, closed, or the targets of an object opened meanwhile
+        if (token !== paletteState.objectToken || !dialog.open || paletteState.drill) return;
+        const root = html && new DOMParser().parseFromString(html, 'text/html')
+          .querySelector('[data-palette-results]');
+        // No fragment — a 403 before any controller, a login page, no network: no objects, and the
+        // page's own hits stand as they are.
+        paletteState.objects = root ? { query, root } : null;
+        paletteShowObjects(dialog, root, query, false, false);
+      });
+  }, PALETTE_OBJECT_DELAY);
+}
+
+/** The objects of one hit element of the fragment, as a command of the palette. */
+function paletteObjectCommand(article) {
+  const part = (name) => article.querySelector('[data-part="' + name + '"]')?.textContent || '';
+  const title = part('title');
+  const subtitle = part('subtitle');
+  const targets = Array.from(article.querySelectorAll('[data-part="target"]'))
+    .map(link => ({ label: link.textContent, href: link.getAttribute('href') }));
+  const markers = Array.from(article.querySelectorAll('[data-part="marker"]')).map(marker => marker.textContent);
+  return {
+    type: 'object',
+    key: article.dataset.kind + ':' + article.dataset.key,
+    label: subtitle ? title + ' · ' + subtitle : title,
+    title,
+    kind: markers.concat(part('context') ? [part('context')] : []).join(' · '),
+    targets,
+    run: () => window.location.assign(targets[0].href),
+  };
+}
+
+/**
+ * Replaces the objects below the page's hits. {@code stale} marks an answer to an earlier query,
+ * narrowed to what still matches until the new one arrives; {@code pending} keeps the list from being
+ * announced as empty meanwhile. The selected row stays where it is; a selected object stays selected
+ * if it is still there.
+ */
+function paletteShowObjects(dialog, root, query, stale, pending) {
+  const list = document.getElementById('commandPaletteList');
+  const active = paletteState.items[paletteState.active];
+  list.querySelectorAll('[data-palette-server]').forEach(group => group.remove());
+  paletteState.items.length = paletteState.localCount;
+
+  let firstObject = -1;
+  (root ? Array.from(root.querySelectorAll('[data-palette-group]')) : []).forEach((section, groupIndex) => {
+    const hits = Array.from(section.querySelectorAll('[data-palette-hit]'))
+      .map(paletteObjectCommand)
+      .filter(command => command.targets.length && (!stale || paletteMatch(command.label, query)));
+    if (!hits.length) return;
+    const heading = section.querySelector('[data-part="heading"]')?.textContent || '';
+    const container = paletteGroupContainer(list, heading, 'commandPaletteObjects' + groupIndex);
+    container.dataset.paletteServer = '';
+    hits.forEach(command => {
+      const match = paletteMatch(command.label, query);
+      const index = paletteState.items.length;
+      if (firstObject < 0) firstObject = index;
+      container.append(paletteOption({ command, ranges: match ? match.ranges : [] }, index, dialog));
+      paletteState.items.push(command);
+    });
+  });
+
+  paletteAnnounce(pending);
+  if (active && active.type === 'object') {
+    const kept = paletteState.items.findIndex(item => item.key === active.key);
+    paletteSetActive(kept >= 0 ? kept : firstObject, false);
+  } else if (paletteState.active < 0 && firstObject >= 0) {
+    // nothing was selected — the page had no hit —, so selecting the first object moves nothing
+    paletteSetActive(firstObject, true);
+  }
+}
+
+/* ─── The targets of an object: → opens them, ← leads back ─── */
+
+function paletteDrill(dialog, item) {
+  const input = document.getElementById('commandPaletteInput');
+  clearTimeout(paletteState.objectTimer);
+  paletteState.objectToken++;
+  paletteState.drill = { item, query: input.value };
+  const crumb = document.getElementById('commandPaletteCrumb');
+  crumb.querySelector('[data-part="query"]').textContent = input.value;
+  crumb.querySelector('[data-part="object"]').textContent = item.label;
+  crumb.hidden = false;
+  input.value = '';
+  paletteRenderTargets('');
+}
+
+function paletteRenderTargets(filter) {
+  const item = paletteState.drill.item;
+  const hits = item.targets
+    .map(target => ({ target, match: filter.trim() ? paletteMatch(target.label, filter) : { ranges: [] } }))
+    .filter(entry => entry.match)
+    .map(entry => ({
+      command: {
+        type: 'target', key: entry.target.href, label: entry.target.label, kind: '',
+        run: () => window.location.assign(entry.target.href),
+      },
+      ranges: entry.match.ranges,
+    }));
+  paletteRender([{ hits }], false);
+}
+
+function paletteUndrill(dialog) {
+  const drill = paletteState.drill;
+  paletteState.drill = null;
+  document.getElementById('commandPaletteCrumb').hidden = true;
+  const input = document.getElementById('commandPaletteInput');
+  input.value = drill.query;
+  paletteUpdate(dialog);
+  // back on the object the targets belonged to
+  const index = paletteState.items.findIndex(item => item.key === drill.item.key);
+  if (index >= 0) paletteSetActive(index, true);
+}
+
+function paletteCaretAt(input, position) {
+  return input.selectionStart === position && input.selectionEnd === position;
 }
 
 /* ─── Opening and closing ─── */
@@ -1332,15 +1518,28 @@ function paletteWire(dialog) {
   const input = document.getElementById('commandPaletteInput');
   const list = document.getElementById('commandPaletteList');
 
-  input.addEventListener('input', () => paletteUpdate(dialog));
+  input.addEventListener('input', () => {
+    if (paletteState.drill) paletteRenderTargets(input.value);
+    else paletteUpdate(dialog);
+  });
   input.addEventListener('keydown', (event) => {
     const count = paletteState.items.length;
+    const active = paletteState.items[paletteState.active];
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (count) paletteSetActive((paletteState.active + (event.key === 'ArrowDown' ? 1 : -1) + count) % count, true);
     } else if (event.key === 'Enter' && !event.isComposing) {
       event.preventDefault();
       paletteRun(paletteState.active);
+    } else if (event.key === 'ArrowRight' && !paletteState.drill && active && active.type === 'object'
+        && paletteCaretAt(input, input.value.length)) {
+      // only with the cursor at the end: elsewhere → moves the cursor, as it always does
+      event.preventDefault();
+      paletteDrill(dialog, active);
+    } else if (paletteState.drill && ((event.key === 'ArrowLeft' && paletteCaretAt(input, 0))
+        || (event.key === 'Backspace' && input.value === ''))) {
+      event.preventDefault();
+      paletteUndrill(dialog);
     }
   });
   // the input keeps the focus while an entry is clicked or tapped — on a phone the on-screen
@@ -1354,7 +1553,17 @@ function paletteWire(dialog) {
   });
   list.addEventListener('click', (event) => {
     const option = event.target.closest('[role="option"]');
-    if (option) paletteRun(Number(option.dataset.index));
+    if (!option) return;
+    const item = paletteState.items[Number(option.dataset.index)];
+    if (event.target.closest('[data-palette-more]') && item && item.type === 'object') {
+      paletteDrill(dialog, item);
+      return;
+    }
+    paletteRun(Number(option.dataset.index));
+  });
+  dialog.querySelector('[data-palette-back]').addEventListener('click', () => {
+    if (paletteState.drill) paletteUndrill(dialog);
+    input.focus();
   });
   // A click on the backdrop lands on the dialog element itself — and so does one that was pressed
   // inside and released outside, selecting the typed text, which is no request to close.
@@ -1366,6 +1575,9 @@ function paletteWire(dialog) {
   });
   dialog.querySelector('[data-command-palette-close]').addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => {
+    // an answer still on its way has nobody to show it to
+    clearTimeout(paletteState.objectTimer);
+    paletteState.objectToken++;
     const origin = paletteState.origin;
     paletteState.origin = null;
     paletteRestoreFocus(origin);
@@ -1390,6 +1602,9 @@ function paletteOpen() {
   paletteWire(dialog);
   paletteState.origin = document.activeElement;
   paletteState.commands = paletteNavigationCommands().concat(paletteSettingsCommands(dialog));
+  paletteState.drill = null;
+  paletteState.objects = null;
+  document.getElementById('commandPaletteCrumb').hidden = true;
   const input = document.getElementById('commandPaletteInput');
   input.value = '';
   dialog.showModal();

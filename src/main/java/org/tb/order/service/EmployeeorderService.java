@@ -10,8 +10,10 @@ import static org.tb.order.command.GetTimereportMinutesCommandEvent.OrderType.EM
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -57,6 +59,19 @@ public class EmployeeorderService {
   private final SuborderService suborderService;
   private final EmployeeorderRepository employeeorderRepository;
   private final EmployeecontractService employeecontractService;
+
+  /**
+   * Which of the given suborders the contract may book on the day: those with an employee order valid
+   * then — the condition of the booking form. For the command palette's target "Buchen auf …"
+   * (#1157); the caller decides whether the day is still open for writing.
+   */
+  @Transactional(readOnly = true)
+  public Set<Long> getBookableSuborderIds(long employeecontractId, Collection<Long> suborderIds, LocalDate date) {
+    if (suborderIds.isEmpty()) {
+      return Set.of();
+    }
+    return new HashSet<>(employeeorderRepository.findBookableSuborderIds(employeecontractId, suborderIds, date));
+  }
 
   @Authorized(requiresManager = true)
   public void create(Employeeorder employeeorder) {

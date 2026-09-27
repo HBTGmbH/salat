@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Die Treffer der Objektsuche (#1157, ADR-0031). Kein fertiges Markup der Liste: salat.js baut
+       daraus die Zeilen der Palette mit denselben Mitteln wie die Treffer aus der Seite, damit
+       Rangfolge, Hervorhebung, Auswahl und Tastatur fuer beide dieselben sind. Das Fragment traegt
+       nur, was dafuer gebraucht wird, und alle Texte aus den Nachrichtendateien.
+
+       Die Ziele stehen als Links am Treffer, in der Reihenfolge, in der die Palette sie anbietet; der
+       erste ist der, den Enter oeffnet. */-->
+<div th:fragment="results" data-palette-results>
+  <section th:each="group : ${groups}" data-palette-group th:data-kind="${group.kind}"
+           th:with="groupKey=${'main.palette.group.' + #strings.toLowerCase(group.kind.name())}">
+    <h3 data-part="heading" th:text="#{${groupKey}}">Aufträge</h3>
+    <article th:each="hit : ${group.hits}" data-palette-hit th:data-kind="${hit.kind}" th:data-key="${hit.key}">
+      <span data-part="title" th:text="${hit.title}">MUSTER-01</span>
+      <span data-part="subtitle" th:if="${hit.subtitle != null}" th:text="${hit.subtitle}">Wartungsvertrag</span>
+      <span data-part="context" th:if="${hit.context != null}"
+            th:text="${#messages.msgWithParams(hit.context.key, hit.context.args.toArray())}">Vertrag seit</span>
+      <span data-part="marker" th:if="${hit.ended}" th:text="#{main.palette.marker.ended}">beendet</span>
+      <span data-part="marker" th:if="${hit.hidden}" th:text="#{main.palette.marker.hidden}">verborgen</span>
+      <a data-part="target" th:each="target : ${hit.targets}" th:href="@{${target.href}}"
+         th:text="${#messages.msgWithParams(target.label.key, target.label.args.toArray())}">Auftrag öffnen</a>
+    </article>
+  </section>
+</div>
+
+</body>
+</html>

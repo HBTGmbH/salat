@@ -8,12 +8,16 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
@@ -24,12 +28,15 @@ import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.exception.ServiceFeedbackMessage;
 import org.tb.common.exception.VetoedException;
+import org.tb.common.palette.PaletteQuery;
 import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.common.util.SqlLikePattern;
 import org.tb.order.command.GetTimereportMinutesCommandEvent;
 import org.tb.order.domain.SuborderDTO;
 import org.tb.order.domain.Suborder;
+import org.tb.order.domain.SuborderSearchRow;
+import org.tb.order.domain.SuborderSignRow;
 import org.tb.order.event.CustomerorderDeleteEvent;
 import org.tb.order.event.CustomerorderUpdateEvent;
 import org.tb.order.event.SuborderDeleteEvent;
@@ -43,11 +50,56 @@ import org.tb.order.persistence.SuborderRepository;
 @Authorized
 public class SuborderService {
 
+  /** Deeper than any suborder tree in the data; guards the parent walk against a cycle. */
+  private static final int MAX_SUBORDER_DEPTH = 20;
+
   private final ApplicationEventPublisher eventPublisher;
   private final CommandPublisher commandPublisher;
   private final SuborderDAO suborderDAO;
   private final SuborderRepository suborderRepository;
   private final CustomerorderService customerorderService;
+
+  /**
+   * The suborders the command palette considers for a query (#1157), hidden and ended ones last.
+   * Whoever is not restricted sees every suborder on the list pages; {@code bookableForEmployeeId}
+   * narrows the result to what that person may book today, for a user who sees no list.
+   */
+  @Transactional(readOnly = true)
+  public List<SuborderSearchRow> getPaletteCandidates(PaletteQuery query, Long bookableForEmployeeId) {
+    return suborderRepository.findPaletteCandidates(query.likeWord(0), query.likeWord(1),
+        query.likeWord(2), bookableForEmployeeId, DateUtils.today(),
+        PageRequest.of(0, PaletteQuery.CANDIDATE_LIMIT));
+  }
+
+  /**
+   * The complete signs ({@link Suborder#getCompleteOrderSign()}, {@code ORDER/SUB/SUBSUB}) of the
+   * given rows. The parent chains are read one level at a time for all rows together — the entity
+   * would load them lazily, one query per suborder and level.
+   */
+  @Transactional(readOnly = true)
+  public Map<Long, String> getCompleteOrderSigns(Collection<SuborderSearchRow> rows) {
+    var known = new HashMap<Long, SuborderSignRow>();
+    rows.forEach(row -> known.put(row.id(), new SuborderSignRow(row.id(), row.sign(), row.parentId())));
+    for (int level = 0; level < MAX_SUBORDER_DEPTH; level++) {
+      var missing = known.values().stream()
+          .map(SuborderSignRow::parentId)
+          .filter(Objects::nonNull)
+          .filter(not(known::containsKey))
+          .collect(Collectors.toSet());
+      if (missing.isEmpty()) break;
+      suborderRepository.findSignRows(missing).forEach(row -> known.put(row.id(), row));
+    }
+    var signs = new HashMap<Long, String>();
+    for (var row : rows) {
+      var chain = new ArrayList<String>();
+      for (var step = known.get(row.id()); step != null && chain.size() < MAX_SUBORDER_DEPTH;
+          step = step.parentId() == null ? null : known.get(step.parentId())) {
+        chain.addFirst(step.sign());
+      }
+      signs.put(row.id(), row.customerorderSign() + "/" + String.join("/", chain));
+    }
+    return signs;
+  }
 
   public List<Suborder> getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(long employeecontractId, long customerorderId, LocalDate date) {
     return suborderDAO.getSubordersByEmployeeContractIdAndCustomerorderIdWithValidEmployeeOrders(employeecontractId, customerorderId, date);
