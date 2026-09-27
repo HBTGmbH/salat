@@ -341,7 +341,8 @@ document.addEventListener('htmx:after:swap', initInfoPopovers);
  *                                   just typed — release up to which month — a fixed text cannot
  *                                   say it, and that scope is the key information here.
  *   data-confirm-label              caption of the confirming button
- *   data-confirm-variant            danger | warning | success | primary (default)
+ *   data-confirm-variant            danger | warning | success | azure | primary (default);
+ *                                   azure marks a day as not worked (#1159)
  *
  * The listener sits on `document` in the capture phase and stops the event there. HTMX registers
  * its trigger on the form element itself, so anything but capture would let an hx-post leave
@@ -349,7 +350,7 @@ document.addEventListener('htmx:after:swap', initInfoPopovers);
  * -------------------------------------------------------------------------- */
 
 // anything else would be a class name straight from an attribute into the DOM
-const CONFIRM_VARIANTS = ['primary', 'danger', 'warning', 'success'];
+const CONFIRM_VARIANTS = ['primary', 'danger', 'warning', 'success', 'azure'];
 
 function confirmDialogLine(id, value) {
   const el = document.getElementById(id);

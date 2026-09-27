@@ -293,6 +293,7 @@ Aktionen in `card-footer`. Tabellen sitzen direkt in der Karte (`card-table`, oh
 | Zustands-Toggle (Budget aktiv/inaktiv) | `btn-outline-warning` ⇄ `btn-outline-success` | `ti ti-player-pause` ⇄ `ti ti-player-play` |
 | Vorgang zurücknehmen (Monat wieder öffnen) | `btn btn-warning` | — |
 | Erinnerungsmail in Tabellenzelle | `btn btn-sm btn-ghost-warning` | `bi bi-envelope` |
+| Tag als nicht gearbeitet markieren (Prüfseite, „Rest nicht gearbeitet") | `btn btn-azure`, auf der Prüfseite `btn-sm` | `ti ti-calendar-off` |
 
 Icon-only-Buttons tragen `m-0` am `<i>`, Buttons mit Text `me-1`. In Listen sind Zeilenaktionen
 **ohne** Textlabel.
@@ -339,11 +340,12 @@ die vom `FormButtonsProcessor` in Java erzeugten Speichern-/Abbrechen-Buttons si
 | `btn-ghost-warning` | 2 | Erinnerungsmail bei überfälliger Freigabe/Abnahme |
 | `btn-ghost-secondary` | 2 | Icon-Aktionen in der Nutzerkarte |
 | `btn-warning` | 1 | Monat wieder öffnen (Admin, `acceptance.html:117`) |
+| `btn-azure` | 3 | Tag als nicht gearbeitet markieren: Prüfseite, „Rest nicht gearbeitet" in Liste und Matrix (#1159) |
 | `btn-link` | 3 | Abbrechen im Modal (`link-secondary me-auto`) — auch im gemeinsamen Bestätigungsdialog, Hinweis ausblenden (`daily.html:56`) |
 
 **Nicht verwendet:** `btn-info`, `btn-dark`, `btn-light` und die Tabler-Sonderfarben
-(`btn-azure`, `btn-purple`, …). `purple`, `azure`, `green`, `red` erscheinen ausschließlich bei
-Badges und Text, nie an Buttons.
+(`btn-purple`, …). `purple`, `green`, `red` erscheinen ausschließlich bei Badges und Text, nie an
+Buttons. Einzige Sonderfarbe an einem Button ist `btn-azure` für „Nicht gearbeitet" (siehe unten).
 
 Drei Achsen bestimmen die Klasse:
 
@@ -381,6 +383,18 @@ grau* gebaut: Speichern `btn-primary` + „Anlegen & Neu" `btn-secondary`
 (`employee-order-form:125/129`), Druckansicht `btn-primary` + Excel-Export `btn-secondary`
 (`invoice-form:351/353`). Derselbe Export ist in `csv.html:234` dagegen grün — die Regel gilt also
 nicht durchgängig.
+
+**„Nicht gearbeitet" ist gefüllt, auch als Zeilenaktion** (#1159). Die Aktionen, die einen Tag als
+nicht gearbeitet markieren — „Nicht gearbeitet" in einer Tageszeile der Prüfseite, „Rest nicht
+gearbeitet" unter Liste und Matrix — tragen `btn-azure` mit `ti-calendar-off`, also Ton und Icon der
+Markierung, die sie erzeugen ([§5.4](#54-badges--flags-spalte)). Das weicht bewusst von
+„`btn-outline-*` für Zeilenaktionen" ab: die Markierung ist eine gefüllte Badge, und ein Outline-Knopf
+daneben sähe aus wie eine andere Sache. Vorher war es auf der Prüfseite `btn-outline-secondary` mit
+`ti-moon` — dem Icon des Dunkelmodus in der Kopfleiste — und unter Liste und Matrix
+`btn-outline-warning`, die Farbe der Feiertage. Tablers `btn-azure` trägt auf dem vollen Ton nur
+2,9:1; `salat.css` gibt ihm deshalb die Füllung der Badge (siehe
+[§7.1](#buttons-die-textfarbe-muss-der-füllung-folgen)). Im Bestätigungsdialog von „Rest nicht
+gearbeitet" ist der bestätigende Knopf aus demselben Grund `azure`.
 
 **Ausrichtung nach Ort:**
 
@@ -432,6 +446,35 @@ Icon jetzt bei **5,20:1**.
 die Regel ist, braucht keine Markierung in jeder Zeile; der Umschalter dagegen muss zeigen, woran man
 gerade dreht.
 
+#### „Nicht gearbeitet" (#1159)
+
+Ein nicht gearbeiteter Tag ist an jeder Stelle dieselbe Badge: `fragments/not-worked :: badge(compact)`
+— gefüllt in `bg-azure-lt` mit `ti-calendar-off` und dem Text aus `main.general.notworked.text`. Keine
+Stelle baut sie selbst; vorher tat das jede, und so standen vier Farben, zwei Icons und ein Punkt ohne
+Text nebeneinander.
+
+| Stelle | Variante |
+|---|---|
+| Tagesansicht: Wochenleiste, Liste, Legende der Liste | voll (Icon und Text) |
+| Prüfseite (Freigabe, Abnahme) | voll |
+| Matrix und Dashboard: Tageszelle über Beginn, Pause und Ende (`rowspan="3"`) | kompakt |
+| Matrix eines externen Vertrags (ohne Beginn, Pause, Ende): Zeile GESAMT | kompakt |
+| Legende der Matrix | voll |
+| Schalter „Nicht gearbeitet" im Formular Arbeitstag | nur das Icon (`:: icon`), in `text-azure` vor dem Label |
+
+- **Kompakt** heißt: nur das Icon, mit `title`-Tooltip und dem Text als `visually-hidden`; das Icon
+  selbst ist in beiden Varianten `aria-hidden`.
+- **Azure, weil ein nicht gearbeiteter Tag ein freier Tag ist** — es ist die Farbe des Wochenendes.
+  `warning` steht in Matrix, Dashboard und Legenden für Feiertage, und `ti-moon` schaltet den
+  Dunkelmodus. Unterschieden vom Wochenende wird die Markierung durch das Icon; die Legende führt sie
+  deshalb mit.
+- In der Matrix gibt es keine eigene Zeile „Nicht gearbeitet" mehr. An diesem Tag sind Beginn, Pause
+  und Ende ohnehin leer; die Zelle der Zeile Beginn reicht über alle drei. Weil `cellIndex` in den
+  beiden Zeilen darunter danach nicht mehr die Spalte zählt, rechnet das Skript der Matrix die Spalte
+  für Hover und Klick aus dem Raster.
+- Im Druck der Matrix (#1148) trägt die Badge ihre Füllung auch ohne „Hintergrundgrafiken": die
+  Tabellenzellen setzen `print-color-adjust: exact`, und die Eigenschaft wird vererbt.
+
 ### 5.5 Rückmeldungen
 - **Erfolg/Fehler nach Redirect:** Flash-Attribute `toastSuccess` / `toastError` / `toastErrors`
   → in `base.html` als schließbarer `alert alert-success|danger` **oberhalb des Seiteninhalts**
@@ -453,7 +496,7 @@ gerade dreht.
   | `data-confirm-detail` / `-detail-secondary` | die fachlichen Schlüsselinformationen (siehe unten) |
   | `data-confirm-detail-input` | Selektor eines Feldes desselben Formulars, dessen aktueller Wert die zweite Zeile vervollständigt |
   | `data-confirm-label` | Beschriftung des bestätigenden Knopfs |
-  | `data-confirm-variant` | `danger` beim Löschen, sonst `warning`, `success` oder `primary` |
+  | `data-confirm-variant` | `danger` beim Löschen, `azure` beim Markieren als nicht gearbeitet, sonst `warning`, `success` oder `primary` |
 
   Layout wie gehabt: `modal-sm modal-dialog-centered`, Abbrechen links (`me-auto`), Bestätigung
   rechts. Ohne JavaScript entsteht der bestätigende Knopf gar nicht erst — `salat.css` blendet
@@ -588,11 +631,12 @@ ohne Format-Hinweis.
 | `danger` (rot) | Löschen, Fehler, ausgeblendet, Kommentarpflicht |
 | `secondary` (grau) | neutral/inaktiv, Abbrechen |
 | `purple` | Rollen-Badge, Schulung, „Beta"-Markierung |
-| `azure` / `blue` | informative Kennzeichnung in Listen |
+| `azure` / `blue` | informative Kennzeichnung in Listen; `azure` zusätzlich Wochenende und „Nicht gearbeitet" (freie Tage) |
 
 `bg-*-lt` für Badges und getönte Flächen — an einer Badge färbt die Klasse allerdings voll, nicht
 getönt ([§7.1](#badges-gefüllt-statt-getönt)). `text-*` für Zahlen und Fließtext-Akzente,
-`btn-*` gefüllt für Primäraktionen, `btn-outline-*` für Zeilenaktionen.
+`btn-*` gefüllt für Primäraktionen, `btn-outline-*` für Zeilenaktionen — mit der Ausnahme
+„Nicht gearbeitet" ([§5.2](#farblogik-der-buttons)).
 Häufigste Utility überhaupt: `text-muted` (222×) für sekundären Text.
 
 Die Farbwahl bei Buttons ist ausführlich in [§5.2 Farblogik der Buttons](#farblogik-der-buttons)
@@ -860,6 +904,7 @@ das war der gemeldete Abbrechen-Button mit 2,43:1.
 | `btn-outline-warning` | **2,13** ✘ | 4,81 | 6,88 | 9,71 |
 | `btn-ghost-warning` | **2,13** ✘ | 4,81 | 6,88 | 9,71 |
 | `btn-link` | **4,13** ✘ | 6,54 | **3,55** ✘ | 4,86 |
+| `btn-azure` (#1159), Hover | **2,92** ✘ | 5,05, Hover 6,36 | **2,92** ✘ | 5,05, Hover 6,36 |
 
 Drei Dinge sind dabei zu wissen:
 

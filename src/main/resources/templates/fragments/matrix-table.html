@@ -145,6 +145,9 @@
             class="text-center px-1"
             th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.totalError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
           <span th:if="${not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
+          <!--/* ohne Beginn, Pause und Ende (externer Vertrag) steht die Markierung hier, #1159 */-->
+          <th:block th:if="${showNotWorked and fd.notWorked and not showBeginBreakEnd}"><span
+              th:replace="~{fragments/not-worked :: badge(true)}"></span></th:block>
         </td>
         <td class="matrix-last-col text-center px-1 fw-bold" th:text="${matrixData.totalString}">0:00</td>
       </tr>
@@ -154,19 +157,31 @@
         <tr th:replace="~{fragments/matrix-row :: matrixRow(${row}, ${rs.even}, ${matrixData.dayHeaders}, true)}"></tr>
       </th:block>
 
+      <!--/* An einem nicht gearbeiteten Tag bleiben Beginn, Pause und Ende leer; die Zelle in der Zeile
+             Beginn reicht deshalb ueber alle drei und traegt die Markierung, in Pause und Ende entfaellt
+             sie fuer diesen Tag (#1159). cellIndex zaehlt in diesen beiden Zeilen danach nicht mehr die
+             Spalte - matrixScript rechnet sie deshalb aus dem Raster. */-->
       <tr th:if="${showBeginBreakEnd}" class="small">
         <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.startofwork.text}">Beginn</td>
-        <td th:each="fd, fs : ${matrixData.footerDays}"
-            class="text-center px-1"
-            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.beginError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
-          <span th:if="${fd.beginString != null}" th:text="${fd.beginString}">08:00</span>
-        </td>
+        <th:block th:each="fd, fs : ${matrixData.footerDays}">
+          <td th:if="${showNotWorked and fd.notWorked}" rowspan="3"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            <span th:replace="~{fragments/not-worked :: badge(true)}"></span>
+          </td>
+          <td th:unless="${showNotWorked and fd.notWorked}"
+              class="text-center px-1"
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.beginError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
+            <span th:if="${fd.beginString != null}" th:text="${fd.beginString}">08:00</span>
+          </td>
+        </th:block>
         <td class="matrix-last-col"></td>
       </tr>
 
       <tr th:if="${showBeginBreakEnd}" class="small">
         <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.breakduration.text}">Pause</td>
         <td th:each="fd, fs : ${matrixData.footerDays}"
+            th:unless="${showNotWorked and fd.notWorked}"
             class="text-center px-1"
             th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.breakError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
           <span th:if="${fd.breakString != null}" th:text="${fd.breakString}">0:30</span>
@@ -177,6 +192,7 @@
       <tr th:if="${showBeginBreakEnd}" class="small">
         <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.endofwork.text}">Ende</td>
         <td th:each="fd, fs : ${matrixData.footerDays}"
+            th:unless="${showNotWorked and fd.notWorked}"
             class="text-center px-1"
             th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
           <span th:if="${fd.endString != null}" th:text="${fd.endString}">17:00</span>
@@ -184,15 +200,6 @@
         <td class="matrix-last-col"></td>
       </tr>
 
-      <tr th:if="${showNotWorked}" class="small">
-        <td class="matrix-first-col text-nowrap" th:text="#{main.matrixoverview.table.notworked.text}">Nicht gearbeitet</td>
-        <td th:each="fd, fs : ${matrixData.footerDays}"
-            class="text-center px-1"
-            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
-          <span th:if="${fd.notWorked}" class="text-warning">●</span>
-        </td>
-        <td class="matrix-last-col"></td>
-      </tr>
     </tfoot>
 
   </table>
@@ -220,6 +227,7 @@
   <span class="ms-auto small">
     <span class="badge bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
     <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
+    <span class="me-1" th:if="${showNotWorked}"><span th:replace="~{fragments/not-worked :: badge(false)}"></span></span>
     <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
   </span>
 </div>
@@ -241,8 +249,24 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
   const table = document.getElementById('matrix');
   const headers = Array.from(table.querySelectorAll('thead th'));
 
+  // The column of every cell, laid out from the grid: a not-worked day spans Beginn, Pause and Ende
+  // with one cell (#1159), so cellIndex and nth-child count one short in the two rows below it.
+  const columnOf = new Map();
+  const cellsByColumn = [];
+  const covered = [];
+  Array.from(table.rows).forEach((row, r) => {
+    let col = 0;
+    Array.from(row.cells).forEach(cell => {
+      while (covered[r]?.[col]) col++;
+      columnOf.set(cell, col);
+      (cellsByColumn[col] ??= []).push(cell);
+      for (let below = 1; below < cell.rowSpan; below++) (covered[r + below] ??= [])[col] = true;
+      col += cell.colSpan;
+    });
+  });
+
   function cellsInColumn(colIdx) {
-    return table.querySelectorAll(`tr > *:nth-child(${colIdx + 1})`);
+    return cellsByColumn[colIdx] ?? [];
   }
 
   // Apply pointer cursor to every cell in a navigable day column
@@ -255,7 +279,7 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
   table.addEventListener('mouseover', e => {
     const cell = e.target.closest('td, th');
     if (!cell) return;
-    const colIdx = cell.cellIndex;
+    const colIdx = columnOf.get(cell);
     if (colIdx === activeColIdx) return;
     cellsInColumn(activeColIdx).forEach(c => c.classList.remove('matrix-col-hover'));
     activeColIdx = colIdx;
@@ -272,7 +296,7 @@ document.querySelectorAll('td .matrix-cell-detail').forEach(detail => {
   table.addEventListener('click', e => {
     const cell = e.target.closest('td, th');
     if (!cell) return;
-    const url = headers[cell.cellIndex]?.dataset.dailyUrl;
+    const url = headers[columnOf.get(cell)]?.dataset.dailyUrl;
     if (url) location.href = url;
   });
 }());

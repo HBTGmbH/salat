@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  „Nicht gearbeitet" (#1159): ein Icon, eine Farbe, ein Text - an jeder Stelle, die den Zustand
+  zeigt, und an jeder Aktion, die ihn setzt. Vorher baute jede Stelle ihre eigene Badge, und so
+  standen vier Farben, zwei Icons und ein Punkt ohne Text nebeneinander.
+
+  Die Farbe ist azure, die des Wochenendes: ein nicht gearbeiteter Tag ist ein freier Tag. warning
+  steht in Matrix und Legende fuer Feiertage, und ti-moon schaltet in der Kopfleiste den dunklen
+  Modus. Die Badge setzt kein eigenes text-*: ihre Schriftfarbe kommt aus salat.css (#1039).
+*/-->
+
+<!--/* Das Icon allein, fuer Schalter und Aktionen. Die Abstandsklasse gibt der Aufrufer mit. */-->
+<i th:fragment="icon(spacing)" class="ti ti-calendar-off" th:classappend="${spacing}" aria-hidden="true"></i>
+
+<!--/* Die Markierung. compact zeigt nur das Icon, fuer Stellen ohne Platz (Matrixzelle); der Text
+       bleibt dann als Tooltip und fuer Screenreader stehen. */-->
+<span th:fragment="badge(compact)" class="badge bg-azure-lt not-worked-badge"
+      th:title="${compact} ? #{main.general.notworked.text}">
+  <i th:replace="~{fragments/not-worked :: icon(${compact} ? '' : 'me-1')}"></i><span th:classappend="${compact} ? 'visually-hidden'"
+        th:text="#{main.general.notworked.text}">Nicht gearbeitet</span>
+</span>
+
+</body>
+</html>
