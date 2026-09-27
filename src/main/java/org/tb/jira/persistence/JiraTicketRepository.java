@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.tb.jira.domain.JiraTicket;
 
 @Repository
@@ -45,5 +47,22 @@ public interface JiraTicketRepository extends JpaRepository<JiraTicket, Long> {
       order by t.updatedTs desc nulls last, t.key asc
       """)
   List<JiraTicket> search(Collection<String> scopeSigns, String searchTerm, Pageable pageable);
+
+  /**
+   * Removes the tickets of a scope that a complete replication run did not see (#1167) — the JQL no
+   * longer matches them. Keyed on the JIRA id, not the key: a ticket moved to another project that
+   * the JQL still matches keeps its id and is rewritten under its new key rather than removed.
+   *
+   * <p>{@code @Transactional} of its own: the replication runs outside a transaction, and the
+   * read-only one a repository method inherits otherwise would refuse the statement.
+   */
+  @Transactional
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("""
+      delete from JiraTicket t
+      where t.scopeSign = :scopeSign
+        and t.jiraId not in :seenJiraIds
+      """)
+  int deleteByScopeSignAndJiraIdNotIn(String scopeSign, Collection<Long> seenJiraIds);
 
 }

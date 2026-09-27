@@ -85,6 +85,11 @@ public class JiraReplicationService {
     var answeredFields = new HashSet<String>();
     int fetched = 0;
 
+    // Only a run without a watermark sees every ticket the JQL matches, so only such a run can tell
+    // which of the stored ones it no longer matches (#1167). A run from the watermark sees nothing
+    // but the changed ones and collects nothing.
+    Set<Long> seenJiraIds = baseline == null ? new HashSet<>() : null;
+
     // The client pages lazily, so a failure on a later page surfaces from here and aborts the run
     // before the watermark below is written.
     var issues = searchClients.forFlavor(cfg.getApiFlavor()).search(request);
@@ -93,7 +98,9 @@ public class JiraReplicationService {
       try {
         fetched++;
         if (issue.getFields() != null) answeredFields.addAll(issue.getFields().keySet());
-        var changed = upsertIfChanged(cfg, fieldConfig, issue);
+        long jiraId = Long.parseLong(issue.getId());
+        if (seenJiraIds != null) seenJiraIds.add(jiraId);
+        var changed = upsertIfChanged(cfg, fieldConfig, jiraId, issue);
         if (changed) {
           processed++;
         }
@@ -113,6 +120,9 @@ public class JiraReplicationService {
       }
     }
     warnAboutUnansweredFields(cfg, fieldConfig, answeredFields, fetched);
+
+    // Before the chains, so that a removed parent no longer passes values on in this very run.
+    if (seenJiraIds != null) removeUnseenTickets(cfg, seenJiraIds, failed);
 
     resolveParentChains(cfg, fieldConfig);
 
@@ -135,6 +145,31 @@ public class JiraReplicationService {
     } catch (Exception ex) {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
     }
+  }
+
+  /**
+   * Removes the tickets of this scope that a complete run did not see (#1167): moved to a project the
+   * JQL does not match, or left out by a JQL that was narrowed. Neither case is reported by JIRA —
+   * the ticket is simply missing from the answer.
+   *
+   * <p>Only after a clean run. An aborted one never gets here, its exception is already on the way
+   * out. One issue that could not be processed is enough to skip it: the ids seen are then not
+   * reliable, not least because parsing the id may itself have been the failure.
+   *
+   * <p>The count goes to the log with the replication and its scope. A JQL narrowed by mistake shows
+   * up here first. Bookings are not affected: their ticket reference is free text, not a foreign key
+   * (#982). Nor are the worklogs written on these tickets — see {@link JiraWorklogSyncService}.
+   */
+  private void removeUnseenTickets(JiraReplicationConfig cfg, Set<Long> seenJiraIds, int failed) {
+    if (failed > 0) {
+      log.warn("Replication {} fetched everything the JQL matches, but {} issues could not be "
+          + "processed - tickets of scope {} no longer matched are not removed in this run",
+          cfg.getName(), failed, cfg.getScopeSign());
+      return;
+    }
+    int removed = ticketRepo.deleteByScopeSignAndJiraIdNotIn(cfg.getScopeSign(), seenJiraIds);
+    log.info("Removed {} tickets of scope {} no longer matched by the JQL of replication {}",
+        removed, cfg.getScopeSign(), cfg.getName());
   }
 
   /**
@@ -303,9 +338,8 @@ public class JiraReplicationService {
     return fields;
   }
 
-  private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, JiraIssue issue) {
-    long jiraId = Long.parseLong(issue.getId());
-
+  private boolean upsertIfChanged(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig, long jiraId,
+                                  JiraIssue issue) {
     var existing = ticketRepo.findByScopeSignAndJiraId(cfg.getScopeSign(), jiraId).orElse(null);
     var fields = issue.getFields();
     var updatedTs = toDateTime(getString(fields, "updated"));

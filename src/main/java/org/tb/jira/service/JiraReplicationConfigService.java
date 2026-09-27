@@ -124,9 +124,9 @@ public class JiraReplicationConfigService {
   }
 
   /**
-   * Clears the watermark so the next run fetches everything the JQL matches again. This is the only
-   * write on {@code last_max_updated} the user interface offers — see
-   * {@link JiraReplicationConfigData}.
+   * Clears the watermark so the next run fetches everything the JQL matches again and removes the
+   * tickets it no longer matches (#1167). This is the only write on {@code last_max_updated} the
+   * user interface offers — see {@link JiraReplicationConfigData}.
    */
   public void resetWatermark(long id) {
     checkManager();
@@ -237,7 +237,7 @@ public class JiraReplicationConfigService {
     config.setBaseUrl(data.baseUrl().trim());
     config.setApiFlavor(data.apiFlavor() != null ? data.apiFlavor() : JiraApiFlavor.SERVER);
     config.setUsername(data.username().trim());
-    config.setJql(data.jql().trim());
+    applyJql(data, config);
     config.setParentFieldNames(trimToNull(data.parentFieldNames()));
     applyFieldNames(data, config);
     config.setPageSize(data.pageSize());
@@ -282,6 +282,22 @@ public class JiraReplicationConfigService {
       config.setLastMaxUpdated(null);
     }
     config.setScopeSign(scopeSign);
+  }
+
+  /**
+   * Changing the JQL resets the watermark (#1167), because only a run without it sees every ticket
+   * the JQL matches. After widening, that run fetches the older tickets that match now — with the
+   * watermark in place they would only arrive once edited in JIRA. After narrowing, it removes the
+   * tickets that no longer match. The field help says so.
+   */
+  private void applyJql(JiraReplicationConfigData data, JiraReplicationConfig config) {
+    var jql = data.jql().trim();
+    if (!Objects.equals(jql, config.getJql())) {
+      log.info("JQL of JIRA replication {} changed, resetting the watermark so the next run fetches "
+          + "everything it matches and removes the tickets it no longer does", config.getName());
+      config.setLastMaxUpdated(null);
+    }
+    config.setJql(jql);
   }
 
   /**

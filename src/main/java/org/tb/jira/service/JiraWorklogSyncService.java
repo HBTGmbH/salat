@@ -9,7 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -93,16 +95,38 @@ public class JiraWorklogSyncService {
 
     var outcome = new Outcome();
     wanted.forEach((key, minutes) -> writeOne(cfg, key, minutes, stored.get(key), outcome));
-    stored.forEach((key, row) -> {
-      if (!wanted.containsKey(key)) {
+    var unwanted = new LinkedHashMap<>(stored);
+    unwanted.keySet().removeAll(wanted.keySet());
+    var replicated = replicatedKeys(cfg, unwanted.keySet());
+    unwanted.forEach((key, row) -> {
+      if (replicated.contains(normalized(key.issueKey()))) {
         removeOne(cfg, key, row, outcome);
+      } else {
+        outcome.kept++;
       }
     });
 
     log.info("Finished JIRA worklog sync: name={}, created={}, updated={}, deleted={}, "
-            + "unchanged={}, failed={}",
+            + "unchanged={}, kept={}, failed={}",
         cfg.getName(), outcome.created, outcome.updated, outcome.deleted, outcome.unchanged,
-        outcome.failed);
+        outcome.kept, outcome.failed);
+  }
+
+  /**
+   * Which of these worklogs are on a ticket that is still replicated in this scope (#1167). Only on
+   * those does a missing sum mean the bookings are gone. A ticket the replication has removed —
+   * moved away, or no longer matched by the JQL — says nothing about the bookings; its worklogs stay
+   * in JIRA, and so does their row here. Should the ticket come back, the sync picks up at that row
+   * instead of writing a second worklog next to the first.
+   */
+  private Set<String> replicatedKeys(JiraReplicationConfig cfg, Set<WorklogKey> worklogs) {
+    if (worklogs.isEmpty()) {
+      return Set.of();
+    }
+    var issueKeys = worklogs.stream().map(WorklogKey::issueKey).distinct().toList();
+    return ticketRepository.findByScopeSignAndKeyIn(cfg.getScopeSign(), issueKeys).stream()
+        .map(ticket -> normalized(ticket.getKey()))
+        .collect(Collectors.toSet());
   }
 
   /**
@@ -218,7 +242,10 @@ public class JiraWorklogSyncService {
     }
   }
 
-  /** A day and ticket that has no bookings left — in JIRA it must not stay behind. */
+  /**
+   * A day and ticket that has no bookings left — in JIRA it must not stay behind. Only called for a
+   * ticket that is still replicated, see {@link #replicatedKeys}.
+   */
   private void removeOne(JiraReplicationConfig cfg, WorklogKey key, JiraWorklogSync stored,
                          Outcome outcome) {
     var client = worklogClients.forFlavor(cfg.getApiFlavor());
@@ -271,6 +298,7 @@ public class JiraWorklogSyncService {
     private int updated;
     private int deleted;
     private int unchanged;
+    private int kept;
     private int failed;
   }
 }

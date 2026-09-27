@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Timeout.ThreadMode.SEPARATE_THREAD;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyCollection;
 import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -23,6 +26,8 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -491,6 +496,117 @@ class JiraReplicationServiceTest {
         .noneMatch(message -> message.contains("customfield_10123"));
   }
 
+  @Test
+  void aRunWithoutWatermarkRemovesTheTicketsItDidNotSee() {
+    // Moved to a project the JQL does not match, or left out by a narrowed JQL: JIRA reports
+    // neither, the ticket is simply missing from a complete answer (#1167).
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue(), otherIssue()));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(removedExceptIn("MOCK_ORDER")).containsExactlyInAnyOrder(1001L, 1003L);
+  }
+
+  @Test
+  void aRunWithoutWatermarkThatFindsNothingRemovesEveryTicketOfTheScope() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues());
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertThat(removedExceptIn("MOCK_ORDER")).isEmpty();
+  }
+
+  @Test
+  void aRunFromTheWatermarkRemovesNothing() {
+    // it only sees what changed since, so a missing ticket says nothing about it
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+
+    jiraReplicationService.runReplication(config.getId());
+
+    verify(ticketRepo, never()).deleteByScopeSignAndJiraIdNotIn(anyString(), anyCollection());
+  }
+
+  @Test
+  void aRunWithAnIssueItCouldNotProcessRemovesNothing() {
+    // the ids seen are not reliable then - parsing the id may itself have been the failure
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(
+        failingIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0)), mockIssue()));
+    var logged = captureWarnings();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    verify(ticketRepo, never()).deleteByScopeSignAndJiraIdNotIn(anyString(), anyCollection());
+    assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+        .extracting(ILoggingEvent::getFormattedMessage)
+        .anyMatch(message -> message.contains("not removed"));
+  }
+
+  @Test
+  void anAbortedRunRemovesNothing() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(failingAfter(mockIssue()));
+
+    assertThrows(RestClientException.class, () -> jiraReplicationService.runReplication(config.getId()));
+
+    verify(ticketRepo, never()).deleteByScopeSignAndJiraIdNotIn(anyString(), anyCollection());
+  }
+
+  @Test
+  void aRemovedParentNoLongerPassesItsValuesOn() {
+    // The removal comes before the chains are walked, so the parent is gone in this very run.
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setInheritedFieldNames("customfield_10123");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    var parent = ticket("MOCK-9", null, Map.of("customfield_10123", "Wartung"));
+    var child = ticket("MOCK-1", "MOCK-9", Map.of());
+    var stored = new ArrayList<>(List.of(parent, child));
+    when(ticketRepo.findByScopeSign("MOCK_ORDER")).thenAnswer(invocation -> List.copyOf(stored));
+    when(ticketRepo.deleteByScopeSignAndJiraIdNotIn(anyString(), anyCollection()))
+        .thenAnswer(invocation -> stored.remove(parent) ? 1 : 0);
+
+    jiraReplicationService.runReplication(config.getId());
+
+    assertNull(child.getCustomFieldsEffective());
+    assertEquals("MOCK-1", child.getTopLevelKey());
+  }
+
+  @Test
+  void theNumberOfRemovedTicketsIsLoggedWithReplicationAndScope() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setName("Mock replication");
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+    when(ticketRepo.deleteByScopeSignAndJiraIdNotIn(anyString(), anyCollection())).thenReturn(7);
+    var logged = captureWarnings();
+
+    jiraReplicationService.runReplication(config.getId());
+
+    // a JQL narrowed by mistake shows up here first
+    assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO)
+        .extracting(ILoggingEvent::getFormattedMessage)
+        .anyMatch(message -> message.contains("Removed 7 tickets")
+            && message.contains("MOCK_ORDER") && message.contains("Mock replication"));
+  }
+
+  /** The ids the run kept when it removed the rest of the given scope. */
+  @SuppressWarnings("unchecked")
+  private Collection<Long> removedExceptIn(String scopeSign) {
+    var seen = ArgumentCaptor.forClass(Collection.class);
+    verify(ticketRepo).deleteByScopeSignAndJiraIdNotIn(eq(scopeSign), seen.capture());
+    return (Collection<Long>) seen.getValue();
+  }
+
   /** Collects what the service under test logs for the rest of the test method. */
   private ListAppender<ILoggingEvent> captureWarnings() {
     var appender = new ListAppender<ILoggingEvent>();
@@ -568,9 +684,16 @@ class JiraReplicationServiceTest {
     return issue;
   }
 
+  private static JiraIssue otherIssue() {
+    var issue = mockIssue();
+    issue.setId("1003");
+    issue.setKey("MOCK-3");
+    return issue;
+  }
+
   /**
    * An issue whose processing blows up the way an unexpected id does: {@code Long.parseLong} in
-   * {@code upsertIfChanged} throws before the ticket is ever written.
+   * {@code runReplication} throws before the ticket is ever written.
    */
   private static JiraIssue failingIssue(LocalDateTime updated) {
     var issue = mockIssue(updated);
