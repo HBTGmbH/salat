@@ -99,7 +99,12 @@ class AcceptanceReviewE2ETest extends PlaywrightE2ETestBase {
       Locator friday = day(page, E2ETestData.ACCEPTING_DAY_WITHOUT_BOOKING);
       assertThat(friday).containsText("Keine Buchung");
       assertThat(friday.locator(".text-danger")).hasCount(0);
-      assertThat(page.locator("a[href*='/timereports/new?']")).hasCount(0);
+      // nor to create: the create links carry the contract, the menu's plain form link does not. The
+      // header button carries parameters too (#1156), the way back and the contract only where
+      // creating is allowed - here it may name neither the person nor count as a create link (#1162)
+      assertThat(page.locator("a[href*='/timereports/new?']:not(#header-new-booking)")).hasCount(0);
+      assertThat(page.locator("#header-new-booking"))
+          .not().hasAttribute("href", Pattern.compile(".*employeecontractId=.*"));
       assertThat(page.locator("#review-findings")).hasCount(0);
 
       // the supervising people lead corrects a released booking and comes back to it
