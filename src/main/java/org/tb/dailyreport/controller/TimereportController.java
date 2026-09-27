@@ -600,7 +600,7 @@ public class TimereportController {
 
     /**
      * The contract a new booking is for: the one the form was opened for (#760), otherwise the
-     * remembered selection. The named contract is read with the READ check, so a link cannot open
+     * remembered selection ({@link #effectiveContractId}). The named contract is read with the READ check, so a link cannot open
      * the form — its orders and recent bookings — for a contract the user may not see; whether they
      * may book on it is still decided when saving ({@code TimereportService}, WRITE).
      */
@@ -616,9 +616,18 @@ public class TimereportController {
         return contractId != null && contractId > 0;
     }
 
+    /**
+     * The remembered selection, if the user may read it, otherwise their own current contract
+     * (#1183). Unlike a named contract, an unreadable remembered one is not refused: UiState keeps
+     * supplying the value, so a 403 would lock the form — the dashboard falls back the same way
+     * (#1134).
+     */
     private long effectiveContractId(Long fEmployeeContractId) {
-        if (fEmployeeContractId != null && fEmployeeContractId > 0) {
-            return fEmployeeContractId;
+        if (isSet(fEmployeeContractId)) {
+            var readable = employeecontractService.getReadableEmployeecontract(fEmployeeContractId);
+            if (readable.isPresent()) {
+                return readable.get().getId();
+            }
         }
         var loginEmployee = employeeService.getLoginEmployee();
         return employeecontractService.getCurrentContract(loginEmployee.getId())

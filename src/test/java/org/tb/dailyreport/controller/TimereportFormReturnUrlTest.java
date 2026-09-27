@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import org.tb.dailyreport.preferences.TimereportPreferences;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.favorites.service.FavoriteService;
@@ -89,6 +91,9 @@ class TimereportFormReturnUrlTest {
 
   @BeforeEach
   void setUp() {
+    var contract = mock(Employeecontract.class);
+    when(contract.getId()).thenReturn(CONTRACT_ID);
+    when(employeecontractService.getReadableEmployeecontract(CONTRACT_ID)).thenReturn(Optional.of(contract));
     when(timereportPreferenceService.getForCurrentUser())
         .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(anyLong(), eq(DATE))).thenReturn(List.of());
