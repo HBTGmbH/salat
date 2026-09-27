@@ -1415,7 +1415,29 @@ document.addEventListener('keydown', function (event) {
 
 document.addEventListener('htmx:history:cache:after:restore', function () {
   paletteDropStale(document.getElementById('commandPalette'));
+  dropStaleModals();
 });
+
+/**
+ * A Bootstrap modal that was open while htmx took its history snapshot — the overview of the
+ * shortcuts, say — comes back from that copy shown, with its backdrop and a body that does not
+ * scroll, but without an instance that could close it. Everything the opening had set is undone.
+ */
+function dropStaleModals() {
+  const stale = Array.from(document.querySelectorAll('.modal.show'))
+    .filter(modal => !tabler.bootstrap.Modal.getInstance(modal));
+  if (!stale.length) return;
+  stale.forEach(modal => {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.removeAttribute('aria-modal');
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+}
 
 // the distance to the server's day is taken while the page is fresh, not on the first open hours later
 document.addEventListener('DOMContentLoaded', function () {
@@ -1468,17 +1490,43 @@ function shortcutDialogOpen() {
 function openShortcutHelp() {
   const modal = document.getElementById('shortcutHelp');
   if (!modal || shortcutDialogOpen()) return;
-  const trigger = document.activeElement;
+  // An open TomSelect dropdown puts the focus back onto its field when it closes — and it closes
+  // as soon as the overview takes the focus, which then stays behind the overview, out of the
+  // reach of Esc. Closed first, it moves the focus before the overview is there. (The palette does
+  // not need this: a modal <dialog> makes the page behind it inert.)
+  document.querySelectorAll('.ts-wrapper.dropdown-active').forEach(wrapper => {
+    const select = wrapper.previousElementSibling && wrapper.previousElementSibling.tomselect;
+    if (select) select.close();
+  });
+  // Opened from the palette, the palette's origin is where the focus belongs — what the closed
+  // palette left behind may be the hidden search input of a TomSelect field.
+  const trigger = paletteState.origin || document.activeElement;
+  // the overview gives the focus back itself; the palette closing under it must not move it
+  // there while the overview is on its way in
+  paletteState.origin = null;
   // Bootstrap hands the focus back only to a toggle of data-bs-toggle; ? and the palette are none
-  modal.addEventListener('hidden.bs.modal', () => {
-    if (trigger && trigger !== document.body && document.body.contains(trigger)) trigger.focus();
-  }, { once: true });
+  modal.addEventListener('hidden.bs.modal', () => paletteRestoreFocus(trigger), { once: true });
   tabler.bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+
+/**
+ * The form Ctrl+Enter saves: the one the focus is in, or — with the focus on the page or beside the
+ * form, say on an entry of the recent comments — the page's only form that offers the shortcut.
+ * A link and a submit button keep what the combination does on them: the link opens in a new tab,
+ * the button does its own saving.
+ */
+function shortcutSubmitForm(focused) {
+  const control = focused && focused.closest ? focused.closest('a[href], button, input[type="submit"]') : null;
+  if (control && (control.matches('a[href]') || control.type === 'submit')) return null;
+  const own = focused && focused.closest ? focused.closest('form') : null;
+  if (own) return own.querySelector('[data-submit-shortcut]') ? own : null;
+  const offered = document.querySelectorAll('[data-submit-shortcut]');
+  return offered.length === 1 && !shortcutDialogOpen() ? offered[0].form : null;
 }
 
 function submitByShortcut(event) {
   const focused = document.activeElement;
-  const form = focused && focused.closest ? focused.closest('form') : null;
+  const form = shortcutSubmitForm(focused);
   const button = form && form.querySelector('[data-submit-shortcut]');
   if (!button) return;
   event.preventDefault();
@@ -1490,7 +1538,7 @@ function submitByShortcut(event) {
   const wrapper = focused.closest('.ts-wrapper');
   const select = wrapper && wrapper.previousElementSibling && wrapper.previousElementSibling.tomselect;
   if (select && select.settings.createOnBlur && select.inputValue()) select.createItem(null);
-  focused.blur();
+  if (focused && focused !== document.body) focused.blur();
   form.requestSubmit(button);
 }
 
@@ -1500,6 +1548,12 @@ document.addEventListener('keydown', function (event) {
   if (typeof event.key !== 'string' || event.isComposing) return;
   if (event.key === 'Enter' && !event.altKey && !event.shiftKey
       && (IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey)) {
+    // a held key saves once: the focus can come back into the form while the first save is on
+    // its way (TomSelect puts it back onto its control when its dropdown closes)
+    if (event.repeat) {
+      if (shortcutSubmitForm(document.activeElement)) event.preventDefault();
+      return;
+    }
     submitByShortcut(event);
     return;
   }

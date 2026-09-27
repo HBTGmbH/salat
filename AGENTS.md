@@ -129,7 +129,8 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
 
 Neben `Ctrl+K` gibt es `?` (Übersicht aller Kürzel), `i` (Neue Buchung, dasselbe Ziel wie der
 Knopf in der Kopfzeile) und `Ctrl+Enter` / `⌘Enter` (speichert das Formular über seinen Knopf mit
-`data-submit-shortcut`, heute das Buchungsformular). Das Verhalten steht in `static/js/salat.js`.
+`data-submit-shortcut`, heute das Buchungsformular; auf einem Link und einem Absendeknopf bleibt
+deren eigene Wirkung). Das Verhalten steht in `static/js/salat.js`.
 
 - **Jedes Kürzel steht in der Übersicht** (`fragments/shortcut-help.html`). Ein Kürzel, das dort
   fehlt, findet niemand.
