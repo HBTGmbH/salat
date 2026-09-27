@@ -744,7 +744,7 @@
                     <div th:replace="~{dailyreport/daily-list-card :: listTimereportCard}"></div>
                   </th:block>
                   <!-- Add new timereport card -->
-                  <a th:if="${listData.canCreateTimereport and !day.notWorked}"
+                  <a th:if="${day.canCreate and !day.notWorked}"
                      th:href="@{/dailyreport/timereports/new(date=${day.date},returnUrl='/dailyreport/daily?mode=list&fMonth='+${yearMonth.monthValue}+'&fYear='+${yearMonth.year})}"
                      class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
                      style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">

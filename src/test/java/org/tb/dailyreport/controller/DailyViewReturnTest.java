@@ -133,6 +133,23 @@ class DailyViewReturnTest {
         + "&returnUrl=" + URLEncoder.encode(OVERVIEW_DAY, UTF_8));
   }
 
+  /**
+   * Auf einem Tag, an dem nicht angelegt werden darf — freigegeben oder abgenommen —, öffnet die Kopfzeile das
+   * Formular für heute, statt in eine Ablehnung zu führen (#1164). Der Weg zurück bleibt der gezeigte Tag.
+   */
+  @Test
+  void on_a_day_that_cannot_be_booked_the_header_button_opens_the_form_for_today() {
+    var dailyData = mock(DailyViewData.class);
+    when(dailyData.canCreateTimereport()).thenReturn(false);
+    when(dailyService.buildDailyView(DATE, 42L)).thenReturn(dailyData);
+    var model = new ExtendedModelMap();
+
+    controller.show(42L, "daily", DATE, null, null, null, model);
+
+    assertThat(model.get("newBookingUrl")).isEqualTo("/dailyreport/timereports/new"
+        + "?returnUrl=%2Fdailyreport%2Fdaily%3Fmode%3Ddaily%26date%3D2026-03-02");
+  }
+
   /** Die Monatsliste zeigt keinen einzelnen Tag; die Kopfzeile öffnet das Formular für heute. */
   @Test
   void the_month_list_leaves_the_header_button_without_context() {

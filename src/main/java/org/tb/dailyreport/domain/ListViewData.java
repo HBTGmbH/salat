@@ -14,8 +14,7 @@ public record ListViewData(
     boolean prevDayDiffNegative,
     boolean hasTarget,
     boolean monthReleased,
-    Set<Long> editableTimereportIds,
-    boolean canCreateTimereport
+    Set<Long> editableTimereportIds
 ) {
     public record ListDay(
         LocalDate date,
@@ -25,6 +24,8 @@ public record ListViewData(
         boolean isHoliday,
         String holidayName,
         boolean notWorked,
-        boolean isToday
+        boolean isToday,
+        /** a booking may be created on this day - decided per day, not per month (#1164) */
+        boolean canCreate
     ) {}
 }

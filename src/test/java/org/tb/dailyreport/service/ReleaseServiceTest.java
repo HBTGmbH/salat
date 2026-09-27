@@ -2361,19 +2361,35 @@ class ReleaseServiceTest {
             assertThat(review.canCreate()).isFalse();
         }
 
+        /** After the acceptance only an admin changes a booking; the manager reopens first (#1164). */
         @Test
-        void theManagerMayEditTheReleasedAndTheAcceptedBookingsButCreatesNone() {
+        void theManagerMayEditTheReleasedBookingsButNeitherTheAcceptedOnesNorCreates() {
+            givenReleasedWeekWithOneAcceptedBooking();
+            loggedInAs(MANAGER, true, true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L);
+            assertThat(review.canCreate()).isFalse();
+        }
+
+        @Test
+        void anAdminMayEditTheAcceptedBookingsToo() {
+            givenReleasedWeekWithOneAcceptedBooking();
+            loggedInAs(MANAGER, true, true);
+            lenient().when(authorizedUser.isAdmin()).thenReturn(true);
+
+            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
+
+            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L);
+        }
+
+        private void givenReleasedWeekWithOneAcceptedBooking() {
             acceptableContract();
             final var closed = booking(6, MONDAY, GlobalConstants.TIMEREPORT_STATUS_CLOSED, OrderType.STANDARD, Duration.ofHours(1));
             final var listed = new ArrayList<>(week());
             listed.add(closed);
             givenBookings(MONDAY, FRIDAY, listed);
-            loggedInAs(MANAGER, true, true);
-
-            final var review = classUnderTest.reviewAcceptance(EMPLOYEE_CONTRACT_ID, FRIDAY);
-
-            assertThat(review.editableTimereportIds()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L);
-            assertThat(review.canCreate()).isFalse();
         }
 
         @Test

@@ -2,6 +2,10 @@ package org.tb.dailyreport.service;
 
 import static org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW;
 import static org.tb.auth.domain.AccessLevel.WRITE;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
+import static org.tb.common.exception.ErrorCode.WD_CLOSED_REQ_ADMIN;
+import static org.tb.common.exception.ErrorCode.WD_COMMITTED_NOT_SELF;
+import static org.tb.common.exception.ErrorCode.WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER;
 import static org.tb.common.exception.ErrorCode.WD_DELETE_REQ_EMPLOYEE_OR_MANAGER;
 import static org.tb.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static org.tb.common.exception.ErrorCode.WD_OUTSIDE_CONTRACT;
@@ -28,9 +32,12 @@ import org.tb.auth.domain.Authorized;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.util.BusinessRuleCheckUtils;
 import org.tb.common.util.DateUtils;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.ReportPeriod;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
@@ -61,6 +68,7 @@ public class WorkingdayService {
   private final EmployeecontractService employeecontractService;
   private final DailyPreferenceService dailyPreferenceService;
   private final PlatformTransactionManager transactionManager;
+  private final TimereportAuthorization timereportAuthorization;
 
   /**
    * The time the working day started: the stored value when there is one, otherwise the configured
@@ -173,12 +181,7 @@ public class WorkingdayService {
    */
   private void checkUpsertAllowed(Workingday workingday) {
     var employeecontract = workingday.getEmployeecontract();
-    String employeeSign = employeecontract.getEmployee().getSign();
-    if(!authorizedUser.isManager() &&
-       !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
-      throw new AuthorizationException(WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
-    }
+    checkWriteAllowed(employeecontract, workingday.getRefday(), WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER);
 
     BusinessRuleCheckUtils.isTrue(employeecontract.isValidAt(workingday.getRefday()), WD_OUTSIDE_CONTRACT);
 
@@ -261,15 +264,49 @@ public class WorkingdayService {
 
   public void deleteWorkingdayById(long workingDayId) {
     var workingday = workingdayRepository.findById(workingDayId).orElseThrow();
-    String employeeSign = workingday.getEmployeecontract().getEmployee().getSign();
-    var employeecontract = workingday.getEmployeecontract();
-    if(!authorizedUser.isManager() &&
-       !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
-       !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
-      throw new AuthorizationException(WD_DELETE_REQ_EMPLOYEE_OR_MANAGER);
-    }
+    checkWriteAllowed(workingday.getEmployeecontract(), workingday.getRefday(), WD_DELETE_REQ_EMPLOYEE_OR_MANAGER);
 
     workingdayRepository.deleteById(workingDayId);
+  }
+
+  /**
+   * Wer den Arbeitstag schreiben oder löschen darf. Im offenen Zeitraum die Person selbst, die
+   * Geschäftsführung und wer es über eine Regel darf; im freigegebenen und im abgenommenen Zeitraum
+   * gilt dieselbe Regel wie für die Buchungen des Tages (#1164): freigegeben die Geschäftsführung und
+   * die zuständige People Lead, aber nie die Person selbst, abgenommen nur noch ein Admin. Beginn und
+   * Pause gehören zu dem, was freigegeben und abgenommen wird — sie ändern sonst nachträglich, was die
+   * Prüfung vor der Freigabe über den Tag gesagt hat.
+   */
+  private void checkWriteAllowed(Employeecontract employeecontract, LocalDate day, ErrorCode openPeriodDenial) {
+    writeDenial(employeecontract, day, openPeriodDenial).ifPresent(denial -> {
+      throw new AuthorizationException(denial);
+    });
+  }
+
+  /**
+   * Ob der Arbeitstag an diesem Tag geschrieben werden darf — dieselbe Antwort, die das Speichern
+   * gibt. „Rest nicht gearbeitet" nimmt damit nur die Tage, die es schreiben darf (#1164).
+   */
+  @Transactional(readOnly = true)
+  public boolean isWriteAllowed(Employeecontract employeecontract, LocalDate day) {
+    return writeDenial(employeecontract, day, WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER).isEmpty();
+  }
+
+  private Optional<ErrorCode> writeDenial(Employeecontract employeecontract, LocalDate day, ErrorCode openPeriodDenial) {
+    if (TIMEREPORT_STATUS_OPEN.equals(ReportPeriod.statusOn(employeecontract, day))) {
+      String employeeSign = employeecontract.getEmployee().getSign();
+      if(!authorizedUser.isManager() &&
+         !employeecontract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()) &&
+         !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
+        return Optional.of(openPeriodDenial);
+      }
+      return Optional.empty();
+    }
+    return timereportAuthorization.writeDenialOn(employeecontract, day).map(denial -> switch (denial) {
+      case TR_CLOSED_TIME_REPORT_REQ_ADMIN -> WD_CLOSED_REQ_ADMIN;
+      case TR_COMMITTED_TIME_REPORT_NOT_SELF -> WD_COMMITTED_NOT_SELF;
+      default -> WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER;
+    });
   }
 
   public List<Workingday> getWorkingdaysByEmployeeContractId(long employeeContractId, LocalDate dateFirst,

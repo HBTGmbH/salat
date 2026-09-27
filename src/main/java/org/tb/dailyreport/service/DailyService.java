@@ -5,7 +5,6 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.tb.common.GlobalConstants.*;
 import static org.tb.common.util.DateUtils.isInRange;
 import static org.tb.common.util.DateUtils.today;
 
@@ -21,8 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
-import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.domain.DailyViewData;
 import org.tb.dailyreport.domain.DailyViewData.WeekStripDay;
 import org.tb.dailyreport.domain.ListViewData;
@@ -30,7 +29,6 @@ import org.tb.dailyreport.domain.ListViewData.ListDay;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
-import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeecontractService;
 
 @Service
@@ -44,7 +42,7 @@ public class DailyService {
     private final PublicholidayService publicholidayService;
     private final OvertimeService overtimeService;
     private final EmployeecontractService employeecontractService;
-    private final AuthorizedUser authorizedUser;
+    private final TimereportAuthorization timereportAuthorization;
 
     @Transactional(readOnly = true)
     public DailyViewData buildDailyView(LocalDate date, long employeeContractId) {
@@ -85,17 +83,15 @@ public class DailyService {
             ? DurationUtils.format(dayTarget)
             : null;
 
-        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
-        var isSupervised = isSupervisedByCurrentUser(contract);
         Set<Long> editableIds = timereports.stream()
-            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner, isSupervised))
+            .filter(tr -> timereportAuthorization.isWriteAllowed(contract, tr.getStatus()))
             .map(TimereportDTO::getId)
             .collect(toSet());
-        boolean workingdayEditable = isOwner || authorizedUser.isManager();
-        LocalDate lastOfMonth = YearMonth.from(date).atEndOfMonth();
-        boolean monthReleased = contract.getReportReleaseDate() != null
-            && !contract.getReportReleaseDate().isBefore(lastOfMonth);
-        boolean canCreate = (!monthReleased && isOwner) || authorizedUser.isManager();
+        // the working day and a new booking follow the rule of the day they belong to, the same the
+        // saving applies (#1164) - offered is only what can be saved
+        boolean canWriteDay = timereportAuthorization.isWriteAllowedOn(contract, date);
+        boolean workingdayEditable = canWriteDay;
+        boolean canCreate = canWriteDay;
 
         return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
             hasTarget, hasDayTarget, overMaxHours, progressPercent, weekStrip,
@@ -127,7 +123,8 @@ public class DailyService {
             boolean isHoliday = holidays.containsKey(day);
             Workingday wd = workingdays.get(day);
             boolean notWorked = wd != null && wd.getType() == Workingday.WorkingDayType.NOT_WORKED;
-            return new ListDay(day, dayReports, DurationUtils.format(dayTotal, false), isWeekend, isHoliday, holidays.get(day), notWorked, day.isEqual(today));
+            return new ListDay(day, dayReports, DurationUtils.format(dayTotal, false), isWeekend, isHoliday, holidays.get(day), notWorked, day.isEqual(today),
+                timereportAuthorization.isWriteAllowedOn(contract, day));
         }).collect(Collectors.toList());
 
         Duration grand = timereports.stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
@@ -162,15 +159,12 @@ public class DailyService {
         boolean monthReleased = contract.getReportReleaseDate() != null
             && !contract.getReportReleaseDate().isBefore(last);
 
-        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign());
-        var isSupervised = isSupervisedByCurrentUser(contract);
         Set<Long> editableIds = timereports.stream()
-            .filter(tr -> canEditTimereport(tr.getStatus(), isOwner, isSupervised))
+            .filter(tr -> timereportAuthorization.isWriteAllowed(contract, tr.getStatus()))
             .map(TimereportDTO::getId)
             .collect(toSet());
-        boolean canCreate = (!monthReleased && isOwner) || authorizedUser.isManager();
 
-        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased, editableIds, canCreate);
+        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased, editableIds);
     }
 
     @Transactional(readOnly = true)
@@ -202,33 +196,13 @@ public class DailyService {
     }
 
     @Transactional(readOnly = true)
+    /**
+     * The status rule of {@link TimereportAuthorization}, the one saving applies. It used to be a copy
+     * of its own here, and the copy let managers edit accepted bookings after saving no longer did (#1164).
+     */
     public boolean isTimereportEditable(TimereportDTO tr, long employeeContractId) {
         var contract = employeecontractService.getEmployeecontractById(employeeContractId);
-        boolean isOwner = contract.getEmployee().getSalatUser().getLoginname()
-            .equals(authorizedUser.getEffectiveLoginSign());
-        var isSupervised = isSupervisedByCurrentUser(contract);
-        return canEditTimereport(tr.getStatus(), isOwner, isSupervised);
-    }
-
-    private boolean canEditTimereport(String status, boolean isOwner, boolean isSupervised) {
-        return switch(status) {
-            // people leads may edit committed time reports if they are the supervisor too
-            // manager for all employees
-            // but not their own (to prevent mistakes)
-            case TIMEREPORT_STATUS_COMMITED -> (isSupervised && authorizedUser.isPeopleLead() || authorizedUser.isManager()) && !isOwner;
-            // managers may edit closed time reports too
-            // but not their own (to prevent mistakes)
-            case TIMEREPORT_STATUS_CLOSED -> authorizedUser.isManager() && !isOwner;
-            // all employees may edit their own open time reports.
-            // manager may do this too, even if open
-            case TIMEREPORT_STATUS_OPEN -> isOwner || authorizedUser.isManager();
-            default -> false; // other status values must default to false
-        };
-    }
-
-    private boolean isSupervisedByCurrentUser(Employeecontract ec) {
-        return ec.getSupervisors().stream()
-                .anyMatch(s -> s.getSalatUser().getLoginname().equals(authorizedUser.getEffectiveLoginSign()));
+        return timereportAuthorization.isWriteAllowed(contract, tr.getStatus());
     }
 
 }

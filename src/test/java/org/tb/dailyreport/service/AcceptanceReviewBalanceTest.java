@@ -151,9 +151,11 @@ class AcceptanceReviewBalanceTest {
 
   @BeforeEach
   void setUp() {
-    // a manager who is not the booked person: may accept, and may write bookings of every status
+    // an admin who is not the booked person: may accept, and may write bookings of every status -
+    // accepted ones only an admin writes (#1164)
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.isManager()).thenReturn(true);
+    when(authorizedUser.isAdmin()).thenReturn(true);
     when(authorizedUser.getLoginSign()).thenReturn(EmployeeTestUtils.BOSS_SIGN);
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(EmployeeTestUtils.BOSS_SIGN);
 

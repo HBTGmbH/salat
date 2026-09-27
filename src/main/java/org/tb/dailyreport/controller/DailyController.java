@@ -137,8 +137,14 @@ public class DailyController {
             LocalDate prev = targetDate.minusDays(1);
             LocalDate next = targetDate.plusDays(1);
 
+            // the day shown is the header button's day only where a booking may be created on it;
+            // on a released or accepted day it opens the form for today instead (#1164)
+            LocalDate bookingDay = targetDate;
             if (ecId > 0) {
                 var dailyData = dailyService.buildDailyView(targetDate, ecId);
+                if (!dailyData.canCreateTimereport()) {
+                    bookingDay = null;
+                }
                 model.addAttribute("dailyData", dailyData);
                 model.addAttribute("weekStripData", dailyData.weekStrip());
                 var form = new WorkingdayForm();
@@ -157,7 +163,7 @@ public class DailyController {
             // the header button books on the day shown and comes back to it (#1156); the contract is
             // the remembered selection the form falls back to, as for the button in the page itself
             model.addAttribute("newBookingUrl",
-                TimereportController.newBookingUrl(targetDate, null, dailyViewUrl(targetDate, returnUrl)));
+                TimereportController.newBookingUrl(bookingDay, null, dailyViewUrl(targetDate, returnUrl)));
             if (ecId > 0) {
                 addBookingOffers(model, ecId, targetDate);
             }
