@@ -38,24 +38,34 @@ public class CustomerPaletteProvider implements PaletteProvider {
     if (authorizedUser.isRestricted()) {
       return List.of();
     }
-    return customerService.getPaletteCandidates(query).stream().map(row -> hit(query, row)).toList();
+    return customerService.getPaletteCandidates(query).stream()
+        // a customer without short name and name has nothing to be shown by
+        .filter(row -> present(row.shortname()) || present(row.name()))
+        .map(row -> hit(query, row))
+        .toList();
   }
 
   private PaletteHit hit(PaletteQuery query, CustomerSearchRow row) {
     var hidden = Hiding.isHidden(row.hide());
-    var shortname = row.shortname() == null || row.shortname().isBlank() ? row.name() : row.shortname();
-    var name = row.name() != null && !row.name().equals(shortname) ? row.name() : null;
+    var shortname = present(row.shortname()) ? row.shortname() : row.name();
+    var name = present(row.name()) && !row.name().equals(shortname) ? row.name() : null;
     var open = authorizedUser.isManager()
         ? PaletteLink.to("/customers/edit").param("id", row.id())
         : PaletteLink.to("/customers").param("fCustomerFilter", shortname)
             .paramIf(hidden, "fCustomerShowHidden", true);
+    // the orders of a hidden customer are hidden as a rule; without the switch the list stays empty
     var orders = PaletteLink.to("/orders/customerorders")
         .param("fCustomerId", row.id())
-        .param("fCustomerOrderFilter", null);
+        .param("fCustomerOrderFilter", null)
+        .paramIf(hidden, "fCustomerOrderShowHidden", true);
     var targets = List.of(
         new PaletteTarget(PaletteText.of("main.palette.target.customer.open"), open.build(), PaletteTarget.OPEN),
         new PaletteTarget(PaletteText.of("main.palette.target.customer.orders"), orders.build(), 1));
     return new PaletteHit(CUSTOMER, String.valueOf(row.id()), shortname, name, null, false, hidden,
         query.match(shortname, row.name()), targets);
+  }
+
+  private static boolean present(String value) {
+    return value != null && !value.isBlank();
   }
 }

@@ -48,7 +48,7 @@ public class PaletteSearchService {
   static final Comparator<PaletteHit> RANKING = Comparator.comparing(PaletteHit::hidden)
       .thenComparing(PaletteHit::ended)
       .thenComparing(Comparator.comparingInt(PaletteHit::match).reversed())
-      .thenComparing(PaletteHit::title, String.CASE_INSENSITIVE_ORDER);
+      .thenComparing(PaletteHit::title, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
 
   private static final Comparator<PaletteTarget> TARGET_ORDER = Comparator.comparingInt(PaletteTarget::rank);
 

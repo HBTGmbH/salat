@@ -105,8 +105,9 @@ public class OrderPaletteProvider implements PaletteProvider {
     var targets = authorizedUser.isRestricted() ? List.<PaletteTarget>of() : List.of(
         new PaletteTarget(PaletteText.of("main.palette.target.suborder.open"),
             openSuborder(row, completeSign, ended), PaletteTarget.OPEN));
-    return new PaletteHit(SUBORDER, String.valueOf(row.id()), completeSign, row.shortdescription(),
-        row.customerShortname() == null ? null : PaletteText.of("main.palette.context.plain", row.customerShortname()),
+    var customer = firstPresent(row.customerShortname());
+    return new PaletteHit(SUBORDER, String.valueOf(row.id()), completeSign, firstPresent(row.shortdescription()),
+        customer == null ? null : PaletteText.of("main.palette.context.plain", customer),
         ended, hidden, query.match(completeSign, row.shortdescription(), row.customerorderShortdescription(),
             row.customerShortname()), targets);
   }

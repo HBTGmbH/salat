@@ -3,6 +3,14 @@
 Date: 2026-09-27
 Status: Accepted
 
+> **Nachtrag 2026-09-27 (#1157):** Die Geschäftsobjekte — Aufträge, Unteraufträge, Auftraggeber,
+> Personen — kommen vom Server, über einen Anbieter je Modul (ADR-0031). Was hier für Seiten, Tage
+> und zuletzt Verwendetes gilt, bleibt: sie kommen ohne Anfrage aus. Ein Objekt wird nicht unter
+> „Zuletzt verwendet" gemerkt, weil ein gemerkter Eintrag ohne Anfrage angezeigt würde und damit
+> ohne die Prüfung, ob er noch geöffnet werden darf. Die Grundsätze C (die Palette navigiert und
+> öffnet vorbelegte Formulare, speichert nichts) und „keine Seite, die mit 403 antwortet" gelten
+> für die Objekte unverändert.
+
 ## Context and Problem Statement
 
 #1016 wünschte feste Tastenkürzel je Ansicht: `Ctrl+M` für die Matrixübersicht, `Ctrl+T` für die

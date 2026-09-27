@@ -257,6 +257,33 @@ public class ArchitectureTest {
           "notification must only import common, auth",
           "org.tb.common.", "org.tb.auth.", "org.tb.notification."));
 
+  /**
+   * palette runs the object search of the command palette (#1157, ADR-0031) and knows none of the
+   * modules it searches: each of them implements {@code PaletteProvider} from {@code common.palette},
+   * and Spring hands the implementations over — the pattern of {@code UiStateKeyContributor}. A
+   * palette that asked order or employee itself would grow an edge with every kind of hit, and it
+   * would take over the decision that has to stay with the modules: who may see a hit, and which of
+   * its targets would answer 403.
+   */
+  @ArchTest
+  static final ArchRule paletteShouldAccessCommonAuthOnly = priority(HIGH).noClasses().that()
+      .resideInAPackage("org.tb.palette..")
+      .should().dependOnClassesThat(new OnlyOwnDependencyPredicate(
+          "palette must only import common, auth",
+          "org.tb.common.", "org.tb.auth.", "org.tb.palette."));
+
+  /**
+   * The other half of the same design (#1157): the modules contribute through {@code common.palette}
+   * alone and never import the collector. Since palette imports no module,
+   * {@link #beFreeOfCycles} would stay green with such an edge — but a provider reaching for, say,
+   * {@code PaletteGroup} would tie its module to the one module that runs all of them, and the first
+   * import in the other direction would close a cycle. This says what is meant before that.
+   */
+  @ArchTest
+  static final ArchRule nothingShouldAccessPalette = priority(HIGH).noClasses().that()
+      .resideOutsideOfPackage("org.tb.palette..")
+      .should().dependOnClassesThat().resideInAPackage("org.tb.palette..");
+
   // settingseditor is an aggregator: it may import from any module.
   // The beFreeOfCycles rule below ensures no other module can accidentally depend back on it.
 

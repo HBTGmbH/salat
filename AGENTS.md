@@ -105,7 +105,7 @@ Zwei Fallstricke, die beide daher kommen, dass der Dialog zwischen Klick und Akt
   abgehen, bevor die Frage beantwortet ist. Ausgelöst wird danach mit `requestSubmit()`, nicht mit
   `submit()`: nur das erste behält den auslösenden Knopf und die HTML5-Validierung.
 
-## Befehlspalette (→ ADR-0030)
+## Befehlspalette (→ ADR-0030, ADR-0031)
 
 `Ctrl+K` / `⌘K` und der Eintrag „Suchen" in der Kopfzeile öffnen sie auf jeder Seite: einmal als
 Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten in
@@ -124,6 +124,15 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
   des Servers, nicht der des Browsers: der Dialog trägt Zeitpunkt und Zeitzone des Servers
   (`data-now`, `data-time-zone`), und die Uhr des Browsers zählt von dort weiter.
+- **Geschäftsobjekte kommen vom Server** (#1157, ADR-0031): jedes Modul mit Objekten oder Zielen
+  setzt `org.tb.common.palette.PaletteProvider` um, in seinem `controller`-Paket neben dem
+  `UiStateKeyContributor`; das Modul `palette` sammelt sie (`GET /palette/search`). **Jeder Anbieter
+  entscheidet selbst, was die Person sieht, je Treffer und je Ziel** — mit den Klassen, die die
+  Zielseite fragt, nicht mit einer Kopie ihrer Regel —, und die Palette zeigt nichts, dessen Seite
+  mit 403 antwortet; ein Treffer ohne Ziel fällt weg. Die Services der Fachmodule prüfen beim Lesen
+  meist nur die Anmeldung, eingeschränkte Anmeldungen hält also der Anbieter fern. Angezeigt werden
+  fachliche Schlüssel, eine Datenbank-id höchstens in der Adresse. Ein Objekt wird nicht unter
+  „Zuletzt verwendet" gemerkt.
 
 ## Tastenkürzel (#1016)
 
@@ -619,6 +628,7 @@ Top-level packages under `org.tb`, one module per domain capability:
 | `invoice` | Invoice generation and settings |
 | `jira` | Jira integration and replication; may import `order` — a replication is scoped to a place in the order tree (#1025). Since #1007 it writes booked hours back as worklogs, but it must **not** import `dailyreport`: the sums come through a command event in `jira.command` that `dailyreport` answers, and `dailyreport` may import `jira` for exactly that |
 | `notification` | Notifications |
+| `palette` | Object search of the command palette (#1157, ADR-0031): collects every module's `PaletteProvider`; imports only `common` and `auth`, and no module imports it |
 | `order` | Customer orders, employee orders, suborders |
 | `reporting` | Report definitions and scheduling |
 | `settings` | User preference store: entity, converter, repository, service — generic map-based API, no UI |
