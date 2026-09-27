@@ -83,6 +83,35 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
+   * A day not worked used to get a row of its own below Beginn, Pause and Ende, holding a dot without
+   * text (#1159). The marker now takes the place of those three rows, which are empty on that day, as
+   * one cell reaching over all of them. That shortens the two rows below it, so the column under the
+   * mouse can no longer be read from {@code cellIndex}: hovering the last cell of Arbeitsende has to
+   * light up its own day, not one further left.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_day_not_worked_is_one_marker_across_begin_break_and_end(E2EBrowser browser) {
+    // September 2026 of this person: every weekday from the 7th on is not worked (see E2ETestData)
+    runAsUser(browser, E2ETestData.EMPLOYEE_REVIEWED_SIGN, "/dailyreport/matrix?fMonth=9&fYear=2026", page -> {
+      Locator matrix = page.locator("#matrix");
+      assertThat(matrix.locator("td.matrix-first-col").filter(
+          new Locator.FilterOptions().setHasText("Nicht gearbeitet"))).hasCount(0);
+
+      Locator marker = matrix.locator("tfoot td[rowspan='3'] .not-worked-badge").first();
+      assertThat(marker).hasAttribute("title", "Nicht gearbeitet");
+      assertThat(marker.locator(".visually-hidden")).hasText("Nicht gearbeitet");
+      assertThat(marker.locator("i")).hasAttribute("aria-hidden", "true");
+
+      // the last day with a cell of its own in Arbeitsende is Sunday the 27th
+      matrix.locator("tfoot tr").filter(new Locator.FilterOptions().setHasText("Arbeitsende"))
+          .locator("td:not(.matrix-first-col):not(.matrix-last-col)").last()
+          .hover();
+      assertThat(matrix.locator("thead th.matrix-col-hover")).containsText("27");
+    });
+  }
+
+  /**
    * Counterpart to {@code EnglishLocaleE2ETest}: the legend labels and the month picker moved from
    * hard-coded template text (and from the native month input) into the message bundle (#823), so a
    * German browser has to keep seeing German.

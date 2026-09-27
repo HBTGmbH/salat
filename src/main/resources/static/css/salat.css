@@ -512,6 +512,21 @@
   --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff);
 }
 
+/* btn-azure setzt einen Tag auf "Nicht gearbeitet" und traegt deshalb den Ton der Badge, die er
+   erzeugt (#1159): dieselbe Mischung wie .badge.bg-azure-lt, modusunabhaengig, mit weisser Schrift.
+   Tablers eigener Button laege auf dem vollen Ton mit Fastweiss bei 2,9:1. Im Hover dunkelt er in
+   beiden Modi weiter ab - Tablers -darken hellte auf hellem Grund auf. */
+.btn-azure {
+  --tblr-btn-color: var(--tblr-white);
+  --tblr-btn-bg: color-mix(in srgb, var(--tblr-azure) 75%, #000);
+  --tblr-btn-hover-color: var(--tblr-white);
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-azure) 65%, #000);
+  --tblr-btn-active-color: var(--tblr-white);
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-azure) 65%, #000);
+  --tblr-btn-disabled-color: var(--tblr-white);
+  --tblr-btn-disabled-bg: color-mix(in srgb, var(--tblr-azure) 75%, #000);
+}
+
 /* Outline- und Ghost-Varianten tragen den vollen Farbton als Text auf der Seitenflaeche und haben
    damit dasselbe Problem wie die text-*-Utilities weiter oben - je nach Modus zu hell oder zu
    dunkel. Sie bekommen deshalb dieselbe Mischung und dieselben Anteile; der Rahmen nimmt sie mit,

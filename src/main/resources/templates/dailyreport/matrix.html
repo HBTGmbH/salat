@@ -77,12 +77,12 @@
           th:data-confirm-text="#{main.matrix.fillnotworked.confirm.text}"
           th:data-confirm-detail="${#temporals.format(yearMonth.atDay(1), 'MMMM yyyy')}"
           th:data-confirm-label="#{main.matrix.fillnotworked.button.text}"
-          data-confirm-variant="warning">
+          data-confirm-variant="azure">
       <input type="hidden" name="month" th:value="${yearMonth.monthValue}"/>
       <input type="hidden" name="year" th:value="${yearMonth.year}"/>
-      <!--/* warning, like the "Nicht gearbeitet" badge this action produces */-->
-      <button type="submit" class="btn btn-outline-warning text-nowrap">
-        <i class="ti ti-calendar-off me-1"></i>
+      <!--/* filled azure with the same icon as the "Nicht gearbeitet" badge this action produces (#1159) */-->
+      <button type="submit" class="btn btn-azure text-nowrap">
+        <i th:replace="~{fragments/not-worked :: icon('me-1')}"></i>
         <span th:text="#{main.matrix.fillnotworked.button.text}">Rest nicht gearbeitet</span>
       </button>
     </form>

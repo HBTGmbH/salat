@@ -275,7 +275,7 @@
                    was an dem Tag war; die Tagessumme unter den Dauern, mit denen sie sich vergleicht. */-->
             <td>
               <span th:if="${day.holiday}" class="badge bg-red-lt me-1" th:text="${day.holidayName}">Feiertag</span>
-              <span th:if="${day.notWorked}" class="badge bg-warning-lt" th:text="#{main.daily.workingday.notworked.label}">Nicht gearbeitet</span>
+              <th:block th:if="${day.notWorked}"><span th:replace="~{fragments/not-worked :: badge(false)}"></span></th:block>
             </td>
             <td class="text-end fw-bold text-nowrap">
               <span th:unless="${#lists.isEmpty(day.timereports)}" th:text="${day.sumText}">7:30</span>
@@ -308,9 +308,9 @@
                 <input type="hidden" name="contractId" th:value="${review.employeecontractId}"/>
                 <input type="hidden" name="date" th:value="${day.date}"/>
                 <input type="hidden" name="returnUrl" th:value="${back}"/>
-                <button type="submit" class="btn btn-sm btn-outline-secondary ms-1"
+                <button type="submit" class="btn btn-sm btn-azure ms-1"
                         th:aria-label="#{main.release.review.notworked.aria.text(${dateText})}">
-                  <i class="ti ti-moon me-1" aria-hidden="true"></i><span th:text="#{main.release.review.notworked.text}">Nicht gearbeitet</span>
+                  <i th:replace="~{fragments/not-worked :: icon('me-1')}"></i><span th:text="#{main.general.notworked.text}">Nicht gearbeitet</span>
                 </button>
               </form>
             </td>
