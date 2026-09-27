@@ -18,6 +18,9 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
@@ -278,10 +281,50 @@ class PaletteSearchServiceTest {
         .containsExactly(CUSTOMERORDER, CUSTOMER, PERSON);
   }
 
+  // --- the transaction ----------------------------------------------------------------------------
+
+  /**
+   * Nothing is written, and a commit would fail where an exception caught within the search crossed
+   * a service; the search ends its transaction with a rollback, and with no exception.
+   */
+  @Test
+  void runs_in_one_read_only_transaction_that_is_rolled_back() {
+    var transactions = new RecordingTransactionManager();
+    var provider = new FakeProvider().finds(hit(CUSTOMERORDER, "MUSTER-01", open("MUSTER-01")));
+
+    assertThat(new PaletteSearchService(List.of(provider), transactions).search("muster")).hasSize(1);
+    assertThat(transactions.ends).containsExactly("read-only rollback");
+  }
+
   // --- helpers ------------------------------------------------------------------------------------
 
   private static PaletteSearchService service(PaletteProvider... providers) {
-    return new PaletteSearchService(List.of(providers));
+    return new PaletteSearchService(List.of(providers), new RecordingTransactionManager());
+  }
+
+  /** How the search ends its transactions; the real one is {@code PaletteSearchIntegrationTest}'s. */
+  private static class RecordingTransactionManager extends AbstractPlatformTransactionManager {
+
+    private final List<String> ends = new ArrayList<>();
+
+    @Override
+    protected Object doGetTransaction() {
+      return new Object();
+    }
+
+    @Override
+    protected void doBegin(Object transaction, TransactionDefinition definition) {
+    }
+
+    @Override
+    protected void doCommit(DefaultTransactionStatus status) {
+      ends.add((status.isReadOnly() ? "read-only " : "") + "commit");
+    }
+
+    @Override
+    protected void doRollback(DefaultTransactionStatus status) {
+      ends.add((status.isReadOnly() ? "read-only " : "") + "rollback");
+    }
   }
 
   /** A current hit matching at the title start, with the key as its title. */

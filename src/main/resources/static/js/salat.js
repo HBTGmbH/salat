@@ -849,8 +849,9 @@ const paletteState = { origin: null, commands: [], items: [], active: -1, wiredD
   // the object search (#1157): items before localCount are the page's own, the rest came from the
   // server; token discards an answer overtaken by the next keystroke; objects is the last answer
   localCount: 0, objectToken: 0, objectTimer: null, objects: null,
-  // the targets of one object, opened with → ({ item, query })
-  drill: null };
+  // the targets of one object, opened with → ({ item, query }); heldKey is the key that last went
+  // into or out of them, as long as it is held
+  drill: null, heldKey: null };
 
 // the object search asks the server from two characters on, once the typing pauses (#1157)
 const PALETTE_OBJECT_MIN_LENGTH = 2;
@@ -1437,8 +1438,11 @@ function paletteShowObjects(dialog, root, query, stale, pending) {
 
   paletteAnnounce(pending);
   if (active && active.type === 'object') {
+    // gone with the new answer, the selection falls back to the first object, then to the first
+    // hit of the page; where rows came in above it, it is scrolled back into view
     const kept = paletteState.items.findIndex(item => item.key === active.key);
-    paletteSetActive(kept >= 0 ? kept : firstObject, false);
+    const index = kept >= 0 ? kept : firstObject >= 0 ? firstObject : paletteState.localCount ? 0 : -1;
+    paletteSetActive(index, index !== paletteState.active);
   } else if (paletteState.active < 0 && firstObject >= 0) {
     // nothing was selected — the page had no hit —, so selecting the first object moves nothing
     paletteSetActive(firstObject, true);
@@ -1535,16 +1539,27 @@ function paletteWire(dialog) {
     } else if (event.key === 'Enter' && !event.isComposing) {
       event.preventDefault();
       paletteRun(paletteState.active);
+    } else if (event.isComposing) {
+      // an input method is composing: → and ← move between its clauses, Backspace deletes in it
+    } else if (event.repeat) {
+      // a held key goes into the targets or out of them once; its repeats would go on in the other
+      // level, deleting from the query that was just put back
+      if (event.key === paletteState.heldKey) event.preventDefault();
     } else if (event.key === 'ArrowRight' && !paletteState.drill && active && active.type === 'object'
         && paletteCaretAt(input, input.value.length)) {
       // only with the cursor at the end: elsewhere → moves the cursor, as it always does
       event.preventDefault();
+      paletteState.heldKey = event.key;
       paletteDrill(dialog, active);
     } else if (paletteState.drill && ((event.key === 'ArrowLeft' && paletteCaretAt(input, 0))
         || (event.key === 'Backspace' && input.value === ''))) {
       event.preventDefault();
+      paletteState.heldKey = event.key;
       paletteUndrill(dialog);
     }
+  });
+  input.addEventListener('keyup', (event) => {
+    if (event.key === paletteState.heldKey) paletteState.heldKey = null;
   });
   // the input keeps the focus while an entry is clicked or tapped — on a phone the on-screen
   // keyboard would otherwise close and move the entry away from under the finger

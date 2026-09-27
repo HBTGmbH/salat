@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
-import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.palette.PaletteKind.PERSON;
 import static org.tb.common.palette.PaletteKind.SUBORDER;
 import static org.tb.dailyreport.controller.DailyReportUiStateKeyContributor.EMPLOYEE_CONTRACT_ID;
@@ -23,7 +22,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.tb.common.exception.AuthorizationException;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
 import org.tb.common.palette.PaletteTarget;
@@ -109,7 +107,7 @@ class DailyReportPaletteProviderTest {
   @Test
   void offers_a_manager_booking_for_the_selected_contract_of_somebody_else() {
     selectedContract(OTHER_CONTRACT_ID);
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID)).thenReturn(otherContract);
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.of(otherContract));
     when(timereportAuthorization.isWriteAllowedOn(otherContract, TODAY)).thenReturn(true);
     when(employeeorderService.getBookableSuborderIds(OTHER_CONTRACT_ID, List.of(MAINTENANCE_ID), TODAY))
         .thenReturn(Set.of(MAINTENANCE_ID));
@@ -125,7 +123,7 @@ class DailyReportPaletteProviderTest {
   @Test
   void offers_a_people_lead_no_booking_on_an_open_day_of_a_team_member() {
     selectedContract(OTHER_CONTRACT_ID);
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID)).thenReturn(otherContract);
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.of(otherContract));
     when(timereportAuthorization.isWriteAllowedOn(otherContract, TODAY)).thenReturn(false);
 
     var targets = provider.targetsFor(SUBORDER, List.of(suborder(MAINTENANCE_ID, "MUSTER-01/03")));
@@ -137,7 +135,7 @@ class DailyReportPaletteProviderTest {
   @Test
   void offers_a_restricted_user_booking_on_their_own_selected_contract() {
     selectedContract(OWN_CONTRACT_ID);
-    when(employeecontractService.getEmployeecontractForView(OWN_CONTRACT_ID)).thenReturn(ownContract);
+    when(employeecontractService.getReadableEmployeecontract(OWN_CONTRACT_ID)).thenReturn(Optional.of(ownContract));
     when(timereportAuthorization.isWriteAllowedOn(ownContract, TODAY)).thenReturn(true);
     when(employeeorderService.getBookableSuborderIds(OWN_CONTRACT_ID, List.of(MAINTENANCE_ID), TODAY))
         .thenReturn(Set.of(MAINTENANCE_ID));
@@ -179,27 +177,14 @@ class DailyReportPaletteProviderTest {
 
   // --- Buchen auf: which contract ---------------------------------------------------------------
 
-  /** A remembered foreign contract is not read; the form would fall back the same way. */
+  /**
+   * A remembered foreign contract is not read, nor one that no longer exists; the form would fall
+   * back the same way.
+   */
   @Test
   void falls_back_to_the_own_contract_where_the_selected_one_is_not_readable() {
     selectedContract(OTHER_CONTRACT_ID);
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID))
-        .thenThrow(new AuthorizationException(AA_NOT_ATHORIZED));
-    ownCurrentContract();
-    when(timereportAuthorization.isWriteAllowedOn(ownContract, TODAY)).thenReturn(true);
-    when(employeeorderService.getBookableSuborderIds(OWN_CONTRACT_ID, List.of(MAINTENANCE_ID), TODAY))
-        .thenReturn(Set.of(MAINTENANCE_ID));
-
-    var targets = provider.targetsFor(SUBORDER, List.of(suborder(MAINTENANCE_ID, "MUSTER-01/03")));
-
-    assertThat(targets.get("501")).extracting(PaletteTarget::href)
-        .containsExactly("/dailyreport/timereports/new?suborderId=501&employeecontractId=42");
-  }
-
-  @Test
-  void falls_back_to_the_own_contract_where_the_selected_one_does_not_exist() {
-    selectedContract(OTHER_CONTRACT_ID);
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID)).thenReturn(null);
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.empty());
     ownCurrentContract();
     when(timereportAuthorization.isWriteAllowedOn(ownContract, TODAY)).thenReturn(true);
     when(employeeorderService.getBookableSuborderIds(OWN_CONTRACT_ID, List.of(MAINTENANCE_ID), TODAY))
@@ -250,8 +235,8 @@ class DailyReportPaletteProviderTest {
 
   @Test
   void offers_a_manager_the_views_of_every_person() {
-    when(employeecontractService.getEmployeecontractForView(OWN_CONTRACT_ID)).thenReturn(ownContract);
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID)).thenReturn(otherContract);
+    when(employeecontractService.getReadableEmployeecontract(OWN_CONTRACT_ID)).thenReturn(Optional.of(ownContract));
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.of(otherContract));
 
     var targets = provider.targetsFor(PERSON, List.of(person(OWN_CONTRACT_ID), person(OTHER_CONTRACT_ID)));
 
@@ -265,9 +250,8 @@ class DailyReportPaletteProviderTest {
 
   @Test
   void offers_a_people_lead_the_views_of_a_team_member_only() {
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID)).thenReturn(otherContract);
-    when(employeecontractService.getEmployeecontractForView(44L))
-        .thenThrow(new AuthorizationException(AA_NOT_ATHORIZED));
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.of(otherContract));
+    when(employeecontractService.getReadableEmployeecontract(44L)).thenReturn(Optional.empty());
 
     var targets = provider.targetsFor(PERSON, List.of(person(OTHER_CONTRACT_ID), person(44L)));
 
@@ -276,9 +260,8 @@ class DailyReportPaletteProviderTest {
 
   @Test
   void offers_an_employee_their_own_views_but_none_of_a_colleague() {
-    when(employeecontractService.getEmployeecontractForView(OWN_CONTRACT_ID)).thenReturn(ownContract);
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID))
-        .thenThrow(new AuthorizationException(AA_NOT_ATHORIZED));
+    when(employeecontractService.getReadableEmployeecontract(OWN_CONTRACT_ID)).thenReturn(Optional.of(ownContract));
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.empty());
 
     var targets = provider.targetsFor(PERSON, List.of(person(OWN_CONTRACT_ID), person(OTHER_CONTRACT_ID)));
 
@@ -289,8 +272,7 @@ class DailyReportPaletteProviderTest {
 
   @Test
   void offers_a_restricted_user_no_view_of_somebody_else() {
-    when(employeecontractService.getEmployeecontractForView(OTHER_CONTRACT_ID))
-        .thenThrow(new AuthorizationException(AA_NOT_ATHORIZED));
+    when(employeecontractService.getReadableEmployeecontract(OTHER_CONTRACT_ID)).thenReturn(Optional.empty());
 
     var targets = provider.targetsFor(PERSON, List.of(person(OTHER_CONTRACT_ID)));
 

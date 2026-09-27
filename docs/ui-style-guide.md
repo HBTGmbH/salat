@@ -194,15 +194,20 @@ höchstens fünf. Die Anbieter je Modul und ihre Regeln stehen in
 - **Die gewählte Zeile springt nicht.** Die Objekte kommen unter die Treffer der Seite; war dort
   nichts gewählt, wird das erste Objekt gewählt. Eine Antwort, die ein weiterer Tastendruck überholt
   hat, wird verworfen; bis die neue da ist, bleibt die vorige stehen, eingeschränkt auf das, was noch
-  passt — sonst blinkten die Objekte mit jedem Buchstaben weg.
+  passt — sonst blinkten die Objekte mit jedem Buchstaben weg. Ist das gewählte Objekt mit der neuen
+  Antwort weg, rückt die Wahl auf das erste Objekt, sonst auf den ersten Treffer der Seite, und wird
+  sichtbar gehalten.
 - **Zeile:** fachlicher Schlüssel und Beschreibung (`MUSTER-01 · Wartungsvertrag · Musterkunde`),
   rechts „beendet", „verborgen" und ein Hinweis wie der Auftraggeber eines Unterauftrags oder
   „Vertrag seit 01.01.2024". Beendete und verborgene Objekte stehen hinter den laufenden. Eine
   Datenbank-id steht nirgends.
 - **Ziele:** Enter öffnet das erste. `→` mit dem Cursor am Ende der Eingabe zeigt alle, die Zeile
   darüber nennt Suche und Objekt (`muster › MUSTER-01 · …`), `←` am Anfang der Eingabe, die Rücktaste
-  im leeren Feld oder der Pfeil links davor führen zurück, das Objekt ist dann wieder gewählt. Für
-  Maus und Finger steht in jeder Zeile mit mehreren Zielen ein `→`.
+  im leeren Feld oder der Pfeil links davor führen zurück, das Objekt ist dann wieder gewählt. Eine
+  gehaltene Taste wechselt nur einmal zwischen Treffern und Zielen, und während eine
+  Eingabemethode (IME) zusammensetzt, gehören die Tasten ihr. Für Maus und Finger steht in jeder
+  Zeile mit mehreren Zielen ein `→`: 24 × 24 px, für den Finger über die ganze Zeilenhöhe bis an
+  ihren rechten Rand. Ein langer Suchtext in der Zeile darüber wird auf 40 % gekürzt, damit das Objekt Platz behält.
 
   | Objekt | Ziele, das erste zuerst |
   |---|---|

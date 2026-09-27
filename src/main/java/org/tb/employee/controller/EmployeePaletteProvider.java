@@ -56,7 +56,7 @@ public class EmployeePaletteProvider implements PaletteProvider {
               .param("id", person.contractId()).build(), 1));
     }
     return new PaletteHit(PERSON, String.valueOf(person.contractId()), person.name(), person.sign(),
-        period(person, ended), ended, person.hidden(), query.match(person.name(), person.sign()), targets);
+        period(person, ended), ended, person.hidden(), query.matchWithKey(person.sign(), person.name()), targets);
   }
 
   /** "Vertrag seit …" for a running contract, "ab …" for one to come, "bis …" for an ended one. */

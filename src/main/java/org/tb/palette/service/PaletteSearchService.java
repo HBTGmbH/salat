@@ -12,7 +12,8 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.palette.PaletteHit;
@@ -38,6 +39,14 @@ import org.tb.common.palette.PaletteTarget;
  * <p>What a user may see is each provider's decision, not this service's. A provider whose decision
  * ends in an {@link AuthorizationException} contributes nothing — the exception would otherwise
  * answer the whole search with 403 and take every other provider's hits along.
+ *
+ * <p>The search runs in one read-only transaction, which is <b>always rolled back</b>. An exception
+ * leaving a service method marks the surrounding transaction for rollback even when it is caught
+ * afterwards — a caught {@link AuthorizationException} as much as one a provider catches itself —
+ * and a commit would then answer the whole search with an {@code UnexpectedRollbackException}.
+ * There is nothing to commit, so the transaction is marked for rollback from the start, and the
+ * rollback is the expected one. Without a transaction of its own the search would be safe as well,
+ * but every service call would open one: measured, 10 to 24 ms more per search (PR to #1157).
  */
 @Slf4j
 @Service
@@ -53,14 +62,22 @@ public class PaletteSearchService {
   private static final Comparator<PaletteTarget> TARGET_ORDER = Comparator.comparingInt(PaletteTarget::rank);
 
   private final List<PaletteProvider> providers;
+  private final PlatformTransactionManager transactionManager;
 
-  @Transactional(readOnly = true)
   public List<PaletteGroup> search(String text) {
     var query = PaletteQuery.of(text);
     if (!query.isSearchable()) {
       return List.of();
     }
+    var transaction = new TransactionTemplate(transactionManager);
+    transaction.setReadOnly(true);
+    return transaction.execute(status -> {
+      status.setRollbackOnly();
+      return collect(query);
+    });
+  }
 
+  private List<PaletteGroup> collect(PaletteQuery query) {
     var found = new EnumMap<PaletteKind, Map<String, PaletteHit>>(PaletteKind.class);
     for (var provider : providers) {
       for (var hit : safely(provider, () -> provider.search(query), List.<PaletteHit>of())) {

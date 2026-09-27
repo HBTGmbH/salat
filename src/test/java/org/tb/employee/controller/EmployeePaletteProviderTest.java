@@ -122,18 +122,21 @@ class EmployeePaletteProviderTest {
     assertThat(hit.hidden()).isTrue();
   }
 
-  /** 4: the name begins with the query; 3: the sign does. */
+  /** 5: the query is the sign; 4: the name begins with it; 3: the sign does. */
   @Test
   void ranks_the_hit_by_name_and_sign() {
     loginWithoutManagerRole();
     var person = person(START, null, true);
-    var byName = PaletteQuery.of("person");
     var bySign = PaletteQuery.of("ppp");
-    when(personSearchService.getPalettePersons(byName)).thenReturn(List.of(person));
+    var byName = PaletteQuery.of("person");
+    var bySignStart = PaletteQuery.of("pp");
     when(personSearchService.getPalettePersons(bySign)).thenReturn(List.of(person));
+    when(personSearchService.getPalettePersons(byName)).thenReturn(List.of(person));
+    when(personSearchService.getPalettePersons(bySignStart)).thenReturn(List.of(person));
 
+    assertThat(provider.search(bySign).getFirst().match()).isEqualTo(5);
     assertThat(provider.search(byName).getFirst().match()).isEqualTo(4);
-    assertThat(provider.search(bySign).getFirst().match()).isEqualTo(3);
+    assertThat(provider.search(bySignStart).getFirst().match()).isEqualTo(3);
   }
 
   @Test

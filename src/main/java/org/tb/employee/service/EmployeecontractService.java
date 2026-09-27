@@ -488,6 +488,17 @@ public class EmployeecontractService {
   }
 
   /**
+   * Der Vertrag, wenn es ihn gibt und die angemeldete Person ihn lesen darf — für Aufrufer, die ein
+   * „nicht lesbar" nicht beantworten, sondern übergehen (#1157). Eine {@link AuthorizationException}
+   * aus {@link #getEmployeecontractForView(long)} setzt eine umgebende Transaktion auf Rollback, auch
+   * wenn der Aufrufer sie fängt; diese Methode wirft deshalb nicht.
+   */
+  public Optional<Employeecontract> getReadableEmployeecontract(long employeeContractId) {
+    return Optional.ofNullable(employeecontractDAO.getEmployeecontractById(employeeContractId))
+        .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ));
+  }
+
+  /**
    * Alle nicht versteckten Verträge des Teams, auch die abgelaufenen (#324) — die rückblickende der
    * beiden Fragen, und der Name sagt es (#1096). Für Freigabe und Abnahme ist genau das richtig:
    * ein Vertrag endet, die Abnahme seiner Buchungen endet damit nicht.

@@ -69,6 +69,25 @@ class PaletteQueryTest {
     assertThat(query.likeWord(PaletteQuery.MAX_WORDS)).isNull();
   }
 
+  /**
+   * An emoji takes four bytes in UTF-8, and MySQL refuses to compare it with a column in utf8mb3:
+   * the query would end in an error instead of in no hits. Such characters stand in no sign and no
+   * name anyway.
+   */
+  @Test
+  void drops_characters_outside_the_basic_multilingual_plane() {
+    var query = PaletteQuery.of("muster \uD83D\uDE00 wartung\uD83D\uDE00");
+
+    assertThat(query.text()).isEqualTo("muster wartung");
+    assertThat(query.likeWord(1)).isEqualTo("%wartung%");
+    assertThat(query.likeWord(2)).isNull();
+  }
+
+  @Test
+  void is_not_searchable_with_nothing_but_such_characters() {
+    assertThat(PaletteQuery.of("\uD83D\uDE00\uD83D\uDE00").isSearchable()).isFalse();
+  }
+
   // --- escaping -----------------------------------------------------------------------------------
 
   @Test
@@ -156,6 +175,26 @@ class PaletteQueryTest {
   void skips_fields_that_are_null() {
     assertThat(PaletteQuery.of("wartung").match("MUSTER-01", null, "Wartungsvertrag")).isEqualTo(3);
     assertThat(PaletteQuery.of("wartung").match("MUSTER-01", (String) null)).isEqualTo(1);
+  }
+
+  // --- the key ------------------------------------------------------------------------------------
+
+  /**
+   * A person is shown by name, and a short sign is the beginning of many names. The query that is
+   * the whole sign ranks its owner above all of them.
+   */
+  @Test
+  void ranks_the_whole_key_above_a_title_beginning_with_the_query() {
+    var query = PaletteQuery.of("KR");
+
+    assertThat(query.matchWithKey("kr", "Anna Zander")).isEqualTo(5);
+    assertThat(query.matchWithKey("xa", "Kristin Muster")).isEqualTo(4);
+  }
+
+  @Test
+  void ranks_a_key_the_query_only_begins_as_any_other_field() {
+    assertThat(PaletteQuery.of("kr").matchWithKey("krs", "Anna Zander")).isEqualTo(3);
+    assertThat(PaletteQuery.of("zand").matchWithKey("krs", "Anna Zander", "Zander")).isEqualTo(3);
   }
 
   // --- case and diacritics ------------------------------------------------------------------------

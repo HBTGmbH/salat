@@ -45,8 +45,16 @@ public final class PaletteQuery {
     this.words = words;
   }
 
+  /**
+   * Characters outside the Basic Multilingual Plane, emoji above all, are dropped: they take four
+   * bytes in UTF-8, and MySQL refuses to compare them with a column in utf8mb3 — the query would end
+   * in an error instead of in no hits. They stand in no sign and no name anyway.
+   */
   public static PaletteQuery of(String raw) {
-    var text = raw == null ? "" : raw.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+    var text = raw == null ? "" : raw.codePoints()
+        .filter(Character::isBmpCodePoint)
+        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+        .toString().trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     var words = text.isEmpty() ? List.<String>of()
         : Arrays.stream(text.split(" ")).limit(MAX_WORDS).toList();
     return new PaletteQuery(text, words);
@@ -106,6 +114,19 @@ public final class PaletteQuery {
       return 2;
     }
     return 1;
+  }
+
+  /**
+   * {@link #match} with one tier above the others: 5 where the query is the whole key of the hit,
+   * which is not its title — the sign of a person, who is shown by name. A short sign is the
+   * beginning of many names, and without this tier all of them would rank before its owner. The
+   * palette's own ranking has no keys and needs no such tier.
+   */
+  public int matchWithKey(String key, String title, String... others) {
+    if (key != null && !text.isEmpty() && fold(key).equals(fold(text))) {
+      return 5;
+    }
+    return match(title, Stream.concat(Stream.of(key), Arrays.stream(others)).toArray(String[]::new));
   }
 
   private static boolean startsAWord(String field, String query) {
