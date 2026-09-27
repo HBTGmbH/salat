@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,7 @@ import org.tb.dailyreport.preferences.TimereportPreferences;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.favorites.service.FavoriteService;
@@ -114,9 +116,15 @@ class TimereportEditContractTest {
     verify(customerorderService).getCustomerordersWithValidEmployeeOrders(OWN_CONTRACT_ID, DATE);
   }
 
-  /** Ohne Buchung bleibt es bei der gemerkten Auswahl: eine neue Buchung wird für sie angelegt. */
+  /**
+   * Ohne Buchung bleibt es bei der gemerkten Auswahl, sofern die Person sie lesen darf (#1183):
+   * eine neue Buchung wird für sie angelegt.
+   */
   @Test
   void the_create_form_offers_the_orders_of_the_remembered_person() {
+    var remembered = mock(Employeecontract.class);
+    when(remembered.getId()).thenReturn(REMEMBERED_CONTRACT_ID);
+    when(employeecontractService.getReadableEmployeecontract(REMEMBERED_CONTRACT_ID)).thenReturn(Optional.of(remembered));
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(anyLong(), eq(DATE))).thenReturn(List.of());
     var form = editedBooking();
     form.setId(null);

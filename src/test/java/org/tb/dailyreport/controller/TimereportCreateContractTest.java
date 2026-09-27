@@ -17,6 +17,7 @@ import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -68,6 +69,7 @@ class TimereportCreateContractTest {
   private static final long REMEMBERED_CONTRACT_ID = 99L;
   private static final long TIMEREPORT_ID = 3L;
   private static final long OWN_CONTRACT_ID = 7L;
+  private static final long LOGIN_EMPLOYEE_ID = 8L;
   private static final long SUBORDER_ID = 5L;
   private static final long EMPLOYEE_ORDER_ID = 11L;
   /** Bewusst nicht heute: sonst liest das Befüllen des Modells zusätzlich den Arbeitstag. */
@@ -94,9 +96,18 @@ class TimereportCreateContractTest {
 
   @BeforeEach
   void setUp() {
-    var named = contract(NAMED_CONTRACT_ID);
+    var named = contract(NAMED_CONTRACT_ID, "Erika Probe", "epr");
     when(employeecontractService.getEmployeecontractForView(NAMED_CONTRACT_ID)).thenReturn(named);
     when(employeecontractService.getEmployeecontractById(NAMED_CONTRACT_ID)).thenReturn(named);
+    var remembered = contract(REMEMBERED_CONTRACT_ID, "Max Fremd", "mfr");
+    when(employeecontractService.getEmployeecontractById(REMEMBERED_CONTRACT_ID)).thenReturn(remembered);
+    when(employeecontractService.getReadableEmployeecontract(REMEMBERED_CONTRACT_ID)).thenReturn(Optional.of(remembered));
+    var own = contract(OWN_CONTRACT_ID, "Olga Eigen", "oei");
+    when(employeecontractService.getEmployeecontractById(OWN_CONTRACT_ID)).thenReturn(own);
+    var loginEmployee = mock(Employee.class);
+    when(loginEmployee.getId()).thenReturn(LOGIN_EMPLOYEE_ID);
+    when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
+    when(employeecontractService.getCurrentContract(LOGIN_EMPLOYEE_ID)).thenReturn(Optional.of(own));
     when(timereportService.getEmployeecontractIdForUpdate(TIMEREPORT_ID, DATE)).thenReturn(OWN_CONTRACT_ID);
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(anyLong(), eq(DATE))).thenReturn(List.of());
     when(timereportPreferenceService.getForCurrentUser())
@@ -128,8 +139,64 @@ class TimereportCreateContractTest {
     controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, null, null, null, null, model);
 
     assertThat(model.get("selectedContractId")).isEqualTo(REMEMBERED_CONTRACT_ID);
+    assertThat(model.get("selectedEmployeeName")).asString().startsWith("Max Fremd | mfr");
     assertThat(((TimereportForm) model.get("timereportForm")).getEmployeecontractId()).isNull();
     verify(employeecontractService, never()).getEmployeecontractForView(anyLong());
+  }
+
+  /**
+   * Ein gemerkter Vertrag, den die angemeldete Person nicht lesen darf, fällt auf den eigenen
+   * zurück (#1183) — wie auf dem Dashboard (#1134): UiState merkt sich den Wert, und ein 403
+   * sperrte sonst das Formular. Der Tag ist bewusst nicht heute; heute las das Befüllen des
+   * Modells nebenbei den Arbeitstag und antwortete dadurch zufällig mit 403.
+   */
+  @Test
+  void a_remembered_contract_the_user_may_not_read_falls_back_to_the_own_one() {
+    when(employeecontractService.getReadableEmployeecontract(REMEMBERED_CONTRACT_ID)).thenReturn(Optional.empty());
+    var model = new ExtendedModelMap();
+
+    controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, null, null, null, null, model);
+
+    assertThat(model.get("selectedContractId")).isEqualTo(OWN_CONTRACT_ID);
+    assertThat(model.get("selectedEmployeeName")).asString().startsWith("Olga Eigen | oei");
+    verify(customerorderService).getCustomerordersWithValidEmployeeOrders(OWN_CONTRACT_ID, DATE);
+    verify(customerorderService, never()).getCustomerordersWithValidEmployeeOrders(eq(REMEMBERED_CONTRACT_ID), any());
+    verify(employeecontractService, never()).getEmployeecontractById(REMEMBERED_CONTRACT_ID);
+  }
+
+  @Test
+  void refreshing_the_orders_falls_back_from_an_unreadable_remembered_contract() {
+    when(employeecontractService.getReadableEmployeecontract(REMEMBERED_CONTRACT_ID)).thenReturn(Optional.empty());
+    var model = new ExtendedModelMap();
+
+    controller.refreshOrders(REMEMBERED_CONTRACT_ID, newBooking(null), model);
+
+    assertThat(model.get("selectedContractId")).isEqualTo(OWN_CONTRACT_ID);
+    verify(customerorderService).getCustomerordersWithValidEmployeeOrders(OWN_CONTRACT_ID, DATE);
+    verify(customerorderService, never()).getCustomerordersWithValidEmployeeOrders(eq(REMEMBERED_CONTRACT_ID), any());
+    verify(timereportService, never()).getRecentBookings(eq(REMEMBERED_CONTRACT_ID), anyLong());
+  }
+
+  @Test
+  void refreshing_the_sidebar_falls_back_from_an_unreadable_remembered_contract() {
+    when(employeecontractService.getReadableEmployeecontract(REMEMBERED_CONTRACT_ID)).thenReturn(Optional.empty());
+    var model = new ExtendedModelMap();
+
+    controller.refreshSidebar(REMEMBERED_CONTRACT_ID, newBooking(null), model);
+
+    assertThat(model.get("selectedContractId")).isEqualTo(OWN_CONTRACT_ID);
+    verify(timereportService, never()).getTimereportsByDateAndEmployeeContractId(eq(REMEMBERED_CONTRACT_ID), any());
+    verify(timereportService, never()).getRecentBookings(eq(REMEMBERED_CONTRACT_ID), anyLong());
+  }
+
+  @Test
+  void refreshing_keeps_a_remembered_contract_the_user_may_read() {
+    var model = new ExtendedModelMap();
+
+    controller.refreshOrders(REMEMBERED_CONTRACT_ID, newBooking(null), model);
+
+    assertThat(model.get("selectedContractId")).isEqualTo(REMEMBERED_CONTRACT_ID);
+    verify(customerorderService).getCustomerordersWithValidEmployeeOrders(REMEMBERED_CONTRACT_ID, DATE);
   }
 
   /** Der genannte Vertrag wird mit der Leseprüfung geladen: ein Link öffnet keinen fremden Vertrag. */
@@ -208,7 +275,7 @@ class TimereportCreateContractTest {
     verify(employeecontractService, never()).getEmployeecontractForView(anyLong());
   }
 
-  private static TimereportForm newBooking(long employeecontractId) {
+  private static TimereportForm newBooking(Long employeecontractId) {
     var form = new TimereportForm();
     form.setEmployeecontractId(employeecontractId);
     form.setReferenceday(DATE);
@@ -218,10 +285,10 @@ class TimereportCreateContractTest {
     return form;
   }
 
-  private static Employeecontract contract(long id) {
+  private static Employeecontract contract(long id, String name, String sign) {
     var employee = mock(Employee.class);
-    when(employee.getName()).thenReturn("Erika Probe");
-    when(employee.getSign()).thenReturn("epr");
+    when(employee.getName()).thenReturn(name);
+    when(employee.getSign()).thenReturn(sign);
     var contract = mock(Employeecontract.class);
     when(contract.getId()).thenReturn(id);
     when(contract.getEmployee()).thenReturn(employee);

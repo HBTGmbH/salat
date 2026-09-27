@@ -16,6 +16,8 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,6 +39,7 @@ import org.tb.dailyreport.preferences.TimereportPreferences;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.AuthorizedEmployee;
+import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
 import org.tb.favorites.service.FavoriteService;
@@ -82,6 +85,14 @@ class TimereportSerialSeedingOrderTest {
   @Mock private RedirectAttributes redirectAttributes;
 
   @InjectMocks private TimereportController controller;
+
+  /** Gebucht wird auf die gemerkte Auswahl; die angemeldete Person darf sie lesen (#1183). */
+  @BeforeEach
+  void setUp() {
+    var contract = mock(Employeecontract.class);
+    when(contract.getId()).thenReturn(EC_ID);
+    when(employeecontractService.getReadableEmployeecontract(EC_ID)).thenReturn(Optional.of(contract));
+  }
 
   @Test
   void a_missing_employee_order_leaves_no_workingday_behind() {
