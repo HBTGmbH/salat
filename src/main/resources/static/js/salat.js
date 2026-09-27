@@ -812,14 +812,15 @@ focusEntryField();
  *                                       along, and a new menu entry shows up without further ado.
  *   data-palette-href-from              on a sidebar entry: selector of an element whose href wins
  *                                       over the entry's own, where that element is on the page
- *   data-palette-command                on a header control: the key a settings command is
- *                                       remembered by. Its accessible name is the label, clicking
- *                                       it is the action, and it is offered only while displayed.
+ *   data-palette-command                on a control of the header or the sidebar: the key a
+ *                                       settings command is remembered by. Its accessible name is
+ *                                       the label, clicking it is the action, and it is offered
+ *                                       only while displayed.
  *   data-palette-keywords               further words a command is found by
  *   data-palette-label-pressed          the label while the control is aria-pressed
  *
  * Day jumps into the daily view are read in the browser, against the server's today carried by
- * the dialog. Neither opening the palette nor any hit it shows sends a request.
+ * the dialog (see paletteToday). Neither opening the palette nor any hit it shows sends a request.
  * -------------------------------------------------------------------------- */
 
 const PALETTE_RECENT_KEY = 'salat-command-palette-recent';
@@ -828,14 +829,19 @@ const PALETTE_IS_MAC = /mac|iphone|ipad|ipod/i.test(
   (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 
 // ranks, highest first; a day jump sits between a word start and a hit inside a word, so that
-// "fr" offers the page "Freigabe" first and the Friday right below it
+// "fr" offers the page "Freigabe" first and the Friday right below it. A command found only by one
+// of its further words shows nothing that matches, and ranks below everything that does.
 const PALETTE_TIER_WORD_START = 3;
 const PALETTE_TIER_DAY = 2.5;
 const PALETTE_TIER_INSIDE = 2;
+const PALETTE_TIER_KEYWORD = 1.5;
 const PALETTE_TIER_FUZZY = 1;
 const PALETTE_TIER_SECTION = 0.5;
 
-const paletteState = { origin: null, commands: [], items: [], active: -1 };
+// wiredDialog is kept here and not as an attribute: the history cache of htmx restores the page
+// from a copy of its markup, and a copied attribute would claim listeners the new dialog lacks
+const paletteState = { origin: null, commands: [], items: [], active: -1, wiredDialog: null,
+  todayOffset: null, pressedOnBackdrop: false };
 
 /**
  * Lower case without diacritics, so that "ubersicht" finds "Übersicht". The map leads every
@@ -957,8 +963,12 @@ function paletteShiftDays(iso, days) {
   return paletteIsoOf(date);
 }
 
-/** A calendar date, or null for one that does not exist (31.2.). */
+/**
+ * A calendar date, or null for one that does not exist (31.2.) — and for a year before 1000,
+ * which is a typing error here and no date the daily view accepts in ISO form.
+ */
 function paletteValidDate(year, month, day) {
+  if (year < 1000) return null;
   const date = new Date(Date.UTC(year, month - 1, day));
   if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
     return null;
@@ -1015,6 +1025,27 @@ function paletteFormatDay(iso, lang) {
     .format(date).replace(/\.$/, '');
   return weekday + ' ' + timeInputPad(date.getUTCDate()) + '.' + timeInputPad(date.getUTCMonth() + 1)
     + '.' + date.getUTCFullYear();
+}
+
+function paletteLocalIso(date) {
+  return date.getFullYear() + '-' + timeInputPad(date.getMonth() + 1) + '-' + timeInputPad(date.getDate());
+}
+
+function paletteDaysBetween(fromIso, toIso) {
+  return Math.round((paletteDateOf(toIso) - paletteDateOf(fromIso)) / 86400000);
+}
+
+/**
+ * Today as the server counts it. The page brings the server's day along, but a tab stays open
+ * past midnight, and a page comes back from the browser's cache: what is kept is therefore the
+ * distance between the server's day and the browser's at load time — nearly always none —, and
+ * today is the browser's current day plus that distance.
+ */
+function paletteToday(dialog) {
+  if (paletteState.todayOffset === null) {
+    paletteState.todayOffset = paletteDaysBetween(paletteLocalIso(new Date()), dialog.dataset.today);
+  }
+  return paletteShiftDays(paletteLocalIso(new Date()), paletteState.todayOffset);
 }
 
 function paletteVocabulary(dialog) {
@@ -1087,7 +1118,10 @@ function paletteDayCommand(dialog, iso, expression) {
 function paletteReadRecent() {
   try {
     const stored = JSON.parse(localStorage.getItem(PALETTE_RECENT_KEY) || '[]');
-    return Array.isArray(stored) ? stored : [];
+    // whatever else stands there is not ours to interpret
+    return Array.isArray(stored)
+      ? stored.filter(e => e && typeof e.t === 'string' && typeof e.k === 'string')
+      : [];
   } catch (e) {
     return [];
   }
@@ -1140,7 +1174,7 @@ function paletteSearch(dialog, commands, query, today, vocabulary) {
     let match = paletteMatch(command.label, query);
     if (!match && command.keywords) {
       const byKeyword = paletteMatch(command.keywords, query);
-      if (byKeyword) match = { tier: byKeyword.tier - 0.25, pos: byKeyword.pos, ranges: [] };
+      if (byKeyword) match = { tier: PALETTE_TIER_KEYWORD, pos: byKeyword.pos, ranges: [] };
     }
     if (!match && command.kind && query.trim().length >= 3) {
       const bySection = paletteMatch(command.kind, query);
@@ -1216,7 +1250,10 @@ function paletteRender(groups) {
       paletteState.items.push(hit.command);
     });
   });
-  document.getElementById('commandPaletteEmpty').hidden = paletteState.items.length > 0;
+  // the status region stays in the page and only changes its text: a region that appears together
+  // with its content is not announced
+  const empty = document.getElementById('commandPaletteEmpty');
+  empty.textContent = paletteState.items.length ? '' : empty.dataset.text;
   input.setAttribute('aria-expanded', String(paletteState.items.length > 0));
   paletteSetActive(paletteState.items.length ? 0 : -1, true);
 }
@@ -1241,17 +1278,24 @@ function paletteSetActive(index, scroll) {
 
 function paletteUpdate(dialog) {
   const query = document.getElementById('commandPaletteInput').value;
-  const today = dialog.dataset.today;
+  const today = paletteToday(dialog);
   const vocabulary = paletteVocabulary(dialog);
   if (query.trim()) {
     paletteRender([{ hits: paletteSearch(dialog, paletteState.commands, query, today, vocabulary) }]);
     return;
   }
   const recent = paletteRecentItems(dialog, paletteState.commands, today, vocabulary);
+  if (recent.length) {
+    paletteRender([{ label: dialog.dataset.groupRecent, hits: recent.map(command => ({ command })) }]);
+    return;
+  }
   // nothing used yet: then everything there is, so that the first look shows what can be found
-  paletteRender(recent.length
-    ? [{ label: dialog.dataset.groupRecent, hits: recent.map(command => ({ command })) }]
-    : [{ label: dialog.dataset.groupPages, hits: paletteState.commands.map(command => ({ command })) }]);
+  const ofType = (type) => paletteState.commands.filter(command => command.type === type)
+    .map(command => ({ command }));
+  paletteRender([
+    { label: dialog.dataset.groupPages, hits: ofType('nav') },
+    { label: dialog.dataset.kindSettings, hits: ofType('cmd') },
+  ]);
 }
 
 function paletteRun(index) {
@@ -1264,9 +1308,28 @@ function paletteRun(index) {
 
 /* ─── Opening and closing ─── */
 
+/**
+ * Where the focus goes back to. Inside a TomSelect field the focus sat on its search input, which
+ * closes with the dropdown as soon as the palette takes the focus; the field's control stands for
+ * it, and it is focused without dropping the dropdown open again.
+ */
+function paletteRestoreFocus(origin) {
+  if (!origin || origin === document.body || !document.body.contains(origin)) return;
+  const wrapper = origin.closest('.ts-wrapper');
+  const select = wrapper && wrapper.previousElementSibling && wrapper.previousElementSibling.tomselect;
+  if (!select) {
+    origin.focus();
+    return;
+  }
+  const openOnFocus = select.settings.openOnFocus;
+  select.settings.openOnFocus = false;
+  (select.focus_node || select.control).focus();
+  select.settings.openOnFocus = openOnFocus;
+}
+
 function paletteWire(dialog) {
-  if (dialog.dataset.paletteReady) return;
-  dialog.dataset.paletteReady = 'true';
+  if (paletteState.wiredDialog === dialog) return;
+  paletteState.wiredDialog = dialog;
   const input = document.getElementById('commandPaletteInput');
   const list = document.getElementById('commandPaletteList');
 
@@ -1294,14 +1357,19 @@ function paletteWire(dialog) {
     const option = event.target.closest('[role="option"]');
     if (option) paletteRun(Number(option.dataset.index));
   });
-  // a click on the backdrop lands on the dialog element itself
-  dialog.addEventListener('click', (event) => {
-    if (event.target === dialog) dialog.close();
+  // A click on the backdrop lands on the dialog element itself — and so does one that was pressed
+  // inside and released outside, selecting the typed text, which is no request to close.
+  dialog.addEventListener('pointerdown', (event) => {
+    paletteState.pressedOnBackdrop = event.target === dialog;
   });
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog && paletteState.pressedOnBackdrop) dialog.close();
+  });
+  dialog.querySelector('[data-command-palette-close]').addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => {
     const origin = paletteState.origin;
     paletteState.origin = null;
-    if (origin && origin !== document.body && document.body.contains(origin)) origin.focus();
+    paletteRestoreFocus(origin);
   });
 }
 
@@ -1334,6 +1402,12 @@ document.addEventListener('keydown', function (event) {
   if (dialog && dialog.open) dialog.close();
   else paletteOpen();
 }, true);
+
+// the distance to the server's day is taken while the page is fresh, not on the first open hours later
+document.addEventListener('DOMContentLoaded', function () {
+  const dialog = document.getElementById('commandPalette');
+  if (dialog) paletteToday(dialog);
+});
 
 document.addEventListener('click', function (event) {
   if (event.target.closest('[data-command-palette-open]')) paletteOpen();

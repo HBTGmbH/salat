@@ -38,11 +38,22 @@
            autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"
            th:aria-label="#{main.palette.input.label}"
            th:placeholder="#{main.palette.input.placeholder}"/>
+    <!--/* Auf dem Telefon gibt es kein Esc, und eine lange Trefferliste laesst vom Hintergrund zum
+           Danebentippen nichts uebrig. */-->
+    <button type="button" class="btn btn-ghost-secondary btn-icon command-palette-close"
+            data-command-palette-close
+            th:aria-label="#{main.button.close}" th:title="#{main.button.close}">
+      <i class="ti ti-x" aria-hidden="true"></i>
+    </button>
   </div>
-  <div class="command-palette-list" id="commandPaletteList" role="listbox"
+  <!--/* tabindex="-1": eine Liste, die scrollt, nehmen Chrome und Firefox sonst in die
+         Tab-Reihenfolge auf - der Fokus gehoert aber ins Feld, dort wirken Pfeile und Enter. */-->
+  <div class="command-palette-list" id="commandPaletteList" role="listbox" tabindex="-1"
        th:aria-label="#{main.palette.title}"></div>
-  <div class="command-palette-empty text-secondary" id="commandPaletteEmpty" role="status" hidden
-       th:text="#{main.palette.empty}">Keine Treffer</div>
+  <!--/* Der Text kommt erst mit dem leeren Ergebnis hinein: eine Statusregion, die zusammen mit
+         ihrem Inhalt erscheint, liest ein Screenreader nicht vor. */-->
+  <div class="command-palette-empty text-secondary" id="commandPaletteEmpty" role="status"
+       th:data-text="#{main.palette.empty}"></div>
   <div class="command-palette-footer text-secondary small" aria-hidden="true">
     <span><kbd>↑</kbd> <kbd>↓</kbd> <span th:text="#{main.palette.hint.select}">auswählen</span></span>
     <span><kbd>↵</kbd> <span th:text="#{main.palette.hint.run}">ausführen</span></span>

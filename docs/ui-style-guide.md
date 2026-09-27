@@ -131,23 +131,36 @@ Eintrag „Suchen …" in der Kopfzeile, der auf dem Telefon als Lupe stehen ble
 Einstieg ist. Die Entscheidung und ihre Alternativen stehen in
 [ADR-0030](adr/0030-befehlspalette-liest-die-seite-und-speichert-nichts.md).
 
-- **Bedienung:** Pfeiltasten wählen, Enter führt aus, Esc schließt, ebenso ein Klick neben die
-  Palette. Danach steht der Fokus wieder dort, wo er beim Öffnen war. Maus und Tipp führen einen
-  Treffer direkt aus; das Eingabefeld behält dabei den Fokus, damit die Bildschirmtastatur den
-  Treffer nicht unter dem Finger wegschiebt.
-- **Treffer:** alle Seiten der Sidebar, die Einstellungen der Kopfzeile (Moduswechsel,
-  Einstellungsseite, Sidebar falten) und Tagessprünge in die Einzelübersicht — `heute`, `gestern`,
+- **Bedienung:** Pfeiltasten wählen, Enter führt aus, Esc schließt, ebenso das Kreuz im Suchfeld
+  und ein Klick neben die Palette — aber nur einer, der auch dort begonnen hat: wer den Text mit
+  der Maus markiert und über den Rand hinaus loslässt, will nicht schließen. Danach steht der Fokus
+  wieder dort, wo er beim Öffnen war; kam er aus der aufgeklappten Liste eines Auswahlfelds, dann
+  auf dem Auswahlfeld, ohne dass es erneut aufklappt. Maus und Tipp führen einen Treffer direkt
+  aus; das Eingabefeld behält dabei den Fokus, damit die Bildschirmtastatur den Treffer nicht unter
+  dem Finger wegschiebt.
+- **Treffer:** alle Seiten der Sidebar, die Einstellungen (Moduswechsel und Einstellungsseite aus
+  der Kopfzeile, Falten aus der Sidebar) und Tagessprünge in die Einzelübersicht — `heute`, `gestern`,
   `vorgestern`, `morgen` ab drei Buchstaben, ein Wochentag ab zwei (`fr` ist der jüngste Freitag,
   heute eingeschlossen), `T.M.`, `T.M.JJ`, `T.M.JJJJ`. Die Zeile nennt immer das aufgelöste Datum.
-- **Rangfolge:** Wortanfang vor Tagessprung vor Teilwort vor Buchstaben in Folge; der Name eines
-  Sidebar-Bereichs findet ab drei Buchstaben alle Einträge des Bereichs, ganz hinten. Der passende
-  Teil ist hervorgehoben — mit derselben Tönung wie in den Auswahlfeldern.
+  Heute ist der Tag des Servers, weitergezählt mit der Uhr des Browsers: ein Tab, der über
+  Mitternacht offen bleibt, rechnet vom neuen Tag aus.
+- **Rangfolge:** Wortanfang vor Tagessprung vor Teilwort vor Buchstaben in Folge. Dahinter kommt,
+  was nur ein weiteres Suchwort trifft, von dem also nichts Sichtbares passt (`dunkel`, `modus`) —
+  sonst stünde bei `mo` der Moduswechsel vor dem Montag —, und ganz hinten, ab drei Buchstaben,
+  alle Einträge eines Sidebar-Bereichs, dessen Name passt. Der passende Teil ist hervorgehoben —
+  mit derselben Tönung wie in den Auswahlfeldern.
 - **Leere Eingabe:** die zuletzt ausgeführten Befehle, höchstens zehn; solange es keine gibt, alle
-  Seiten. Ein Tagessprung wird als Ausdruck gemerkt und beim Öffnen neu aufgelöst.
+  Seiten und darunter die Einstellungen, jeweils als eigene Gruppe. Ein Tagessprung wird als
+  Ausdruck gemerkt und beim Öffnen neu aufgelöst.
 - **Barrierefreiheit:** ARIA-Combobox (`role="combobox"` am Feld, `role="listbox"` darunter,
-  `aria-activedescendant` für die gewählte Zeile). Die Zeilen selbst sind nicht fokussierbar;
-  einen positiven `tabindex` gibt es auch hier nicht.
-- **Telefon:** unter `sm` über die ganze Breite und oben angeschlagen, ohne die Tastenhinweise.
+  `aria-activedescendant` für die gewählte Zeile). Die Zeilen selbst sind nicht fokussierbar, die
+  Liste trägt `tabindex="-1"` — scrollt sie, nähmen Chrome und Firefox sie sonst in die
+  Tab-Reihenfolge auf, und dort wirken weder Pfeile noch Enter. „Keine Treffer" steht in einer
+  Statusregion, die immer im Dokument bleibt und nur ihren Text wechselt; erschiene sie zusammen
+  mit dem Text, läse ein Screenreader sie nicht vor.
+- **Telefon:** unter `sm` über die ganze Breite und oben angeschlagen, ohne die Tastenhinweise. Das
+  Kreuz ist dort der Weg hinaus: Esc gibt es nicht, und eine lange Liste lässt vom Hintergrund zum
+  Danebentippen nichts übrig.
 
 **Gemessener Kontrast** (hell gegen die Karte, dunkel gegen die dunkle Karte, Moduswechsel
 ausgeklungen): kein Text unter 4,5:1.
@@ -161,6 +174,8 @@ ausgeklungen): kein Text unter 4,5:1.
 | Hervorhebung, gewählte / andere Zeile | 7,82 / 8,79 | 4,71 / 4,98 |
 | Tastenbeschriftung (`kbd`) | 9,37 | 14,33 |
 | Eintrag „Suchen …" in der Kopfzeile, auch mit Hover | 10,31 | 11,86 |
+| „Keine Treffer" | 4,83 | 5,78 |
+| Kreuz (Nicht-Text), Ruhe / Hover | 4,83 / 4,63 | 5,78 / 5,78 |
 | Balken der gewählten Zeile gegen Zeile / Karte (Nicht-Text, 3:1) | 4,24 / 5,00 | 4,44 / 4,92 |
 
 Zwei Werte waren zunächst zu knapp und sind in `salat.css` korrigiert: der Bereich in Sekundärfarbe
