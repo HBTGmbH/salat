@@ -266,13 +266,22 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
   /**
    * Opened from the palette, the overview hands the focus back to where the palette came from —
    * here the booking form's order field, whose dropdown was open.
+   *
+   * <p>TomSelect handles the focus of a click one timer tick later, and that is when it opens the
+   * dropdown. Chrome runs input sent in quick succession before that timer: without waiting, Ctrl+K
+   * found the dropdown still closed, and the pending focus handling opened it only once the palette
+   * had handed the focus back to the field — behind the overview, whose focus trap then lost the
+   * focus to the closing dropdown (#1177).
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void the_overview_from_the_palette_gives_the_focus_back_to_the_field(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + THIRD_DAY, page -> {
-      Locator order = page.locator("#suborderId ~ .ts-wrapper .ts-control");
+      Locator wrapper = page.locator("#suborderId ~ .ts-wrapper");
+      Locator order = wrapper.locator(".ts-control");
+      Pattern open = Pattern.compile("\\bdropdown-active\\b");
       order.click();
+      assertThat(wrapper).hasClass(open);
       page.keyboard().press("ControlOrMeta+k");
       page.locator("#commandPaletteInput").fill("tasten");
       assertThat(page.locator("#commandPaletteList [role=option]").first()).containsText("Tastenkürzel");
@@ -282,6 +291,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
       page.keyboard().press("Escape");
 
       assertThat(order).isFocused();
+      assertThat(wrapper).not().hasClass(open);
     });
   }
 
