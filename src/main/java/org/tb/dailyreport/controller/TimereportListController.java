@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.SalatProperties;
 import org.tb.dailyreport.domain.TimereportListFilter;
 import org.tb.dailyreport.domain.TimereportListFilter.Billable;
 import org.tb.dailyreport.service.TimereportListExcelService;
@@ -44,7 +45,11 @@ import org.tb.dailyreport.viewhelper.TimereportListPrintHeader;
 @Authorized(requireUnrestricted = true)
 public class TimereportListController {
 
-  /** Offered as the maximum number of rows; {@code 0} is the "all of them" entry. */
+  /**
+   * Offered as the maximum number of rows; {@code 0} is the "all of them" entry. All means the whole filter, but at most
+   * {@code salat.booking-list.all-max-rows} rows on the page (#1153) — beyond that the list says it is cut, like with
+   * every other limit. The export is not limited.
+   */
   static final List<Integer> LIMITS = List.of(50, 100, 500, 1000, 0);
   private static final int DEFAULT_LIMIT = 500;
 
@@ -54,6 +59,7 @@ public class TimereportListController {
   private final TimereportListService timereportListService;
   private final TimereportListExcelService excelService;
   private final MessageSourceAccessor messages;
+  private final SalatProperties salatProperties;
 
   @GetMapping
   public String show(
@@ -84,7 +90,7 @@ public class TimereportListController {
     var order = sortOrder(fBookingsSort);
     var filter = new TimereportListFilter(employeeIds, customerIds, orderIds, suborderIds, ticketKeys, ticketChildren,
         period.from(), period.until(), billable, order.sort(), order.descending(),
-        limit == 0 ? TimereportListFilter.UNLIMITED : limit);
+        limit == 0 ? salatProperties.getBookingList().getAllMaxRows() : limit);
 
     // Ein Filterwechsel tauscht nur den Ergebnisbereich. Die Seite selbst bleibt stehen — mit ihr das
     // offene Modal, das ein Seitenwechsel mitgerissen haette, und die Auswahllisten, die das Fragment

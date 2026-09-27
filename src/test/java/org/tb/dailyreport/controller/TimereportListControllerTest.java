@@ -101,7 +101,7 @@ class TimereportListControllerTest {
     messageSource.setDefaultEncoding("UTF-8");
     messageSource.setFallbackToSystemLocale(false);
     controller = new TimereportListController(timereportListService, excelService,
-        new MessageSourceAccessor(messageSource, Locale.GERMANY));
+        new MessageSourceAccessor(messageSource, Locale.GERMANY), new SalatProperties());
 
     when(loginSignProvider.getEffectiveLoginSign()).thenReturn(LOGIN);
     when(timereportListService.search(any())).thenReturn(TimereportListResult.empty());
@@ -118,7 +118,49 @@ class TimereportListControllerTest {
     assertThat(searchedFilters()).containsExactly(new TimereportListFilter(
         List.of(5L, 7L), List.of(), List.of(42L), List.of(), List.of(), true,
         LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31), Billable.BILLABLE, Sort.EMPLOYEE, true,
-        TimereportListFilter.UNLIMITED));
+        10_000));
+  }
+
+  /**
+   * "Alle" is the whole filter, but not every row of it on one page (#1153): a wide period without any other filter
+   * would render every booking the user may read. Beyond ten thousand hits the list says it is cut, as it does for
+   * every other limit.
+   */
+  @Test
+  void all_shows_at_most_ten_thousand_rows() throws Exception {
+    perform(get("/dailyreport/list")
+        .param("fBookingsFrom", "2020-01-01")
+        .param("fBookingsUntil", "2026-12-31")
+        .param("fBookingsLimit", "0"));
+
+    assertThat(searchedFilters()).extracting(TimereportListFilter::maxResults).containsExactly(10_000);
+  }
+
+  @Test
+  void the_cap_of_all_comes_from_the_configuration() throws Exception {
+    var properties = new SalatProperties();
+    properties.getBookingList().setAllMaxRows(250);
+    controller = new TimereportListController(timereportListService, excelService,
+        new MessageSourceAccessor(messageSource, Locale.GERMANY), properties);
+
+    perform(get("/dailyreport/list").param("fBookingsLimit", "0"));
+
+    assertThat(searchedFilters()).extracting(TimereportListFilter::maxResults).containsExactly(250);
+  }
+
+  /** The spreadsheet is where the limit message points to, so it keeps every hit. */
+  @Test
+  void the_export_keeps_every_hit_when_all_is_chosen() throws Exception {
+    when(excelService.export(anyList())).thenReturn(new byte[0]);
+
+    perform(get("/dailyreport/list/export")
+        .param("fBookingsFrom", "2020-01-01")
+        .param("fBookingsUntil", "2026-12-31")
+        .param("fBookingsLimit", "0"));
+
+    var captor = ArgumentCaptor.forClass(TimereportListFilter.class);
+    verify(timereportListService).searchAll(captor.capture());
+    assertThat(captor.getValue().maxResults()).isEqualTo(TimereportListFilter.UNLIMITED);
   }
 
   @Test

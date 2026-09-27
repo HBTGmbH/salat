@@ -40,7 +40,7 @@ public record TimereportListFilter(
     int maxResults
 ) {
 
-  /** No limit at all — what the "Alle" entry of the limit select means. */
+  /** No limit at all — what the export asks for. The entry "Alle" of the page is capped (#1153). */
   public static final int UNLIMITED = Integer.MAX_VALUE;
 
   public TimereportListFilter {

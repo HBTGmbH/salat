@@ -21,6 +21,8 @@ salat:
   api-docs-url: ""                   # env: SALAT_API_DOCS_URL
   auth-service:
     cache-expiry: 1s                 # env: SALAT_AUTH_SERVICE_CACHE_EXPIRY
+  booking-list:
+    all-max-rows: 10000              # env: SALAT_BOOKING_LIST_ALL_MAX_ROWS — rows the entry "Alle" of the booking list shows at most
   cache:
     max-entries: 1000                # env: SALAT_CACHE_MAX_ENTRIES
     expiry-tti: 10                   # env: SALAT_CACHE_EXPIRY_TTI
