@@ -1,10 +1,11 @@
 package org.tb.common;
 
+import static org.tb.common.GlobalConstants.DEFAULT_TIMEZONE_ID;
 import static org.tb.common.util.DateUtils.formatDateTime;
 
 import org.springframework.stereotype.Component;
+import org.tb.common.util.ClockProvider;
 import org.tb.common.util.DateTimeUtils;
-import org.tb.common.util.DateUtils;
 
 @Component
 public class ServerTimeHelper {
@@ -14,12 +15,18 @@ public class ServerTimeHelper {
   }
 
   /**
-   * Today as the server sees it, in ISO form. The command palette resolves its day jumps against
-   * this value rather than against the clock of the browser (#1155): "gestern" has to name the same
-   * day the daily view shows for it, and that view counts from the server's today.
+   * The server's current instant. Together with {@link #getTimeZone()} it lets the command palette
+   * count its day jumps from the server's today (#1155): "gestern" has to name the same day the
+   * daily view shows for it. The instant rather than the date, because the browser carries it
+   * forward with its own clock — a date would stand still in a tab left open past midnight.
    */
-  public String getToday() {
-    return DateUtils.today().toString();
+  public long getEpochMillis() {
+    return ClockProvider.instant().toEpochMilli();
+  }
+
+  /** The zone in which the server's today begins and ends. */
+  public String getTimeZone() {
+    return DEFAULT_TIMEZONE_ID;
   }
 
 }

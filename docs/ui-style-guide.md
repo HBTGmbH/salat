@@ -142,12 +142,13 @@ Einstieg ist. Die Entscheidung und ihre Alternativen stehen in
   der Kopfzeile, Falten aus der Sidebar) und Tagessprünge in die Einzelübersicht — `heute`, `gestern`,
   `vorgestern`, `morgen` ab drei Buchstaben, ein Wochentag ab zwei (`fr` ist der jüngste Freitag,
   heute eingeschlossen), `T.M.`, `T.M.JJ`, `T.M.JJJJ`. Die Zeile nennt immer das aufgelöste Datum.
-  Heute ist der Tag des Servers, weitergezählt mit der Uhr des Browsers: ein Tab, der über
-  Mitternacht offen bleibt, rechnet vom neuen Tag aus.
+  Heute ist der Tag des Servers in dessen Zeitzone, weitergezählt mit der Uhr des Browsers: ein
+  Tab, der über Mitternacht offen bleibt, rechnet vom neuen Tag aus, gleich in welcher Zone der
+  Browser läuft.
 - **Rangfolge:** Wortanfang vor Tagessprung vor Teilwort vor Buchstaben in Folge. Dahinter kommt,
   was nur ein weiteres Suchwort trifft, von dem also nichts Sichtbares passt (`dunkel`, `modus`) —
-  sonst stünde bei `mo` der Moduswechsel vor dem Montag —, und ganz hinten, ab drei Buchstaben,
-  alle Einträge eines Sidebar-Bereichs, dessen Name passt. Der passende Teil ist hervorgehoben —
+  sonst stünde bei `mo` der Moduswechsel vor dem Montag und vor „Meine Konten" —, und ganz hinten,
+  ab drei Buchstaben, alle Einträge eines Sidebar-Bereichs, dessen Name passt. Der passende Teil ist hervorgehoben —
   mit derselben Tönung wie in den Auswahlfeldern.
 - **Leere Eingabe:** die zuletzt ausgeführten Befehle, höchstens zehn; solange es keine gibt, alle
   Seiten und darunter die Einstellungen, jeweils als eigene Gruppe. Ein Tagessprung wird als

@@ -834,14 +834,14 @@ const PALETTE_IS_MAC = /mac|iphone|ipad|ipod/i.test(
 const PALETTE_TIER_WORD_START = 3;
 const PALETTE_TIER_DAY = 2.5;
 const PALETTE_TIER_INSIDE = 2;
-const PALETTE_TIER_KEYWORD = 1.5;
 const PALETTE_TIER_FUZZY = 1;
+const PALETTE_TIER_KEYWORD = 0.75;
 const PALETTE_TIER_SECTION = 0.5;
 
 // wiredDialog is kept here and not as an attribute: the history cache of htmx restores the page
 // from a copy of its markup, and a copied attribute would claim listeners the new dialog lacks
 const paletteState = { origin: null, commands: [], items: [], active: -1, wiredDialog: null,
-  todayOffset: null, pressedOnBackdrop: false };
+  clockSkew: null, pressedOnBackdrop: false };
 
 /**
  * Lower case without diacritics, so that "ubersicht" finds "Übersicht". The map leads every
@@ -1027,25 +1027,22 @@ function paletteFormatDay(iso, lang) {
     + '.' + date.getUTCFullYear();
 }
 
-function paletteLocalIso(date) {
-  return date.getFullYear() + '-' + timeInputPad(date.getMonth() + 1) + '-' + timeInputPad(date.getDate());
-}
-
-function paletteDaysBetween(fromIso, toIso) {
-  return Math.round((paletteDateOf(toIso) - paletteDateOf(fromIso)) / 86400000);
-}
-
 /**
- * Today as the server counts it. The page brings the server's day along, but a tab stays open
- * past midnight, and a page comes back from the browser's cache: what is kept is therefore the
- * distance between the server's day and the browser's at load time — nearly always none —, and
- * today is the browser's current day plus that distance.
+ * Today as the server counts it: the day in the server's time zone at the server's time. The page
+ * brings that time along, but a tab stays open past midnight and a page comes back from the
+ * browser's cache — what is kept is therefore how far the browser's clock is off, taken at load
+ * time, and the server's time is the browser's plus that. A difference of days would not do: with
+ * the browser in another time zone, the two days change at different moments.
  */
 function paletteToday(dialog) {
-  if (paletteState.todayOffset === null) {
-    paletteState.todayOffset = paletteDaysBetween(paletteLocalIso(new Date()), dialog.dataset.today);
+  if (paletteState.clockSkew === null) {
+    paletteState.clockSkew = Number(dialog.dataset.now) - Date.now();
   }
-  return paletteShiftDays(paletteLocalIso(new Date()), paletteState.todayOffset);
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: dialog.dataset.timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(Date.now() + paletteState.clockSkew));
+  const part = (type) => parts.find(p => p.type === type).value;
+  return part('year') + '-' + part('month') + '-' + part('day');
 }
 
 function paletteVocabulary(dialog) {
@@ -1373,8 +1370,18 @@ function paletteWire(dialog) {
   });
 }
 
+/**
+ * A palette that was open while htmx took its history snapshot comes back from that copy as an
+ * open dialog — but not a modal one, without listeners, at the end of the page. It is a leftover of
+ * the markup, not an open palette.
+ */
+function paletteDropStale(dialog) {
+  if (dialog && dialog.open && !dialog.matches(':modal')) dialog.removeAttribute('open');
+}
+
 function paletteOpen() {
   const dialog = document.getElementById('commandPalette');
+  paletteDropStale(dialog);
   if (!dialog || dialog.open) return;
   // a Bootstrap modal holds the focus inside itself and would take it straight back
   if (document.querySelector('.modal.show')) return;
@@ -1399,9 +1406,14 @@ document.addEventListener('keydown', function (event) {
   event.preventDefault();
   event.stopPropagation();
   const dialog = document.getElementById('commandPalette');
+  paletteDropStale(dialog);
   if (dialog && dialog.open) dialog.close();
   else paletteOpen();
 }, true);
+
+document.addEventListener('htmx:history:cache:after:restore', function () {
+  paletteDropStale(document.getElementById('commandPalette'));
+});
 
 // the distance to the server's day is taken while the page is fresh, not on the first open hours later
 document.addEventListener('DOMContentLoaded', function () {

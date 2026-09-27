@@ -122,8 +122,8 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
   Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein Element der Seite das bessere
   Ziel kennt, verweist der Sidebar-Eintrag mit `data-palette-href-from` darauf.
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
-  des Servers (`data-today` am Dialog), nicht der des Browsers — beim Laden als Abstand zum Tag des
-  Browsers festgehalten und mit dessen Uhr weitergezählt.
+  des Servers, nicht der des Browsers: der Dialog trägt Zeitpunkt und Zeitzone des Servers
+  (`data-now`, `data-time-zone`), und die Uhr des Browsers zählt von dort weiter.
 
 ## Farben und Kontrast (→ ADR-0025)
 

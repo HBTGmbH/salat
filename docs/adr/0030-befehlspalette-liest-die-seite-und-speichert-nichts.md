@@ -76,10 +76,13 @@ es das Fragment genau einmal (`fragments/command-palette.html` in `layout/base.h
 Template bringt eigenes JavaScript mit.
 
 Zum Tempo: Seiten, Tage und zuletzt Verwendetes kommen ohne Anfrage aus. Heute ist der Tag des
-**Servers**, den die Seite mitbringt (`data-today`), damit „gestern" denselben Tag meint wie die
-Einzelübersicht, auch wenn die Uhr des Rechners anders geht. Festgehalten wird beim Laden der
-Abstand zum Tag des Browsers, und weitergezählt wird mit dessen Uhr: ein Tab, der über Mitternacht
-offen bleibt, rechnet sonst vom Tag seines Aufrufs aus.
+**Servers**, damit „gestern" denselben Tag meint wie die Einzelübersicht, auch wenn die Uhr des
+Rechners anders geht. Die Seite bringt dafür Zeitpunkt und Zeitzone des Servers mit (`data-now`,
+`data-time-zone`); festgehalten wird beim Laden, wie weit die Uhr des Browsers davon abweicht, und
+heute ist der Tag in der Zeitzone des Servers zur Uhrzeit des Browsers plus dieser Abweichung. Ein
+Tab, der über Mitternacht offen bleibt, rechnet so vom neuen Tag aus. Ein bloßes Datum stünde
+still, und ein Abstand in ganzen Tagen stimmte nur, solange Browser und Server in derselben Zone
+laufen — sonst wechseln die beiden Tage zu verschiedenen Zeiten.
 
 ### Consequences
 

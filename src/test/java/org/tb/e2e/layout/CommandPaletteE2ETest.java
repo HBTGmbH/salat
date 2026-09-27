@@ -138,7 +138,7 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
   void the_words_for_a_day_resolve_against_the_servers_today(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
       LocalDate today = DateUtils.today();
-      assertEquals(today.toString(), palette(page).getAttribute("data-today"));
+      assertEquals(today.toString(), page.evaluate("() => paletteToday(document.getElementById('commandPalette'))"));
       page.keyboard().press(SHORTCUT);
       Map<String, LocalDate> days = new LinkedHashMap<>();
       days.put("heute", today);
@@ -161,6 +161,11 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       // the issue names for "mo" comes first
       input(page).fill("mo");
       assertThat(options(page).first()).hasAttribute("data-command-type", "day");
+      @SuppressWarnings("unchecked")
+      List<String> keys = (List<String>) page.evaluate(
+          "() => Array.from(document.querySelectorAll('#commandPaletteList [role=option]')).map(o => o.dataset.commandKey)");
+      assertTrue(keys.indexOf("/my-accounts") < keys.indexOf("theme-dark"),
+          "letters in order on the label rank before a further word: " + keys);
     });
   }
 
@@ -427,6 +432,32 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       assertThat(options(page).first()).containsText("Matrixübersicht");
       page.keyboard().press("Enter");
       page.waitForURL(Pattern.compile(".*/dailyreport/matrix.*"));
+    });
+  }
+
+  /**
+   * Open while htmx took its snapshot, the palette comes back from that copy as an open dialog that
+   * is no modal and has no listeners. It is dropped, and the header entry opens a working palette.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_palette_open_in_the_history_snapshot_does_not_come_back(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/orders/customerorders", page -> {
+      page.keyboard().press(SHORTCUT);
+      // the filter answers while the palette is open, so the snapshot of the page left carries it
+      page.evaluate("() => document.querySelector('form[data-filter-form]').requestSubmit()");
+      page.waitForURL(Pattern.compile(".*fCustomerOrderShowInactive=.*"));
+      page.keyboard().press("Escape");
+
+      page.evaluate("() => window.paletteBeforeBack = document.getElementById('commandPalette')");
+      page.goBack();
+      page.waitForFunction("() => document.getElementById('commandPalette') !== window.paletteBeforeBack");
+
+      assertEquals(false, page.evaluate("() => document.getElementById('commandPalette').open"));
+      page.locator("#header-command-palette").click();
+      assertEquals(true, page.evaluate("() => document.getElementById('commandPalette').matches(':modal')"));
+      input(page).fill("mat");
+      assertThat(options(page).first()).containsText("Matrixübersicht");
     });
   }
 

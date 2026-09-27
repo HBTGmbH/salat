@@ -982,9 +982,12 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   flex-direction: column;
 }
 
-/* Dieselbe Abdunklung wie hinter einem Bootstrap-Modal: hell Grau 800, dunkel Schwarz, je 32 %. */
+/* Dieselbe Abdunklung wie hinter einem Bootstrap-Modal: hell Grau 800, dunkel Schwarz, je 32 %,
+   und dieselbe Unschaerfe wie hinter den Dialogen mit .modal-blur - Tablers Token, 4px. */
 .command-palette::backdrop {
   background-color: color-mix(in srgb, var(--tblr-gray-800) 32%, transparent);
+  -webkit-backdrop-filter: var(--tblr-backdrop-filter);
+  backdrop-filter: var(--tblr-backdrop-filter);
 }
 
 [data-bs-theme="dark"] .command-palette::backdrop {
