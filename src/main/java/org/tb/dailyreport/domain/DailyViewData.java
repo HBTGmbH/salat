@@ -25,7 +25,9 @@ public record DailyViewData(
     String dailyWorkingTimeFormatted,
     Set<Long> editableTimereportIds,
     boolean workingdayEditable,
-    boolean canCreateTimereport
+    boolean canCreateTimereport,
+    // open, commited or closed: the period the day lies in, shown in the heading of the day (#1164)
+    String reportStatus
 ) {
     public record WeekStripDay(
         LocalDate date,

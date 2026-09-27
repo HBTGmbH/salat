@@ -14,7 +14,9 @@ public record ListViewData(
     boolean prevDayDiffNegative,
     boolean hasTarget,
     boolean monthReleased,
-    Set<Long> editableTimereportIds
+    Set<Long> editableTimereportIds,
+    // how far acceptance and release reach into the month, shown in its heading (#1164)
+    ReportPeriod.Month reportPeriod
 ) {
     public record ListDay(
         LocalDate date,
