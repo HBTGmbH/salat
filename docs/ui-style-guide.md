@@ -191,7 +191,7 @@ Balken am linken Rand.
 | `Ctrl K` / `⌘ K` | überall, auch in einem Feld | Befehlspalette ([§3.2](#32-befehlspalette-1155)) |
 | `?` | ohne Fokus in einem Eingabefeld | Übersicht der Tastenkürzel |
 | `i` | ohne Fokus in einem Eingabefeld | Neue Buchung — das Ziel des Knopfs in der Kopfzeile, also mit Tag und Vertrag der Seite; auf dem Buchungsformular, wo der Knopf fehlt, nichts |
-| `Ctrl ↵` / `⌘ ↵` | in einem Feld des Buchungsformulars, auch im Kommentar | Speichern |
+| `Ctrl ↵` / `⌘ ↵` | im Buchungsformular, auch im Kommentar — und mit dem Fokus neben dem Formular | Speichern |
 | `↑` `↓`, mit `Shift` bzw. `Alt` | im Zeitfeld mit Schnelleingabe | ein Schritt, eine Stunde, eine Minute ([§6](#6-eingabekomponenten-nach-datentyp)) |
 
 - **Die Übersicht** öffnet mit `?`, über den Eintrag „Tastenkürzel" im Fuß (ab `md`) und aus der
@@ -200,7 +200,13 @@ Balken am linken Rand.
   sagt die Übersicht das und verweist auf die Einstellungen.
 - **`Ctrl ↵` nimmt mit, was noch getippt wird:** ein Ticket, das erst beim Verlassen des Felds
   übernommen würde, und eine Dauer, die erst beim Verlassen ins Format kommt. Gespeichert wird über
-  den Knopf „Speichern", also mit derselben Prüfung wie per Klick.
+  den Knopf „Speichern", also mit derselben Prüfung wie per Klick, und bei gehaltener Taste einmal.
+- **Wo `Ctrl ↵` nicht speichert:** auf einem Link — dort öffnet der Browser ihn in einem neuen Tab —
+  und auf einem Absendeknopf, der selbst speichert („Speichern und neu"). Steht der Fokus neben dem
+  Formular, etwa auf einem Eintrag der letzten Kommentare, gilt das eine Formular der Seite, das das
+  Kürzel anbietet; in einem offenen Dialog gilt keines.
+- **Aufgeklappte Auswahlfelder** schließt die Übersicht beim Öffnen zuerst: TomSelect setzt beim
+  Zuklappen den Fokus auf sein Feld zurück und nähme ihn der Übersicht sonst gleich wieder weg.
 - **Beschriftung:** `Ctrl`, `Shift`, `Alt` bzw. auf macOS `⌘`, `⇧`, `⌥` (`data-platform-label`).
 
 **Gemessener Kontrast** der Übersicht, hell / dunkel: Titel 17,74 / 14,68, Bedeutung 10,31 /

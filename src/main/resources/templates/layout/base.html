@@ -705,16 +705,6 @@
         <div class="row text-center align-items-center flex-row-reverse">
           <div class="col-lg-auto ms-lg-auto">
             <ul class="list-inline list-inline-dots mb-0">
-              <!--/* Die Uebersicht der Tastenkuerzel (#1016), sonst nur ueber ? erreichbar. Erst ab md:
-                     darunter gibt es keine Tastatur, fuer die sie gilt. Die Befehlspalette bietet
-                     sie ebenfalls an (data-palette-command). */-->
-              <li class="list-inline-item d-none d-md-inline-block">
-                <button type="button" class="link-secondary border-0 bg-transparent p-0"
-                        data-shortcut-help-open aria-haspopup="dialog" aria-keyshortcuts="?"
-                        data-palette-command="shortcuts"
-                        th:data-palette-keywords="#{main.shortcuts.keywords}"
-                        th:text="#{main.shortcuts.title}">Tastenkürzel</button>
-              </li>
               <li class="list-inline-item"><a th:href="@{/api/doc/swagger-ui/index.html}" target="_blank" class="link-secondary" rel="noopener">API</a></li>
               <li class="list-inline-item" th:if="${not #strings.isEmpty(@salatProperties.docsUrl)}"><a th:with="url=${@salatProperties.docsUrl}" th:href="${url}" target="_blank" class="link-secondary" rel="noopener">Documentation</a></li>
               <li class="list-inline-item"><a href="https://raw.githubusercontent.com/HBTGmbH/salat/refs/heads/main/LICENSE" class="link-secondary">License</a></li>
@@ -724,6 +714,17 @@
                   <i class="ti ti-heart-filled ti-size-3 text-red"></i>
                   Sponsor
                 </a>
+              </li>
+              <!--/* Die Uebersicht der Tastenkuerzel (#1016), sonst nur ueber ? erreichbar. Erst ab md:
+                     darunter gibt es keine Tastatur, fuer die sie gilt. Die Befehlspalette bietet
+                     sie ebenfalls an (data-palette-command). Als letzter Eintrag, weil Tabler den
+                     Trennpunkt vor jeden weiteren setzt - vorn verborgen, bliebe er vor "API" stehen. */-->
+              <li class="list-inline-item d-none d-md-inline-block">
+                <button type="button" class="link-secondary border-0 bg-transparent p-0"
+                        data-shortcut-help-open aria-haspopup="dialog" aria-keyshortcuts="?"
+                        data-palette-command="shortcuts"
+                        th:data-palette-keywords="#{main.shortcuts.keywords}"
+                        th:text="#{main.shortcuts.title}">Tastenkürzel</button>
               </li>
             </ul>
           </div>

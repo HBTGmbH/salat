@@ -10,6 +10,8 @@ import com.microsoft.playwright.Request;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,6 +32,7 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
   private static final String MANAGER = E2ETestData.EMPLOYEE_BL_SIGN;
   private static final LocalDate DAY = LocalDate.parse("2026-06-03");
   private static final LocalDate OTHER_DAY = LocalDate.parse("2026-06-02");
+  private static final LocalDate THIRD_DAY = LocalDate.parse("2026-06-01");
   private static final String SAVE = "ControlOrMeta+Enter";
 
   @ParameterizedTest(name = "{0}")
@@ -157,31 +160,170 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
-  /**
-   * What is typed but not yet taken goes along: the ticket field keeps its text until it loses the
-   * focus, and the duration is put into its form on blur. Both are in the request that saves.
-   */
+  /** A ticket number that is still being typed is taken only when its field is left — or saved. */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void ctrl_enter_takes_along_what_is_still_being_typed(E2EBrowser browser) {
+  void ctrl_enter_takes_along_a_ticket_still_being_typed(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + OTHER_DAY, page -> {
       selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
-      page.fill("#durationTime", "1,5");
-      page.locator("#commentField").fill("Tastenkuerzel Eingabe im Gange " + browser);
+      page.fill("#durationTime", "00:45");
+      page.locator("#commentField").fill("Tastenkuerzel Ticket im Gange " + browser);
       page.locator("#ticketReference ~ .ts-wrapper .ts-control").click();
       page.locator("#ticketReference-ts-control").pressSequentially("EXTERN-7");
 
-      // the form itself, not one of the htmx updates the leaving of a field sets off
-      Request saved = page.waitForRequest(
-          request -> "POST".equals(request.method()) && request.headers().get("hx-request") == null
-              && request.url().matches(".*/dailyreport/timereports(\\?.*)?$"),
-          () -> page.keyboard().press(SAVE));
+      String body = savedForm(page, () -> page.keyboard().press(SAVE));
 
-      String body = URLDecoder.decode(saved.postData(), StandardCharsets.UTF_8);
       assertTrue(body.contains("ticketReference=EXTERN-7"), body);
+      page.waitForURL(Pattern.compile(".*/dailyreport/daily.*"));
+    });
+  }
+
+  /** "1,5" becomes 01:30 only when the duration field is left; saving from it has to do that. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void ctrl_enter_takes_along_a_duration_still_being_typed(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + OTHER_DAY, page -> {
+      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      page.locator("#commentField").fill("Tastenkuerzel Dauer im Gange " + browser);
+      page.fill("#durationTime", "1,5");
+      assertThat(page.locator("#durationTime")).isFocused();
+
+      String body = savedForm(page, () -> page.keyboard().press(SAVE));
+
       assertTrue(body.contains("durationTime=01:30"), body);
       page.waitForURL(Pattern.compile(".*/dailyreport/daily.*"));
     });
+  }
+
+  /** With the focus on the page, or beside the form, Ctrl+Enter saves the page's one form. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void ctrl_enter_saves_with_the_focus_outside_the_form(E2EBrowser browser) {
+    String comment = "Tastenkuerzel Speichern ohne Fokus im Formular " + browser;
+    runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + THIRD_DAY, page -> {
+      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      page.fill("#durationTime", "00:15");
+      page.locator("#commentField").fill(comment);
+      leaveFields(page);
+
+      page.keyboard().press(SAVE);
+
+      page.waitForURL(Pattern.compile(".*/dailyreport/daily.*date=" + THIRD_DAY + ".*"));
+      assertThat(page.locator("body")).containsText(comment);
+    });
+  }
+
+  /** On a link the combination opens it in a new tab, as the browser does — the form is not saved. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void ctrl_enter_on_a_link_keeps_what_the_browser_does(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + THIRD_DAY, page -> {
+      String before = page.url();
+      List<String> posts = new ArrayList<>();
+      page.onRequest(request -> {
+        if ("POST".equals(request.method()) && request.headers().get("hx-request") == null) posts.add(request.url());
+      });
+      page.locator("#timereportMainForm a.btn-secondary").focus();
+
+      Page opened = page.context().waitForPage(() -> page.keyboard().press(SAVE));
+
+      opened.waitForLoadState();
+      assertTrue(opened.url().contains("/dailyreport/daily"), opened.url());
+      assertEquals(before, page.url());
+      assertEquals(List.of(), posts);
+    });
+  }
+
+  /**
+   * A held key sends repeats; the focus may be back in the form by then, and the form must not go
+   * out twice. Checked on the handler itself: a repeat is swallowed, the first press submits.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_held_ctrl_enter_saves_once(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + THIRD_DAY, page -> {
+      page.locator("#commentField").focus();
+      String press = "repeat => { const form = document.getElementById('timereportMainForm');"
+          + " let submitted = false;"
+          + " const onSubmit = e => { submitted = true; e.preventDefault(); };"
+          + " form.addEventListener('submit', onSubmit, true);"
+          + " const mac = IS_MAC;"
+          + " const key = new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: !mac, metaKey: mac, repeat, bubbles: true, cancelable: true });"
+          + " document.getElementById('commentField').dispatchEvent(key);"
+          + " form.removeEventListener('submit', onSubmit, true);"
+          + " return [submitted, key.defaultPrevented]; }";
+
+      assertEquals(List.of(false, true), page.evaluate(press, true));
+      // the form is invalid here, so a real submit stops at the validation — the submit event of
+      // requestSubmit comes only for a valid form; the handler reaching it is what counts
+      selectTomSelectOption(page, "suborderId", GlobalConstants.SUBRORDER_SIGN_TRAINING);
+      page.fill("#durationTime", "00:15");
+      page.locator("#commentField").fill("Tastenkuerzel gehalten " + browser);
+      assertEquals(List.of(true, true), page.evaluate(press, false));
+    });
+  }
+
+  /**
+   * Opened from the palette, the overview hands the focus back to where the palette came from —
+   * here the booking form's order field, whose dropdown was open.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_overview_from_the_palette_gives_the_focus_back_to_the_field(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/timereports/new?date=" + THIRD_DAY, page -> {
+      Locator order = page.locator("#suborderId ~ .ts-wrapper .ts-control");
+      order.click();
+      page.keyboard().press("ControlOrMeta+k");
+      page.locator("#commandPaletteInput").fill("tasten");
+      assertThat(page.locator("#commandPaletteList [role=option]").first()).containsText("Tastenkürzel");
+      page.keyboard().press("Enter");
+      assertThat(overview(page)).isFocused();
+
+      page.keyboard().press("Escape");
+
+      assertThat(order).isFocused();
+    });
+  }
+
+  /**
+   * Open while htmx took its history snapshot, the overview would come back from that copy shown
+   * but without anything that could close it. It is dropped, and ? opens a working one.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void an_overview_open_in_the_history_snapshot_does_not_come_back(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/orders/customerorders", page -> {
+      leaveFields(page);
+      page.keyboard().press("?");
+      assertThat(overview(page)).isFocused();
+      // the filter answers while the overview is open, so the snapshot of the page left carries it
+      page.evaluate("() => document.querySelector('form[data-filter-form]').requestSubmit()");
+      page.waitForURL(Pattern.compile(".*fCustomerOrderShowInactive=.*"));
+      page.keyboard().press("Escape");
+      assertThat(overview(page)).isHidden();
+
+      page.evaluate("() => window.overviewBeforeBack = document.getElementById('shortcutHelp')");
+      page.goBack();
+      page.waitForFunction("() => document.getElementById('shortcutHelp') !== window.overviewBeforeBack");
+
+      assertThat(page.locator(".modal.show")).hasCount(0);
+      assertThat(page.locator(".modal-backdrop")).hasCount(0);
+      assertEquals(false, page.evaluate("() => document.body.classList.contains('modal-open')"));
+      leaveFields(page);
+      page.keyboard().press("?");
+      assertThat(overview(page)).isFocused();
+      page.keyboard().press("Escape");
+      assertThat(overview(page)).isHidden();
+    });
+  }
+
+  /** The body of the form submission itself, not of one of the htmx updates leaving a field sets off. */
+  private static String savedForm(Page page, Runnable action) {
+    Request saved = page.waitForRequest(
+        request -> "POST".equals(request.method()) && request.headers().get("hx-request") == null
+            && request.url().matches(".*/dailyreport/timereports(\\?.*)?$"),
+        action);
+    return URLDecoder.decode(saved.postData(), StandardCharsets.UTF_8);
   }
 
   private static Locator overview(Page page) {
