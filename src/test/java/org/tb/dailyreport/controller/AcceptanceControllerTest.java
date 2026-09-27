@@ -194,6 +194,23 @@ class AcceptanceControllerTest {
         "/acceptance/accept/review?contractId=42&until=2026-08",
         "/acceptance/accept/review?contractId=42&until=2026-08&view=day",
         "/acceptance/accept", "/acceptance"));
+    assertThat(result.getModelAndView().getModel().get("newBookingUrl"))
+        .isEqualTo("/dailyreport/timereports/new?employeecontractId=42"
+            + "&returnUrl=%2Facceptance%2Faccept%2Freview%3FcontractId%3D42%26until%3D2026-08%26view%3Dday");
+  }
+
+  /**
+   * Wer für die Person der Übersicht nicht anlegen darf, bekommt in der Kopfzeile (#1156) das
+   * Formular für die gemerkte Auswahl — mit demselben Weg zurück in die Übersicht.
+   */
+  @Test
+  void the_header_button_names_the_person_of_the_review_only_where_booking_for_them_is_allowed() throws Exception {
+    when(releaseService.reviewAcceptance(anyLong(), any()))
+        .thenReturn(ReleaseControllerTest.review(new ReviewPeriod(BEGIN, END), false));
+
+    mockMvc.perform(get("/acceptance/accept/review").param("contractId", "42").param("until", "2026-08"))
+        .andExpect(model().attribute("newBookingUrl",
+            "/dailyreport/timereports/new?returnUrl=%2Facceptance%2Faccept%2Freview%3FcontractId%3D42%26until%3D2026-08"));
   }
 
   /** Ohne Filterparameter: die Auswahl der Abnahme ist gemerkt, Speichern ändert sie nicht (ADR-0023). */

@@ -154,6 +154,10 @@ public class DailyController {
             model.addAttribute("prevDate", prev);
             model.addAttribute("nextDate", next);
             model.addAttribute("title", targetDate.toString());
+            // the header button books on the day shown and comes back to it (#1156); the contract is
+            // the remembered selection the form falls back to, as for the button in the page itself
+            model.addAttribute("newBookingUrl",
+                TimereportController.newBookingUrl(targetDate, null, dailyViewUrl(targetDate, returnUrl)));
             if (ecId > 0) {
                 addBookingOffers(model, ecId, targetDate);
             }

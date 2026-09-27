@@ -534,6 +534,19 @@
                 </select>
               </div>
               <div class="btn-list">
+                <!--/* Neue Buchung von jeder Seite aus (#1156). Eine Seite mit Zusammenhang - der Tag der
+                       Einzeluebersicht, eine Pruefseite - legt das Ziel als newBookingUrl ins Modell,
+                       sonst oeffnet das Formular fuer heute. Die Beschriftung ab md ist dieselbe wie
+                       aria-label, damit der sichtbare Name im zugaenglichen enthalten ist. */-->
+                <a th:unless="${subSection == 'timereports'}" id="header-new-booking"
+                   th:with="newBookingTarget=${newBookingUrl ?: '/dailyreport/timereports/new'}"
+                   th:href="@{${newBookingTarget}}"
+                   class="btn btn-success btn-icon px-md-3"
+                   th:aria-label="#{main.general.mainmenu.newreport.text}"
+                   th:title="#{main.general.mainmenu.newreport.text}">
+                  <i class="ti ti-plus ti-size-3" aria-hidden="true"></i>
+                  <span class="d-none d-md-inline ms-1" th:text="#{main.general.mainmenu.newreport.text}">Neue Buchung</span>
+                </a>
                 <div class="dropdown">
                   <button type="button"
                           class="btn btn-icon"
