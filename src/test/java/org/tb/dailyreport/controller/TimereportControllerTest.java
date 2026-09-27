@@ -1,6 +1,7 @@
 package org.tb.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.tb.dailyreport.controller.TimereportController.newBookingUrl;
 import static org.tb.dailyreport.controller.TimereportController.nextBookingUrl;
 import static org.tb.dailyreport.controller.TimereportController.trainingDefaultOf;
 
@@ -102,6 +103,33 @@ class TimereportControllerTest {
   void an_off_site_return_target_is_dropped_rather_than_carried_along() {
     assertThat(nextBookingUrl(DATE, null, null, "https://evil.example.com")).doesNotContain("returnUrl");
     assertThat(nextBookingUrl(DATE, null, null, "/management/employees")).doesNotContain("returnUrl");
+  }
+
+  /** Der Knopf der Kopfzeile (#1156) ohne Zusammenhang: das Formular für heute. */
+  @Test
+  void the_header_button_without_context_opens_the_plain_form() {
+    assertThat(newBookingUrl(null, null, null)).isEqualTo("/dailyreport/timereports/new");
+  }
+
+  @Test
+  void the_header_button_carries_the_day_and_the_way_back_into_it() {
+    assertThat(newBookingUrl(DATE, null, "/dailyreport/daily?mode=daily&date=2026-06-18"))
+        .isEqualTo("/dailyreport/timereports/new?date=2026-06-18"
+            + "&returnUrl=%2Fdailyreport%2Fdaily%3Fmode%3Ddaily%26date%3D2026-06-18");
+  }
+
+  /** Von einer Prüfseite: deren Person als Formularfeld, nicht als Filter (ADR-0023), und kein Tag. */
+  @Test
+  void the_header_button_on_a_review_names_its_contract_and_leads_back() {
+    assertThat(newBookingUrl(null, 42L, "/acceptance/accept/review?contractId=42&until=2026-06"))
+        .isEqualTo("/dailyreport/timereports/new?employeecontractId=42"
+            + "&returnUrl=%2Facceptance%2Faccept%2Freview%3FcontractId%3D42%26until%3D2026-06");
+  }
+
+  @Test
+  void the_header_button_drops_an_unset_contract_and_an_unsafe_target() {
+    assertThat(newBookingUrl(null, -1L, "/management/employees")).isEqualTo("/dailyreport/timereports/new");
+    assertThat(newBookingUrl(null, 0L, "javascript:alert(1)")).isEqualTo("/dailyreport/timereports/new");
   }
 
 }

@@ -51,11 +51,20 @@ final class ReviewPage {
     }
   }
 
+  /**
+   * Befüllt die Seite. Der Knopf „Neue Buchung" der Kopfzeile (#1156) führt nach dem Speichern und
+   * beim Abbrechen in diese Übersicht zurück. Er nennt die Person der Übersicht nur, wenn für sie
+   * angelegt werden darf ({@code canCreate}, wie die Verweise an den Tagen ohne Buchung) — sonst
+   * öffnete das Formular für jemanden, für den das Speichern scheitert, und es bucht auf die gemerkte
+   * Auswahl. Einen Tag nennt er nicht: die Übersicht zeigt einen Zeitraum.
+   */
   static void addReview(Model model, TimereportReview review, ReviewLinks links, String view,
       ErrorCodeViewHelper errorCodeViewHelper) {
     model.addAttribute("review", TimereportReviewViewHelper.from(review, errorCodeViewHelper));
     model.addAttribute("reviewLinks", links);
     model.addAttribute("reviewView", view);
+    model.addAttribute("newBookingUrl", TimereportController.newBookingUrl(null,
+        review.canCreate() ? review.employeecontractId() : null, links.currentUrl()));
   }
 
   /** Die Meldung nach dem Freigeben: der Zeitraum, der freigegeben wurde. */

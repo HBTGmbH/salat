@@ -1,5 +1,6 @@
 package org.tb.dailyreport.controller;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.when;
 import static org.tb.dailyreport.controller.DailyController.dailyViewUrl;
 import static org.tb.dailyreport.controller.DailyController.reviewReturnUrlOf;
 
+import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
@@ -107,6 +109,38 @@ class DailyViewReturnTest {
     controller.show(null, "daily", DATE, null, null, returnUrl, model);
 
     assertThat(model.get("reviewReturnUrl")).isNull();
+  }
+
+  /** Der Knopf „Neue Buchung" der Kopfzeile (#1156) bucht auf den gezeigten Tag und führt in ihn zurück. */
+  @Test
+  void the_header_button_books_on_the_day_shown_and_leads_back_into_it() {
+    var model = new ExtendedModelMap();
+
+    controller.show(null, "daily", DATE, null, null, null, model);
+
+    assertThat(model.get("newBookingUrl")).isEqualTo("/dailyreport/timereports/new?date=2026-03-02"
+        + "&returnUrl=%2Fdailyreport%2Fdaily%3Fmode%3Ddaily%26date%3D2026-03-02");
+  }
+
+  /** Kam der Tag aus einer Übersicht, bleibt deren Weg zurück im Rücksprung erhalten. */
+  @Test
+  void the_header_button_of_a_day_opened_from_an_overview_keeps_the_way_back_to_it() {
+    var model = new ExtendedModelMap();
+
+    controller.show(null, "daily", DATE, null, null, OVERVIEW, model);
+
+    assertThat(model.get("newBookingUrl")).isEqualTo("/dailyreport/timereports/new?date=2026-03-02"
+        + "&returnUrl=" + URLEncoder.encode(OVERVIEW_DAY, UTF_8));
+  }
+
+  /** Die Monatsliste zeigt keinen einzelnen Tag; die Kopfzeile öffnet das Formular für heute. */
+  @Test
+  void the_month_list_leaves_the_header_button_without_context() {
+    var model = new ExtendedModelMap();
+
+    controller.show(null, "list", null, 3, 2026, null, model);
+
+    assertThat(model.containsAttribute("newBookingUrl")).isFalse();
   }
 
   /** Ohne Skript geht das Formular des Tages als gewöhnlicher POST, und die Umleitung behält den Weg zurück. */

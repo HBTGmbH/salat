@@ -12,6 +12,7 @@ import static org.tb.dailyreport.service.TimereportService.normalizeTicketRefere
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.StringJoiner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -653,5 +654,27 @@ public class TimereportController {
             url.append("&returnUrl=").append(encode(returnUrl, UTF_8));
         }
         return url.toString();
+    }
+
+    /**
+     * The target of the button "Neue Buchung" in the page header (#1156), for a page that has a
+     * context to hand on: the day it shows, the contract it is about, and where saving and
+     * "Abbrechen" lead. Each part is optional; a page without any leaves the model attribute out and
+     * the header opens the plain form, which books today on the remembered selection. The contract is
+     * the form field, never the filter — the link must not change the selection (ADR-0023) — and a
+     * return target only goes along where {@link ReturnUrls} accepts it.
+     */
+    static String newBookingUrl(LocalDate date, Long employeecontractId, String returnUrl) {
+        var query = new StringJoiner("&", "?", "").setEmptyValue("");
+        if (date != null) {
+            query.add("date=" + date);
+        }
+        if (isSet(employeecontractId)) {
+            query.add("employeecontractId=" + employeecontractId);
+        }
+        if (ReturnUrls.isSafe(returnUrl)) {
+            query.add("returnUrl=" + encode(returnUrl, UTF_8));
+        }
+        return "/dailyreport/timereports/new" + query;
     }
 }

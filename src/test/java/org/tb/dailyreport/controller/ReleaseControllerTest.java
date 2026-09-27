@@ -156,6 +156,9 @@ class ReleaseControllerTest {
         "/release/review?until=2026-08",
         "/release/review?until=2026-08&view=day",
         "/release", "/release"));
+    // the header button (#1156) books for the person of the review and leads back into it
+    assertThat(result.getModelAndView().getModel().get("newBookingUrl"))
+        .isEqualTo("/dailyreport/timereports/new?employeecontractId=42&returnUrl=%2Frelease%2Freview%3Funtil%3D2026-08");
   }
 
   @Test
@@ -366,8 +369,12 @@ class ReleaseControllerTest {
   }
 
   static TimereportReview review(ReviewPeriod period) {
+    return review(period, true);
+  }
+
+  static TimereportReview review(ReviewPeriod period, boolean canCreate) {
     return new TimereportReview(CONTRACT_ID, "Erika Probe", "epr", true, BEGIN.minusDays(1), null, period,
-        null, true, Duration.ZERO, List.of(), List.of(), List.of(), List.of(), List.of(), Set.of(), true, true, 0);
+        null, true, Duration.ZERO, List.of(), List.of(), List.of(), List.of(), List.of(), Set.of(), canCreate, true, 0);
   }
 
   static MessageSourceAccessor germanMessages() {
