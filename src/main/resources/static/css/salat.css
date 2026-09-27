@@ -603,6 +603,49 @@
   color: var(--tblr-body-color);
 }
 
+/* Das x zum Entfernen eines Chips (#1149, Plugin remove_button). Es erbt die Chip-Schrift und
+   steht gegen den Chip bei 7,98:1 hell und 7,77:1 dunkel, mit Hover bei 6,83:1 und 6,03:1.
+   Trennlinie und Hover waren Literale (#dee2e6, 5% Schwarz) und kommen aus denselben Tokens wie
+   der Chip. Der aktive Chip behaelt TomSelects Primaerfarbe samt Linie und Hover (4,50:1).
+   WCAG 2.5.8 verlangt 24 x 24px Tippflaeche, der Chip ist aber nur 22px hoch. Die Flaeche ragt
+   deshalb als Pseudo-Element ueber den Chip hinaus, statt ihn wachsen zu lassen - sonst waere
+   die Feldhoehe von 38px dahin. Damit sie nicht abgeschnitten wird, verliert der Chip TomSelects
+   overflow: auto. Zu scrollen hatte er damit nie etwas: ein Chip waechst mit seinem Text, und was
+   ueber das Feld hinausragt, schneidet .ts-control mit overflow: hidden ab. */
+.ts-wrapper.plugin-remove_button .ts-control > .item {
+  overflow: visible;
+}
+
+.ts-wrapper.plugin-remove_button .item .remove {
+  position: relative;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 0;
+}
+
+/* left: -1px, weil sich das Pseudo-Element am Innenrand ausrichtet: ohne das faengt es erst hinter
+   der 1px breiten Trennlinie an und ist oberhalb und unterhalb des Chips nur 23px breit. */
+.ts-wrapper.plugin-remove_button .item .remove::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -1px;
+  right: 0;
+  height: 24px;
+  transform: translateY(-50%);
+}
+
+.ts-wrapper.plugin-remove_button:not(.rtl) .item:not(.active) .remove {
+  border-left-color: var(--tblr-border-color);
+}
+
+.ts-wrapper.plugin-remove_button .item:not(.active) .remove:hover {
+  background: color-mix(in srgb, var(--tblr-body-color) 10%, transparent);
+}
+
 /* TomSelect ersetzt das Feld durch eigenes Markup und bringt dabei eigene Masse mit: Innenabstand
    .375rem und Zeilenhoehe 1,5, waehrend Bootstrap hier 1,4285 rechnet. Sichtbar wurde das als
    Sprung der Feldhoehe, sobald TomSelect ein Feld uebernimmt - das Textfeld schrumpfte von 40px
