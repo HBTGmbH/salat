@@ -22,6 +22,7 @@ import org.tb.dailyreport.domain.TimereportListFilter;
 import org.tb.dailyreport.domain.TimereportListFilter.Billable;
 import org.tb.dailyreport.service.TimereportListExcelService;
 import org.tb.dailyreport.service.TimereportListService;
+import org.tb.dailyreport.viewhelper.TimereportListPrintHeader;
 
 /**
  * The booking list (#1092): one page that shows bookings across employees, orders and periods, and writes them to a
@@ -91,6 +92,12 @@ public class TimereportListController {
     var fragment = "true".equals(request.getHeader("HX-Request"));
 
     model.addAttribute("result", timereportListService.search(filter));
+    // Der Filterblock des Ausdrucks steht im Fragment und wird mit ihm getauscht; seine Namen koennen
+    // deshalb nicht aus den Auswahllisten kommen, die ein Filterwechsel nicht berechnet (#1147).
+    var filterSummary = timereportListService.describe(filter);
+    model.addAttribute("filterSummary", filterSummary);
+    model.addAttribute("printHeader",
+        TimereportListPrintHeader.from(filterSummary, billable, period.from(), period.until(), messages));
     if (!fragment) {
       model.addAttribute("options", timereportListService.getFilterOptions(orderIds, suborderIds, ticketKeys));
     }

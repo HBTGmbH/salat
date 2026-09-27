@@ -19,6 +19,21 @@ function toggleTheme(theme) {
   document.documentElement.setAttribute('data-bs-theme', theme);
 }
 
+// Papier ist weiss: gedruckt wird immer im hellen Modus, sonst stuende etwa ein Warnhinweis in
+// hellem Gelb auf weissem Grund (#1147). Nur das Attribut wechselt, nicht die gespeicherte Wahl -
+// nach dem Druck steht die Seite wieder so da wie vorher.
+let themeBeforePrint = null;
+window.addEventListener('beforeprint', () => {
+  themeBeforePrint = document.documentElement.getAttribute('data-bs-theme');
+  document.documentElement.setAttribute('data-bs-theme', 'light');
+});
+window.addEventListener('afterprint', () => {
+  if (themeBeforePrint !== null) {
+    document.documentElement.setAttribute('data-bs-theme', themeBeforePrint);
+    themeBeforePrint = null;
+  }
+});
+
 function selectContract(id) {
   const url = new URL(window.location.href);
   url.searchParams.set('fEmployeeContractId', String(id));

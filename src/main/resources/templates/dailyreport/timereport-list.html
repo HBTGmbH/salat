@@ -6,7 +6,7 @@
 
 <!--/* Die Seite ist neu und im Zuschnitt noch in Abstimmung; die Markierung sagt das, solange sie
        gilt, und faellt mit ihr weg. */-->
-<div class="mb-3">
+<div class="mb-3 d-print-none">
   <span class="badge bg-azure-lt" th:text="#{main.beta.badge}">Beta</span>
   <span class="text-secondary small ms-2" th:text="#{main.timereportlist.beta.hint}">
     Neue Seite — Rückmeldungen willkommen.
@@ -20,13 +20,44 @@
   .booking-task { max-width: 26rem; }
   /* The picker of a tree opens a dialog; it has to read like the select boxes next to it. */
   .tree-picker { text-align: left; }
+
+  /* Druck (#1147): alle neun Spalten auf A4 quer, rund zwanzig Buchungen je Seite. */
+  @media print {
+    .print-summary { gap: 15mm; align-items: flex-start; }
+    .print-filter { font-size: 8pt; border-collapse: collapse; }
+    .print-filter caption { caption-side: top; padding: 0 0 2pt 0; font-weight: 600; color: inherit;
+                            text-transform: uppercase; letter-spacing: .04em; }
+    .print-filter th { font-weight: 600; padding: 0 6pt 1pt 0; vertical-align: top; white-space: nowrap; }
+    .print-filter td { padding: 0 0 1pt 0; }
+    #results-container .card { border: 0; box-shadow: none; }
+    #bookings { font-size: 7.5pt; line-height: 1.25; width: 100%; }
+    #bookings th, #bookings td { padding: 1.5pt 3pt; }
+    #bookings .d-none { display: table-cell !important; }
+    /* Die Tätigkeit bricht um statt abgeschnitten zu werden. */
+    #bookings .booking-task { max-width: none; white-space: normal; overflow: visible; text-overflow: clip; }
+    /* Sortiert wird am Bildschirm; die Richtung steht im Filterblock. */
+    #bookings thead .ti { display: none; }
+    #bookings tr { break-inside: avoid; }
+    /* Die Summe gilt für die ganze Tabelle, nicht für eine Seite: sie steht einmal am Ende, statt
+       wie ein Seitenfuß auf jeder Seite wiederholt zu werden. */
+    #bookings tfoot { display: table-row-group; }
+    /* Hintergründe lässt der Druck weg, salat.css setzt die Schrift der Badges aber auf Weiß -
+       übrig bliebe Weiß auf Weiß. Im Druck ist die Badge deshalb nur noch Text, und die
+       Ticketnummer wird dabei nicht mehr gekürzt. Als Text steht sie auch auf der Schriftlinie:
+       inline-flex mit vertical-align: bottom setzte die Summe tiefer als "Summe" daneben. */
+    #bookings .badge { display: inline; vertical-align: baseline; height: auto; line-height: inherit;
+                       background: none !important; border: 0; padding: 0; font-size: inherit;
+                       font-weight: inherit; letter-spacing: normal; text-transform: none;
+                       color: var(--tblr-body-color) !important;
+                       max-width: none !important; white-space: normal; }
+  }
 </style>
 
 <!-- ═══════════════════════════════ FILTER ═══════════════════════════════ -->
 <!--/* Der Filter tauscht den Ergebnisbereich, statt die Seite neu zu laden: ein Wechsel im Filter
        laedt nach, waehrend jemand schon den naechsten Dialog oeffnet — und ein Seitenwechsel raeumt
        das offene Modal mit weg. */-->
-<form method="get" th:action="@{/dailyreport/list}" id="filter-form" class="card mb-3"
+<form method="get" th:action="@{/dailyreport/list}" id="filter-form" class="card mb-3 d-print-none"
       th:hx-get="@{/dailyreport/list}" hx-target="#results-container" hx-push-url="true">
   <div class="card-body">
 
@@ -200,8 +231,104 @@
 
 <div id="results-container" th:fragment="results">
 
+<!--/* Kopf und Fuss des Ausdrucks stehen im Ergebnisbereich, damit ein Filterwechsel sie mit
+       austauscht (#1147). */-->
+<style th:replace="~{fragments/print-page :: page(${printHeader.title}, ${printHeader.filterLine}, ${printHeader.asOf})}"></style>
+
+<!-- ═══════════════════════════════ FILTER UND ERGEBNIS IM AUSDRUCK ═══════════════════════════════ -->
+<!--/* Nur im Druck: links, was das Formular sagt, als Text; rechts die Kennzahlen des Ergebnisses. Die
+       Namen kommen aus filterSummary, nicht aus den Auswahllisten - die rechnet ein Filterwechsel
+       nicht mit. Stunden und Fakturierbarkeit gelten fuer alle Treffer, auch die nicht angezeigten. */-->
+<section class="d-none d-print-flex print-summary mb-3" id="print-filter">
+  <table class="print-filter">
+    <caption th:text="#{main.timereportlist.print.filter}">Filter</caption>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.period}">Zeitraum</th>
+      <td th:text="${#temporals.format(from, 'dd.MM.yyyy')} + ' – ' + ${#temporals.format(until, 'dd.MM.yyyy')}">01.09.2026 – 30.09.2026</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.employees}">Mitarbeiter</th>
+      <td th:if="${filterSummary.employees.isEmpty()}" th:text="#{main.timereportlist.print.all}">alle</td>
+      <td th:unless="${filterSummary.employees.isEmpty()}">
+        <div th:each="employee : ${filterSummary.employees}" th:text="${employee.name} + ' | ' + ${employee.sign}">Name | sig</div>
+      </td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.customers}">Auftraggeber</th>
+      <td th:if="${filterSummary.customers.isEmpty()}" th:text="#{main.timereportlist.print.all}">alle</td>
+      <td th:unless="${filterSummary.customers.isEmpty()}">
+        <div th:each="customer : ${filterSummary.customers}" th:text="${customer.shortname} + ' (' + ${customer.name} + ')'">TK (Testkunde)</div>
+      </td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.orders}">Aufträge</th>
+      <td th:if="${filterSummary.orderCount() == 0}" th:text="#{main.timereportlist.print.all}">alle</td>
+      <td th:unless="${filterSummary.orderCount() == 0}">
+        <div th:each="sign : ${filterSummary.orderSigns()}" th:text="${sign}">ORD-1</div>
+        <div th:text="'(' + ${filterSummary.includedSuborders} + ' ' + #{main.timereportlist.orders.dialog.included} + ')'">
+          (3 Unteraufträge eingeschlossen)</div>
+      </td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.tickets}">Tickets</th>
+      <td th:if="${filterSummary.tickets.isEmpty()}" th:text="#{main.timereportlist.print.all}">alle</td>
+      <td th:unless="${filterSummary.tickets.isEmpty()}">
+        <div th:each="ticket : ${filterSummary.tickets}" th:text="${ticket}">OPS-42</div>
+        <div th:text="'(' + (${filterSummary.ticketDescendants}
+                              ? #{main.timereportlist.tickets.dialog.children.included}
+                              : #{main.timereportlist.tickets.dialog.children.excluded}) + ')'">(inklusive untergeordneter)</div>
+      </td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.billable}">Fakturierbarkeit</th>
+      <td th:text="${billable == 'BILLABLE'} ? #{main.timereportlist.filter.billable.yes}
+                   : (${billable == 'NOT_BILLABLE'} ? #{main.timereportlist.filter.billable.no}
+                   : #{main.timereportlist.print.all})">alle</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.print.sort}">Sortierung</th>
+      <td th:text="#{'main.timereportlist.column.' + ${#strings.toLowerCase(sort)}} + ', '
+                   + (${sortDescending} ? #{main.timereportlist.print.sort.descending}
+                                        : #{main.timereportlist.print.sort.ascending})">Datum, aufsteigend</td>
+    </tr>
+  </table>
+
+  <table class="print-filter" th:with="total=${result.totalDuration.toMinutes()},
+                                       billableMinutes=${result.billableDuration.toMinutes()},
+                                       otherMinutes=${total - billableMinutes}">
+    <caption th:text="#{main.timereportlist.print.result}">Ergebnis</caption>
+    <tr>
+      <th th:text="#{main.general.print.asof.label}">Stand</th>
+      <td th:text="${printHeader.asOf}">27.09.2026 12:05</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.print.hits}">Treffer</th>
+      <td class="text-end" th:text="${#numbers.formatInteger(result.totalCount, 1, 'DEFAULT')}">3.399</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.print.shown}">Davon angezeigt</th>
+      <td class="text-end" th:text="${#numbers.formatInteger(result.timereports.size(), 1, 'DEFAULT')}">50</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.print.hours}">Stunden</th>
+      <td class="text-end" th:text="${#numbers.formatInteger(total / 60, 1, 'DEFAULT')} + ':'
+                                    + ${#numbers.formatInteger(total % 60, 2, 'NONE')}">9.406:39</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.billable.yes}">Fakturierbar</th>
+      <td class="text-end" th:text="${#numbers.formatInteger(billableMinutes / 60, 1, 'DEFAULT')} + ':'
+                                    + ${#numbers.formatInteger(billableMinutes % 60, 2, 'NONE')}">4.999:05</td>
+    </tr>
+    <tr>
+      <th th:text="#{main.timereportlist.filter.billable.no}">Nicht fakturierbar</th>
+      <td class="text-end" th:text="${#numbers.formatInteger(otherMinutes / 60, 1, 'DEFAULT')} + ':'
+                                    + ${#numbers.formatInteger(otherMinutes % 60, 2, 'NONE')}">4.407:34</td>
+    </tr>
+  </table>
+</section>
+
 <!-- ═══════════════════════════════ KENNZAHLEN ═══════════════════════════════ -->
-<div class="row row-cards mb-3">
+<div class="row row-cards mb-3 d-print-none">
   <div class="col-sm-6 col-lg-3">
     <div class="card card-sm">
       <div class="card-body">
@@ -246,7 +373,7 @@
 
 <!-- ═══════════════════════════════ TABELLE ═══════════════════════════════ -->
 <div class="card">
-  <div class="card-header">
+  <div class="card-header d-print-none">
     <h3 class="card-title" th:text="#{main.timereportlist.table.title(${result.totalCount})}">Buchungen</h3>
     <div class="card-actions btn-list">
       <a class="btn btn-outline-secondary" id="export-button" th:href="@{/dailyreport/list/export}">
@@ -255,7 +382,8 @@
     </div>
   </div>
 
-  <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0"
+  <!--/* Im Druck steht die Begrenzung im Filterblock: sie sagt, was das Blatt zeigt, wie die Filter. */-->
+  <div th:if="${result.truncated}" class="alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0 d-print-none"
        role="alert">
     <!--/* Symbol und Text in einer Zeilenbox: als eigene Flex-Kinder haben sie verschiedene
            Zeilenhoehen, und das Zeichen saesse oben in seiner Box statt auf der Schriftlinie. */-->
@@ -344,7 +472,7 @@
       </tfoot>
     </table>
   </div>
-  <div class="card-footer">
+  <div class="card-footer d-print-none">
     <p class="m-0 text-secondary" th:text="#{main.timereportlist.table.count(${result.totalCount})}">0 Buchungen</p>
   </div>
 </div>

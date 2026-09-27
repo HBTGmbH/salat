@@ -79,6 +79,41 @@
   }
 }
 
+/* ===== Druckbasis (#1147, #1148) =====
+   Was fuer jeden Ausdruck gilt; Seitenformat und Tabellenregeln stehen in der jeweiligen Seite.
+   Solange Seite, Inhalt und Karte im Druck Flex-Container bleiben, schiebt Chrome eine Tabelle, die
+   nicht auf die erste Seite passt, als Ganzes auf die zweite - die erste bleibt leer. Ohne
+   min-height: 0 haengt Chrome ausserdem eine leere letzte Seite an, die im Fuss trotzdem mitzaehlt.
+   .table-responsive schneidet am Bildschirm ab, was nicht in die Breite passt, und im Druck genauso.
+   Der Farbmodus wird fuer den Druck in salat.js auf hell gestellt: die modusabhaengigen Regeln in
+   dieser Datei erreicht eine reine CSS-Loesung ueber color-scheme nicht. */
+@media print {
+  html,
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* :not(), weil diese Regel nach Tabler steht und dessen d-print-none sonst ueberstimmte. */
+  .page:not(.d-print-none),
+  .page-wrapper:not(.d-print-none),
+  .page-body:not(.d-print-none),
+  .card:not(.d-print-none) {
+    display: block !important;
+    min-height: 0 !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  /* Tabler haelt eine Karte im Druck beisammen. Traegt sie eine Tabelle, die laenger ist als eine
+     Seite, schiebt Chrome sie deshalb als Ganzes auf die naechste und laesst die erste leer. */
+  .card:has(.table-responsive) {
+    break-inside: auto;
+  }
+}
+
 /* ===== Textkontrast: WCAG AA (4,5:1) fuer jeden Text =====
    Alle Werte in diesem Block sind im Browser gegen die echten Tabler-Stylesheets gemessen, nicht
    geschaetzt; das Verfahren und die Messtabellen stehen in docs/ui-style-guide.md (#1022).
