@@ -126,7 +126,7 @@ class MatrixE2ETest extends PlaywrightE2ETestBase {
       assertThat(legend).containsText("Feiertag");
       assertThat(legend).containsText("Heute");
 
-      // FIXED_NOW is 2026-06-15, and the matrix opens on the current month
+      // FIXED_NOW lies in June 2026, and the matrix opens on the current month
       assertThat(page.locator("button.dropdown-toggle[title='Monat wählen']")).hasText("Juni 2026");
     });
   }

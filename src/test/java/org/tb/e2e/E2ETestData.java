@@ -99,8 +99,8 @@ public class E2ETestData {
   private static final LocalDate PAST = LocalDate.of(2020, 1, 1);
 
   /**
-   * Already-released-through date for {@link #EMPLOYEE_MA_SIGN}'s contract, aligned to
-   * {@code PlaywrightE2ETestBase.FIXED_NOW} (2026-06-15): only the following weekend
+   * Already-released-through date for {@link #EMPLOYEE_MA_SIGN}'s contract, one month before
+   * {@code PlaywrightE2ETestBase.FIXED_NOW} (June 2026): only the following weekend
    * (2026-05-30/31) remains unreleased, so the self-release E2E test doesn't hit the
    * "all working days must be booked" business rule for the ~6 years since {@link #PAST}.
    */

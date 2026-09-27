@@ -3,7 +3,6 @@ package org.tb.etl.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDateTime;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -12,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.tb.common.SalatProperties;
-import org.tb.common.util.ClockProvider;
+import org.tb.common.test.FixedClock;
 import org.tb.etl.domain.ETLExecutionHistory;
 import org.tb.etl.domain.ETLRunHistory;
 import org.tb.etl.domain.ETLRunHistory.Status;
@@ -21,11 +20,13 @@ import org.tb.etl.persistence.ETLExecutionHistoryRepository;
 import org.tb.etl.persistence.ETLRunHistoryRepository;
 
 @DataJpaTest
+@FixedClock(ETLExecutionHistoryCleanupServiceTest.NOW_TEXT)
 @Import({ ETLExecutionHistoryCleanupService.class, SalatProperties.class })
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class ETLExecutionHistoryCleanupServiceTest {
 
-  private static final LocalDateTime NOW = LocalDateTime.of(2026, 8, 22, 3, 0);
+  static final String NOW_TEXT = "2026-08-22T03:00:00";
+  private static final LocalDateTime NOW = LocalDateTime.parse(NOW_TEXT);
 
   @Autowired
   private ETLExecutionHistoryCleanupService cleanupService;
@@ -41,15 +42,9 @@ class ETLExecutionHistoryCleanupServiceTest {
 
   @BeforeEach
   void setUp() {
-    ClockProvider.useFixedClock(NOW);
     repository.deleteAll();
     runHistoryRepository.deleteAll();
     salatProperties.getEtl().getHistory().setRetentionDays(14);
-  }
-
-  @AfterEach
-  void tearDown() {
-    ClockProvider.reset();
   }
 
   @Test

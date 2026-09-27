@@ -19,7 +19,7 @@ import org.tb.e2e.PlaywrightE2ETestBase;
 @FixedClock(DailyProgressUnitE2ETest.NOW)
 class DailyProgressUnitE2ETest extends PlaywrightE2ETestBase {
 
-  /** Explicit because {@code @FixedClock} is not inherited from the base class. */
+  /** A July day of its own, so the days below lie in the past and nobody else books on them. */
   static final String NOW = "2026-07-15T14:00:00";
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_MA_SIGN;

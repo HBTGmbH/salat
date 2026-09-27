@@ -10,6 +10,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.tb.common.GlobalConstants;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
 import org.tb.common.util.ClockProvider;
@@ -193,7 +195,8 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
 
       // the server's day moves on a week; FixedClockExtension puts the clock back after the test
       LocalDate weekLater = today.plusDays(7);
-      ClockProvider.useFixedClock(weekLater.atTime(9, 0));
+      ZoneId zone = ZoneId.of(GlobalConstants.DEFAULT_TIMEZONE_ID);
+      ClockProvider.setClock(java.time.Clock.fixed(weekLater.atTime(9, 0).atZone(zone).toInstant(), zone));
       page.navigate(urlWithLogin("/dailyreport/dashboard", MANAGER));
       page.keyboard().press(SHORTCUT);
 

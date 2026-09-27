@@ -3,9 +3,11 @@ package org.tb.dailyreport.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -270,7 +272,8 @@ class ReleaseReviewBalanceTest {
 
   /** The total of the overtime account as it reads on the day after {@code date}, i.e. up to {@code date}. */
   private Duration overtimeAccountAt(LocalDate date) {
-    ClockProvider.useFixedClock(date.plusDays(1).atTime(10, 0));
+    ZoneId zone = ZoneId.of(GlobalConstants.DEFAULT_TIMEZONE_ID);
+    ClockProvider.setClock(Clock.fixed(date.plusDays(1).atTime(10, 0).atZone(zone).toInstant(), zone));
     return overtimeService.calculateOvertime(contract, false).orElseThrow().getTotal().getDuration();
   }
 

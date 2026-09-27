@@ -131,8 +131,8 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
    * The hint on working days of the previous week without a booking (#1124), for a person of its
    * own whose contract begins on Wednesday of that week: it names each remaining weekday, and each
    * day leads into the daily view of that date, for that contract. The clock stands on Monday,
-   * 2026-06-15 — {@code @FixedClock} is not inherited, and without its own the method would run a
-   * week and a half later, at the extension's default.
+   * 2026-06-15 — without its own {@code @FixedClock} the method would run a week and a half later,
+   * on the base class's day.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
@@ -187,7 +187,7 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
 
   /**
    * The matrix of the running month replaced the card "Stunden nach Auftrag (Monat)" (#878). The
-   * clock stands at the extension's default, 2026-06-25, so the booking lands in the month the
+   * clock stands on the base class's day, 2026-06-25, so the booking lands in the month the
    * dashboard shows. The cell is found by the test's own comment: other test classes book in June
    * too (see PlaywrightE2ETestBase).
    */

@@ -21,7 +21,7 @@ import org.tb.e2e.PlaywrightE2ETestBase;
 @FixedClock(DailyTargetOnNonWorkingDaysE2ETest.NOW)
 class DailyTargetOnNonWorkingDaysE2ETest extends PlaywrightE2ETestBase {
 
-  /** Explicit because {@code @FixedClock} is not inherited from the base class. */
+  /** In October 2026, the month of the seeded public holidays, instead of the base class's day. */
   static final String NOW = "2026-10-20T14:00:00";
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_MA_SIGN;
