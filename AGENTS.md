@@ -487,6 +487,8 @@ All `<select>` elements use [TomSelect](https://tom-select.github.io/) for searc
 
 Always add both `tomselect-multi` **and** the native `multiple` attribute. The class sets `maxItems: null` in TomSelect; `multiple` ensures the browser submits all selected values so Spring MVC can bind them to a `List<Long>` (or `List<String>`).
 
+The class also switches on the `remove_button` plugin: every chip carries an × that removes it by tap or click and fires `change` on the `<select>` (#1149). Its translated name comes from `data-select-remove-label` on `<body>` in `layout/base.html`, so a template with a multi-select needs nothing extra.
+
 ```html
 <select class="form-select tomselect tomselect-multi" th:field="*{contractIds}" multiple>
   <option th:each="ec : ${contracts}" th:value="${ec.id}" th:text="${ec.employee.name}"></option>

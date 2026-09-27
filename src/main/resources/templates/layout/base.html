@@ -25,7 +25,7 @@
   <link rel="stylesheet" th:href="@{/webjars/tom-select/dist/css/tom-select.bootstrap5.min.css}" />
   <link rel="stylesheet" th:href="@{/css/salat.css}"/>
 </head>
-<body>
+<body th:data-select-remove-label="#{main.general.select.remove.text}">
 <script th:src="@{/webjars/tabler__core/dist/js/tabler-theme.min.js}"></script>
 <!--/* Sprunglink (#1064): das erste fokussierbare Element der Seite, damit die Navigation mit der
        Tastatur uebersprungen werden kann. Er steht hier statt in .page, weil er vor allem anderen

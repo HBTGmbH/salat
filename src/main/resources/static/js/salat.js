@@ -25,19 +25,41 @@ function selectContract(id) {
   location.href = url.toString();
 }
 
+// The translated name sits on <body>, so no template with a multi-select has to bring it along. The
+// plugin puts it into the title only, and a role="button" takes its accessible name from its
+// content first — a screen reader would announce "×". Hence an element of our own with aria-label.
+const removeButtonOptions = () => ({
+  title: document.body.dataset.selectRemoveLabel,
+  html: (data) => {
+    const cross = document.createElement('div');
+    cross.className = data.className;
+    cross.title = data.title;
+    cross.setAttribute('aria-label', data.title);
+    cross.setAttribute('role', data.role);
+    cross.tabIndex = data.tabindex;
+    cross.textContent = data.label;
+    return cross;
+  },
+});
+
 const tomSelectConfig = (el) => {
   // a remote field is an <input>, which has no options at all
   const hasSubtext = Array.from(el.options || []).some(opt => opt.dataset.subtext);
   const favoriteTarget = el.dataset.favoriteTarget || null;
   const remoteUrl = el.dataset.remoteUrl || null;
+  const multi = el.classList.contains('tomselect-multi');
 
   const config = {
     // A field whose values are not all known in advance says so with data-allow-create: the offered
     // options stay a convenience, and what somebody types is kept (#1074).
     create: el.dataset.allowCreate === 'true',
-    maxItems: el.classList.contains('tomselect-multi') ? null : 1,
+    maxItems: multi ? null : 1,
     maxOptions: 1000,
-    plugins: ['dropdown_input'],
+    // Without remove_button a chip goes away only by keyboard: activate it, then Backspace. On a
+    // phone that never comes together, and a picked entry stayed (#1149).
+    plugins: multi
+      ? { dropdown_input: {}, remove_button: removeButtonOptions() }
+      : ['dropdown_input'],
     sortField: [{ field: '$order' }],
     placeholder: el.getAttribute('placeholder') || 'Select an option...',
     onDropdownOpen(dropdown) {

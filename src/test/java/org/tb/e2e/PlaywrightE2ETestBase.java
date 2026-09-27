@@ -172,8 +172,24 @@ public abstract class PlaywrightE2ETestBase {
    */
   protected void runAsUser(E2EBrowser browser, String employeeSign, String startPath, String locale,
       Consumer<Page> testBody) {
+    runInContext(browser, employeeSign, startPath, new Browser.NewContextOptions().setLocale(locale), testBody);
+  }
+
+  /**
+   * Same as {@link #runAsUser(E2EBrowser, String, String, Consumer)}, but on a device with a touch
+   * screen, so that {@link Locator#tap()} is available. Only {@code hasTouch} is set: Firefox does
+   * not support {@code isMobile}, and the viewport stays the desktop one the other tests use.
+   */
+  protected void runOnTouchDevice(E2EBrowser browser, String employeeSign, String startPath,
+      Consumer<Page> testBody) {
+    runInContext(browser, employeeSign, startPath,
+        new Browser.NewContextOptions().setLocale("de-DE").setHasTouch(true), testBody);
+  }
+
+  private void runInContext(E2EBrowser browser, String employeeSign, String startPath,
+      Browser.NewContextOptions contextOptions, Consumer<Page> testBody) {
     try (Browser b = browser.launch(playwright)) {
-      BrowserContext context = b.newContext(new Browser.NewContextOptions().setLocale(locale));
+      BrowserContext context = b.newContext(contextOptions);
       Page page = context.newPage();
       page.navigate(urlFor(startPath, employeeSign));
       testBody.accept(page);
