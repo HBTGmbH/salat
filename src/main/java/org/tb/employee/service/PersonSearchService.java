@@ -109,7 +109,7 @@ public class PersonSearchService {
 
   /** 0 running today, 1 starting later, 2 ended — the end alone decides "ended" (ADR-0029). */
   private static int phase(PersonSearchRow row, LocalDate today) {
-    if (Validity.isInactive(row.validUntil())) {
+    if (Validity.isInactiveOn(row.validUntil(), today)) {
       return 2;
     }
     return row.validFrom() != null && row.validFrom().isAfter(today) ? 1 : 0;

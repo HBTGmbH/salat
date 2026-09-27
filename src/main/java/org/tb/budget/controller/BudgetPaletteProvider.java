@@ -56,7 +56,7 @@ public class BudgetPaletteProvider implements PaletteProvider {
       targets.put(sign, hasActivePlan == null ? List.of(controlling) : List.of(controlling,
           new PaletteTarget(PaletteText.of("main.palette.target.customerorder.budget"),
               PaletteLink.to("/budget").param("fCustomerOrderSign", sign)
-                  .param("fBudgetShowInactive", !hasActivePlan).build(), 3)));
+                  .paramIf(!hasActivePlan, "fBudgetShowInactive", true).build(), 3)));
     }
     return targets;
   }

@@ -1457,6 +1457,9 @@ function paletteDrill(dialog, item) {
   crumb.querySelector('[data-part="object"]').textContent = item.label;
   crumb.hidden = false;
   input.value = '';
+  // what the field searches for now are the targets; "Seite, Tag, …" would promise something else
+  input.dataset.placeholder = input.placeholder;
+  input.placeholder = '';
   paletteRenderTargets('');
 }
 
@@ -1481,6 +1484,7 @@ function paletteUndrill(dialog) {
   document.getElementById('commandPaletteCrumb').hidden = true;
   const input = document.getElementById('commandPaletteInput');
   input.value = drill.query;
+  input.placeholder = input.dataset.placeholder || input.placeholder;
   paletteUpdate(dialog);
   // back on the object the targets belonged to
   const index = paletteState.items.findIndex(item => item.key === drill.item.key);
@@ -1606,6 +1610,7 @@ function paletteOpen() {
   paletteState.objects = null;
   document.getElementById('commandPaletteCrumb').hidden = true;
   const input = document.getElementById('commandPaletteInput');
+  input.placeholder = input.dataset.placeholder || input.placeholder;
   input.value = '';
   dialog.showModal();
   input.focus();

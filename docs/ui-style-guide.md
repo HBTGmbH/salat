@@ -184,6 +184,47 @@ auf der getönten Zeile (hell 4,10:1) und Tablers `kbd` (hell 2,84:1). Die getö
 gewählten Zeile erreicht gegen die Karte nur 1,18:1 bzw. 1,11:1 — die Markierung trägt deshalb der
 Balken am linken Rand.
 
+#### Geschäftsobjekte (#1157)
+
+Ab zwei Zeichen fragt die Palette den Server, sobald das Tippen etwa 150 ms ruht, und hängt die
+Antwort unter die Treffer der Seite: **Aufträge, Unteraufträge, Auftraggeber, Personen**, je Gruppe
+höchstens fünf. Die Anbieter je Modul und ihre Regeln stehen in
+[ADR-0031](adr/0031-objektsuche-der-befehlspalette-anbieter-je-modul.md).
+
+- **Die gewählte Zeile springt nicht.** Die Objekte kommen unter die Treffer der Seite; war dort
+  nichts gewählt, wird das erste Objekt gewählt. Eine Antwort, die ein weiterer Tastendruck überholt
+  hat, wird verworfen; bis die neue da ist, bleibt die vorige stehen, eingeschränkt auf das, was noch
+  passt — sonst blinkten die Objekte mit jedem Buchstaben weg.
+- **Zeile:** fachlicher Schlüssel und Beschreibung (`MUSTER-01 · Wartungsvertrag · Musterkunde`),
+  rechts „beendet", „verborgen" und ein Hinweis wie der Auftraggeber eines Unterauftrags oder
+  „Vertrag seit 01.01.2024". Beendete und verborgene Objekte stehen hinter den laufenden. Eine
+  Datenbank-id steht nirgends.
+- **Ziele:** Enter öffnet das erste. `→` mit dem Cursor am Ende der Eingabe zeigt alle, die Zeile
+  darüber nennt Suche und Objekt (`muster › MUSTER-01 · …`), `←` am Anfang der Eingabe, die Rücktaste
+  im leeren Feld oder der Pfeil links davor führen zurück, das Objekt ist dann wieder gewählt. Für
+  Maus und Finger steht in jeder Zeile mit mehreren Zielen ein `→`.
+
+  | Objekt | Ziele, das erste zuerst |
+  |---|---|
+  | Auftrag | Auftrag öffnen (Geschäftsführung: bearbeiten, sonst die Liste auf ihn gefiltert), Unteraufträge, Controlling ausgewertet, Budget |
+  | Unterauftrag | Unterauftrag öffnen, Buchen auf … |
+  | Auftraggeber | Auftraggeber öffnen, Aufträge des Auftraggebers |
+  | Person | Mitarbeiter, Vertrag, Einzelübersicht, Matrixübersicht |
+
+  Angeboten wird nur, was sich öffnen lässt — je Rolle, je Ziel. „Buchen auf" steht nur da, wo der
+  gewählte Vertrag heute buchen darf; Controlling und Budget nur für die Aufträge, deren Zahlen die
+  Person sehen darf, das Budget nur, wo es Pläne gibt.
+- **Zuletzt verwendet** merkt kein Objekt: ob es sich noch öffnen lässt, beantwortet nur der Server.
+- „Keine Treffer" kommt erst mit der Antwort, nicht schon, während sie aussteht.
+
+| Probe | hell | dunkel |
+|---|---|---|
+| Objekt, Ziel | 10,31 | 11,86 |
+| Hinweis rechts mit „beendet"/„verborgen", Gruppenkopf, `→` | 4,83 | 5,78 |
+| `→` in der gewählten Zeile | 8,74 | 10,70 |
+| Zeile über den Zielen: Suche / Objekt | 4,83 / 10,31 | 5,78 / 11,86 |
+| Pfeil zurück (Nicht-Text) | 4,83 | 5,78 |
+
 ### 3.3 Tastenkürzel (#1016)
 
 | Taste | wo | was |

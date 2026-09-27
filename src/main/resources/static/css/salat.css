@@ -1092,6 +1092,11 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   color: var(--tblr-secondary);
 }
 
+/* ohne Hinweis rechts steht der Pfeil trotzdem am rechten Rand */
+.command-palette-label + .command-palette-more {
+  margin-left: auto;
+}
+
 /* Woher die Ziele eines Objekts kommen: Suche › Treffer, vor dem Eingabefeld. */
 .command-palette-crumb {
   display: flex;

@@ -79,6 +79,16 @@ class ControllerAuthorizationIntegrationTest {
   private static final List<String> ALL_LOGINS =
       List.of(RESTRICTED, REGULAR, BACKOFFICE, PEOPLE_LEAD, MANAGER);
 
+  /**
+   * Die Objektsuche der Befehlspalette (#1157) steht jeder Anmeldung offen, der eingeschränkten
+   * eingeschlossen: was jemand findet, entscheiden die Anbieter je Treffer und Ziel, nicht der
+   * Controller. Eine 403 nähme Externen die ganze Palette, auch die Unteraufträge, auf die sie
+   * buchen. Zwei Zeichen genügen für eine Suche — jeder Anbieter fragt also wirklich, in der Sicht
+   * der jeweiligen Rolle.
+   */
+  private static final List<String> ALL_LOGIN_VIEWS = List.of(
+      "/palette/search?q=ab");
+
   /** Stammdatensichten: alles ausser {@code RESTRICTED}. */
   private static final List<String> UNRESTRICTED_VIEWS = List.of(
       "/customers",
@@ -219,6 +229,7 @@ class ControllerAuthorizationIntegrationTest {
 
   private static Stream<Arguments> allowed() {
     return Stream.of(
+        pairs(ALL_LOGIN_VIEWS, RESTRICTED, REGULAR, BACKOFFICE, PEOPLE_LEAD, MANAGER),
         pairs(UNRESTRICTED_VIEWS, REGULAR, BACKOFFICE, PEOPLE_LEAD, MANAGER),
         pairs(MANAGER_VIEWS, MANAGER),
         pairs(ETL_VIEWS, MANAGER),

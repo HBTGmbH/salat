@@ -87,7 +87,10 @@ public class SuborderService {
           .filter(not(known::containsKey))
           .collect(Collectors.toSet());
       if (missing.isEmpty()) break;
-      suborderRepository.findSignRows(missing).forEach(row -> known.put(row.id(), row));
+      var found = suborderRepository.findSignRows(missing);
+      // a parent the database does not return would be asked for again on every level
+      if (found.isEmpty()) break;
+      found.forEach(row -> known.put(row.id(), row));
     }
     var signs = new HashMap<Long, String>();
     for (var row : rows) {

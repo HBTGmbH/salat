@@ -225,12 +225,13 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
   }
 
   /**
-   * Nothing the palette shows comes from the server: pages are read from the sidebar, days in the
-   * browser. Only running a command leaves the page.
+   * The page's own hits come without a request: pages are read from the sidebar, days in the
+   * browser, and they are there before any answer could be. Only the business objects are asked
+   * for, at the object search (#1157) — and nothing else.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void opening_it_and_its_hits_send_no_request(E2EBrowser browser) {
+  void its_own_hits_send_no_request_and_the_objects_only_the_search(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
       page.waitForLoadState(LoadState.NETWORKIDLE);
       List<String> requests = new ArrayList<>();
@@ -239,12 +240,14 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       page.keyboard().press(SHORTCUT);
       for (String typed : List.of("mat", "fr", "gestern", "12.9.", "dunkel", "")) {
         input(page).fill(typed);
+        // there at once, before the object search has even been asked
         assertTrue(options(page).count() > 0, typed);
       }
-      page.keyboard().press("ArrowDown");
+      input(page).fill("contoso");
+      assertThat(page.locator("#commandPaletteList [data-command-type=object]").first()).isVisible();
       page.keyboard().press("Escape");
 
-      assertEquals(List.of(), requests);
+      assertTrue(requests.stream().allMatch(url -> url.contains("/palette/search?q=")), requests::toString);
     });
   }
 
