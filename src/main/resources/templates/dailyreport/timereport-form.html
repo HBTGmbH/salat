@@ -53,8 +53,7 @@
                        hx-include="closest form"
                        hx-target="#orders-suborders-wrapper"
                        hx-swap="outerHTML"
-                       hx-trigger="change"
-                       hx-on="htmx:after:swap -> refreshShareRecipientsOnFieldChange()"/>
+                       hx-trigger="change"/>
               </div>
 
               <!--/* beginEnd: the entry mode the user prefers (#844), rendered server-side so the
@@ -151,8 +150,7 @@
                       hx-include="closest form"
                       hx-target="#form-sidebar"
                       hx-swap="outerHTML"
-                      hx-trigger="change"
-                      hx-on="htmx:after:swap -> refreshShareRecipientsOnFieldChange()">
+                      hx-trigger="change">
                 <option value="" th:text="#{main.timereport.form.suborder.placeholder}">— Unterauftrag wählen —</option>
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
@@ -493,30 +491,26 @@
       }
     }
 
+    // loadShareRecipients empties the list where suborder or date are missing, so a date without
+    // a single suborder does not leave the colleagues of the previous one standing
     function refreshShareRecipientsIfEnabled() {
-      var shareToggle = document.getElementById('shareToggle');
-      if (!shareToggle || !shareToggle.checked) return;
-
-      var suborderId = document.getElementById('suborderId')?.value;
-      var date = document.getElementById('referenceday')?.value;
-
-      if (suborderId && date) {
-        loadShareRecipients();
-      }
+      if (document.getElementById('shareToggle')?.checked) loadShareRecipients();
     }
 
-    // Add change listeners to refresh recipients when suborder or date changes
+    // #1184: delegated at the form instead of attached to the fields - a date change replaces
+    // #orders-suborders-wrapper, and a listener on the suborder select would be gone with it. The
+    // date refreshes once its own swap is done, because refresh-orders may pick another suborder
+    // for the new day. Both handlers look at the field the event comes from, so neither the swap of
+    // the list itself nor a change inside it asks for the list again (07f9f838: a listener on every
+    // swap reloaded it endlessly).
     document.addEventListener('DOMContentLoaded', function() {
-      var suborderSelect = document.getElementById('suborderId');
-      var dateInput = document.getElementById('referenceday');
-
-      if (suborderSelect) {
-        suborderSelect.addEventListener('change', refreshShareRecipientsIfEnabled);
-      }
-
-      if (dateInput) {
-        dateInput.addEventListener('change', refreshShareRecipientsIfEnabled);
-      }
+      var form = document.getElementById('timereportMainForm');
+      form.addEventListener('change', function(e) {
+        if (e.target.id === 'suborderId') refreshShareRecipientsIfEnabled();
+      });
+      form.addEventListener('htmx:after:swap', function(e) {
+        if (e.target.id === 'referenceday') refreshShareRecipientsIfEnabled();
+      });
     });
     // durationMask/durationBlur/parseTimeValue live in /js/salat.js (#830). That file is loaded at
     // the end of the body, i.e. after this block, so nothing here may call into it at parse time —
