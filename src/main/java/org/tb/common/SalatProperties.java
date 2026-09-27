@@ -19,6 +19,7 @@ public class SalatProperties {
   private UiState uiState = new UiState();
   private Notifications notifications = new Notifications();
   private Etl etl = new Etl();
+  private BookingList bookingList = new BookingList();
 
   @Data
   public static class Auth {
@@ -60,6 +61,17 @@ public class SalatProperties {
   public static class Notifications {
     private int retentionDays = 30;
     private int bellLimit = 10;
+  }
+
+  /** The booking list (#1092). */
+  @Data
+  public static class BookingList {
+    /**
+     * How many rows the entry "Alle" of the limit select shows at most (#1153). A wide period without any other filter
+     * would otherwise render every booking the user may read. Beyond this many hits the list says it is cut; the sums
+     * and the spreadsheet still count every hit.
+     */
+    private int allMaxRows = 10_000;
   }
 
   @Data
