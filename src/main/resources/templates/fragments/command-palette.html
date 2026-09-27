@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Die Befehlspalette (#1155, ADR-0030). Sie liegt einmal in layout/base.html; das Verhalten
+       steht in salat.js, kein Template bringt dafuer eigenes JavaScript mit.
+
+       Ein natives <dialog> statt eines Bootstrap-Modals: showModal() oeffnet synchron und ohne
+       Ueberblendung, der Fokus steht also im Feld, bevor der naechste Buchstabe ankommt. Ein
+       Modal nimmt die Tastatur erst nach seiner Einblendung an.
+
+       Was die Palette anbietet, liest sie aus der gerenderten Seite: die Navigation aus der
+       Sidebar, die Einstellungen aus den Knoepfen der Kopfzeile, die ein data-palette-command
+       tragen. Hier stehen nur die Texte, die es auf der Seite sonst nicht gibt - die Woerter fuer
+       die Tagesspruenge, die Gruppen und die Bedienhinweise. Heute ist der Tag des Servers, damit
+       "gestern" denselben Tag meint wie die Einzeluebersicht. */-->
+<dialog th:fragment="commandPalette" id="commandPalette" class="command-palette p-0"
+        aria-labelledby="commandPaletteTitle"
+        th:with="today=${@serverTimeHelper.today}"
+        th:data-today="${today}"
+        th:data-daily-url="@{/dailyreport/daily}"
+        th:data-label-daily="#{main.general.mainmenu.daily.text}"
+        th:data-kind-day="#{main.palette.kind.day}"
+        th:data-kind-settings="#{main.palette.kind.settings}"
+        th:data-group-recent="#{main.palette.group.recent}"
+        th:data-group-pages="#{main.palette.group.pages}"
+        th:data-day-today="#{main.palette.day.today}"
+        th:data-day-yesterday="#{main.palette.day.yesterday}"
+        th:data-day-daybeforeyesterday="#{main.palette.day.daybeforeyesterday}"
+        th:data-day-tomorrow="#{main.palette.day.tomorrow}"
+        th:data-weekdays="|#{main.matrixoverview.weekdays.monday.text},#{main.matrixoverview.weekdays.tuesday.text},#{main.matrixoverview.weekdays.wednesday.text},#{main.matrixoverview.weekdays.thursday.text},#{main.matrixoverview.weekdays.friday.text},#{main.matrixoverview.weekdays.saturday.text},#{main.matrixoverview.weekdays.sunday.text}|">
+  <h2 class="visually-hidden" id="commandPaletteTitle" th:text="#{main.palette.title}">Befehlspalette</h2>
+  <div class="command-palette-search">
+    <i class="ti ti-search text-secondary" aria-hidden="true"></i>
+    <input type="text" class="command-palette-input" id="commandPaletteInput"
+           role="combobox" aria-autocomplete="list" aria-expanded="true"
+           aria-controls="commandPaletteList"
+           autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"
+           th:aria-label="#{main.palette.input.label}"
+           th:placeholder="#{main.palette.input.placeholder}"/>
+  </div>
+  <div class="command-palette-list" id="commandPaletteList" role="listbox"
+       th:aria-label="#{main.palette.title}"></div>
+  <div class="command-palette-empty text-secondary" id="commandPaletteEmpty" role="status" hidden
+       th:text="#{main.palette.empty}">Keine Treffer</div>
+  <div class="command-palette-footer text-secondary small" aria-hidden="true">
+    <span><kbd>↑</kbd> <kbd>↓</kbd> <span th:text="#{main.palette.hint.select}">auswählen</span></span>
+    <span><kbd>↵</kbd> <span th:text="#{main.palette.hint.run}">ausführen</span></span>
+    <span><kbd>Esc</kbd> <span th:text="#{main.palette.hint.close}">schließen</span></span>
+  </div>
+</dialog>
+
+</body>
+</html>

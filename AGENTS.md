@@ -105,6 +105,24 @@ Zwei Fallstricke, die beide daher kommen, dass der Dialog zwischen Klick und Akt
   abgehen, bevor die Frage beantwortet ist. Ausgelöst wird danach mit `requestSubmit()`, nicht mit
   `submit()`: nur das erste behält den auslösenden Knopf und die HTML5-Validierung.
 
+## Befehlspalette (→ ADR-0030)
+
+`Ctrl+K` / `⌘K` und der Eintrag „Suchen" in der Kopfzeile öffnen sie auf jeder Seite: einmal als
+Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten in
+`static/js/salat.js`.
+
+- **Die Palette navigiert oder öffnet ein vorbelegtes Formular. Sie speichert nichts und schickt
+  kein Formular ab** — gespeichert wird mit dem Knopf der Seite, Freigabe und Abnahme laufen über
+  ihre Prüfseiten. Deshalb braucht kein Befehl eine Rückfrage. Das gilt für jeden Befehl, der
+  dazukommt.
+- **Was sie anbietet, liest sie aus der gerenderten Seite**, statt eine zweite Liste zu führen: die
+  Navigation aus `#sidebar-menu .dropdown-item[href]`, die Einstellungen aus den Knöpfen der
+  Kopfzeile mit `data-palette-command`. Die Rollenfrage beantwortet damit allein die Sidebar; eine
+  Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein Element der Seite das bessere
+  Ziel kennt, verweist der Sidebar-Eintrag mit `data-palette-href-from` darauf.
+- Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
+  des Servers (`data-today` am Dialog), nicht der des Browsers.
+
 ## Farben und Kontrast (→ ADR-0025)
 
 Farbwerte kommen **ausschließlich aus Tabler-Tokens** (`--tblr-*`); es gibt keine eigene

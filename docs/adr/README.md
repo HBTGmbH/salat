@@ -43,3 +43,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0027](0027-gemeinsamer-bestaetigungsdialog.md) | Ein gemeinsamer Bestätigungsdialog, und er nennt das Geschäftsobjekt | Accepted | 2026-09-22 |
 | [0028](0028-ein-etl-lauf-zur-zeit.md) | Ein ETL-Lauf zur Zeit: die RUNNING-Zeile ist die Sperre | Accepted | 2026-09-24 |
 | [0029](0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md) | „Inaktiv“ ist zeitlich definiert und zählt nur das Ende | Accepted | 2026-09-25 |
+| [0030](0030-befehlspalette-liest-die-seite-und-speichert-nichts.md) | Die Befehlspalette liest die Seite, und sie speichert nichts | Accepted | 2026-09-27 |
