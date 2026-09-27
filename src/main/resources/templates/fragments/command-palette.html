@@ -10,14 +10,16 @@
        Modal nimmt die Tastatur erst nach seiner Einblendung an.
 
        Was die Palette anbietet, liest sie aus der gerenderten Seite: die Navigation aus der
-       Sidebar, die Einstellungen aus den Knoepfen der Kopfzeile, die ein data-palette-command
-       tragen. Hier stehen nur die Texte, die es auf der Seite sonst nicht gibt - die Woerter fuer
-       die Tagesspruenge, die Gruppen und die Bedienhinweise. Heute ist der Tag des Servers, damit
-       "gestern" denselben Tag meint wie die Einzeluebersicht. */-->
+       Sidebar, die Einstellungen aus den Bedienelementen mit data-palette-command (Moduswechsel
+       und Einstellungsseite in der Kopfzeile, der Faltknopf der Sidebar). Hier stehen nur die
+       Texte, die es auf der Seite sonst nicht gibt - die Woerter fuer die Tagesspruenge, die
+       Gruppen und die Bedienhinweise. Heute ist der Tag des Servers, damit "gestern" denselben Tag
+       meint wie die Einzeluebersicht: die Seite bringt Uhrzeit und Zeitzone des Servers mit. */-->
 <dialog th:fragment="commandPalette" id="commandPalette" class="command-palette p-0"
         aria-labelledby="commandPaletteTitle"
-        th:with="today=${@serverTimeHelper.today}"
-        th:data-today="${today}"
+        th:with="now=${@serverTimeHelper.epochMillis}, zone=${@serverTimeHelper.timeZone}"
+        th:data-now="${now}"
+        th:data-time-zone="${zone}"
         th:data-daily-url="@{/dailyreport/daily}"
         th:data-label-daily="#{main.general.mainmenu.daily.text}"
         th:data-kind-day="#{main.palette.kind.day}"
