@@ -1,5 +1,6 @@
 package org.tb.dailyreport.controller;
 
+import static org.tb.common.util.DateUtils.formatDateTime;
 import static org.tb.common.util.DateUtils.formatMonth;
 import static org.tb.common.util.DateUtils.today;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.ErrorCodeException;
+import org.tb.common.util.ClockProvider;
 import org.tb.common.viewhelper.ErrorCodeViewHelper;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.employee.domain.Employeecontract;
@@ -70,6 +72,8 @@ public class MatrixController {
         model.addAttribute("showBeginBreakEnd", showBeginBreakEnd);
         model.addAttribute("yearMonth", yearMonth);
         model.addAttribute("monthShortForm", formatMonth(yearMonth.atDay(1)));
+        // Stand des Ausdrucks im Fuss jeder Seite (#1148), in der Zeitzone der Anwendung
+        model.addAttribute("printAsOf", formatDateTime(ClockProvider.now(), "dd.MM.yyyy HH:mm"));
         // month/year navigation is rendered from yearMonth by fragments/month-navigation
         model.addAttribute("section", "dailyreport");
         model.addAttribute("subSection", "matrix");

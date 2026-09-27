@@ -6,8 +6,41 @@
 
 <th:block th:replace="~{fragments/matrix-table :: matrixStyles}"></th:block>
 
+<!--/* Kopf und Fuss des Ausdrucks (#1148). Der Monat kommt aus yearMonth und nicht aus title: die
+       Vorlage setzt title auf pageTitle, und das ist nur "Matrixuebersicht". */-->
+<style th:replace="~{fragments/print-page :: page(
+    ${pageTitle} + ' · ' + ${#temporals.format(yearMonth.atDay(1), 'MMMM yyyy')},
+    ${selectedEmployeeName} ?: '', ${printAsOf})}"></style>
+
+<!--/* Druck (#1148): der ganze Monat mit Summenspalte auf A4 quer. Die Regeln stehen hier und nicht
+       in matrixStyles, weil das Dashboard dieselbe Tabelle einbindet und unveraendert drucken soll. */-->
+<style>
+  @media print {
+    #matrix-card { border: 0; box-shadow: none; }
+    #matrix { font-size: 7pt; width: 100%; }
+    #matrix th, #matrix td { padding: 1pt 1.5pt !important; }
+    #matrix .matrix-day-col { min-width: 0; }
+    /* Lange Auftragsbezeichnungen brechen in der ersten Spalte um, statt die Tage vom Blatt zu
+       schieben. */
+    #matrix .matrix-first-col { white-space: normal !important; max-width: 55mm; }
+    #matrix .matrix-first-col .nowrap { white-space: normal; }
+    /* Wochenende, Feiertag und Fehler sind nur Hintergrundfarben; ohne exact haengen sie an der
+       Einstellung "Hintergrundgrafiken" des Druckdialogs, die in der Voreinstellung aus ist. */
+    #matrix td, #matrix th, #matrix-card .card-footer .badge {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+    #matrix tr { break-inside: avoid; }
+    /* GESAMT und die Zeilen darunter stehen im tfoot; ohne das wiederholte Chrome den ganzen Block
+       am Fuss jeder Seite. */
+    #matrix tfoot { display: table-row-group; }
+    /* Im laufenden Monat waeren die roten Raender von heute auf Papier zu kraeftig. */
+    #matrix .matrix-today { border-left-width: 1px !important; border-right-width: 1px !important; }
+  }
+</style>
+
 <!-- Filter bar -->
-<div class="card mb-3">
+<div class="card mb-3 d-print-none">
   <div class="card-body py-2">
     <div class="d-flex gap-2 align-items-center flex-wrap">
 
@@ -25,11 +58,11 @@
 </div>
 
 <!-- Matrix table -->
-<div class="card">
+<div class="card" id="matrix-card">
   <th:block th:replace="~{fragments/matrix-table :: matrixTable(${matrixData}, ${showBeginBreakEnd}, ${selectedContractId > 0})}"></th:block>
   <!--/* same place as in the single overview: below the month, away from the navigation. The action
          touches every open workday of the month at once and can only be undone day by day (#855) */-->
-  <div class="card-footer d-flex justify-content-between align-items-center gap-3 flex-wrap"
+  <div class="card-footer d-flex justify-content-between align-items-center gap-3 flex-wrap d-print-none"
        id="matrix-fill-not-worked"
        th:if="${!monthReleased and selectedContractId > 0}">
     <!--/* the explanation used to be a title attribute, which never shows up on touch and does
@@ -57,7 +90,7 @@
 </div>
 
 <!-- Quick Actions -->
-<div class="row g-3 mt-3">
+<div class="row g-3 mt-3 d-print-none">
 
   <div class="col-12 col-sm-4 d-flex">
     <a th:href="@{/dailyreport/timereports/new}" class="card card-link h-100 w-100 text-decoration-none">
