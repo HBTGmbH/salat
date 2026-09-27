@@ -799,3 +799,550 @@ function focusEntryField() {
 // only on the first load, and deliberately not on htmx:after:swap: the daily view swaps fragments
 // while the user types, and a focus set again there would take the cursor out of the field
 focusEntryField();
+
+/* ─── Command palette (#1155, ADR-0030) ──────────────────────────────────────
+ *
+ * Ctrl+K (⌘K on macOS) or the search entry in the header open it on every page
+ * (fragments/command-palette.html, included once by layout/base.html). It navigates — it never
+ * saves anything and never submits a form, which is why no command needs a confirmation.
+ *
+ * What it offers is read from the rendered page instead of from a list of its own:
+ *
+ *   #sidebar-menu .dropdown-item[href]  the navigation. Label, section and the role filter come
+ *                                       along, and a new menu entry shows up without further ado.
+ *   data-palette-href-from              on a sidebar entry: selector of an element whose href wins
+ *                                       over the entry's own, where that element is on the page
+ *   data-palette-command                on a header control: the key a settings command is
+ *                                       remembered by. Its accessible name is the label, clicking
+ *                                       it is the action, and it is offered only while displayed.
+ *   data-palette-keywords               further words a command is found by
+ *   data-palette-label-pressed          the label while the control is aria-pressed
+ *
+ * Day jumps into the daily view are read in the browser, against the server's today carried by
+ * the dialog. Neither opening the palette nor any hit it shows sends a request.
+ * -------------------------------------------------------------------------- */
+
+const PALETTE_RECENT_KEY = 'salat-command-palette-recent';
+const PALETTE_RECENT_MAX = 10;
+const PALETTE_IS_MAC = /mac|iphone|ipad|ipod/i.test(
+  (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
+
+// ranks, highest first; a day jump sits between a word start and a hit inside a word, so that
+// "fr" offers the page "Freigabe" first and the Friday right below it
+const PALETTE_TIER_WORD_START = 3;
+const PALETTE_TIER_DAY = 2.5;
+const PALETTE_TIER_INSIDE = 2;
+const PALETTE_TIER_FUZZY = 1;
+const PALETTE_TIER_SECTION = 0.5;
+
+const paletteState = { origin: null, commands: [], items: [], active: -1 };
+
+/**
+ * Lower case without diacritics, so that "ubersicht" finds "Übersicht". The map leads every
+ * character of the folded text back to its position in the original, for the highlighting.
+ */
+function paletteFold(text) {
+  let folded = '';
+  const map = [];
+  for (let i = 0; i < text.length; i++) {
+    const part = text[i].normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    for (let j = 0; j < part.length; j++) {
+      folded += part[j];
+      map.push(i);
+    }
+  }
+  return { folded, map };
+}
+
+function paletteIsWordStart(folded, index) {
+  return index === 0 || !/[\p{L}\p{N}]/u.test(folded[index - 1]);
+}
+
+function paletteWordStartIndex(folded, word) {
+  let from = 0;
+  let index;
+  while ((index = folded.indexOf(word, from)) !== -1) {
+    if (paletteIsWordStart(folded, index)) return index;
+    from = index + 1;
+  }
+  return -1;
+}
+
+/** The letters of the query in order, starting on a word start; the tightest such run wins. */
+function paletteFuzzy(folded, query) {
+  let best = null;
+  for (let start = 0; start < folded.length; start++) {
+    if (folded[start] !== query[0] || !paletteIsWordStart(folded, start)) continue;
+    const positions = [start];
+    let at = start + 1;
+    for (let q = 1; q < query.length && positions.length === q; q++) {
+      const next = folded.indexOf(query[q], at);
+      if (next === -1) break;
+      positions.push(next);
+      at = next + 1;
+    }
+    if (positions.length !== query.length) continue;
+    const span = positions[positions.length - 1] - start;
+    if (!best || span < best.span) best = { span, positions };
+  }
+  return best;
+}
+
+/** [start, end) in the folded text, merged where they touch, then led back to the original. */
+function paletteRanges(map, spans) {
+  const merged = [];
+  spans.slice().sort((a, b) => a[0] - b[0]).forEach(([start, end]) => {
+    const last = merged[merged.length - 1];
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+    else merged.push([start, end]);
+  });
+  return merged.map(([start, end]) => [map[start], map[end - 1] + 1]);
+}
+
+/**
+ * How well `text` answers `query`: a word of it starts with the query, the query stands inside a
+ * word, or its letters follow each other from a word start on. Several words of a query may stand
+ * in any order, each on a word start of its own. Returns the tier, the position of the hit and the
+ * ranges to highlight — or null.
+ */
+function paletteMatch(text, query) {
+  const q = paletteFold(query.trim()).folded.replace(/\s+/g, ' ');
+  if (!q || !text) return null;
+  const { folded, map } = paletteFold(text);
+
+  const wordStart = paletteWordStartIndex(folded, q);
+  if (wordStart !== -1) {
+    return { tier: PALETTE_TIER_WORD_START, pos: wordStart,
+      ranges: paletteRanges(map, [[wordStart, wordStart + q.length]]) };
+  }
+  const inside = folded.indexOf(q);
+  if (inside !== -1) {
+    return { tier: PALETTE_TIER_INSIDE, pos: inside, ranges: paletteRanges(map, [[inside, inside + q.length]]) };
+  }
+  const words = q.split(' ');
+  if (words.length > 1) {
+    const spans = words.map(word => {
+      const index = paletteWordStartIndex(folded, word);
+      return index === -1 ? null : [index, index + word.length];
+    });
+    if (spans.every(Boolean)) {
+      return { tier: PALETTE_TIER_INSIDE, pos: Math.min(...spans.map(span => span[0])),
+        ranges: paletteRanges(map, spans) };
+    }
+    return null;
+  }
+  const fuzzy = paletteFuzzy(folded, q);
+  if (fuzzy) {
+    return { tier: PALETTE_TIER_FUZZY, pos: fuzzy.positions[0],
+      ranges: paletteRanges(map, fuzzy.positions.map(p => [p, p + 1])) };
+  }
+  return null;
+}
+
+/* ─── Day jumps ─── */
+
+function paletteIsoOf(date) {
+  return date.getUTCFullYear() + '-' + timeInputPad(date.getUTCMonth() + 1) + '-'
+    + timeInputPad(date.getUTCDate());
+}
+
+function paletteDateOf(iso) {
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function paletteShiftDays(iso, days) {
+  const date = paletteDateOf(iso);
+  date.setUTCDate(date.getUTCDate() + days);
+  return paletteIsoOf(date);
+}
+
+/** A calendar date, or null for one that does not exist (31.2.). */
+function paletteValidDate(year, month, day) {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return null;
+  }
+  return paletteIsoOf(date);
+}
+
+/**
+ * Reads a day from what was typed, relative to `today` (ISO): the words for today, yesterday, the
+ * day before yesterday and tomorrow from three letters on, a weekday from two — the most recent one,
+ * today included —, a date T.M., T.M.JJ or T.M.JJJJ, or an ISO date. Returns every day the input
+ * can mean, as `{ iso }`; an empty list for anything else.
+ *
+ * @param vocabulary `{ offsets: [[word, days]], weekdays: [monday … sunday] }`
+ */
+function paletteParseDay(raw, today, vocabulary) {
+  const input = paletteFold(String(raw || '').trim()).folded.replace(/\s+/g, ' ');
+  if (!input) return [];
+
+  let match;
+  if ((match = /^(\d{1,2})\.(\d{1,2})\.?(?:(\d{2}|\d{4}))?$/.exec(input))) {
+    const year = match[3] === undefined ? paletteDateOf(today).getUTCFullYear()
+      : (match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]));
+    const iso = paletteValidDate(year, Number(match[2]), Number(match[1]));
+    return iso ? [{ iso }] : [];
+  }
+  if ((match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input))) {
+    const iso = paletteValidDate(Number(match[1]), Number(match[2]), Number(match[3]));
+    return iso ? [{ iso }] : [];
+  }
+
+  const days = [];
+  if (input.length >= 3) {
+    vocabulary.offsets.forEach(([word, offset]) => {
+      if (word && paletteFold(word).folded.startsWith(input)) days.push({ iso: paletteShiftDays(today, offset) });
+    });
+  }
+  if (input.length >= 2) {
+    // getUTCDay counts from Sunday, the list from Monday
+    const todayIndex = (paletteDateOf(today).getUTCDay() + 6) % 7;
+    vocabulary.weekdays.forEach((name, index) => {
+      if (name && paletteFold(name).folded.startsWith(input)) {
+        days.push({ iso: paletteShiftDays(today, -((todayIndex - index + 7) % 7)) });
+      }
+    });
+  }
+  return days;
+}
+
+/** "Fr 25.09.2026" — the weekday in the language of the page, without a trailing dot. */
+function paletteFormatDay(iso, lang) {
+  const date = paletteDateOf(iso);
+  const weekday = new Intl.DateTimeFormat(lang, { weekday: 'short', timeZone: 'UTC' })
+    .format(date).replace(/\.$/, '');
+  return weekday + ' ' + timeInputPad(date.getUTCDate()) + '.' + timeInputPad(date.getUTCMonth() + 1)
+    + '.' + date.getUTCFullYear();
+}
+
+function paletteVocabulary(dialog) {
+  const data = dialog.dataset;
+  return {
+    offsets: [[data.dayToday, 0], [data.dayYesterday, -1], [data.dayDaybeforeyesterday, -2],
+      [data.dayTomorrow, 1]],
+    weekdays: (data.weekdays || '').split(','),
+  };
+}
+
+/* ─── What the page offers ─── */
+
+function paletteCleanText(el) {
+  if (!el) return '';
+  const copy = el.cloneNode(true);
+  // "Beta" and "New" are markers, not part of the name
+  copy.querySelectorAll('.badge').forEach(badge => badge.remove());
+  return copy.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function paletteNavigationCommands() {
+  return Array.from(document.querySelectorAll('#sidebar-menu .dropdown-item[href]')).map(link => {
+    const override = link.dataset.paletteHrefFrom
+      ? document.querySelector(link.dataset.paletteHrefFrom) : null;
+    const target = override && override.href ? override.href : link.href;
+    return {
+      type: 'nav',
+      key: link.getAttribute('href'),
+      label: paletteCleanText(link),
+      kind: paletteCleanText(link.closest('.nav-item')?.querySelector('.nav-link-title')),
+      keywords: '',
+      href: target,
+      run: () => window.location.assign(target),
+    };
+  });
+}
+
+function paletteSettingsCommands(dialog) {
+  return Array.from(document.querySelectorAll('[data-palette-command]'))
+    .filter(el => el.checkVisibility ? el.checkVisibility() : el.offsetParent !== null)
+    .map(el => ({
+      type: 'cmd',
+      key: el.dataset.paletteCommand,
+      label: el.getAttribute('aria-pressed') === 'true' && el.dataset.paletteLabelPressed
+        ? el.dataset.paletteLabelPressed
+        : (el.getAttribute('aria-label') || paletteCleanText(el)),
+      kind: dialog.dataset.kindSettings,
+      keywords: el.dataset.paletteKeywords || '',
+      href: el.href || null,
+      run: () => el.click(),
+    }));
+}
+
+function paletteDayCommand(dialog, iso, expression) {
+  const url = dialog.dataset.dailyUrl + '?mode=daily&date=' + iso;
+  const lang = document.documentElement.lang || 'de';
+  return {
+    type: 'day',
+    key: expression,
+    label: dialog.dataset.labelDaily + ' · ' + paletteFormatDay(iso, lang),
+    kind: dialog.dataset.kindDay,
+    href: url,
+    run: () => window.location.assign(url),
+  };
+}
+
+/* ─── Remembered commands ─── */
+
+function paletteReadRecent() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PALETTE_RECENT_KEY) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function paletteRemember(entry) {
+  const recent = paletteReadRecent().filter(e => !(e.t === entry.t && e.k === entry.k));
+  recent.unshift(entry);
+  try {
+    localStorage.setItem(PALETTE_RECENT_KEY, JSON.stringify(recent.slice(0, PALETTE_RECENT_MAX)));
+  } catch (e) {
+    // private mode or a full storage: the palette works on, it only forgets
+  }
+}
+
+/**
+ * Every entry is resolved again against what the page offers now: a page the current login does
+ * not see is not offered, whoever used it before, and a day jump is remembered as its expression,
+ * so "fr" leads to the most recent Friday next week as well.
+ */
+function paletteRecentItems(dialog, commands, today, vocabulary) {
+  const lang = document.documentElement.lang || 'de';
+  return paletteReadRecent().map(entry => {
+    if (entry.t === 'day') {
+      const day = paletteParseDay(entry.k, today, vocabulary)[0];
+      if (!day) return null;
+      const item = paletteDayCommand(dialog, day.iso, entry.k);
+      item.label = dialog.dataset.labelDaily + ' · ' + entry.k;
+      item.kind = paletteFormatDay(day.iso, lang);
+      return item;
+    }
+    return commands.find(command => command.type === entry.t && command.key === entry.k) || null;
+  }).filter(Boolean);
+}
+
+/* ─── Hits and their list ─── */
+
+/** The expression a day jump is remembered by: what was typed, in the form it is read in. */
+function paletteDayExpression(query) {
+  return query.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * Every command the query finds, best first. The label counts most; the further words of a
+ * command and — from three letters on — the section it belongs to find it too, but rank below.
+ */
+function paletteSearch(dialog, commands, query, today, vocabulary) {
+  const hits = [];
+  commands.forEach((command, order) => {
+    let match = paletteMatch(command.label, query);
+    if (!match && command.keywords) {
+      const byKeyword = paletteMatch(command.keywords, query);
+      if (byKeyword) match = { tier: byKeyword.tier - 0.25, pos: byKeyword.pos, ranges: [] };
+    }
+    if (!match && command.kind && query.trim().length >= 3) {
+      const bySection = paletteMatch(command.kind, query);
+      if (bySection && bySection.tier >= PALETTE_TIER_INSIDE) {
+        match = { tier: PALETTE_TIER_SECTION, pos: 0, ranges: [] };
+      }
+    }
+    if (match) hits.push({ command, ranges: match.ranges, tier: match.tier, pos: match.pos, order });
+  });
+  paletteParseDay(query, today, vocabulary).forEach((day, index) => {
+    hits.push({ command: paletteDayCommand(dialog, day.iso, paletteDayExpression(query)),
+      ranges: [], tier: PALETTE_TIER_DAY, pos: 0, order: commands.length + index });
+  });
+  return hits.sort((a, b) => b.tier - a.tier || a.pos - b.pos || a.order - b.order);
+}
+
+function paletteHighlight(target, text, ranges) {
+  let at = 0;
+  ranges.forEach(([start, end]) => {
+    if (start > at) target.append(text.slice(at, start));
+    const mark = document.createElement('mark');
+    mark.textContent = text.slice(start, end);
+    target.append(mark);
+    at = end;
+  });
+  if (at < text.length) target.append(text.slice(at));
+}
+
+function paletteOption(hit, index) {
+  const option = document.createElement('div');
+  option.className = 'command-palette-option';
+  option.id = 'commandPaletteOption' + index;
+  option.setAttribute('role', 'option');
+  option.setAttribute('aria-selected', 'false');
+  option.dataset.index = String(index);
+  option.dataset.commandType = hit.command.type;
+  option.dataset.commandKey = hit.command.key;
+
+  const label = document.createElement('span');
+  label.className = 'command-palette-label';
+  paletteHighlight(label, hit.command.label, hit.ranges || []);
+  option.append(label);
+  if (hit.command.kind) {
+    const kind = document.createElement('span');
+    kind.className = 'command-palette-kind';
+    kind.textContent = hit.command.kind;
+    option.append(kind);
+  }
+  return option;
+}
+
+function paletteRender(groups) {
+  const input = document.getElementById('commandPaletteInput');
+  const list = document.getElementById('commandPaletteList');
+  list.replaceChildren();
+  paletteState.items = [];
+  groups.forEach((group, groupIndex) => {
+    let container = list;
+    if (group.label && group.hits.length) {
+      container = document.createElement('div');
+      container.setAttribute('role', 'group');
+      const heading = document.createElement('div');
+      heading.className = 'command-palette-group';
+      heading.id = 'commandPaletteGroup' + groupIndex;
+      heading.setAttribute('role', 'presentation');
+      heading.textContent = group.label;
+      container.setAttribute('aria-labelledby', heading.id);
+      container.append(heading);
+      list.append(container);
+    }
+    group.hits.forEach(hit => {
+      container.append(paletteOption(hit, paletteState.items.length));
+      paletteState.items.push(hit.command);
+    });
+  });
+  document.getElementById('commandPaletteEmpty').hidden = paletteState.items.length > 0;
+  input.setAttribute('aria-expanded', String(paletteState.items.length > 0));
+  paletteSetActive(paletteState.items.length ? 0 : -1, true);
+}
+
+function paletteSetActive(index, scroll) {
+  const input = document.getElementById('commandPaletteInput');
+  const list = document.getElementById('commandPaletteList');
+  list.querySelectorAll('[aria-selected="true"]').forEach(option => option.setAttribute('aria-selected', 'false'));
+  paletteState.active = index;
+  if (index < 0) {
+    input.removeAttribute('aria-activedescendant');
+    return;
+  }
+  const option = document.getElementById('commandPaletteOption' + index);
+  option.setAttribute('aria-selected', 'true');
+  input.setAttribute('aria-activedescendant', option.id);
+  if (!scroll) return;
+  // the first entry takes its group heading along into view
+  if (index === 0) list.scrollTop = 0;
+  else option.scrollIntoView({ block: 'nearest' });
+}
+
+function paletteUpdate(dialog) {
+  const query = document.getElementById('commandPaletteInput').value;
+  const today = dialog.dataset.today;
+  const vocabulary = paletteVocabulary(dialog);
+  if (query.trim()) {
+    paletteRender([{ hits: paletteSearch(dialog, paletteState.commands, query, today, vocabulary) }]);
+    return;
+  }
+  const recent = paletteRecentItems(dialog, paletteState.commands, today, vocabulary);
+  // nothing used yet: then everything there is, so that the first look shows what can be found
+  paletteRender(recent.length
+    ? [{ label: dialog.dataset.groupRecent, hits: recent.map(command => ({ command })) }]
+    : [{ label: dialog.dataset.groupPages, hits: paletteState.commands.map(command => ({ command })) }]);
+}
+
+function paletteRun(index) {
+  const command = paletteState.items[index];
+  if (!command) return;
+  paletteRemember({ t: command.type, k: command.key });
+  document.getElementById('commandPalette').close();
+  command.run();
+}
+
+/* ─── Opening and closing ─── */
+
+function paletteWire(dialog) {
+  if (dialog.dataset.paletteReady) return;
+  dialog.dataset.paletteReady = 'true';
+  const input = document.getElementById('commandPaletteInput');
+  const list = document.getElementById('commandPaletteList');
+
+  input.addEventListener('input', () => paletteUpdate(dialog));
+  input.addEventListener('keydown', (event) => {
+    const count = paletteState.items.length;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (count) paletteSetActive((paletteState.active + (event.key === 'ArrowDown' ? 1 : -1) + count) % count, true);
+    } else if (event.key === 'Enter' && !event.isComposing) {
+      event.preventDefault();
+      paletteRun(paletteState.active);
+    }
+  });
+  // the input keeps the focus while an entry is clicked or tapped — on a phone the on-screen
+  // keyboard would otherwise close and move the entry away from under the finger
+  list.addEventListener('mousedown', (event) => event.preventDefault());
+  list.addEventListener('mousemove', (event) => {
+    const option = event.target.closest('[role="option"]');
+    if (option && Number(option.dataset.index) !== paletteState.active) {
+      paletteSetActive(Number(option.dataset.index), false);
+    }
+  });
+  list.addEventListener('click', (event) => {
+    const option = event.target.closest('[role="option"]');
+    if (option) paletteRun(Number(option.dataset.index));
+  });
+  // a click on the backdrop lands on the dialog element itself
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => {
+    const origin = paletteState.origin;
+    paletteState.origin = null;
+    if (origin && origin !== document.body && document.body.contains(origin)) origin.focus();
+  });
+}
+
+function paletteOpen() {
+  const dialog = document.getElementById('commandPalette');
+  if (!dialog || dialog.open) return;
+  // a Bootstrap modal holds the focus inside itself and would take it straight back
+  if (document.querySelector('.modal.show')) return;
+  paletteWire(dialog);
+  paletteState.origin = document.activeElement;
+  paletteState.commands = paletteNavigationCommands().concat(paletteSettingsCommands(dialog));
+  const input = document.getElementById('commandPaletteInput');
+  input.value = '';
+  dialog.showModal();
+  input.focus();
+  paletteUpdate(dialog);
+}
+
+// Capture phase, so that a field with key handlers of its own — TomSelect, the time input — never
+// sees the shortcut, and preventDefault, so that the browser's own use of it (the search bar) does
+// not happen. The other system's modifier stays free: Ctrl+K on a Mac deletes to the end of line.
+document.addEventListener('keydown', function (event) {
+  if (typeof event.key !== 'string' || event.key.toLowerCase() !== 'k') return;
+  if (event.isComposing || event.altKey || event.shiftKey) return;
+  const modifier = PALETTE_IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+  if (!modifier) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const dialog = document.getElementById('commandPalette');
+  if (dialog && dialog.open) dialog.close();
+  else paletteOpen();
+}, true);
+
+document.addEventListener('click', function (event) {
+  if (event.target.closest('[data-command-palette-open]')) paletteOpen();
+});
+
+document.querySelectorAll('[data-command-palette-shortcut]').forEach(function (kbd) {
+  kbd.textContent = PALETTE_IS_MAC ? kbd.dataset.labelMac : kbd.dataset.label;
+  kbd.hidden = false;
+});
+document.querySelectorAll('[data-command-palette-open]').forEach(function (trigger) {
+  trigger.setAttribute('aria-keyshortcuts', PALETTE_IS_MAC ? 'Meta+K' : 'Control+K');
+});

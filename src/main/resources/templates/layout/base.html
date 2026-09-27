@@ -56,6 +56,9 @@
                den Faltzustand setzt (true = eingeklappt). */-->
         <button type="button" class="btn btn-action btn-sm d-none d-md-inline-flex"
                 data-bs-toggle="sidebar-folded" aria-pressed="false"
+                data-palette-command="sidebar"
+                th:data-palette-keywords="#{main.palette.keywords.sidebar}"
+                th:data-palette-label-pressed="#{main.palette.sidebar.unfold}"
                 th:aria-label="#{main.general.nav.fold.title}"
                 th:title="#{main.general.nav.fold.title}">
           <i class="ti ti-layout-sidebar-left-collapse"></i>
@@ -200,7 +203,11 @@
                     Meine Konten
                   </a>
                   <div class="dropdown-divider"></div>
+                  <!--/* Die Befehlspalette nimmt fuer diesen Eintrag das Ziel des Knopfs in der
+                         Kopfzeile, der Tag und Rueckweg der Seite traegt (#1155); auf dem
+                         Buchungsformular, wo der Knopf fehlt, bleibt es bei diesem Link. */-->
                   <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}"
+                     data-palette-href-from="#header-new-booking"
                      th:text="#{main.general.mainmenu.newreport.text}">
                     Neue Buchung
                   </a>
@@ -534,6 +541,22 @@
                 </select>
               </div>
               <div class="btn-list">
+                <!--/* Einstieg in die Befehlspalette (#1155): mit der Maus, auf dem Telefon per Tipp,
+                       und zugleich der Hinweis auf das Kuerzel. Dessen Beschriftung setzt salat.js
+                       je nach System (Ctrl K oder ⌘ K); bis dahin bleibt sie verborgen, statt kurz
+                       die falsche zu zeigen. Der sichtbare Name ist im zugaenglichen enthalten. */-->
+                <button type="button" class="btn command-palette-trigger" id="header-command-palette"
+                        data-command-palette-open aria-haspopup="dialog" aria-controls="commandPalette"
+                        th:aria-label="#{main.palette.open.aria}"
+                        th:title="#{main.palette.open.aria}">
+                  <i class="ti ti-search ti-size-3" aria-hidden="true"></i>
+                  <span class="d-none d-md-inline ms-1" th:text="#{main.palette.open.text}">Suchen …</span>
+                  <span class="d-none d-lg-inline ms-2" aria-hidden="true">
+                    <kbd data-command-palette-shortcut hidden
+                         th:data-label="#{main.palette.shortcut}"
+                         th:data-label-mac="#{main.palette.shortcut.mac}"></kbd>
+                  </span>
+                </button>
                 <!--/* Neue Buchung von jeder Seite aus (#1156). Eine Seite mit Zusammenhang - der Tag der
                        Einzeluebersicht, eine Pruefseite - legt das Ziel als newBookingUrl ins Modell,
                        sonst oeffnet das Formular fuer heute. Die Beschriftung ab md ist dieselbe wie
@@ -566,15 +589,21 @@
                        style="min-width: 340px; max-height: 480px; overflow-y: auto;">
                   </div>
                 </div>
-                <a th:href="@{/settings}" class="btn" th:aria-label="#{main.settings.title}" th:title="#{main.settings.title}">
+                <!--/* data-palette-command: die Befehlspalette bietet diese drei Knoepfe als Einstellungen
+                       an und loest sie aus (#1155). Was hier gerade verborgen ist - der Moduswechsel in
+                       den Modus, der schon gilt -, bietet sie auch nicht an. */-->
+                <a th:href="@{/settings}" class="btn" th:aria-label="#{main.settings.title}" th:title="#{main.settings.title}"
+                   data-palette-command="settings" th:data-palette-keywords="#{main.palette.keywords.settings}">
                   <i class="ti ti-settings ti-size-3"></i>
                 </a>
                 <button class="btn hide-theme-dark" th:aria-label="#{main.general.theme.dark.title}"
-                        th:title="#{main.general.theme.dark.title}" onclick="toggleTheme('dark')">
+                        th:title="#{main.general.theme.dark.title}" onclick="toggleTheme('dark')"
+                        data-palette-command="theme-dark" th:data-palette-keywords="#{main.palette.keywords.theme.dark}">
                   <i class="ti ti-moon ti-size-3"></i>
                 </button>
                 <button class="btn hide-theme-light" th:aria-label="#{main.general.theme.light.title}"
-                        th:title="#{main.general.theme.light.title}" onclick="toggleTheme('light')">
+                        th:title="#{main.general.theme.light.title}" onclick="toggleTheme('light')"
+                        data-palette-command="theme-light" th:data-palette-keywords="#{main.palette.keywords.theme.light}">
                   <i class="ti ti-sun-high ti-size-3"></i>
                 </button>
               </div>
@@ -730,6 +759,10 @@
 <!--/* Der gemeinsame Bestaetigungsdialog (#1032): einmal fuer die ganze Anwendung, die ausloesende
        Aktion beschreibt ihn ueber data-confirm-*. */-->
 <div th:replace="~{fragments/confirm-dialog :: confirmDialog}"></div>
+
+<!--/* Die Befehlspalette (#1155): einmal fuer die ganze Anwendung, geoeffnet mit Ctrl K / ⌘ K oder
+       ueber den Eintrag in der Kopfzeile. */-->
+<dialog th:replace="~{fragments/command-palette :: commandPalette}"></dialog>
 
 <div class="modal modal-blur fade" id="loginSwitchModal" tabindex="-1" role="dialog"
      th:if="${@loginSwitchViewHelper.visible}">

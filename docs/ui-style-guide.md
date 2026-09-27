@@ -72,8 +72,9 @@ Die Referenz ist der Tabler-Standard.
 - **Aktive Markierung:** `section` / `subSection` werden pro Seite via `th:with` gesetzt und steuern
   `active`-Klassen.
 - **Kopfzeile:** `page-pretitle` (Bereich) + `page-title` (Seite), rechts ein `btn-list` mit
-  Benachrichtigungsglocke, Einstellungen, Theme-Umschalter — sowie im Bereich *Buchungen* ein
-  globaler Vertrags-Selektor (`globalEmployeeContractId`).
+  dem Einstieg in die Befehlspalette („Suchen …", [§3.2](#32-befehlspalette-1155)), „Neue
+  Buchung", Benachrichtigungsglocke, Einstellungen, Theme-Umschalter — sowie im Bereich
+  *Buchungen* ein globaler Vertrags-Selektor (`globalEmployeeContractId`).
 - **Nutzerblock** in der `navbar-footer`-Zone der Sidebar: Bild, Name und darunter das Rollen-Badge
   bleiben unten stehen, während die Menüliste darüber scrollt. Alles Weitere — Gravatar-Link,
   Login-Kürzel, dasselbe Rollen-Badge, Benutzerwechsel (Impersonation) über ein Modal, Abmelden —
@@ -122,6 +123,50 @@ ausserhalb eines Formulars auch nicht.
 Seite und führt auf `#page-content`. Er ist der vorgesehene Weg an der Navigation vorbei; sichtbar
 wird er nur, solange er den Fokus trägt (`visually-hidden-focusable`). Er liegt auf `z-index: 1040`
 — über der fixierten Sidebar (1030), unter einem Dialog (1055).
+
+### 3.2 Befehlspalette (#1155)
+
+`Ctrl+K` (macOS `⌘K`) öffnet sie von jeder Seite, auch mit dem Fokus in einem Feld; ebenso der
+Eintrag „Suchen …" in der Kopfzeile, der auf dem Telefon als Lupe stehen bleibt und dort der
+Einstieg ist. Die Entscheidung und ihre Alternativen stehen in
+[ADR-0030](adr/0030-befehlspalette-liest-die-seite-und-speichert-nichts.md).
+
+- **Bedienung:** Pfeiltasten wählen, Enter führt aus, Esc schließt, ebenso ein Klick neben die
+  Palette. Danach steht der Fokus wieder dort, wo er beim Öffnen war. Maus und Tipp führen einen
+  Treffer direkt aus; das Eingabefeld behält dabei den Fokus, damit die Bildschirmtastatur den
+  Treffer nicht unter dem Finger wegschiebt.
+- **Treffer:** alle Seiten der Sidebar, die Einstellungen der Kopfzeile (Moduswechsel,
+  Einstellungsseite, Sidebar falten) und Tagessprünge in die Einzelübersicht — `heute`, `gestern`,
+  `vorgestern`, `morgen` ab drei Buchstaben, ein Wochentag ab zwei (`fr` ist der jüngste Freitag,
+  heute eingeschlossen), `T.M.`, `T.M.JJ`, `T.M.JJJJ`. Die Zeile nennt immer das aufgelöste Datum.
+- **Rangfolge:** Wortanfang vor Tagessprung vor Teilwort vor Buchstaben in Folge; der Name eines
+  Sidebar-Bereichs findet ab drei Buchstaben alle Einträge des Bereichs, ganz hinten. Der passende
+  Teil ist hervorgehoben — mit derselben Tönung wie in den Auswahlfeldern.
+- **Leere Eingabe:** die zuletzt ausgeführten Befehle, höchstens zehn; solange es keine gibt, alle
+  Seiten. Ein Tagessprung wird als Ausdruck gemerkt und beim Öffnen neu aufgelöst.
+- **Barrierefreiheit:** ARIA-Combobox (`role="combobox"` am Feld, `role="listbox"` darunter,
+  `aria-activedescendant` für die gewählte Zeile). Die Zeilen selbst sind nicht fokussierbar;
+  einen positiven `tabindex` gibt es auch hier nicht.
+- **Telefon:** unter `sm` über die ganze Breite und oben angeschlagen, ohne die Tastenhinweise.
+
+**Gemessener Kontrast** (hell gegen die Karte, dunkel gegen die dunkle Karte, Moduswechsel
+ausgeklungen): kein Text unter 4,5:1.
+
+| Probe | hell | dunkel |
+|---|---|---|
+| Eingabe, Treffer | 10,31 | 11,86 |
+| Treffer, gewählte Zeile | 8,74 | 10,70 |
+| Bereich rechts (`--tblr-secondary`), Gruppenkopf, Platzhalter, Fußzeile | 4,83 | 5,78 |
+| Bereich in der gewählten Zeile (Schriftfarbe) | 8,74 | 10,70 |
+| Hervorhebung, gewählte / andere Zeile | 7,82 / 8,79 | 4,71 / 4,98 |
+| Tastenbeschriftung (`kbd`) | 9,37 | 14,33 |
+| Eintrag „Suchen …" in der Kopfzeile, auch mit Hover | 10,31 | 11,86 |
+| Balken der gewählten Zeile gegen Zeile / Karte (Nicht-Text, 3:1) | 4,24 / 5,00 | 4,44 / 4,92 |
+
+Zwei Werte waren zunächst zu knapp und sind in `salat.css` korrigiert: der Bereich in Sekundärfarbe
+auf der getönten Zeile (hell 4,10:1) und Tablers `kbd` (hell 2,84:1). Die getönte Fläche der
+gewählten Zeile erreicht gegen die Karte nur 1,18:1 bzw. 1,11:1 — die Markierung trägt deshalb der
+Balken am linken Rand.
 
 ## 4. Seitentypen
 

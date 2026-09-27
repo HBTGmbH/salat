@@ -82,7 +82,7 @@ public abstract class PlaywrightE2ETestBase {
    * browser via {@code -De2e.browsers=chrome} (or {@code firefox}) so each browser gets its
    * own job/report without duplicating test code.
    */
-  static Stream<E2EBrowser> browsers() {
+  protected static Stream<E2EBrowser> browsers() {
     String property = System.getProperty("e2e.browsers");
     if (property == null || property.isBlank()) {
       return Arrays.stream(E2EBrowser.values());
