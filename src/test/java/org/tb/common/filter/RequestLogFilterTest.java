@@ -21,7 +21,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class RequestLogFilterTest {
 
   private final RequestLogFilter filter = new RequestLogFilter();
-  private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+  private final ListAppender<ILoggingEvent> appender = new MdcCapturingAppender();
   private final Logger logger = (Logger) LoggerFactory.getLogger(RequestLogFilter.class);
 
   @BeforeEach

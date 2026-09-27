@@ -74,7 +74,7 @@ class RequestLogIntegrationTest {
   @Autowired
   private AuthorizationRuleRepository authorizationRuleRepository;
 
-  private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+  private final ListAppender<ILoggingEvent> appender = new MdcCapturingAppender();
   private final Logger logger = (Logger) LoggerFactory.getLogger(RequestLogFilter.class);
 
   @BeforeEach
