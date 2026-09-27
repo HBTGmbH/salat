@@ -121,10 +121,12 @@ public class JiraReplicationService {
     }
     warnAboutUnansweredFields(cfg, fieldConfig, answeredFields, fetched);
 
-    // Before the chains, so that a removed parent no longer passes values on in this very run.
-    if (seenJiraIds != null) removeUnseenTickets(cfg, seenJiraIds, failed);
+    // Loaded once for both steps. The removal comes first, so that a removed parent no longer
+    // passes values on in this very run.
+    var tickets = new ArrayList<>(ticketRepo.findByScopeSign(cfg.getScopeSign()));
+    if (seenJiraIds != null) removeUnseenTickets(cfg, tickets, seenJiraIds, failed);
 
-    resolveParentChains(cfg, fieldConfig);
+    resolveParentChains(cfg, fieldConfig, tickets);
 
     // Update last_max_updated if progressed - but never past an issue this run failed to store
     newMax = capBelowFailures(newMax, baseline, oldestFailure, failureWithoutTimestamp);
@@ -156,20 +158,32 @@ public class JiraReplicationService {
    * out. One issue that could not be processed is enough to skip it: the ids seen are then not
    * reliable, not least because parsing the id may itself have been the failure.
    *
+   * <p>The stale tickets are picked from the scope's tickets in memory and deleted one by one by
+   * their primary key, rather than with a {@code not in} over every id the run saw: that list grows
+   * with the scope, the stale ones are usually a handful. They are also dropped from
+   * {@code tickets}, which the parent chains are resolved on next.
+   *
    * <p>The count goes to the log with the replication and its scope. A JQL narrowed by mistake shows
    * up here first. Bookings are not affected: their ticket reference is free text, not a foreign key
    * (#982). Nor are the worklogs written on these tickets — see {@link JiraWorklogSyncService}.
    */
-  private void removeUnseenTickets(JiraReplicationConfig cfg, Set<Long> seenJiraIds, int failed) {
+  private void removeUnseenTickets(JiraReplicationConfig cfg, List<JiraTicket> tickets,
+                                   Set<Long> seenJiraIds, int failed) {
     if (failed > 0) {
       log.warn("Replication {} fetched everything the JQL matches, but {} issues could not be "
           + "processed - tickets of scope {} no longer matched are not removed in this run",
           cfg.getName(), failed, cfg.getScopeSign());
       return;
     }
-    int removed = ticketRepo.deleteByScopeSignAndJiraIdNotIn(cfg.getScopeSign(), seenJiraIds);
+    var unseen = tickets.stream()
+        .filter(ticket -> !seenJiraIds.contains(ticket.getJiraId()))
+        .toList();
+    if (!unseen.isEmpty()) {
+      ticketRepo.deleteAll(unseen);
+      tickets.removeAll(unseen);
+    }
     log.info("Removed {} tickets of scope {} no longer matched by the JQL of replication {}",
-        removed, cfg.getScopeSign(), cfg.getName());
+        unseen.size(), cfg.getScopeSign(), cfg.getName());
   }
 
   /**
@@ -183,9 +197,10 @@ public class JiraReplicationService {
    * makes the inheritance heal itself when a value is set at a higher level later on: the ancestor
    * changes, the children do not, and JIRA reports only the ancestor as updated.
    */
-  private void resolveParentChains(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig) {
+  private void resolveParentChains(JiraReplicationConfig cfg, JiraFieldConfig fieldConfig,
+                                   List<JiraTicket> tickets) {
     var scopeSign = cfg.getScopeSign();
-    var ticketsByKey = ticketRepo.findByScopeSign(scopeSign).stream()
+    var ticketsByKey = tickets.stream()
         .collect(Collectors.toMap(JiraTicket::getKey, identity()));
     var updatedChildren = new LinkedList<JiraTicket>();
 
