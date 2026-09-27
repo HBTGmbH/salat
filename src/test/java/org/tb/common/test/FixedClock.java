@@ -1,6 +1,7 @@
 package org.tb.common.test;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -16,6 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * ISO-8601 local date-time (e.g. {@code 2026-06-25T10:15:30}); the default matches the dates
  * commonly hard-coded in existing fixtures.
  *
+ * <p>The annotation is {@link Inherited}: a subclass without an annotation of its own runs on the
+ * day of its superclass (#1173). An annotation on the subclass replaces that day, one on the test
+ * method replaces the day of the class.
+ *
  * <pre>
  * &#64;FixedClock
  * class MyTest { ... }                       // now() == 2026-06-25T10:15:30
@@ -26,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Inherited
 @ExtendWith(FixedClockExtension.class)
 public @interface FixedClock {
 

@@ -17,13 +17,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +41,7 @@ import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.tb.common.SalatProperties;
 import org.tb.common.filter.UiStateFilter;
-import org.tb.common.util.ClockProvider;
+import org.tb.common.test.FixedClock;
 import org.tb.common.util.DurationUtilsBean;
 import org.tb.common.web.LoginSignProvider;
 import org.tb.common.web.UiState;
@@ -73,6 +71,7 @@ import org.tb.dailyreport.service.TimereportListService;
  * swaps in does not render them, so it does not compute them either.
  */
 @ExtendWith(MockitoExtension.class)
+@FixedClock("2026-09-27T12:05:00")
 @MockitoSettings(strictness = LENIENT)
 class TimereportListControllerTest {
 
@@ -88,14 +87,8 @@ class TimereportListControllerTest {
   private TimereportListController controller;
   private ResourceBundleMessageSource messageSource;
 
-  @AfterEach
-  void resetClock() {
-    ClockProvider.reset();
-  }
-
   @BeforeEach
   void setUp() {
-    ClockProvider.useFixedClock(LocalDateTime.of(2026, 9, 27, 12, 5));
     messageSource = new ResourceBundleMessageSource();
     messageSource.setBasename("org/tb/web/MessageResources");
     messageSource.setDefaultEncoding("UTF-8");

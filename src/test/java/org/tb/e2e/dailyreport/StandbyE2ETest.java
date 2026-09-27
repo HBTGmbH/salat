@@ -24,7 +24,7 @@ import org.tb.e2e.PlaywrightE2ETestBase;
 @FixedClock(StandbyE2ETest.NOW)
 class StandbyE2ETest extends PlaywrightE2ETestBase {
 
-  /** Explicit because {@code @FixedClock} is not inherited from the base class. */
+  /** In August 2026 (see above), instead of the base class's day. */
   static final String NOW = "2026-08-12T18:00:00";
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_MA_SIGN;

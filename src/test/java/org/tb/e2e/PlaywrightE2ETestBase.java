@@ -8,7 +8,6 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.WaitForSelectorState;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -27,7 +26,6 @@ import org.springframework.test.context.bean.override.mockito.MockReset;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.tb.auth.persistence.SalatUserRepository;
 import org.tb.common.test.FixedClock;
-import org.tb.common.util.ClockProvider;
 import org.tb.customer.persistence.CustomerRepository;
 import org.tb.dailyreport.persistence.PublicholidayRepository;
 import org.tb.dailyreport.persistence.ReferencedayRepository;
@@ -47,6 +45,13 @@ import org.tb.order.persistence.SuborderRepository;
  * ({@code local} profile, see {@link org.tb.auth.configuration.LocalDevSecurityConfiguration}).
  * Master data (customers, orders, employees, ...) is seeded once per test run via
  * {@link E2ETestData}.
+ *
+ * <p><b>The day of the tests:</b> {@link FixedClock} is inherited, so a subclass without an
+ * annotation of its own runs on {@link #FIXED_NOW}, Thursday, 2026-06-25 (#1173). A class that
+ * needs another day sets its own {@code @FixedClock}, on the class or on a single method. The seed
+ * runs once, in the {@code @BeforeAll} of the first class, on that class's day; of that day it
+ * reads only the year, for the sign of the vacation suborder. Every class day lies in 2026; one
+ * outside it would change that sign for all classes that run after it.
  *
  * <p><b>Shared database state:</b> all E2E test classes run against the same H2 database, and
  * the bookings a test creates are never cleaned up — they stay visible to every test class that
@@ -74,7 +79,7 @@ import org.tb.order.persistence.SuborderRepository;
 @TestInstance(Lifecycle.PER_CLASS)
 public abstract class PlaywrightE2ETestBase {
 
-  static final String FIXED_NOW = "2026-06-15T09:00:00";
+  static final String FIXED_NOW = "2026-06-25T10:15:30";
 
   /**
    * Browsers to run each {@code @ParameterizedTest} against. Defaults to every
@@ -132,9 +137,8 @@ public abstract class PlaywrightE2ETestBase {
     when(mailSender.createMimeMessage()).thenReturn(new JavaMailSenderImpl().createMimeMessage());
 
     playwright = Playwright.create();
-    // the seed computes the Urlaub-suborder sign from "today", so it must run under the same
-    // fixed clock the per-test @FixedClock extension applies for assertions
-    ClockProvider.useFixedClock(LocalDateTime.parse(FIXED_NOW));
+    // runs on the day of the class, which FixedClockExtension pins before @BeforeAll; of that day
+    // the seed reads only the year, for the sign of the Urlaub suborder
     E2ETestData.seedIfNeeded(customerRepository, customerorderRepository, suborderRepository,
         employeeRepository, employeecontractRepository, employeeorderRepository, salatUserRepository,
         publicholidayRepository, referencedayRepository, timereportRepository, workingdayRepository);

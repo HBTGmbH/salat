@@ -25,9 +25,8 @@ import org.tb.e2e.PlaywrightE2ETestBase;
 class LiveBookingStartE2ETest extends PlaywrightE2ETestBase {
 
   /**
-   * Set explicitly rather than relying on the base class: {@code @FixedClock} is not
-   * {@code @Inherited}, so a subclass without its own annotation silently gets the extension's
-   * default instead of the base class's value.
+   * The base class's day, but set here: {@link #TODAY} spells out the same date and must not move
+   * when the base class's day does.
    */
   static final String NOW = "2026-06-25T10:15:30";
 
