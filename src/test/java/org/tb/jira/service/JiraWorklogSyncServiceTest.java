@@ -38,7 +38,8 @@ import org.tb.jira.persistence.JiraWorklogSyncRepository;
 
 /**
  * Writing the booked hours back to JIRA (#1007): one worklog per day and ticket, overwritten when
- * the sum moves, removed when the bookings are gone, and untouched when nothing changed.
+ * the sum moves, removed when the bookings are gone, and untouched when nothing changed — or when
+ * its ticket is no longer replicated (#1167).
  */
 @FixedClock
 @ExtendWith(MockitoExtension.class)
@@ -175,12 +176,42 @@ class JiraWorklogSyncServiceTest {
     // Nothing comes back for that day — the bookings were deleted, and a soft-deleted booking is
     // recognisable by nothing else than its absence from the sums.
     givenBookings();
+    givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
 
     classUnderTest.sync(config());
 
     verify(worklogClient).delete(any(), eq("10101"));
     verify(syncRepository).delete(stored);
+  }
+
+  @Test
+  void a_worklog_on_a_ticket_no_longer_replicated_stays_in_jira_and_remembered() {
+    // The replication removed the ticket (#1167) - moved away, or no longer matched by the JQL.
+    // That says nothing about the bookings, so what SALAT wrote there is left as it is.
+    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 90));
+    givenReplicatedTickets();
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+
+    classUnderTest.sync(config());
+
+    verify(worklogClient, never()).delete(any(), any());
+    verify(syncRepository, never()).delete(any());
+    assertThat(stored.getWorklogId()).isEqualTo("10101");
+  }
+
+  @Test
+  void a_ticket_that_comes_back_picks_up_at_its_remembered_worklog() {
+    // no second worklog next to the one written before the ticket was removed
+    givenBookings(new TicketDaySum(DAY, "ALPHA-1", 120));
+    givenReplicatedTickets("ALPHA-1");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+
+    classUnderTest.sync(config());
+
+    verify(worklogClient, never()).create(any(), any());
+    verify(worklogClient).update(any(), eq("10101"), any());
+    assertThat(stored.getMinutes()).isEqualTo(120);
   }
 
   @Test
@@ -264,6 +295,7 @@ class JiraWorklogSyncServiceTest {
   @Test
   void a_worklog_already_gone_from_jira_only_loses_its_row() {
     givenBookings();
+    givenReplicatedTickets("ALPHA-1");
     var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
     doThrow(new JiraWorklogNotFoundException("ALPHA-1", "10101", null))
         .when(worklogClient).delete(any(), eq("10101"));

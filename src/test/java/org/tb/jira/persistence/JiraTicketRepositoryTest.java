@@ -20,7 +20,8 @@ import org.tb.jira.domain.JiraTicket;
 
 /**
  * The ticket search behind the suggestions of the booking form (#982): scoped to the branch that is
- * being booked on (#1025), matching key and title alike, most recently updated first.
+ * being booked on (#1025), matching key and title alike, most recently updated first. And the
+ * removal of the tickets a complete replication run no longer saw (#1167), bound to one scope.
  */
 @DataJpaTest
 @Import(AuthorizedUserAuditorAware.class)
@@ -83,6 +84,39 @@ class JiraTicketRepositoryTest {
   void the_most_recently_updated_ticket_comes_first() {
     assertThat(searchBranchA("")).extracting(JiraTicket::getKey)
         .containsExactly("ALPHA-2", "ALPHA-1");
+  }
+
+  @Test
+  void a_complete_run_removes_the_tickets_of_its_scope_it_did_not_see() {
+    save(BRANCH_A, 5L, "ALPHA-5", "Aus der JQL gefallen", LocalDateTime.parse("2026-02-01T10:00"));
+
+    int removed = jiraTicketRepository.deleteByScopeSignAndJiraIdNotIn(BRANCH_A, List.of(2L));
+
+    assertThat(removed).isEqualTo(1);
+    assertThat(jiraTicketRepository.findByScopeSign(BRANCH_A)).extracting(JiraTicket::getKey)
+        .containsExactly("ALPHA-2");
+  }
+
+  @Test
+  void the_removal_leaves_other_scopes_alone_even_with_the_same_key_and_id() {
+    // two JIRA instances can hand out the same key and the same id, a sign tells them apart
+    save(BRANCH_B, 2L, "ALPHA-2", "Gleiche Nummer im Nachbarast", LocalDateTime.parse("2026-02-01T10:00"));
+
+    jiraTicketRepository.deleteByScopeSignAndJiraIdNotIn(BRANCH_A, List.of(99L));
+
+    assertThat(jiraTicketRepository.findByScopeSign(BRANCH_A)).isEmpty();
+    assertThat(jiraTicketRepository.findByScopeSign(BRANCH_B)).extracting(JiraTicket::getKey)
+        .containsExactlyInAnyOrder("ALPHA-3", "ALPHA-2");
+    assertThat(jiraTicketRepository.findByScopeSign(WHOLE_ORDER)).hasSize(1);
+  }
+
+  @Test
+  void a_complete_run_that_saw_nothing_removes_the_whole_scope_and_only_that() {
+    int removed = jiraTicketRepository.deleteByScopeSignAndJiraIdNotIn(BRANCH_A, List.of());
+
+    assertThat(removed).isEqualTo(1);
+    assertThat(jiraTicketRepository.findByScopeSign(BRANCH_A)).isEmpty();
+    assertThat(jiraTicketRepository.findAll()).hasSize(3);
   }
 
   /** The scopes of ALPHA/A/01: the order itself, its parent suborder, and the suborder. */

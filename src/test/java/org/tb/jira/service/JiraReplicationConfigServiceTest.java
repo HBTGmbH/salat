@@ -411,6 +411,33 @@ class JiraReplicationConfigServiceTest {
   }
 
   @Test
+  void changing_the_jql_resets_the_watermark() {
+    // Only a run without the watermark sees every ticket the JQL matches (#1167): after narrowing it
+    // removes the ones left out, after widening it fetches the older ones that match now.
+    var stored = existingConfig();
+    stored.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0));
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withJql("project = ALPHA AND component = Web"));
+
+    assertThat(saved().getLastMaxUpdated()).isNull();
+    assertThat(saved().getJql()).isEqualTo("project = ALPHA AND component = Web");
+  }
+
+  @Test
+  void an_edit_that_leaves_the_jql_alone_keeps_the_watermark() {
+    var watermark = LocalDateTime.of(2026, 6, 1, 8, 0);
+    var stored = existingConfig();
+    stored.setLastMaxUpdated(watermark);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    // the text is trimmed before it is stored, so surrounding blanks are no change
+    classUnderTest.update(ID, withJql("  project = ALPHA "));
+
+    assertThat(saved().getLastMaxUpdated()).isEqualTo(watermark);
+  }
+
+  @Test
   void a_replication_can_be_scoped_to_one_suborder_of_any_depth() {
     // the scope is stored as the fully qualified sign — the suborder sign alone is not unique
     when(customerorderService.getCustomerorderBySign("ALPHA/A/01")).thenReturn(null);
@@ -678,6 +705,11 @@ class JiraReplicationConfigServiceTest {
     schema.setType(type);
     field.setSchema(schema);
     return field;
+  }
+
+  private static JiraReplicationConfigData withJql(String jql) {
+    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+        JiraApiFlavor.SERVER, "jira-user", null, jql, null, null, null, 100, true, false, null);
   }
 
   private static JiraReplicationConfigData withFields(String additional, String inherited) {
