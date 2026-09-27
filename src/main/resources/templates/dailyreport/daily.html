@@ -121,7 +121,17 @@
                th:href="@{/dailyreport/daily(mode='daily',date=${prevDate})}">
               <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevday.text}">Vorheriger Tag</span>
             </a>
-            <h3 class="mb-0" th:text="${#temporals.format(date, 'EEEE, d. MMMM yyyy')}"></h3>
+            <!--/* Freigegeben oder abgenommen steht an der Ueberschrift, damit klar ist, warum hier (je
+                   nach Rolle) nichts mehr geaendert werden kann (#1164) */-->
+            <h3 class="mb-0">
+              <span th:text="${#temporals.format(date, 'EEEE, d. MMMM yyyy')}">Montag, 18. Mai 2026</span>
+              <span th:if="${dailyData != null and dailyData.reportStatus == 'commited'}" id="daily-report-status"
+                    class="badge bg-secondary-lt ms-2 align-middle"><i class="ti ti-lock me-1" aria-hidden="true"></i><span
+                    th:text="#{main.daily.period.released.text}">Freigegeben</span></span>
+              <span th:if="${dailyData != null and dailyData.reportStatus == 'closed'}" id="daily-report-status"
+                    class="badge bg-secondary-lt ms-2 align-middle"><i class="ti ti-lock me-1" aria-hidden="true"></i><span
+                    th:text="#{main.daily.period.accepted.text}">Abgenommen</span></span>
+            </h3>
             <a class="btn btn-sm btn-outline-secondary"
                th:href="@{/dailyreport/daily(mode='daily',date=${nextDate})}">
               <span th:text="#{main.daily.nav.nextday.text}">Nächster Tag</span><i class="ti ti-chevron-right ms-1"></i>
@@ -674,8 +684,19 @@
                th:href="@{/dailyreport/daily(mode='list',fMonth=${prevMonth},fYear=${prevYear})}">
               <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevmonth.text}">Vorheriger Monat</span>
             </a>
-            <h3 class="mb-0"
-                th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}"></h3>
+            <!--/* wie weit Abnahme und Freigabe in den Monat reichen; endet eine mitten im Monat, nennt
+                   die Badge den letzten Tag (#1164) */-->
+            <h3 class="mb-0" th:with="period=${listData != null ? listData.reportPeriod : null}">
+              <span th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}">Mai 2026</span>
+              <span th:if="${period != null and period.acceptedUntil != null}" id="list-accepted-status"
+                    class="badge bg-secondary-lt ms-2 align-middle"
+                    th:with="until=${#temporals.format(period.acceptedUntil, 'dd.MM.')}"><i class="ti ti-lock me-1" aria-hidden="true"></i><span
+                    th:text="${period.acceptedWholeMonth} ? #{main.daily.period.accepted.text} : #{main.daily.period.accepteduntil.text(${until})}">Abgenommen bis 08.05.</span></span>
+              <span th:if="${period != null and period.releasedUntil != null}" id="list-released-status"
+                    class="badge bg-secondary-lt ms-2 align-middle"
+                    th:with="until=${#temporals.format(period.releasedUntil, 'dd.MM.')}"><i class="ti ti-lock me-1" aria-hidden="true"></i><span
+                    th:text="${period.releasedWholeMonth} ? #{main.daily.period.released.text} : #{main.daily.period.releaseduntil.text(${until})}">Freigegeben bis 15.05.</span></span>
+            </h3>
             <a class="btn btn-sm btn-outline-secondary"
                th:href="@{/dailyreport/daily(mode='list',fMonth=${nextMonth},fYear=${nextYear})}">
               <span th:text="#{main.daily.nav.nextmonth.text}">Nächster Monat</span><i class="ti ti-chevron-right ms-1"></i>

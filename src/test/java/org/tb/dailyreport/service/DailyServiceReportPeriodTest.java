@@ -149,6 +149,26 @@ class DailyServiceReportPeriodTest {
     assertThat(asAdmin.editableTimereportIds()).containsExactly(7L);
   }
 
+  /** Die Überschrift des Tages sagt, in welchem Zeitraum er liegt. */
+  @Test
+  void the_daily_view_names_the_period_of_the_day() {
+    loggedInAs(OWNER, false);
+
+    assertThat(dailyService.buildDailyView(MAY.atDay(5), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_CLOSED);
+    assertThat(dailyService.buildDailyView(MAY.atDay(12), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_COMMITED);
+    assertThat(dailyService.buildDailyView(MAY.atDay(19), CONTRACT_ID).reportStatus()).isEqualTo(TIMEREPORT_STATUS_OPEN);
+  }
+
+  @Test
+  void the_list_names_how_far_acceptance_and_release_reach_into_the_month() {
+    loggedInAs(OWNER, false);
+
+    var period = dailyService.buildListView(MAY, CONTRACT_ID).reportPeriod();
+
+    assertThat(period.acceptedUntil()).isEqualTo(ACCEPTED_UNTIL);
+    assertThat(period.releasedUntil()).isEqualTo(RELEASED_UNTIL);
+  }
+
   @Test
   void the_person_edits_only_their_open_bookings() {
     when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, MAY.atDay(1), MAY.atEndOfMonth()))

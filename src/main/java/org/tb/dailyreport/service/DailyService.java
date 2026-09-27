@@ -27,6 +27,7 @@ import org.tb.dailyreport.domain.DailyViewData.WeekStripDay;
 import org.tb.dailyreport.domain.ListViewData;
 import org.tb.dailyreport.domain.ListViewData.ListDay;
 import org.tb.dailyreport.domain.Publicholiday;
+import org.tb.dailyreport.domain.ReportPeriod;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
 import org.tb.employee.service.EmployeecontractService;
@@ -96,7 +97,7 @@ public class DailyService {
         return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
             hasTarget, hasDayTarget, overMaxHours, progressPercent, weekStrip,
             notWorked, startTime, breakTime, dailyWorkingTimeFormatted,
-            editableIds, workingdayEditable, canCreate);
+            editableIds, workingdayEditable, canCreate, ReportPeriod.statusOn(contract, date));
     }
 
     @Transactional(readOnly = true)
@@ -164,7 +165,8 @@ public class DailyService {
             .map(TimereportDTO::getId)
             .collect(toSet());
 
-        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased, editableIds);
+        return new ListViewData(days, monthTotal, monthTarget, monthDiff, monthDiffNegative, prevDayDiffString, prevDayDiffNegative, hasTarget, monthReleased, editableIds,
+            ReportPeriod.Month.of(contract, yearMonth));
     }
 
     @Transactional(readOnly = true)
