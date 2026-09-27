@@ -117,9 +117,12 @@
       <div class="card mb-3" id="daily-mode-nav">
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='daily',date=${prevDate})}">
-              <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevday.text}">Vorheriger Tag</span>
+            <!--/* nur das Icon: der Text drueckte auf schmalen Bildschirmen den Tag aus der Mitte; der Name
+                   bleibt fuer Tooltip und Screenreader */-->
+            <a class="btn btn-sm btn-outline-secondary btn-icon"
+               th:href="@{/dailyreport/daily(mode='daily',date=${prevDate})}"
+               th:title="#{main.daily.nav.prevday.text}" th:aria-label="#{main.daily.nav.prevday.text}">
+              <i class="ti ti-chevron-left m-0" aria-hidden="true"></i>
             </a>
             <!--/* Freigegeben oder abgenommen steht an der Ueberschrift, damit klar ist, warum hier (je
                    nach Rolle) nichts mehr geaendert werden kann (#1164) */-->
@@ -132,9 +135,10 @@
                     class="badge bg-secondary-lt ms-2 align-middle"><i class="ti ti-lock me-1" aria-hidden="true"></i><span
                     th:text="#{main.daily.period.accepted.text}">Abgenommen</span></span>
             </h3>
-            <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='daily',date=${nextDate})}">
-              <span th:text="#{main.daily.nav.nextday.text}">Nächster Tag</span><i class="ti ti-chevron-right ms-1"></i>
+            <a class="btn btn-sm btn-outline-secondary btn-icon"
+               th:href="@{/dailyreport/daily(mode='daily',date=${nextDate})}"
+               th:title="#{main.daily.nav.nextday.text}" th:aria-label="#{main.daily.nav.nextday.text}">
+              <i class="ti ti-chevron-right m-0" aria-hidden="true"></i>
             </a>
           </div>
           <div class="d-flex justify-content-center gap-2">
@@ -680,9 +684,11 @@
       <div class="card mb-3" id="daily-mode-nav">
         <div class="card-body text-center py-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='list',fMonth=${prevMonth},fYear=${prevYear})}">
-              <i class="ti ti-chevron-left me-1"></i><span th:text="#{main.daily.nav.prevmonth.text}">Vorheriger Monat</span>
+            <!--/* nur das Icon, wie in der Tagesansicht */-->
+            <a class="btn btn-sm btn-outline-secondary btn-icon"
+               th:href="@{/dailyreport/daily(mode='list',fMonth=${prevMonth},fYear=${prevYear})}"
+               th:title="#{main.daily.nav.prevmonth.text}" th:aria-label="#{main.daily.nav.prevmonth.text}">
+              <i class="ti ti-chevron-left m-0" aria-hidden="true"></i>
             </a>
             <!--/* wie weit Abnahme und Freigabe in den Monat reichen; endet eine mitten im Monat, nennt
                    die Badge den letzten Tag (#1164) */-->
@@ -697,9 +703,10 @@
                     th:with="until=${#temporals.format(period.releasedUntil, 'dd.MM.')}"><i class="ti ti-lock me-1" aria-hidden="true"></i><span
                     th:text="${period.releasedWholeMonth} ? #{main.daily.period.released.text} : #{main.daily.period.releaseduntil.text(${until})}">Freigegeben bis 15.05.</span></span>
             </h3>
-            <a class="btn btn-sm btn-outline-secondary"
-               th:href="@{/dailyreport/daily(mode='list',fMonth=${nextMonth},fYear=${nextYear})}">
-              <span th:text="#{main.daily.nav.nextmonth.text}">Nächster Monat</span><i class="ti ti-chevron-right ms-1"></i>
+            <a class="btn btn-sm btn-outline-secondary btn-icon"
+               th:href="@{/dailyreport/daily(mode='list',fMonth=${nextMonth},fYear=${nextYear})}"
+               th:title="#{main.daily.nav.nextmonth.text}" th:aria-label="#{main.daily.nav.nextmonth.text}">
+              <i class="ti ti-chevron-right m-0" aria-hidden="true"></i>
             </a>
           </div>
           <!--/* mirrors the mode toggle of the daily view, so the button that switches the mode sits
