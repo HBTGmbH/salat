@@ -29,7 +29,7 @@ import org.tb.common.web.UiStateKeyRegistry;
 
 @Component
 @RequiredArgsConstructor
-@Order(102)
+@Order(101)
 public class UiStateFilter extends OncePerRequestFilter {
 
     static final String COOKIE_NAME = "salat_uistate";

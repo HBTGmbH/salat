@@ -7,6 +7,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,13 +18,19 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
 import org.springframework.test.context.ActiveProfiles;
 import org.tb.auth.domain.AccessLevel;
 import org.tb.auth.domain.AuthorizationRule;
@@ -41,6 +49,8 @@ import org.tb.employee.persistence.EmployeeRepository;
  * <p>Eigene H2-Datenbank: die übrigen {@code @SpringBootTest}-Klassen teilen sich eine, und ein
  * zweiter Anwendungskontext mit {@code ddl-auto: create} legte sie beim Hochfahren neu an. Der Cache
  * der Berechtigungsregeln verfällt sofort, sonst sähe der Sichtwechsel die hier angelegte Regel nicht.
+ *
+ * <p>Was eine Logzeile mitten in der Anfrage trägt, hält ein Filter hinter allen anderen fest.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
     "spring.datasource.url=jdbc:h2:mem:salat-1145;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;MODE=MySQL;NON_KEYWORDS=YEAR",
@@ -87,6 +97,25 @@ class RequestLogIntegrationTest {
   @AfterEach
   void releaseLog() {
     logger.detachAppender(appender);
+  }
+
+  /** Pfad der Anfrage → der MDC, den eine Logzeile im Controller trüge. */
+  private static final Map<String, Map<String, String>> MDC_DURING_REQUEST = new ConcurrentHashMap<>();
+
+  @TestConfiguration
+  static class RecordMdcDuringRequest {
+
+    @Bean
+    FilterRegistrationBean<?> recordMdcFilter() {
+      var registration = new FilterRegistrationBean<Filter>((request, response, chain) -> {
+        var mdc = MDC.getCopyOfContextMap();
+        MDC_DURING_REQUEST.put(((HttpServletRequest) request).getRequestURI(), mdc == null ? Map.of() : mdc);
+        chain.doFilter(request, response);
+      });
+      registration.setOrder(Ordered.LOWEST_PRECEDENCE);
+      return registration;
+    }
+
   }
 
   @Test
@@ -145,6 +174,9 @@ class RequestLogIntegrationTest {
 
     assertThat(next.statusCode()).isEqualTo(200);
     assertThat(lineFor("/employees"))
+        .containsEntry("login-sign", ADMIN)
+        .containsEntry("effective-login-sign", OTHER_ADMIN);
+    assertThat(MDC_DURING_REQUEST.get("/employees"))
         .containsEntry("login-sign", ADMIN)
         .containsEntry("effective-login-sign", OTHER_ADMIN);
   }

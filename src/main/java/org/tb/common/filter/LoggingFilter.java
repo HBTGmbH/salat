@@ -17,10 +17,16 @@ import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+/**
+ * Legt Anfrage und Nutzer in den MDC, damit jede Logzeile der Anfrage sie trägt.
+ *
+ * <p>Läuft hinter {@link UiStateFilter}: erst der lädt einen Sichtwechsel aus dem Cookie. Davor
+ * stand in {@code effective-login-sign} immer der angemeldete Nutzer, auch in fremder Sicht (#1145).
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Component
-@Order(101)
+@Order(102)
 public class LoggingFilter extends HttpFilter {
 
   /**
@@ -48,8 +54,7 @@ public class LoggingFilter extends HttpFilter {
       MDC.remove("request-query-string");
       MDC.remove("request-method");
       MDC.remove("request-uri");
-      // Neu gelesen statt data: den Sichtwechsel lädt erst UiStateFilter aus dem Cookie, und die
-      // Anfrage selbst kann ihn ändern.
+      // Neu gelesen statt data: die Anfrage selbst kann die Sicht wechseln.
       request.setAttribute(MDC_DATA_ATTRIBUTE, collectMdcData());
     }
   }
