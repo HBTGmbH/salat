@@ -4,6 +4,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.microsoft.playwright.Clock;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
@@ -23,6 +24,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.tb.e2e.E2EBrowser;
 import org.tb.e2e.E2ETestData;
+import org.tb.common.util.ClockProvider;
 import org.tb.common.util.DateUtils;
 import org.tb.e2e.PlaywrightE2ETestBase;
 
@@ -66,7 +68,7 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       page.keyboard().press("Escape");
 
       assertThat(palette(page)).isHidden();
-      assertEquals("fCustomerFilter", page.evaluate("() => document.activeElement.name"));
+      assertThat(page.locator("[name=fCustomerFilter]")).isFocused();
     });
   }
 
@@ -154,32 +156,63 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       });
       input(page).fill("31.2.");
       assertThat(page.locator("[data-command-type=day]")).hasCount(0);
+
+      // "modus" is a further word of the colour mode, but nothing visible of it matches — the day
+      // the issue names for "mo" comes first
+      input(page).fill("mo");
+      assertThat(options(page).first()).hasAttribute("data-command-type", "day");
     });
   }
 
   /**
-   * A day jump is remembered as the expression that was typed, and resolved again on every open.
-   * The recent entries show up on an empty input, the latest first.
+   * The recent entries show up on an empty input, the latest first. A day jump is remembered as the
+   * expression that was typed: a week later, the same entry names the day before that later day.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
-  void an_empty_input_offers_the_recently_used_commands(E2EBrowser browser) {
+  void an_empty_input_offers_the_recently_used_commands_resolved_anew(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
-      LocalDate yesterday = DateUtils.today().minusDays(1);
+      LocalDate today = DateUtils.today();
       runFromPalette(page, "mat");
       page.waitForURL(Pattern.compile(".*/dailyreport/matrix.*"));
       runFromPalette(page, "gestern");
-      page.waitForURL(Pattern.compile(".*date=" + yesterday + "$"));
+      page.waitForURL(Pattern.compile(".*date=" + today.minusDays(1) + "$"));
 
       page.keyboard().press(SHORTCUT);
 
       assertThat(palette(page).locator(".command-palette-group")).hasText("Zuletzt verwendet");
       assertThat(options(page)).hasCount(2);
       assertThat(options(page).first()).containsText("Einzelübersicht · gestern");
-      assertThat(options(page).first()).containsText(shown(yesterday));
+      assertThat(options(page).first()).containsText(shown(today.minusDays(1)));
       assertThat(options(page).nth(1)).containsText("Matrixübersicht");
-      assertEquals("gestern", page.evaluate(
-          "() => JSON.parse(localStorage.getItem('salat-command-palette-recent'))[0].k"));
+
+      // the server's day moves on a week; FixedClockExtension puts the clock back after the test
+      LocalDate weekLater = today.plusDays(7);
+      ClockProvider.useFixedClock(weekLater.atTime(9, 0));
+      page.navigate(urlWithLogin("/dailyreport/dashboard", MANAGER));
+      page.keyboard().press(SHORTCUT);
+
+      assertThat(options(page).first()).containsText("Einzelübersicht · gestern");
+      assertThat(options(page).first()).containsText(shown(weekLater.minusDays(1)));
+    });
+  }
+
+  /**
+   * The server's day is taken when the page loads and carried forward with the browser's clock: a
+   * tab left open past midnight counts from the new day, not from the one it was rendered on.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void a_tab_left_open_past_midnight_counts_from_the_new_day(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
+      LocalDate today = DateUtils.today();
+      page.clock().install(new Clock.InstallOptions().setTime(System.currentTimeMillis()));
+      page.clock().fastForward("24:00:00");
+
+      page.keyboard().press(SHORTCUT);
+      input(page).fill("heute");
+
+      assertThat(options(page).first()).containsText("Einzelübersicht · " + shown(today.plusDays(1)));
     });
   }
 
@@ -222,7 +255,8 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
 
       page.keyboard().press(SHORTCUT);
 
-      assertThat(palette(page).locator(".command-palette-group")).hasText("Seiten");
+      assertThat(palette(page).locator(".command-palette-group").first()).hasText("Seiten");
+      assertThat(palette(page).locator(".command-palette-group").nth(1)).hasText("Einstellungen");
       @SuppressWarnings("unchecked")
       List<String> offered = (List<String>) page.evaluate(
           "() => Array.from(document.querySelectorAll('#commandPaletteList [data-command-type=nav]'))"
@@ -292,7 +326,7 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
           "v => paletteParseDay('fr', '2026-03-02', eval('(' + v + ')'))[0].iso", vocabulary));
       assertEquals("2025-12-31", page.evaluate(
           "v => paletteParseDay('gestern', '2026-01-01', eval('(' + v + ')'))[0].iso", vocabulary));
-      for (String nothing : List.of("31.2.", "29.2.2026", "m", "he", "xyz", "0.1.")) {
+      for (String nothing : List.of("31.2.", "29.2.2026", "m", "he", "xyz", "0.1.", "1.1.0500", "0999-12-31")) {
         assertEquals("", page.evaluate(
             "([typed, v]) => paletteParseDay(typed, '2026-09-28', eval('(' + v + ')')).map(d => d.iso).join()",
             List.of(nothing, vocabulary)), nothing);
@@ -306,6 +340,93 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       assertEquals(List.of(List.of(6, 10)), page.evaluate(
           "() => paletteMatch('Matrixübersicht', 'uber').ranges"));
       assertEquals(3, page.evaluate("() => paletteMatch('Neue Buchung', 'buch').tier"));
+    });
+  }
+
+  /** On a phone there is no Esc; the close button is the way out without running a command. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_close_button_closes_it_on_a_touch_device(E2EBrowser browser) {
+    runOnTouchDevice(browser, MANAGER, "/dailyreport/dashboard", page -> {
+      page.locator("#header-command-palette").tap();
+      assertThat(palette(page)).isVisible();
+
+      palette(page).locator("[data-command-palette-close]").tap();
+
+      assertThat(palette(page)).isHidden();
+    });
+  }
+
+  /**
+   * Selecting the typed text with the mouse and letting go beyond the edge is no click on the
+   * backdrop, although the browser delivers it to the dialog; a real one closes it.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void only_a_press_on_the_backdrop_closes_it(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
+      page.keyboard().press(SHORTCUT);
+      input(page).fill("matrix");
+      var box = input(page).boundingBox();
+
+      page.mouse().move(box.x + box.width - 5, box.y + box.height / 2);
+      page.mouse().down();
+      page.mouse().move(box.x + 5, 5);
+      page.mouse().up();
+      assertThat(palette(page)).isVisible();
+
+      page.mouse().click(5, 5);
+      assertThat(palette(page)).isHidden();
+    });
+  }
+
+  /**
+   * With the dropdown of a TomSelect field open, the focus sits on the dropdown's search input,
+   * which closes along with it. Esc hands the focus back to the field's control instead.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void escape_hands_the_focus_back_to_a_tomselect_field(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/orders/employeeorders", page -> {
+      page.locator(".ts-wrapper .ts-control").first().click();
+      assertThat(page.locator(".ts-wrapper.dropdown-active")).hasCount(1);
+
+      page.keyboard().press(SHORTCUT);
+      page.keyboard().press("Escape");
+
+      assertThat(palette(page)).isHidden();
+      // the dialog fires "close" as a task of its own, after it is gone from the screen
+      assertThat(page.locator(".ts-wrapper .ts-control").first()).isFocused();
+      assertThat(page.locator(".ts-wrapper.dropdown-active")).hasCount(0);
+    });
+  }
+
+  /**
+   * The list views push their filter into the history, and htmx restores such a page from a copy of
+   * its markup. The palette of the restored page has to work like the first one.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void it_works_on_a_page_restored_from_the_history(E2EBrowser browser) {
+    runAsUser(browser, MANAGER, "/orders/customerorders", page -> {
+      page.keyboard().press(SHORTCUT);
+      page.keyboard().press("Escape");
+      page.locator("#advanced-toggle").check();
+      Locator filter = page.locator("[name=fCustomerOrderFilter]");
+      filter.fill("E2E");
+      filter.press("Enter");
+      page.waitForURL(Pattern.compile(".*fCustomerOrderFilter=E2E.*"));
+
+      page.evaluate("() => window.paletteBeforeBack = document.getElementById('commandPalette')");
+      page.goBack();
+      // the address changes before htmx has put the copy in place; the new dialog is the sign
+      page.waitForFunction("() => document.getElementById('commandPalette') !== window.paletteBeforeBack");
+      page.keyboard().press(SHORTCUT);
+      input(page).fill("mat");
+
+      assertThat(options(page).first()).containsText("Matrixübersicht");
+      page.keyboard().press("Enter");
+      page.waitForURL(Pattern.compile(".*/dailyreport/matrix.*"));
     });
   }
 

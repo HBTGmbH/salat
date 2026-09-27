@@ -51,8 +51,8 @@ ein zweites Mal gestellt, und zwei Stellen, die dieselbe Berechtigung beantworte
 ersten neuen Menüeintrag auseinander — entweder fehlt er in der Palette, oder sie bietet eine Seite
 an, die mit 403 antwortet. Mit A erscheint ein neuer Eintrag ohne weiteres Zutun, und „keiner, den
 die Person nicht sieht" gilt, weil es nichts anderes zu lesen gibt. Dasselbe Prinzip trägt die
-Einstellungen: Moduswechsel, Einstellungsseite und Falten der Sidebar sind die Knöpfe der
-Kopfzeile, markiert mit `data-palette-command`; die Palette löst sie aus und bietet nur an, was
+Einstellungen: Moduswechsel und Einstellungsseite sind die Knöpfe der Kopfzeile, das Falten ist
+der Knopf der Sidebar, alle markiert mit `data-palette-command`; die Palette löst sie aus und bietet nur an, was
 gerade angezeigt ist. Ein Eintrag, dessen Ziel die Seite mit ihrem Zusammenhang kennt, verweist
 mit `data-palette-href-from` auf das Element, das es trägt — „Neue Buchung" nimmt so das Ziel des
 Knopfs in der Kopfzeile (#1156), samt Tag und Rückweg der Seite.
@@ -77,7 +77,9 @@ Template bringt eigenes JavaScript mit.
 
 Zum Tempo: Seiten, Tage und zuletzt Verwendetes kommen ohne Anfrage aus. Heute ist der Tag des
 **Servers**, den die Seite mitbringt (`data-today`), damit „gestern" denselben Tag meint wie die
-Einzelübersicht, auch wenn die Uhr des Rechners anders geht.
+Einzelübersicht, auch wenn die Uhr des Rechners anders geht. Festgehalten wird beim Laden der
+Abstand zum Tag des Browsers, und weitergezählt wird mit dessen Uhr: ein Tab, der über Mitternacht
+offen bleibt, rechnet sonst vom Tag seines Aufrufs aus.
 
 ### Consequences
 

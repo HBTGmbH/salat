@@ -116,12 +116,14 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
   ihre Prüfseiten. Deshalb braucht kein Befehl eine Rückfrage. Das gilt für jeden Befehl, der
   dazukommt.
 - **Was sie anbietet, liest sie aus der gerenderten Seite**, statt eine zweite Liste zu führen: die
-  Navigation aus `#sidebar-menu .dropdown-item[href]`, die Einstellungen aus den Knöpfen der
-  Kopfzeile mit `data-palette-command`. Die Rollenfrage beantwortet damit allein die Sidebar; eine
+  Navigation aus `#sidebar-menu .dropdown-item[href]`, die Einstellungen aus den Bedienelementen
+  mit `data-palette-command` (Moduswechsel und Einstellungsseite in der Kopfzeile, der Faltknopf
+  der Sidebar). Die Rollenfrage beantwortet damit allein die Sidebar; eine
   Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein Element der Seite das bessere
   Ziel kennt, verweist der Sidebar-Eintrag mit `data-palette-href-from` darauf.
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
-  des Servers (`data-today` am Dialog), nicht der des Browsers.
+  des Servers (`data-today` am Dialog), nicht der des Browsers — beim Laden als Abstand zum Tag des
+  Browsers festgehalten und mit dessen Uhr weitergezählt.
 
 ## Farben und Kontrast (→ ADR-0025)
 

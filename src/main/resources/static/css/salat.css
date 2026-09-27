@@ -1086,6 +1086,16 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   text-align: center;
 }
 
+/* Leer bleibt die Statusregion im Dokument, nur ohne Hoehe - sonst meldet sie sich nicht. */
+.command-palette-empty:empty {
+  padding: 0;
+}
+
+.command-palette-close {
+  flex-shrink: 0;
+  margin: -.375rem -.5rem -.375rem 0;
+}
+
 .command-palette-footer {
   display: flex;
   gap: 1rem;
