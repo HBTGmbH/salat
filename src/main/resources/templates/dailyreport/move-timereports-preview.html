@@ -56,6 +56,20 @@
     </div>
   </div>
 
+  <!--/* Nach der Abnahme aendert nur noch ein Admin eine Buchung, auch ihren Unterauftrag (#1164). Die
+         Vorschau sagt es vor dem Bestaetigen, und der Knopf entfaellt; das Verschieben selbst prueft es
+         noch einmal. */-->
+  <div th:if="${not preview.moveAllowed}" class="alert alert-danger mb-3" id="move-accepted-warning">
+    <div class="d-flex">
+      <i class="ti ti-lock me-2 mt-1" aria-hidden="true"></i>
+      <span th:with="acceptedCount=${#lists.size(preview.acceptedTimereports())}"
+            th:text="#{main.movetimereports.preview.accepted.text(${acceptedCount})}">
+        3 der Buchungen sind abgenommen. Abgenommene Buchungen verschiebt nur ein Admin; sonst muss der
+        Zeitraum erst wieder geöffnet werden.
+      </span>
+    </div>
+  </div>
+
   <!-- Empty state -->
   <div th:if="${#lists.isEmpty(preview.timereports)}" class="alert alert-info mb-3"
        th:text="#{main.movetimereports.preview.empty}">
@@ -137,7 +151,7 @@
 
   <!-- Confirm / Back actions -->
   <div th:if="${not #lists.isEmpty(preview.timereports)}" class="d-flex gap-2 mb-3">
-    <form th:action="@{/dailyreports/move/confirm}" method="post">
+    <form th:if="${preview.moveAllowed}" th:action="@{/dailyreports/move/confirm}" method="post">
       <input type="hidden" name="sourceSuborderId" th:value="${form.sourceSuborderId}" />
       <input type="hidden" name="targetSuborderId" th:value="${form.targetSuborderId}" />
       <input type="hidden" name="fromDate" th:value="${form.fromDate}" />

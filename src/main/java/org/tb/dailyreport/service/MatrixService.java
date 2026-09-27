@@ -214,7 +214,11 @@ public class MatrixService {
         Set<LocalDate> publicHolidays = publicholidayService.getPublicHolidaysBetween(first, last)
             .stream().map(Publicholiday::getRefdate).collect(Collectors.toSet());
 
+        // only the days that may be written: in a partly released month the person fills the rest
+        // after the release, instead of the action stopping at the first released day (#1164)
         UnbookedWorkingDays.between(first, last, employeecontract, bookedDays, workingdays, publicHolidays)
+            .stream()
+            .filter(day -> workingdayService.isWriteAllowed(employeecontract, day))
             .forEach(day -> {
                 var workingday = workingdays.get(day);
                 if (workingday == null) {

@@ -8,7 +8,7 @@ import static org.mockito.quality.Strictness.LENIENT;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
-import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_MANAGER;
+import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 import static org.tb.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
@@ -36,7 +36,8 @@ import org.tb.employee.domain.Employeecontract;
 
 /**
  * Wer eine Buchung schreiben darf, hängt an ihrem Status und daran, wer fragt: die Person selbst,
- * die Geschäftsführung, die zuständige People Lead. Die Tabelle hält fest, was
+ * die Geschäftsführung, die zuständige People Lead, ein Admin. Eine abgenommene Buchung schreibt nur
+ * noch ein Admin; alle anderen öffnen den Zeitraum erst wieder (#1164). Die Tabelle hält fest, was
  * {@link TimereportAuthorization#checkAuthorized} dazu entscheidet — mit dem Fehlercode, den eine
  * Ablehnung trägt. Keine Regel der Kategorie TIMEREPORT greift hier; sie könnte an diesen Fällen
  * auch nichts ändern, denn die Prüfung des Status kommt vor ihr.
@@ -66,8 +67,8 @@ class TimereportAuthorizationWriteTest {
     }
 
     /**
-     * status, owner, manager, supervising people lead → the code of the denial, {@code null} when
-     * writing is allowed.
+     * status, owner, manager, supervising people lead, admin → the code of the denial, {@code null}
+     * when writing is allowed. An admin holds the manager role as well.
      */
     static Stream<Arguments> writeAccess() {
         var cases = new ArrayList<Arguments>();
@@ -75,8 +76,10 @@ class TimereportAuthorizationWriteTest {
             for (var owner : List.of(true, false)) {
                 for (var manager : List.of(true, false)) {
                     for (var supervisingPeopleLead : List.of(true, false)) {
-                        cases.add(Arguments.of(status, owner, manager, supervisingPeopleLead,
-                            expectedDenial(status, owner, manager, supervisingPeopleLead)));
+                        for (var admin : manager ? List.of(true, false) : List.of(false)) {
+                            cases.add(Arguments.of(status, owner, manager, supervisingPeopleLead, admin,
+                                expectedDenial(status, owner, manager, supervisingPeopleLead, admin)));
+                        }
                     }
                 }
             }
@@ -84,22 +87,23 @@ class TimereportAuthorizationWriteTest {
         return cases.stream();
     }
 
-    private static ErrorCode expectedDenial(String status, boolean owner, boolean manager, boolean supervisingPeopleLead) {
+    private static ErrorCode expectedDenial(String status, boolean owner, boolean manager, boolean supervisingPeopleLead,
+                                            boolean admin) {
         return switch (status) {
             case TIMEREPORT_STATUS_OPEN -> owner || manager ? null : TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
             case TIMEREPORT_STATUS_COMMITED -> !manager && !supervisingPeopleLead ? TR_COMMITTED_TIME_REPORT_REQ_MANAGER
                 : owner ? TR_COMMITTED_TIME_REPORT_NOT_SELF
                 : null;
-            case TIMEREPORT_STATUS_CLOSED -> manager && !owner ? null : TR_CLOSED_TIME_REPORT_REQ_MANAGER;
+            case TIMEREPORT_STATUS_CLOSED -> admin && !owner ? null : TR_CLOSED_TIME_REPORT_REQ_ADMIN;
             default -> throw new IllegalArgumentException(status);
         };
     }
 
-    @ParameterizedTest(name = "{0}, owner {1}, manager {2}, supervising people lead {3} -> {4}")
+    @ParameterizedTest(name = "{0}, owner {1}, manager {2}, supervising people lead {3}, admin {4} -> {5}")
     @MethodSource("writeAccess")
     void checkAuthorizedDecidesByStatusAndWhoAsks(String status, boolean owner, boolean manager,
-                                                  boolean supervisingPeopleLead, ErrorCode expectedDenial) {
-        loggedInAs(owner, manager, supervisingPeopleLead);
+                                                  boolean supervisingPeopleLead, boolean admin, ErrorCode expectedDenial) {
+        loggedInAs(owner, manager, supervisingPeopleLead, admin);
 
         var denial = catchThrowableOfType(AuthorizationException.class,
             () -> timereportAuthorization.checkAuthorized(List.of(timereport(status)), AccessLevel.WRITE));
@@ -112,11 +116,11 @@ class TimereportAuthorizationWriteTest {
         }
     }
 
-    @ParameterizedTest(name = "{0}, owner {1}, manager {2}, supervising people lead {3} -> {4}")
+    @ParameterizedTest(name = "{0}, owner {1}, manager {2}, supervising people lead {3}, admin {4} -> {5}")
     @MethodSource("writeAccess")
     void deletingIsDecidedTheSameWay(String status, boolean owner, boolean manager,
-                                     boolean supervisingPeopleLead, ErrorCode expectedDenial) {
-        loggedInAs(owner, manager, supervisingPeopleLead);
+                                     boolean supervisingPeopleLead, boolean admin, ErrorCode expectedDenial) {
+        loggedInAs(owner, manager, supervisingPeopleLead, admin);
 
         var check = assertThatCode(() -> timereportAuthorization.checkAuthorized(List.of(timereport(status)), AccessLevel.DELETE));
 
@@ -128,11 +132,11 @@ class TimereportAuthorizationWriteTest {
     }
 
     /** Die Frage ohne Buchung beantwortet {@code isWriteAllowed} genau so, wie {@code checkAuthorized} sie mit Buchung beantwortet (#760). */
-    @ParameterizedTest(name = "{0}, owner {1}, manager {2}, supervising people lead {3} -> {4}")
+    @ParameterizedTest(name = "{0}, owner {1}, manager {2}, supervising people lead {3}, admin {4} -> {5}")
     @MethodSource("writeAccess")
     void isWriteAllowedAgreesWithCheckAuthorized(String status, boolean owner, boolean manager,
-                                                 boolean supervisingPeopleLead, ErrorCode expectedDenial) {
-        loggedInAs(owner, manager, supervisingPeopleLead);
+                                                 boolean supervisingPeopleLead, boolean admin, ErrorCode expectedDenial) {
+        loggedInAs(owner, manager, supervisingPeopleLead, admin);
 
         var checkPasses = catchThrowableOfType(AuthorizationException.class,
             () -> timereportAuthorization.checkAuthorized(List.of(timereport(status)), AccessLevel.WRITE)) == null;
@@ -142,7 +146,7 @@ class TimereportAuthorizationWriteTest {
             .isEqualTo(expectedDenial == null);
     }
 
-    private void loggedInAs(boolean owner, boolean manager, boolean supervisingPeopleLead) {
+    private void loggedInAs(boolean owner, boolean manager, boolean supervisingPeopleLead, boolean admin) {
         var sign = owner ? OWNER : supervisingPeopleLead ? PEOPLE_LEAD : SOMEBODY_ELSE;
         if (owner && supervisingPeopleLead) {
             // one person as owner and supervisor of the same contract
@@ -151,6 +155,7 @@ class TimereportAuthorizationWriteTest {
         lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(sign);
         lenient().when(authorizedUser.getLoginSign()).thenReturn(sign);
         lenient().when(authorizedUser.isManager()).thenReturn(manager);
+        lenient().when(authorizedUser.isAdmin()).thenReturn(admin);
         lenient().when(authorizedUser.isPeopleLead()).thenReturn(manager || supervisingPeopleLead);
     }
 

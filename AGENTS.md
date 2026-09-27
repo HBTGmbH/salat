@@ -1143,6 +1143,11 @@ Two stacked layers provide defence in depth — **both spelled `@Authorized`** (
   - `MANAGER` — general manager (`status=bl`) plus `ADMIN`; can manage contracts, orders, and time reports for everyone
   - `ADMIN` — system administrators (`status=adm`); full access; only role that is NOT an employee
   - A "regular employee" is someone with `BACKOFFICE` but not `PEOPLE_LEAD` or `MANAGER` — they can only view their own data.
+- **Writing follows the period the day lies in** (#1164), for bookings and for the working day
+  (start, break, „Nicht gearbeitet") alike: open — the person and `MANAGER`; released — `MANAGER`
+  and the supervising `PEOPLE_LEAD`, never the person themselves; accepted — only `ADMIN`, everyone
+  else reopens the period first. The rule lives in `TimereportAuthorization` with `ReportPeriod`;
+  a view offers creating or editing only where that rule lets the save through, decided per day.
 
 ### Ein Ereignis-Listener entscheidet über keinen HTTP-Status (#1054)
 

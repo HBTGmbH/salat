@@ -381,6 +381,8 @@ public class TimereportController {
 
             // seed workingday start time for all serial days when not yet set
             if (!isEdit) {
+                // refused before seeding, so a refused booking leaves no working day behind (#1164)
+                timereportService.checkCreationAllowed(ecId, date);
                 boolean useBegin = beginEndMode && form.getBeginTime() != null;
                 LocalTime beginTime;
                 if (useBegin) {

@@ -7,9 +7,13 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
+import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
+import static org.tb.common.exception.ErrorCode.TR_MOVE_ACCEPTED_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
 
@@ -23,6 +27,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.exception.ErrorCodeException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -51,6 +56,8 @@ class MoveTimereportsServiceTest {
     private EmployeeorderService employeeorderService;
     @Mock
     private EmployeecontractService employeecontractService;
+    @Mock
+    private AuthorizedUser authorizedUser;
 
     private static final long SOURCE_ID = 1L;
     private static final long TARGET_ID = 2L;
@@ -71,6 +78,16 @@ class MoveTimereportsServiceTest {
                 .employeecontractId(ecId)
                 .employeeName(employeeName)
                 .referenceday(date)
+                .build();
+    }
+
+    private TimereportDTO dto(long id, long ecId, String employeeName, LocalDate date, String status) {
+        return TimereportDTO.builder()
+                .id(id)
+                .employeecontractId(ecId)
+                .employeeName(employeeName)
+                .referenceday(date)
+                .status(status)
                 .build();
     }
 
@@ -134,6 +151,74 @@ class MoveTimereportsServiceTest {
             var preview = classUnderTest.preview(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
 
             assertThat(preview.timereports()).isEmpty();
+        }
+    }
+
+    /**
+     * Nach der Abnahme ändert nur noch ein Admin eine Buchung (#1164) — auch ihren Unterauftrag. Das Verschieben
+     * überspringt die Prüfung am Status und fragt deshalb selbst.
+     */
+    @Nested
+    class Accepted {
+
+        private void rangeWith(TimereportDTO... timereports) {
+            var source = suborder(SOURCE_ID, LocalDate.of(2023, 1, 1), null);
+            var target = suborder(TARGET_ID, LocalDate.of(2024, 1, 1), null);
+            // the preview reads the source, the move only the target
+            lenient().when(suborderDAO.getSuborderById(SOURCE_ID)).thenReturn(source);
+            when(suborderDAO.getSuborderById(TARGET_ID)).thenReturn(target);
+            when(timereportDAO.getTimereportsByDatesAndSuborderId(FROM, TO, SOURCE_ID)).thenReturn(List.of(timereports));
+        }
+
+        @Test
+        void the_preview_names_the_accepted_bookings() {
+            var accepted = dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_CLOSED);
+            rangeWith(accepted, dto(2L, 10L, "Mustermann", LocalDate.of(2024, 1, 11), TIMEREPORT_STATUS_COMMITED));
+            when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
+                .thenReturn(List.of(new Employeeorder()));
+
+            var preview = classUnderTest.preview(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
+
+            assertThat(preview.acceptedTimereports()).containsExactly(accepted);
+        }
+
+        @Test
+        void a_manager_cannot_move_a_range_with_accepted_bookings() {
+            rangeWith(dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_CLOSED));
+            when(authorizedUser.isAdmin()).thenReturn(false);
+
+            assertThatThrownBy(() -> classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO))
+                .isInstanceOf(ErrorCodeException.class)
+                .satisfies(ex -> assertThat(((ErrorCodeException) ex).getMessages())
+                    .anyMatch(m -> m.getErrorCode() == TR_MOVE_ACCEPTED_REQ_ADMIN));
+            verify(timereportService, never()).updateTimereport(anyLong(), anyLong(), anyLong(), any(), any(),
+                anyBoolean(), anyLong(), anyLong(), anyBoolean());
+            verify(employeeorderService, never()).create(any());
+        }
+
+        @Test
+        void a_manager_still_moves_released_bookings() {
+            rangeWith(dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_COMMITED));
+            when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
+                .thenReturn(List.of(employeeorderWithId(99L)));
+
+            classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
+
+            verify(timereportService).updateTimereport(eq(1L), eq(10L), eq(99L), any(), any(),
+                anyBoolean(), anyLong(), anyLong(), eq(true));
+        }
+
+        @Test
+        void an_admin_moves_accepted_bookings() {
+            rangeWith(dto(1L, 10L, "Mustermann", LocalDate.of(2024, 1, 10), TIMEREPORT_STATUS_CLOSED));
+            when(authorizedUser.isAdmin()).thenReturn(true);
+            when(employeeorderDAO.getEmployeeOrdersByEmployeeContractIdAndSuborderId(10L, TARGET_ID))
+                .thenReturn(List.of(employeeorderWithId(99L)));
+
+            classUnderTest.move(SOURCE_ID, TARGET_ID, List.of(), FROM, TO);
+
+            verify(timereportService).updateTimereport(eq(1L), eq(10L), eq(99L), any(), any(),
+                anyBoolean(), anyLong(), anyLong(), eq(true));
         }
     }
 

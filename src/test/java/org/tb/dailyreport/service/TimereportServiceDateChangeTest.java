@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
-import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_MANAGER;
+import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 
@@ -73,6 +73,7 @@ class TimereportServiceDateChangeTest {
   private static final long EMPLOYEE_ORDER_ID = 2L;
   private static final String OWNER = EmployeeTestUtils.TESTY_SIGN;
   private static final String MANAGER = EmployeeTestUtils.BOSS_SIGN;
+  private static final String ADMIN = "adm";
 
   // the year must lie within one of the current year, otherwise the booking is rejected for that
   private static final int YEAR = Year.now().getValue();
@@ -147,6 +148,23 @@ class TimereportServiceDateChangeTest {
     when(timereportRepository.save(any())).thenAnswer(call -> call.getArgument(0));
   }
 
+  /** Das Formular fragt vor dem Anlegen des Arbeitstags, mit der Ablehnung, die das Speichern gäbe (#1164). */
+  @Test
+  void creating_in_the_released_period_is_refused_before_anything_is_prepared() {
+    actingAsOwner();
+
+    assertThatThrownBy(() -> timereportService.checkCreationAllowed(EMPLOYEE_CONTRACT_ID, RELEASED_DAY))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(TR_COMMITTED_TIME_REPORT_REQ_MANAGER.getCode());
+  }
+
+  @Test
+  void creating_in_the_open_period_passes_the_check() {
+    actingAsOwner();
+
+    timereportService.checkCreationAllowed(EMPLOYEE_CONTRACT_ID, OPEN_DAY);
+  }
+
   @Test
   void a_person_moving_their_open_booking_into_the_released_period_is_refused_as_on_creation() {
     givenBooking(OPEN_DAY, TIMEREPORT_STATUS_OPEN);
@@ -182,7 +200,7 @@ class TimereportServiceDateChangeTest {
     assertThatThrownBy(() -> moveTo(ACCEPTED_DAY))
         .isInstanceOf(AuthorizationException.class)
         .hasMessage(refusalOnCreation(ACCEPTED_DAY))
-        .hasMessageContaining(TR_CLOSED_TIME_REPORT_REQ_MANAGER.getCode());
+        .hasMessageContaining(TR_CLOSED_TIME_REPORT_REQ_ADMIN.getCode());
 
     verify(timereportRepository, never()).save(any());
   }
@@ -201,9 +219,9 @@ class TimereportServiceDateChangeTest {
   }
 
   @Test
-  void a_manager_moving_an_accepted_booking_into_the_open_period_opens_it() {
+  void an_admin_moving_an_accepted_booking_into_the_open_period_opens_it() {
     var timereport = givenBooking(ACCEPTED_DAY, TIMEREPORT_STATUS_CLOSED);
-    actingAsManager();
+    actingAsAdmin();
 
     moveTo(OPEN_DAY);
 
@@ -218,9 +236,9 @@ class TimereportServiceDateChangeTest {
   }
 
   @Test
-  void a_manager_moving_an_accepted_booking_into_the_released_period_keeps_only_the_release() {
+  void an_admin_moving_an_accepted_booking_into_the_released_period_keeps_only_the_release() {
     var timereport = givenBooking(ACCEPTED_DAY, TIMEREPORT_STATUS_CLOSED);
-    actingAsManager();
+    actingAsAdmin();
 
     moveTo(RELEASED_DAY);
 
@@ -232,19 +250,42 @@ class TimereportServiceDateChangeTest {
   }
 
   @Test
-  void a_manager_moving_an_open_booking_into_the_accepted_period_closes_it() {
+  void an_admin_moving_an_open_booking_into_the_accepted_period_closes_it() {
     var timereport = givenBooking(OPEN_DAY, TIMEREPORT_STATUS_OPEN);
-    actingAsManager();
+    actingAsAdmin();
 
     moveTo(ACCEPTED_DAY);
 
     assertThat(timereport.getStatus()).isEqualTo(TIMEREPORT_STATUS_CLOSED);
   }
 
+  /** Nach der Abnahme ändert nur noch ein Admin; alle anderen öffnen den Zeitraum erst wieder (#1164). */
   @Test
-  void a_manager_moving_a_booking_within_the_same_period_changes_nothing_but_the_day() {
-    var timereport = givenBooking(ACCEPTED_DAY, TIMEREPORT_STATUS_CLOSED);
+  void a_manager_cannot_move_an_open_booking_into_the_accepted_period() {
+    givenBooking(OPEN_DAY, TIMEREPORT_STATUS_OPEN);
     actingAsManager();
+
+    assertThatThrownBy(() -> moveTo(ACCEPTED_DAY))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(TR_CLOSED_TIME_REPORT_REQ_ADMIN.getCode());
+    verify(timereportRepository, never()).save(any());
+  }
+
+  @Test
+  void a_manager_cannot_move_an_accepted_booking_out_of_the_accepted_period() {
+    givenBooking(ACCEPTED_DAY, TIMEREPORT_STATUS_CLOSED);
+    actingAsManager();
+
+    assertThatThrownBy(() -> moveTo(OPEN_DAY))
+        .isInstanceOf(AuthorizationException.class)
+        .hasMessageContaining(TR_CLOSED_TIME_REPORT_REQ_ADMIN.getCode());
+    verify(timereportRepository, never()).save(any());
+  }
+
+  @Test
+  void an_admin_moving_a_booking_within_the_same_period_changes_nothing_but_the_day() {
+    var timereport = givenBooking(ACCEPTED_DAY, TIMEREPORT_STATUS_CLOSED);
+    actingAsAdmin();
 
     moveTo(OTHER_ACCEPTED_DAY);
 
@@ -347,6 +388,12 @@ class TimereportServiceDateChangeTest {
   private void actingAsManager() {
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(MANAGER);
     when(authorizedUser.isManager()).thenReturn(true);
+  }
+
+  private void actingAsAdmin() {
+    when(authorizedUser.getEffectiveLoginSign()).thenReturn(ADMIN);
+    when(authorizedUser.isManager()).thenReturn(true);
+    when(authorizedUser.isAdmin()).thenReturn(true);
   }
 
   /** what creating a booking on that day answers the same person */

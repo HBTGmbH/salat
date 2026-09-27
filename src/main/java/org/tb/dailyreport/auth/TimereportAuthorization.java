@@ -8,11 +8,12 @@ import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.GlobalConstants.YESNO_YES;
 import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
-import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_MANAGER;
+import static org.tb.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static org.tb.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 import static org.tb.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.ErrorCode;
+import org.tb.dailyreport.domain.ReportPeriod;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.employee.domain.Employeecontract;
 
@@ -62,7 +64,7 @@ public class TimereportAuthorization {
     if(accessLevel == DELETE || accessLevel == AccessLevel.WRITE) {
       // write allowance depends on timereport status
       if(TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus())) {
-        return authorizedUser.isManager() && !isOwner;
+        return authorizedUser.isAdmin() && !isOwner;
       }
       if(TIMEREPORT_STATUS_COMMITED.equals(timereport.getStatus())) {
         return !isOwner && (
@@ -132,7 +134,7 @@ public class TimereportAuthorization {
    * <p>Es ist die Vorprüfung nach dem Status, die {@link #checkAuthorized} selbst aufruft, keine
    * Kopie davon: offene Buchungen schreiben die Person selbst und die Geschäftsführung, freigegebene
    * die Geschäftsführung und die zuständige People Lead, aber nie die Person selbst, abgenommene nur
-   * die Geschäftsführung, und auch sie nicht die eigenen. Besteht eine Buchung mit einem dieser drei
+   * noch ein Admin (#1164) — alle anderen öffnen den Zeitraum erst wieder. Besteht eine Buchung mit einem dieser drei
    * Status die Vorprüfung, lässt {@link #isAuthorized} sie über seine ausdrücklichen Zweige ebenfalls
    * zu, und keine Regel ändert daran noch etwas — die Antwort ist dieselbe wie die von
    * {@code checkAuthorized}.
@@ -141,11 +143,25 @@ public class TimereportAuthorization {
     return writeDenial(contract, status).isEmpty();
   }
 
+  /**
+   * Dieselbe Frage für einen Tag statt für einen Status: der Status ist der, den eine Buchung an
+   * diesem Tag bekäme ({@link ReportPeriod}). So beantworten Tagesansicht und Liste je Tag, ob sie
+   * Anlegen und den Arbeitstag anbieten, und der Arbeitstag folgt beim Speichern derselben Regel
+   * wie die Buchungen seines Tages (#1164).
+   */
+  public boolean isWriteAllowedOn(Employeecontract contract, LocalDate day) {
+    return writeDenialOn(contract, day).isEmpty();
+  }
+
+  public Optional<ErrorCode> writeDenialOn(Employeecontract contract, LocalDate day) {
+    return writeDenial(contract, ReportPeriod.statusOn(contract, day));
+  }
+
   private Optional<ErrorCode> writeDenial(Employeecontract contract, String status) {
     var isOwner = Objects.equals(authorizedUser.getEffectiveLoginSign(), contract.getEmployee().getSalatUser().getLoginname());
     if(TIMEREPORT_STATUS_CLOSED.equals(status) &&
-       (!authorizedUser.isManager() || isOwner)) {
-      return Optional.of(TR_CLOSED_TIME_REPORT_REQ_MANAGER);
+       (!authorizedUser.isAdmin() || isOwner)) {
+      return Optional.of(TR_CLOSED_TIME_REPORT_REQ_ADMIN);
     }
     if(TIMEREPORT_STATUS_COMMITED.equals(status) &&
        !authorizedUser.isManager() &&

@@ -1,6 +1,7 @@
 package org.tb.dailyreport.service;
 
 import static org.tb.common.exception.ErrorCode.SO_NOT_FOUND;
+import static org.tb.common.exception.ErrorCode.TR_MOVE_ACCEPTED_REQ_ADMIN;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_DATE_RANGE_OUTSIDE_TARGET;
 import static org.tb.common.exception.ErrorCode.TR_MOVE_SOURCE_TARGET_SAME;
 
@@ -16,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
+import org.tb.auth.domain.AuthorizedUser;
 import org.tb.common.LocalDateRange;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.persistence.TimereportDAO;
@@ -40,6 +43,7 @@ public class MoveTimereportsService {
   private final EmployeeorderDAO employeeorderDAO;
   private final EmployeeorderService employeeorderService;
   private final EmployeecontractService employeecontractService;
+  private final AuthorizedUser authorizedUser;
 
   @Transactional(readOnly = true)
   public MoveTimereportsPreview preview(
@@ -54,7 +58,8 @@ public class MoveTimereportsService {
     var byContract = groupByContract(timereports);
     var newOrders = computeNewEmployeeOrders(byContract, targetSuborderId, targetSuborder);
 
-    return new MoveTimereportsPreview(timereports, newOrders, sourceSuborder, targetSuborder, fromDate, toDate);
+    return new MoveTimereportsPreview(timereports, newOrders, sourceSuborder, targetSuborder, fromDate, toDate,
+        mayMove(timereports));
   }
 
   public void move(
@@ -65,6 +70,9 @@ public class MoveTimereportsService {
     validate(sourceSuborderId, targetSuborderId, targetSuborder, fromDate, toDate);
 
     var timereports = loadTimereports(sourceSuborderId, employeeContractIds, fromDate, toDate);
+    if (!mayMove(timereports)) {
+      throw new AuthorizationException(TR_MOVE_ACCEPTED_REQ_ADMIN);
+    }
     var byContract = groupByContract(timereports);
 
     // Build or find employee orders on target suborder, keyed by employeeContractId
@@ -93,6 +101,15 @@ public class MoveTimereportsService {
           dto.getDurationminutes(),
           true);
     }
+  }
+
+  /**
+   * The move is forced past the status check of each booking, which is what lets a manager move
+   * released bookings of everybody. Accepted ones only an admin changes (#1164), so the move asks
+   * that itself — before it creates a single employee order.
+   */
+  private boolean mayMove(List<TimereportDTO> timereports) {
+    return timereports.stream().noneMatch(MoveTimereportsPreview::isAccepted) || authorizedUser.isAdmin();
   }
 
   private void validate(long sourceSuborderId, long targetSuborderId,

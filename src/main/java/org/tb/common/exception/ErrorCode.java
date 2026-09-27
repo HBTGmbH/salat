@@ -68,7 +68,7 @@ public enum ErrorCode {
   TR_DURATION_MINUTES_INVALID("TR-0007","durationMinutes must be 0 at minimum"),
   TR_DURATION_INVALID("TR-0008","At least one of durationHours and durationMinutes must be greater than 0"),
   TR_SEQUENCE_NUMBER_ALREADY_SET("TR-0011","sequencenumber already set on timereport"),
-  TR_CLOSED_TIME_REPORT_REQ_MANAGER("TR-0012","closed time reports can only be saved by managers."),
+  TR_CLOSED_TIME_REPORT_REQ_ADMIN("TR-0012","closed time reports can only be saved by admins; reopen the period first."),
   TR_COMMITTED_TIME_REPORT_REQ_MANAGER("TR-0013","committed time reports can only be saved by managers."),
   TR_OPEN_TIME_REPORT_REQ_EMPLOYEE("TR-0014","open time reports can only be saved by the employee herself."),
   TR_MONTH_BUDGET_EXCEEDED("TR-0015","debit minutes of employee order exceeded for month"),
@@ -100,6 +100,7 @@ public enum ErrorCode {
   TR_BOOKING_OF_OTHER_EMPLOYEE("TR-0043", "the booking belongs to another employee than the selected contract"),
   TR_BOOKING_ORDER_CONTRADICTS_SIGN("TR-0044", "the employee order id and the suborder sign of the booking contradict each other"),
   TR_CSV_LINE_REJECTED("TR-0045", "a line of the uploaded CSV file names a booking that cannot be assigned"),
+  TR_MOVE_ACCEPTED_REQ_ADMIN("TR-0046", "the range contains accepted time reports, which only admins may move"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
@@ -125,6 +126,9 @@ public enum ErrorCode {
   WD_DELETE_REQ_EMPLOYEE_OR_MANAGER("WD-0012", "you can only delete your own working days or you must be a manager!"),
   WD_READ_REQ_EMPLOYEE_OR_MANAGER("WD-0013", "you can only read your own working days or you must be a manager!"),
   WD_DAY_LENGTH_TOO_LONG("WD-0014", "standby and working time together must not exceed 24 hours per day!"),
+  WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER("WD-0015", "in the released period only people leads and managers may change the working day"),
+  WD_COMMITTED_NOT_SELF("WD-0016", "the own working day cannot be changed in the released period"),
+  WD_CLOSED_REQ_ADMIN("WD-0017", "in the accepted period only admins may change the working day; reopen the period first"),
 
   ETL_INVALID_DATE_RANGE("ETL-0001", "etl definition executed with invalid date range"),
   ETL_RUN_ALREADY_RUNNING("ETL-0002", "an etl run is already running"),

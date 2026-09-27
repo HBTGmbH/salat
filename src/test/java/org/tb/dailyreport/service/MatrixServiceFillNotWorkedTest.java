@@ -307,6 +307,21 @@ class MatrixServiceFillNotWorkedTest {
     }
   }
 
+  /**
+   * Freigegeben bis Freitag, den 13.: die Person darf dort keinen Arbeitstag mehr schreiben (#1164).
+   * „Rest nicht gearbeitet" nimmt deshalb nur die Tage danach, statt mitten im Monat abzubrechen.
+   */
+  @Test
+  void takes_only_the_days_after_the_release_in_a_partly_released_month() {
+    contract.setReportReleaseDate(day(13));
+    contract = employeecontractRepository.save(contract);
+
+    fillNotWorked();
+
+    assertThat(notWorkedDays()).startsWith(day(16)).endsWith(day(31)).hasSize(12);
+    assertThat(storedDays()).noneMatch(day -> !day.isAfter(day(13)));
+  }
+
   @Test
   void the_management_may_fill_the_month_of_someone_else() {
     logInAs("gf" + PERSONS.incrementAndGet(), "ROLE_MANAGER");

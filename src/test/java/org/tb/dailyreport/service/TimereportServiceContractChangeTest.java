@@ -136,9 +136,11 @@ class TimereportServiceContractChangeTest {
     });
     when(timereportRepository.save(any())).thenAnswer(call -> call.getArgument(0));
 
-    // a manager who is not the booked person, so every status may be written
+    // an admin who is not the booked person, so every status may be written - accepted ones only an
+    // admin writes (#1164)
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(EmployeeTestUtils.BOSS_SIGN);
     when(authorizedUser.isManager()).thenReturn(true);
+    when(authorizedUser.isAdmin()).thenReturn(true);
   }
 
   @Test

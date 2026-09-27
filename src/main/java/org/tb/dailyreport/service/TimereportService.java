@@ -20,7 +20,6 @@ import static org.tb.common.GlobalConstants.NINE_HOURS_IN_MINUTES;
 import static org.tb.common.GlobalConstants.SIX_HOURS_IN_MINUTES;
 import static org.tb.common.GlobalConstants.TICKET_REFERENCE_MAX_LENGTH;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_CLOSED;
-import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_COMMITED;
 import static org.tb.common.GlobalConstants.TIMEREPORT_STATUS_OPEN;
 import static org.tb.common.LocalDateRange.FINIT_FROM_BOUNDARY;
 import static org.tb.common.LocalDateRange.FINIT_UNTIL_BOUNDARY;
@@ -98,6 +97,7 @@ import org.tb.dailyreport.domain.PreviousBooking;
 import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.RecentBooking;
 import org.tb.dailyreport.domain.Referenceday;
+import org.tb.dailyreport.domain.ReportPeriod;
 import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.Workingday;
@@ -177,6 +177,21 @@ public class TimereportService {
     }
 
     checkAndSaveTimereports(timereportsToSave);
+  }
+
+  /**
+   * Refuses a booking on this day before anything is prepared for it, with the refusal saving would
+   * give. The booking form seeds the working day of every serial day first, each in a transaction of
+   * its own (#1111); on a released or accepted day that seeding is refused as well, but its message
+   * speaks of the working day instead of the booking somebody tried to create (#1164).
+   */
+  @Transactional(readOnly = true)
+  public void checkCreationAllowed(long employeeContractId, LocalDate referenceDay) {
+    Employeecontract employeecontract = employeecontractDAO.getEmployeecontractById(employeeContractId);
+    DataValidationUtils.notNull(employeecontract, TR_EMPLOYEE_CONTRACT_NOT_FOUND);
+    timereportAuthorization.writeDenialOn(employeecontract, referenceDay).ifPresent(denial -> {
+      throw new AuthorizationException(denial);
+    });
   }
 
   public void updateTimereport(long timereportId, long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
@@ -448,18 +463,7 @@ public class TimereportService {
    * drops both when it reopens a booking. A new booking carries neither.
    */
   private void setStatus(Timereport timereport) {
-    LocalDate acceptanceDate = timereport.getEmployeecontract().getReportAcceptanceDate();
-    LocalDate releaseDate = timereport.getEmployeecontract().getReportReleaseDate();
-
-    if(acceptanceDate != null && !acceptanceDate.isBefore(timereport.getReferenceday().getRefdate())) {
-      // timereports created within the period of accepted reports will automatically get the closed status
-      timereport.setStatus(TIMEREPORT_STATUS_CLOSED);
-    } else if(releaseDate != null && !releaseDate.isBefore(timereport.getReferenceday().getRefdate())) {
-      // timereports created within the period of released reports will automatically get the committed status
-      timereport.setStatus(TIMEREPORT_STATUS_COMMITED);
-    } else {
-      timereport.setStatus(TIMEREPORT_STATUS_OPEN);
-    }
+    timereport.setStatus(ReportPeriod.statusOn(timereport.getEmployeecontract(), timereport.getReferenceday().getRefdate()));
 
     if (!TIMEREPORT_STATUS_CLOSED.equals(timereport.getStatus())) {
       timereport.setAcceptedby(null);

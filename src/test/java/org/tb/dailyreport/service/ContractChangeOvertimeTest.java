@@ -137,9 +137,11 @@ class ContractChangeOvertimeTest {
 
   @BeforeEach
   void setUp() {
-    // a manager who is not the booked person, so every status may be written
+    // an admin who is not the booked person, so every status may be written - accepted ones only an
+    // admin writes (#1164)
     when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(authorizedUser.isManager()).thenReturn(true);
+    when(authorizedUser.isAdmin()).thenReturn(true);
     when(authorizedUser.getLoginSign()).thenReturn(EmployeeTestUtils.BOSS_SIGN);
     when(authorizedUser.getEffectiveLoginSign()).thenReturn(EmployeeTestUtils.BOSS_SIGN);
 
