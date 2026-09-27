@@ -118,12 +118,26 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
 - **Was sie anbietet, liest sie aus der gerenderten Seite**, statt eine zweite Liste zu führen: die
   Navigation aus `#sidebar-menu .dropdown-item[href]`, die Einstellungen aus den Bedienelementen
   mit `data-palette-command` (Moduswechsel und Einstellungsseite in der Kopfzeile, der Faltknopf
-  der Sidebar). Die Rollenfrage beantwortet damit allein die Sidebar; eine
+  der Sidebar, die Tastenkürzel im Fuß). Die Rollenfrage beantwortet damit allein die Sidebar; eine
   Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein Element der Seite das bessere
   Ziel kennt, verweist der Sidebar-Eintrag mit `data-palette-href-from` darauf.
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag
   des Servers, nicht der des Browsers: der Dialog trägt Zeitpunkt und Zeitzone des Servers
   (`data-now`, `data-time-zone`), und die Uhr des Browsers zählt von dort weiter.
+
+## Tastenkürzel (#1016)
+
+Neben `Ctrl+K` gibt es `?` (Übersicht aller Kürzel), `i` (Neue Buchung, dasselbe Ziel wie der
+Knopf in der Kopfzeile) und `Ctrl+Enter` / `⌘Enter` (speichert das Formular über seinen Knopf mit
+`data-submit-shortcut`, heute das Buchungsformular). Das Verhalten steht in `static/js/salat.js`.
+
+- **Jedes Kürzel steht in der Übersicht** (`fragments/shortcut-help.html`). Ein Kürzel, das dort
+  fehlt, findet niemand.
+- **Eine Einzeltaste wirkt nur ohne Fokus in einem Eingabefeld** und ohne offenen Dialog — dort ist
+  sie Text.
+- **Keine Kombination, die Browser oder System für sich behalten** (`Ctrl+T`, `Ctrl+W`, `Ctrl+N`;
+  `Ctrl+M` minimiert je nach System das Fenster). Auf macOS gilt `⌘` statt `Ctrl`, und die andere
+  Belegung bleibt frei; die Beschriftung setzt `data-platform-label`.
 
 ## Farben und Kontrast (→ ADR-0025)
 

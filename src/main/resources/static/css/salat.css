@@ -1109,10 +1109,32 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 /* Tablers kbd traegt --tblr-secondary-color auf --tblr-code-bg und kommt hell auf 2,84:1. Die
    Tastenbeschriftung ist Text, also die Schriftfarbe. */
 .command-palette-footer kbd,
-.command-palette-trigger kbd {
+.command-palette-trigger kbd,
+.shortcut-help kbd {
   padding: .0625rem .375rem;
   font-size: .75rem;
   color: var(--tblr-body-color);
+}
+
+/* ===== Uebersicht der Tastenkuerzel (#1016) =====
+   Tasten links, Bedeutung rechts. Die linke Spalte ist in allen Gruppen gleich breit - so breit wie
+   die laengste Kombination (Shift ↑ ↓) -, damit die Bedeutungen untereinander stehen. */
+.shortcut-list {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: .5rem 1.25rem;
+  align-items: baseline;
+  margin-bottom: .75rem;
+}
+
+.shortcut-list dt {
+  margin: 0;
+  font-weight: var(--tblr-font-weight-normal);
+  white-space: nowrap;
+}
+
+.shortcut-list dd {
+  margin: 0;
 }
 
 /* Auf dem Telefon ueber die ganze Breite und oben angeschlagen, damit die Bildschirmtastatur die

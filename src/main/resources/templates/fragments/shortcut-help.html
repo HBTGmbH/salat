@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Die Uebersicht der Tastenkuerzel (#1016). Sie liegt einmal in layout/base.html und oeffnet
+       mit ? (ohne Fokus in einem Eingabefeld), ueber den Eintrag im Fuss und aus der
+       Befehlspalette; das Verhalten steht in salat.js. Ein Kuerzel, das dazukommt, gehoert hier
+       hinein - eine Tastenbelegung, die niemand findet, gibt es nicht.
+
+       Ein Bootstrap-Modal wie die uebrigen Dialoge: anders als die Palette muss es keine Eingabe
+       annehmen, bevor es eingeblendet ist. Die Beschriftung der Sondertasten setzt salat.js je nach
+       System (data-platform-label: Ctrl oder ⌘, Alt oder ⌥, Shift oder ⇧). */-->
+<div th:fragment="shortcutHelp"
+     class="modal modal-blur fade shortcut-help" id="shortcutHelp" tabindex="-1" role="dialog"
+     aria-labelledby="shortcutHelpTitle" aria-hidden="true"
+     th:with="ctrl=#{main.shortcuts.key.ctrl}, ctrlMac=#{main.shortcuts.key.ctrl.mac},
+              shift=#{main.shortcuts.key.shift}, shiftMac=#{main.shortcuts.key.shift.mac},
+              alt=#{main.shortcuts.key.alt}, altMac=#{main.shortcuts.key.alt.mac}">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="shortcutHelpTitle" th:text="#{main.shortcuts.title}">Tastenkürzel</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" th:aria-label="#{main.button.close}"></button>
+      </div>
+      <div class="modal-body">
+
+        <h3 class="subheader mb-2" th:text="#{main.shortcuts.group.everywhere}">Überall</h3>
+        <dl class="shortcut-list">
+          <dt><kbd data-platform-label th:data-label="${ctrl}" th:data-label-mac="${ctrlMac}" th:text="${ctrl}">Ctrl</kbd> <kbd>K</kbd></dt>
+          <dd th:text="#{main.shortcuts.palette.open}">Befehlspalette</dd>
+          <dt><kbd>?</kbd></dt>
+          <dd th:text="#{main.shortcuts.help}">Diese Übersicht</dd>
+          <dt><kbd>i</kbd></dt>
+          <dd th:text="#{main.shortcuts.newbooking}">Neue Buchung</dd>
+        </dl>
+        <p class="text-secondary small" th:text="#{main.shortcuts.singlekeys}">? und i wirken nur ohne Fokus in einem Eingabefeld.</p>
+
+        <h3 class="subheader mt-4 mb-2" th:text="#{main.shortcuts.group.palette}">In der Befehlspalette</h3>
+        <dl class="shortcut-list">
+          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt>
+          <dd th:text="#{main.shortcuts.palette.select}">Treffer wählen</dd>
+          <dt><kbd>↵</kbd></dt>
+          <dd th:text="#{main.shortcuts.palette.run}">Ausführen</dd>
+          <dt><kbd>Esc</kbd></dt>
+          <dd th:text="#{main.shortcuts.palette.close}">Schließen</dd>
+        </dl>
+
+        <h3 class="subheader mt-4 mb-2" th:text="#{main.shortcuts.group.form}">Im Buchungsformular</h3>
+        <dl class="shortcut-list">
+          <dt><kbd data-platform-label th:data-label="${ctrl}" th:data-label-mac="${ctrlMac}" th:text="${ctrl}">Ctrl</kbd> <kbd>↵</kbd></dt>
+          <dd th:text="#{main.shortcuts.form.save}">Speichern</dd>
+        </dl>
+
+        <h3 class="subheader mt-4 mb-2" th:text="#{main.shortcuts.group.time}">In Zeitfeldern</h3>
+        <dl class="shortcut-list">
+          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt>
+          <dd th:text="#{main.shortcuts.time.step}">Ein Schritt</dd>
+          <dt><kbd data-platform-label th:data-label="${shift}" th:data-label-mac="${shiftMac}" th:text="${shift}">Shift</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt>
+          <dd th:text="#{main.shortcuts.time.hour}">Eine Stunde</dd>
+          <dt><kbd data-platform-label th:data-label="${alt}" th:data-label-mac="${altMac}" th:text="${alt}">Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt>
+          <dd th:text="#{main.shortcuts.time.minute}">Eine Minute</dd>
+        </dl>
+        <p class="text-secondary small mb-0" th:text="#{main.shortcuts.time.wheel}">Mausrad wie ↑ und ↓.</p>
+        <!--/* Die Pfeiltasten haengen an der Schnelleingabe (data-time-step, #830); ohne sie sind die
+               Zeitfelder die klassischen. Die Uebersicht sagt das, statt ein Kuerzel zu versprechen,
+               das nicht wirkt. */-->
+        <p class="text-secondary small mt-2 mb-0" th:unless="${@betaViewHelper.timeInput}">
+          <span th:text="#{main.shortcuts.time.beta}">Die Pfeiltasten gelten mit der Schnelleingabe (Beta).</span>
+          <a th:href="@{/settings} + '#beta'" th:text="#{main.shortcuts.time.beta.link}">In den Einstellungen einschalten</a>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
