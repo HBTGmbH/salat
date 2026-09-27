@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  Freigegeben oder abgenommen, als Schloss an der Ueberschrift von Tag und Monat der Einzeluebersicht
+  (#1164): so ist klar, warum dort (je nach Rolle) nichts mehr geaendert werden kann. Das Schloss
+  allein reicht; was es bedeutet, steht im title und fuer Screenreader im visually-hidden-Text.
+*/-->
+
+<!--/* status: open, commited oder closed - der Zeitraum des Tages (ReportPeriod.statusOn) */-->
+<span th:fragment="dayStatus(status)" th:if="${status == 'commited' or status == 'closed'}" id="daily-report-status"
+      th:with="statusText=${status == 'closed'} ? #{main.daily.period.accepted.text} : #{main.daily.period.released.text}"
+      class="badge bg-secondary-lt ms-2 align-middle" th:title="${statusText}"><i class="ti ti-lock m-0" aria-hidden="true"></i><span
+      class="visually-hidden" th:text="${statusText}">Freigegeben</span></span>
+
+<!--/* period: ReportPeriod.Month. Ein Schloss, auch wenn ein Teil abgenommen und ein Teil freigegeben
+       ist; der Titel nennt beide, und wo eines mitten im Monat endet, seinen letzten Tag. */-->
+<span th:fragment="monthStatus(period)"
+      th:if="${period != null and (period.acceptedUntil != null or period.releasedUntil != null)}" id="list-report-status"
+      th:with="accepted=${period.acceptedUntil == null ? null : (period.acceptedWholeMonth ? #messages.msg('main.daily.period.accepted.text') : #messages.msg('main.daily.period.accepteduntil.text', #temporals.format(period.acceptedUntil, 'dd.MM.')))},
+               released=${period.releasedUntil == null ? null : (period.releasedWholeMonth ? #messages.msg('main.daily.period.released.text') : #messages.msg('main.daily.period.releaseduntil.text', #temporals.format(period.releasedUntil, 'dd.MM.')))},
+               statusText=${accepted != null and released != null ? accepted + ' · ' + released : (accepted != null ? accepted : released)}"
+      class="badge bg-secondary-lt ms-2 align-middle" th:title="${statusText}"><i class="ti ti-lock m-0" aria-hidden="true"></i><span
+      class="visually-hidden" th:text="${statusText}">Abgenommen bis 08.05. · Freigegeben bis 15.05.</span></span>
+
+</body>
+</html>
