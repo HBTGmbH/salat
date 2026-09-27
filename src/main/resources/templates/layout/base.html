@@ -552,7 +552,7 @@
                   <i class="ti ti-search ti-size-3" aria-hidden="true"></i>
                   <span class="d-none d-md-inline ms-1" th:text="#{main.palette.open.text}">Suchen …</span>
                   <span class="d-none d-lg-inline ms-2" aria-hidden="true">
-                    <kbd data-command-palette-shortcut hidden
+                    <kbd data-platform-label hidden
                          th:data-label="#{main.palette.shortcut}"
                          th:data-label-mac="#{main.palette.shortcut.mac}"></kbd>
                   </span>
@@ -563,7 +563,7 @@
                        aria-label, damit der sichtbare Name im zugaenglichen enthalten ist. */-->
                 <a th:unless="${subSection == 'timereports'}" id="header-new-booking"
                    th:with="newBookingTarget=${newBookingUrl ?: '/dailyreport/timereports/new'}"
-                   th:href="@{${newBookingTarget}}"
+                   th:href="@{${newBookingTarget}}" aria-keyshortcuts="i"
                    class="btn btn-success btn-icon px-md-3"
                    th:aria-label="#{main.general.mainmenu.newreport.text}"
                    th:title="#{main.general.mainmenu.newreport.text}">
@@ -705,6 +705,16 @@
         <div class="row text-center align-items-center flex-row-reverse">
           <div class="col-lg-auto ms-lg-auto">
             <ul class="list-inline list-inline-dots mb-0">
+              <!--/* Die Uebersicht der Tastenkuerzel (#1016), sonst nur ueber ? erreichbar. Erst ab md:
+                     darunter gibt es keine Tastatur, fuer die sie gilt. Die Befehlspalette bietet
+                     sie ebenfalls an (data-palette-command). */-->
+              <li class="list-inline-item d-none d-md-inline-block">
+                <button type="button" class="link-secondary border-0 bg-transparent p-0"
+                        data-shortcut-help-open aria-haspopup="dialog" aria-keyshortcuts="?"
+                        data-palette-command="shortcuts"
+                        th:data-palette-keywords="#{main.shortcuts.keywords}"
+                        th:text="#{main.shortcuts.title}">Tastenkürzel</button>
+              </li>
               <li class="list-inline-item"><a th:href="@{/api/doc/swagger-ui/index.html}" target="_blank" class="link-secondary" rel="noopener">API</a></li>
               <li class="list-inline-item" th:if="${not #strings.isEmpty(@salatProperties.docsUrl)}"><a th:with="url=${@salatProperties.docsUrl}" th:href="${url}" target="_blank" class="link-secondary" rel="noopener">Documentation</a></li>
               <li class="list-inline-item"><a href="https://raw.githubusercontent.com/HBTGmbH/salat/refs/heads/main/LICENSE" class="link-secondary">License</a></li>
@@ -763,6 +773,9 @@
 <!--/* Die Befehlspalette (#1155): einmal fuer die ganze Anwendung, geoeffnet mit Ctrl K / ⌘ K oder
        ueber den Eintrag in der Kopfzeile. */-->
 <dialog th:replace="~{fragments/command-palette :: commandPalette}"></dialog>
+
+<!--/* Die Uebersicht der Tastenkuerzel (#1016), geoeffnet mit ? oder ueber den Eintrag im Fuss. */-->
+<div th:replace="~{fragments/shortcut-help :: shortcutHelp}"></div>
 
 <div class="modal modal-blur fade" id="loginSwitchModal" tabindex="-1" role="dialog"
      th:if="${@loginSwitchViewHelper.visible}">

@@ -184,6 +184,29 @@ auf der getönten Zeile (hell 4,10:1) und Tablers `kbd` (hell 2,84:1). Die getö
 gewählten Zeile erreicht gegen die Karte nur 1,18:1 bzw. 1,11:1 — die Markierung trägt deshalb der
 Balken am linken Rand.
 
+### 3.3 Tastenkürzel (#1016)
+
+| Taste | wo | was |
+|---|---|---|
+| `Ctrl K` / `⌘ K` | überall, auch in einem Feld | Befehlspalette ([§3.2](#32-befehlspalette-1155)) |
+| `?` | ohne Fokus in einem Eingabefeld | Übersicht der Tastenkürzel |
+| `i` | ohne Fokus in einem Eingabefeld | Neue Buchung — das Ziel des Knopfs in der Kopfzeile, also mit Tag und Vertrag der Seite; auf dem Buchungsformular, wo der Knopf fehlt, nichts |
+| `Ctrl ↵` / `⌘ ↵` | in einem Feld des Buchungsformulars, auch im Kommentar | Speichern |
+| `↑` `↓`, mit `Shift` bzw. `Alt` | im Zeitfeld mit Schnelleingabe | ein Schritt, eine Stunde, eine Minute ([§6](#6-eingabekomponenten-nach-datentyp)) |
+
+- **Die Übersicht** öffnet mit `?`, über den Eintrag „Tastenkürzel" im Fuß (ab `md`) und aus der
+  Befehlspalette. Sie ist ein Bootstrap-Modal wie die übrigen Dialoge und gibt den Fokus beim
+  Schließen zurück. Die Pfeiltasten im Zeitfeld hängen an der Schnelleingabe (Beta); ist sie aus,
+  sagt die Übersicht das und verweist auf die Einstellungen.
+- **`Ctrl ↵` nimmt mit, was noch getippt wird:** ein Ticket, das erst beim Verlassen des Felds
+  übernommen würde, und eine Dauer, die erst beim Verlassen ins Format kommt. Gespeichert wird über
+  den Knopf „Speichern", also mit derselben Prüfung wie per Klick.
+- **Beschriftung:** `Ctrl`, `Shift`, `Alt` bzw. auf macOS `⌘`, `⇧`, `⌥` (`data-platform-label`).
+
+**Gemessener Kontrast** der Übersicht, hell / dunkel: Titel 17,74 / 14,68, Bedeutung 10,31 /
+11,86, Gruppenkopf und Hinweise 4,83 / 5,78, Tasten 9,37 / 14,33, Verweis auf die Einstellungen
+5,00 / 5,87; der Eintrag im Fuß wie die übrigen Fußlinks 4,63 / 6,99.
+
 ## 4. Seitentypen
 
 ### 4.1 Listenansicht (Standardfall, 12+ Seiten)

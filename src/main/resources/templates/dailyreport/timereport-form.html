@@ -243,7 +243,9 @@
           <!--/* Footer: Save + Cancel. flex-wrap so the buttons stack instead of overflowing once
                  "Speichern und neu" (#843) is in the row as well */-->
           <div class="card-footer d-flex flex-wrap gap-2">
-            <button type="submit" class="btn btn-primary">
+            <!--/* data-submit-shortcut: Ctrl+Enter bzw. ⌘Enter speichert von jedem Feld des
+                   Formulars aus, auch aus dem Kommentar (#1016) */-->
+            <button type="submit" class="btn btn-primary" data-submit-shortcut>
               <i class="ti ti-device-floppy me-1"></i>
               <span th:text="#{main.timereport.form.save}">Speichern</span>
             </button>

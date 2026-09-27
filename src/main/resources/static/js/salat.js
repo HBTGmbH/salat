@@ -812,8 +812,8 @@ focusEntryField();
  *                                       along, and a new menu entry shows up without further ado.
  *   data-palette-href-from              on a sidebar entry: selector of an element whose href wins
  *                                       over the entry's own, where that element is on the page
- *   data-palette-command                on a control of the header or the sidebar: the key a
- *                                       settings command is remembered by. Its accessible name is
+ *   data-palette-command                on a control of the header, the sidebar or the footer:
+ *                                       the key a settings command is remembered by. Its accessible name is
  *                                       the label, clicking it is the action, and it is offered
  *                                       only while displayed.
  *   data-palette-keywords               further words a command is found by
@@ -825,7 +825,9 @@ focusEntryField();
 
 const PALETTE_RECENT_KEY = 'salat-command-palette-recent';
 const PALETTE_RECENT_MAX = 10;
-const PALETTE_IS_MAC = /mac|iphone|ipad|ipod/i.test(
+// Apple's systems name the modifiers differently and put the shortcuts on ⌘ — the palette and
+// the shortcuts below (#1016) both ask this
+const IS_MAC = /mac|iphone|ipad|ipod/i.test(
   (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 
 // ranks, highest first; a day jump sits between a word start and a hit inside a word, so that
@@ -1401,7 +1403,7 @@ function paletteOpen() {
 document.addEventListener('keydown', function (event) {
   if (typeof event.key !== 'string' || event.key.toLowerCase() !== 'k') return;
   if (event.isComposing || event.altKey || event.shiftKey) return;
-  const modifier = PALETTE_IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+  const modifier = IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
   if (!modifier) return;
   event.preventDefault();
   event.stopPropagation();
@@ -1425,10 +1427,106 @@ document.addEventListener('click', function (event) {
   if (event.target.closest('[data-command-palette-open]')) paletteOpen();
 });
 
-document.querySelectorAll('[data-command-palette-shortcut]').forEach(function (kbd) {
-  kbd.textContent = PALETTE_IS_MAC ? kbd.dataset.labelMac : kbd.dataset.label;
-  kbd.hidden = false;
-});
 document.querySelectorAll('[data-command-palette-open]').forEach(function (trigger) {
-  trigger.setAttribute('aria-keyshortcuts', PALETTE_IS_MAC ? 'Meta+K' : 'Control+K');
+  trigger.setAttribute('aria-keyshortcuts', IS_MAC ? 'Meta+K' : 'Control+K');
+});
+
+/* ─── Keyboard shortcuts (#1016) ─────────────────────────────────────────────
+ *
+ * Besides Ctrl+K for the palette, three shortcuts; the overview (fragments/shortcut-help.html,
+ * included once by layout/base.html) lists them all, and a shortcut that is added belongs there:
+ *
+ *   ?            opens the overview
+ *   i            follows the header's "new booking" button. Its target carries the page's day
+ *                and contract and is built once, on the server (TimereportController.newBookingUrl);
+ *                where the button is missing — on the booking form itself — i does nothing.
+ *   Ctrl+Enter   (⌘Enter) submits the form through its button marked data-submit-shortcut, also
+ *                from the comment field
+ *
+ *   data-platform-label   on a key label: data-label and data-label-mac name the key on the two
+ *                         kinds of system (Ctrl or ⌘); shown only once it is set
+ *
+ * The single keys act only while the focus is in no input field — there they are text — and while
+ * no dialog is open. None of the combinations is one the browser keeps for itself.
+ * -------------------------------------------------------------------------- */
+
+// the input types a single key would type into
+const SHORTCUT_TEXT_INPUT_TYPES = ['text', 'search', 'email', 'number', 'password', 'tel', 'url',
+  'date', 'datetime-local', 'month', 'time', 'week'];
+
+function shortcutFocusInField(el) {
+  if (!el || el === document.body) return false;
+  if (el.isContentEditable || el.closest('.ts-wrapper')) return true;
+  if (el.matches('textarea, select')) return true;
+  return el.matches('input') && SHORTCUT_TEXT_INPUT_TYPES.includes(el.type);
+}
+
+function shortcutDialogOpen() {
+  return !!document.querySelector('dialog[open], .modal.show');
+}
+
+function openShortcutHelp() {
+  const modal = document.getElementById('shortcutHelp');
+  if (!modal || shortcutDialogOpen()) return;
+  const trigger = document.activeElement;
+  // Bootstrap hands the focus back only to a toggle of data-bs-toggle; ? and the palette are none
+  modal.addEventListener('hidden.bs.modal', () => {
+    if (trigger && trigger !== document.body && document.body.contains(trigger)) trigger.focus();
+  }, { once: true });
+  tabler.bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+
+function submitByShortcut(event) {
+  const focused = document.activeElement;
+  const form = focused && focused.closest ? focused.closest('form') : null;
+  const button = form && form.querySelector('[data-submit-shortcut]');
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  // What is typed but not yet taken has to be in the form before it leaves. The ticket field keeps
+  // its text until it loses the focus — and TomSelect drops the blur while its focus bookkeeping,
+  // which runs a tick behind, still says unfocused; so the entry is created here, as leaving the
+  // field would create it. The duration is put into its form on blur.
+  const wrapper = focused.closest('.ts-wrapper');
+  const select = wrapper && wrapper.previousElementSibling && wrapper.previousElementSibling.tomselect;
+  if (select && select.settings.createOnBlur && select.inputValue()) select.createItem(null);
+  focused.blur();
+  form.requestSubmit(button);
+}
+
+// Capture phase for the same reason as the palette's shortcut: TomSelect handles Enter in its own
+// field and would take Ctrl+Enter as a choice of the highlighted entry.
+document.addEventListener('keydown', function (event) {
+  if (typeof event.key !== 'string' || event.isComposing) return;
+  if (event.key === 'Enter' && !event.altKey && !event.shiftKey
+      && (IS_MAC ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey)) {
+    submitByShortcut(event);
+    return;
+  }
+  if (event.repeat || shortcutFocusInField(document.activeElement) || shortcutDialogOpen()) return;
+  // ? needs Shift on most layouts, and AltGr — Ctrl and Alt together — on some
+  if (event.key === '?' && !event.metaKey && (!event.ctrlKey || event.altKey)) {
+    event.preventDefault();
+    openShortcutHelp();
+  } else if (event.key === 'i' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    const newBooking = document.getElementById('header-new-booking');
+    if (!newBooking) return;
+    event.preventDefault();
+    newBooking.click();
+  }
+}, true);
+
+document.addEventListener('click', function (event) {
+  if (event.target.closest('[data-shortcut-help-open]')) openShortcutHelp();
+});
+
+// On DOMContentLoaded, because the overview stands behind this script in the page.
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-platform-label]').forEach(function (label) {
+    label.textContent = IS_MAC ? label.dataset.labelMac : label.dataset.label;
+    label.hidden = false;
+  });
+  document.querySelectorAll('[data-submit-shortcut]').forEach(function (button) {
+    button.setAttribute('aria-keyshortcuts', IS_MAC ? 'Meta+Enter' : 'Control+Enter');
+  });
 });
