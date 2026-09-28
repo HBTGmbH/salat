@@ -242,7 +242,10 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/list?fBookingsBillable=NOT_BILLABLE", page -> {
       page.navigate(urlWithLogin("/dailyreport/dashboard", E2ETestData.EMPLOYEE_MA_SIGN));
 
-      cardOf(page, "Diese Woche").locator(".h1").click();
+      // A mouse click where the number stands, not a click on the number: the stretched link lies
+      // over the whole card on purpose, so Playwright's own click would refuse the covered element.
+      var number = cardOf(page, "Diese Woche").locator(".h1").boundingBox();
+      page.mouse().click(number.x + number.width / 2, number.y + number.height / 2);
 
       assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/list\\?.*"));
       var url = page.url();
