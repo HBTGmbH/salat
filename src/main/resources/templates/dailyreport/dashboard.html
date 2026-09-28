@@ -286,10 +286,12 @@
             <div class="progress" style="height: 8px;">
               <div class="progress-bar"
                    th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                   th:title="#{main.welcome.vacation.taken.title(${v.takenVacationString})}"
                    th:style="'width: ' + ${v.takenPercent} + '%'">
               </div>
               <div class="progress-bar progress-bar-planned" th:if="${v.hasPlannedVacation()}"
                    th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                   th:title="#{main.welcome.vacation.planned.title(${v.plannedVacationString})}"
                    th:style="'width: ' + ${v.plannedPercent} + '%'">
               </div>
             </div>
