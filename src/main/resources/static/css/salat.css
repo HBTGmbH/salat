@@ -1296,3 +1296,12 @@ body:not(.salat-confirm-ready) button[data-confirm] {
     display: none;
   }
 }
+
+/* ===== Geplanter Urlaub im Balken =====
+   Gebucht, aber noch nicht genommen: derselbe Ton wie der genommene Teil daneben, nur heller - er
+   zaehlt zum Verbrauch, ist aber noch nicht verbraucht (#1175). Eine Schraffur war zu unruhig.
+   Die Menge steht zusaetzlich als Text unter bzw. neben dem Balken; die hellere Stufe allein muss
+   sie nicht tragen. */
+.progress-bar.progress-bar-planned {
+  opacity: 0.45;
+}

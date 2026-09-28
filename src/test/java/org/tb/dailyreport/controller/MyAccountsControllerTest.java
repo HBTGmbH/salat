@@ -138,6 +138,55 @@ class MyAccountsControllerTest {
     assertThat(model.getAttribute("balanceColorClass")).isEqualTo("warning");
   }
 
+  /* Genommen und geplant stehen im Balken nebeneinander (#1175): 10 von 30 Tagen genommen, 5 geplant. */
+  @Test
+  void splits_the_vacation_bar_into_taken_and_planned() {
+    vacationOrderEndingOn(null);
+    bookedUntilToday(Duration.ofHours(8 * 10));
+    when(timereportService.getTotalDurationMinutesForEmployeeOrder(ORDER_ID, TODAY.plusDays(1), TODAY.plusYears(2)))
+        .thenReturn(Duration.ofHours(8 * 5).toMinutes());
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("vacationUsedPercent")).isEqualTo(50);
+    assertThat(model.getAttribute("vacationTakenPercent")).isEqualTo(33);
+    assertThat(model.getAttribute("vacationPlannedPercent")).isEqualTo(17);
+  }
+
+  /* Rot erst bei Ueberschreitung. Der Prozentwert ist bei 100 gedeckelt und kann "genau
+     aufgebraucht" nicht von "ueberschritten" unterscheiden; bis #1175 war der Balken schon bei 0
+     verbleibenden Tagen rot. */
+  @Test
+  void a_vacation_used_up_exactly_is_not_exceeded() {
+    vacationOrderEndingOn(null);
+    bookedUntilToday(Duration.ofHours(8 * 10));
+    plannedAfterToday(Duration.ofHours(8 * 20));
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("vacationUsedPercent")).isEqualTo(100);
+    assertThat(model.getAttribute("vacationBudgetExceeded")).isEqualTo(false);
+  }
+
+  @Test
+  void a_vacation_beyond_the_budget_is_exceeded() {
+    vacationOrderEndingOn(null);
+    bookedUntilToday(Duration.ofHours(8 * 10));
+    plannedAfterToday(Duration.ofHours(8 * 21));
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("vacationBudgetExceeded")).isEqualTo(true);
+  }
+
+  private void plannedAfterToday(Duration planned) {
+    when(timereportService.getTotalDurationMinutesForEmployeeOrder(ORDER_ID, TODAY.plusDays(1), TODAY.plusYears(2)))
+        .thenReturn(planned.toMinutes());
+  }
+
   private void balanceOf(Duration balance) {
     var info = new OvertimeStatusInfo();
     info.setDuration(balance);
