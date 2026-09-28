@@ -18,7 +18,7 @@ Einstellungen auseinanderlaufen, die die Antwortzeit bestimmen:
 | devtools auf dem Classpath | ja | nein |
 
 Es gibt keine `application-local.yaml`; `local` läuft auf der Basiskonfiguration.
-Dadurch werden lokal alle Webjars (plotly, tabler, bootstrap, jquery, htmx, tom-select)
+Dadurch werden lokal alle Webjars (tabler, bootstrap, jquery, htmx, tom-select)
 ohne Cache-Header und ohne Tomcat-Resource-Cache bei jedem Seitenaufruf neu ausgeliefert,
 devtools deaktiviert zusätzlich den Thymeleaf-Template-Cache, und der Autorisierungs-Cache
 in `AuthService.ensureUpToDateCache()` wird im Sekundentakt statt stündlich neu aufgebaut.
