@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.tb.dailyreport.domain.VacationInfo;
 import org.tb.employee.domain.Employeecontract;
@@ -72,13 +73,25 @@ class VacationViewHelperTest {
     assertThat(closed.getBookingsUntil()).isEqualTo(LocalDate.parse("2027-03-31"));
   }
 
+  /* Sonderurlaub hat kein Budget: er ist nie ueberschritten und damit nie rot (#1175). */
+  @Test
+  void special_leave_is_never_exceeded() {
+    var special = VacationViewHelper.from(contract(8), new VacationInfo("Sonderurlaub", Duration.ZERO, 16 * HOUR,
+        8 * HOUR, List.of(7L, 9L), LocalDate.parse("2026-01-01"), LocalDate.parse("2028-09-28"), true));
+
+    assertThat(special.isVacationBudgetExceeded()).isFalse();
+    assertThat(special.getColorClass()).isEqualTo("secondary");
+    assertThat(special.getUsedVacationString()).isEqualTo("2,00 Tage (16:00)");
+    assertThat(special.getSuborderIdsParam()).isEqualTo("7,9");
+  }
+
   private static VacationViewHelper helper(long dailyHours, long budgetHours, long usedHours, long plannedHours) {
     return VacationViewHelper.from(contract(dailyHours), info(budgetHours, usedHours, plannedHours, null));
   }
 
   private static VacationInfo info(long budgetHours, long usedHours, long plannedHours, LocalDate validUntil) {
-    return new VacationInfo("2026", Duration.ofHours(budgetHours), usedHours * HOUR, plannedHours * HOUR, 7L,
-        LocalDate.parse("2026-01-01"), validUntil);
+    return new VacationInfo("2026", Duration.ofHours(budgetHours), usedHours * HOUR, plannedHours * HOUR, List.of(7L),
+        LocalDate.parse("2026-01-01"), validUntil, false);
   }
 
   private static Employeecontract contract(long dailyHours) {

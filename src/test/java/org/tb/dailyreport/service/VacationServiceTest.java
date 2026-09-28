@@ -83,6 +83,41 @@ class VacationServiceTest {
     assertThat(vacationService.getVacations(contract)).hasSize(1);
   }
 
+  /* Sonderurlaub steht nicht je Auftrag, sondern als eine Zeile am Ende: genommen im laufenden Jahr
+     und alles schon Geplante, ueber jeden Sonderurlaubsauftrag ab Jahresbeginn (#1175). */
+  @Test
+  void sums_up_special_leave_in_one_line_at_the_end() {
+    var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
+    var pastSpecial = order(3L, 103L, "Sonderurlaub", LocalDate.parse("2026-03-02"));
+    var futureSpecial = order(4L, 103L, "Sonderurlaub", LocalDate.parse("2026-10-15"));
+    currentOrders(current);
+    futureOrders(current, pastSpecial, futureSpecial);
+    booked(101L, 80, 16);
+    when(timereportService.getTotalDurationMinutesForEmployeeOrder(eq(3L), any(), any()))
+        .thenAnswer(call -> call.getArgument(1, LocalDate.class).isAfter(LocalDate.parse("2026-09-28")) ? 0L : 8 * 60L);
+    when(timereportService.getTotalDurationMinutesForEmployeeOrder(eq(4L), any(), any())).thenReturn(8 * 60L);
+
+    var vacations = vacationService.getVacations(contract);
+
+    assertThat(vacations).extracting(VacationInfo::suborderSign).containsExactly("2026", "Sonderurlaub");
+    var special = vacations.get(1);
+    assertThat(special.special()).isTrue();
+    assertThat(special.usedVacationMinutes()).isEqualTo(16 * 60);
+    assertThat(special.plannedVacationMinutes()).isEqualTo(8 * 60);
+    assertThat(special.suborderIds()).containsExactly(103L);
+  }
+
+  @Test
+  void leaves_out_special_leave_without_bookings() {
+    var current = order(1L, 101L, "2026", LocalDate.parse("2026-01-01"));
+    var special = order(3L, 103L, "Sonderurlaub", LocalDate.parse("2026-10-15"));
+    currentOrders(current);
+    futureOrders(current, special);
+    booked(101L, 80, 16);
+
+    assertThat(vacationService.getVacations(contract)).extracting(VacationInfo::suborderSign).containsExactly("2026");
+  }
+
   private void currentOrders(Employeeorder... orders) {
     when(employeeorderService.getVacationEmployeeOrders(CONTRACT_ID)).thenReturn(List.of(orders));
   }

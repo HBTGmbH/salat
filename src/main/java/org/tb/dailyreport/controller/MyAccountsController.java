@@ -6,12 +6,15 @@ import static org.tb.common.util.DateUtils.today;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,7 @@ import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
 import org.tb.employee.service.EmployeecontractService;
+import org.tb.order.domain.Employeeorder;
 import org.tb.order.service.EmployeeorderService;
 
 @Controller
@@ -159,7 +163,6 @@ public class MyAccountsController {
         double annualEntitlementDays = 0;
         double previousYearCarryoverDays = 0;
         double takenDays = 0;
-        double specialDays = 0;
         double plannedDays = 0;
         int usedPercent = 0;
         int takenPercent = 0;
@@ -167,8 +170,11 @@ public class MyAccountsController {
 
         long dailyWorkingMinutes = contract.getDailyWorkingTime().toMinutes();
         var vacationOrders = employeeorderService.getVacationEmployeeOrders(contract.getId(), new LocalDateRange(yearStart, yearEnd));
-        var vacationMonthLabels = new ArrayList<String>();
-        var vacationMonthDays = new ArrayList<Double>();
+        // Sonderurlaub und Diagramm reichen ueber das Jahr hinaus, so weit schon geplant ist (#1175)
+        var horizon = today.plusYears(VacationService.PLANNED_HORIZON_YEARS);
+        var ordersUntilHorizon = dailyWorkingMinutes > 0
+                ? employeeorderService.getVacationEmployeeOrders(contract.getId(), new LocalDateRange(yearStart, horizon))
+                : List.<Employeeorder>of();
 
         if (dailyWorkingMinutes > 0 && !vacationOrders.isEmpty()) {
             var currentYearSign = String.valueOf(currentYear);
@@ -220,14 +226,7 @@ public class MyAccountsController {
                     plannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
                             employeeorderId,
                             today.plusDays(1),
-                            today.plusYears(2)
-                    ) / dailyWorkingMinutes;
-                } else {
-                    long employeeorderId = order.getId();
-                    specialDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
-                            employeeorderId,
-                            yearStart,
-                            today
+                            horizon
                     ) / dailyWorkingMinutes;
                 }
             }
@@ -242,22 +241,6 @@ public class MyAccountsController {
             // "ueberschritten" nicht auseinander; die Toleranz faengt Rundung der Tage ab
             budgetExceeded = takenDays + plannedDays - totalBudget > 1e-6;
 
-            // Monthly breakdown for current year
-            var monthMinutes = new TreeMap<Integer, Long>();
-            for (int m = 1; m <= 12; m++) monthMinutes.put(m, 0L);
-            for (var order : vacationOrders) {
-                var reports = timereportService.getTimereportsByDatesAndEmployeeorderId(
-                        yearStart, yearEnd, order.getId());
-                for (var report : reports) {
-                    monthMinutes.merge(report.getReferenceday().getMonthValue(),
-                            report.getDuration().toMinutes(), Long::sum);
-                }
-            }
-            for (var entry : monthMinutes.entrySet()) {
-                vacationMonthLabels.add(LocalDate.of(currentYear, entry.getKey(), 1)
-                        .getMonth().getDisplayName(TextStyle.SHORT, Locale.GERMAN));
-                vacationMonthDays.add(Math.round((double) entry.getValue() / dailyWorkingMinutes * 10) / 10.0);
-            }
         }
 
         double remainingDays = Math.max(0,
@@ -267,17 +250,94 @@ public class MyAccountsController {
         model.addAttribute("annualEntitlementDays", String.format(Locale.GERMAN, "%.1f", annualEntitlementDays));
         model.addAttribute("previousYearCarryoverDays", String.format(Locale.GERMAN, "%.1f", previousYearCarryoverDays));
         model.addAttribute("takenDays", String.format(Locale.GERMAN, "%.1f", takenDays));
-        model.addAttribute("hasSpecialDays", specialDays > 0);
+        populateSpecialVacation(model, ordersUntilHorizon, today, yearStart, horizon, dailyWorkingMinutes);
+        populateVacationChart(model, ordersUntilHorizon, today, yearStart, horizon, dailyWorkingMinutes);
         populateNextYearVacation(model, contract, currentYear, dailyWorkingMinutes);
-        model.addAttribute("specialDays", String.format(Locale.GERMAN, "%.1f", specialDays));
         model.addAttribute("plannedDays", String.format(Locale.GERMAN, "%.1f", plannedDays));
         model.addAttribute("remainingDays", String.format(Locale.GERMAN, "%.1f", remainingDays));
         model.addAttribute("vacationUsedPercent", usedPercent);
         model.addAttribute("vacationTakenPercent", takenPercent);
         model.addAttribute("vacationBudgetExceeded", budgetExceeded);
         model.addAttribute("vacationPlannedPercent", usedPercent - takenPercent);
-        model.addAttribute("vacationMonthLabels", vacationMonthLabels);
-        model.addAttribute("vacationMonthDays", vacationMonthDays);
+    }
+
+    /**
+     * Sonderurlaub zaehlt nicht gegen den Anspruch, steht aber mit genommenen und geplanten Tagen in
+     * der Zusammenfassung (#1175): genommen im laufenden Jahr bis heute, geplant alles danach - ueber
+     * jeden Sonderurlaubsauftrag ab Jahresbeginn, auch einen, der erst in der Zukunft beginnt. Bis
+     * dahin fehlte geplanter Sonderurlaub, und ohne genommenen fehlte die ganze Zeile.
+     */
+    private void populateSpecialVacation(Model model, List<Employeeorder> orders, LocalDate today,
+            LocalDate yearStart, LocalDate horizon, long dailyWorkingMinutes) {
+        double takenDays = 0;
+        double plannedDays = 0;
+        for (var order : orders.stream().filter(MyAccountsController::isSpecialVacation).toList()) {
+            takenDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                    order.getId(), yearStart, today) / dailyWorkingMinutes;
+            plannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                    order.getId(), today.plusDays(1), horizon) / dailyWorkingMinutes;
+        }
+        model.addAttribute("hasSpecialDays", takenDays + plannedDays > 0);
+        model.addAttribute("specialDays", String.format(Locale.GERMAN, "%.1f", takenDays + plannedDays));
+        model.addAttribute("hasSpecialPlannedDays", plannedDays > 0);
+        model.addAttribute("specialPlannedDays", String.format(Locale.GERMAN, "%.1f", plannedDays));
+    }
+
+    /**
+     * Die Urlaubstage je Monat (#1175): ab Januar des laufenden Jahres bis Dezember - oder weiter, bis
+     * zum letzten Monat, in dem schon Urlaub geplant ist. Urlaub und Sonderurlaub stehen getrennt,
+     * jeweils genommen (bis heute) und geplant (danach): dieselbe Unterscheidung wie in den Balken.
+     * Reicht das Diagramm ueber das Jahr hinaus, traegt jede Beschriftung ihr Jahr.
+     */
+    private void populateVacationChart(Model model, List<Employeeorder> orders, LocalDate today,
+            LocalDate yearStart, LocalDate horizon, long dailyWorkingMinutes) {
+        var regularTaken = new TreeMap<YearMonth, Long>();
+        var regularPlanned = new TreeMap<YearMonth, Long>();
+        var specialTaken = new TreeMap<YearMonth, Long>();
+        var specialPlanned = new TreeMap<YearMonth, Long>();
+        for (var order : orders) {
+            var special = isSpecialVacation(order);
+            for (var report : timereportService.getTimereportsByDatesAndEmployeeorderId(yearStart, horizon, order.getId())) {
+                var planned = report.getReferenceday().isAfter(today);
+                var target = special ? (planned ? specialPlanned : specialTaken) : (planned ? regularPlanned : regularTaken);
+                target.merge(YearMonth.from(report.getReferenceday()), report.getDuration().toMinutes(), Long::sum);
+            }
+        }
+
+        var labels = new ArrayList<String>();
+        var taken = new ArrayList<Double>();
+        var planned = new ArrayList<Double>();
+        var specialTakenDays = new ArrayList<Double>();
+        var specialPlannedDays = new ArrayList<Double>();
+        if (!orders.isEmpty()) {
+            var first = YearMonth.from(yearStart);
+            var last = Stream.of(regularPlanned, specialPlanned, regularTaken, specialTaken)
+                    .filter(map -> !map.isEmpty())
+                    .map(TreeMap::lastKey)
+                    .reduce(first.withMonth(12), (a, b) -> a.isAfter(b) ? a : b);
+            var spansYears = last.getYear() > first.getYear();
+            for (var month = first; !month.isAfter(last); month = month.plusMonths(1)) {
+                var name = month.getMonth().getDisplayName(TextStyle.SHORT, Locale.GERMAN);
+                labels.add(spansYears ? name + " '" + String.valueOf(month.getYear()).substring(2) : name);
+                taken.add(days(regularTaken.get(month), dailyWorkingMinutes));
+                planned.add(days(regularPlanned.get(month), dailyWorkingMinutes));
+                specialTakenDays.add(days(specialTaken.get(month), dailyWorkingMinutes));
+                specialPlannedDays.add(days(specialPlanned.get(month), dailyWorkingMinutes));
+            }
+        }
+        model.addAttribute("vacationMonthLabels", labels);
+        model.addAttribute("vacationMonthDays", taken);
+        model.addAttribute("vacationMonthPlannedDays", planned);
+        model.addAttribute("vacationMonthSpecialDays", specialTakenDays);
+        model.addAttribute("vacationMonthSpecialPlannedDays", specialPlannedDays);
+    }
+
+    private static double days(Long minutes, long dailyWorkingMinutes) {
+        return minutes == null ? 0 : Math.round((double) minutes / dailyWorkingMinutes * 10) / 10.0;
+    }
+
+    private static boolean isSpecialVacation(Employeeorder order) {
+        return SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
     }
 
     private void populateTrainingTab(Model model, Employeecontract contract, LocalDate today, LocalDate yearStart) {
@@ -359,24 +419,28 @@ public class MyAccountsController {
     }
 
     /**
-     * Das Diagramm des Urlaubskontos zeigt nur die Monate des laufenden Jahres. Urlaub, der fuer das
-     * Folgejahr schon gebucht ist, steht deshalb als eigene Angabe darunter (#1175) - ueber jeden
-     * Urlaubsauftrag, der im Folgejahr gilt, auch den, der erst dann beginnt.
+     * Urlaub, der fuer das Folgejahr schon gebucht ist, als eigene Angabe unter dem Diagramm (#1175) -
+     * Urlaub und Sonderurlaub getrennt, ueber jeden Urlaubsauftrag, der im Folgejahr gilt, auch den,
+     * der erst dann beginnt.
      */
     private void populateNextYearVacation(Model model, Employeecontract contract, int currentYear,
             long dailyWorkingMinutes) {
         var nextYear = new LocalDateRange(LocalDate.of(currentYear + 1, 1, 1), LocalDate.of(currentYear + 1, 12, 31));
-        double nextYearPlannedDays = 0;
+        double regularDays = 0;
+        double specialDays = 0;
         if (dailyWorkingMinutes > 0) {
             for (var order : employeeorderService.getVacationEmployeeOrders(contract.getId(), nextYear)) {
-                nextYearPlannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                double days = (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
                         order.getId(), nextYear.getFrom(), nextYear.getUntil()) / dailyWorkingMinutes;
+                if (isSpecialVacation(order)) specialDays += days; else regularDays += days;
             }
         }
         // das Jahr als Text: MessageFormat setzte sonst einen Tausenderpunkt ("2.027")
         model.addAttribute("nextYear", String.valueOf(currentYear + 1));
-        model.addAttribute("nextYearPlannedDays", String.format(Locale.GERMAN, "%.1f", nextYearPlannedDays));
-        model.addAttribute("hasNextYearPlannedDays", nextYearPlannedDays > 0);
+        model.addAttribute("nextYearPlannedDays", String.format(Locale.GERMAN, "%.1f", regularDays));
+        model.addAttribute("nextYearSpecialPlannedDays", String.format(Locale.GERMAN, "%.1f", specialDays));
+        model.addAttribute("hasNextYearPlannedDays", regularDays + specialDays > 0);
+        model.addAttribute("nextYearPlannedKind", regularDays > 0 && specialDays > 0 ? "both" : specialDays > 0 ? "special" : "regular");
     }
 
     private boolean isTraining(TimereportDTO timereport) {

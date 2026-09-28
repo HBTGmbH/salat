@@ -255,7 +255,9 @@
     </div>
 
     <!-- Vacation -->
-    <!--/* Gezaehlt ist jede Buchung auf den Urlaub, auch die geplanten nach heute; die stehen im
+    <!--/* Sonderurlaub steht als letzte Zeile ohne Balken: genommen im laufenden Jahr und schon
+           geplant, ohne Budget (VacationService).
+           Gezaehlt ist jede Buchung auf den Urlaub, auch die geplanten nach heute; die stehen im
            Balken in hellerer Stufe und darunter mit ihrer Menge. Rot erst ueber dem Budget (#1175).
            Jeder Urlaub fuehrt in die Buchungsliste, gefiltert auf seinen Unterauftrag ueber die
            Gueltigkeit des Mitarbeiterauftrags: ihre Summe ist dann dieselbe wie hier. */-->
@@ -275,15 +277,16 @@
           <div th:each="v : ${vacations}" class="mb-3">
             <div class="d-flex justify-content-between align-items-baseline mb-1">
               <a th:if="${bookingListAllowed}" class="fw-semibold small"
-                 th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders=${v.suborderId},fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${v.validFrom},fBookingsUntil=${v.bookingsUntil})}"
+                 th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders=${v.suborderIdsParam},fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${v.validFrom},fBookingsUntil=${v.bookingsUntil})}"
                  th:aria-label="#{main.welcome.vacation.bookings.link.text(${v.suborderSign})}"
                  th:text="${v.suborderSign}">Urlaub 2025</a>
               <span th:unless="${bookingListAllowed}" class="fw-semibold small" th:text="${v.suborderSign}">Urlaub 2025</span>
               <span class="small"
                     th:classappend="${v.vacationBudgetExceeded} ? 'text-danger fw-bold' : 'text-muted'"
-                    th:text="${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>
+                    th:text="${v.special} ? ${v.usedVacationString} : ${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>
             </div>
-            <div class="progress" style="height: 8px;">
+            <!--/* Sonderurlaub hat kein Budget, also keinen Balken - nur seine Tage (#1175) */-->
+            <div class="progress" style="height: 8px;" th:unless="${v.special}">
               <div class="progress-bar"
                    th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
                    th:title="#{main.welcome.vacation.taken.title(${v.takenVacationString})}"
