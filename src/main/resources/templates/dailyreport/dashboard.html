@@ -256,7 +256,7 @@
 
     <!-- Vacation -->
     <!--/* Gezaehlt ist jede Buchung auf den Urlaub, auch die geplanten nach heute; die stehen im
-           Balken schraffiert und darunter mit ihrer Menge. Rot erst ueber dem Budget (#1175).
+           Balken in hellerer Stufe und darunter mit ihrer Menge. Rot erst ueber dem Budget (#1175).
            Jeder Urlaub fuehrt in die Buchungsliste, gefiltert auf seinen Unterauftrag ueber die
            Gueltigkeit des Mitarbeiterauftrags: ihre Summe ist dann dieselbe wie hier. */-->
     <div class="col-12 col-md-4 d-flex" th:if="${not #lists.isEmpty(vacations)}">
@@ -288,7 +288,7 @@
                    th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
                    th:style="'width: ' + ${v.takenPercent} + '%'">
               </div>
-              <div class="progress-bar progress-bar-striped" th:if="${v.hasPlannedVacation()}"
+              <div class="progress-bar progress-bar-planned" th:if="${v.hasPlannedVacation()}"
                    th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
                    th:style="'width: ' + ${v.plannedPercent} + '%'">
               </div>

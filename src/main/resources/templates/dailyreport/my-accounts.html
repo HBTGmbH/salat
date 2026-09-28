@@ -141,10 +141,15 @@
                     <small class="text-muted" th:text="#{main.my.accounts.vacation.used.percent}">Verbraucht</small>
                     <small class="fw-semibold" th:text="${vacationUsedPercent} + '%'">0%</small>
                   </div>
+                  <!--/* Geplante Tage in hellerer Stufe neben den genommenen, wie im Dashboard (#1175) */-->
                   <div class="progress" style="height: 8px;">
                     <div class="progress-bar"
-                         th:classappend="${vacationUsedPercent >= 100} ? 'bg-danger' : 'bg-azure'"
-                         th:style="'width: ' + ${vacationUsedPercent} + '%'">
+                         th:classappend="${vacationBudgetExceeded} ? 'bg-danger' : 'bg-azure'"
+                         th:style="'width: ' + ${vacationTakenPercent} + '%'">
+                    </div>
+                    <div class="progress-bar progress-bar-planned" th:if="${vacationPlannedPercent > 0}"
+                         th:classappend="${vacationBudgetExceeded} ? 'bg-danger' : 'bg-azure'"
+                         th:style="'width: ' + ${vacationPlannedPercent} + '%'">
                     </div>
                   </div>
                 </div>
@@ -168,7 +173,11 @@
                     <div class="progress" style="height: 6px;">
                       <div class="progress-bar"
                            th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
-                           th:style="'width: ' + ${v.usedPercent} + '%'">
+                           th:style="'width: ' + ${v.takenPercent} + '%'">
+                      </div>
+                      <div class="progress-bar progress-bar-planned" th:if="${v.hasPlannedVacation()}"
+                           th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                           th:style="'width: ' + ${v.plannedPercent} + '%'">
                       </div>
                     </div>
                   </div>

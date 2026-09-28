@@ -162,6 +162,8 @@ public class MyAccountsController {
         double specialDays = 0;
         double plannedDays = 0;
         int usedPercent = 0;
+        int takenPercent = 0;
+        boolean budgetExceeded = false;
 
         long dailyWorkingMinutes = contract.getDailyWorkingTime().toMinutes();
         var vacationOrders = employeeorderService.getVacationEmployeeOrders(contract.getId(), new LocalDateRange(yearStart, yearEnd));
@@ -233,6 +235,12 @@ public class MyAccountsController {
             double totalBudget = annualEntitlementDays + previousYearCarryoverDays;
             usedPercent = totalBudget > 0
                     ? (int) Math.min(100, (takenDays + plannedDays) * 100 / totalBudget) : 0;
+            // genommen und geplant stehen im Balken nebeneinander, zusammen usedPercent (#1175)
+            takenPercent = totalBudget > 0
+                    ? (int) Math.min(usedPercent, takenDays * 100 / totalBudget) : 0;
+            // rot erst ueber dem Budget: der gedeckelte Prozentwert kennt "genau aufgebraucht" und
+            // "ueberschritten" nicht auseinander; die Toleranz faengt Rundung der Tage ab
+            budgetExceeded = takenDays + plannedDays - totalBudget > 1e-6;
 
             // Monthly breakdown for current year
             var monthMinutes = new TreeMap<Integer, Long>();
@@ -264,6 +272,9 @@ public class MyAccountsController {
         model.addAttribute("plannedDays", String.format(Locale.GERMAN, "%.1f", plannedDays));
         model.addAttribute("remainingDays", String.format(Locale.GERMAN, "%.1f", remainingDays));
         model.addAttribute("vacationUsedPercent", usedPercent);
+        model.addAttribute("vacationTakenPercent", takenPercent);
+        model.addAttribute("vacationBudgetExceeded", budgetExceeded);
+        model.addAttribute("vacationPlannedPercent", usedPercent - takenPercent);
         model.addAttribute("vacationMonthLabels", vacationMonthLabels);
         model.addAttribute("vacationMonthDays", vacationMonthDays);
     }
