@@ -3,6 +3,7 @@ package org.tb.palette.controller;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -13,6 +14,7 @@ import static org.tb.common.palette.PaletteKind.CUSTOMERORDER;
 import static org.tb.common.palette.PaletteKind.PERSON;
 import static org.tb.common.palette.PaletteKind.SUBORDER;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.MatchResult;
@@ -33,8 +35,11 @@ import org.springframework.web.servlet.i18n.FixedLocaleResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.tb.common.palette.PaletteCommand;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
+import org.tb.common.palette.PaletteParameter;
+import org.tb.common.palette.PaletteSuggestion;
 import org.tb.common.palette.PaletteTarget;
 import org.tb.common.palette.PaletteText;
 import org.tb.palette.service.PaletteGroup;
@@ -232,6 +237,51 @@ class PaletteControllerTest {
         .contains("Wartung &amp; &lt;b&gt;Pflege&lt;/b&gt;")
         .doesNotContain("<b>")
         .contains("href=\"/orders/customerorders?fCustomerOrderFilter=MUSTER-04&amp;fCustomerId=5\"");
+  }
+
+  // --- the parameters of the commands (#1158) -----------------------------------------------------
+
+  @Test
+  void a_suggestion_request_hands_command_parameter_text_day_and_contract_to_the_service() throws Exception {
+    var suggestions = List.of(PaletteSuggestion.of("2026-09", "2026-09", null, null));
+    when(paletteSearchService.suggest(PaletteCommand.ACCEPT, PaletteParameter.MONTH, "sep", LocalDate.of(2026, 9, 25), 7L))
+        .thenReturn(suggestions);
+
+    MockMvcBuilders.standaloneSetup(controller).build()
+        .perform(get("/palette/suggest").param("command", "ACCEPT").param("parameter", "MONTH").param("q", "sep")
+            .param("date", "2026-09-25").param("contractId", "7"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("palette/suggestions :: suggestions"))
+        .andExpect(model().attribute("suggestions", suggestions));
+  }
+
+  @Test
+  void without_command_or_parameter_there_are_no_suggestions_and_the_service_is_not_asked() throws Exception {
+    var html = renderFragment(get("/palette/suggest").param("parameter", "MONTH"));
+
+    verifyNoInteractions(paletteSearchService);
+    assertThat(html).contains("data-palette-suggestions").doesNotContain("<article");
+  }
+
+  /** The value, the flags salat.js reads, and every text with its arguments resolved and escaped. */
+  @Test
+  void a_suggestion_carries_its_value_its_flags_and_its_texts() throws Exception {
+    when(paletteSearchService.suggest(PaletteCommand.BOOK, PaletteParameter.SUBORDER, "wart", null, null)).thenReturn(List.of(
+        new PaletteSuggestion("501", "MUSTER-01.03", "Wartung & <b>Pflege</b>",
+            PaletteText.of("main.palette.suggestion.notbookable", "01.08.2026"), true, true, true),
+        PaletteSuggestion.of("502", "MUSTER-01.04", null, null)));
+
+    var html = renderFragment(get("/palette/suggest").param("command", "BOOK").param("parameter", "SUBORDER").param("q", "wart"));
+
+    var articles = Pattern.compile("<article[^>]*>.*?</article>", Pattern.DOTALL).matcher(html).results()
+        .map(MatchResult::group).toList();
+    assertThat(articles).hasSize(2);
+    assertThat(articles.get(0))
+        .contains("data-value=\"501\"", "data-disabled=\"true\"", "data-comment-required=\"true\"", "data-exact=\"true\"")
+        .contains("MUSTER-01.03", "Wartung &amp; &lt;b&gt;Pflege&lt;/b&gt;", "am 01.08.2026 nicht buchbar");
+    assertThat(articles.get(1))
+        .contains("data-value=\"502\"")
+        .doesNotContain("data-disabled", "data-comment-required", "data-exact", "data-part=\"detail\"", "data-part=\"note\"");
   }
 
   private static PaletteTarget target(String key, String href, int rank) {

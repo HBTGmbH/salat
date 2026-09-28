@@ -1,10 +1,12 @@
 package org.tb.budget.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.tb.common.palette.PaletteKind.CUSTOMERORDER;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -18,10 +20,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.service.OrderBudgetService;
+import org.tb.common.palette.PaletteCommand;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
+import org.tb.common.palette.PaletteParameter;
+import org.tb.common.palette.PaletteQuery;
+import org.tb.common.palette.PaletteSuggestion;
+import org.tb.common.palette.PaletteSuggestionRequest;
 import org.tb.common.palette.PaletteTarget;
 import org.tb.common.palette.PaletteText;
+import org.tb.order.domain.CustomerorderSearchRow;
+import org.tb.order.service.CustomerorderService;
 
 /**
  * The budget targets the command palette adds to an order the order module found (#1157): the
@@ -42,6 +51,8 @@ class BudgetPaletteProviderTest {
   private BudgetAuthorization budgetAuthorization;
   @Mock
   private OrderBudgetService orderBudgetService;
+  @Mock
+  private CustomerorderService customerorderService;
 
   @InjectMocks
   private BudgetPaletteProvider provider;
@@ -163,6 +174,49 @@ class BudgetPaletteProviderTest {
     assertThat(targets.get(OWN_ORDER)).hasSize(2);
     assertThat(targets.get(FOREIGN_ORDER)).containsExactly(
         controlling("/budget/controlling?fCustomerOrderSign=MUSTER-02&evaluate=true"));
+  }
+
+  // --- the order of controlling (#1158) ---------------------------------------------------------
+
+  /** The order search of the palette, narrowed to the orders whose figures the user may see. */
+  @Test
+  void offers_for_controlling_only_the_orders_whose_figures_the_user_may_see() {
+    when(customerorderService.getPaletteCandidates(any())).thenReturn(List.of(row(OWN_ORDER, false, null),
+        row(FOREIGN_ORDER, false, null)));
+    when(budgetAuthorization.isAuthorizedForCustomerorder(OWN_ORDER)).thenReturn(true);
+    when(budgetAuthorization.isAuthorizedForCustomerorder(FOREIGN_ORDER)).thenReturn(false);
+
+    assertThat(suggest("muster")).containsExactly(
+        new PaletteSuggestion(OWN_ORDER, OWN_ORDER, "Wartungsvertrag", null, false, false, false));
+  }
+
+  @Test
+  void puts_ended_and_hidden_orders_last_and_marks_the_whole_sign() {
+    when(customerorderService.getPaletteCandidates(any())).thenReturn(List.of(row("MUSTER-01", true, null),
+        row("MUSTER-011", false, LocalDate.of(2020, 1, 31)), row("MUSTER-012", false, null)));
+    when(budgetAuthorization.isAuthorizedForCustomerorder(any())).thenReturn(true);
+
+    var suggestions = suggest("muster-01");
+
+    assertThat(suggestions).extracting(PaletteSuggestion::value).containsExactly("MUSTER-012", "MUSTER-011", "MUSTER-01");
+    assertThat(suggestions).extracting(PaletteSuggestion::exact).containsExactly(false, false, true);
+  }
+
+  @Test
+  void answers_nothing_for_the_parameters_of_other_commands() {
+    assertThat(provider.suggest(new PaletteSuggestionRequest(PaletteCommand.BOOK, PaletteParameter.SUBORDER,
+        PaletteQuery.of("muster"), null, null))).isEmpty();
+    verifyNoInteractions(customerorderService, budgetAuthorization);
+  }
+
+  private List<PaletteSuggestion> suggest(String text) {
+    return provider.suggest(new PaletteSuggestionRequest(PaletteCommand.CONTROLLING, PaletteParameter.CUSTOMERORDER,
+        PaletteQuery.of(text), null, null));
+  }
+
+  private static CustomerorderSearchRow row(String sign, boolean hidden, LocalDate until) {
+    return new CustomerorderSearchRow(1L, sign, "Wartungsvertrag", "Wartung und Pflege", 5L, "MUSTER", "Musterkunde",
+        hidden, until);
   }
 
   private static PaletteTarget controlling(String href) {

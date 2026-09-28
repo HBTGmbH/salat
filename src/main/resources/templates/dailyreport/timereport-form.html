@@ -96,7 +96,8 @@
                                     data-time-chips-target=${betaTimeInput} ? '#durationChips' : null,
                                     data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                     data-time-label-increase=#{main.timeinput.increase.tooltip},
-                                    data-time-label-reset=#{main.timeinput.reset.tooltip}"
+                                    data-time-label-reset=#{main.timeinput.reset.tooltip},
+                                    data-entry-focus=${entryFocus != null and entryFocus.name() == 'DURATION'} ? 'true' : null"
                            oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
                   </div>
 
@@ -145,7 +146,8 @@
               <select class="form-select tomselect"
                       name="suborderId" id="suborderId"
                       data-favorite-target="/dailyreport/timereports/preferences/favorite-suborder"
-                      th:attr="data-favorite-id=${favoriteSuborderId}"
+                      th:attr="data-favorite-id=${favoriteSuborderId},
+                               data-entry-focus=${entryFocus != null and entryFocus.name() == 'SUBORDER'} ? 'true' : null"
                       hx-post="/dailyreport/timereports/refresh-sidebar"
                       hx-include="closest form"
                       hx-target="#form-sidebar"
@@ -188,7 +190,8 @@
                      th:class="${'form-label' + (commentNecessary == true ? ' required' : '')}"
                      th:text="#{main.timereport.form.comment.label}">Kommentar</label>
               <textarea id="commentField" class="form-control" th:field="*{comment}" rows="3"
-                        th:attr="required=${commentNecessary == true ? 'required' : null}"
+                        th:attr="required=${commentNecessary == true ? 'required' : null},
+                                 data-entry-focus=${entryFocus != null and entryFocus.name() == 'COMMENT'} ? 'true' : null"
                         th:placeholder="#{main.timereport.form.comment.placeholder}"></textarea>
             </div>
 
@@ -243,7 +246,8 @@
           <div class="card-footer d-flex flex-wrap gap-2">
             <!--/* data-submit-shortcut: Ctrl+Enter bzw. ⌘Enter speichert von jedem Feld des
                    Formulars aus, auch aus dem Kommentar (#1016) */-->
-            <button type="submit" class="btn btn-primary" data-submit-shortcut>
+            <button type="submit" class="btn btn-primary" data-submit-shortcut
+                    th:attr="data-entry-focus=${entryFocus != null and entryFocus.name() == 'SAVE'} ? 'true' : null">
               <i class="ti ti-device-floppy me-1"></i>
               <span th:text="#{main.timereport.form.save}">Speichern</span>
             </button>

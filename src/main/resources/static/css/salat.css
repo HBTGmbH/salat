@@ -1153,6 +1153,55 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   color: inherit;
 }
 
+/* Befehle mit Parametern (#1158): der Befehl und die uebernommenen Werte als Chips vor dem Feld,
+   rechts der Parameter, der gerade dran ist. Die Chips sind Tablers getoente Badges - dieselben
+   Paare wie in den Listen, ein fehlerhafter Wert in der Fehlerfarbe. Sie weichen dem Feld, nicht
+   umgekehrt: ein langer Unterauftrag wird gekuerzt, statt das Eingabefeld zu verdraengen. */
+.command-palette-chips {
+  display: flex;
+  flex: 0 1 auto;
+  gap: .375rem;
+  min-width: 0;
+  max-width: 70%;
+  overflow: hidden;
+}
+
+.command-palette-chip {
+  flex: 0 1 auto;
+  min-width: 2rem;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  font-size: .8125rem;
+  cursor: pointer;
+}
+
+.command-palette-param {
+  flex-shrink: 0;
+  font-size: .8125rem;
+  white-space: nowrap;
+}
+
+/* Was Enter tut: zwischen Eingabe und Liste, wie eine Zeile ueber den Treffern. */
+.command-palette-preview {
+  padding: .5rem 1rem;
+  border-bottom: var(--tblr-border-width) solid var(--tblr-border-color);
+  font-size: .875rem;
+}
+
+.command-palette-preview [data-part]:empty {
+  display: none;
+}
+
+/* Ein Wert, der sich nicht waehlen laesst, steht in der Sekundaerfarbe; die gewaehlte Zeile wird er
+   nie, deshalb misst er nur gegen die Karte. */
+.command-palette-option-disabled {
+  color: var(--tblr-secondary);
+  cursor: default;
+}
+
 .command-palette-empty {
   padding: 1rem;
   text-align: center;
@@ -1178,6 +1227,7 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 /* Tablers kbd traegt --tblr-secondary-color auf --tblr-code-bg und kommt hell auf 2,84:1. Die
    Tastenbeschriftung ist Text, also die Schriftfarbe. */
 .command-palette-footer kbd,
+.command-palette-preview kbd,
 .command-palette-trigger kbd,
 .shortcut-help kbd {
   padding: .0625rem .375rem;

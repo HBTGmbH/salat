@@ -1,12 +1,17 @@
 package org.tb.palette.controller;
 
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.tb.auth.domain.Authorized;
+import org.tb.common.palette.PaletteCommand;
+import org.tb.common.palette.PaletteParameter;
 import org.tb.palette.service.PaletteSearchService;
 
 /**
@@ -29,5 +34,21 @@ public class PaletteController {
   public String search(@RequestParam(defaultValue = "") String q, Model model) {
     model.addAttribute("groups", paletteSearchService.search(q));
     return "palette/search-results :: results";
+  }
+
+  /**
+   * The values for a parameter of a command (#1158), as a fragment like the search; without command
+   * or parameter there are none.
+   */
+  @GetMapping("/suggest")
+  public String suggest(@RequestParam(required = false) PaletteCommand command,
+      @RequestParam(required = false) PaletteParameter parameter,
+      @RequestParam(defaultValue = "") String q,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+      @RequestParam(required = false) Long contractId,
+      Model model) {
+    model.addAttribute("suggestions", command == null || parameter == null ? List.of()
+        : paletteSearchService.suggest(command, parameter, q, date, contractId));
+    return "palette/suggestions :: suggestions";
   }
 }

@@ -1,5 +1,6 @@
 package org.tb.palette.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -16,10 +17,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.tb.auth.domain.Authorized;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.palette.PaletteCommand;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
+import org.tb.common.palette.PaletteParameter;
 import org.tb.common.palette.PaletteProvider;
 import org.tb.common.palette.PaletteQuery;
+import org.tb.common.palette.PaletteSuggestion;
+import org.tb.common.palette.PaletteSuggestionRequest;
 import org.tb.common.palette.PaletteTarget;
 
 /**
@@ -59,6 +64,9 @@ public class PaletteSearchService {
       .thenComparing(Comparator.comparingInt(PaletteHit::match).reversed())
       .thenComparing(PaletteHit::title, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
 
+  /** How many values the palette offers for a parameter. */
+  static final int SUGGESTIONS = 8;
+
   private static final Comparator<PaletteTarget> TARGET_ORDER = Comparator.comparingInt(PaletteTarget::rank);
 
   private final List<PaletteProvider> providers;
@@ -69,11 +77,30 @@ public class PaletteSearchService {
     if (!query.isSearchable()) {
       return List.of();
     }
+    return readOnly(() -> collect(query));
+  }
+
+  /**
+   * The values for a parameter of a command (#1158): the answers of every provider in the order of
+   * the providers, each provider's own ranking kept, at most {@link #SUGGESTIONS} of them. Unlike the
+   * search, an empty query is asked as well — then the providers offer what they would put first.
+   * The same transaction as for the search, for the same reason.
+   */
+  public List<PaletteSuggestion> suggest(PaletteCommand command, PaletteParameter parameter, String text,
+      LocalDate date, Long contractId) {
+    var request = new PaletteSuggestionRequest(command, parameter, PaletteQuery.of(text), date, contractId);
+    return readOnly(() -> providers.stream()
+        .flatMap(provider -> safely(provider, () -> provider.suggest(request), List.<PaletteSuggestion>of()).stream())
+        .limit(SUGGESTIONS)
+        .toList());
+  }
+
+  private <T> T readOnly(Supplier<T> work) {
     var transaction = new TransactionTemplate(transactionManager);
     transaction.setReadOnly(true);
     return transaction.execute(status -> {
       status.setRollbackOnly();
-      return collect(query);
+      return work.get();
     });
   }
 

@@ -105,7 +105,7 @@ Zwei Fallstricke, die beide daher kommen, dass der Dialog zwischen Klick und Akt
   abgehen, bevor die Frage beantwortet ist. Ausgelöst wird danach mit `requestSubmit()`, nicht mit
   `submit()`: nur das erste behält den auslösenden Knopf und die HTML5-Validierung.
 
-## Befehlspalette (→ ADR-0030, ADR-0031)
+## Befehlspalette (→ ADR-0030, ADR-0031, ADR-0032)
 
 `Ctrl+K` / `⌘K` und der Eintrag „Suchen" in der Kopfzeile öffnen sie auf jeder Seite: einmal als
 Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten in
@@ -133,6 +133,12 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
   meist nur die Anmeldung, eingeschränkte Anmeldungen hält also der Anbieter fern. Angezeigt werden
   fachliche Schlüssel, eine Datenbank-id höchstens in der Adresse. Ein Objekt wird nicht unter
   „Zuletzt verwendet" gemerkt.
+- **Befehle mit Parametern** (#1158, ADR-0032: `buchen`, `tag`, `matrix`, `freigabe`, `abnahme`,
+  `controlling`) bietet der Sidebar-Eintrag ihrer Seite an (`data-palette-verb`); was sie tun, steht
+  in `PALETTE_VERBS` in `salat.js`. Tag, Monat und Dauer liest der Browser, alle übrigen Werte
+  schlägt **das Modul vor, dem die Zielseite gehört** (`PaletteProvider#suggest`), aus derselben
+  Quelle wie diese Seite — die Unteraufträge aus der Liste des Buchungsformulars, die Monate aus
+  denen der Prüfseiten. Enter öffnet das vorbelegte Formular oder die Prüfseite, nie mehr.
 
 ## Tastenkürzel (#1016)
 

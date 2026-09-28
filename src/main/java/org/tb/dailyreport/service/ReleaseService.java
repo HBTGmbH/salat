@@ -342,6 +342,17 @@ public class ReleaseService {
   }
 
   /**
+   * Ob der angemeldete Benutzer die Buchungen dieses Vertrags freigeben darf — dieselbe Frage, die
+   * {@link #reviewRelease} stellt. Die Befehlspalette schlägt nur dann einen Monat vor (#1158), statt
+   * in eine 403 zu führen.
+   */
+  @Transactional(readOnly = true)
+  public boolean isReleaseAllowed(long employeecontractId) {
+    var contract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    return contract != null && releaseAuthorization.isReleaseAuthorized(contract, AccessLevel.WRITE);
+  }
+
+  /**
    * Ob der angemeldete Benutzer die Buchungen dieses Vertrags abnehmen darf (#1122). Die Seite der
    * Abnahme bietet die Übersicht nur dann an, statt in eine 403 zu führen — wählt jemand aus der
    * Geschäftsführung dort den eigenen Vertrag, sagt sie, dass er nicht abzunehmen ist.

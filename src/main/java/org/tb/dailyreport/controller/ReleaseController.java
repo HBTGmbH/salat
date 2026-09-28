@@ -1,8 +1,6 @@
 package org.tb.dailyreport.controller;
 
-import static org.tb.common.util.DateUtils.addMonths;
 import static org.tb.common.util.DateUtils.format;
-import static org.tb.common.util.DateUtils.min;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -187,9 +185,7 @@ public class ReleaseController {
 
     private String defaultReleaseDateStr(Employeecontract contract) {
         if (contract == null) return "";
-        LocalDate rd = contract.getReportReleaseDate();
-        LocalDate defaultDate = rd == null ? contract.getValidFrom() : addMonths(rd, 1);
-        return YearMonth.from(min(defaultDate, contract.getValidUntil())).toString();
+        return ReviewMonths.nextRelease(contract).toString();
     }
 
     /** Der letzte Monat, in dem es etwas freizugeben gibt (#324). */

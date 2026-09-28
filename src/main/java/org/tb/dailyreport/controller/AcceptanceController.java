@@ -1,8 +1,6 @@
 package org.tb.dailyreport.controller;
 
-import static org.tb.common.util.DateUtils.addMonths;
 import static org.tb.common.util.DateUtils.format;
-import static org.tb.common.util.DateUtils.min;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.LocalDate;
@@ -256,23 +254,13 @@ public class AcceptanceController {
 
     private String defaultReleaseDateStr(Employeecontract contract) {
         if (contract == null) return "";
-        LocalDate rd = contract.getReportReleaseDate();
-        LocalDate defaultDate = rd == null ? contract.getValidFrom() : addMonths(rd, 1);
-        return monthStr(min(defaultDate, contract.getValidUntil()));
+        return ReviewMonths.nextRelease(contract).toString();
     }
 
-    /**
-     * Der Monat, den die Abnahme vorschlägt (#1122): der der Freigabe — abgenommen wird, was
-     * freigegeben ist. Bis dahin war es der Monat der letzten Abnahme, und dessen Übersicht wäre leer.
-     * Ist noch nichts freigegeben, bleibt der frühere Vorschlag; die Übersicht sagt dann, warum es
-     * nichts abzunehmen gibt.
-     */
+    /** Der Monat, den die Abnahme vorschlägt (#1122), siehe {@link ReviewMonths#nextAcceptance}. */
     private static String defaultAcceptanceDateStr(Employeecontract contract) {
         if (contract == null) return "";
-        if (contract.getReportReleaseDate() != null) return monthStr(contract.getReportReleaseDate());
-        LocalDate ad = contract.getReportAcceptanceDate();
-        LocalDate defaultDate = ad == null ? contract.getValidFrom() : ad;
-        return monthStr(min(defaultDate, contract.getValidUntil()));
+        return ReviewMonths.nextAcceptance(contract).toString();
     }
 
     /**

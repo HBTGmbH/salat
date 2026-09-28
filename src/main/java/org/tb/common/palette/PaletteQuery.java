@@ -123,10 +123,22 @@ public final class PaletteQuery {
    * palette's own ranking has no keys and needs no such tier.
    */
   public int matchWithKey(String key, String title, String... others) {
-    if (key != null && !text.isEmpty() && fold(key).equals(fold(text))) {
+    if (isKey(key)) {
       return 5;
     }
     return match(title, Stream.concat(Stream.of(key), Arrays.stream(others)).toArray(String[]::new));
+  }
+
+  /** The query is the whole key — a person's sign, an order's sign —, case and diacritics aside. */
+  public boolean isKey(String key) {
+    return key != null && !text.isEmpty() && fold(key).equals(fold(text));
+  }
+
+  /** Every word of the query stands in one of the fields; an empty query is contained in anything. */
+  public boolean isContainedIn(String... fields) {
+    var folded = Arrays.stream(fields).filter(Objects::nonNull).map(PaletteQuery::fold).toList();
+    return words.stream().map(PaletteQuery::fold)
+        .allMatch(word -> folded.stream().anyMatch(field -> field.contains(word)));
   }
 
   private static boolean startsAWord(String field, String query) {

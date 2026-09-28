@@ -780,8 +780,13 @@ function focusEntryField() {
 
   const wrapper = document.querySelector('.page-body');
   if (!wrapper) return;
-  const field = Array.from(wrapper.querySelectorAll(ENTRY_FOCUS_SELECTOR))
-    .find(isEntryFocusCandidate);
+  // A form the command palette prefilled names where to go on (#1158): the first field it left
+  // empty, or the save button when it filled them all. Only while that field can take the focus.
+  const named = wrapper.querySelector('[data-entry-focus]');
+  const field = named && (named.matches('button') ? !named.disabled && named.offsetParent !== null
+    : isEntryFocusCandidate(named))
+    ? named
+    : Array.from(wrapper.querySelectorAll(ENTRY_FOCUS_SELECTOR)).find(isEntryFocusCandidate);
   if (!field) return;
 
   if (field.tomselect) {
@@ -837,6 +842,9 @@ const IS_MAC = /mac|iphone|ipad|ipod/i.test(
 // of its further words shows nothing that matches, and ranks below everything that does.
 const PALETTE_TIER_WORD_START = 3;
 const PALETTE_TIER_DAY = 2.5;
+// A command with parameters (#1158) found by the beginning of its word ranks below the pages and the
+// day, so that "mat" and Enter still lead to the matrix view; typed as its whole word, it comes first.
+const PALETTE_TIER_COMMAND = 2.25;
 const PALETTE_TIER_INSIDE = 2;
 const PALETTE_TIER_FUZZY = 1;
 const PALETTE_TIER_KEYWORD = 0.75;
@@ -851,7 +859,11 @@ const paletteState = { origin: null, commands: [], items: [], active: -1, wiredD
   localCount: 0, objectToken: 0, objectTimer: null, objects: null,
   // the targets of one object, opened with → ({ item, query }); heldKey is the key that last went
   // into or out of them, as long as it is held
-  drill: null, heldKey: null };
+  drill: null, heldKey: null,
+  // the command being entered (#1158): { verb, values, fallback, label }; valueParam is the
+  // parameter the list offers values for and valueQuery what of the field they answer. The answers
+  // of the server are kept per address until the palette closes; openToken drops a late one.
+  invocation: null, valueParam: null, valueQuery: '', valueCache: new Map(), valueTimer: null, openToken: 0 };
 
 // the object search asks the server from two characters on, once the typing pauses (#1157)
 const PALETTE_OBJECT_MIN_LENGTH = 2;
@@ -1183,6 +1195,11 @@ function paletteSearch(dialog, commands, query, today, vocabulary) {
   const hits = [];
   commands.forEach((command, order) => {
     let match = paletteMatch(command.label, query);
+    if (match && command.type === 'verb') {
+      match = paletteFold(command.label).folded === paletteFold(query.trim()).folded
+        ? { tier: PALETTE_TIER_WORD_START, pos: -1, ranges: match.ranges }
+        : { tier: Math.min(match.tier, PALETTE_TIER_COMMAND), pos: match.pos, ranges: match.ranges };
+    }
     if (!match && command.keywords) {
       const byKeyword = paletteMatch(command.keywords, query);
       if (byKeyword) match = { tier: PALETTE_TIER_KEYWORD, pos: byKeyword.pos, ranges: [] };
@@ -1236,6 +1253,12 @@ function paletteOption(hit, index, dialog) {
   }
   // An object with more than one target: → on the keyboard, a click or tap on the arrow for the
   // pointer. The arrow is no button of its own — the row is the option, and focus stays in the field.
+  // a value that cannot be chosen (#1158): shown, so that the one looked for is not missing without a
+  // word, but skipped by the arrows and not taken
+  if (hit.command.disabled) {
+    option.setAttribute('aria-disabled', 'true');
+    option.classList.add('command-palette-option-disabled');
+  }
   if (hit.command.type === 'object' && hit.command.targets.length > 1) {
     const more = document.createElement('span');
     more.className = 'command-palette-more';
@@ -1335,12 +1358,18 @@ function paletteUpdate(dialog) {
   paletteRender([
     { label: dialog.dataset.groupPages, hits: ofType('nav') },
     { label: dialog.dataset.kindSettings, hits: ofType('cmd') },
+    { label: dialog.dataset.groupCommands, hits: ofType('verb') },
   ]);
 }
 
 function paletteRun(index) {
   const command = paletteState.items[index];
   if (!command) return;
+  // a command with parameters is not run but entered (#1158); the palette stays open for them
+  if (command.type === 'verb') {
+    command.run();
+    return;
+  }
   // An object is not remembered: whether it may still be opened is the server's question, and a
   // remembered entry is shown without asking it.
   if (command.type !== 'object' && command.type !== 'target') {
@@ -1499,6 +1528,740 @@ function paletteCaretAt(input, position) {
   return input.selectionStart === position && input.selectionEnd === position;
 }
 
+/* ─── Commands with parameters (#1158) ───
+ *
+ * A sidebar entry marked data-palette-verb offers the command of its page, so the sidebar decides
+ * which commands a user gets, as it does for the pages (ADR-0030). Typed as a word of its own
+ * ("buchen ") or taken with Tab, the command becomes a chip, and what follows is read as its
+ * parameters, in their order: a complete word that means exactly one value becomes a chip, and
+ * whatever doesn't stays in the field and gets suggestions. An optional parameter the word does not
+ * fit is passed over — "buchen wart" books today. Tab takes the selected suggestion, Backspace in
+ * the empty field gives the last chip back, a click on a chip takes it out. Enter opens the target
+ * with what is there — a prefilled form or a review page, never an action.
+ *
+ * Day, month and duration are read here, so that the preview follows every keystroke. The last
+ * working day, suborders, persons, orders and the months of release and acceptance come from
+ * /palette/suggest, answered by the module that owns the command's page; the tickets come from
+ * the booking form's own endpoint. A ticket is taken only by its whole number — any other word
+ * begins the comment —, and without a comment of its own the form gets the ticket's number and
+ * title, as a pick in the form writes them.
+ */
+
+// the parameters of each command in the order they are read; "?" marks one that may be left out
+const PALETTE_VERBS = {
+  book: ['day?', 'suborder', 'duration?', 'ticket?', 'comment?'],
+  day: ['day'],
+  matrix: ['month', 'person?'],
+  release: ['month'],
+  accept: ['person', 'month'],
+  controlling: ['customerorder'],
+};
+const PALETTE_SERVER_PARAMS = ['suborder', 'person', 'customerorder'];
+const PALETTE_PENDING = 'pending';
+
+function paletteCapitalized(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+function paletteParams(verb) {
+  return PALETTE_VERBS[verb].map(spec => ({ type: spec.replace('?', ''), optional: spec.endsWith('?') }));
+}
+
+function paletteParamName(dialog, type) {
+  return dialog.dataset['param' + paletteCapitalized(type)] || type;
+}
+
+/** The commands the sidebar offers, once each, in the order of PALETTE_VERBS. */
+function paletteVerbCommands(dialog) {
+  const entries = new Map();
+  document.querySelectorAll('#sidebar-menu [data-palette-verb]').forEach(link => {
+    if (PALETTE_VERBS[link.dataset.paletteVerb] && !entries.has(link.dataset.paletteVerb)) {
+      entries.set(link.dataset.paletteVerb, link);
+    }
+  });
+  return Object.keys(PALETTE_VERBS).filter(verb => entries.has(verb)).map(verb => ({
+    type: 'verb',
+    key: verb,
+    label: dialog.dataset['verb' + paletteCapitalized(verb)],
+    kind: paletteParams(verb).map(param => paletteParamName(dialog, param.type)).join(' · '),
+    keywords: '',
+    // the entry's own href, not the one of data-palette-href-from: the fallback is the plain page
+    fallback: { href: entries.get(verb).getAttribute('href'), label: paletteCleanText(entries.get(verb)) },
+    run: () => paletteInvoke(dialog, verb, ''),
+  }));
+}
+
+/* ─── Reading month and duration ─── */
+
+function paletteMonthOf(year, month) {
+  return year + '-' + timeInputPad(month);
+}
+
+function paletteShiftMonths(ym, months) {
+  const [year, month] = ym.split('-').map(Number);
+  const index = year * 12 + month - 1 + months;
+  return paletteMonthOf(Math.floor(index / 12), index % 12 + 1);
+}
+
+/**
+ * Reads a month from what was typed, relative to `today` (ISO): a number 1–12, M/JJJJ, M.JJ or
+ * JJJJ-MM, the name of a month from three letters on, or the word for the last month. A month
+ * without its year is the most recent one, the current month included — in January, "dez" is the
+ * December before. Returns every month the input can mean, as `{ ym }`.
+ *
+ * @param vocabulary `{ months: [january … december], last: word for the last month }`
+ */
+function paletteParseMonth(raw, today, vocabulary) {
+  const input = paletteFold(String(raw || '').trim()).folded;
+  if (!input) return [];
+  const current = today.slice(0, 7);
+  const recent = (month) => {
+    const ym = paletteMonthOf(Number(today.slice(0, 4)), month);
+    return { ym: ym <= current ? ym : paletteShiftMonths(ym, -12) };
+  };
+  const valid = (year, month) => (month >= 1 && month <= 12 && year >= 1000 ? [{ ym: paletteMonthOf(year, month) }] : []);
+  let match;
+  if ((match = /^(\d{1,2})$/.exec(input))) return valid(1000, Number(match[1])).length ? [recent(Number(match[1]))] : [];
+  if ((match = /^(\d{1,2})[/.](\d{2}|\d{4})$/.exec(input))) {
+    return valid(match[2].length === 2 ? 2000 + Number(match[2]) : Number(match[2]), Number(match[1]));
+  }
+  if ((match = /^(\d{4})-(\d{1,2})$/.exec(input))) return valid(Number(match[1]), Number(match[2]));
+  if (input.length < 3) return [];
+  const months = [];
+  if (vocabulary.last && paletteFold(vocabulary.last).folded.startsWith(input)) {
+    months.push({ ym: paletteShiftMonths(current, -1) });
+  }
+  vocabulary.months.forEach((name, index) => {
+    if (paletteFold(name).folded.startsWith(input)) months.push(recent(index + 1));
+  });
+  return months;
+}
+
+/** "September 2026" in the language of the page. */
+function paletteFormatMonth(ym, lang) {
+  const [year, month] = ym.split('-').map(Number);
+  return new Intl.DateTimeFormat(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+function paletteMonthVocabulary(dialog) {
+  const lang = document.documentElement.lang || 'de';
+  const format = new Intl.DateTimeFormat(lang, { month: 'long', timeZone: 'UTC' });
+  return {
+    months: Array.from({ length: 12 }, (_, index) => format.format(new Date(Date.UTC(2000, index, 1)))),
+    last: dialog.dataset.monthLast,
+  };
+}
+
+/**
+ * A duration as the time field reads it (parseDurationValue: 1:30, 1h30, 90m, 1,5), in minutes;
+ * null for anything else, and for nothing or more than a day.
+ */
+function paletteParseDuration(raw) {
+  const minutes = parseDurationValue(raw);
+  return minutes && minutes > 0 && minutes <= TIME_INPUT_MAX_DURATION ? minutes : null;
+}
+
+/** "1:30" — without the leading zero of the time field, as it is said. */
+function paletteFormatDuration(minutes) {
+  return Math.floor(minutes / 60) + ':' + timeInputPad(minutes % 60);
+}
+
+/** "Fr 25.09." — a day on a chip, where the year is rarely in question. */
+function paletteShortDay(iso, lang) {
+  return paletteFormatDay(iso, lang).replace(/\d{4}$/, '');
+}
+
+/* ─── Values from the server ─── */
+
+function paletteSuggestUrl(dialog, invocation, type, query) {
+  const params = new URLSearchParams({ command: invocation.verb.toUpperCase(), parameter: type.toUpperCase(), q: query });
+  const day = paletteValue(invocation, 'day');
+  if (invocation.verb === 'book' && day) params.set('date', day.value);
+  const person = paletteValue(invocation, 'person');
+  if (invocation.verb === 'accept' && person) params.set('contractId', person.value);
+  return dialog.dataset.suggestUrl + '?' + params;
+}
+
+function paletteTicketUrl(dialog, suborderId, query) {
+  return dialog.dataset.ticketUrl + '?' + new URLSearchParams({ suborderId, q: query });
+}
+
+function paletteSuggestionOf(article) {
+  const part = (name) => article.querySelector('[data-part="' + name + '"]')?.textContent || '';
+  return {
+    value: article.dataset.value,
+    label: part('label'),
+    detail: part('detail'),
+    note: part('note'),
+    disabled: article.dataset.disabled === 'true',
+    commentRequired: article.dataset.commentRequired === 'true',
+    exact: article.dataset.exact === 'true',
+  };
+}
+
+/**
+ * The answer for `url` if it is there, otherwise undefined — and the request goes out: at once, or
+ * with `delayed` once the typing pauses, as for the object search. Every answer is kept until the
+ * palette closes; when one arrives, the command is read again.
+ */
+function paletteFetchValues(dialog, url, delayed, read) {
+  const cache = paletteState.valueCache;
+  if (cache.has(url)) {
+    const known = cache.get(url);
+    return known === PALETTE_PENDING ? undefined : known;
+  }
+  const send = () => {
+    if (cache.has(url)) return;
+    cache.set(url, PALETTE_PENDING);
+    const token = paletteState.openToken;
+    fetch(url, { headers: { 'HX-Request': 'true' } })
+      .then(response => (response.ok && !response.redirected ? response.text() : null))
+      .catch(() => null)
+      .then(body => {
+        if (token !== paletteState.openToken) return;
+        let values = [];
+        try {
+          values = body ? read(body) : [];
+        } catch (e) {
+          // an answer that is no answer offers nothing
+        }
+        cache.set(url, values);
+        if (dialog.open && paletteState.invocation) paletteInvocationUpdate(dialog);
+      });
+  };
+  clearTimeout(paletteState.valueTimer);
+  if (delayed) paletteState.valueTimer = setTimeout(send, PALETTE_OBJECT_DELAY);
+  else send();
+  return undefined;
+}
+
+function paletteServerValues(dialog, invocation, type, query, delayed) {
+  return paletteFetchValues(dialog, paletteSuggestUrl(dialog, invocation, type, query), delayed, body => {
+    const root = new DOMParser().parseFromString(body, 'text/html').querySelector('[data-palette-suggestions]');
+    return root ? Array.from(root.querySelectorAll('[data-palette-suggestion]')).map(paletteSuggestionOf) : [];
+  });
+}
+
+/**
+ * The ticket suggestions of the booking form, for the chosen suborder. `comment` is what the form
+ * writes into an untouched comment when a ticket is picked there: number and title.
+ */
+function paletteTicketValues(dialog, suborderId, query, delayed) {
+  return paletteFetchValues(dialog, paletteTicketUrl(dialog, suborderId, query), delayed, body =>
+    JSON.parse(body).map(ticket => ({
+      value: ticket.key, label: ticket.key, detail: ticket.summary || '', note: '',
+      comment: ticket.summary ? ticket.key + ' - ' + ticket.summary : ticket.key,
+      exact: paletteFold(ticket.key).folded === paletteFold(query.trim()).folded,
+    })));
+}
+
+/** The last working day, from the server: weekends and public holidays are its knowledge. */
+function paletteLastWorkday(dialog, invocation) {
+  const answer = paletteServerValues(dialog, { verb: invocation.verb, values: {} }, 'day', '', false);
+  return answer && answer.length ? answer[0].value : null;
+}
+
+/* ─── The command being entered ─── */
+
+function paletteValue(invocation, type) {
+  const value = invocation.values[type];
+  return value && !value.skipped ? value : null;
+}
+
+/** The first parameter without a value; the one the typed text is read for. */
+function paletteCurrentParam(invocation) {
+  return paletteParams(invocation.verb).find(param => !(param.type in invocation.values)) || null;
+}
+
+function paletteNextParam(invocation, param) {
+  const params = paletteParams(invocation.verb);
+  return params.slice(params.findIndex(p => p.type === param.type) + 1)
+    .find(p => !(p.type in invocation.values)) || null;
+}
+
+/**
+ * Whether `text` begins with the words for the last working day: `{ rest }` behind them once they
+ * are complete and followed by a space, 'partial' while they are still being typed.
+ */
+function paletteLastWorkdayPhrase(dialog, text) {
+  const phrase = paletteFold(dialog.dataset.dayLastworkday || '').folded;
+  const folded = paletteFold(text).folded.replace(/\s+/g, ' ');
+  if (!phrase) return null;
+  if (folded.startsWith(phrase + ' ')) {
+    const words = phrase.split(' ').length;
+    return { rest: text.replace(/^\s+/, '').split(/\s+/).slice(words).join(' ') };
+  }
+  const typed = folded.trim();
+  return typed.length >= 3 && phrase.startsWith(typed) ? 'partial' : null;
+}
+
+/**
+ * What a complete word means for a parameter: a value, 'skip' where an optional parameter does not
+ * fit it, 'open' where it means nothing or more than one thing, 'pending' while the server is asked.
+ */
+function paletteResolveWord(dialog, invocation, param, word) {
+  const lang = document.documentElement.lang || 'de';
+  const today = paletteToday(dialog);
+  if (param.type === 'day') {
+    const days = paletteParseDay(word, today, paletteVocabulary(dialog));
+    if (days.length === 1) return { value: days[0].iso, label: paletteShortDay(days[0].iso, lang) };
+    return days.length || !param.optional ? 'open' : 'skip';
+  }
+  if (param.type === 'month') {
+    const months = paletteParseMonth(word, today, paletteMonthVocabulary(dialog));
+    return months.length === 1 ? { value: months[0].ym, label: paletteFormatMonth(months[0].ym, lang) } : 'open';
+  }
+  if (param.type === 'duration') {
+    const minutes = paletteParseDuration(word);
+    if (minutes) return { value: paletteFormatDuration(minutes), label: paletteFormatDuration(minutes) };
+    return param.optional ? 'skip' : 'open';
+  }
+  if (param.type === 'ticket') {
+    // a ticket only by its whole number: any other word is the beginning of the comment
+    const suborder = paletteValue(invocation, 'suborder');
+    if (!suborder || suborder.error) return 'skip';
+    const answer = paletteTicketValues(dialog, suborder.value, word, false);
+    if (!answer) return 'pending';
+    const exact = answer.find(value => value.exact);
+    return exact ? paletteTaken(exact) : 'skip';
+  }
+  if (PALETTE_SERVER_PARAMS.includes(param.type)) {
+    const answer = paletteServerValues(dialog, invocation, param.type, word, false);
+    if (!answer) return 'pending';
+    const enabled = answer.filter(value => !value.disabled);
+    const exact = enabled.filter(value => value.exact);
+    const pick = exact.length === 1 ? exact[0] : enabled.length === 1 ? enabled[0] : null;
+    return pick ? paletteTaken(pick) : 'open';
+  }
+  return 'open';
+}
+
+function paletteTaken(value) {
+  return { value: value.value, label: value.label, detail: value.detail, commentRequired: value.commentRequired,
+    comment: value.comment };
+}
+
+/** Reads the complete words of the field into chips, as far as they resolve. */
+function paletteResolve(dialog) {
+  const invocation = paletteState.invocation;
+  const input = document.getElementById('commandPaletteInput');
+  let text = input.value;
+  let changed = false;
+  for (;;) {
+    const param = paletteCurrentParam(invocation);
+    if (!param || param.type === 'comment') break;
+    const lead = text.replace(/^\s+/, '');
+    if (param.type === 'day') {
+      const phrase = paletteLastWorkdayPhrase(dialog, lead);
+      if (phrase === 'partial') break;
+      if (phrase) {
+        const iso = paletteLastWorkday(dialog, invocation);
+        if (!iso) break;
+        invocation.values.day = { value: iso, label: paletteShortDay(iso, document.documentElement.lang || 'de') };
+        text = phrase.rest;
+        changed = true;
+        continue;
+      }
+    }
+    const word = /^(\S+)\s+/.exec(lead);
+    if (!word) break;
+    const outcome = paletteResolveWord(dialog, invocation, param, word[1]);
+    if (outcome === 'pending' || outcome === 'open') break;
+    changed = true;
+    if (outcome === 'skip') {
+      invocation.values[param.type] = { skipped: true };
+      continue;
+    }
+    invocation.values[param.type] = outcome;
+    text = lead.slice(word[0].length);
+  }
+  if (changed) input.value = text;
+}
+
+/**
+ * The suggestions for a parameter and what was typed for it, as `{ value, label, detail, note,
+ * disabled }` — or undefined while the server has not answered yet.
+ */
+function paletteParamValues(dialog, invocation, param, query, partial) {
+  const lang = document.documentElement.lang || 'de';
+  const today = paletteToday(dialog);
+  const data = dialog.dataset;
+  if (param.type === 'day') {
+    const lastWorkday = paletteLastWorkday(dialog, invocation);
+    const word = (label, iso) => ({ value: iso, label, note: paletteFormatDay(iso, lang), chip: paletteShortDay(iso, lang) });
+    if (!query) {
+      const yesterday = paletteShiftDays(today, -1);
+      return [word(data.dayToday, today)]
+        .concat(lastWorkday && lastWorkday !== yesterday ? [word(data.dayLastworkday, lastWorkday)] : [])
+        .concat([word(data.dayYesterday, yesterday)]);
+    }
+    const values = paletteParseDay(query, today, paletteVocabulary(dialog))
+      .map(day => ({ value: day.iso, label: paletteFormatDay(day.iso, lang), chip: paletteShortDay(day.iso, lang) }));
+    if (lastWorkday && paletteLastWorkdayPhrase(dialog, query + ' ')) values.unshift(word(data.dayLastworkday, lastWorkday));
+    return values;
+  }
+  if (param.type === 'month') {
+    const month = (ym, note) => ({ value: ym, label: paletteFormatMonth(ym, lang), note: note || '' });
+    if (query) return paletteParseMonth(query, today, paletteMonthVocabulary(dialog)).map(m => month(m.ym));
+    const proposed = invocation.verb === 'release' || (invocation.verb === 'accept' && paletteValue(invocation, 'person'))
+      ? paletteServerValues(dialog, invocation, 'month', '', false) : [];
+    if (proposed === undefined) return undefined;
+    const current = today.slice(0, 7);
+    const values = proposed.map(value => month(value.value, value.note));
+    [month(current), month(paletteShiftMonths(current, -1), data.monthLast)].forEach(value => {
+      if (!values.some(known => known.value === value.value)) values.push(value);
+    });
+    return values;
+  }
+  if (param.type === 'duration') {
+    if (!query) return [15, 30, 60].map(minutes => ({ value: paletteFormatDuration(minutes), label: paletteFormatDuration(minutes) }));
+    const minutes = paletteParseDuration(query);
+    return minutes ? [{ value: paletteFormatDuration(minutes), label: paletteFormatDuration(minutes) }] : [];
+  }
+  if (param.type === 'ticket') {
+    const suborder = paletteValue(invocation, 'suborder');
+    return suborder && !suborder.error ? paletteTicketValues(dialog, suborder.value, query, partial) : [];
+  }
+  if (param.type === 'comment') return [];
+  return paletteServerValues(dialog, invocation, param.type, query, partial);
+}
+
+/**
+ * Whether the chosen suborder can still be booked on the chosen day — asked again after the day
+ * changed. Returns the reason it cannot, '' where it can, undefined while the server is asked.
+ */
+function paletteSuborderProblem(dialog, invocation) {
+  const suborder = paletteValue(invocation, 'suborder');
+  const answer = paletteServerValues(dialog, invocation, 'suborder', suborder.label, false);
+  if (!answer) return undefined;
+  const found = answer.find(value => value.value === suborder.value);
+  if (found) return found.disabled ? found.note : '';
+  // neither on that day nor today: the server names no reason, the day is reason enough
+  const day = paletteValue(invocation, 'day');
+  return dialog.dataset.suborderNotbookable.replace('{0}',
+    paletteFormatDay(day ? day.value : paletteToday(dialog), document.documentElement.lang || 'de'));
+}
+
+function paletteInvoke(dialog, verb, rest) {
+  const command = paletteState.commands.find(item => item.type === 'verb' && item.key === verb);
+  paletteState.invocation = { verb, values: {}, fallback: command ? command.fallback : null,
+    label: command ? command.label : verb };
+  clearTimeout(paletteState.objectTimer);
+  paletteState.objectToken++;
+  paletteState.objects = null;
+  const input = document.getElementById('commandPaletteInput');
+  input.dataset.placeholder = input.dataset.placeholder || input.placeholder;
+  input.placeholder = '';
+  input.value = rest;
+  // asked right away, so that the last working day is there once the day is typed
+  if (paletteParams(verb).some(param => param.type === 'day')) paletteLastWorkday(dialog, paletteState.invocation);
+  paletteInvocationUpdate(dialog);
+}
+
+function paletteLeaveInvocation(dialog, text) {
+  paletteState.invocation = null;
+  const input = document.getElementById('commandPaletteInput');
+  input.placeholder = input.dataset.placeholder || input.placeholder;
+  input.value = text;
+  document.getElementById('commandPaletteChips').hidden = true;
+  document.getElementById('commandPaletteParam').hidden = true;
+  document.getElementById('commandPalettePreview').hidden = true;
+  paletteUpdate(dialog);
+}
+
+/** The command typed as a word of its own at the start of the field; then what follows is its input. */
+function paletteDetectVerb(dialog, text) {
+  const match = /^\s*(\S+)\s+([\s\S]*)$/.exec(text);
+  if (!match) return false;
+  const word = paletteFold(match[1]).folded;
+  const command = paletteState.commands.find(item => item.type === 'verb' && paletteFold(item.label).folded === word);
+  if (!command) return false;
+  paletteInvoke(dialog, command.key, match[2]);
+  return true;
+}
+
+function paletteInvocationUpdate(dialog) {
+  const invocation = paletteState.invocation;
+  const input = document.getElementById('commandPaletteInput');
+  paletteResolve(dialog);
+
+  const suborder = paletteValue(invocation, 'suborder');
+  if (suborder) {
+    const problem = paletteSuborderProblem(dialog, invocation);
+    if (problem !== undefined) suborder.error = problem;
+  }
+
+  const text = input.value;
+  let param = paletteCurrentParam(invocation);
+  const lead = text.replace(/^\s+/, '');
+  const firstWord = /^(\S+)(\s|$)/.exec(lead);
+  const complete = /\s/.test(lead);
+  let query = '';
+  if (param && (param.type === 'comment' || (param.type === 'day' && paletteLastWorkdayPhrase(dialog, lead)))) {
+    query = lead.trim();
+  } else if (firstWord) {
+    query = firstWord[1];
+  }
+  let values = param ? paletteParamValues(dialog, invocation, param, query, !complete) : [];
+  // an optional parameter the input does not fit: it is left out, and the next one is offered
+  if (param && param.optional && param.type !== 'comment' && query && values && !values.length) {
+    const next = paletteNextParam(invocation, param);
+    if (next) {
+      param = next;
+      values = paletteParamValues(dialog, invocation, param, next.type === 'comment' ? lead.trim() : query, !complete);
+    }
+  }
+  paletteState.valueParam = param;
+  paletteState.valueQuery = param && param.type === 'comment' ? '' : query;
+
+  paletteRenderChips(dialog);
+  const hint = document.getElementById('commandPaletteParam');
+  hint.hidden = !param;
+  hint.textContent = param ? paletteParamName(dialog, param.type) + '?' : '';
+
+  const hits = (values || []).map(value => ({
+    command: {
+      type: 'value', key: value.value, label: value.detail ? value.label + ' · ' + value.detail : value.label,
+      kind: value.note || '', disabled: !!value.disabled, value, run: () => paletteTake(dialog, value),
+    },
+    ranges: query && param && param.type !== 'comment' && paletteMatch(value.label, query)
+      ? paletteMatch(value.label, query).ranges : [],
+  }));
+  paletteRender([{ hits }], values === undefined);
+  const firstEnabled = paletteState.items.findIndex(item => !item.disabled);
+  paletteSetActive(firstEnabled, true);
+  paletteRenderPreview(dialog);
+}
+
+function paletteRenderChips(dialog) {
+  const invocation = paletteState.invocation;
+  const chips = document.getElementById('commandPaletteChips');
+  chips.replaceChildren();
+  const chip = (label, type, error) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    // only aimed at by a click: the keyboard stays in the field, where Backspace takes chips back
+    button.tabIndex = -1;
+    button.className = 'command-palette-chip badge' + (error ? ' bg-danger-lt' : ' bg-primary-lt');
+    button.dataset.paletteChip = type;
+    button.textContent = label;
+    button.title = error || dialog.dataset.chipRemove;
+    chips.append(button);
+  };
+  chip(invocation.label, '');
+  paletteParams(invocation.verb).forEach(param => {
+    const value = paletteValue(invocation, param.type);
+    // a person by name and sign, as the palette lists them — two of the same name stay apart
+    const label = value && (value.chip
+      || (param.type === 'person' && value.detail ? value.label + ' · ' + value.detail : value.label));
+    if (value) chip(label, param.type, value.error);
+  });
+  chips.hidden = false;
+}
+
+/** The title of what Enter opens, the values it opens with, and what is still wrong. */
+function paletteRenderPreview(dialog) {
+  const preview = document.getElementById('commandPalettePreview');
+  const target = paletteTarget(dialog, paletteAsEnterTakesIt());
+  preview.querySelector('[data-part="title"]').textContent = target.title;
+  preview.querySelector('[data-part="values"]').textContent = target.parts.filter(Boolean).join(' · ');
+  preview.querySelector('[data-part="warning"]').textContent = target.warnings.join(' · ');
+  preview.hidden = false;
+}
+
+/**
+ * The comment as it stands: the text of the field, once every parameter before it is read. With
+ * the ticket still open that is its text as well — Enter makes a ticket of it only by its number.
+ */
+function paletteComment(invocation) {
+  if (invocation.fieldTaken) return '';
+  const param = paletteCurrentParam(invocation);
+  return param && (param.type === 'comment' || param.type === 'ticket')
+    ? document.getElementById('commandPaletteInput').value.trim() : '';
+}
+
+/**
+ * Where Enter leads with the values there are, with the preview's title, values and warnings. A
+ * required value that is missing and cannot be defaulted leads to the command's page instead.
+ */
+function paletteTarget(dialog, invocation) {
+  const lang = document.documentElement.lang || 'de';
+  const data = dialog.dataset;
+  const today = paletteToday(dialog);
+  const value = (type) => paletteValue(invocation, type);
+  const title = data['preview' + paletteCapitalized(invocation.verb)];
+  const page = () => ({
+    href: invocation.fallback ? invocation.fallback.href : null,
+    title: data.previewPage.replace('{0}', invocation.fallback ? invocation.fallback.label : invocation.label),
+    parts: [], warnings: [],
+  });
+  const month = (type) => value(type) || null;
+  const proposedMonth = () => {
+    const answer = paletteState.valueCache.get(paletteSuggestUrl(dialog, invocation, 'month', ''));
+    return Array.isArray(answer) && answer.length ? { value: answer[0].value } : null;
+  };
+  const monthLabel = (ym) => paletteFormatMonth(ym, lang);
+
+  switch (invocation.verb) {
+    case 'book': {
+      const day = value('day') ? value('day').value : today;
+      const suborder = value('suborder') && !value('suborder').error ? value('suborder') : null;
+      const duration = value('duration');
+      const ticket = suborder && value('ticket');
+      // without a comment of its own, the ticket's number and title, as the form writes them
+      const comment = paletteComment(invocation) || (ticket ? ticket.comment : '');
+      const params = new URLSearchParams({ date: day });
+      if (suborder) params.set('suborderId', suborder.value);
+      if (duration) params.set('duration', duration.value);
+      if (ticket) params.set('ticketReference', ticket.value);
+      if (comment) params.set('comment', comment);
+      params.set('focus', !duration ? 'duration' : !suborder ? 'suborder' : !comment ? 'comment' : 'save');
+      const warnings = [];
+      if (value('suborder') && value('suborder').error) warnings.push(value('suborder').error);
+      if (suborder && suborder.commentRequired && !comment) warnings.push(data.previewCommentRequired);
+      return {
+        href: data.targetBook + '?' + params, title, warnings,
+        parts: [paletteFormatDay(day, lang), suborder && (suborder.detail ? suborder.label + ' ' + suborder.detail : suborder.label),
+          duration && duration.label, ticket && ticket.label, comment && '„' + comment + '“'],
+      };
+    }
+    case 'day': {
+      const day = value('day') ? value('day').value : today;
+      return { href: data.dailyUrl + '?mode=daily&date=' + day, title, parts: [paletteFormatDay(day, lang)], warnings: [] };
+    }
+    case 'matrix': {
+      const ym = month('month') ? month('month').value : today.slice(0, 7);
+      const [year, monthNumber] = ym.split('-').map(Number);
+      const params = new URLSearchParams({ fMonth: monthNumber, fYear: year });
+      const person = value('person');
+      if (person) params.set('fEmployeeContractId', person.value);
+      return { href: data.targetMatrix + '?' + params, title, parts: [monthLabel(ym), person && person.label], warnings: [] };
+    }
+    case 'release': {
+      const chosen = month('month') || proposedMonth();
+      if (!chosen) return page();
+      return { href: data.targetRelease + '?until=' + chosen.value, title, parts: [monthLabel(chosen.value)], warnings: [] };
+    }
+    case 'accept': {
+      const person = value('person');
+      const chosen = person && (month('month') || proposedMonth());
+      if (!chosen) return page();
+      return {
+        href: data.targetAccept + '?' + new URLSearchParams({ contractId: person.value, until: chosen.value }),
+        title, parts: [person.label, monthLabel(chosen.value)], warnings: [],
+      };
+    }
+    case 'controlling': {
+      const order = value('customerorder');
+      if (!order) return page();
+      return {
+        href: data.targetControlling + '?' + new URLSearchParams({ fCustomerOrderSign: order.value, evaluate: 'true' }),
+        title, parts: [order.detail ? order.label + ' ' + order.detail : order.label], warnings: [],
+      };
+    }
+    default:
+      return page();
+  }
+}
+
+/**
+ * Takes a suggestion for the parameter it was offered for. Where that is not the current one, the
+ * current, optional one is left out.
+ */
+function paletteTake(dialog, value) {
+  const invocation = paletteState.invocation;
+  const param = paletteState.valueParam;
+  if (!param || value.disabled) return;
+  const input = document.getElementById('commandPaletteInput');
+  const current = paletteCurrentParam(invocation);
+  if (current && current.type !== param.type) invocation.values[current.type] = { skipped: true };
+  invocation.values[param.type] = Object.assign(paletteTaken(value), value.chip ? { chip: value.chip } : {});
+  const lead = input.value.replace(/^\s+/, '');
+  const query = paletteState.valueQuery;
+  let rest = lead;
+  if (query) {
+    const phrase = param.type === 'day' && paletteLastWorkdayPhrase(dialog, lead);
+    rest = phrase && phrase !== 'partial' ? phrase.rest
+      : phrase === 'partial' ? '' : lead.slice(lead.indexOf(query) + query.length);
+  }
+  input.value = rest.replace(/^\s+/, '');
+  paletteInvocationUpdate(dialog);
+}
+
+/** Backspace in the empty field, or a click on a chip: the value goes, and its parameter is next. */
+function paletteTakeBack(dialog, type) {
+  const invocation = paletteState.invocation;
+  if (!type) {
+    const set = paletteParams(invocation.verb).filter(param => paletteValue(invocation, param.type));
+    if (!set.length) {
+      paletteLeaveInvocation(dialog, invocation.label);
+      return;
+    }
+    type = set[set.length - 1].type;
+  }
+  delete invocation.values[type];
+  // parameters left out on the way are open again: the one taken back may be what they missed
+  Object.keys(invocation.values).forEach(key => {
+    if (invocation.values[key].skipped) delete invocation.values[key];
+  });
+  // a ticket belongs to its suborder's branch and goes with it
+  if (type === 'suborder') delete invocation.values.ticket;
+  paletteInvocationUpdate(dialog);
+}
+
+/**
+ * The value Enter takes before it opens the target: the selected one for the parameter still open,
+ * where something was typed for it or where the command needs it. Null where there is none.
+ */
+function paletteEnterTakes() {
+  const param = paletteState.valueParam;
+  const active = paletteState.items[paletteState.active];
+  const typed = document.getElementById('commandPaletteInput').value.trim();
+  if (!param || param.type === 'comment' || !active || active.type !== 'value' || active.disabled) return null;
+  // a ticket only by its whole number: a ticket whose title merely contains the word is no reason
+  // to turn the comment into a ticket
+  if (param.type === 'ticket') return active.value.exact ? active.value : null;
+  return typed || !param.optional ? active.value : null;
+}
+
+/** The command as Enter would open it — what the preview shows, so that it never promises otherwise. */
+function paletteAsEnterTakesIt() {
+  const invocation = paletteState.invocation;
+  const taken = paletteEnterTakes();
+  if (!taken) return invocation;
+  const values = Object.assign({}, invocation.values);
+  const current = paletteCurrentParam(invocation);
+  if (current && current.type !== paletteState.valueParam.type) values[current.type] = { skipped: true };
+  values[paletteState.valueParam.type] = paletteTaken(taken);
+  // the field still holds the word the value is taken for; it is no comment
+  return Object.assign({}, invocation, { values, fieldTaken: true });
+}
+
+/** Enter: the value paletteEnterTakes names is taken first, then the target opens. */
+function paletteInvocationRun(dialog) {
+  const invocation = paletteState.invocation;
+  const taken = paletteEnterTakes();
+  if (taken) paletteTake(dialog, taken);
+  const target = paletteTarget(dialog, invocation);
+  if (!target.href) return;
+  document.getElementById('commandPalette').close();
+  window.location.assign(target.href);
+}
+
+function paletteMoveActive(step) {
+  const count = paletteState.items.length;
+  if (!count) return;
+  let index = paletteState.active;
+  for (let tried = 0; tried < count; tried++) {
+    index = (index + step + count) % count;
+    if (!paletteState.items[index].disabled) {
+      paletteSetActive(index, true);
+      return;
+    }
+  }
+}
+
 /* ─── Opening and closing ─── */
 
 /**
@@ -1528,11 +2291,37 @@ function paletteWire(dialog) {
 
   input.addEventListener('input', () => {
     if (paletteState.drill) paletteRenderTargets(input.value);
-    else paletteUpdate(dialog);
+    else if (paletteState.invocation) paletteInvocationUpdate(dialog);
+    else if (!paletteDetectVerb(dialog, input.value)) paletteUpdate(dialog);
   });
   input.addEventListener('keydown', (event) => {
     const count = paletteState.items.length;
     const active = paletteState.items[paletteState.active];
+    if (paletteState.invocation && !event.isComposing) {
+      // a command is being entered (#1158): the arrows pass over what cannot be chosen, Tab takes,
+      // Backspace in the empty field gives the last chip back — once per press, like → and ←
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        paletteMoveActive(event.key === 'ArrowDown' ? 1 : -1);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        paletteInvocationRun(dialog);
+      } else if (event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        if (active && active.type === 'value' && !active.disabled) paletteTake(dialog, active.value);
+      } else if (event.key === 'Backspace' && input.value === '') {
+        event.preventDefault();
+        if (event.repeat && paletteState.heldKey === event.key) return;
+        paletteState.heldKey = event.key;
+        paletteTakeBack(dialog, null);
+      }
+      return;
+    }
+    if (event.key === 'Tab' && !event.shiftKey && active && active.type === 'verb') {
+      event.preventDefault();
+      active.run();
+      return;
+    }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (count) paletteSetActive((paletteState.active + (event.key === 'ArrowDown' ? 1 : -1) + count) % count, true);
@@ -1566,7 +2355,8 @@ function paletteWire(dialog) {
   list.addEventListener('mousedown', (event) => event.preventDefault());
   list.addEventListener('mousemove', (event) => {
     const option = event.target.closest('[role="option"]');
-    if (option && Number(option.dataset.index) !== paletteState.active) {
+    // a value that cannot be chosen is not selected under the pointer either (#1158)
+    if (option && Number(option.dataset.index) !== paletteState.active && !option.hasAttribute('aria-disabled')) {
       paletteSetActive(Number(option.dataset.index), false);
     }
   });
@@ -1578,7 +2368,21 @@ function paletteWire(dialog) {
       paletteDrill(dialog, item);
       return;
     }
+    if (item && item.type === 'value') {
+      paletteTake(dialog, item.value);
+      return;
+    }
     paletteRun(Number(option.dataset.index));
+  });
+  const chips = document.getElementById('commandPaletteChips');
+  chips.addEventListener('mousedown', (event) => event.preventDefault());
+  chips.addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-palette-chip]');
+    if (!chip || !paletteState.invocation) return;
+    // the command's own chip leaves the command, as Backspace does once nothing else is left
+    if (chip.dataset.paletteChip) paletteTakeBack(dialog, chip.dataset.paletteChip);
+    else paletteLeaveInvocation(dialog, paletteState.invocation.label);
+    input.focus();
   });
   dialog.querySelector('[data-palette-back]').addEventListener('click', () => {
     if (paletteState.drill) paletteUndrill(dialog);
@@ -1596,6 +2400,9 @@ function paletteWire(dialog) {
   dialog.addEventListener('close', () => {
     // an answer still on its way has nobody to show it to
     clearTimeout(paletteState.objectTimer);
+    // Not openToken: the close event comes a task later, and a palette opened again at once would
+    // lose its own answers. Opening counts it; a closed palette ignores an answer anyway.
+    clearTimeout(paletteState.valueTimer);
     paletteState.objectToken++;
     const origin = paletteState.origin;
     paletteState.origin = null;
@@ -1620,10 +2427,17 @@ function paletteOpen() {
   if (document.querySelector('.modal.show')) return;
   paletteWire(dialog);
   paletteState.origin = document.activeElement;
-  paletteState.commands = paletteNavigationCommands().concat(paletteSettingsCommands(dialog));
+  // the commands first: on an equal hit "buchen" stands above "Buchungsliste"
+  paletteState.commands = paletteVerbCommands(dialog).concat(paletteNavigationCommands(), paletteSettingsCommands(dialog));
   paletteState.drill = null;
   paletteState.objects = null;
+  paletteState.invocation = null;
+  paletteState.valueCache = new Map();
+  paletteState.openToken++;
   document.getElementById('commandPaletteCrumb').hidden = true;
+  document.getElementById('commandPaletteChips').hidden = true;
+  document.getElementById('commandPaletteParam').hidden = true;
+  document.getElementById('commandPalettePreview').hidden = true;
   const input = document.getElementById('commandPaletteInput');
   input.placeholder = input.dataset.placeholder || input.placeholder;
   input.value = '';

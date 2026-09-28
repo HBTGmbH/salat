@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Die Werte fuer einen Parameter eines Befehls (#1158). Wie bei der Objektsuche baut salat.js
+       daraus die Zeilen selbst; das Fragment traegt nur, was dafuer gebraucht wird, und die Texte
+       aus den Nachrichtendateien. */-->
+<div th:fragment="suggestions" data-palette-suggestions>
+  <article th:each="suggestion : ${suggestions}" data-palette-suggestion
+           th:data-value="${suggestion.value}"
+           th:data-disabled="${suggestion.disabled} ? 'true' : null"
+           th:data-comment-required="${suggestion.commentRequired} ? 'true' : null"
+           th:data-exact="${suggestion.exact} ? 'true' : null">
+    <span data-part="label" th:text="${suggestion.label}">MUSTER-01.03</span>
+    <span data-part="detail" th:if="${suggestion.detail != null}" th:text="${suggestion.detail}">Wartung</span>
+    <span data-part="note" th:if="${suggestion.note != null}"
+          th:text="${#messages.msgWithParams(suggestion.note.key, suggestion.note.args.toArray())}">Favorit</span>
+  </article>
+</div>
+
+</body>
+</html>

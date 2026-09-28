@@ -2,6 +2,7 @@ package org.tb.budget.controller;
 
 import static org.tb.common.palette.PaletteKind.CUSTOMERORDER;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,12 +10,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.tb.budget.auth.BudgetAuthorization;
 import org.tb.budget.service.OrderBudgetService;
+import org.tb.common.Hiding;
+import org.tb.common.Validity;
+import org.tb.common.palette.PaletteCommand;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
 import org.tb.common.palette.PaletteLink;
+import org.tb.common.palette.PaletteParameter;
 import org.tb.common.palette.PaletteProvider;
+import org.tb.common.palette.PaletteSuggestion;
+import org.tb.common.palette.PaletteSuggestionRequest;
 import org.tb.common.palette.PaletteTarget;
 import org.tb.common.palette.PaletteText;
+import org.tb.order.domain.CustomerorderSearchRow;
+import org.tb.order.service.CustomerorderService;
 
 /**
  * The budget targets of an order found by the command palette (#1157, ADR-0031): its controlling,
@@ -35,6 +44,7 @@ public class BudgetPaletteProvider implements PaletteProvider {
 
   private final BudgetAuthorization budgetAuthorization;
   private final OrderBudgetService orderBudgetService;
+  private final CustomerorderService customerorderService;
 
   @Override
   public Map<String, List<PaletteTarget>> targetsFor(PaletteKind kind, List<PaletteHit> hits) {
@@ -59,5 +69,28 @@ public class BudgetPaletteProvider implements PaletteProvider {
                   .paramIf(!hasActivePlan, "fBudgetShowInactive", true).build(), 3)));
     }
     return targets;
+  }
+
+  /**
+   * The orders for {@code controlling} (#1158): the order search of the palette, narrowed to those
+   * whose figures the user may see — the same question as for the controlling target above. Current
+   * orders before ended and hidden ones, then by how well they match.
+   */
+  @Override
+  public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+    if (!request.is(PaletteCommand.CONTROLLING, PaletteParameter.CUSTOMERORDER)) {
+      return List.of();
+    }
+    var query = request.query();
+    return customerorderService.getPaletteCandidates(query).stream()
+        .filter(row -> budgetAuthorization.isAuthorizedForCustomerorder(row.sign()))
+        .sorted(Comparator.comparing((CustomerorderSearchRow row) -> Hiding.isHidden(row.hide()))
+            .thenComparing(row -> Validity.isInactive(row.untilDate()))
+            .thenComparing(Comparator.comparingInt((CustomerorderSearchRow row) -> query.match(row.sign(),
+                row.shortdescription(), row.description(), row.customerShortname())).reversed()))
+        .map(row -> new PaletteSuggestion(row.sign(), row.sign(),
+            row.shortdescription() != null && !row.shortdescription().isBlank() ? row.shortdescription() : row.description(),
+            null, false, false, query.isKey(row.sign())))
+        .toList();
   }
 }
