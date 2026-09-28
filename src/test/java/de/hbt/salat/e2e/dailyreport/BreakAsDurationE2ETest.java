@@ -28,6 +28,7 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_BO_SIGN;
   private static final LocalDate DAY = LocalDate.parse("2026-08-10");
+  private static final String WORKINGDAY_SAVE = "/dailyreport/daily/workingday";
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
@@ -38,10 +39,11 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
 
       // two digits are minutes, as in every other duration field
       assertBreakInputStores(page, "30", "00:30");
-      // and the other duration formats work too
+      // and the other duration formats work too. Each value differs from the one before: an
+      // unchanged value is not saved at all, so it would prove nothing
       assertBreakInputStores(page, "90m", "01:30");
-      assertBreakInputStores(page, "1,5", "01:30");
       assertBreakInputStores(page, "0:45", "00:45");
+      assertBreakInputStores(page, "1,5", "01:30");
       // clearing the field means no break
       assertBreakInputStores(page, "", "00:00");
     });
@@ -58,8 +60,7 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
       // without the beta the browser control stays, and the duration mask must not interfere with it
       assertThat(page.locator("#breakTime")).hasAttribute("type", "time");
       page.fill("#breakTime", "00:45");
-      page.locator("h3").first().click();
-      page.waitForTimeout(1200);
+      afterResponse(page, WORKINGDAY_SAVE, () -> page.locator("h3").first().click());
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + DAY, EMPLOYEE));
       assertThat(page.locator("#breakTime")).hasValue("00:45");
     });
@@ -72,8 +73,7 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
       page.locator("#breakTime").click();
       page.locator("#breakTime").pressSequentially(typed);
     }
-    page.locator("h3").first().click();
-    page.waitForTimeout(1200);
+    afterResponse(page, WORKINGDAY_SAVE, () -> page.locator("h3").first().click());
 
     page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + DAY, EMPLOYEE));
     assertThat(page.locator("#breakTime")).hasValue(stored);

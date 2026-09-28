@@ -7,6 +7,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -211,6 +212,18 @@ public abstract class PlaywrightE2ETestBase {
 
   protected String urlWithLogin(String path, String employeeSign) {
     return urlFor(path, employeeSign);
+  }
+
+  /**
+   * Runs the action and returns once the answer to the request it triggers on {@code path} is
+   * complete. A save whose result only shows after navigating away would otherwise be cut off by
+   * that navigation, and a fixed wait is too short on a busy runner and wasted time everywhere else.
+   * What the answer then changes on the page is left to the retrying assertions.
+   */
+  protected Response afterResponse(Page page, String path, Runnable action) {
+    Response response = page.waitForResponse(r -> r.url().contains(path), action);
+    response.finished();
+    return response;
   }
 
   /**

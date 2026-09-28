@@ -106,8 +106,4 @@ class ShareSwitchedOffE2ETest extends PlaywrightE2ETestBase {
     assertThat(page.locator("body")).containsText(comment);
   }
 
-  private void afterResponse(Page page, String path, Runnable action) {
-    page.waitForResponse(r -> r.url().contains(path), action).finished();
-  }
-
 }

@@ -137,6 +137,8 @@ class KeyboardShortcutsE2ETest extends PlaywrightE2ETestBase {
       leaveFields(page);
 
       page.keyboard().press("i");
+      // Nothing happening leaves nothing to wait for, and a later key cannot stand in: a navigation
+      // started by i changes the URL only once it commits, which can be after that key took effect.
       page.waitForTimeout(300);
 
       assertEquals(before, page.url());
