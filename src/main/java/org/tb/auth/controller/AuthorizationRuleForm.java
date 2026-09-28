@@ -21,6 +21,7 @@ import org.tb.auth.domain.AuthorizationRuleInfo;
 public class AuthorizationRuleForm {
 
   private Long id;
+  private String name;
   private String category;
   private List<String> granteeIds = new ArrayList<>();
   private List<String> objectIds = new ArrayList<>();
@@ -37,12 +38,13 @@ public class AuthorizationRuleForm {
   }
 
   public AuthorizationRuleData toData() {
-    return new AuthorizationRuleData(category, granteeIds, objectIds, accessLevels, validFrom, validUntil);
+    return new AuthorizationRuleData(name, category, granteeIds, objectIds, accessLevels, validFrom, validUntil);
   }
 
   public static AuthorizationRuleForm of(AuthorizationRuleInfo info) {
     var form = new AuthorizationRuleForm();
     form.setId(info.id());
+    form.setName(info.name());
     form.setCategory(info.category());
     form.setGranteeIds(new ArrayList<>(info.granteeIds()));
     form.setObjectIds(new ArrayList<>(info.objectIds()));

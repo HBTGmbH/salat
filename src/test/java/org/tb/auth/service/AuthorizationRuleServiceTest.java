@@ -9,10 +9,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 import static org.tb.auth.domain.AccessLevel.READ;
+import static org.tb.common.exception.ErrorCode.AR_NAME_REQUIRED;
+import static org.tb.common.exception.ErrorCode.AR_NAME_TAKEN;
+import static org.tb.common.exception.ErrorCode.AR_NAME_TOO_LONG;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,14 +24,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.tb.auth.domain.AuthorizationObject;
 import org.tb.auth.domain.AuthorizationObjectProvider;
 import org.tb.auth.domain.AuthorizationRule;
 import org.tb.auth.domain.AuthorizationRuleData;
+import org.tb.auth.domain.AuthorizationRuleInfo;
 import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.domain.ObjectJudgement;
 import org.tb.auth.persistence.AuthorizationRuleRepository;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.ErrorCode;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.util.DateUtils;
 
@@ -134,17 +141,17 @@ class AuthorizationRuleServiceTest {
     @Test
     void aRuleWithoutCategoryOrAccessLevelIsRefused() {
         assertThatThrownBy(() -> service.create(
-            new AuthorizationRuleData(null, List.of("kr"), List.of(), List.of(READ), null, null)))
+            new AuthorizationRuleData("Regel", null, List.of("kr"), List.of(), List.of(READ), null, null)))
             .isInstanceOf(InvalidDataException.class);
         assertThatThrownBy(() -> service.create(
-            new AuthorizationRuleData(CATEGORY, List.of("kr"), List.of(), List.of(), null, null)))
+            new AuthorizationRuleData("Regel", CATEGORY, List.of("kr"), List.of(), List.of(), null, null)))
             .isInstanceOf(InvalidDataException.class);
     }
 
     @Test
     void aRuleThatEndsBeforeItStartsIsRefused() {
         assertThatThrownBy(() -> service.create(new AuthorizationRuleData(
-            CATEGORY, List.of("kr"), List.of("umsatz"), List.of(READ), of(2026, 2, 1), of(2026, 1, 1))))
+            "Regel", CATEGORY, List.of("kr"), List.of("umsatz"), List.of(READ), of(2026, 2, 1), of(2026, 1, 1))))
             .isInstanceOf(InvalidDataException.class);
     }
 
@@ -155,6 +162,78 @@ class AuthorizationRuleServiceTest {
 
         assertThatThrownBy(() -> service.create(data(many, List.of("umsatz"))))
             .isInstanceOf(InvalidDataException.class);
+    }
+
+    @Test
+    void aRuleWithoutANameIsRefusedAndNothingIsSaved() {
+        for (var name : new String[]{null, "", "   "}) {
+            assertThatThrownBy(() -> service.create(named(name)))
+                .as("name <%s>", name)
+                .satisfies(e -> assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_REQUIRED));
+        }
+        // an old rule gets its name the next time it is saved - it cannot be saved without one either
+        assertThatThrownBy(() -> service.update(7L, named(" ")))
+            .satisfies(e -> assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_REQUIRED));
+
+        verify(authorizationRuleRepository, never()).save(any(AuthorizationRule.class));
+    }
+
+    @Test
+    void aNameLongerThanTheColumnIsRefused() {
+        assertThatThrownBy(() -> service.create(named("x".repeat(256))))
+            .satisfies(e -> assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_TOO_LONG));
+    }
+
+    @Test
+    void theNameIsStoredWithoutSurroundingBlanks() {
+        var saved = new ArrayList<AuthorizationRule>();
+        when(authorizationRuleRepository.save(any(AuthorizationRule.class))).thenAnswer(invocation -> {
+            saved.add(invocation.getArgument(0));
+            return invocation.getArgument(0);
+        });
+
+        service.create(named("  Umsatz-ETL  "));
+
+        assertThat(saved).singleElement().extracting(AuthorizationRule::getName).isEqualTo("Umsatz-ETL");
+    }
+
+    @Test
+    void aNameAnotherRuleCarriesIsRefusedRegardlessOfCase() {
+        var other = storedRule(3L, "Umsatz-ETL");
+        when(authorizationRuleRepository.findAllByNameIgnoreCase("UMSATZ-etl")).thenReturn(List.of(other));
+
+        assertThatThrownBy(() -> service.create(named("UMSATZ-etl")))
+            .isInstanceOfSatisfying(InvalidDataException.class, e -> {
+                assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_TAKEN);
+                assertThat(e.getMessages().getFirst().getArguments()).containsExactly("UMSATZ-etl");
+            });
+        when(authorizationRuleRepository.findById(7L)).thenReturn(Optional.of(storedRule(7L, "Anders")));
+        assertThatThrownBy(() -> service.update(7L, named("UMSATZ-etl")))
+            .satisfies(e -> assertThat(errorCodeOf(e)).isEqualTo(AR_NAME_TAKEN));
+
+        verify(authorizationRuleRepository, never()).save(any(AuthorizationRule.class));
+    }
+
+    @Test
+    void aRuleKeepingItsOwnNameIsNoConflict() {
+        var rule = storedRule(3L, "Umsatz-ETL");
+        when(authorizationRuleRepository.findById(3L)).thenReturn(Optional.of(rule));
+        when(authorizationRuleRepository.findAllByNameIgnoreCase("umsatz-etl")).thenReturn(List.of(rule));
+
+        service.update(3L, named("umsatz-etl"));
+
+        assertThat(rule.getName()).isEqualTo("umsatz-etl");
+        verify(authorizationRuleRepository).save(rule);
+    }
+
+    @Test
+    void theListIsSortedByNameAndTheRulesWithoutOneComeLast() {
+        when(authorizationRuleRepository.findAll()).thenReturn(List.of(
+            storedRule(1L, null), storedRule(2L, "zentrale Auswertung"), storedRule(3L, "Abnahme Team"),
+            storedRule(4L, "buchungen lesen")));
+
+        assertThat(service.getAll()).extracting(AuthorizationRuleInfo::name)
+            .containsExactly("Abnahme Team", "buchungen lesen", "zentrale Auswertung", null);
     }
 
     @Test
@@ -187,7 +266,27 @@ class AuthorizationRuleServiceTest {
     }
 
     private AuthorizationRuleData data(List<String> grantees, List<String> objects) {
-        return new AuthorizationRuleData(CATEGORY, grantees, objects, List.of(READ), of(2026, 1, 1), null);
+        return new AuthorizationRuleData("Regel", CATEGORY, grantees, objects, List.of(READ), of(2026, 1, 1), null);
+    }
+
+    private AuthorizationRuleData named(String name) {
+        return new AuthorizationRuleData(name, CATEGORY, List.of("kr"), List.of("umsatz"), List.of(READ), null, null);
+    }
+
+    private static AuthorizationRule storedRule(long id, String name) {
+        var rule = new AuthorizationRule();
+        ReflectionTestUtils.setField(rule, "id", id);
+        rule.setName(name);
+        rule.setCategory(CATEGORY);
+        rule.setGranteeId(Set.of("kr"));
+        rule.setObjectId(Set.of("umsatz"));
+        rule.setAccessLevels(Set.of(READ));
+        return rule;
+    }
+
+    private static ErrorCode errorCodeOf(Throwable e) {
+        assertThat(e).isInstanceOf(InvalidDataException.class);
+        return ((InvalidDataException) e).getMessages().getFirst().getErrorCode();
     }
 
 }
