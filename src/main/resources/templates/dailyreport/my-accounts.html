@@ -504,6 +504,25 @@
         const targetName = /*[[#{main.my.accounts.working.chart.target}]]*/ 'Soll';
         const actualColor = tblrColor('primary');
         const targetColor = tblrColor('orange');
+        const differenceName = /*[[#{main.my.accounts.working.chart.difference}]]*/ 'Differenz';
+        const hours = (value) => number(value) + ' h';
+        const signedHours = (value) => (value > 0 ? '+' : value < 0 ? '−' : '±') + hours(Math.abs(value));
+        /* Eigenes Popup statt des eingebauten: das stellt den Sollwert einer Markierung anders dar
+           als die Saeule - ohne Doppelpunkt, mit einem Zeichen zwischen den Zeilen. Hier stehen
+           Ist, Soll und ihre Differenz gleich aufgebaut untereinander, jede Zeile mit dem Zeichen
+           aus der Legende (Kaestchen fuer die Saeule, Strich fuer die Markierung). */
+        const row = (marker, label, value) => '<div class="chart-tooltip-row">' + marker
+            + '<span>' + label + '</span><span class="chart-tooltip-value">' + value + '</span></div>';
+        const workingTimeTooltip = ({ dataPointIndex }) => {
+          const actual = chartActual[dataPointIndex];
+          const target = chartTarget[dataPointIndex];
+          return '<div class="chart-tooltip">'
+              + '<div class="chart-tooltip-title">' + chartLabels[dataPointIndex] + '</div>'
+              + row('<span class="chart-tooltip-marker" style="background:' + actualColor + '"></span>', actualName, hours(actual))
+              + row('<span class="chart-tooltip-marker chart-tooltip-marker-line" style="background:' + targetColor + '"></span>', targetName, hours(target))
+              + row('<span class="chart-tooltip-marker"></span>', differenceName, signedHours(Math.round((actual - target) * 10) / 10))
+              + '</div>';
+        };
         renderWhenShown('tab-working-time', () => barChart(workingTimeChart, {
           categories: chartLabels,
           series: [{
@@ -515,7 +534,12 @@
           }],
           colors: [actualColor],
           legend: { show: true, showForSingleSeries: true, customLegendItems: [actualName, targetName],
-            markers: { fillColors: [actualColor, targetColor] } }
+            // dieselben Zeichen wie im Popup; ApexCharts' eigene Linienform bliebe ohne Strichstaerke unsichtbar
+            markers: { customHTML: [
+              () => '<span class="chart-tooltip-marker" style="background:' + actualColor + '"></span>',
+              () => '<span class="chart-tooltip-marker chart-tooltip-marker-line" style="background:' + targetColor + '"></span>'
+            ] } },
+          tooltip: { custom: workingTimeTooltip }
         }));
       }
 

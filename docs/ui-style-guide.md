@@ -798,7 +798,13 @@ statt als leerer Eintrag dazustehen.
 - Bei gestapelten Säulen **ein** Popup je Säule (`shared`, `intersect: false`) mit allen Teilen und
   ihrer Summe im Titel, zum Beispiel „Okt. '26: 6 Tage“. Teile ohne Wert fehlen darin
   (`hideEmptySeries`).
-- Zahlen stehen im Format der Sprache, mit Einheit und Einzahl: „1 Tag“, „5 Tage“.
+- Zahlen stehen im Format der Sprache, mit Einheit und Einzahl: „1 Tag“, „5 Tage“, „151 h“.
+- Jede Zeile hat denselben Aufbau: Zeichen, Bezeichnung, rechtsbündiger Wert. Das Zeichen ist
+  dasselbe wie in der Legende, ein Kästchen für eine Säule und ein Strich für eine Markierung.
+  Das eingebaute Popup stellt eine Markierung (`goals`) anders dar als eine Säule. Wo das so ist,
+  baut `tooltip.custom` das Popup aus den Klassen `.chart-tooltip*` in `salat.css`. Die Legende
+  bekommt dieselben Zeichen über `legend.markers.customHTML`. Bei Ist und Soll steht die Differenz
+  als eigene Zeile mit Vorzeichen darunter.
 
 **Zeitachse.**
 - Sie deckt den gewählten Zeitraum ab. Liegen schon geplante Werte dahinter, reicht sie bis zum

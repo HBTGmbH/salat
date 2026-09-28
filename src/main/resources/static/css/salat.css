@@ -1358,3 +1358,41 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 .apexcharts-tooltip-series-group {
   padding: 0 0.5rem !important;
 }
+
+/* Eigenes Popup eines Diagramms (tooltip.custom), in Aufbau und Farben wie das eingebaute: Titel
+   gedaempft, darunter Zeilen aus Zeichen, Bezeichnung und rechtsbuendigem Wert. */
+.chart-tooltip {
+  padding: 0.25rem 0.5rem;
+}
+
+.chart-tooltip-title {
+  margin-bottom: 0.25rem;
+  font-weight: var(--tblr-font-weight-semibold);
+  opacity: 0.7;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1px 0;
+}
+
+.chart-tooltip-value {
+  margin-left: auto;
+  padding-left: 1rem;
+  font-weight: var(--tblr-font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip-marker {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+}
+
+.chart-tooltip-marker-line {
+  height: 3px;
+  border-radius: 2px;
+}
