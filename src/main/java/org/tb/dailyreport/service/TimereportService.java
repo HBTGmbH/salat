@@ -143,6 +143,18 @@ public class TimereportService {
     return timereportDAO.getTimereportById(id);
   }
 
+  /**
+   * Whether the current user may change or delete this booking — the status rule saving and deleting apply
+   * ({@link TimereportAuthorization#isWriteAllowed}), so the booking form offers "Löschen" only where it would succeed
+   * (#1192). For both the rule is the same. {@code false} for a booking that does not exist.
+   */
+  @Transactional(readOnly = true)
+  public boolean isWriteAllowed(long timereportId) {
+    return timereportRepository.findById(timereportId)
+        .map(timereport -> timereportAuthorization.isWriteAllowed(timereport.getEmployeecontract(), timereport.getStatus()))
+        .orElse(false);
+  }
+
   public void createTimereports(long employeeContractId, long employeeOrderId, LocalDate referenceDay, String taskDescription,
       boolean trainingFlag, long durationHours, long durationMinutes, int numberOfSerialDays) throws ErrorCodeException {
     createTimereports(employeeContractId, employeeOrderId, referenceDay, taskDescription, null, trainingFlag, durationHours,

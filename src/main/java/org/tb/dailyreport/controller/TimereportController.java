@@ -265,6 +265,38 @@ public class TimereportController {
         return "dailyreport/timereport-share-recipients :: recipientsPicker";
     }
 
+    /**
+     * Deletes the booking from its edit form (#1192). Whether that is allowed is decided by the
+     * service, as on every other way of deleting; the form only offers the button where it would
+     * pass. After deleting it goes where the form would have gone after saving. A failure — the
+     * period was released in the meantime, say — leads back to the form, so the message stands next
+     * to the booking it concerns. A booking that is gone already has no form to go back to: the form
+     * would redirect once more, and that second redirect would swallow the message.
+     */
+    @PostMapping("/{id}/delete")
+    @Authorized
+    public String delete(@PathVariable Long id,
+                         @RequestParam(required = false) String returnUrl,
+                         RedirectAttributes redirectAttributes) {
+        var tr = timereportService.getTimereportById(id);
+        var fallback = tr != null ? "/dailyreport/daily?mode=daily&date=" + tr.getReferenceday() : "/dailyreport/daily";
+        try {
+            timereportService.deleteTimereportById(id);
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError", errorCodeViewHelper.toViewMessages(ex).stream()
+                .map(Object::toString).findFirst().orElse(ex.getMessage()));
+            return "redirect:" + (tr != null ? editUrl(id, returnUrl) : ReturnUrls.orElse(returnUrl, fallback));
+        }
+        redirectAttributes.addFlashAttribute("toastSuccess",
+            messages.getMessage("main.daily.timereport.delete.success.text"));
+        return "redirect:" + ReturnUrls.orElse(returnUrl, fallback);
+    }
+
+    static String editUrl(long id, String returnUrl) {
+        var url = "/dailyreport/timereports/" + id + "/edit";
+        return ReturnUrls.isSafe(returnUrl) ? url + "?returnUrl=" + encode(returnUrl, UTF_8) : url;
+    }
+
     @PostMapping("/{id}/share")
     @Authorized
     public String shareTimereport(@PathVariable Long id,
@@ -476,6 +508,10 @@ public class TimereportController {
         model.addAttribute("suborders", suborders);
         model.addAttribute("commentNecessary", commentNecessary);
         model.addAttribute("isEdit", isEdit);
+        if (isEdit && form.getId() != null && timereportService.isWriteAllowed(form.getId())) {
+            // the confirmation names the booking as it is stored, not what the form holds by now (#1192)
+            model.addAttribute("deletableTimereport", timereportService.getTimereportById(form.getId()));
+        }
         var todaysBookings = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
         model.addAttribute("todaysBookings", todaysBookings);
         model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
