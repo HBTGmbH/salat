@@ -1,6 +1,8 @@
 package org.tb.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
@@ -22,12 +24,16 @@ import org.springframework.ui.ExtendedModelMap;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.Workingday;
+import org.tb.dailyreport.domain.Workingday.WorkingDayType;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -211,6 +217,86 @@ public class DashboardControllerTest {
       contract.setValidFrom(LocalDate.parse("2020-01-01"));
       contract.setDailyWorkingTime(Duration.ofHours(8));
       return contract;
+    }
+  }
+
+  /* Der Rueckstand der Karte "Letzte Buchung" folgt derselben Regel wie der Hinweis auf die Vorwoche
+     (UnbookedWorkingDays): ein als nicht gearbeitet markierter Tag ist kein vergessener Buchungstag.
+     Montag, 28.09.: zuletzt am Donnerstag gebucht, der Freitag ist als nicht gearbeitet markiert -
+     offen ist allein der heutige Tag. */
+  @Nested
+  @FixedClock("2026-09-28T08:00:00")
+  @ExtendWith(MockitoExtension.class)
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  class LastBooking {
+
+    private static final LocalDate THURSDAY = LocalDate.parse("2026-09-24");
+    private static final LocalDate FRIDAY = LocalDate.parse("2026-09-25");
+
+    @Mock
+    private EmployeecontractService employeecontractService;
+    @Mock
+    private EmployeeService employeeService;
+    @Mock
+    private OvertimeService overtimeService;
+    @Mock
+    private VacationService vacationService;
+    @Mock
+    private TimereportService timereportService;
+    @Mock
+    private PublicholidayService publicholidayService;
+    @Mock
+    private ReleaseService releaseService;
+    @Mock
+    private MatrixService matrixService;
+    @Mock
+    private WorkingdayService workingdayService;
+    @Mock
+    private MessageSourceAccessor messageSourceAccessor;
+
+    @InjectMocks
+    private DashboardController dashboardController;
+
+    @Test
+    void does_not_count_a_day_marked_as_not_worked() {
+      bookedLastOn(THURSDAY);
+      when(workingdayService.getWorkingdaysByEmployeeContractId(eq(42L), any(), any()))
+          .thenReturn(List.of(notWorked(FRIDAY)));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("businessDaysLagging")).isEqualTo(1);
+      assertThat(model.getAttribute("lastLogIsLagging")).isEqualTo(false);
+    }
+
+    @Test
+    void still_counts_an_unmarked_day_without_a_booking() {
+      bookedLastOn(THURSDAY);
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("businessDaysLagging")).isEqualTo(2);
+      assertThat(model.getAttribute("lastLogIsLagging")).isEqualTo(true);
+    }
+
+    private void bookedLastOn(LocalDate day) {
+      var contract = new Employeecontract();
+      setField(contract, "id", 42L);
+      contract.setEmployee(new Employee());
+      contract.setValidFrom(LocalDate.parse("2020-01-01"));
+      contract.setDailyWorkingTime(Duration.ofHours(8));
+      when(employeecontractService.getEmployeecontractForView(42L)).thenReturn(contract);
+      when(timereportService.getTimereportsByDatesAndEmployeeContractId(eq(42L), any(), any()))
+          .thenReturn(List.of(TimereportDTO.builder().referenceday(day).duration(Duration.ofHours(8)).build()));
+    }
+
+    private static Workingday notWorked(LocalDate day) {
+      var workingday = new Workingday();
+      workingday.setRefday(day);
+      workingday.setType(WorkingDayType.NOT_WORKED);
+      return workingday;
     }
   }
 
