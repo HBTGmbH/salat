@@ -259,8 +259,26 @@
               <i class="ti ti-star me-1"></i>
               <span th:text="#{main.timereport.form.savefav.button}">Als Favorit speichern</span>
             </button>
+            <!--/* #1192: nur wo das Loeschen gelingen wuerde. Der Knopf gehoert ueber form= zum
+                   Loeschformular unter diesem Formular — Formulare lassen sich nicht schachteln —, und
+                   traegt data-confirm selbst: so greift auch die Sperre in salat.css, bevor das Skript
+                   geladen ist. Enter und Ctrl+Enter bleiben beim Speichern, denn der Knopf gehoert
+                   nicht zu diesem Formular. Der Dialog nennt den gespeicherten Stand. */-->
+            <button type="submit" form="timereportDeleteForm" class="btn btn-outline-danger ms-auto"
+                    th:if="${deletableTimereport != null}"
+                    th:with="trDuration=${@durationUtils.format(deletableTimereport.duration)}"
+                    data-confirm
+                    th:data-confirm-title="#{main.daily.delete.modal.title}"
+                    th:data-confirm-detail="${#temporals.format(deletableTimereport.referenceday, 'dd.MM.yyyy') + ' · ' + deletableTimereport.employeeName + ' | ' + deletableTimereport.employeeSign}"
+                    th:data-confirm-detail-secondary="|${deletableTimereport.completeOrderSign} · ${trDuration}${#strings.isEmpty(deletableTimereport.taskdescription) ? '' : ' · ' + deletableTimereport.taskdescription}|"
+                    th:data-confirm-label="#{main.daily.delete.modal.confirm}"
+                    data-confirm-variant="danger">
+              <i class="ti ti-trash me-1"></i>
+              <span th:text="#{main.general.button.delete.text}">Löschen</span>
+            </button>
             <a th:href="${returnUrl != null} ? ${returnUrl} : @{/dailyreport/daily(mode='daily',date=${timereportForm.referenceday})}"
-               class="btn btn-secondary ms-auto"
+               class="btn btn-secondary"
+               th:classappend="${deletableTimereport == null} ? 'ms-auto' : ''"
                th:text="#{main.timereport.form.cancel}">Abbrechen</a>
           </div>
 
@@ -277,6 +295,10 @@
             </div>
           </div>
 
+        </form>
+        <form id="timereportDeleteForm" method="post" th:if="${deletableTimereport != null}"
+              th:action="@{/dailyreport/timereports/{id}/delete(id=${deletableTimereport.id})}">
+          <input type="hidden" name="returnUrl" th:value="${returnUrl}"/>
         </form>
       </div>
     </div><!-- end main col -->
