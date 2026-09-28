@@ -90,14 +90,18 @@
       <span class="text-secondary" aria-hidden="true">›</span>
       <span class="command-palette-crumb-object" data-part="object"></span>
     </span>
-    <!--/* Der Befehl und die uebernommenen Werte (#1158); ein Klick nimmt einen Wert zurueck. */-->
-    <span class="command-palette-chips" id="commandPaletteChips" hidden></span>
-    <input type="text" class="command-palette-input" id="commandPaletteInput"
-           role="combobox" aria-autocomplete="list" aria-expanded="true"
-           aria-controls="commandPaletteList"
-           autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"
-           th:aria-label="#{main.palette.input.label}"
-           th:placeholder="#{main.palette.input.placeholder}"/>
+    <!--/* Der Befehl und die uebernommenen Werte (#1158); ein Klick nimmt einen Wert zurueck. Chips und
+           Feld brechen gemeinsam um, statt dass ein Chip gekuerzt wird: reicht die Zeile nicht,
+           steht das Feld darunter. */-->
+    <span class="command-palette-field">
+      <span class="command-palette-chips" id="commandPaletteChips" hidden></span>
+      <input type="text" class="command-palette-input" id="commandPaletteInput"
+             role="combobox" aria-autocomplete="list" aria-expanded="true"
+             aria-controls="commandPaletteList"
+             autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"
+             th:aria-label="#{main.palette.input.label}"
+             th:placeholder="#{main.palette.input.placeholder}"/>
+    </span>
     <span class="command-palette-param text-secondary" id="commandPaletteParam" hidden></span>
     <!--/* Auf dem Telefon gibt es kein Esc, und eine lange Trefferliste laesst vom Hintergrund zum
            Danebentippen nichts uebrig. */-->

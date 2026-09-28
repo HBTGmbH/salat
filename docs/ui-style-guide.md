@@ -250,6 +250,11 @@ People Lead.
   übernimmt. Rechts steht, welcher Parameter dran ist (`Tag?`). Tab übernimmt den gewählten
   Vorschlag, die Rücktaste im leeren Feld nimmt den letzten Chip zurück, zuletzt den Befehl; ein
   Klick auf einen Chip nimmt genau ihn zurück. Die Pfeile überspringen, was sich nicht wählen lässt.
+  Ein optionaler Parameter ohne jeden Vorschlag — das Ticket eines Unterauftrags ohne Tickets — wird
+  übersprungen.
+- **Platz:** Chips werden nicht gekürzt. Reicht die Zeile nicht für Chips und Feld, rutscht das Feld
+  unter die Chips; gekürzt wird nur ein Chip, der allein breiter ist als die Zeile. Solange ein Befehl
+  eingegeben wird, wird die Palette ab `sm` bis zu 56rem breit, soweit der Bildschirm es zulässt.
 - **In einem Zug:** jedes vollständige Wort, das genau einen Wert meint, wird Chip. Passt ein Wort
   nicht zu einem optionalen Parameter, bleibt dieser leer (`buchen wart 1,5` bucht heute). Was
   mehrdeutig ist, bleibt offen und wird vorgeschlagen; die Wörter dahinter bleiben stehen.
