@@ -268,6 +268,7 @@ public class MyAccountsController {
         model.addAttribute("previousYearCarryoverDays", String.format(Locale.GERMAN, "%.1f", previousYearCarryoverDays));
         model.addAttribute("takenDays", String.format(Locale.GERMAN, "%.1f", takenDays));
         model.addAttribute("hasSpecialDays", specialDays > 0);
+        populateNextYearVacation(model, contract, currentYear, dailyWorkingMinutes);
         model.addAttribute("specialDays", String.format(Locale.GERMAN, "%.1f", specialDays));
         model.addAttribute("plannedDays", String.format(Locale.GERMAN, "%.1f", plannedDays));
         model.addAttribute("remainingDays", String.format(Locale.GERMAN, "%.1f", remainingDays));
@@ -355,6 +356,27 @@ public class MyAccountsController {
         model.addAttribute("overtimeMismatch", overtimeMismatch);
         model.addAttribute("reportReleaseDate", contract.getReportReleaseDate());
         model.addAttribute("reportAcceptanceDate", contract.getReportAcceptanceDate());
+    }
+
+    /**
+     * Das Diagramm des Urlaubskontos zeigt nur die Monate des laufenden Jahres. Urlaub, der fuer das
+     * Folgejahr schon gebucht ist, steht deshalb als eigene Angabe darunter (#1175) - ueber jeden
+     * Urlaubsauftrag, der im Folgejahr gilt, auch den, der erst dann beginnt.
+     */
+    private void populateNextYearVacation(Model model, Employeecontract contract, int currentYear,
+            long dailyWorkingMinutes) {
+        var nextYear = new LocalDateRange(LocalDate.of(currentYear + 1, 1, 1), LocalDate.of(currentYear + 1, 12, 31));
+        double nextYearPlannedDays = 0;
+        if (dailyWorkingMinutes > 0) {
+            for (var order : employeeorderService.getVacationEmployeeOrders(contract.getId(), nextYear)) {
+                nextYearPlannedDays += (double) timereportService.getTotalDurationMinutesForEmployeeOrder(
+                        order.getId(), nextYear.getFrom(), nextYear.getUntil()) / dailyWorkingMinutes;
+            }
+        }
+        // das Jahr als Text: MessageFormat setzte sonst einen Tausenderpunkt ("2.027")
+        model.addAttribute("nextYear", String.valueOf(currentYear + 1));
+        model.addAttribute("nextYearPlannedDays", String.format(Locale.GERMAN, "%.1f", nextYearPlannedDays));
+        model.addAttribute("hasNextYearPlannedDays", nextYearPlannedDays > 0);
     }
 
     private boolean isTraining(TimereportDTO timereport) {

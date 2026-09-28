@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
+import org.tb.common.LocalDateRange;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.domain.OvertimeReportTotal;
@@ -180,6 +181,35 @@ class MyAccountsControllerTest {
     myAccountsController.show(CONTRACT_ID, model);
 
     assertThat(model.getAttribute("vacationBudgetExceeded")).isEqualTo(true);
+  }
+
+  /* Das Diagramm zeigt nur das laufende Jahr. Urlaub im Folgejahr zaehlt ueber jeden Auftrag, der
+     dann gilt - auch einen, der erst dann beginnt (#1175). */
+  @Test
+  void names_the_vacation_planned_for_the_following_year() {
+    var nextYear = new LocalDateRange(LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31));
+    var nextYearOrder = new Employeeorder();
+    setField(nextYearOrder, "id", 200L);
+    // im laufenden Jahr gilt hier kein Urlaubsauftrag, im Folgejahr der neue
+    when(employeeorderService.getVacationEmployeeOrders(eq(CONTRACT_ID), any())).thenReturn(List.of());
+    when(employeeorderService.getVacationEmployeeOrders(CONTRACT_ID, nextYear)).thenReturn(List.of(nextYearOrder));
+    when(timereportService.getTotalDurationMinutesForEmployeeOrder(200L, nextYear.getFrom(), nextYear.getUntil()))
+        .thenReturn(Duration.ofHours(8 * 5).toMinutes());
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("hasNextYearPlannedDays")).isEqualTo(true);
+    assertThat(model.getAttribute("nextYear")).isEqualTo("2027");
+    assertThat(model.getAttribute("nextYearPlannedDays")).isEqualTo("5,0");
+  }
+
+  @Test
+  void says_nothing_without_vacation_in_the_following_year() {
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("hasNextYearPlannedDays")).isEqualTo(false);
   }
 
   private void plannedAfterToday(Duration planned) {

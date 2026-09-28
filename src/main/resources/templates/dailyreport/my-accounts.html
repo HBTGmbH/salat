@@ -203,7 +203,13 @@
             <div class="card-body">
               <div id="vacationChart" style="height: 220px; width: 100%"></div>
             </div>
+            <!--/* Das Diagramm endet im Dezember; im Folgejahr gebuchter Urlaub steht hier (#1175) */-->
+            <div class="card-footer text-muted small" th:if="${hasNextYearPlannedDays}"
+                 th:text="#{main.my.accounts.vacation.next.year.planned(${nextYear}, ${nextYearPlannedDays})}">Im Folgejahr (2027) sind 5,0 Tage geplant</div>
           </div>
+          <!--/* ohne Urlaubsauftrag im laufenden Jahr gibt es kein Diagramm, die Angabe steht dann allein */-->
+          <p class="text-muted small" th:if="${hasNextYearPlannedDays and #lists.isEmpty(vacationMonthLabels)}"
+             th:text="#{main.my.accounts.vacation.next.year.planned(${nextYear}, ${nextYearPlannedDays})}">Im Folgejahr (2027) sind 5,0 Tage geplant</p>
 
         </div><!-- end tab-vacation -->
 
