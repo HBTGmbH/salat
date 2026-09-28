@@ -26,9 +26,12 @@ import de.hbt.salat.common.util.SqlLikePattern;
  * its {@code suborder_fqs} view. A pattern ending in a slash therefore covers a suborder and its
  * whole subtree and cannot spill over into a sibling whose sign merely starts with the same
  * characters; {@code %} and {@code _} may be used as wildcards. An empty pattern covers the whole
- * customer order. {@code employeeSign} in contrast is compared for equality, {@code null} meaning
- * "any employee" — the report prefix-matches it too, but stored signs exist that are a prefix of a
- * different employee's sign, so copying that would attach rates to the wrong people.
+ * customer order. The person in contrast is matched by id (#968), no person meaning "any
+ * employee" ({@link OrderPricing#isForEveryone()}). While the person was still stored as a sign it
+ * was compared for equality — the report prefix-matches it, but stored signs exist that are a
+ * prefix of a different employee's sign, so copying that would have attached rates to the wrong
+ * people. A rate whose person the migration could not resolve names nobody the lookup knows and
+ * applies to nobody ({@link OrderPricing#isEmployeeUnresolved()}).
  *
  * <p>A rate may also be bound to a budget plan (#1065). Such a rate applies only to bookings
  * assigned to that plan; every other booking falls back to the plan-less rate, exactly as work by
@@ -61,16 +64,15 @@ public final class OrderPricingLookup {
      */
     private record Candidate(OrderPricing pricing, SqlLikePattern suborderPattern, Long orderBudgetId) {
 
-        boolean covers(String suborderSignWithSlash, String employeeSign, Long bookingPlanId) {
-            var ownEmployee = pricing.getEmployeeSign();
-            return (ownEmployee == null || ownEmployee.equals(employeeSign))
+        boolean covers(String suborderSignWithSlash, long employeeId, Long bookingPlanId) {
+            return (pricing.isForEveryone() || Long.valueOf(employeeId).equals(pricing.getEmployeeId()))
                 // A plan-bound rate is for its own plan only; a plan-less one takes any booking.
                 && (orderBudgetId == null || orderBudgetId.equals(bookingPlanId))
                 && suborderPattern.matches(suborderSignWithSlash);
         }
     }
 
-    private record MemoKey(String customerorderSign, String suborderSign, String employeeSign,
+    private record MemoKey(String customerorderSign, String suborderSign, long employeeId,
                            Long orderBudgetId) {}
 
     private final Map<String, List<Candidate>> byCustomerorderSign;
@@ -99,7 +101,7 @@ public final class OrderPricingLookup {
      */
     private static Comparator<Candidate> bySpecificity() {
         return Comparator
-            .comparing((Candidate c) -> c.pricing().getEmployeeSign() == null)
+            .comparing((Candidate c) -> c.pricing().isForEveryone())
             .thenComparing(c -> c.orderBudgetId() == null)
             .thenComparing(c -> c.suborderPattern().length(), Comparator.reverseOrder())
             .thenComparing(c -> c.pricing().getId(), Comparator.nullsLast(Comparator.naturalOrder()));
@@ -114,9 +116,9 @@ public final class OrderPricingLookup {
      *                      picked.
      */
     public Optional<OrderPricing> findEffectiveRate(String customerorderSign, String suborderSign,
-                                                    String employeeSign, Long orderBudgetId,
+                                                    long employeeId, Long orderBudgetId,
                                                     LocalDate date) {
-        return covering(customerorderSign, suborderSign, employeeSign, orderBudgetId).stream()
+        return covering(customerorderSign, suborderSign, employeeId, orderBudgetId).stream()
             .filter(p -> !p.getValidFrom().isAfter(date) && !p.getValidUntil().isBefore(date))
             .findFirst();
     }
@@ -166,12 +168,12 @@ public final class OrderPricingLookup {
      * plans.
      */
     private List<OrderPricing> covering(String customerorderSign, String suborderSign,
-                                        String employeeSign, Long orderBudgetId) {
-        var memoKey = new MemoKey(customerorderSign, suborderSign, employeeSign, orderBudgetId);
+                                        long employeeId, Long orderBudgetId) {
+        var memoKey = new MemoKey(customerorderSign, suborderSign, employeeId, orderBudgetId);
         return covering.computeIfAbsent(memoKey, key -> {
             var withSlash = withTrailingSlash(key.suborderSign());
             return byCustomerorderSign.getOrDefault(key.customerorderSign(), List.of()).stream()
-                .filter(c -> c.covers(withSlash, key.employeeSign(), key.orderBudgetId()))
+                .filter(c -> c.covers(withSlash, key.employeeId(), key.orderBudgetId()))
                 .map(Candidate::pricing)
                 .toList();
         });
@@ -180,7 +182,7 @@ public final class OrderPricingLookup {
     /**
      * Callers pass the complete order sign as {@code Suborder#getCompleteOrderSign()} returns it. The
      * slash is appended here rather than at the call sites, which share the value with the employee
-     * cost lookup, where signs are still compared for equality.
+     * cost lookup, where the suborder sign is compared for equality.
      */
     private static String withTrailingSlash(String suborderSign) {
         if (suborderSign == null || suborderSign.isBlank()) {

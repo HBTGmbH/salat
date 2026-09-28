@@ -20,6 +20,7 @@ import de.hbt.salat.common.util.DurationUtils;
  * for the plan as a whole ({@link BudgetEmployeesViewHelper}) and row by row in the booking list.
  */
 public record BudgetEmployeeViewHelper(
+    long employeeId,
     String employeeSign,
     String employeeName,
     String hours,
@@ -31,6 +32,7 @@ public record BudgetEmployeeViewHelper(
 
     public static BudgetEmployeeViewHelper from(BudgetEmployee employee) {
         return new BudgetEmployeeViewHelper(
+            employee.employeeId(),
             employee.employeeSign(),
             employee.employeeName(),
             DurationUtils.format(employee.duration()),

@@ -15,7 +15,8 @@ public class OrderPricingForm {
     private Long id;
     private String customerorderSign;
     private String suborderSign;
-    private String employeeSign;
+    /** Optional: without it the rate applies to everyone on the order. */
+    private Long employeeId;
 
     /** Optional (#1065): without it the rate applies whatever plan a booking belongs to. */
     private Long orderBudgetId;

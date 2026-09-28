@@ -3,6 +3,7 @@ package de.hbt.salat.budget.service;
 import static java.util.Comparator.comparing;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import static java.lang.Boolean.TRUE;
@@ -12,7 +13,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +32,7 @@ import de.hbt.salat.budget.persistence.OrderPricingRepository;
 import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Suborder;
@@ -77,23 +78,45 @@ public class OrderPricingService {
         var pricings = sign == null ? getAll() : getByCustomerorderSign(sign);
         var ordersBySign = ordersOf(pricings);
         var coverage = OrderPricingLookup.of(pricings);
-        var knownEmployeeSigns = employeeService.getAllEmployeeSigns();
+        var employeeSigns = employeeSignsOf(pricings);
         var planNames = planNamesOf(pricings);
         return pricings.stream()
             .filter(pricing -> showInactive || pricing.getCurrentlyValid())
             .map(pricing -> row(pricing, ordersBySign.get(pricing.getCustomerorderSign()), coverage,
-                knownEmployeeSigns, planNames))
+                employeeSigns, planNames))
             .filter(row -> showInactiveOrders || orderStillValid(row))
             .toList();
     }
 
     private static OrderPricingRow row(OrderPricing pricing, Customerorder order,
-                                       OrderPricingLookup coverage, Set<String> knownEmployeeSigns,
+                                       OrderPricingLookup coverage, Map<Long, String> employeeSigns,
                                        Map<Long, String> planNames) {
         // Most rates carry no plan at all, and an immutable map refuses a null key outright.
         var planId = pricing.getOrderBudgetId();
         return new OrderPricingRow(pricing, order, OrderPricingDeviation.of(pricing, order, coverage),
-            employeeUnknown(pricing, knownEmployeeSigns), planId == null ? null : planNames.get(planId));
+            employeeSignOf(pricing, employeeSigns), planId == null ? null : planNames.get(planId));
+    }
+
+    /**
+     * The current signs of the people the given rates are for, by id (#968) — one query for the
+     * whole list.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, String> employeeSignsOf(Collection<OrderPricing> pricings) {
+        var ids = pricings.stream().map(OrderPricing::getEmployeeId).filter(Objects::nonNull)
+            .collect(toSet());
+        return ids.isEmpty() ? Map.of() : employeeService.getSignsByIds(ids);
+    }
+
+    /**
+     * The sign a rate is shown with: the person's, or — for a rate whose person the migration could
+     * not resolve (#968) — the one it was stored with, which is all there is to recognize it by.
+     */
+    private static String employeeSignOf(OrderPricing pricing, Map<Long, String> employeeSigns) {
+        if (pricing.isEmployeeUnresolved()) {
+            return pricing.getEmployeeSign();
+        }
+        return pricing.getEmployeeId() == null ? null : employeeSigns.get(pricing.getEmployeeId());
     }
 
     /**
@@ -108,16 +131,6 @@ public class OrderPricingService {
         }
         return StreamSupport.stream(orderBudgetRepository.findAllById(ids).spliterator(), false)
             .collect(toMap(OrderBudget::getId, OrderBudget::getName, (first, second) -> first));
-    }
-
-    /**
-     * A rate naming a sign nobody carries is a leftover of #966 — since a sign change is followed,
-     * it can only come from before. It resolves to nothing and lets the work fall back to the
-     * order-wide rate, so the list marks it rather than leaving it to be discovered in a total.
-     */
-    private static boolean employeeUnknown(OrderPricing pricing, Set<String> knownEmployeeSigns) {
-        var sign = pricing.getEmployeeSign();
-        return sign != null && !sign.isBlank() && !knownEmployeeSigns.contains(sign);
     }
 
     private Map<String, Customerorder> ordersOf(List<OrderPricing> pricings) {
@@ -227,13 +240,13 @@ public class OrderPricingService {
     public void save(OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
         checkCustomerorderExists(data.customerorderSign());
-        checkEmployeeExists(data.employeeSign());
+        var employee = employeeOf(data);
         checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
         var plan = resolvePlan(data, validUntil);
-        checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
+        checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeId(),
             data.orderBudgetId(), data.validFrom(), validUntil, null);
         var pricing = new OrderPricing();
-        apply(pricing, data, plan);
+        apply(pricing, data, employee, plan);
         orderPricingRepository.save(pricing);
     }
 
@@ -241,17 +254,29 @@ public class OrderPricingService {
      * The customer order is deliberately not checked here: a rate references its order by sign and
      * outlives it (#957, → {@code CustomerorderFilterOption}). Demanding the order on every edit
      * would leave a rate whose order is gone only deletable, and editing it is how it gets corrected.
+     *
+     * <p>A rate whose person the migration could not resolve (#968) stays unresolved when saved
+     * without a person. The form cannot offer that person, so its empty choice would otherwise turn
+     * one person's rate into the rate of everyone on the order — without anybody having picked that.
+     * Such a rate applies to nobody and so competes with no other; it is not checked for overlaps.
      */
     @Authorized(requiresManager = true)
     public void update(long id, OrderPricingData data) {
         var validUntil = data.validUntil() != null ? data.validUntil() : OPEN_END;
-        checkEmployeeExists(data.employeeSign());
+        var pricing = getById(id);
+        var employee = employeeOf(data);
+        var staysUnresolved = employee == null && pricing.isEmployeeUnresolved();
         checkSuborderPatternMatches(data.customerorderSign(), data.suborderSign());
         var plan = resolvePlan(data, validUntil);
-        checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeSign(),
-            data.orderBudgetId(), data.validFrom(), validUntil, id);
-        var pricing = getById(id);
-        apply(pricing, data, plan);
+        if (!staysUnresolved) {
+            checkNoOverlap(data.customerorderSign(), data.suborderSign(), data.employeeId(),
+                data.orderBudgetId(), data.validFrom(), validUntil, id);
+        }
+        var unresolvedSign = pricing.getEmployeeSign();
+        apply(pricing, data, employee, plan);
+        if (staysUnresolved) {
+            pricing.setEmployeeSign(unresolvedSign);
+        }
         orderPricingRepository.save(pricing);
     }
 
@@ -261,24 +286,29 @@ public class OrderPricingService {
     }
 
     /**
-     * Carries every rate of {@code oldSign} over to {@code newSign} (#966). Driven by the event of
-     * the employee module, where changing a sign takes a manager.
+     * Writes the new sign of a person into the sign column of their rates (#966, #968) — see
+     * {@code EmployeeCostService#followSignChange}. Driven by the event of the employee module,
+     * where changing a sign takes a manager.
      */
-    public void movePricingsToSign(String oldSign, String newSign) {
-        orderPricingRepository.updateEmployeeSign(oldSign, newSign);
+    public void followSignChange(long employeeId, String newSign) {
+        orderPricingRepository.updateEmployeeSign(employeeId, newSign);
     }
 
     /**
-     * A rate names its employee by sign, so a typo or a post that bypasses the select puts a sign
-     * into the record that no person carries (#958). Such a rate never matches during controlling
-     * and the work silently falls back to the order-wide rate, so the sign is refused when written.
-     *
-     * <p>No sign at all is the normal case: the rate then applies to everyone on the order.
+     * The person the rate is for, or {@code null} for a rate for everyone on the order — the normal
+     * case. An id nobody carries is refused here rather than by the foreign key, which would only
+     * fail the statement; and the person is needed anyway, for the sign column that is still
+     * written alongside the id (#968).
      */
-    private void checkEmployeeExists(String employeeSign) {
-        if (employeeSign != null && employeeService.getEmployeeBySign(employeeSign) == null) {
-            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN, employeeSign);
+    private Employee employeeOf(OrderPricingData data) {
+        if (data.employeeId() == null) {
+            return null;
         }
+        var employee = employeeService.getEmployeeById(data.employeeId());
+        if (employee == null) {
+            throw new InvalidDataException(ErrorCode.EM_NOT_FOUND, data.employeeId());
+        }
+        return employee;
     }
 
     /** Only on create — see {@link #update} for why an edit must not insist on the order. */
@@ -304,9 +334,9 @@ public class OrderPricingService {
      * to the plan-less one it narrows is the point of the new level, exactly as a specific pattern
      * over a general one is the point of the old one.
      */
-    private void checkNoOverlap(String co, String so, String emp, Long budgetId,
+    private void checkNoOverlap(String co, String so, Long employeeId, Long budgetId,
                                 LocalDate from, LocalDate until, Long excludeId) {
-        var overlapping = orderPricingRepository.findOverlapping(co, so, emp, budgetId, from, until, excludeId);
+        var overlapping = orderPricingRepository.findOverlapping(co, so, employeeId, budgetId, from, until, excludeId);
         if (!overlapping.isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_PRICING_OVERLAP);
         }
@@ -349,10 +379,11 @@ public class OrderPricingService {
             .toList();
     }
 
-    private void apply(OrderPricing pricing, OrderPricingData data, OrderBudget plan) {
+    private void apply(OrderPricing pricing, OrderPricingData data, Employee employee, OrderBudget plan) {
         pricing.setCustomerorderSign(data.customerorderSign());
         pricing.setSuborderSign(data.suborderSign());
-        pricing.setEmployeeSign(data.employeeSign());
+        pricing.setEmployeeId(employee == null ? null : employee.getId());
+        pricing.setEmployeeSign(employee == null ? null : employee.getSign());
         pricing.setOrderBudget(plan);
         pricing.setDescription(data.description());
         pricing.setPriceCentsPerHour(data.priceCentsPerHour());

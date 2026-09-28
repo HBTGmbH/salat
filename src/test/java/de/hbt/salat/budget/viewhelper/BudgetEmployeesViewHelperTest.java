@@ -58,7 +58,7 @@ public class BudgetEmployeesViewHelperTest {
   @Test
   public void sums_the_hours_without_a_rate_and_says_there_is_something_to_report() {
     var card = BudgetEmployeesViewHelper.from(BudgetEmployees.of(List.of(
-        new BudgetEmployee("abc", "Abc Person", 4, Duration.ofHours(10), List.of(), List.of(),
+        new BudgetEmployee(1L, "abc", "Abc Person", 4, Duration.ofHours(10), List.of(), List.of(),
             Duration.ofHours(4), Duration.ofHours(3), Duration.ofHours(2))), true));
 
     assertThat(card.hoursWithoutCost()).isEqualTo("4:00");
@@ -92,7 +92,7 @@ public class BudgetEmployeesViewHelperTest {
   private static BudgetEmployee employee(String sign, Duration duration, long bookings,
                                          List<CostCategoryRate> costs, List<Integer> prices) {
     var name = Character.toUpperCase(sign.charAt(0)) + sign.substring(1) + " Person";
-    return new BudgetEmployee(sign, name, bookings, duration, costs, prices,
+    return new BudgetEmployee(Math.abs((long) sign.hashCode()), sign, name, bookings, duration, costs, prices,
         Duration.ZERO, Duration.ZERO, Duration.ZERO);
   }
 

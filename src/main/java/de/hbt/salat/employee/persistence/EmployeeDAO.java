@@ -123,21 +123,21 @@ public class EmployeeDAO {
      * <p>The exception applies to {@code hide} only — the read authorization is checked for the kept
      * employee like for every other one.
      */
-    public List<Employee> getSelectableEmployees(String keepSign) {
+    public List<Employee> getSelectableEmployees(Long keepId) {
         var supervisedIds = getActiveTeamEmployeeIds();
-        return employeeRepository.findAll(notHiddenOrSign(keepSign)).stream()
+        return employeeRepository.findAll(notHiddenOrId(keepId)).stream()
             .filter(e -> employeeAuthorization.isAuthorized(e, AccessLevel.READ, supervisedIds))
             .sorted(Comparator.comparing(Employee::getName))
             .collect(Collectors.toList());
     }
 
-    private Specification<Employee> notHiddenOrSign(String keepSign) {
-        if (keepSign == null || keepSign.isBlank()) {
+    private Specification<Employee> notHiddenOrId(Long keepId) {
+        if (keepId == null) {
             return notHidden();
         }
         return (root, query, builder) -> builder.or(
             notHidden().toPredicate(root, query, builder),
-            builder.equal(root.get(Employee_.sign), keepSign));
+            builder.equal(root.get(Employee_.id), keepId));
     }
 
     /**

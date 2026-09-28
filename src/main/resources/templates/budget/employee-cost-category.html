@@ -141,11 +141,12 @@
               Keine Zuordnung vorhanden
             </td>
           </tr>
-          <tr th:each="a : ${assignments}">
-            <!--/* Ein Kürzel, das niemand mehr trägt, löst sich lautlos auf (#966). */-->
+          <tr th:each="row : ${assignments}" th:with="a=${row.assignment()}">
+            <!--/* Eine Zuordnung, deren Person die Umstellung auf den Personenbezug nicht zuordnen
+                   konnte, greift lautlos nicht (#968). */-->
             <td>
-              <span th:text="${a.employeeSign}"></span>
-              <span th:if="${unknownEmployeeSigns.contains(a.employeeSign)}"
+              <span th:text="${row.employeeSign()}"></span>
+              <span th:if="${row.employeeUnknown()}"
                     class="badge bg-red-lt ms-1"
                     th:title="#{main.budget.employeesign.unknown}">
                 <i class="icon ti ti-user-off m-0"></i>
@@ -169,7 +170,7 @@
               <form th:action="@{/budget/employee-cost/assignments/{id}/delete(id=${a.id})}" method="post"
                     data-confirm
                     th:data-confirm-title="#{main.employeecost.assignment.delete.confirm.title}"
-                    th:data-confirm-detail="|${a.employeeSign} · ${a.suborderSign ?: '—'}|"
+                    th:data-confirm-detail="|${row.employeeSign()} · ${a.suborderSign ?: '—'}|"
                     th:data-confirm-detail-secondary="|${#temporals.format(a.validFrom, 'dd.MM.yyyy')} – ${a.validUntil.year != 2999 ? #temporals.format(a.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
                     th:data-confirm-label="#{main.general.button.delete.text}"
                     data-confirm-variant="danger">

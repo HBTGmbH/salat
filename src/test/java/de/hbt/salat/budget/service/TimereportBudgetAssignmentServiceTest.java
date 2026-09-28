@@ -558,7 +558,7 @@ public class TimereportBudgetAssignmentServiceTest {
   }
 
   private static AssignedBooking assignedBooking(long id, LocalDate day, long suborderId) {
-    return new AssignedBooking(id, day, suborderId, null, "abc", "Abc Person",
+    return new AssignedBooking(id, day, suborderId, null, 1L, "abc", "Abc Person",
         Duration.ofHours(1), "task");
   }
 

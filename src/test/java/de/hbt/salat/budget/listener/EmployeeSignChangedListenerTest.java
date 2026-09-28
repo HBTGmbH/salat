@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -42,12 +43,12 @@ import de.hbt.salat.testutils.EmployeeTestUtils;
 
 /**
  * The sign is not a key: it can be corrected, and anonymizing an employee overwrites it by design
- * (#966). Cost assignments and customer rates name their person by it, while the booking side reads
- * it live off the employee — so a sign that moves on one side and not on the other makes both
- * lookups resolve nothing, and the work costs 0 EUR in controlling without a word (#922).
+ * (#966). Cost assignments and customer rates therefore reference their person by id (#968), and a
+ * changed sign has no bearing on what the work costs or earns — budgets reach into the past and have
+ * to keep counting the work an anonymized person did.
  *
- * <p>That must not happen to an anonymized person in particular: budgets reach into the past and
- * have to keep counting the work they did.
+ * <p>The sign column stays next to the id while views, ETL definitions and reports still join on
+ * it, and has to follow the person there. That following is all the listener still does.
  *
  * <p>The test goes through the real services and the real event, because the point is precisely
  * that the two modules stay in step — mocking the listener away would test nothing.
@@ -97,7 +98,7 @@ public class EmployeeSignChangedListenerTest {
   /**
    * The signs are rewritten with a bulk statement, which the persistence context does not see —
    * the entities it already holds would keep the old sign. Clearing it makes the assertions read
-   * what is actually stored, which is what controlling reads too.
+   * what is actually stored, which is what the reports read too.
    */
   @PersistenceContext
   private EntityManager entityManager;
@@ -129,63 +130,79 @@ public class EmployeeSignChangedListenerTest {
   public void anonymizing_an_employee_leaves_their_cost_assignment_resolvable() {
     var employee = givenEmployee(TESTY_SIGN);
     givenCostRate();
-    givenAssignment(TESTY_SIGN);
+    givenAssignment(employee);
 
-    var newSign = whenAnonymized(employee);
+    whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(newSign, null, OrderType.STANDARD, WORKDAY)).isPresent();
+    assertThat(employeeCostService.findEffectiveCost(employee.getId(), null, OrderType.STANDARD, WORKDAY)).isPresent();
   }
 
   @Test
   public void anonymizing_an_employee_leaves_their_customer_rate_resolvable() {
     var employee = givenEmployee(TESTY_SIGN);
-    givenPricing(TESTY_SIGN);
-
-    var newSign = whenAnonymized(employee);
-
-    assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, newSign, null, WORKDAY)).isPresent();
-  }
-
-  /**
-   * The rate has to travel, not be copied: left behind on the old sign it would come back to life
-   * the day somebody is given that sign — priced with the rate of a different person.
-   */
-  @Test
-  public void the_old_sign_keeps_nothing_behind() {
-    var employee = givenEmployee(TESTY_SIGN);
-    givenCostRate();
-    givenAssignment(TESTY_SIGN);
-    givenPricing(TESTY_SIGN);
+    givenPricing(employee);
 
     whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, OrderType.STANDARD, WORKDAY)).isEmpty();
     assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, TESTY_SIGN, null, WORKDAY)).isEmpty();
+        .findEffectiveRate(ORDER_SIGN, null, employee.getId(), null, WORKDAY)).isPresent();
+  }
+
+  /**
+   * The rates stay with the person, not with the sign: whoever is given the old sign afterwards is
+   * somebody else and must not be priced with the rates of the anonymized person.
+   */
+  @Test
+  public void whoever_takes_over_the_old_sign_inherits_nothing() {
+    var employee = givenEmployee(TESTY_SIGN);
+    givenCostRate();
+    givenAssignment(employee);
+    givenPricing(employee);
+
+    whenAnonymized(employee);
+    var successor = givenEmployee(TESTY_SIGN);
+
+    assertThat(employeeCostService.findEffectiveCost(successor.getId(), null, OrderType.STANDARD, WORKDAY)).isEmpty();
+    assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
+        .findEffectiveRate(ORDER_SIGN, null, successor.getId(), null, WORKDAY)).isEmpty();
+  }
+
+  /** The sign column follows the person, for the readers outside the application that join on it. */
+  @Test
+  public void anonymizing_an_employee_writes_the_new_sign_next_to_the_id() {
+    var employee = givenEmployee(TESTY_SIGN);
+    givenCostRate();
+    givenAssignment(employee);
+    givenPricing(employee);
+
+    var newSign = whenAnonymized(employee);
+
+    assertThat(assignmentSigns()).containsExactly(newSign);
+    assertThat(pricingSigns()).containsExactly(newSign);
   }
 
   /** Anonymizing one person must not drag the records of anybody else along. */
   @Test
   public void leaves_the_records_of_other_employees_alone() {
     var employee = givenEmployee(TESTY_SIGN);
-    givenEmployee(BOSS_SIGN);
+    var boss = givenEmployee(BOSS_SIGN);
     givenCostRate();
-    givenAssignment(TESTY_SIGN);
-    givenAssignment(BOSS_SIGN);
+    givenAssignment(employee);
+    givenAssignment(boss);
 
-    whenAnonymized(employee);
+    var newSign = whenAnonymized(employee);
 
-    assertThat(employeeCostService.findEffectiveCost(BOSS_SIGN, null, OrderType.STANDARD, WORKDAY)).isPresent();
+    assertThat(assignmentSigns()).containsExactlyInAnyOrder(newSign, BOSS_SIGN);
+    assertThat(employeeCostService.findEffectiveCost(boss.getId(), null, OrderType.STANDARD, WORKDAY)).isPresent();
   }
 
   /** The same has to hold for an ordinary correction of the sign, which is the commoner case. */
   @Test
-  public void correcting_a_sign_carries_the_records_along() {
+  public void correcting_a_sign_writes_it_next_to_the_id() {
     var employee = givenEmployee(TESTY_SIGN);
     givenCostRate();
-    givenAssignment(TESTY_SIGN);
-    givenPricing(TESTY_SIGN);
+    givenAssignment(employee);
+    givenPricing(employee);
 
     var previousSign = employee.getSign();
     employee.setSign("newby");
@@ -193,9 +210,9 @@ public class EmployeeSignChangedListenerTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(employeeCostService.findEffectiveCost("newby", null, OrderType.STANDARD, WORKDAY)).isPresent();
-    assertThat(orderPricingService.lookupFor(List.of(ORDER_SIGN))
-        .findEffectiveRate(ORDER_SIGN, null, "newby", null, WORKDAY)).isPresent();
+    assertThat(assignmentSigns()).containsExactly("newby");
+    assertThat(pricingSigns()).containsExactly("newby");
+    assertThat(employeeCostService.findEffectiveCost(employee.getId(), null, OrderType.STANDARD, WORKDAY)).isPresent();
   }
 
   /** A save that leaves the sign alone must not rewrite anything. */
@@ -203,14 +220,26 @@ public class EmployeeSignChangedListenerTest {
   public void a_save_without_a_sign_change_carries_nothing() {
     var employee = givenEmployee(TESTY_SIGN);
     givenCostRate();
-    givenAssignment(TESTY_SIGN);
+    givenAssignment(employee);
 
     employee.setLastname("Neu");
     employeeService.createOrUpdate(employee);
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(employeeCostService.findEffectiveCost(TESTY_SIGN, null, OrderType.STANDARD, WORKDAY)).isPresent();
+    assertThat(assignmentSigns()).containsExactly(TESTY_SIGN);
+  }
+
+  private List<String> assignmentSigns() {
+    return StreamSupport.stream(assignmentRepository.findAll().spliterator(), false)
+        .map(EmployeeCostAssignment::getEmployeeSign)
+        .toList();
+  }
+
+  private List<String> pricingSigns() {
+    return StreamSupport.stream(pricingRepository.findAll().spliterator(), false)
+        .map(OrderPricing::getEmployeeSign)
+        .toList();
   }
 
   private String whenAnonymized(Employee employee) {
@@ -235,19 +264,21 @@ public class EmployeeSignChangedListenerTest {
     costRepository.save(cost);
   }
 
-  private void givenAssignment(String employeeSign) {
+  private void givenAssignment(Employee employee) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeCostName(CATEGORY);
-    assignment.setEmployeeSign(employeeSign);
+    assignment.setEmployeeId(employee.getId());
+    assignment.setEmployeeSign(employee.getSign());
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);
     assignmentRepository.save(assignment);
   }
 
-  private void givenPricing(String employeeSign) {
+  private void givenPricing(Employee employee) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderSign(ORDER_SIGN);
-    pricing.setEmployeeSign(employeeSign);
+    pricing.setEmployeeId(employee.getId());
+    pricing.setEmployeeSign(employee.getSign());
     pricing.setPriceCentsPerHour(10000);
     pricing.setValidFrom(FROM);
     pricing.setValidUntil(UNTIL);

@@ -86,9 +86,10 @@
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
           <td th:text="${p.suborderSign} ?: '-'"></td>
-          <!--/* Ein Kürzel, das niemand mehr trägt, löst sich lautlos auf (#966). */-->
+          <!--/* Ein Satz, dessen Person die Umstellung auf den Personenbezug nicht zuordnen konnte,
+                 greift lautlos nicht (#968). */-->
           <td>
-            <span th:text="${p.employeeSign} ?: '-'"></span>
+            <span th:text="${row.employeeSign()} ?: '-'"></span>
             <span th:if="${row.employeeUnknown()}" class="badge bg-red-lt ms-1"
                   th:title="#{main.budget.employeesign.unknown}">
               <i class="icon ti ti-user-off m-0"></i>
@@ -129,7 +130,7 @@
             <form th:action="@{/budget/pricing/{id}/delete(id=${p.id})}" method="post"
                   data-confirm
                   th:data-confirm-title="#{main.pricing.delete.confirm.title}"
-                  th:data-confirm-detail="|${p.customerorderSign} · ${p.suborderSign ?: '-'} · ${p.employeeSign ?: '-'}|"
+                  th:data-confirm-detail="|${p.customerorderSign} · ${p.suborderSign ?: '-'} · ${row.employeeSign() ?: '-'}|"
                   th:data-confirm-detail-secondary="|${#messages.msg('main.budget.format.amount', p.priceCentsPerHour / 100.0)} · ${#temporals.format(p.validFrom, 'dd.MM.yyyy')} – ${p.validUntil.year != 2999 ? #temporals.format(p.validUntil, 'dd.MM.yyyy') : #messages.msg('main.general.validity.open')}|"
                   th:data-confirm-label="#{main.general.button.delete.text}"
                   data-confirm-variant="danger">

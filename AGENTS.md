@@ -709,6 +709,10 @@ Entities are divided into two categories (→ ADR-0011):
 - `AuditedEntity` provides: `@Id @GeneratedValue(IDENTITY)`, Spring Data audit fields (`created`, `lastupdate`, `createdby`, `lastupdatedby`), optimistic locking via `@Version updatecounter`, `equals`/`hashCode` by ID
 - Standard entity annotations: `@Entity`, `@Getter @Setter` (Lombok), `@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)`
 - Boolean columns in the database must be `bit(1)` — Hibernate maps `Boolean` to `bit`, not `tinyint`. In Liquibase migrations always use `type: bit(1)`.
+- **A person is referenced by `employee_id`, never by their sign** (#968). The sign changes — a
+  correction, an anonymization — and nothing makes it unique. Where a sign column still stands next
+  to the id because views, ETL definitions or reports join on it, the application writes it from
+  the person and never reads it to resolve anything.
 
 ### Criteria-Abfragen über den EntityManager (#1092)
 
@@ -883,7 +887,7 @@ its whole subtree to the top level.
   `CustomerService.getSelectableCustomers(keepId)`,
   `CustomerorderService.getSelectableCustomerorders(keepSign)`,
   `SuborderService.getSelectableSubordersByCustomerorderId(id, keep…)`,
-  `EmployeeService.getSelectableEmployees(keepSign)`. Not an ad-hoc “add it back if absent” block in
+  `EmployeeService.getSelectableEmployees(keepId)`. Not an ad-hoc “add it back if absent” block in
   the controller: the rule then lives in as many places as there are forms.
 - Where a stored value can be filtered out for reasons **other** than `hide` — expired validity,
   authorization — a `getSelectable…` method is not enough, because it only knows `hide`. Those places
@@ -1005,7 +1009,7 @@ Wirkung ist auf beiden Seiten eine andere, und das ist beabsichtigt:
 - **Beim Stundensatz ist der Plan eine Rangstufe, kein Schalter.** `OrderPricingLookup` prüft ihn an
   *beiden* Stellen: `Candidate.covers` lässt einen plangebundenen Satz nur für seinen Plan zu,
   `bySpecificity` ordnet ihn über den planlosen. Nur als Filter gebaut ließe er fremde Pläne
-  gewinnen; nur als Rang gebaut bepreiste er jede Buchung. Die Reihenfolge lautet **Kürzel, dann
+  gewinnen; nur als Rang gebaut bepreiste er jede Buchung. Die Reihenfolge lautet **Person, dann
   Plan, dann Musterlänge, dann id** — die Stufe sitzt unter dem Mitarbeitendenbezug und über dem
   Unterauftrag, und das ist die einzige Einfügung, die bestehende Zahlen nicht verändert.
 - **Bei der Pauschale nagelt der Plan eine hergeleitete Zuordnung fest** (siehe oben).

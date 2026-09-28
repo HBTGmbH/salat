@@ -3283,3 +3283,88 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                     nullable: true
+
+  - changeSet:
+      id: 91
+      author: kr
+      comment: Kostenzuordnung verweist ueber employee_id auf die Person (#968)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: employee_cost_employee
+                columnName: employee_id
+      changes:
+        # Neben employee_sign, nicht an seiner Stelle: Views, ETL-Definitionen und Reports lesen das
+        # Kuerzel noch. Die Anwendung schluesselt ab jetzt ueber die id und haelt das Kuerzel als
+        # Spiegel der Person aktuell, bis die Leser umgestellt sind; entfernt wird es erst danach.
+        #
+        # Nullable, weil ein Kuerzel, das keine oder mehr als eine Person traegt, sich nicht zuordnen
+        # laesst. Solche Zeilen bleiben mit ihrem Kuerzel stehen - verworfen wird nichts - und die
+        # Kategorieseite markiert sie, bis jemand die Person waehlt.
+        - addColumn:
+            tableName: employee_cost_employee
+            columns:
+              - column:
+                  name: employee_id
+                  type: bigint
+        # Uebernommen wird nur bei genau einer Person. Beide Spalten sind utf8mb3_bin, das = vergleicht
+        # also binaer - so, wie EmployeeCostLookup das Kuerzel bisher mit equals verglichen hat.
+        - sql:
+            sql: >-
+              UPDATE employee_cost_employee a
+              SET a.employee_id = (SELECT MIN(e.id) FROM employee e WHERE e.sign = a.employee_sign)
+              WHERE (SELECT COUNT(*) FROM employee e WHERE e.sign = a.employee_sign) = 1
+        # Ohne Loeschregel: eine Person mit Kostenzuordnung laesst sich nicht loeschen, genau wie eine
+        # mit Vertrag. Anonymisieren aendert die id nicht.
+        - addForeignKeyConstraint:
+            baseTableName: employee_cost_employee
+            baseColumnNames: employee_id
+            referencedTableName: employee
+            referencedColumnNames: id
+            constraintName: fk_employee_cost_employee_employee
+        - createIndex:
+            tableName: employee_cost_employee
+            indexName: idx_employee_cost_employee_employee
+            columns:
+              - column:
+                  name: employee_id
+
+  - changeSet:
+      id: 92
+      author: kr
+      comment: Kundenstundensatz verweist ueber employee_id auf die Person (#968)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: order_pricing
+                columnName: employee_id
+      changes:
+        # Wie in Changeset 91 neben employee_sign. Leer heisst hier weiterhin "gilt fuer alle" - aber
+        # nur, solange auch das Kuerzel leer ist: ein Satz mit Kuerzel und ohne id ist einer, dessen
+        # Person sich nicht zuordnen liess, und gilt fuer niemanden, wie bisher auch.
+        - addColumn:
+            tableName: order_pricing
+            columns:
+              - column:
+                  name: employee_id
+                  type: bigint
+        - sql:
+            sql: >-
+              UPDATE order_pricing p
+              SET p.employee_id = (SELECT MIN(e.id) FROM employee e WHERE e.sign = p.employee_sign)
+              WHERE p.employee_sign IS NOT NULL AND p.employee_sign <> ''
+                AND (SELECT COUNT(*) FROM employee e WHERE e.sign = p.employee_sign) = 1
+        - addForeignKeyConstraint:
+            baseTableName: order_pricing
+            baseColumnNames: employee_id
+            referencedTableName: employee
+            referencedColumnNames: id
+            constraintName: fk_order_pricing_employee
+        - createIndex:
+            tableName: order_pricing
+            indexName: idx_order_pricing_employee
+            columns:
+              - column:
+                  name: employee_id

@@ -58,6 +58,7 @@ public interface TimereportBudgetAssignmentRepository
     @Query("""
         SELECT new de.hbt.salat.budget.domain.AssignedBooking(
                t.id, t.referenceday.refdate, t.suborder.id,
+               t.employeecontract.employee.id,
                t.employeecontract.employee.sign,
                concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname),
                t.durationhours, t.durationminutes, t.taskdescription)
@@ -117,6 +118,7 @@ public interface TimereportBudgetAssignmentRepository
      */
     @Query("""
         SELECT new de.hbt.salat.budget.domain.AssignedEmployeeDay(
+               t.employeecontract.employee.id,
                t.employeecontract.employee.sign,
                concat(t.employeecontract.employee.firstname, ' ', t.employeecontract.employee.lastname),
                t.suborder.id, t.referenceday.refdate,
@@ -125,7 +127,8 @@ public interface TimereportBudgetAssignmentRepository
         WHERE t.id = a.timereportId
           AND a.orderBudget.id = :budgetId
           AND t.referenceday.refdate >= :from AND t.referenceday.refdate <= :until
-        GROUP BY t.employeecontract.employee.sign,
+        GROUP BY t.employeecontract.employee.id,
+                 t.employeecontract.employee.sign,
                  t.employeecontract.employee.firstname,
                  t.employeecontract.employee.lastname,
                  t.suborder.id,

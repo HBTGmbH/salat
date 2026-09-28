@@ -3,6 +3,7 @@ package de.hbt.salat.budget.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -10,12 +11,14 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import de.hbt.salat.budget.auth.BudgetAuthorization;
 import de.hbt.salat.budget.domain.OrderBudget;
 import de.hbt.salat.budget.domain.OrderPricing;
@@ -48,6 +51,8 @@ public class OrderPricingServiceTest {
   private static final LocalDate YESTERDAY = TODAY.minusDays(1);
   private static final LocalDate TOMORROW = TODAY.plusDays(1);
   private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
+  private static final long EMP = 1L;
+  private static final long GHOST = 99L;
 
   private OrderPricingRepository orderPricingRepository;
   private OrderBudgetRepository orderBudgetRepository;
@@ -66,7 +71,7 @@ public class OrderPricingServiceTest {
     // The order and the employee of a written rate exist unless a test says otherwise (#958).
     when(customerorderService.getCustomerorderBySign(any())).thenReturn(new Customerorder());
     employeeService = mock(EmployeeService.class);
-    when(employeeService.getEmployeeBySign(any())).thenReturn(new Employee());
+    when(employeeService.getEmployeeById(EMP)).thenReturn(employee(EMP, "emp"));
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     when(orderBudgetRepository.findByCustomerorderSign(any())).thenReturn(List.of());
     budgetAuthorization = mock(BudgetAuthorization.class);
@@ -220,28 +225,33 @@ public class OrderPricingServiceTest {
         .extracting(row -> row.deviation().uncoveredOrderPeriod()).isEqualTo(false);
   }
 
-  // --- the signs a rate references (#958) -----------------------------------------------------
+  // --- the person a rate references (#958, #968) ---------------------------------------------
 
   /**
-   * The form protects the employee only as long as the input comes from its select. A rate with a
-   * sign no person carries never matches during controlling: the work silently falls back to the
-   * order-wide rate, which is a wrong number rather than an error.
+   * The form protects the person only as long as the input comes from its select. A post with
+   * another id reaches the same endpoint; the foreign key would refuse it too, but only as a failed
+   * statement.
    */
   @Test
   public void should_reject_a_new_rate_for_an_employee_that_does_not_exist() {
-    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
-
-    assertThatThrownBy(() -> service.save(data("co", null, "ghost")))
+    assertThatThrownBy(() -> service.save(data("co", null, GHOST)))
         .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+        .hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
     verify(orderPricingRepository, never()).save(any());
   }
 
+  /**
+   * The id is the reference; the sign is written next to it only for the views, ETL definitions and
+   * reports that still join on it (#968) — and it is the person's sign.
+   */
   @Test
-  public void should_accept_a_new_rate_for_an_employee_that_exists() {
-    service.save(data("co", null, "emp"));
+  public void should_store_the_person_by_id_and_their_current_sign_next_to_it() {
+    service.save(data("co", null, EMP));
 
-    verify(orderPricingRepository).save(any());
+    var saved = ArgumentCaptor.forClass(OrderPricing.class);
+    verify(orderPricingRepository).save(saved.capture());
+    assertThat(saved.getValue().getEmployeeId()).isEqualTo(EMP);
+    assertThat(saved.getValue().getEmployeeSign()).isEqualTo("emp");
   }
 
   /** No employee at all is the normal case: the rate then applies to everyone on the order. */
@@ -249,8 +259,10 @@ public class OrderPricingServiceTest {
   public void should_not_ask_for_an_employee_when_the_rate_names_none() {
     service.save(data("co", null, null));
 
-    verify(employeeService, never()).getEmployeeBySign(any());
-    verify(orderPricingRepository).save(any());
+    verify(employeeService, never()).getEmployeeById(anyLong());
+    var saved = ArgumentCaptor.forClass(OrderPricing.class);
+    verify(orderPricingRepository).save(saved.capture());
+    assertThat(saved.getValue().isForEveryone()).isTrue();
   }
 
   @Test
@@ -284,36 +296,41 @@ public class OrderPricingServiceTest {
     var edited = pricing("co", TODAY.minusYears(1), OPEN_END);
     setId(edited, 6L);
     when(orderPricingRepository.findById(6L)).thenReturn(Optional.of(edited));
-    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
 
-    assertThatThrownBy(() -> service.update(6L, data("co", null, "ghost")))
+    assertThatThrownBy(() -> service.update(6L, data("co", null, GHOST)))
         .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+        .hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
     verify(orderPricingRepository, never()).save(any());
   }
 
-  // --- rates left behind on a sign nobody carries (#966) ---------------------------------------
+  // --- rates whose person the migration could not resolve (#968) ------------------------------
 
   /**
-   * Since a sign change is followed, a rate on a sign no person carries can only be a leftover from
-   * before. It resolves to nothing and lets the work fall back to the order-wide rate, so the list
-   * has to say so instead of leaving it to be noticed in a total.
+   * Such a rate keeps its sign and has no id. It resolves to nothing and lets the work fall back to
+   * the order-wide rate, so the list has to say so instead of leaving it to be noticed in a total.
    */
   @Test
-  public void marks_a_rate_whose_employee_sign_nobody_carries() {
-    given(pricingFor("ghost"));
+  public void marks_a_rate_whose_person_is_unresolved() {
+    given(unresolvedPricing("ghost"));
 
-    assertThat(service.getRows(null, false, true))
-        .singleElement().extracting(OrderPricingRow::employeeUnknown).isEqualTo(true);
+    assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
+      assertThat(row.employeeUnknown()).isTrue();
+      assertThat(row.employeeSign()).isEqualTo("ghost");
+    });
   }
 
+  /** The list shows the person's current sign, not the one stored with the rate. */
   @Test
-  public void leaves_a_rate_alone_whose_employee_still_exists() {
-    givenEmployees("emp");
-    given(pricingFor("emp"));
+  public void shows_the_current_sign_of_the_person() {
+    when(employeeService.getSignsByIds(Set.of(EMP))).thenReturn(Map.of(EMP, "emp"));
+    var pricing = pricingFor(EMP);
+    pricing.setEmployeeSign("old-sign");
+    given(pricing);
 
-    assertThat(service.getRows(null, false, true))
-        .singleElement().extracting(OrderPricingRow::employeeUnknown).isEqualTo(false);
+    assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
+      assertThat(row.employeeUnknown()).isFalse();
+      assertThat(row.employeeSign()).isEqualTo("emp");
+    });
   }
 
   /** A rate without an employee applies to everyone on the order — there is nothing to be unknown. */
@@ -321,22 +338,63 @@ public class OrderPricingServiceTest {
   public void marks_no_rate_that_names_no_employee() {
     given(pricingFor(null));
 
-    assertThat(service.getRows(null, false, true))
-        .singleElement().extracting(OrderPricingRow::employeeUnknown).isEqualTo(false);
+    assertThat(service.getRows(null, false, true)).singleElement().satisfies(row -> {
+      assertThat(row.employeeUnknown()).isFalse();
+      assertThat(row.employeeSign()).isNull();
+    });
   }
 
-  private void givenEmployees(String... signs) {
-    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of(signs));
+  /**
+   * The form cannot offer the person of an unresolved rate, so its empty choice arrives as "no
+   * person". Saved as such, one person's rate would become the rate of everyone on the order.
+   */
+  @Test
+  public void keeps_an_unresolved_rate_unresolved_when_saved_without_a_person() {
+    var unresolved = unresolvedPricing("ghost");
+    setId(unresolved, 7L);
+    when(orderPricingRepository.findById(7L)).thenReturn(Optional.of(unresolved));
+
+    service.update(7L, data("co", null, null));
+
+    assertThat(unresolved.isEmployeeUnresolved()).isTrue();
+    assertThat(unresolved.getEmployeeSign()).isEqualTo("ghost");
+    verify(orderPricingRepository, never()).findOverlapping(any(), any(), any(), any(), any(), any(), any());
   }
 
-  private static OrderPricing pricingFor(String employeeSign) {
+  @Test
+  public void resolves_an_unresolved_rate_when_its_person_is_picked() {
+    var unresolved = unresolvedPricing("ghost");
+    setId(unresolved, 7L);
+    when(orderPricingRepository.findById(7L)).thenReturn(Optional.of(unresolved));
+
+    service.update(7L, data("co", null, EMP));
+
+    assertThat(unresolved.getEmployeeId()).isEqualTo(EMP);
+    assertThat(unresolved.getEmployeeSign()).isEqualTo("emp");
+  }
+
+  private static OrderPricing pricingFor(Long employeeId) {
+    var pricing = pricing("co", TODAY.minusYears(1), OPEN_END);
+    pricing.setEmployeeId(employeeId);
+    pricing.setEmployeeSign(employeeId == null ? null : "sign-" + employeeId);
+    return pricing;
+  }
+
+  private static OrderPricing unresolvedPricing(String employeeSign) {
     var pricing = pricing("co", TODAY.minusYears(1), OPEN_END);
     pricing.setEmployeeSign(employeeSign);
     return pricing;
   }
 
-  private static OrderPricingData data(String customerorderSign, String suborderSign, String employeeSign) {
-    return new OrderPricingData(customerorderSign, suborderSign, employeeSign, null, null, 10000, TODAY, null);
+  private static Employee employee(long id, String sign) {
+    var employee = new Employee();
+    setId(employee, id);
+    employee.setSign(sign);
+    return employee;
+  }
+
+  private static OrderPricingData data(String customerorderSign, String suborderSign, Long employeeId) {
+    return new OrderPricingData(customerorderSign, suborderSign, employeeId, null, null, 10000, TODAY, null);
   }
 
   /** The id is generated, so there is no setter; a stored record always has one. */

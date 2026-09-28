@@ -265,7 +265,10 @@ public class BudgetController {
         // The conditions negotiated for this work package (#1065). Shown to everybody who reaches
         // the plan, like the rates of the "Mitarbeitende" card; only editing them stays with
         // managers, which is where the links lead.
-        model.addAttribute("boundPricings", orderPricingService.getByOrderBudgetId(id));
+        var boundPricings = orderPricingService.getByOrderBudgetId(id);
+        model.addAttribute("boundPricings", boundPricings);
+        // The signs are read off the people, not the rates (#968).
+        model.addAttribute("boundPricingSigns", orderPricingService.employeeSignsOf(boundPricings));
         model.addAttribute("boundFlatRates", orderFlatRateService.getByOrderBudgetId(id));
         addAssignedTimereports(budget, from, until, model);
         return "budget/budget-detail";

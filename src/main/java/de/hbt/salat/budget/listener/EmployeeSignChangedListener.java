@@ -8,17 +8,17 @@ import de.hbt.salat.budget.service.OrderPricingService;
 import de.hbt.salat.employee.event.EmployeeSignChangedEvent;
 
 /**
- * Carries cost assignments and customer rates over when an employee changes their sign (#966).
+ * Keeps the sign column of cost assignments and customer rates in step when an employee changes
+ * their sign (#966, #968).
  *
- * <p>Both reference the person by sign, while the booking side reads its sign live off the employee
- * ({@code TimereportDAO}). A sign that changes on one side and not on the other makes
- * {@code EmployeeCostLookup} and {@code OrderPricingLookup} resolve nothing, and that shows up as
- * work costing 0 EUR and falling back to the order-wide rate — silently, which is the damage of
- * #922. Anonymizing an employee triggers it by design, and the past work of that person has to keep
- * counting: budgets reach back, and the person merely stops booking.
+ * <p>Both reference the person by {@code employee_id} now, and the application resolves by that id
+ * alone — a changed sign no longer affects what work costs or earns. The sign column stays next to
+ * the id only because views, ETL definitions and reports still join on it; a stale sign there would
+ * let the reports lose the rows of an anonymized person, which is the damage of #922 moved outside
+ * the application.
  *
- * <p>Following the sign is the interim measure. The reference belongs on {@code employee.id}, and
- * once it is there (#968) this listener goes away again.
+ * <p>Once those readers have moved to {@code employee_id}, the column is dropped and this listener
+ * goes away with it.
  */
 @Component
 @RequiredArgsConstructor
@@ -29,8 +29,8 @@ public class EmployeeSignChangedListener {
 
     @EventListener
     public void onEmployeeSignChanged(EmployeeSignChangedEvent event) {
-        employeeCostService.moveAssignmentsToSign(event.getPreviousSign(), event.getNewSign());
-        orderPricingService.movePricingsToSign(event.getPreviousSign(), event.getNewSign());
+        employeeCostService.followSignChange(event.getEmployeeId(), event.getNewSign());
+        orderPricingService.followSignChange(event.getEmployeeId(), event.getNewSign());
     }
 
 }

@@ -203,7 +203,8 @@ public class EmployeeServiceTest {
 	}
 
 	private List<String> signsOfSelectable(String keepSign) {
-		return employeeDAO.getSelectableEmployees(keepSign).stream()
+		var keepId = keepSign == null ? null : employeeDAO.getEmployeeBySign(keepSign).getId();
+		return employeeDAO.getSelectableEmployees(keepId).stream()
 				.map(Employee::getSign)
 				.toList();
 	}

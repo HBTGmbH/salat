@@ -26,15 +26,19 @@ public class OrderPricingLookupTest {
   private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
   private static final long PLAN_A = 1L;
   private static final long PLAN_B = 2L;
+  private static final long EMP = 11L;
+  private static final long OTHER = 12L;
+  /** A person without a rate of their own. */
+  private static final long SOMEBODY = 13L;
 
   @Test
   public void should_prefer_employee_specific_over_suborder_wide_and_order_wide() {
     var lookup = OrderPricingLookup.of(List.of(
         pricing("co", null, null, 100),
         pricing("co", "so", null, 200),
-        pricing("co", "so", "emp", 300)));
+        pricing("co", "so", EMP, 300)));
 
-    assertThat(rate(lookup, "co", "so", "emp")).isEqualTo(300);
+    assertThat(rate(lookup, "co", "so", EMP)).isEqualTo(300);
   }
 
   @Test
@@ -42,9 +46,9 @@ public class OrderPricingLookupTest {
     var lookup = OrderPricingLookup.of(List.of(
         pricing("co", null, null, 100),
         pricing("co", "so", null, 200),
-        pricing("co", "other", "emp", 300)));
+        pricing("co", "other", EMP, 300)));
 
-    assertThat(rate(lookup, "co", "so", "emp")).isEqualTo(200);
+    assertThat(rate(lookup, "co", "so", EMP)).isEqualTo(200);
   }
 
   @Test
@@ -53,14 +57,14 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 100),
         pricing("co", "other", null, 200)));
 
-    assertThat(rate(lookup, "co", "so", "emp")).isEqualTo(100);
+    assertThat(rate(lookup, "co", "so", EMP)).isEqualTo(100);
   }
 
   @Test
   public void should_ignore_rates_of_other_customerorders() {
     var lookup = OrderPricingLookup.of(List.of(pricing("other", null, null, 100)));
 
-    assertThat(lookup.findEffectiveRate("co", "so", "emp", null, DATE)).isEmpty();
+    assertThat(lookup.findEffectiveRate("co", "so", EMP, null, DATE)).isEmpty();
   }
 
   @Test
@@ -71,9 +75,9 @@ public class OrderPricingLookupTest {
     future.setValidFrom(DATE.plusDays(1));
     var current = pricing("co", null, null, 300);
 
-    assertThat(rate(OrderPricingLookup.of(List.of(expired, future, current)), "co", null, null))
+    assertThat(rate(OrderPricingLookup.of(List.of(expired, future, current)), "co", null, SOMEBODY))
         .isEqualTo(300);
-    assertThat(OrderPricingLookup.of(List.of(expired, future)).findEffectiveRate("co", null, null, null, DATE))
+    assertThat(OrderPricingLookup.of(List.of(expired, future)).findEffectiveRate("co", null, SOMEBODY, null, DATE))
         .isEmpty();
   }
 
@@ -83,7 +87,7 @@ public class OrderPricingLookupTest {
     pricing.setValidFrom(DATE);
     pricing.setValidUntil(DATE);
 
-    assertThat(rate(OrderPricingLookup.of(List.of(pricing)), "co", null, null)).isEqualTo(100);
+    assertThat(rate(OrderPricingLookup.of(List.of(pricing)), "co", null, SOMEBODY)).isEqualTo(100);
   }
 
   @Test
@@ -93,21 +97,21 @@ public class OrderPricingLookupTest {
 
     var lookup = OrderPricingLookup.of(List.of(pricing("co", null, null, 100), expiredSuborderRate));
 
-    assertThat(rate(lookup, "co", "so", null)).isEqualTo(100);
+    assertThat(rate(lookup, "co", "so", SOMEBODY)).isEqualTo(100);
   }
 
   @Test
-  public void should_skip_the_employee_specific_step_when_no_employee_is_given() {
+  public void should_skip_the_employee_specific_step_for_somebody_without_an_own_rate() {
     var lookup = OrderPricingLookup.of(List.of(
-        pricing("co", "so", "emp", 300),
+        pricing("co", "so", EMP, 300),
         pricing("co", "so", null, 200)));
 
-    assertThat(rate(lookup, "co", "so", null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "so", SOMEBODY)).isEqualTo(200);
   }
 
   @Test
   public void should_return_empty_for_an_empty_lookup() {
-    assertThat(OrderPricingLookup.of(List.of()).findEffectiveRate("co", "so", "emp", null, DATE)).isEmpty();
+    assertThat(OrderPricingLookup.of(List.of()).findEffectiveRate("co", "so", EMP, null, DATE)).isEmpty();
   }
 
   /**
@@ -122,7 +126,7 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 100),
         pricing("co", "co/01/02", null, 200)));
 
-    assertThat(rate(lookup, "co", suborder.getCompleteOrderSign(), null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", suborder.getCompleteOrderSign(), SOMEBODY)).isEqualTo(200);
   }
 
   @Test
@@ -132,7 +136,7 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 100),
         pricing("co", "02", null, 200)));
 
-    assertThat(rate(lookup, "co", suborder.getCompleteOrderSign(), null)).isEqualTo(100);
+    assertThat(rate(lookup, "co", suborder.getCompleteOrderSign(), SOMEBODY)).isEqualTo(100);
   }
 
   /**
@@ -146,9 +150,9 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 100),
         pricing("co", "co/01/", null, 200)));
 
-    assertThat(rate(lookup, "co", "co/01", null)).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/01/02", null)).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/01/02/03", null)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02/03", SOMEBODY)).isEqualTo(200);
   }
 
   @Test
@@ -158,27 +162,27 @@ public class OrderPricingLookupTest {
         pricing("co", "co/01/", null, 200)));
 
     // Without the trailing slash "co/01" would also prefix-match "co/010".
-    assertThat(rate(lookup, "co", "co/010", null)).isEqualTo(100);
+    assertThat(rate(lookup, "co", "co/010", SOMEBODY)).isEqualTo(100);
   }
 
   @Test
   public void should_treat_percent_as_a_wildcard_and_underscore_as_a_single_character() {
     var percent = OrderPricingLookup.of(List.of(pricing("co", "co/%/02/", null, 200)));
-    assertThat(rate(percent, "co", "co/01/02", null)).isEqualTo(200);
-    assertThat(rate(percent, "co", "co/99/02", null)).isEqualTo(200);
-    assertThat(rate(percent, "co", "co/01/03", null)).isNull();
+    assertThat(rate(percent, "co", "co/01/02", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(percent, "co", "co/99/02", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(percent, "co", "co/01/03", SOMEBODY)).isNull();
 
     var underscore = OrderPricingLookup.of(List.of(pricing("co", "co/0_/", null, 200)));
-    assertThat(rate(underscore, "co", "co/01", null)).isEqualTo(200);
-    assertThat(rate(underscore, "co", "co/012", null)).isNull();
+    assertThat(rate(underscore, "co", "co/01", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(underscore, "co", "co/012", SOMEBODY)).isNull();
   }
 
   @Test
   public void should_treat_regex_metacharacters_in_the_pattern_as_literal_text() {
     var lookup = OrderPricingLookup.of(List.of(pricing("co", "co/a.c+(x)/", null, 200)));
 
-    assertThat(rate(lookup, "co", "co/a.c+(x)", null)).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/abcx", null)).isNull();
+    assertThat(rate(lookup, "co", "co/a.c+(x)", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/abcx", SOMEBODY)).isNull();
   }
 
   @Test
@@ -188,19 +192,19 @@ public class OrderPricingLookupTest {
         pricing("co", "co/01/", null, 200),
         pricing("co", "co/01/02/", null, 300)));
 
-    assertThat(rate(lookup, "co", "co/01/02", null)).isEqualTo(300);
-    assertThat(rate(lookup, "co", "co/01/09", null)).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/07", null)).isEqualTo(100);
+    assertThat(rate(lookup, "co", "co/01/02", SOMEBODY)).isEqualTo(300);
+    assertThat(rate(lookup, "co", "co/01/09", SOMEBODY)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/07", SOMEBODY)).isEqualTo(100);
   }
 
   @Test
   public void should_prefer_an_employee_specific_rate_over_a_more_specific_suborder_pattern() {
     var lookup = OrderPricingLookup.of(List.of(
         pricing("co", "co/01/02/", null, 300),
-        pricing("co", "co/", "emp", 200)));
+        pricing("co", "co/", EMP, 200)));
 
-    assertThat(rate(lookup, "co", "co/01/02", "emp")).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/01/02", "other")).isEqualTo(300);
+    assertThat(rate(lookup, "co", "co/01/02", EMP)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02", OTHER)).isEqualTo(300);
   }
 
   /**
@@ -211,20 +215,60 @@ public class OrderPricingLookupTest {
   public void should_resolve_an_employee_specific_rate_that_applies_to_the_whole_order() {
     var lookup = OrderPricingLookup.of(List.of(
         pricing("co", null, null, 100),
-        pricing("co", null, "emp", 200)));
+        pricing("co", null, EMP, 200)));
 
-    assertThat(rate(lookup, "co", "co/01/02", "emp")).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/01/02", "other")).isEqualTo(100);
+    assertThat(rate(lookup, "co", "co/01/02", EMP)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01/02", OTHER)).isEqualTo(100);
   }
 
+  /**
+   * The person is matched by id (#968): a rate still carrying the sign the person had before a
+   * correction or an anonymization applies unchanged, without anything following the sign.
+   */
   @Test
-  public void should_match_the_employee_sign_exactly_rather_than_by_prefix() {
-    var lookup = OrderPricingLookup.of(List.of(
-        pricing("co", null, null, 100),
-        pricing("co", null, "AB", 200)));
+  public void should_match_the_person_by_id_whatever_sign_the_rate_was_stored_with() {
+    var stale = pricing("co", null, EMP, 200);
+    stale.setEmployeeSign("old-sign");
+    var lookup = OrderPricingLookup.of(List.of(pricing("co", null, null, 100), stale));
 
-    assertThat(rate(lookup, "co", "co/01", "AB")).isEqualTo(200);
-    assertThat(rate(lookup, "co", "co/01", "ABC")).isEqualTo(100);
+    assertThat(rate(lookup, "co", "co/01", EMP)).isEqualTo(200);
+    assertThat(rate(lookup, "co", "co/01", OTHER)).isEqualTo(100);
+  }
+
+  /**
+   * A rate whose person the migration could not resolve (#968) keeps its sign and has no id. It must
+   * apply to nobody — read as "no person" it would price the work of everyone on the order.
+   */
+  @Test
+  public void should_apply_a_rate_whose_person_is_unresolved_to_nobody() {
+    var unresolved = pricing("co", null, null, 900);
+    unresolved.setEmployeeSign("gone");
+    var lookup = OrderPricingLookup.of(List.of(pricing("co", null, null, 100), unresolved));
+
+    assertThat(rate(lookup, "co", "co/01", SOMEBODY)).isEqualTo(100);
+    assertThat(OrderPricingLookup.of(List.of(unresolved)).findEffectiveRate("co", "co/01", SOMEBODY, null, DATE))
+        .isEmpty();
+  }
+
+  /** Neither does it price the order as a whole, so it cannot close a gap in the coverage either. */
+  @Test
+  public void should_not_count_a_rate_whose_person_is_unresolved_as_order_wide() {
+    var unresolved = rate("co", JAN, DEC);
+    unresolved.setEmployeeSign("gone");
+    var lookup = OrderPricingLookup.of(List.of(rate("co", JAN, JUN), unresolved));
+
+    assertThat(unresolved.isOrderWide()).isFalse();
+    assertThat(lookup.hasUncoveredPeriod("co", JAN, DEC)).isTrue();
+  }
+
+  /** An empty sign without an id names nobody either — the reports read it the same way. */
+  @Test
+  public void should_treat_an_empty_sign_without_an_id_as_a_rate_for_everyone() {
+    var blank = pricing("co", null, null, 100);
+    blank.setEmployeeSign("");
+
+    assertThat(blank.isForEveryone()).isTrue();
+    assertThat(rate(OrderPricingLookup.of(List.of(blank)), "co", "co/01", SOMEBODY)).isEqualTo(100);
   }
 
   /**
@@ -284,7 +328,7 @@ public class OrderPricingLookupTest {
     var suborderRate = rate("co", JAN, JUN);
     suborderRate.setSuborderSign("co/01/");
     var employeeRate = rate("co", JAN, JUN);
-    employeeRate.setEmployeeSign("emp");
+    employeeRate.setEmployeeId(EMP);
 
     var lookup = OrderPricingLookup.of(List.of(suborderRate, employeeRate));
 
@@ -339,21 +383,22 @@ public class OrderPricingLookupTest {
     return child;
   }
 
-  private static Integer rate(OrderPricingLookup lookup, String co, String so, String emp) {
-    return rate(lookup, co, so, emp, null);
+  private static Integer rate(OrderPricingLookup lookup, String co, String so, long employeeId) {
+    return rate(lookup, co, so, employeeId, null);
   }
 
-  private static Integer rate(OrderPricingLookup lookup, String co, String so, String emp, Long planId) {
-    return lookup.findEffectiveRate(co, so, emp, planId, DATE)
+  private static Integer rate(OrderPricingLookup lookup, String co, String so, long employeeId, Long planId) {
+    return lookup.findEffectiveRate(co, so, employeeId, planId, DATE)
         .map(OrderPricing::getPriceCentsPerHour)
         .orElse(null);
   }
 
-  private static OrderPricing pricing(String co, String so, String emp, int cents) {
+  private static OrderPricing pricing(String co, String so, Long employeeId, int cents) {
     var pricing = new OrderPricing();
     pricing.setCustomerorderSign(co);
     pricing.setSuborderSign(so);
-    pricing.setEmployeeSign(emp);
+    pricing.setEmployeeId(employeeId);
+    pricing.setEmployeeSign(employeeId == null ? null : "sign-" + employeeId);
     pricing.setPriceCentsPerHour(cents);
     pricing.setValidFrom(LocalDate.of(2026, 1, 1));
     pricing.setValidUntil(LocalDate.of(2026, 12, 31));
@@ -368,7 +413,7 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 12000),
         boundTo(pricing("co", null, null, 15000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "so", null, PLAN_A)).isEqualTo(15000);
+    assertThat(rate(lookup, "co", "so", SOMEBODY, PLAN_A)).isEqualTo(15000);
   }
 
   /**
@@ -381,7 +426,7 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 12000),
         boundTo(pricing("co", null, null, 15000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "so", null, PLAN_B)).isEqualTo(12000);
+    assertThat(rate(lookup, "co", "so", SOMEBODY, PLAN_B)).isEqualTo(12000);
   }
 
   @Test
@@ -390,7 +435,7 @@ public class OrderPricingLookupTest {
         pricing("co", null, null, 12000),
         boundTo(pricing("co", null, null, 15000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "so", null, null)).isEqualTo(12000);
+    assertThat(rate(lookup, "co", "so", SOMEBODY, null)).isEqualTo(12000);
   }
 
   /** Without a plan-less rate next to it, a booking of another plan is priced by nothing at all. */
@@ -398,17 +443,17 @@ public class OrderPricingLookupTest {
   public void should_resolve_nothing_when_only_a_rate_of_another_plan_exists() {
     var lookup = OrderPricingLookup.of(List.of(boundTo(pricing("co", null, null, 15000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "so", null, PLAN_B)).isNull();
+    assertThat(rate(lookup, "co", "so", SOMEBODY, PLAN_B)).isNull();
   }
 
   /** The plan sits below the employee: a personal rate wins even without a plan. */
   @Test
   public void should_prefer_an_employee_specific_plan_less_rate_over_a_plan_bound_one() {
     var lookup = OrderPricingLookup.of(List.of(
-        pricing("co", null, "emp", 20000),
+        pricing("co", null, EMP, 20000),
         boundTo(pricing("co", null, null, 15000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "so", "emp", PLAN_A)).isEqualTo(20000);
+    assertThat(rate(lookup, "co", "so", EMP, PLAN_A)).isEqualTo(20000);
   }
 
   /** And above the pattern: the shortest plan-bound pattern beats the longest plan-less one. */
@@ -418,7 +463,7 @@ public class OrderPricingLookupTest {
         pricing("co", "co/01/", null, 12000),
         boundTo(pricing("co", null, null, 15000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "co/01", null, PLAN_A)).isEqualTo(15000);
+    assertThat(rate(lookup, "co", "co/01", SOMEBODY, PLAN_A)).isEqualTo(15000);
   }
 
   /** Among plan-bound rates of the same plan the pattern decides again, as it always did. */
@@ -428,7 +473,7 @@ public class OrderPricingLookupTest {
         boundTo(pricing("co", null, null, 15000), PLAN_A),
         boundTo(pricing("co", "co/01/", null, 18000), PLAN_A)));
 
-    assertThat(rate(lookup, "co", "co/01", null, PLAN_A)).isEqualTo(18000);
+    assertThat(rate(lookup, "co", "co/01", SOMEBODY, PLAN_A)).isEqualTo(18000);
   }
 
   /**
@@ -440,10 +485,10 @@ public class OrderPricingLookupTest {
     var lookup = OrderPricingLookup.of(List.of(
         pricing("co", null, null, 100),
         pricing("co", "so", null, 200),
-        pricing("co", "so", "emp", 300)));
+        pricing("co", "so", EMP, 300)));
 
-    assertThat(rate(lookup, "co", "so", "emp", PLAN_A)).isEqualTo(300);
-    assertThat(rate(lookup, "co", "so", "emp", null)).isEqualTo(300);
+    assertThat(rate(lookup, "co", "so", EMP, PLAN_A)).isEqualTo(300);
+    assertThat(rate(lookup, "co", "so", EMP, null)).isEqualTo(300);
   }
 
   /**

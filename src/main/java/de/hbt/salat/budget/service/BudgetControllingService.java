@@ -183,14 +183,14 @@ public class BudgetControllingService {
     private static BigDecimal rateOf(TimereportDTO report, String coSign, String soSign, Long planId,
                                      OrderPricingLookup lookup) {
         var hours = minutesToHours(report.getDuration().toMinutes());
-        return lookup.findEffectiveRate(coSign, soSign, report.getEmployeeSign(), planId, report.getReferenceday())
+        return lookup.findEffectiveRate(coSign, soSign, report.getEmployeeId(), planId, report.getReferenceday())
             .map(p -> hours.multiply(new BigDecimal(p.getPriceCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }
 
     private static BigDecimal costOf(TimereportDTO report, String soSign, OrderType orderType, EmployeeCostLookup lookup) {
         var hours = minutesToHours(report.getDuration().toMinutes());
-        return lookup.findEffectiveCost(report.getEmployeeSign(), soSign, orderType, report.getReferenceday())
+        return lookup.findEffectiveCost(report.getEmployeeId(), soSign, orderType, report.getReferenceday())
             .map(c -> hours.multiply(new BigDecimal(c.getCostCentsPerHour())).movePointLeft(2))
             .orElse(BigDecimal.ZERO);
     }

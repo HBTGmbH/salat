@@ -106,7 +106,7 @@ public class BudgetEmployeeService {
         return new AppliedRates(
             BudgetEmployees.of(rowsOf(days, lookup), includeCosts),
             rendered.stream().collect(toMap(AssignedBooking::id,
-                booking -> lookup.resolve(booking.employeeSign(), booking.suborderId(), booking.day()),
+                booking -> lookup.resolve(booking.employeeId(), booking.suborderId(), booking.day()),
                 (first, second) -> first)));
     }
 
@@ -169,7 +169,7 @@ public class BudgetEmployeeService {
     private static List<BudgetEmployee> rowsOf(List<AssignedEmployeeDay> days, AppliedRateLookup lookup) {
         Comparator<BudgetEmployee> byHours = comparing(BudgetEmployee::duration, reverseOrder());
         return days.stream()
-            .collect(groupingBy(AssignedEmployeeDay::employeeSign, LinkedHashMap::new, toList()))
+            .collect(groupingBy(AssignedEmployeeDay::employeeId, LinkedHashMap::new, toList()))
             .values().stream()
             .map(group -> row(group, lookup))
             .sorted(byHours.thenComparing(BudgetEmployee::employeeSign))
@@ -182,7 +182,7 @@ public class BudgetEmployeeService {
     private static BudgetEmployee row(List<AssignedEmployeeDay> group, AppliedRateLookup lookup) {
         var resolved = group.stream()
             .map(day -> new Resolved(day,
-                lookup.resolve(day.employeeSign(), day.suborderId(), day.day())))
+                lookup.resolve(day.employeeId(), day.suborderId(), day.day())))
             .toList();
 
         var costs = new TreeSet<>(comparing(CostCategoryRate::name)
@@ -202,6 +202,7 @@ public class BudgetEmployeeService {
 
         var first = group.getFirst();
         return new BudgetEmployee(
+            first.employeeId(),
             first.employeeSign(),
             first.employeeName(),
             group.stream().mapToLong(AssignedEmployeeDay::bookings).sum(),

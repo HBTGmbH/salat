@@ -4,12 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import de.hbt.salat.auth.domain.AuthorizedUser;
@@ -17,9 +20,9 @@ import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 
 /**
- * Following an employee sign (#966): the assignments name their person by it, and a sign that
- * moves has to take them along — one left behind resolves to nothing and costs the work 0 EUR in
- * controlling without a word (#922).
+ * The sign column next to the id (#968): the application resolves by {@code employee_id}, but views,
+ * ETL definitions and reports still join on {@code employee_sign}, so a sign change has to reach it
+ * — for the person's rows and for nobody else's.
  */
 @DataJpaTest
 @Import(AuthorizedUserAuditorAware.class)
@@ -28,9 +31,15 @@ public class EmployeeCostAssignmentRepositoryTest {
 
   private static final LocalDate FROM = LocalDate.of(2026, 1, 1);
   private static final LocalDate UNTIL = LocalDate.of(2026, 12, 31);
+  private static final long TESTY = 1L;
+  private static final long BOSS = 2L;
 
   @Autowired
   private EmployeeCostAssignmentRepository assignmentRepository;
+
+  /** The update is a bulk statement the persistence context does not see; clearing it reads what is stored. */
+  @Autowired
+  private TestEntityManager entityManager;
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
@@ -42,38 +51,48 @@ public class EmployeeCostAssignmentRepositoryTest {
   }
 
   @Test
-  public void carries_every_assignment_of_a_sign_over_to_the_new_one() {
-    givenAssignment("testy");
-    givenAssignment("testy");
+  public void writes_the_new_sign_into_every_assignment_of_the_person() {
+    givenAssignment(TESTY, "testy");
+    givenAssignment(TESTY, "testy");
 
-    assertThat(assignmentRepository.updateEmployeeSign("testy", "newby")).isEqualTo(2);
-    assertThat(assignmentRepository.findDistinctEmployeeSigns()).containsExactly("newby");
+    assertThat(assignmentRepository.updateEmployeeSign(TESTY, "newby")).isEqualTo(2);
+    assertThat(signs()).containsExactly("newby", "newby");
   }
 
-  /** Following one sign must not drag the assignments of anybody else along. */
+  /** Following one person must not drag the assignments of anybody else along. */
   @Test
-  public void leaves_the_assignments_of_other_signs_alone() {
-    givenAssignment("testy");
-    givenAssignment("boss");
+  public void leaves_the_assignments_of_other_people_alone() {
+    givenAssignment(TESTY, "testy");
+    givenAssignment(BOSS, "boss");
 
-    assignmentRepository.updateEmployeeSign("testy", "newby");
+    assignmentRepository.updateEmployeeSign(TESTY, "newby");
 
-    assertThat(assignmentRepository.findDistinctEmployeeSigns())
-        .containsExactlyInAnyOrder("newby", "boss");
+    assertThat(signs()).containsExactlyInAnyOrder("newby", "boss");
   }
 
-  /** Several assignments on one sign are one entry, not one per row — the caller compares signs. */
+  /**
+   * An assignment the migration could not resolve carries no id, only its sign — even when a person
+   * happens to have carried that very sign before. It is left as it is.
+   */
   @Test
-  public void names_a_sign_only_once() {
-    givenAssignment("testy");
-    givenAssignment("testy");
+  public void leaves_an_assignment_without_a_person_alone() {
+    givenAssignment(null, "testy");
 
-    assertThat(assignmentRepository.findDistinctEmployeeSigns()).containsExactly("testy");
+    assertThat(assignmentRepository.updateEmployeeSign(TESTY, "newby")).isZero();
+    assertThat(signs()).containsExactly("testy");
   }
 
-  private void givenAssignment(String employeeSign) {
+  private List<String> signs() {
+    entityManager.clear();
+    return StreamSupport.stream(assignmentRepository.findAll().spliterator(), false)
+        .map(EmployeeCostAssignment::getEmployeeSign)
+        .toList();
+  }
+
+  private void givenAssignment(Long employeeId, String employeeSign) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeCostName("Standard");
+    assignment.setEmployeeId(employeeId);
     assignment.setEmployeeSign(employeeSign);
     assignment.setValidFrom(FROM);
     assignment.setValidUntil(UNTIL);

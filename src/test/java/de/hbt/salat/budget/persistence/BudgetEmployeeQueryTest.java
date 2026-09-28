@@ -5,7 +5,9 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -54,6 +56,8 @@ public class BudgetEmployeeQueryTest {
 
   @Autowired
   private TestEntityManager entityManager;
+
+  private final Map<String, Employee> employees = new HashMap<>();
 
   @MockitoBean
   private AuthorizedUser authorizedUser;
@@ -350,14 +354,20 @@ public class BudgetEmployeeQueryTest {
    * A new person per booking, sharing sign and name where the sign repeats — which is what makes
    * the grouping keys do their work rather than the identity of one row.
    */
+  /**
+   * One person per sign, one contract per booking: the rows are grouped by the person's id (#968),
+   * and a person booking through several contracts is still one person.
+   */
   private Employeecontract employeecontract(String sign) {
-    var employee = new Employee();
-    employee.setSign(sign);
-    employee.setFirstname(sign);
-    employee.setLastname(sign);
-    employee.setGender(GlobalConstants.GENDER_FEMALE);
-    employee.setHide(false);
-    entityManager.persist(employee);
+    var employee = employees.computeIfAbsent(sign, key -> {
+      var created = new Employee();
+      created.setSign(key);
+      created.setFirstname(key);
+      created.setLastname(key);
+      created.setGender(GlobalConstants.GENDER_FEMALE);
+      created.setHide(false);
+      return entityManager.persist(created);
+    });
 
     var contract = new Employeecontract();
     contract.setEmployee(employee);

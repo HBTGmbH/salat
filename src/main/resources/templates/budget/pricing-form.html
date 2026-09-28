@@ -60,10 +60,13 @@
         <div class="row">
           <div class="col-md-6">
             <!--/* A hidden employee only appears when the rate already references them; say so. */-->
-            <salat:select th:field="*{employeeSign}" th:label="#{main.pricing.field.employeeSign}">
-              <option value="" th:text="#{main.pricing.field.employeeSign.all}">--- Alle Mitarbeiter ---</option>
+            <!--/* A person the migration could not resolve cannot be offered; the empty choice then keeps
+                   the rate as it is instead of meaning "everyone" (OrderPricingService#update). */-->
+            <salat:select th:field="*{employeeId}" th:label="#{main.pricing.field.employeeSign}">
+              <option value=""
+                      th:text="${unresolvedEmployeeSign} != null ? #{main.budget.employeesign.unresolved.option(${unresolvedEmployeeSign})} : #{main.pricing.field.employeeSign.all}">--- Alle Mitarbeiter ---</option>
               <option th:each="emp : ${employees}"
-                      th:value="${emp.sign}"
+                      th:value="${emp.id}"
                       th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}| + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
             </salat:select>
           </div>

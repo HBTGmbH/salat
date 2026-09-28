@@ -12,7 +12,9 @@ import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -90,12 +92,12 @@ public class EmployeeService {
   }
 
   /**
-   * The employees offered in a select box: everything not hidden, plus the one carrying
-   * {@code keepSign} even if it is hidden (#956). Hiding an employee is a decluttering aid for
+   * The employees offered in a select box: everything not hidden, plus the one with the id
+   * {@code keepId} even if it is hidden (#956). Hiding an employee is a decluttering aid for
    * exactly these lists — it must not make an existing record uneditable.
    */
-  public List<Employee> getSelectableEmployees(String keepSign) {
-    return employeeDAO.getSelectableEmployees(keepSign);
+  public List<Employee> getSelectableEmployees(Long keepId) {
+    return employeeDAO.getSelectableEmployees(keepId);
   }
 
   public List<Employee> getEmployeesWithContracts() {
@@ -120,6 +122,18 @@ public class EmployeeService {
 
   public Employee getEmployeeById(long employeeId) {
     return employeeDAO.getEmployeeById(employeeId);
+  }
+
+  /**
+   * The current sign of each of these employees, by id — for records that reference a person by
+   * id and show the sign (#968). One statement for a whole list, and without the read rules, for
+   * the reason given at {@link #getEmployeesByIds}: the caller shows the sign of a record it may
+   * show, and the sign is how the person is named there.
+   */
+  public Map<Long, String> getSignsByIds(Collection<Long> ids) {
+    return getEmployeesByIds(ids).stream()
+        .filter(employee -> employee.getSign() != null)
+        .collect(Collectors.toMap(Employee::getId, Employee::getSign));
   }
 
   public List<Employee> getEmployeesWithValidContracts() {
