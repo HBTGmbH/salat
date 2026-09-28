@@ -1947,6 +1947,8 @@ function paletteInvoke(dialog, verb, rest) {
   const command = paletteState.commands.find(item => item.type === 'verb' && item.key === verb);
   paletteState.invocation = { verb, values: {}, fallback: command ? command.fallback : null,
     label: command ? command.label : verb };
+  // room for the chips where the screen has it (salat.css)
+  dialog.classList.add('command-palette-wide');
   clearTimeout(paletteState.objectTimer);
   paletteState.objectToken++;
   paletteState.objects = null;
@@ -1961,6 +1963,7 @@ function paletteInvoke(dialog, verb, rest) {
 
 function paletteLeaveInvocation(dialog, text) {
   paletteState.invocation = null;
+  dialog.classList.remove('command-palette-wide');
   const input = document.getElementById('commandPaletteInput');
   input.placeholder = input.dataset.placeholder || input.placeholder;
   input.value = text;
@@ -2004,8 +2007,9 @@ function paletteInvocationUpdate(dialog) {
     query = firstWord[1];
   }
   let values = param ? paletteParamValues(dialog, invocation, param, query, !complete) : [];
-  // an optional parameter the input does not fit: it is left out, and the next one is offered
-  if (param && param.optional && param.type !== 'comment' && query && values && !values.length) {
+  // an optional parameter the input does not fit, or one with nothing to offer at all — the ticket
+  // of a suborder without tickets —: it is left out, and the next one is offered
+  if (param && param.optional && param.type !== 'comment' && values && !values.length) {
     const next = paletteNextParam(invocation, param);
     if (next) {
       param = next;
@@ -2028,7 +2032,8 @@ function paletteInvocationUpdate(dialog) {
     ranges: query && param && param.type !== 'comment' && paletteMatch(value.label, query)
       ? paletteMatch(value.label, query).ranges : [],
   }));
-  paletteRender([{ hits }], values === undefined);
+  // "Keine Treffer" only where something was looked for: a comment has no suggestions to miss
+  paletteRender([{ hits }], values === undefined || !query || !param || param.type === 'comment');
   const firstEnabled = paletteState.items.findIndex(item => !item.disabled);
   paletteSetActive(firstEnabled, true);
   paletteRenderPreview(dialog);
@@ -2434,6 +2439,7 @@ function paletteOpen() {
   paletteState.invocation = null;
   paletteState.valueCache = new Map();
   paletteState.openToken++;
+  dialog.classList.remove('command-palette-wide');
   document.getElementById('commandPaletteCrumb').hidden = true;
   document.getElementById('commandPaletteChips').hidden = true;
   document.getElementById('commandPaletteParam').hidden = true;

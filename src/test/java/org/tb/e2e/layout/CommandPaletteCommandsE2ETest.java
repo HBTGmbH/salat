@@ -186,6 +186,41 @@ class CommandPaletteCommandsE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * Chips are not cut short: where the line is too narrow for them and the field, the field moves
+   * below the chips. On a wide screen the palette grows while a command is entered, and shrinks back.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void chips_are_not_cut_short_and_the_field_moves_below_them(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      page.setViewportSize(1400, 900);
+      page.keyboard().press(SHORTCUT);
+      int listWidth = paletteWidth(page);
+      input(page).fill("buchen gestern alpha 1:30 ");
+      assertThat(chips(page)).hasCount(4);
+      assertTrue(paletteWidth(page) > listWidth, "wider while a command is entered");
+
+      page.setViewportSize(480, 900);
+      assertEquals(Boolean.FALSE, page.evaluate("() => Array.from(document.querySelectorAll('#commandPaletteChips button'))"
+          + ".some(chip => chip.scrollWidth > chip.clientWidth)"));
+      assertEquals(Boolean.TRUE, page.evaluate("() => document.getElementById('commandPaletteInput').getBoundingClientRect().top"
+          + " >= document.querySelector('#commandPaletteChips button').getBoundingClientRect().bottom"));
+
+      page.setViewportSize(1400, 900);
+      // duration, suborder, day, then the command itself
+      for (int press = 0; press < 4; press++) {
+        page.keyboard().press("Backspace");
+      }
+      assertThat(page.locator("#commandPaletteChips")).isHidden();
+      assertEquals(listWidth, paletteWidth(page));
+    });
+  }
+
+  private static int paletteWidth(Page page) {
+    return ((Number) page.evaluate("() => document.getElementById('commandPalette').offsetWidth")).intValue();
+  }
+
   private static Locator input(Page page) {
     return page.locator("#commandPaletteInput");
   }

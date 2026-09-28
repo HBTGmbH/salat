@@ -1003,8 +1003,9 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 }
 
 .command-palette-input {
-  flex: 1 1 auto;
-  min-width: 0;
+  /* Mindestbreite, damit neben den Chips (#1158) noch getippt werden kann; sonst bricht es um */
+  flex: 1 1 8rem;
+  min-width: 8rem;
   border: 0;
   outline: 0;
   background: transparent;
@@ -1155,27 +1156,41 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 
 /* Befehle mit Parametern (#1158): der Befehl und die uebernommenen Werte als Chips vor dem Feld,
    rechts der Parameter, der gerade dran ist. Die Chips sind Tablers getoente Badges - dieselben
-   Paare wie in den Listen, ein fehlerhafter Wert in der Fehlerfarbe. Sie weichen dem Feld, nicht
-   umgekehrt: ein langer Unterauftrag wird gekuerzt, statt das Eingabefeld zu verdraengen. */
-.command-palette-chips {
+   Paare wie in den Listen, ein fehlerhafter Wert in der Fehlerfarbe.
+   Chips und Feld stehen in einer Zeile, die umbricht: ein Chip wird nicht gekuerzt, und reicht der
+   Platz nicht, rutscht das Feld unter die Chips. Die Chips sind dafuer ueber display: contents
+   selbst Glieder der Zeile; [hidden] blendet sie trotzdem aus, Bootstrap setzt es mit !important. */
+.command-palette-field {
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
   gap: .375rem;
   min-width: 0;
-  max-width: 70%;
-  overflow: hidden;
 }
 
+.command-palette-chips {
+  display: contents;
+}
+
+/* Gekuerzt wird ein Chip nur, wenn er allein breiter ist als die ganze Zeile. */
 .command-palette-chip {
-  flex: 0 1 auto;
-  min-width: 2rem;
-  max-width: 14rem;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   border: 0;
   font-size: .8125rem;
   cursor: pointer;
+}
+
+/* Waehrend ein Befehl eingegeben wird, darf die Palette breiter werden, wo der Bildschirm es
+   zulaesst - Platz fuer die Chips, bevor das Feld umbrechen muss. Nicht auf dem Telefon, dort
+   nimmt sie ohnehin die ganze Breite (unten). */
+@media (min-width: 576px) {
+  .command-palette.command-palette-wide {
+    width: min(56rem, calc(100vw - 2rem));
+  }
 }
 
 .command-palette-param {
