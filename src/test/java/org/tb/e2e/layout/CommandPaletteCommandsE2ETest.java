@@ -189,13 +189,22 @@ class CommandPaletteCommandsE2ETest extends PlaywrightE2ETestBase {
   /**
    * Chips are not cut short: where the line is too narrow for them and the field, the field moves
    * below the chips. On a wide screen the palette grows while a command is entered, and shrinks back.
+   * The parameters listed beside a command are not cut short either.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
   void chips_are_not_cut_short_and_the_field_moves_below_them(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
-      page.setViewportSize(1400, 900);
+      // the parameters beside a command are not cut short either, on a phone neither
+      page.setViewportSize(480, 900);
       page.keyboard().press(SHORTCUT);
+      input(page).fill("buch");
+      Locator parameters = page.locator(".command-palette-option-verb .command-palette-kind");
+      assertThat(parameters).hasText("Tag · Unterauftrag · Dauer · Ticket · Kommentar");
+      assertEquals(Boolean.FALSE, parameters.evaluate("kind => kind.scrollWidth > kind.clientWidth"));
+      input(page).fill("");
+
+      page.setViewportSize(1400, 900);
       int listWidth = paletteWidth(page);
       input(page).fill("buchen gestern alpha 1:30 ");
       assertThat(chips(page)).hasCount(4);
