@@ -52,6 +52,9 @@ See also README.md
   - **Prefer the `salat:` custom dialect** for reusable form and table components over raw `th:replace` fragment calls. The dialect provides cleaner, attribute-based tags that are easier to read and IDE-friendly.
   - Thymeleaf fragments remain valid for structural/layout reuse (e.g. `master-table`, layout decorators); the `salat:` dialect targets leaf-level components (inputs, selects, buttons).
   - Shared layout and fragments should live under a common templates/layout and templates/fragments structure.
+  - **No SpEL type expression `T(...)` in templates.** A value from Java comes from the controller as
+    a model attribute (`@ModelAttribute` method if every rendering path needs it); formatting goes
+    through `#temporals` or `#numbers`. `TemplateTypeExpressionTest` enforces this.
   - **Die Tab-Reihenfolge ist die Reihenfolge des Dokuments** (#1064). Kein positiver `tabindex`,
     im Markup so wenig wie aus JavaScript; erlaubt ist allein `-1` für ein Ziel, das nur gezielt
     angesprungen wird. Wo der Einstieg liegt, entscheidet nicht die Reihenfolge, sondern

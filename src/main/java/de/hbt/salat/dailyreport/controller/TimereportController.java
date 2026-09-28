@@ -3,6 +3,7 @@ package de.hbt.salat.dailyreport.controller;
 import static java.math.BigDecimal.valueOf;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static de.hbt.salat.common.GlobalConstants.MAX_SERIAL_BOOKING_DAYS;
 import static de.hbt.salat.common.util.DateUtils.today;
 import static de.hbt.salat.common.util.DurationUtils.parseFlexibleMinutes;
 import static de.hbt.salat.common.util.TimeFormatUtils.parseFlexibleTimeOfDay;
@@ -14,6 +15,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -75,6 +77,16 @@ public class TimereportController {
     private final NotificationService notificationService;
     private final AuthorizedUser authorizedUser;
     private final AuthorizedEmployee authorizedEmployee;
+
+    /**
+     * The serial booking choices beyond "Nicht wiederholen": 2 up to the limit the service enforces,
+     * generated so the list cannot drift apart from it (#826). Offered on every path that renders the
+     * form, including the one back after a validation error.
+     */
+    @ModelAttribute("serialDayOptions")
+    public List<Integer> serialDayOptions() {
+        return IntStream.rangeClosed(2, MAX_SERIAL_BOOKING_DAYS).boxed().toList();
+    }
 
     /**
      * The empty booking form. It books on the remembered selection, unless the link names the

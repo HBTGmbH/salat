@@ -687,7 +687,7 @@
             </a>
             <!--/* wie weit Abnahme und Freigabe in den Monat reichen (#1164) */-->
             <h3 class="mb-0" th:with="period=${listData != null ? listData.reportPeriod : null}">
-              <span th:text="${yearMonth != null ? yearMonth.month.getDisplayName(T(java.time.format.TextStyle).FULL, #locale) + ' ' + yearMonth.year : ''}">Mai 2026</span>
+              <span th:text="${yearMonth != null ? #temporals.format(yearMonth, 'MMMM yyyy') : ''}">Mai 2026</span>
               <span th:replace="~{fragments/report-period :: monthStatus(${period})}"></span>
             </h3>
             <a class="btn btn-sm btn-outline-secondary btn-icon"
