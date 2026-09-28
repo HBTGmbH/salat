@@ -1,14 +1,19 @@
 package org.tb.dailyreport.controller;
 
 import static java.lang.Boolean.TRUE;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.tb.common.util.DateUtils.getWorkingDayDistance;
 import static org.tb.common.util.DateUtils.today;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -24,12 +29,16 @@ import org.tb.common.util.DateUtils;
 import org.tb.common.util.DurationUtils;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import org.tb.dailyreport.domain.Publicholiday;
 import org.tb.dailyreport.domain.TimereportDTO;
+import org.tb.dailyreport.domain.UnbookedWorkingDays;
 import org.tb.dailyreport.domain.VacationInfo;
+import org.tb.dailyreport.domain.Workingday;
 import org.tb.dailyreport.service.MatrixService;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.dailyreport.viewhelper.OvertimeScale;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -52,6 +61,7 @@ public class DashboardController {
     private final PublicholidayService publicholidayService;
     private final ReleaseService releaseService;
     private final MatrixService matrixService;
+    private final WorkingdayService workingdayService;
     private final MessageSourceAccessor messageSourceAccessor;
     @GetMapping
     public String dashboard(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
@@ -145,13 +155,7 @@ public class DashboardController {
             .max(Comparator.naturalOrder());
         int businessDaysLagging = lastLogOpt.map(d -> {
             if (!d.isBefore(todayDate)) return 0;
-            long rawDays = Math.max(0L, getWorkingDayDistance(d, todayDate) - 1);
-            long holidaysBetween = publicholidayService
-                .getPublicHolidaysBetween(d.plusDays(1), todayDate).stream()
-                .filter(h -> h.getRefdate().getDayOfWeek() != DayOfWeek.SATURDAY
-                          && h.getRefdate().getDayOfWeek() != DayOfWeek.SUNDAY)
-                .count();
-            return (int) Math.max(0L, rawDays - holidaysBetween);
+            return unbookedWorkingDaysSince(employeecontract, d, todayDate);
         }).orElse(99);
 
         model.addAttribute("weekLogged", DurationUtils.format(weekLogged));
@@ -165,6 +169,22 @@ public class DashboardController {
         model.addAttribute("lastLogDate", lastLogOpt.orElse(null));
         model.addAttribute("businessDaysLagging", businessDaysLagging);
         model.addAttribute("lastLogIsLagging", businessDaysLagging > 1);
+    }
+
+    /* Der Rueckstand nach der letzten Buchung bis einschliesslich heute, nach derselben Regel wie der
+       Hinweis auf die Vorwoche (UnbookedWorkingDays): ein als nicht gearbeitet markierter Tag ist
+       kein vergessener Buchungstag. Nach der letzten Buchung ist nichts mehr gebucht, die Menge der
+       gebuchten Tage ist deshalb leer. Wer den Vertrag hier sehen darf, darf auch seine Arbeitstage
+       lesen - beide Regeln lassen Manager, die Person selbst und die zustaendige People Lead zu. */
+    private int unbookedWorkingDaysSince(Employeecontract employeecontract, LocalDate lastBooking, LocalDate today) {
+        var from = lastBooking.plusDays(1);
+        var workingDays = workingdayService
+            .getWorkingdaysByEmployeeContractId(employeecontract.getId(), from, today).stream()
+            .collect(toMap(Workingday::getRefday, identity()));
+        var publicHolidays = publicholidayService.getPublicHolidaysBetween(from, today).stream()
+            .map(Publicholiday::getRefdate)
+            .collect(toSet());
+        return UnbookedWorkingDays.between(from, today, employeecontract, Set.of(), workingDays, publicHolidays).size();
     }
 
     @PostMapping(params = "task=refresh")
