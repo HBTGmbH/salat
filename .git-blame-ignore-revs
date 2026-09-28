@@ -1,0 +1,5 @@
+# Commits, die git blame überspringt. GitHub liest die Datei von selbst; lokal einmalig:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# #1195 - Java-Pakete von org.tb nach de.hbt.salat umbenennen
+fcee82b8fe5df53a928f5322a0c271d713f85322
