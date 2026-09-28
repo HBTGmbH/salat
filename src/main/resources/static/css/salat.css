@@ -1316,7 +1316,8 @@ body:not(.salat-confirm-ready) button[data-confirm] {
    Grau, das ApexCharts voreinstellt. */
 .apexcharts-canvas .apexcharts-text,
 .apexcharts-canvas .apexcharts-xaxis-label,
-.apexcharts-canvas .apexcharts-yaxis-label {
+.apexcharts-canvas .apexcharts-yaxis-label,
+.apexcharts-canvas .apexcharts-point-annotation-label {
   fill: var(--tblr-body-color);
 }
 
