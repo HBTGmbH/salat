@@ -34,6 +34,7 @@ import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.dailyreport.viewhelper.OvertimeScale;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -43,15 +44,15 @@ public class DashboardControllerTest {
 
   @Test
   public void grades_a_negative_total_on_the_negative_side_of_the_scale() {
-    assertThat(DashboardController.overtimeColorClass(status(-25, 0))).isEqualTo("warning");
-    assertThat(DashboardController.overtimeColorClass(status(-50, 0))).isEqualTo("danger");
+    assertThat(DashboardController.overtimeColorClass(status(-25, 0), OvertimeScale.TOTAL)).isEqualTo("warning");
+    assertThat(DashboardController.overtimeColorClass(status(-50, 0), OvertimeScale.TOTAL)).isEqualTo("danger");
   }
 
   @Test
   public void leaves_a_positive_total_where_it_was() {
-    assertThat(DashboardController.overtimeColorClass(status(10, 0))).isEqualTo("success");
-    assertThat(DashboardController.overtimeColorClass(status(50, 0))).isEqualTo("warning");
-    assertThat(DashboardController.overtimeColorClass(status(85, 0))).isEqualTo("danger");
+    assertThat(DashboardController.overtimeColorClass(status(10, 0), OvertimeScale.TOTAL)).isEqualTo("success");
+    assertThat(DashboardController.overtimeColorClass(status(50, 0), OvertimeScale.TOTAL)).isEqualTo("warning");
+    assertThat(DashboardController.overtimeColorClass(status(85, 0), OvertimeScale.TOTAL)).isEqualTo("danger");
   }
 
   /* Der Pfeil zeigt nach unten, sobald die Dauer negativ ist. Die Farbe kommt aus derselben Dauer -
@@ -62,24 +63,24 @@ public class DashboardControllerTest {
     var status = status(-25, 0);
 
     assertThat(status.get().getTotal().isNegative()).isTrue();
-    assertThat(DashboardController.overtimeColorClass(status)).isNotEqualTo("success");
+    assertThat(DashboardController.overtimeColorClass(status, OvertimeScale.TOTAL)).isNotEqualTo("success");
   }
 
   /* Die Monatszelle wurde mit dem Vorzeichen des Gesamtsaldos bewertet. Bei gegenlaeufigen
      Vorzeichen zeigt sich das: ein Monat von -20 h ist gelb, gleich wie der Gesamtsaldo steht. */
   @Test
   public void grades_the_month_without_looking_at_the_total() {
-    assertThat(DashboardController.monthlyOvertimeColorClass(status(60, -20))).isEqualTo("warning");
-    assertThat(DashboardController.monthlyOvertimeColorClass(status(-60, -20))).isEqualTo("warning");
-    assertThat(DashboardController.monthlyOvertimeColorClass(status(-60, 20))).isEqualTo("warning");
-    assertThat(DashboardController.monthlyOvertimeColorClass(status(-60, 35))).isEqualTo("danger");
-    assertThat(DashboardController.monthlyOvertimeColorClass(status(60, -35))).isEqualTo("danger");
+    assertThat(DashboardController.monthlyOvertimeColorClass(status(60, -20), OvertimeScale.CURRENT_MONTH)).isEqualTo("warning");
+    assertThat(DashboardController.monthlyOvertimeColorClass(status(-60, -20), OvertimeScale.CURRENT_MONTH)).isEqualTo("warning");
+    assertThat(DashboardController.monthlyOvertimeColorClass(status(-60, 20), OvertimeScale.CURRENT_MONTH)).isEqualTo("warning");
+    assertThat(DashboardController.monthlyOvertimeColorClass(status(-60, 35), OvertimeScale.CURRENT_MONTH)).isEqualTo("danger");
+    assertThat(DashboardController.monthlyOvertimeColorClass(status(60, -35), OvertimeScale.CURRENT_MONTH)).isEqualTo("danger");
   }
 
   @Test
   public void grades_a_missing_status_as_unremarkable() {
-    assertThat(DashboardController.overtimeColorClass(Optional.empty())).isEqualTo("success");
-    assertThat(DashboardController.monthlyOvertimeColorClass(Optional.empty())).isEqualTo("success");
+    assertThat(DashboardController.overtimeColorClass(Optional.empty(), OvertimeScale.TOTAL)).isEqualTo("success");
+    assertThat(DashboardController.monthlyOvertimeColorClass(Optional.empty(), OvertimeScale.CURRENT_MONTH)).isEqualTo("success");
   }
 
   @Test
@@ -87,7 +88,7 @@ public class DashboardControllerTest {
     var status = new OvertimeStatus();
     status.setTotal(info(-50));
 
-    assertThat(DashboardController.monthlyOvertimeColorClass(Optional.of(status))).isEqualTo("success");
+    assertThat(DashboardController.monthlyOvertimeColorClass(Optional.of(status), OvertimeScale.CURRENT_MONTH)).isEqualTo("success");
   }
 
   /* Ohne taegliche Sollarbeitszeit gibt es keine Abweichung vom Soll und damit keinen Saldo -
@@ -97,7 +98,7 @@ public class DashboardControllerTest {
   void a_contract_without_target_hours_fills_neither_overtime_field() {
     var model = new ExtendedModelMap();
 
-    DashboardController.addOvertimeAttributes(model, Optional.empty());
+    DashboardController.addOvertimeAttributes(model, Optional.empty(), OvertimeScale.TOTAL, OvertimeScale.CURRENT_MONTH);
 
     assertThat(model.getAttribute("overtime")).isEqualTo("");
     assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("");
@@ -112,7 +113,7 @@ public class DashboardControllerTest {
     status.setTotal(info(-50));
     var model = new ExtendedModelMap();
 
-    DashboardController.addOvertimeAttributes(model, Optional.of(status));
+    DashboardController.addOvertimeAttributes(model, Optional.of(status), OvertimeScale.TOTAL, OvertimeScale.CURRENT_MONTH);
 
     assertThat(model.getAttribute("overtime")).isEqualTo("-50:00");
     assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("");
@@ -129,7 +130,7 @@ public class DashboardControllerTest {
     status.getCurrentMonth().setBegin(LocalDate.parse("2026-09-01"));
     var model = new ExtendedModelMap();
 
-    DashboardController.addOvertimeAttributes(model, Optional.of(status));
+    DashboardController.addOvertimeAttributes(model, Optional.of(status), OvertimeScale.TOTAL, OvertimeScale.CURRENT_MONTH);
 
     assertThat(model.getAttribute("monthlyOvertime")).isEqualTo("0:00");
     assertThat(model.getAttribute("overtimeMonth")).isEqualTo("2026-09");
@@ -163,6 +164,8 @@ public class DashboardControllerTest {
     private ReleaseService releaseService;
     @Mock
     private MatrixService matrixService;
+    @Mock
+    private WorkingdayService workingdayService;
     @Mock
     private MessageSourceAccessor messageSourceAccessor;
 
@@ -220,15 +223,14 @@ public class DashboardControllerTest {
     }
   }
 
-  /* Der Rueckstand der Karte "Letzte Buchung" folgt derselben Regel wie der Hinweis auf die Vorwoche
-     (UnbookedWorkingDays): ein als nicht gearbeitet markierter Tag ist kein vergessener Buchungstag.
-     Montag, 28.09.: zuletzt am Donnerstag gebucht, der Freitag ist als nicht gearbeitet markiert -
-     offen ist allein der heutige Tag. */
+  /* Die Kennzahlen der Seite fuer einen Vertrag mit 8 Stunden am Tag, am Montag, 28.09. Der
+     Rueckstand der Karte "Letzte Buchung" folgt derselben Regel wie der Hinweis auf die Vorwoche
+     (UnbookedWorkingDays): ein als nicht gearbeitet markierter Tag ist kein vergessener Buchungstag. */
   @Nested
   @FixedClock("2026-09-28T08:00:00")
   @ExtendWith(MockitoExtension.class)
   @MockitoSettings(strictness = Strictness.LENIENT)
-  class LastBooking {
+  class Kpis {
 
     private static final LocalDate THURSDAY = LocalDate.parse("2026-09-24");
     private static final LocalDate FRIDAY = LocalDate.parse("2026-09-25");
@@ -266,8 +268,8 @@ public class DashboardControllerTest {
 
       dashboardController.dashboard(42L, model);
 
-      assertThat(model.getAttribute("businessDaysLagging")).isEqualTo(1);
-      assertThat(model.getAttribute("lastLogIsLagging")).isEqualTo(false);
+      assertThat(model.getAttribute("openWorkingDays")).isEqualTo(1);
+      assertThat(model.getAttribute("lastLogColorClass")).isEqualTo("secondary");
     }
 
     @Test
@@ -277,19 +279,155 @@ public class DashboardControllerTest {
 
       dashboardController.dashboard(42L, model);
 
-      assertThat(model.getAttribute("businessDaysLagging")).isEqualTo(2);
-      assertThat(model.getAttribute("lastLogIsLagging")).isEqualTo(true);
+      assertThat(model.getAttribute("openWorkingDays")).isEqualTo(2);
+      assertThat(model.getAttribute("lastLogColorClass")).isEqualTo("warning");
+    }
+
+    /* Geplanter Urlaub ist schon gebucht, liegt aber in der Zukunft. Er darf den Rueckstand bis
+       heute nicht verdecken: zuletzt am Donnerstag gebucht bleibt es bei Freitag und Montag. */
+    @Test
+    void a_booking_in_the_future_does_not_hide_the_days_until_today() {
+      bookedOn(THURSDAY, LocalDate.parse("2026-10-02"));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("openWorkingDays")).isEqualTo(2);
+      assertThat(model.getAttribute("lastLogDate")).isEqualTo(THURSDAY);
+    }
+
+    /* Die Woche geht von Montag bis Sonntag. Der Montag der Folgewoche gehoert nicht dazu -
+       LocalDateRange schliesst sein Ende ein. */
+    @Test
+    void the_week_ends_on_sunday() {
+      bookedOn(LocalDate.parse("2026-09-28"), LocalDate.parse("2026-10-05"));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("weekLogged")).isEqualTo("8:00");
+    }
+
+    /* Ohne Buchung zaehlt der Rueckstand ab Vertragsbeginn: ein Vertrag, der heute beginnt, hat nur
+       den heutigen Tag offen und ist nicht vom ersten Tag an rot. */
+    @Test
+    void a_new_contract_without_bookings_is_not_overdue() {
+      contractFrom(LocalDate.parse("2026-09-28"), Duration.ofHours(8));
+      bookedOn();
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("lastLogDate")).isNull();
+      assertThat(model.getAttribute("openWorkingDays")).isEqualTo(1);
+      assertThat(model.getAttribute("lastLogColorClass")).isEqualTo("secondary");
+    }
+
+    @Test
+    void a_contract_without_any_booking_since_last_week_is_overdue() {
+      contractFrom(LocalDate.parse("2026-09-21"), Duration.ofHours(8));
+      bookedOn();
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("openWorkingDays")).isEqualTo(6);
+      assertThat(model.getAttribute("lastLogColorClass")).isEqualTo("danger");
+    }
+
+    /* Der Link der Karte fuehrt zum ersten offenen Arbeitstag, der markierte Freitag zaehlt nicht
+       dazu; ist nichts offen, zu heute. */
+    @Test
+    void the_card_leads_to_the_first_open_working_day() {
+      bookedLastOn(LocalDate.parse("2026-09-23"));
+      when(workingdayService.getWorkingdaysByEmployeeContractId(eq(42L), any(), any()))
+          .thenReturn(List.of(notWorked(THURSDAY)));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("nextBookingDate")).isEqualTo(FRIDAY);
+    }
+
+    @Test
+    void without_an_open_day_the_card_leads_to_today() {
+      bookedLastOn(LocalDate.parse("2026-09-28"));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("openWorkingDays")).isEqualTo(0);
+      assertThat(model.getAttribute("lastLogColorClass")).isEqualTo("success");
+      assertThat(model.getAttribute("nextBookingDate")).isEqualTo(LocalDate.parse("2026-09-28"));
+    }
+
+    /* Der Text folgt dem Kalender, die Farbe den offenen Arbeitstagen: nach einem markierten
+       Freitag steht am Montag "Vor 4 Tagen", und die Karte bleibt trotzdem neutral. */
+    @Test
+    void the_text_counts_calendar_days() {
+      bookedLastOn(THURSDAY);
+      when(workingdayService.getWorkingdaysByEmployeeContractId(eq(42L), any(), any()))
+          .thenReturn(List.of(notWorked(FRIDAY)));
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("lastLogDaysAgo")).isEqualTo(4L);
+    }
+
+    /* Die Schwellen gelten fuer 40 Wochenstunden. Bei 20 Wochenstunden liegen sie bei der Haelfte:
+       -15 h sind dort schon gelb, bei 40 Wochenstunden noch gruen (#1175). */
+    @Test
+    void grades_the_overtime_on_the_scale_of_the_contract() {
+      contractFrom(LocalDate.parse("2020-01-01"), Duration.ofHours(4));
+      bookedOn(THURSDAY);
+      var status = status(-15, 0);
+      status.get().getCurrentMonth().setBegin(LocalDate.parse("2026-09-01"));
+      when(overtimeService.calculateOvertime(42L, false)).thenReturn(status);
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("overtimeColorClass")).isEqualTo("warning");
+      assertThat(((OvertimeScale) model.getAttribute("overtimeScale")).warningBelowLabel()).isEqualTo("-10");
+    }
+
+    /* Nie freigegeben heisst neuer Vertrag: Employeecontract.getReleaseWarning() warnt nicht, die
+       Karte auch nicht. */
+    @Test
+    void a_contract_never_released_is_neutral() {
+      bookedLastOn(THURSDAY);
+      var model = new ExtendedModelMap();
+
+      dashboardController.dashboard(42L, model);
+
+      assertThat(model.getAttribute("releasedUntil")).isNull();
+      assertThat(model.getAttribute("releaseColorClass")).isEqualTo("secondary");
     }
 
     private void bookedLastOn(LocalDate day) {
-      var contract = new Employeecontract();
+      bookedOn(day);
+    }
+
+    private Employeecontract contract;
+
+    private void contractFrom(LocalDate validFrom, Duration dailyWorkingTime) {
+      contract = new Employeecontract();
       setField(contract, "id", 42L);
       contract.setEmployee(new Employee());
-      contract.setValidFrom(LocalDate.parse("2020-01-01"));
-      contract.setDailyWorkingTime(Duration.ofHours(8));
+      contract.setValidFrom(validFrom);
+      contract.setDailyWorkingTime(dailyWorkingTime);
       when(employeecontractService.getEmployeecontractForView(42L)).thenReturn(contract);
+    }
+
+    private void bookedOn(LocalDate... days) {
+      if (contract == null) {
+        contractFrom(LocalDate.parse("2020-01-01"), Duration.ofHours(8));
+      }
       when(timereportService.getTimereportsByDatesAndEmployeeContractId(eq(42L), any(), any()))
-          .thenReturn(List.of(TimereportDTO.builder().referenceday(day).duration(Duration.ofHours(8)).build()));
+          .thenReturn(java.util.Arrays.stream(days)
+              .map(day -> TimereportDTO.builder().referenceday(day).duration(Duration.ofHours(8)).build())
+              .toList());
     }
 
     private static Workingday notWorked(LocalDate day) {

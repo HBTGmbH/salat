@@ -903,6 +903,11 @@ public class TimereportService {
     return timereportRepository.getReportedMinutesForSuborderAndEmployeeContract(soId, ecId).orElse(0L);
   }
 
+  /** Like {@link #getTotalDurationMinutesForSuborderAndEmployeeContract}, only the bookings after {@code day}. */
+  public long getTotalDurationMinutesForSuborderAndEmployeeContractAfter(long soId, long ecId, LocalDate day) {
+    return timereportRepository.getReportedMinutesForSuborderAndEmployeeContractAfter(soId, ecId, day).orElse(0L);
+  }
+
   /**
    * Gets the sum of all duration minutes WITH considering the hours.
    */

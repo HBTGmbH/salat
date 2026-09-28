@@ -1,6 +1,7 @@
 package org.tb.dailyreport.controller;
 
 import static java.lang.Boolean.TRUE;
+import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +41,7 @@ import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.VacationService;
 import org.tb.dailyreport.service.WorkingdayService;
+import org.tb.dailyreport.viewhelper.DashboardGrades;
 import org.tb.dailyreport.viewhelper.OvertimeScale;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.dailyreport.service.PublicholidayService;
@@ -81,14 +84,19 @@ public class DashboardController {
         model.addAttribute("sectionTitle", messageSourceAccessor.getMessage("main.general.mainmenu.timereports.text"));
         model.addAttribute("displayEmployeeInfo", displayEmployeeInfo);
         model.addAttribute("releasedUntil", employeecontract.getReportReleaseDate());
-        model.addAttribute("releaseColorClass", employeecontract.getReleaseWarning() ? "danger" : "success");
+        model.addAttribute("releaseColorClass",
+            DashboardGrades.release(employeecontract.getReportReleaseDate(), employeecontract.getReleaseWarning()));
         model.addAttribute("acceptedUntil", employeecontract.getReportAcceptanceDate());
         model.addAttribute("acceptanceColorClass", employeecontract.getAcceptanceWarning() ? "danger" : "success");
-        addOvertimeAttributes(model, overtimeStatus);
+        // die Schwellen gelten fuer 40 Wochenstunden und werden auf den Vertrag umgerechnet (#1175)
+        addOvertimeAttributes(model, overtimeStatus, OvertimeScale.TOTAL.forContract(employeecontract),
+            OvertimeScale.CURRENT_MONTH.forContract(employeecontract));
         model.addAttribute("vacations", vacations);
         // the hint follows the contract the page shows, and its links name it (#1124)
         model.addAttribute("unbookedDays", releaseService.getUnbookedWorkingDaysOfPreviousWeek(employeecontract.getId()));
         model.addAttribute("shownContractId", employeecontract.getId());
+        // die Buchungsliste filtert nach Person, nicht nach Vertrag (#1175)
+        model.addAttribute("shownEmployeeId", employeecontract.getEmployee().getId());
         // the matrix of the running month for the contract resolved above - never for the id from
         // the request, which may name a contract the login is not allowed to read (#1134, #878)
         var matrixMonth = YearMonth.from(today());
@@ -108,12 +116,14 @@ public class DashboardController {
     private void calculateEmployeeInfo(Model model, Employeecontract employeecontract) {
         var todayDate = today();
         var weekStart = todayDate.with(DayOfWeek.MONDAY);
-        var weekEnd = weekStart.plusWeeks(1);
+        // LocalDateRange schliesst beide Enden ein: der Sonntag ist der letzte Tag der Woche
+        var weekEnd = weekStart.plusDays(6);
         var monthStart = todayDate.withDayOfMonth(1);
         var monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
+        var windowStart = todayDate.minusDays(60);
         var recentReports = timereportService.getTimereportsByDatesAndEmployeeContractId(
-            employeecontract.getId(), todayDate.minusDays(60), monthEnd);
+            employeecontract.getId(), windowStart, monthEnd);
 
         // Public holidays (weekdays only)
         long weekPublicHolidays = publicholidayService
@@ -149,15 +159,23 @@ public class DashboardController {
         int monthPercent = monthTarget.isZero() ? 0
             : (int) (monthLogged.toMinutes() * 100 / monthTarget.toMinutes());
 
-        // Last log
+        // Last log: geplante Buchungen in der Zukunft verdecken keinen Rueckstand bis heute
         var lastLogOpt = recentReports.stream()
             .map(TimereportDTO::getReferenceday)
+            .filter(day -> !day.isAfter(todayDate))
             .max(Comparator.naturalOrder());
-        int businessDaysLagging = lastLogOpt.map(d -> {
-            if (!d.isBefore(todayDate)) return 0;
-            return unbookedWorkingDaysSince(employeecontract, d, todayDate);
-        }).orElse(99);
+        // ohne Buchung im Fenster zaehlt der Rueckstand ab Vertragsbeginn: ein neuer Vertrag ist
+        // nicht vom ersten Tag an ueberfaellig
+        var openFrom = lastLogOpt.map(day -> day.plusDays(1))
+            .orElseGet(() -> DateUtils.max(windowStart, employeecontract.getValidFrom()));
+        var openDays = openWorkingDays(employeecontract, openFrom, todayDate);
 
+        model.addAttribute("weekStart", weekStart);
+        model.addAttribute("weekEnd", weekEnd);
+        model.addAttribute("weekColorClass", DashboardGrades.progress(weekPercent));
+        model.addAttribute("monthStart", monthStart);
+        model.addAttribute("monthEnd", monthEnd);
+        model.addAttribute("monthColorClass", DashboardGrades.progress(monthPercent));
         model.addAttribute("weekLogged", DurationUtils.format(weekLogged));
         model.addAttribute("weekTarget", DurationUtils.format(weekTarget));
         model.addAttribute("weekPercent", weekPercent);
@@ -167,24 +185,28 @@ public class DashboardController {
         model.addAttribute("monthPercent", monthPercent);
         model.addAttribute("monthPercentCapped", Math.min(100, monthPercent));
         model.addAttribute("lastLogDate", lastLogOpt.orElse(null));
-        model.addAttribute("businessDaysLagging", businessDaysLagging);
-        model.addAttribute("lastLogIsLagging", businessDaysLagging > 1);
+        model.addAttribute("lastLogDaysAgo", lastLogOpt.map(day -> DAYS.between(day, todayDate)).orElse(0L));
+        model.addAttribute("openWorkingDays", openDays.size());
+        model.addAttribute("lastLogColorClass", DashboardGrades.lastBooking(openDays.size()));
+        // der Link der Karte fuehrt zum ersten offenen Arbeitstag, ohne Rueckstand zu heute
+        model.addAttribute("nextBookingDate", openDays.isEmpty() ? todayDate : openDays.getFirst());
     }
 
-    /* Der Rueckstand nach der letzten Buchung bis einschliesslich heute, nach derselben Regel wie der
+    /* Die offenen Arbeitstage von from bis einschliesslich heute, nach derselben Regel wie der
        Hinweis auf die Vorwoche (UnbookedWorkingDays): ein als nicht gearbeitet markierter Tag ist
-       kein vergessener Buchungstag. Nach der letzten Buchung ist nichts mehr gebucht, die Menge der
-       gebuchten Tage ist deshalb leer. Wer den Vertrag hier sehen darf, darf auch seine Arbeitstage
-       lesen - beide Regeln lassen Manager, die Person selbst und die zustaendige People Lead zu. */
-    private int unbookedWorkingDaysSince(Employeecontract employeecontract, LocalDate lastBooking, LocalDate today) {
-        var from = lastBooking.plusDays(1);
+       kein vergessener Buchungstag. from liegt hinter der letzten Buchung bis heute, dazwischen ist
+       also nichts gebucht und die Menge der gebuchten Tage leer. Wer den Vertrag hier sehen darf,
+       darf auch seine Arbeitstage lesen - beide Regeln lassen Manager, die Person selbst und die
+       zustaendige People Lead zu. */
+    private List<LocalDate> openWorkingDays(Employeecontract employeecontract, LocalDate from, LocalDate today) {
+        if (from.isAfter(today)) return List.of();
         var workingDays = workingdayService
             .getWorkingdaysByEmployeeContractId(employeecontract.getId(), from, today).stream()
             .collect(toMap(Workingday::getRefday, identity()));
         var publicHolidays = publicholidayService.getPublicHolidaysBetween(from, today).stream()
             .map(Publicholiday::getRefdate)
             .collect(toSet());
-        return UnbookedWorkingDays.between(from, today, employeecontract, Set.of(), workingDays, publicHolidays).size();
+        return UnbookedWorkingDays.between(from, today, employeecontract, Set.of(), workingDays, publicHolidays);
     }
 
     @PostMapping(params = "task=refresh")
@@ -215,34 +237,35 @@ public class DashboardController {
        nie leer ist: ohne Sollstunden oder mit einem Vertrag, der den laufenden Monat nicht
        beruehrt, behauptete sie damit einen Monatssaldo (#1031). Ein echtes 0:00 ist formatiert und
        deshalb weiterhin da. */
-    static void addOvertimeAttributes(Model model, Optional<OvertimeStatus> overtimeStatus) {
+    static void addOvertimeAttributes(Model model, Optional<OvertimeStatus> overtimeStatus, OvertimeScale totalScale,
+                                      OvertimeScale monthScale) {
         var total = overtimeStatus.map(OvertimeStatus::getTotal);
         var currentMonth = overtimeStatus.map(OvertimeStatus::getCurrentMonth);
         model.addAttribute("overtime", total.map(info -> DurationUtils.format(info.getDuration())).orElse(""));
         model.addAttribute("overtimeIsNegative", total.map(OvertimeStatusInfo::isNegative).orElse(false));
-        model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus));
-        model.addAttribute("overtimeScale", OvertimeScale.TOTAL);
+        model.addAttribute("overtimeColorClass", overtimeColorClass(overtimeStatus, totalScale));
+        model.addAttribute("overtimeScale", totalScale);
         model.addAttribute("monthlyOvertime", currentMonth.map(info -> DurationUtils.format(info.getDuration())).orElse(""));
         model.addAttribute("monthlyOvertimeIsNegative", currentMonth.map(OvertimeStatusInfo::isNegative).orElse(false));
-        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus));
-        model.addAttribute("monthlyOvertimeScale", OvertimeScale.CURRENT_MONTH);
+        model.addAttribute("monthlyOvertimeColorClass", monthlyOvertimeColorClass(overtimeStatus, monthScale));
+        model.addAttribute("monthlyOvertimeScale", monthScale);
         model.addAttribute("overtimeMonth", currentMonth.map(info -> DateUtils.format(info.getBegin(), "yyyy-MM")).orElse(""));
     }
 
     /* Die Dauer ist bereits vorzeichenbehaftet (OvertimeService.toStatusInfo); isNegative daneben ist
        nur die Pfeilrichtung. Wer es hier ein zweites Mal anwendet, prueft bei Minusstunden die
        positive Seite der Skala - genau die Richtung, in der die Warnung gebraucht wird (#1030). */
-    static String overtimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
+    static String overtimeColorClass(Optional<OvertimeStatus> overtimeStatus, OvertimeScale scale) {
         return overtimeStatus
             .map(OvertimeStatus::getTotal)
-            .map(info -> OvertimeScale.TOTAL.colorClass(info.getDuration()))
+            .map(info -> scale.colorClass(info.getDuration()))
             .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 
-    static String monthlyOvertimeColorClass(Optional<OvertimeStatus> overtimeStatus) {
+    static String monthlyOvertimeColorClass(Optional<OvertimeStatus> overtimeStatus, OvertimeScale scale) {
         return overtimeStatus
             .map(OvertimeStatus::getCurrentMonth)
-            .map(info -> OvertimeScale.CURRENT_MONTH.colorClass(info.getDuration()))
+            .map(info -> scale.colorClass(info.getDuration()))
             .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
     }
 

@@ -27,10 +27,12 @@ import org.tb.auth.domain.Authorized;
 import org.tb.common.LocalDateRange;
 import org.tb.common.Validity;
 import org.tb.common.util.DurationUtils;
+import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.viewhelper.OvertimeScale;
 import org.tb.dailyreport.viewhelper.VacationViewHelper;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -103,14 +105,13 @@ public class MyAccountsController {
 
         String balance = overtimeStatus.map(s -> DurationUtils.format(s.getTotal().getDuration())).orElse("0:00");
         boolean balanceIsNegative = overtimeStatus.map(s -> s.getTotal().isNegative()).orElse(false);
-        String balanceColorClass = overtimeStatus.map(s -> {
-            if (s.getTotal() == null) return "success";
-            long hours = s.getTotal().getDuration().toHours();
-            long signedHours = s.getTotal().isNegative() ? -hours : hours;
-            if (signedHours > 80 || signedHours < -40) return "danger";
-            if (signedHours > 40 || signedHours < -20) return "warning";
-            return "success";
-        }).orElse("success");
+        // dieselbe Skala wie die Kachel im Dashboard, die hierher verlinkt: die Dauer traegt ihr
+        // Vorzeichen schon, isNegative ist nur die Pfeilrichtung (#1030, #1175)
+        var scale = OvertimeScale.TOTAL.forContract(contract);
+        String balanceColorClass = overtimeStatus
+            .map(OvertimeStatus::getTotal)
+            .map(total -> scale.colorClass(total.getDuration()))
+            .orElse(OvertimeScale.NEUTRAL_COLOR_CLASS);
 
         // Cumulative balance as of Dec 31 of the previous year
         int prevYear = currentYear - 1;

@@ -138,6 +138,12 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
   Optional<Long> getReportedMinutesForSuborderAndEmployeeContract(long suborderId, long employeecontractId);
 
   @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
+      + "where tr.deleted = false and tr.suborder.id = :suborderId and tr.employeecontract.id = :employeecontractId "
+      + "and tr.referenceday.refdate > :after")
+  Optional<Long> getReportedMinutesForSuborderAndEmployeeContractAfter(long suborderId, long employeecontractId,
+      LocalDate after);
+
+  @Query("select sum(tr.durationminutes) + " + MINUTES_PER_HOUR + " * sum(tr.durationhours) from Timereport tr "
       + "where tr.deleted = false and tr.suborder.invoice = '" + INVOICE_YES + "' and tr.employeeorder.suborder.customerorder.id = :customerorderId")
   Optional<Long> getReportedMinutesForCustomerorder(long customerorderId);
 
