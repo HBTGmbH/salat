@@ -789,6 +789,11 @@ Modusabhängiges, und beim Umschalten des Farbmodus muss nichts nachgezogen werd
 - Ein Ziel- oder Sollwert steht als **Markierung** auf der Säule („Column with Markers“, ApexCharts
   `goals`), nicht als zweite Säule daneben. Ob ein Wert darüber oder darunter liegt, ist so an
   einer Säule abzulesen.
+- Die **Differenz zum Soll** steht als Etikett über der Säule („+1 h“, „−2,7 h“), über Säule oder
+  Markierung, was höher ist (ApexCharts `annotations.points`, Ankerpunkt unsichtbar). Die Schrift
+  hat die Textfarbe, die Fläche ist nur getönt: grün, wenn das Soll erreicht ist; im Ton der
+  Markierung, wenn etwas fehlt; grau bei null. Eine Teilfläche in der Säule taugt dafür nicht, denn
+  eine Stunde auf 150 wäre kaum einen Pixel hoch. Die y-Achse bekommt oben Luft für die Etiketten.
 
 **Legende.** Oben links. Bei nur einer Reihe entfällt sie, außer sie erklärt eine Markierung
 (`customLegendItems`). Eine Reihe ohne Wert im gezeigten Zeitraum fehlt in Legende und Popup,

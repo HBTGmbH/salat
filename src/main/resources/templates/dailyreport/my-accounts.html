@@ -447,11 +447,12 @@
          dieses Skript davor laeuft. Die Farbtoene sind modusunabhaengig; alles Modusabhaengige -
          Schrift, Gitter, Tooltip - gestaltet salat.css, ein Nachziehen beim Moduswechsel entfaellt. */
       const tblrColor = (name) => getComputedStyle(document.body).getPropertyValue('--tblr-' + name).trim();
-      // geplant: dieselbe Farbe in hellerer Stufe, wie .progress-bar-planned in den Balken
-      const planned = (hex) => {
+      const withAlpha = (hex, alpha) => {
         const n = parseInt(hex.replace('#', ''), 16);
-        return 'rgba(' + (n >> 16 & 255) + ', ' + (n >> 8 & 255) + ', ' + (n & 255) + ', 0.45)';
+        return 'rgba(' + (n >> 16 & 255) + ', ' + (n >> 8 & 255) + ', ' + (n & 255) + ', ' + alpha + ')';
       };
+      // geplant: dieselbe Farbe in hellerer Stufe, wie .progress-bar-planned in den Balken
+      const planned = (hex) => withAlpha(hex, 0.45);
       const number = (value) => Number(value).toLocaleString(document.documentElement.lang || 'de',
           { maximumFractionDigits: 1 });
 
@@ -459,7 +460,7 @@
          "Bewegung reduzieren" gewaehlt; dann stehen sie sofort da. */
       const animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const barChart = (element, { categories, series, colors, stacked = false, tooltip, legend }) => new ApexCharts(element, {
+      const barChart = (element, { categories, series, colors, stacked = false, tooltip, legend, annotations, yMax }) => new ApexCharts(element, {
         chart: {
           type: 'bar', stacked: stacked, height: parseInt(element.style.height, 10), fontFamily: 'inherit',
           parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false },
@@ -476,7 +477,8 @@
           categories: categories, axisBorder: { show: false }, axisTicks: { show: false },
           tooltip: { enabled: false }, labels: { style: { fontSize: '13px' } }
         },
-        yaxis: { labels: { formatter: number, style: { fontSize: '13px' } } },
+        yaxis: { max: yMax, labels: { formatter: number, style: { fontSize: '13px' } } },
+        annotations: annotations || {},
         legend: { show: series.length > 1, position: 'top', horizontalAlign: 'left', fontSize: '13px',
           ...legend, markers: { strokeWidth: 0, ...(legend && legend.markers) } },
         tooltip: tooltip || { y: { formatter: number } }
@@ -523,8 +525,29 @@
               + row('<span class="chart-tooltip-marker"></span>', differenceName, signedHours(Math.round((actual - target) * 10) / 10))
               + '</div>';
         };
+        /* Die Differenz steht als Etikett ueber jeder Saeule, ueber Saeule oder Markierung, was
+           hoeher ist. Schrift in Textfarbe (salat.css), die Flaeche nur getoent: gruen, wenn das
+           Soll erreicht ist, orange - der Ton der Soll-Markierung -, wenn Stunden fehlen, grau bei
+           genau null. Eine Flaeche fuer die Differenz in der Saeule selbst waere bei einer Stunde
+           auf 150 kaum einen Pixel hoch. Die y-Achse bekommt oben Luft fuer die Etiketten. */
+        const difference = (index) => Math.round((chartActual[index] - chartTarget[index]) * 10) / 10;
+        const differenceTint = (value) => withAlpha(tblrColor(value > 0 ? 'green' : value < 0 ? 'orange' : 'gray-500'), 0.18);
+        const highest = Math.max(0, ...chartActual, ...chartTarget);
+        const differenceLabels = { points: chartLabels.map((label, index) => ({
+          x: label,
+          y: Math.max(chartActual[index], chartTarget[index]),
+          // der Ankerpunkt des Etiketts bliebe sonst als Punkt auf der Saeule stehen
+          marker: { size: 0, strokeWidth: 0, fillColor: 'transparent', strokeColor: 'transparent' },
+          label: {
+            text: signedHours(difference(index)), borderWidth: 0, borderRadius: 4, offsetY: -6,
+            style: { background: differenceTint(difference(index)), fontSize: '12px', fontWeight: 600,
+              padding: { left: 6, right: 6, top: 2, bottom: 3 } }
+          }
+        })) };
         renderWhenShown('tab-working-time', () => barChart(workingTimeChart, {
           categories: chartLabels,
+          annotations: differenceLabels,
+          yMax: Math.ceil(highest * 1.15 / 50) * 50,
           series: [{
             name: actualName,
             data: chartActual.map((value, index) => ({
