@@ -513,7 +513,10 @@
 
         htmx.ajax('GET', url, {target: '#shareRecipientsContainer', swap: 'innerHTML'});
       } else {
+        // #1196: out of the form, not just out of sight - the choice is a required field, and a
+        // hidden one blocks the submit without the browser being able to say why
         shareSection.classList.add('d-none');
+        document.getElementById('shareRecipientsContainer').innerHTML = '';
       }
     }
 
@@ -536,6 +539,11 @@
       });
       form.addEventListener('htmx:after:swap', function(e) {
         if (e.target.id === 'referenceday') refreshShareRecipientsIfEnabled();
+      });
+      // #1196: a list that arrives after sharing was switched off again must not bring the
+      // required choice back into the form
+      document.getElementById('shareRecipientsContainer')?.addEventListener('htmx:before:swap', function(e) {
+        if (!document.getElementById('shareToggle').checked) e.preventDefault();
       });
     });
     // durationMask/durationBlur/parseTimeValue live in /js/salat.js (#830). That file is loaded at
