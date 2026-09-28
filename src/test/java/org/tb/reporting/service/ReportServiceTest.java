@@ -1,8 +1,11 @@
 package org.tb.reporting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
 import static org.tb.common.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
 
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +26,8 @@ import org.tb.auth.domain.AuthorizedUser;
 import org.tb.auth.service.AuthService;
 import org.tb.common.GlobalConstants;
 import org.tb.common.SalatProperties;
+import org.tb.common.exception.AuthorizationException;
+import org.tb.common.exception.InvalidDataException;
 import org.tb.common.web.UiState;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.persistence.EmployeeRepository;
@@ -60,6 +65,38 @@ public class ReportServiceTest {
     );
     SecurityContextHolder.getContext().setAuthentication(
         new UsernamePasswordAuthenticationToken(loginname, "N/A", authorities));
+  }
+
+  private void loginAsEmployee(String loginname) {
+    SecurityContextHolder.getContext().setAuthentication(
+        new UsernamePasswordAuthenticationToken(loginname, "N/A", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+  }
+
+  @Test
+  public void should_get_report_definition_by_id() {
+    loginAsManager("test");
+    var reportDefinition = reportService.create("test", "select 1");
+
+    assertThat(reportService.getReportDefinitionById(reportDefinition.getId()))
+        .isEqualTo(reportDefinition);
+  }
+
+  @Test
+  public void should_tell_an_unknown_id_apart_from_a_missing_permission() {
+    loginAsManager("test");
+    var reportDefinition = reportService.create("test", "select 1");
+    var unknownId = reportDefinition.getId() + 1000;
+
+    assertThatThrownBy(() -> reportService.getReportDefinitionById(unknownId))
+        .isInstanceOfSatisfying(InvalidDataException.class, e -> {
+          assertThat(e.getMessages().getFirst().getErrorCode()).isEqualTo(RP_REPORT_ID_NOT_FOUND);
+          assertThat(e.getMessages().getFirst().getArguments()).containsExactly(String.valueOf(unknownId));
+        });
+
+    loginAsEmployee("other");
+    assertThatThrownBy(() -> reportService.getReportDefinitionById(reportDefinition.getId()))
+        .isInstanceOfSatisfying(AuthorizationException.class,
+            e -> assertThat(e.getMessages().getFirst().getErrorCode()).isEqualTo(AA_NOT_ATHORIZED));
   }
 
   @Test

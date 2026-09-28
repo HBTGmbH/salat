@@ -203,6 +203,9 @@ public enum ErrorCode {
   RP_REPORT_PARAMETERS_MISSING("RP-0003", "the report needs parameters that were not given"),
   RP_REPORT_PARAMETER_INVALID("RP-0004", "a report parameter cannot be interpreted as its type"),
   RP_REPORT_EXECUTION_FAILED("RP-0005", "the report could not be executed"),
+  RP_REPORT_ID_NOT_FOUND("RP-0006", "there is no report with this id"),
+  RP_REPORT_ID_INVALID("RP-0007", "the report id is not a number"),
+  RP_REPORT_NOT_SPECIFIED("RP-0008", "the report must be given by reportId or by report (its name)"),
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
