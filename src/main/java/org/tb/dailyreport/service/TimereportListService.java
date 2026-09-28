@@ -1,12 +1,14 @@
 package org.tb.dailyreport.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tb.auth.domain.Authorized;
 import org.tb.customer.domain.Customer;
 import org.tb.customer.service.CustomerService;
+import org.tb.dailyreport.auth.TimereportAuthorization;
 import org.tb.dailyreport.auth.TimereportVisibility;
 import org.tb.dailyreport.auth.TimereportVisibilityService;
+import org.tb.dailyreport.domain.Timereport;
 import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.domain.TimereportFilterOptions;
 import org.tb.dailyreport.domain.TimereportFilterOptions.CustomerOption;
@@ -56,6 +60,7 @@ public class TimereportListService {
   private final TimereportListDAO timereportListDAO;
   private final TimereportDAO timereportDAO;
   private final TimereportVisibilityService visibilityService;
+  private final TimereportAuthorization timereportAuthorization;
   private final EmployeeService employeeService;
   private final CustomerService customerService;
   private final CustomerorderService customerorderService;
@@ -74,9 +79,26 @@ public class TimereportListService {
     if (totals.count() == 0) {
       return TimereportListResult.empty();
     }
-    var rows = timereportDAO.getDtosOf(timereportListDAO.findRows(expanded, visibility));
+    var timereports = timereportListDAO.findRows(expanded, visibility);
+    var rows = timereportDAO.getDtosOf(timereports);
     return new TimereportListResult(rows, totals.count(), totals.duration(), totals.billableDuration(),
-        totals.employees(), totals.orders());
+        totals.employees(), totals.orders(), editableIds(timereports));
+  }
+
+  /**
+   * Which rows the list offers to edit (#1190): the status rule saving applies, {@link TimereportAuthorization#isWriteAllowed},
+   * asked while the entities are still at hand rather than per row through the DTO, which would load the contract once
+   * per row. The answer depends on nothing but contract and status, so it is asked once per pair — a page of a thousand
+   * rows reads the supervisors of each contract once.
+   */
+  private Set<Long> editableIds(List<Timereport> timereports) {
+    var answers = new HashMap<String, Boolean>();
+    return timereports.stream()
+        .filter(timereport -> answers.computeIfAbsent(
+            timereport.getEmployeecontract().getId() + "/" + timereport.getStatus(),
+            key -> timereportAuthorization.isWriteAllowed(timereport.getEmployeecontract(), timereport.getStatus())))
+        .map(Timereport::getId)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   /** Every hit, regardless of the display maximum — what the export writes (#1092). */

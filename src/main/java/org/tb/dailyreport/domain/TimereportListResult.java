@@ -2,6 +2,7 @@ package org.tb.dailyreport.domain;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The answer of the booking list (#1092).
@@ -15,6 +16,8 @@ import java.util.List;
  * @param billableDuration the part of it booked on a billable suborder
  * @param employeeCount   over how many employees the hits spread
  * @param orderCount      over how many customer orders
+ * @param editableIds     the shown rows the current user may change — the answer the booking form gets when saving,
+ *                        so the list offers editing only where saving would succeed (#1190)
  */
 public record TimereportListResult(
     List<TimereportDTO> timereports,
@@ -22,11 +25,16 @@ public record TimereportListResult(
     Duration totalDuration,
     Duration billableDuration,
     long employeeCount,
-    long orderCount
+    long orderCount,
+    Set<Long> editableIds
 ) {
 
   public static TimereportListResult empty() {
-    return new TimereportListResult(List.of(), 0, Duration.ZERO, Duration.ZERO, 0, 0);
+    return new TimereportListResult(List.of(), 0, Duration.ZERO, Duration.ZERO, 0, 0, Set.of());
+  }
+
+  public boolean isEditable(long timereportId) {
+    return editableIds.contains(timereportId);
   }
 
   public boolean truncated() {

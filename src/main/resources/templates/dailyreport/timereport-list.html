@@ -411,11 +411,12 @@
           <th th:replace="~{dailyreport/timereport-list-fragments :: sortHeader('DURATION', #{main.timereportlist.column.duration}, 'text-end')}"></th>
           <th class="text-center" th:text="#{main.timereportlist.column.billable.short}">Fakt.</th>
           <th class="text-center d-none d-lg-table-cell" th:text="#{main.timereportlist.column.status}">Status</th>
+          <th class="w-1 d-print-none"></th>
         </tr>
       </thead>
       <tbody>
         <tr th:if="${result.timereports.isEmpty()}">
-          <td colspan="9" class="text-center text-secondary py-4"
+          <td colspan="10" class="text-center text-secondary py-4"
               th:text="#{main.timereportlist.table.empty}">Keine Buchungen gefunden.</td>
         </tr>
         <tr th:each="tr : ${result.timereports}">
@@ -457,6 +458,16 @@
                                        : (${tr.status == 'commited'} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                   th:text="#{'main.timereportlist.status.' + ${tr.status}}">offen</span>
           </td>
+          <!--/* Nur wo das Speichern gelingen wuerde: dieselbe Statusregel wie beim Speichern (#1190).
+                 Zurueck geht es ohne Abfrage, die Liste merkt sich ihren Filter selbst. */-->
+          <td class="d-print-none">
+            <a th:if="${result.isEditable(tr.id)}" class="btn btn-outline-primary btn-sm"
+               th:href="@{/dailyreport/timereports/{id}/edit(id=${tr.id},returnUrl='/dailyreport/list')}"
+               th:title="#{main.timereport.action.edit.tooltip}"
+               th:aria-label="#{main.timereport.action.edit.tooltip}">
+              <i class="icon ti ti-pencil m-0"></i>
+            </a>
+          </td>
         </tr>
       </tbody>
       <tfoot class="table-group-divider fw-bold" th:unless="${result.timereports.isEmpty()}">
@@ -468,6 +479,7 @@
                            + ${#numbers.formatInteger(minutes % 60, 2, 'NONE')}">0:00</span>
           </td>
           <td colspan="2"></td>
+          <td class="d-print-none"></td>
         </tr>
       </tfoot>
     </table>
