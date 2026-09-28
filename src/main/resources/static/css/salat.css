@@ -1305,3 +1305,56 @@ body:not(.salat-confirm-ready) button[data-confirm] {
 .progress-bar.progress-bar-planned {
   opacity: 0.45;
 }
+
+/* ===== Diagramme (ApexCharts, Kontenuebersicht) =====
+   Tabler gestaltet ApexCharts in tabler-vendors.css. Die Datei gestaltet aber auch Tom Select um,
+   und die Vertragsauswahl im Kopf jeder Seite ist ein Tom Select: eingebunden nur auf dieser Seite,
+   saehe sie hier anders aus als ueberall sonst. Uebernommen sind deshalb nur die Diagrammregeln
+   daraus, alle auf Tabler-Tokens (#1175).
+   Dazu die Beschriftung: ApexCharts setzt ihre Farbe als SVG-Attribut, das jede CSS-Regel schlaegt.
+   Sie bekommt die normale Textfarbe - hell 10,31:1, dunkel 11,86:1 auf der Karte -, nicht das
+   Grau, das ApexCharts voreinstellt. */
+.apexcharts-canvas .apexcharts-text,
+.apexcharts-canvas .apexcharts-xaxis-label,
+.apexcharts-canvas .apexcharts-yaxis-label {
+  fill: var(--tblr-body-color);
+}
+
+.apexcharts-legend-text {
+  color: inherit !important;
+}
+
+.apexcharts-grid-borders line,
+.apexcharts-gridline,
+.apexcharts-xaxis-tick,
+.apexcharts-yaxis-tick {
+  stroke: var(--tblr-border-color) !important;
+}
+
+.apexcharts-tooltip {
+  --apx-tt-color-muted: var(--tblr-text-inverted) !important;
+  --apx-tt-bg: var(--tblr-bg-surface-inverted) !important;
+  --apx-tt-border: var(--tblr-bg-surface-inverted) !important;
+  padding: 0.25rem !important;
+  font-size: 0.765625rem !important;
+  color: var(--tblr-text-inverted) !important;
+  background: var(--tblr-bg-surface-inverted) !important;
+  box-shadow: none !important;
+}
+
+.apexcharts-tooltip-title {
+  padding: 0.25rem 0.5rem !important;
+  margin: 0 !important;
+  font-weight: var(--tblr-font-weight-semibold);
+  background: transparent !important;
+  border: 0 !important;
+  opacity: 0.7;
+}
+
+.apexcharts-tooltip-y-group {
+  padding: 2px 0 !important;
+}
+
+.apexcharts-tooltip-series-group {
+  padding: 0 0.5rem !important;
+}
