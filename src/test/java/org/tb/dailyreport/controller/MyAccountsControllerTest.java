@@ -3,6 +3,7 @@ package org.tb.dailyreport.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
@@ -24,6 +25,7 @@ import org.tb.dailyreport.domain.OvertimeReport;
 import org.tb.dailyreport.domain.OvertimeReportTotal;
 import org.tb.dailyreport.domain.OvertimeStatus;
 import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
+import org.tb.dailyreport.domain.TimereportDTO;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
@@ -190,6 +192,9 @@ class MyAccountsControllerTest {
     var nextYear = new LocalDateRange(LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31));
     var nextYearOrder = new Employeeorder();
     setField(nextYearOrder, "id", 200L);
+    var nextYearSuborder = new Suborder();
+    nextYearSuborder.setSign("2027");
+    nextYearOrder.setSuborder(nextYearSuborder);
     // im laufenden Jahr gilt hier kein Urlaubsauftrag, im Folgejahr der neue
     when(employeeorderService.getVacationEmployeeOrders(eq(CONTRACT_ID), any())).thenReturn(List.of());
     when(employeeorderService.getVacationEmployeeOrders(CONTRACT_ID, nextYear)).thenReturn(List.of(nextYearOrder));
@@ -210,6 +215,74 @@ class MyAccountsControllerTest {
     myAccountsController.show(CONTRACT_ID, model);
 
     assertThat(model.getAttribute("hasNextYearPlannedDays")).isEqualTo(false);
+  }
+
+  /* Das Diagramm reicht bis zum letzten Monat mit geplantem Urlaub, hier Februar des Folgejahres,
+     und jede Beschriftung traegt dann ihr Jahr. Urlaub und Sonderurlaub stehen getrennt, jeweils
+     genommen und geplant (#1175). Heute ist der 25.06.2026. */
+  @Test
+  @SuppressWarnings("unchecked")
+  void the_chart_reaches_the_last_planned_month_and_separates_special_leave() {
+    specialOrderBesidesVacation();
+    var horizon = TODAY.plusYears(2);
+    lenient().when(timereportService.getTimereportsByDatesAndEmployeeorderId(LocalDate.of(2026, 1, 1), horizon, ORDER_ID))
+        .thenReturn(List.of(booking("2026-06-10"), booking("2027-02-03")));
+    lenient().when(timereportService.getTimereportsByDatesAndEmployeeorderId(LocalDate.of(2026, 1, 1), horizon, SPECIAL_ORDER_ID))
+        .thenReturn(List.of(booking("2026-10-15")));
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat((List<String>) model.getAttribute("vacationMonthLabels")).hasSize(14)
+        .startsWith("Jan. '26").endsWith("Feb. '27");
+    assertThat((List<Double>) model.getAttribute("vacationMonthDays")).element(5).isEqualTo(1.0);
+    assertThat((List<Double>) model.getAttribute("vacationMonthPlannedDays")).element(13).isEqualTo(1.0);
+    assertThat((List<Double>) model.getAttribute("vacationMonthSpecialPlannedDays")).element(9).isEqualTo(1.0);
+    assertThat((List<Double>) model.getAttribute("vacationMonthSpecialDays")).containsOnly(0.0);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void without_planned_vacation_beyond_the_year_the_chart_ends_in_december() {
+    vacationOrderEndingOn(null);
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat((List<String>) model.getAttribute("vacationMonthLabels")).hasSize(12).startsWith("Jan.").endsWith("Dez.");
+  }
+
+  /* Sonderurlaub zaehlt genommen und geplant; die Zeile steht auch, wenn nur geplanter da ist. */
+  @Test
+  void counts_planned_special_leave_in_the_summary() {
+    specialOrderBesidesVacation();
+    lenient().when(timereportService.getTotalDurationMinutesForEmployeeOrder(SPECIAL_ORDER_ID, TODAY.plusDays(1), TODAY.plusYears(2)))
+        .thenReturn(Duration.ofHours(8).toMinutes());
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("hasSpecialDays")).isEqualTo(true);
+    assertThat(model.getAttribute("specialDays")).isEqualTo("1,0");
+    assertThat(model.getAttribute("specialPlannedDays")).isEqualTo("1,0");
+  }
+
+  private static final long SPECIAL_ORDER_ID = 300L;
+
+  private void specialOrderBesidesVacation() {
+    var suborder = new Suborder();
+    suborder.setSign("Sonderurlaub");
+    var special = new Employeeorder();
+    setField(special, "id", SPECIAL_ORDER_ID);
+    special.setSuborder(suborder);
+    special.setFromDate(LocalDate.parse("2026-10-15"));
+    special.setDebithours(Duration.ZERO);
+    when(employeeorderService.getVacationEmployeeOrders(eq(CONTRACT_ID), any()))
+        .thenReturn(List.of(vacationOrder(null), special));
+  }
+
+  private static TimereportDTO booking(String day) {
+    return TimereportDTO.builder().referenceday(LocalDate.parse(day)).duration(DAILY_WORKING_TIME).build();
   }
 
   private void plannedAfterToday(Duration planned) {

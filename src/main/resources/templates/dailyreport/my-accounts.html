@@ -132,7 +132,11 @@
                       </tr>
                       <tr th:if="${hasSpecialDays}">
                         <td class="text-muted" th:text="#{main.my.accounts.vacation.special}">Sonderurlaub</td>
-                        <td class="text-end fw-medium" th:text="${specialDays + ' ' + #messages.msg('main.my.accounts.vacation.days')}"></td>
+                        <td class="text-end fw-medium">
+                          <span th:text="${specialDays + ' ' + #messages.msg('main.my.accounts.vacation.days')}">2,0 Tage</span>
+                          <div class="small text-muted fw-normal" th:if="${hasSpecialPlannedDays}"
+                               th:text="#{main.welcome.vacation.planned.text(${specialPlannedDays + ' ' + #messages.msg('main.my.accounts.vacation.days')})}">davon 1,0 Tage geplant</div>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -170,9 +174,10 @@
                       <span class="fw-semibold small" th:text="${v.suborderSign}"></span>
                       <span class="small"
                             th:classappend="${v.vacationBudgetExceeded} ? 'text-danger fw-bold' : 'text-muted'"
-                            th:text="${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>
+                            th:text="${v.special} ? ${v.usedVacationString} : ${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>
                     </div>
-                    <div class="progress" style="height: 6px;">
+                    <!--/* Sonderurlaub hat kein Budget, also keinen Balken - nur seine Tage (#1175) */-->
+                    <div class="progress" style="height: 6px;" th:unless="${v.special}">
                       <div class="progress-bar"
                            th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
                            th:title="#{main.welcome.vacation.taken.title(${v.takenVacationString})}"
@@ -205,11 +210,15 @@
             </div>
             <!--/* Das Diagramm endet im Dezember; im Folgejahr gebuchter Urlaub steht hier (#1175) */-->
             <div class="card-footer text-muted small" th:if="${hasNextYearPlannedDays}"
-                 th:text="#{main.my.accounts.vacation.next.year.planned(${nextYear}, ${nextYearPlannedDays})}">Im Folgejahr (2027) sind 5,0 Tage geplant</div>
+                 th:text="${nextYearPlannedKind == 'both'} ? #{main.my.accounts.vacation.next.year.planned.both(${nextYear}, ${nextYearPlannedDays}, ${nextYearSpecialPlannedDays})}
+                          : (${nextYearPlannedKind == 'special'} ? #{main.my.accounts.vacation.next.year.planned.special(${nextYear}, ${nextYearSpecialPlannedDays})}
+                          : #{main.my.accounts.vacation.next.year.planned(${nextYear}, ${nextYearPlannedDays})})">Im Folgejahr (2027) sind 5,0 Tage geplant</div>
           </div>
           <!--/* ohne Urlaubsauftrag im laufenden Jahr gibt es kein Diagramm, die Angabe steht dann allein */-->
           <p class="text-muted small" th:if="${hasNextYearPlannedDays and #lists.isEmpty(vacationMonthLabels)}"
-             th:text="#{main.my.accounts.vacation.next.year.planned(${nextYear}, ${nextYearPlannedDays})}">Im Folgejahr (2027) sind 5,0 Tage geplant</p>
+             th:text="${nextYearPlannedKind == 'both'} ? #{main.my.accounts.vacation.next.year.planned.both(${nextYear}, ${nextYearPlannedDays}, ${nextYearSpecialPlannedDays})}
+                      : (${nextYearPlannedKind == 'special'} ? #{main.my.accounts.vacation.next.year.planned.special(${nextYear}, ${nextYearSpecialPlannedDays})}
+                      : #{main.my.accounts.vacation.next.year.planned(${nextYear}, ${nextYearPlannedDays})})">Im Folgejahr (2027) sind 5,0 Tage geplant</p>
 
         </div><!-- end tab-vacation -->
 
@@ -408,6 +417,9 @@
       const chartTarget = [[${chartTarget}]];
       const vacationMonthLabels = [[${vacationMonthLabels}]];
       const vacationMonthDays = [[${vacationMonthDays}]];
+      const vacationMonthPlannedDays = [[${vacationMonthPlannedDays}]];
+      const vacationMonthSpecialDays = [[${vacationMonthSpecialDays}]];
+      const vacationMonthSpecialPlannedDays = [[${vacationMonthSpecialPlannedDays}]];
       const trainingChartLabels = [[${trainingChartLabels}]];
       const trainingChartHours = [[${trainingChartHours}]];
 
@@ -444,11 +456,19 @@
         });
       }
 
-      // Vacation monthly chart
+      /* Urlaub und Sonderurlaub je in eigener Farbe, gestapelt; geplante Tage in hellerer Stufe
+         derselben Farbe wie in den Balken (.progress-bar-planned). Das Diagramm reicht bis zum
+         letzten Monat mit geplantem Urlaub (#1175). Eine Reihe ohne Tage bleibt aus der Legende. */
       if (document.getElementById('vacationChart') && vacationMonthLabels.length > 0) {
-        Plotly.newPlot('vacationChart', [
-          { name: /*[[#{main.my.accounts.vacation.days}]]*/ 'Tage', x: vacationMonthLabels, y: vacationMonthDays, type: 'bar', marker: { color: tblrColor('green') } }
-        ], layout, config);
+        const series = [
+          { name: /*[[#{main.my.accounts.vacation.chart.taken}]]*/ 'Urlaub', y: vacationMonthDays, color: 'green', opacity: 1 },
+          { name: /*[[#{main.my.accounts.vacation.chart.planned}]]*/ 'Urlaub geplant', y: vacationMonthPlannedDays, color: 'green', opacity: 0.45 },
+          { name: /*[[#{main.my.accounts.vacation.chart.special.taken}]]*/ 'Sonderurlaub', y: vacationMonthSpecialDays, color: 'orange', opacity: 1 },
+          { name: /*[[#{main.my.accounts.vacation.chart.special.planned}]]*/ 'Sonderurlaub geplant', y: vacationMonthSpecialPlannedDays, color: 'orange', opacity: 0.45 }
+        ].filter(s => s.y.some(v => v > 0));
+        Plotly.newPlot('vacationChart', series.map(s => ({
+          name: s.name, x: vacationMonthLabels, y: s.y, type: 'bar', opacity: s.opacity, marker: { color: tblrColor(s.color) }
+        })), { ...layout, barmode: 'stack', showlegend: true, legend: { ...layout.legend, traceorder: 'normal' } }, config);
         document.getElementById('tab-vacation-button').addEventListener('shown.bs.tab', function() {
           Plotly.Plots.resize('vacationChart');
         });

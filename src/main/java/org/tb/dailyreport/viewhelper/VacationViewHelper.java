@@ -9,8 +9,11 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 import org.tb.dailyreport.domain.VacationInfo;
+import org.tb.dailyreport.service.VacationService;
 import org.tb.employee.domain.Employeecontract;
 
 @Data
@@ -21,7 +24,8 @@ public class VacationViewHelper {
     private Duration budget;
     private long usedVacationMinutes;
     private long plannedVacationMinutes;
-    private long suborderId;
+    private List<Long> suborderIds;
+    private boolean special;
     private LocalDate validFrom;
     private LocalDate validUntil;
 
@@ -31,7 +35,8 @@ public class VacationViewHelper {
         helper.setBudget(info.budget());
         helper.setUsedVacationMinutes(info.usedVacationMinutes());
         helper.setPlannedVacationMinutes(info.plannedVacationMinutes());
-        helper.setSuborderId(info.suborderId());
+        helper.setSuborderIds(info.suborderIds());
+        helper.setSpecial(info.special());
         helper.setValidFrom(info.validFrom());
         helper.setValidUntil(info.validUntil());
         return helper;
@@ -43,15 +48,21 @@ public class VacationViewHelper {
      * geplanten Tage der Kontenuebersicht, zwei Jahre.
      */
     public LocalDate getBookingsUntil() {
-        return validUntil != null ? validUntil : today().plusYears(2);
+        return validUntil != null ? validUntil : today().plusYears(VacationService.PLANNED_HORIZON_YEARS);
     }
 
     public void addVacationMinutes(long minutes) {
         this.usedVacationMinutes += minutes;
     }
 
+    /** Sonderurlaub hat kein Budget und ist deshalb nie ueberschritten (#1175). */
     public boolean isVacationBudgetExceeded() {
-        return usedVacationMinutes > budget.toMinutes();
+        return !special && usedVacationMinutes > budget.toMinutes();
+    }
+
+    /** Die Unterauftraege fuer den Filter der Buchungsliste, durch Komma getrennt wie dort ueblich. */
+    public String getSuborderIdsParam() {
+        return suborderIds.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 
     /** Die Farbe des Balkens im Dashboard ({@link DashboardGrades#vacation}). */
