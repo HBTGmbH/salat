@@ -166,7 +166,7 @@ public class EmployeeService {
       throw new RuntimeException("Illegal access to delete " + employeeId + " by " + authorizedUser.getLoginSign());
     }
 
-    if(employee.isNew()) {
+    if(!employee.isNew()) {
       var event = new EmployeeDeleteEvent(employee.getId());
       try {
         eventPublisher.publishEvent(event);
