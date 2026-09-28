@@ -443,7 +443,7 @@
          "Bewegung reduzieren" gewaehlt; dann stehen sie sofort da. */
       const animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const barChart = (element, categories, series, colors, stacked) => new ApexCharts(element, {
+      const barChart = (element, categories, series, colors, stacked, tooltip) => new ApexCharts(element, {
         chart: {
           type: 'bar', stacked: stacked, height: parseInt(element.style.height, 10), fontFamily: 'inherit',
           parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false },
@@ -451,7 +451,8 @@
         },
         series: series,
         colors: colors,
-        plotOptions: { bar: { columnWidth: '55%', borderRadius: 2, borderRadiusApplication: 'end' } },
+        // abgerundet wie die Fortschrittsbalken; gestapelt rundet ApexCharts den ganzen Stapel, nicht jedes Teilstueck
+        plotOptions: { bar: { columnWidth: '55%', borderRadius: 5, borderRadiusApplication: 'around', borderRadiusWhenStacked: 'last' } },
         dataLabels: { enabled: false },
         fill: { opacity: 1 },
         grid: { strokeDashArray: 4, padding: { top: -10, right: 0, left: 4, bottom: 0 } },
@@ -461,7 +462,7 @@
         },
         yaxis: { labels: { formatter: number, style: { fontSize: '13px' } } },
         legend: { show: series.length > 1, position: 'top', horizontalAlign: 'left', fontSize: '13px', markers: { strokeWidth: 0 } },
-        tooltip: { y: { formatter: number } }
+        tooltip: tooltip || { y: { formatter: number } }
       });
 
       /* Gezeichnet wird ein Diagramm erst, wenn sein Reiter sichtbar ist: in einem verborgenen
@@ -498,8 +499,18 @@
           { name: /*[[#{main.my.accounts.vacation.chart.special.taken}]]*/ 'Sonderurlaub', data: vacationMonthSpecialDays, color: orange },
           { name: /*[[#{main.my.accounts.vacation.chart.special.planned}]]*/ 'Sonderurlaub geplant', data: vacationMonthSpecialPlannedDays, color: planned(orange) }
         ].filter(s => s.data.some(v => v > 0));
+        /* Ein Popup je Monat mit allen Werten des Balkens und ihrer Summe im Titel, statt eines
+           Popups je Teilstueck; Reihen ohne Tage in diesem Monat bleiben darin weg. */
+        const dayUnit = /*[[#{main.my.accounts.vacation.day}]]*/ 'Tag';
+        const daysUnit = /*[[#{main.my.accounts.vacation.days}]]*/ 'Tage';
+        const days = (value) => number(value) + ' ' + (value === 1 ? dayUnit : daysUnit);
+        const monthTotal = (index) => series.reduce((sum, s) => sum + (s.data[index] || 0), 0);
         renderWhenShown('tab-vacation', () => barChart(vacationChart, vacationMonthLabels,
-            series.map(s => ({ name: s.name, data: s.data })), series.map(s => s.color), true));
+            series.map(s => ({ name: s.name, data: s.data })), series.map(s => s.color), true, {
+              shared: true, intersect: false, hideEmptySeries: true,
+              x: { formatter: (label, context) => label + ': ' + days(monthTotal(context.dataPointIndex)) },
+              y: { formatter: days }
+            }));
       }
 
       // Training monthly chart
