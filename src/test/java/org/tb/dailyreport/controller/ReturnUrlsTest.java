@@ -106,6 +106,20 @@ class ReturnUrlsTest {
     assertThat(ReturnUrls.isSafe(returnUrl)).isFalse();
   }
 
+  /** The booking list opens the form from its edit button and gets the user back (#1190). */
+  @ParameterizedTest
+  @ValueSource(strings = {"/dailyreport/list", "/dailyreport/list?fBookingsLimit=50", "/dailyreport/list#bookings"})
+  void the_booking_list_is_safe_but_no_overview(String returnUrl) {
+    assertThat(ReturnUrls.isSafe(returnUrl)).isTrue();
+    assertThat(ReturnUrls.isReviewPage(returnUrl)).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"/dailyreport/list/export", "/dailyreport/listing", "/dailyreport/list/../../management"})
+  void a_path_that_only_begins_like_the_booking_list_is_dropped(String returnUrl) {
+    assertThat(ReturnUrls.isSafe(returnUrl)).isFalse();
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {
       "/management/employees",

@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
@@ -254,7 +255,7 @@ class TimereportListControllerTest {
         .taskdescription("Pflege").duration(Duration.ofMinutes(90)).status("open")
         .build();
     when(timereportListService.search(any())).thenReturn(new TimereportListResult(
-        List.of(booking), 3399, Duration.ofHours(9406), Duration.ofHours(4999), 1, 1));
+        List.of(booking), 3399, Duration.ofHours(9406), Duration.ofHours(4999), 1, 1, Set.of()));
 
     var html = renderFragment(get("/dailyreport/list")
         .header("HX-Request", "true")
@@ -271,6 +272,34 @@ class TimereportListControllerTest {
         .containsSubsequence("<th>Nicht fakturierbar</th>", ">4.407:00</td>")
         .doesNotContain("Maximale Anzahl Treffer</th>")
         .contains("alert alert-warning m-0 rounded-0 border-start-0 border-end-0 border-top-0 d-print-none");
+  }
+
+  /**
+   * Editing is offered where saving would succeed, and only there (#1190). The way back is the bare list: it restores
+   * its filter itself. On paper there is neither button nor column.
+   */
+  @Test
+  void only_an_editable_row_offers_editing_and_the_printout_leaves_it_out() throws Exception {
+    var editable = TimereportDTO.builder().id(11L)
+        .referenceday(LocalDate.of(2026, 9, 1)).employeeName("Berta Beispiel").employeeSign("bb")
+        .completeOrderSign("ORD-42/01").duration(Duration.ofMinutes(90)).status("open").build();
+    var released = TimereportDTO.builder().id(12L)
+        .referenceday(LocalDate.of(2026, 9, 2)).employeeName("Berta Beispiel").employeeSign("bb")
+        .completeOrderSign("ORD-42/01").duration(Duration.ofMinutes(60)).status("commited").build();
+    when(timereportListService.search(any())).thenReturn(new TimereportListResult(
+        List.of(editable, released), 2, Duration.ofMinutes(150), Duration.ZERO, 1, 1, Set.of(11L)));
+
+    var html = renderFragment(get("/dailyreport/list")
+        .header("HX-Request", "true")
+        .param("fBookingsFrom", "2026-09-01")
+        .param("fBookingsUntil", "2026-09-30"));
+
+    assertThat(html)
+        .contains("href=\"/dailyreport/timereports/11/edit?returnUrl=/dailyreport/list\"")
+        .doesNotContain("/dailyreport/timereports/12/edit")
+        .contains("<th class=\"w-1 d-print-none\"></th>");
+    // every row and the footer carry the cell, so the columns stay in line on screen and vanish together on paper
+    assertThat(html.split("<td class=\"d-print-none\">", -1).length - 1).isEqualTo(3);
   }
 
   /** Like {@link #perform}, but through Thymeleaf, so that the template itself runs. */
