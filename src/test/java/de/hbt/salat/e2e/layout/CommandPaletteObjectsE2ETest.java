@@ -199,22 +199,35 @@ class CommandPaletteObjectsE2ETest extends PlaywrightE2ETestBase {
   /**
    * An answer the next keystroke has overtaken is dropped. The answer for "co" is held back until the
    * one for "contoso" is shown; "co" would also bring the suborder of GLOBEX, "contoso" does not.
+   *
+   * <p>Dropping leaves nothing on the page to wait for, so the page reports when it is done with the
+   * answer: the palette handles it in the microtasks after {@code text()}, and the timeout set there
+   * runs only after them.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void an_overtaken_answer_is_dropped(E2EBrowser browser) {
     runAsUser(browser, MANAGER, "/dailyreport/dashboard", page -> {
-      page.evaluate("() => { const fetchNow = window.fetch; window.fetch = (url, options) =>"
-          + " /[?&]q=co$/.test(String(url))"
-          + "   ? new Promise(resolve => setTimeout(() => resolve(fetchNow(url, options)), 1500))"
-          + "   : fetchNow(url, options); }");
+      page.evaluate("() => { const fetchNow = window.fetch; let release, asked, handled;"
+          + " const held = new Promise(resolve => release = resolve); window.releaseOvertaken = release;"
+          + " window.overtakenAsked = new Promise(resolve => asked = resolve);"
+          + " window.overtakenHandled = new Promise(resolve => handled = resolve);"
+          + " window.fetch = (url, options) => {"
+          + "   if (!/[?&]q=co$/.test(String(url))) return fetchNow(url, options);"
+          + "   asked();"
+          + "   return held.then(() => fetchNow(url, options)).then(response => {"
+          + "     const read = response.text.bind(response);"
+          + "     response.text = () => read().then(text => { setTimeout(handled); return text; });"
+          + "     return response; }); }; }");
       page.keyboard().press(SHORTCUT);
       input(page).fill("co");
-      page.waitForTimeout(400);
+      // the palette asks once the typing pauses; "contoso" right away would never let it ask for "co"
+      page.evaluate("() => window.overtakenAsked.then(() => true)");
       input(page).fill("contoso");
       assertThat(option(page, "CUSTOMERORDER:" + ORDER)).isVisible();
 
-      page.waitForTimeout(2000);
+      page.evaluate("() => window.releaseOvertaken()");
+      page.evaluate("() => window.overtakenHandled.then(() => true)");
 
       assertThat(page.locator("#commandPaletteList [data-command-type=object]")
           .filter(new Locator.FilterOptions().setHasText("GLOBEX"))).hasCount(0);

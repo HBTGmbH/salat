@@ -115,10 +115,9 @@ class DailyTargetOnNonWorkingDaysE2ETest extends PlaywrightE2ETestBase {
     row.locator("span.inline-edit-display").click();
     Locator input = row.locator("input[name=duration]");
     input.fill(value);
-    // Enter blurs the field, which is what triggers the hx-post
+    // Enter blurs the field, which is what triggers the hx-post; the caller's assertions wait for
+    // the refresh it answers with
     input.press("Enter");
-    page.waitForLoadState();
-    page.waitForTimeout(1500);
   }
 
 }

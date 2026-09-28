@@ -63,8 +63,8 @@ class DailyProgressUnitE2ETest extends PlaywrightE2ETestBase {
       wrap.locator(".inline-edit-display").click();
       wrap.locator(".inline-edit-input").fill("03:00");
       page.locator("h3").first().click();
-      page.waitForTimeout(1500);
 
+      // the new value arrives only with the refresh, so once it is there the block is complete
       assertThat(page.locator("#daily-progress")).containsText("3:00 h");
       assertEquals(initial, structureOf(page),
           "labels and units must be identical after the refresh; only the values may move");

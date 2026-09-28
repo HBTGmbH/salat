@@ -5,10 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Request;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.KeyboardModifier;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -153,6 +157,10 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
    * the display and the field are found through the wrapper rather than as adjacent siblings, since
    * an enhanced field sits inside an input-group; and the field saves on blur, so a stepper click
    * must not commit and swap the row away mid-edit.
+   *
+   * <p>That stepping saves nothing is proven by the save that follows, see {@link #awaitSave}. The
+   * field is stepped twice for that: a save from the first step would send 02:45, leaving the field
+   * sends 03:00.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
@@ -171,7 +179,7 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       wrap.locator(".inline-edit-display").click();
       wrap.locator(".inline-edit-input").fill("2h30");
       page.locator("h3").first().click();
-      page.waitForTimeout(1200);
+      // the display changes only with the answer, so this also waits for the save
       assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:30");
 
       setBeta(page, true);
@@ -191,33 +199,41 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       assertThat(wrap.locator(".inline-edit-field")).isVisible();
       assertThat(wrap.locator(".inline-edit-input")).hasValue("2:30");
 
-      // stepping snaps onto the grid, saves nothing yet and keeps the focus in the field
-      wrap.locator(".input-group > button").last().click();
+      // stepping snaps onto the grid and keeps the focus in the field
+      var increase = wrap.locator(".input-group > button").last();
+      increase.click();
       assertThat(wrap.locator(".inline-edit-input")).hasValue("02:45");
-      page.waitForTimeout(1000);
-      assertEquals(0, saves.size(), "stepping must not commit the inline edit");
       assertEquals(true, page.evaluate(
           "() => document.activeElement.classList.contains('inline-edit-input')"));
+      increase.click();
+      assertThat(wrap.locator(".inline-edit-input")).hasValue("03:00");
 
-      // leaving the field saves once and the value survives a reload
-      page.locator("h3").first().click();
-      page.waitForTimeout(1200);
-      assertEquals(1, saves.size(), "leaving the field must save exactly once");
+      // leaving the field saves once, so stepping saved nothing, and the value survives a reload
+      awaitSave(page, "duration", "03:00", () -> page.locator("h3").first().click());
+      assertEquals(1, saves.size(),
+          "stepping must not commit the inline edit, leaving the field must save exactly once");
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
-      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:45");
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("3:00");
 
       // Escape still discards: display comes back and nothing is written
       saves.clear();
       wrap = inlineDurationWrap(page);
       wrap.locator(".inline-edit-display").click();
       wrap.locator(".input-group > button").last().click();
+      assertThat(wrap.locator(".inline-edit-input")).hasValue("03:15");
       page.keyboard().press("Escape");
-      page.waitForTimeout(1200);
       assertThat(wrap.locator(".inline-edit-display")).isVisible();
       assertThat(wrap.locator(".inline-edit-field")).isHidden();
-      assertEquals(0, saves.size(), "Escape must not write anything");
+      assertThat(wrap.locator(".inline-edit-display")).hasText("3:00");
+
+      // a save from Escape would have sent 03:15, so the next save must be the only one
+      // (see awaitSave for how else it shows)
+      wrap.locator(".inline-edit-display").click();
+      wrap.locator(".inline-edit-input").fill("04:00");
+      awaitSave(page, "duration", "04:00", () -> page.locator("h3").first().click());
+      assertEquals(1, saves.size(), "Escape must not write anything");
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
-      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:45");
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("4:00");
     });
   }
 
@@ -320,22 +336,28 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       page.locator("#startTime").pressSequentially("0745", new Locator.PressSequentiallyOptions().setDelay(80));
       assertThat(page.locator("#startTime")).hasValue("07:45");
 
-      // the stepper snaps on the grid, saves nothing yet and leaves the focus in the field
-      page.click("#start-field .input-group > button:last-child");
+      // the stepper snaps on the grid and leaves the focus in the field. Two steps, so that a save
+      // from typing or from the first step would send another value than leaving the field does
+      var increase = page.locator("#start-field .input-group > button:last-child");
+      increase.click();
       assertThat(page.locator("#startTime")).hasValue("08:00");
-      page.waitForTimeout(1200);
-      assertEquals(0, saves.size(), "neither typing nor stepping may trigger a save");
       assertEquals("startTime", page.evaluate("() => document.activeElement.id"));
+      increase.click();
+      assertThat(page.locator("#startTime")).hasValue("08:15");
 
-      // moving on to the next field saves once and leaves the caret there: the response must not
-      // swap the form back when only a time changed
-      page.locator("#breakTime").click();
-      page.waitForTimeout(1200);
-      assertEquals(1, saves.size(), "leaving the field must save exactly once");
+      // moving on to the next field saves once, so typing and stepping saved nothing, and leaves
+      // the caret there: the response must not swap the form back when only a time changed. The
+      // focus can only be judged once htmx has swapped the answer in, which is after its response.
+      page.evaluate("() => { window.workingdaySaved = new Promise(done =>"
+          + " document.addEventListener('htmx:finally:request', done, {once: true})); }");
+      awaitSave(page, "startTime", "08:15", () -> page.locator("#breakTime").click());
+      page.evaluate("() => window.workingdaySaved.then(() => true)");
+      assertEquals(1, saves.size(),
+          "neither typing nor stepping may trigger a save, leaving the field must save exactly once");
       assertEquals("breakTime", page.evaluate("() => document.activeElement.id"),
           "the save must not pull the focus out of the next field");
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
-      assertThat(page.locator("#startTime")).hasValue("08:00");
+      assertThat(page.locator("#startTime")).hasValue("08:15");
     });
   }
 
@@ -352,13 +374,12 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-29", EMPLOYEE));
       assertThat(page.locator("#start-field")).isVisible();
 
+      // the client only hides the fields; they are gone once the swapped form is there
       page.locator("#notWorked").check();
-      page.waitForTimeout(1200);
       assertThat(page.locator("#start-field")).hasCount(0);
       assertThat(page.locator("#break-field")).hasCount(0);
 
       page.locator("#notWorked").uncheck();
-      page.waitForTimeout(1200);
       assertThat(page.locator("#start-field")).isVisible();
       // and the field is enhanced again after the swap
       assertThat(page.locator("#start-field .input-group")).isVisible();
@@ -392,6 +413,27 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
     page.click("#timereportMainForm button[type=submit]");
     page.waitForLoadState();
     page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+  }
+
+  /**
+   * Runs the action and waits for the answer to the save that sends {@code value} for {@code field}.
+   *
+   * <p>This is also how the tests prove that an earlier step did <em>not</em> save; for that there is
+   * no state to wait for. A save from that step would have gone out before this one, and as long as
+   * the step left another value in the field than this one sends, it cannot be taken for it.
+   * Playwright reports requests in the order the browser sends them, so once this answer is in, such
+   * a save has been counted too. More often it does not get that far: its answer swaps the row away
+   * or marks the value as saved, so the expected save never goes out and this wait times out.
+   */
+  private void awaitSave(Page page, String field, String value, Runnable action) {
+    page.waitForResponse(response -> sends(response.request(), field, value), action).finished();
+  }
+
+  private static boolean sends(Request request, String field, String value) {
+    String body = request.postData();
+    return body != null && Arrays.stream(body.split("&"))
+        .map(pair -> URLDecoder.decode(pair, StandardCharsets.UTF_8))
+        .anyMatch((field + "=" + value)::equals);
   }
 
   private Locator chip(Page page, String label) {

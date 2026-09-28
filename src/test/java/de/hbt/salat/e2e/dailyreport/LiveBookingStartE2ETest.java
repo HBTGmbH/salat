@@ -31,6 +31,7 @@ class LiveBookingStartE2ETest extends PlaywrightE2ETestBase {
   static final String NOW = "2026-06-25T10:15:30";
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_BO_SIGN;
+  private static final String WORKINGDAY_SAVE = "/dailyreport/daily/workingday";
   /** What {@link #NOW} makes "today"; no other E2E test books on this date. */
   private static final LocalDate TODAY = LocalDate.parse("2026-06-25");
 
@@ -58,16 +59,14 @@ class LiveBookingStartE2ETest extends PlaywrightE2ETestBase {
       // (2) a stored start wins over the setting
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + TODAY, EMPLOYEE));
       page.fill("#startTime", "07:00");
-      page.locator("h3").first().click();
-      page.waitForTimeout(1200);
+      afterResponse(page, WORKINGDAY_SAVE, () -> page.locator("h3").first().click());
 
       openBookingForm(page, TODAY);
       assertThat(page.locator("#beginTimeInput")).hasValue("07:00");
 
       // (3) a day marked as not worked has no starting point
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + TODAY, EMPLOYEE));
-      page.locator("#notWorked").check();
-      page.waitForTimeout(1200);
+      afterResponse(page, WORKINGDAY_SAVE, () -> page.locator("#notWorked").check());
 
       openBookingForm(page, TODAY);
       assertThat(page.locator("#durationModeField")).hasValue("duration");
@@ -75,8 +74,7 @@ class LiveBookingStartE2ETest extends PlaywrightE2ETestBase {
 
       // (4) the prefill is for today only — a past day stays in duration mode
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + TODAY, EMPLOYEE));
-      page.locator("#notWorked").uncheck();
-      page.waitForTimeout(1200);
+      afterResponse(page, WORKINGDAY_SAVE, () -> page.locator("#notWorked").uncheck());
 
       openBookingForm(page, TODAY.minusDays(3));
       assertThat(page.locator("#durationModeField")).hasValue("duration");

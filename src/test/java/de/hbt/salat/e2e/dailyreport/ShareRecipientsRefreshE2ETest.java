@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Response;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -84,11 +83,6 @@ class ShareRecipientsRefreshE2ETest extends PlaywrightE2ETestBase {
   private Locator colleagueOnAlphaOnly(Page page) {
     return page.locator("#shareRecipientsContainer option")
         .filter(new Locator.FilterOptions().setHasText(COLLEAGUE_ON_ALPHA_ONLY));
-  }
-
-  private void afterResponse(Page page, String path, Runnable action) {
-    Response response = page.waitForResponse(r -> r.url().contains(path), action);
-    response.finished();
   }
 
   private List<String> collectRecipientRequests(Page page) {
