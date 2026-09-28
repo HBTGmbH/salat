@@ -1,0 +1,66 @@
+package de.hbt.salat.dailyreport.domain;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.employee.domain.Employeecontract;
+
+/**
+ * Einen Arbeitstag gibt es je Mitarbeitervertrag und Tag genau einmal. Der Unique Key dazu steht
+ * seit jeher in der Datenbank, aber nicht im Mapping — und damit auch nicht in dem Schema, das die
+ * Tests daraus erzeugen. Ohne ihn ließe sich das gleichzeitige Anlegen desselben Arbeitstags nicht
+ * nachstellen, obwohl genau daran eine Anfrage scheitert (#1111). Die Schemaprüfung beim Start
+ * vergleicht Tabellen, Spalten und Typen, keine Schlüssel; die Angabe wirkt deshalb allein auf das
+ * erzeugte Schema.
+ */
+@Getter
+@Setter
+@Entity
+@Table(name = "workingday", uniqueConstraints = @UniqueConstraint(
+    name = "workingday_uk1", columnNames = {"EMPLOYEECONTRACT_ID", "refday"}))
+public class Workingday extends AuditedEntity implements Serializable {
+
+    public enum WorkingDayType { WORKED, NOT_WORKED }
+
+    private static final long serialVersionUID = 1L;
+
+    @ManyToOne
+    @Fetch(FetchMode.SELECT)
+    @JoinColumn(name = "EMPLOYEECONTRACT_ID")
+    private Employeecontract employeecontract;
+
+    private LocalDate refday;
+    private int starttimehour;
+    private int starttimeminute;
+    private int breakhours;
+    private int breakminutes;
+    @Enumerated(EnumType.STRING)
+    private WorkingDayType type = WorkingDayType.WORKED;
+
+    public LocalDateTime getStartOfWorkingDay() {
+        LocalTime localTime = LocalTime.of(starttimehour, starttimeminute);
+        return LocalDateTime.of(refday, localTime);
+    }
+
+    public Duration getBreakLength() {
+        return Duration.ofHours(breakhours).plusMinutes(breakminutes);
+    }
+
+    public long getBreakLengthInMinutes() {
+        return getBreakLength().toMinutes();
+    }
+}

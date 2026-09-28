@@ -11,16 +11,16 @@ weder eine hilfreiche Fehlermeldung noch die Möglichkeit, technische Details ei
 Anwendungssupport weiterzugeben.
 
 Um die Fehlerseite zu gestalten, wird ein `ErrorController` (Spring Boot) benötigt, der gleichzeitig
-auf `AuthorizedUser` (`org.tb.auth`) und `AuthorizedEmployee` (`org.tb.employee`) zugreift, um den
+auf `AuthorizedUser` (`de.hbt.salat.auth`) und `AuthorizedEmployee` (`de.hbt.salat.employee`) zugreift, um den
 Sitzungskontext im Fehlerbericht darzustellen.
 
-Das `common`-Modul darf laut ArchUnit-Regel keine anderen `org.tb.*`-Module importieren.
+Das `common`-Modul darf laut ArchUnit-Regel keine anderen `de.hbt.salat.*`-Module importieren.
 Das `auth`-Modul darf nur `common` und `auth` importieren — nicht `employee`.
 Damit kann der Controller in keinem dieser Module platziert werden.
 
 ## Considered Options
 
-* **Option A — Neues `error`-Modul** (`org.tb.error`)
+* **Option A — Neues `error`-Modul** (`de.hbt.salat.error`)
 * **Option B — Controller in `auth`-Modul**, Zugriff auf `AuthorizedEmployee` über ein Interface in `common`
 * **Option C — Controller in `dailyreport`-Modul** (dem primären UI-Modul, das bereits beide Beans importiert)
 
@@ -38,5 +38,5 @@ Modul importiert werden — damit entstehen keine Zyklen.
 * Good: Klare Verantwortlichkeit; der Controller liegt dort, wo man ihn erwartet.
 * Good: Keine Aufweichung der bestehenden Kopplungsregeln in `common` oder `auth`.
 * Good: Das Modul kann künftig um weitere querschnittliche UI-Controller ergänzt werden (z. B. `/health`-Seite).
-* Neutral: Ein weiteres Top-Level-Paket in `org.tb` — der ArchUnit-Zykluscheck überwacht es automatisch.
+* Neutral: Ein weiteres Top-Level-Paket in `de.hbt.salat` — der ArchUnit-Zykluscheck überwacht es automatisch.
 * Bad: Option B (Interface in `common`) hätte die Anzahl der Module konstant gehalten.

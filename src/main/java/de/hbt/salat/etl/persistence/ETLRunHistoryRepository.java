@@ -1,0 +1,40 @@
+package de.hbt.salat.etl.persistence;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import de.hbt.salat.etl.domain.ETLRunHistory;
+import de.hbt.salat.etl.domain.ETLRunHistory.Status;
+
+public interface ETLRunHistoryRepository extends JpaRepository<ETLRunHistory, Long> {
+
+  List<ETLRunHistory> findByOrderByStartedAtDesc(Pageable pageable);
+
+  List<ETLRunHistory> findByStatusNotOrderByStartedAtDesc(Status status, Pageable pageable);
+
+  /**
+   * Der laufende Lauf, falls es ihn gibt (#1071).
+   *
+   * <p>Nicht {@code existsByStatus}: die Absage nennt den Startzeitpunkt des blockierenden Laufs,
+   * und ohne ihn liest sich „es läuft schon einer" wie eine Sackgasse. Mehr als eine Zeile mit
+   * {@code RUNNING} soll es nicht geben — {@code findFirst} ist die Vorsorge dagegen, dass eine
+   * zweite aus einem Absturz übrigbleibt.
+   */
+  Optional<ETLRunHistory> findFirstByStatusOrderByStartedAtDesc(Status status);
+
+  /**
+   * @return Anzahl der gelöschten Einträge
+   */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("""
+      DELETE FROM ETLRunHistory r
+      WHERE r.startedAt < :cutoff
+      """)
+  int deleteStartedBefore(@Param("cutoff") LocalDateTime cutoff);
+
+}

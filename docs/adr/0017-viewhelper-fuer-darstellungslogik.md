@@ -22,7 +22,7 @@ Chosen: **Option C**, weil Services keine Präsentationslogik enthalten sollen (
 ### Regeln
 
 **Paketort:**
-- ViewHelper-Klassen gehören ausschließlich in das `viewhelper`-Subpaket ihres Moduls (z. B. `org.tb.dailyreport.viewhelper`).
+- ViewHelper-Klassen gehören ausschließlich in das `viewhelper`-Subpaket ihres Moduls (z. B. `de.hbt.salat.dailyreport.viewhelper`).
 - Sie dürfen nicht in `domain`, `service` oder anderen Subpaketen abgelegt werden.
 
 **Abhängigkeitsregeln:**

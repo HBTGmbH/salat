@@ -128,7 +128,7 @@ builder.or(
 ```
 
 > **Präzisiert durch [ADR-0029](0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md).**
-> Das Prädikat steht seit #950 nicht mehr je DAO, sondern einmal in `org.tb.common.Validity`,
+> Das Prädikat steht seit #950 nicht mehr je DAO, sondern einmal in `de.hbt.salat.common.Validity`,
 > und der Schalter heißt über alle Schichten hinweg `showInactive`.
 
 ### Service- / Controller-Schicht

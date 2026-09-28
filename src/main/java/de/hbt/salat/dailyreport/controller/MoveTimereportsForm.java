@@ -1,0 +1,31 @@
+package de.hbt.salat.dailyreport.controller;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import de.hbt.salat.common.util.DateUtils;
+
+@Getter
+@Setter
+public class MoveTimereportsForm {
+
+  private Long sourceCustomerId;
+  private Long sourceCustomerOrderId;
+  private Long sourceSuborderId;
+  private Long targetCustomerId;
+  private Long targetCustomerOrderId;
+  private Long targetSuborderId;
+  private List<Long> employeeContractIds = new ArrayList<>();
+  private String fromDate;
+  private String toDate;
+
+  public LocalDate getFromDateTyped() {
+    return DateUtils.parseOrNull(fromDate);
+  }
+
+  public LocalDate getToDateTyped() {
+    return DateUtils.parseOrNull(toDate);
+  }
+}

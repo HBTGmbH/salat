@@ -26,7 +26,7 @@ Chosen: **Modular Monolith**, weil der Umfang der Anwendung und die Teamgröße 
 
 ## Module
 
-Top-level-Pakete unter `org.tb`: `auth`, `chicoree`, `common`, `customer`, `dailyreport`, `employee`, `etl`, `favorites`, `invoice`, `jira`, `management`, `order`, `reporting`, `statistic`.
+Top-level-Pakete unter `de.hbt.salat`: `auth`, `chicoree`, `common`, `customer`, `dailyreport`, `employee`, `etl`, `favorites`, `invoice`, `jira`, `management`, `order`, `reporting`, `statistic`.
 
 Coupling-Regeln:
 - Intra-Modul: freie Abhängigkeiten erlaubt

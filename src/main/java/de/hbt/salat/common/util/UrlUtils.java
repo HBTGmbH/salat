@@ -1,0 +1,19 @@
+package de.hbt.salat.common.util;
+
+import jakarta.servlet.ServletContext;
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
+public class UrlUtils {
+
+  public static String absoluteUrl(String url, ServletContext context) {
+    if(!url.startsWith("/")) {
+      url = "/" + url;
+    }
+    if(context.getContextPath() != null && !context.getContextPath().isEmpty()) {
+      url = context.getContextPath() + url;
+    }
+    return url;
+  }
+
+}

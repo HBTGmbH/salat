@@ -1,0 +1,571 @@
+package de.hbt.salat.employee.service;
+
+import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static de.hbt.salat.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
+import static de.hbt.salat.common.exception.ErrorCode.EC_OVERLAPS;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_BL;
+import static de.hbt.salat.common.GlobalConstants.EMPLOYEE_STATUS_PV;
+import static de.hbt.salat.common.exception.ErrorCode.EC_SUPERVISOR_INVALID;
+import static de.hbt.salat.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS;
+import static de.hbt.salat.common.exception.ErrorCode.EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT;
+import static de.hbt.salat.common.exception.ErrorCode.EC_UPDATE_GOT_VETO;
+import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
+import static de.hbt.salat.common.util.DateUtils.today;
+import static java.util.stream.Collectors.toSet;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.Year;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import de.hbt.salat.auth.domain.AccessLevel;
+import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.common.exception.AuthorizationException;
+import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
+import de.hbt.salat.common.exception.VetoedException;
+import de.hbt.salat.common.util.DataValidationUtils;
+import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.employee.auth.EmployeecontractAuthorization;
+import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.domain.Employee_;
+import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.domain.EmployeecontractListItemDTO;
+import de.hbt.salat.employee.domain.Employeecontract_;
+import de.hbt.salat.employee.domain.Overtime;
+import de.hbt.salat.employee.event.EmployeeAnonymizedEvent;
+import de.hbt.salat.employee.event.EmployeeDeleteEvent;
+import de.hbt.salat.employee.event.EmployeecontractConflictResolutionEvent;
+import de.hbt.salat.employee.event.EmployeecontractDeleteEvent;
+import de.hbt.salat.employee.event.EmployeecontractUpdateEvent;
+import de.hbt.salat.employee.persistence.EmployeeDAO;
+import de.hbt.salat.employee.persistence.EmployeecontractDAO;
+import de.hbt.salat.employee.persistence.EmployeecontractRepository;
+import de.hbt.salat.employee.persistence.OvertimeRepository;
+import de.hbt.salat.notification.service.NotificationService;
+
+@Slf4j
+@Service
+@Transactional
+@RequiredArgsConstructor
+@Authorized
+public class EmployeecontractService {
+
+  private final ApplicationEventPublisher eventPublisher;
+  private final EmployeecontractDAO employeecontractDAO;
+  private final EmployeeDAO employeeDAO;
+  private final EmployeecontractRepository employeecontractRepository;
+  private final OvertimeRepository overtimeRepository;
+  private final EmployeecontractAuthorization employeecontractAuthorization;
+  private final NotificationService notificationService;
+
+  @Authorized(requiresManager = true)
+  public ContractStoredInfo createEmployeecontract(
+      long employeeId,
+      LocalDate validFrom,
+      LocalDate validUntil,
+      List<Long> supervisorIds,
+      String taskDescription,
+      boolean freelancer,
+      boolean hide,
+      Duration dailyWorkingTime,
+      int vacationEntitlement,
+      Duration initialOvertime,
+      boolean resolveConflicts
+  ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
+
+    var employeecontract = new Employeecontract();
+    employeecontract.setOvertimeStatic(Duration.ZERO);
+    Employee theEmployee = employeeDAO.getEmployeeById(employeeId);
+    employeecontract.setEmployee(theEmployee);
+    var info = createOrUpdate(employeecontract, validFrom,
+        validUntil,
+        supervisorIds,
+        taskDescription,
+        freelancer,
+        hide,
+        dailyWorkingTime,
+        vacationEntitlement,
+        resolveConflicts);
+
+    if(initialOvertime != null && !initialOvertime.isZero() ) {
+      Overtime overtime = new Overtime();
+      overtime.setComment("initial overtime");
+      overtime.setEmployeecontract(employeecontract);
+      // The balance the employee brings into the contract, so it takes effect at its begin. Without
+      // an effective date the overtime calculation dereferences null and fails (#933).
+      overtime.setEffective(employeecontract.getValidFrom());
+      overtime.setTime(initialOvertime);
+      create(overtime);
+    }
+
+    emitContractCreatedNotification(employeecontract);
+    return info;
+  }
+
+  private void emitContractCreatedNotification(Employeecontract employeecontract) {
+    var salatUser = employeecontract.getEmployee().getSalatUser();
+    if (salatUser == null || salatUser.getId() == null) return;
+    notificationService.emitNotification(
+        List.of(salatUser.getId()),
+        "notification.employeecontract.created.title",
+        List.of(),
+        null,
+        null,
+        "/employees/contracts/view?id=" + employeecontract.getId(),
+        null);
+  }
+
+  @Authorized(requiresManager = true)
+  public ContractStoredInfo updateEmployeecontract(
+      long employeecontractId,
+      LocalDate validFrom,
+      LocalDate validUntil,
+      List<Long> supervisorIds,
+      String taskDescription,
+      boolean freelancer,
+      boolean hide,
+      Duration dailyWorkingTime,
+      int vacationEntitlement,
+      boolean resolveConflicts
+  ) throws AuthorizationException, InvalidDataException, BusinessRuleException {
+
+    var employeecontract = employeecontractDAO.getEmployeecontractById(employeecontractId);
+    return createOrUpdate(employeecontract, validFrom,
+        validUntil,
+        supervisorIds,
+        taskDescription,
+        freelancer,
+        hide,
+        dailyWorkingTime,
+        vacationEntitlement,
+        resolveConflicts);
+  }
+
+  private ContractStoredInfo createOrUpdate(
+      Employeecontract employeecontract,
+      LocalDate validFrom,
+      LocalDate validUntil,
+      List<Long> supervisorIds,
+      String taskDescription,
+      boolean freelancer,
+      boolean hide,
+      Duration dailyWorkingTime,
+      int vacationEntitlement,
+      boolean resolveConflicts) {
+
+    List<String> logs = new ArrayList<>();
+
+    var throwResolvableConflicts = !resolveConflicts; // throw always if not resolving any conflicts
+    var valid = validateEmployeecontractBusinessRules(employeecontract, validFrom, validUntil, supervisorIds, throwResolvableConflicts);
+
+    employeecontract.setValidUntil(validFrom);
+    employeecontract.setValidFrom(validFrom);
+    employeecontract.setValidUntil(validUntil);
+
+    var resolvedSupervisors = supervisorIds.stream()
+        .map(id -> employeeDAO.getEmployeeById(id))
+        .toList();
+    employeecontract.setSupervisors(resolvedSupervisors);
+    employeecontract.setTaskDescription(taskDescription);
+    employeecontract.setFreelancer(freelancer);
+    employeecontract.setHide(hide);
+    employeecontract.setDailyWorkingTime(dailyWorkingTime);
+    employeecontract.setVacationEntitlement(vacationEntitlement);
+
+    if(!valid) {
+
+      // get the conflicting employee contract
+      var overlappingContracts = getOverlapping(employeecontract);
+      var conflictingEmployeecontract = overlappingContracts.getFirst();
+      logs.add("Konflikt mit altem Vertrag (%s) erkannt. Automatische Auflösung angefordert...".formatted(conflictingEmployeecontract.getValidity()));
+
+      // set the conflicting employee contract to invalid - it ends one day before
+      var conflictingValidity = conflictingEmployeecontract.getValidity();
+      var resolvedValidities = conflictingValidity.minus(employeecontract.getValidity());
+      if(resolvedValidities.size() > 1) {
+        throw new BusinessRuleException(EC_UNRESOLVABLE_CONFLICT_VALIDITY_SPLIT, resolvedValidities.size());
+      }
+      LocalDateRange resolvedValidity = resolvedValidities.getFirst();
+      conflictingEmployeecontract.setValidFrom(resolvedValidity.getFrom());
+      conflictingEmployeecontract.setValidUntil(resolvedValidity.getUntil());
+      logs.add("Alten Vertrag angepasst von (%s) nach (%s).".formatted(conflictingValidity, resolvedValidity));
+
+      // update release and acceptance dates
+      if(conflictingEmployeecontract.getReportReleaseDate() != null) {
+        conflictingEmployeecontract.setReportReleaseDate(
+            DateUtils.min(conflictingEmployeecontract.getReportReleaseDate(), conflictingEmployeecontract.getValidUntil())
+        );
+        logs.add("Freigabedatum im alten Vertrag angepasst: " + DateUtils.format(conflictingEmployeecontract.getReportReleaseDate()));
+      }
+      if(conflictingEmployeecontract.getReportAcceptanceDate() != null) {
+        conflictingEmployeecontract.setReportAcceptanceDate(
+            DateUtils.min(conflictingEmployeecontract.getReportAcceptanceDate(), conflictingEmployeecontract.getValidUntil())
+        );
+        logs.add("Abnahmedatum im alten Vertrag angepasst: " + DateUtils.format(conflictingEmployeecontract.getReportAcceptanceDate()));
+      }
+
+      // move overtime
+      overtimeRepository.findAllByEmployeecontractId(conflictingEmployeecontract.getId())
+          .stream()
+          .filter(o -> !resolvedValidity.contains(o.getEffective()))
+          .forEach(o -> {
+            o.setEmployeecontract(employeecontract);
+            logs.add("Überstundenanpassung vom %s von Vertrag (%s) nach Vertrag (%s) verschoben.".formatted(
+                DateUtils.format(o.getEffective()),
+                conflictingEmployeecontract.getValidity(),
+                employeecontract.getValidity()
+            ));
+          });
+
+      // save contracts to ensure id is set before resolving conflicts (other parts in this software rely on this)
+      employeecontractRepository.save(employeecontract);
+      employeecontractRepository.save(conflictingEmployeecontract);
+
+      var event = new EmployeecontractConflictResolutionEvent(employeecontract, conflictingEmployeecontract);
+      try {
+        eventPublisher.publishEvent(event);
+        logs.addAll(event.getEventLog());
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            EC_CONFLICT_RESOLUTION_GOT_VETO
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
+
+      var updateEvent = new EmployeecontractUpdateEvent(conflictingEmployeecontract);
+      try {
+        eventPublisher.publishEvent(updateEvent);
+        logs.addAll(updateEvent.getEventLog());
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            EC_CONFLICT_RESOLUTION_GOT_VETO
+        ));
+        allMessages.addAll(e.getMessages());
+        updateEvent.veto(allMessages);
+      }
+    }
+
+    if(!employeecontract.isNew()) {
+      var event = new EmployeecontractUpdateEvent(employeecontract);
+      try {
+        eventPublisher.publishEvent(event);
+        logs.addAll(event.getEventLog());
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            EC_UPDATE_GOT_VETO,
+            employeecontract.getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
+    }
+    employeecontractRepository.save(employeecontract);
+
+    var info = new ContractStoredInfo(employeecontract.getId());
+    info.addLogs(logs);
+    return info;
+  }
+
+  @Transactional(readOnly = true)
+  public Duration getEffectiveVacationEntitlement(long employeecontractId, Year year) {
+    return getEmployeecontractById(employeecontractId).getEffectiveVacationEntitlement(year);
+  }
+
+  private boolean validateEmployeecontractBusinessRules(Employeecontract employeecontract, LocalDate validFrom,
+      LocalDate validUntil, List<Long> supervisorIds, boolean throwResolvableConflicts) {
+    DataValidationUtils.validDateRange(validFrom, validUntil, ErrorCode.EC_INVALID_DATE_RANGE);
+
+    if (supervisorIds == null || supervisorIds.isEmpty()) {
+      throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+    }
+    for (Long supervisorId : supervisorIds) {
+      var supervisor = employeeDAO.getEmployeeById(supervisorId);
+      if (supervisor == null) {
+        throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+      }
+      if (employeecontract.getEmployee().getId().equals(supervisorId)) {
+        throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+      }
+      var supervisorStatus = supervisor.getSalatUser().getStatus();
+      if (!EMPLOYEE_STATUS_PV.equals(supervisorStatus) && !EMPLOYEE_STATUS_BL.equals(supervisorStatus)) {
+        throw new BusinessRuleException(EC_SUPERVISOR_INVALID);
+      }
+    }
+
+    // ensure no overlapping employee contracts
+    employeecontract.setValidFrom(validFrom);
+    employeecontract.setValidUntil(validUntil);
+    List<Employeecontract> overlapping = getOverlapping(employeecontract);
+    if(!overlapping.isEmpty()) {
+      if(throwResolvableConflicts) {
+        throw new BusinessRuleException(EC_OVERLAPS);
+      }
+      // only one overlapping contract can be resolved
+      if(overlapping.size() > 1) {
+        throw new BusinessRuleException(EC_UNRESOLVABLE_CONFLICT_TOO_MANY_OVERLAPS, overlapping.size());
+      }
+      return false;
+    }
+    return true;
+  }
+
+  private List<Employeecontract> getOverlapping(Employeecontract employeecontract) {
+    List<Employeecontract> allEmployeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(
+        employeecontract.getEmployee().getId());
+    List<Employeecontract> overlapping = allEmployeecontracts
+        .stream()
+        .filter(otherEmployeecontract -> !Objects.equals(otherEmployeecontract.getId(), employeecontract.getId()))
+        .filter(ec -> ec.overlaps(employeecontract))
+        .toList();
+    return overlapping;
+  }
+
+  @Authorized(requiresManager = true)
+  public Employeecontract toggleHide(long id) {
+    Employeecontract ec = employeecontractRepository.findById(id)
+        .orElseThrow(() -> new InvalidDataException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND));
+    ec.setHide(!ec.getHide());
+    return employeecontractRepository.save(ec);
+  }
+
+  @Authorized(requiresManager = true)
+  public void deleteEmployeeContractById(long employeeContractId) {
+    Employeecontract ec = getEmployeecontractById(employeeContractId);
+
+    if (ec != null) {
+
+      var event = new EmployeecontractDeleteEvent(employeeContractId);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            ErrorCode.EC_DELETE_GOT_VETO,
+            ec.getEmployee().getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
+
+      // if ok for deletion, check for overtime entries and
+      // delete them successively (cannot yet be done via web application)
+
+      var overtimes = overtimeRepository.findAllByEmployeecontractId(employeeContractId);
+      overtimes.stream()
+          .map(AuditedEntity::getId)
+          .forEach(overtimeRepository::deleteById);
+
+      // finally, go for deletion of employeecontract
+      employeecontractRepository.delete(ec);
+    }
+  }
+
+  public void updateOvertimeStatic(Long employeecontractId, Duration overtimeStaticNewValue) {
+    getEmployeecontractById(employeecontractId).setOvertimeStatic(overtimeStaticNewValue);
+  }
+
+  public void updateReportReleaseData(Long employeecontractId, LocalDate releaseDate, LocalDate acceptanceDate) {
+    Employeecontract employeecontract = getEmployeecontractById(employeecontractId);
+    employeecontract.setReportReleaseDate(releaseDate);
+    employeecontract.setReportAcceptanceDate(acceptanceDate);
+  }
+
+  public void create(Overtime overtime) {
+    overtimeRepository.save(overtime);
+    var employeecontract = overtime.getEmployeecontract();
+    var event = new EmployeecontractUpdateEvent(employeecontract);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          EC_UPDATE_GOT_VETO,
+          employeecontract.getEmployee().getSign()
+      ));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
+  }
+
+  @EventListener
+  void onEmployeeAnonymized(EmployeeAnonymizedEvent event) {
+    var contracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getEmployeeId());
+    for (var contract : contracts) {
+      contract.setHide(true);
+      employeecontractRepository.save(contract);
+    }
+  }
+
+  @EventListener
+  void onEmployeeDelete(EmployeeDeleteEvent event) {
+    var employeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getId());
+    for (var employeecontract : employeecontracts) {
+      deleteEmployeeContractById(employeecontract.getId());
+    }
+  }
+
+  public Employeecontract getEmployeeContractValidAt(long employeeId, LocalDate date) {
+    return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
+  }
+
+  public List<Employeecontract> getVisibleEmployeeContracts() {
+    return employeecontractDAO.getVisibleEmployeeContracts();
+  }
+
+  public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
+    return employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
+  }
+
+  /**
+   * „Wen leite ich, auch rückblickend?" — die Personen dieses Teams über <em>alle</em> ihre Verträge, nicht nur über
+   * die nicht abgelaufenen (#1092). Ein Vertrag endet, die Verantwortung für seine Buchungen endet damit nicht (#324);
+   * genau dafür gibt es {@link EmployeecontractDAO#getTeamContractsIncludingExpired(long)}.
+   *
+   * <p>Die andere Frage — „wen leite ich, mit laufendem oder künftigem Vertrag?" — beantwortet
+   * {@code EmployeeDAO#getActiveTeamEmployeeIds()} über {@link EmployeecontractDAO#getActiveTeamContracts(long)}.
+   * Sie trägt den Sichtbereich auf die <em>Stammdaten</em> einer Person und endet mit deren Vertrag; diese hier trägt
+   * die Sichtbarkeit von <em>Buchungen</em> und muss über beendete Verträge zurückreichen. Beide liegen auf einer
+   * Umsetzung, und welche der beiden gestellt wird, steht im Namen und nicht in einem Argument (#1096).
+   */
+  public Set<Long> getTeamEmployeeIdsIncludingExpired(long supervisorEmployeeId) {
+    return employeecontractDAO.getTeamContractsIncludingExpired(supervisorEmployeeId).stream()
+        .map(ec -> ec.getEmployee().getId())
+        .collect(toSet());
+  }
+
+  public Optional<Employeecontract> getCurrentContract(long employeeId) {
+    var contract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, today());
+    if(contract != null) {
+      return Optional.of(contract);
+    }
+
+    // fallback find next future contract
+    Specification<Employeecontract> spec = (root, query, builder) -> {
+      var validFromInFuture = builder.greaterThan(root.get(Employeecontract_.validFrom), today());
+      var employee = root.join(Employeecontract_.employee);
+      var employeeIdMatches = builder.equal(employee.get(Employee_.id), employeeId);
+      return builder.and(validFromInFuture, employeeIdMatches);
+    };
+    return employeecontractRepository.findOne(spec);
+  }
+
+  public Employeecontract getEmployeecontractById(long employeeContractId) {
+    return employeecontractDAO.getEmployeecontractById(employeeContractId);
+  }
+
+  public Employeecontract getEmployeecontractForView(long employeeContractId) {
+    var ec = employeecontractDAO.getEmployeecontractById(employeeContractId);
+    if (ec == null) return null;
+    if (!employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ)) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
+    return ec;
+  }
+
+  /**
+   * Der Vertrag, wenn es ihn gibt und die angemeldete Person ihn lesen darf — für Aufrufer, die ein
+   * „nicht lesbar" nicht beantworten, sondern übergehen (#1157). Eine {@link AuthorizationException}
+   * aus {@link #getEmployeecontractForView(long)} setzt eine umgebende Transaktion auf Rollback, auch
+   * wenn der Aufrufer sie fängt; diese Methode wirft deshalb nicht.
+   */
+  public Optional<Employeecontract> getReadableEmployeecontract(long employeeContractId) {
+    return Optional.ofNullable(employeecontractDAO.getEmployeecontractById(employeeContractId))
+        .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ));
+  }
+
+  /**
+   * Alle nicht versteckten Verträge des Teams, auch die abgelaufenen (#324) — die rückblickende der
+   * beiden Fragen, und der Name sagt es (#1096). Für Freigabe und Abnahme ist genau das richtig:
+   * ein Vertrag endet, die Abnahme seiner Buchungen endet damit nicht.
+   */
+  public List<Employeecontract> getTeamContractsIncludingExpired(long teamManagerEmployeeId) {
+    return employeecontractDAO.getTeamContractsIncludingExpired(teamManagerEmployeeId);
+  }
+
+  public List<Employeecontract> getAllEmployeeContracts() {
+    return employeecontractDAO.getEmployeeContracts();
+  }
+
+  public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInactive, String filter,
+      Long filterEmployeeId, Boolean showHidden) {
+    return employeecontractDAO.getEmployeeContractsByFilters(showInactive, filter, filterEmployeeId, showHidden);
+  }
+
+  public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInactive, String filter,
+      Long filterEmployeeId, Boolean showHidden) {
+    return employeecontractDAO.getEmployeeContractsByFilters(showInactive, filter, filterEmployeeId, showHidden).stream()
+        .map(ec -> new EmployeecontractListItemDTO(
+            ec.getId(),
+            ec.getEmployee().getName(),
+            ec.getTaskDescription(),
+            ec.getSupervisors().stream().map(Employee::getName).collect(java.util.stream.Collectors.joining(", ")),
+            ec.getValidFrom(),
+            ec.getValidUntil(),
+            Boolean.TRUE.equals(ec.getFreelancer()),
+            ec.getDailyWorkingTime(),
+            ec.getVacationEntitlement(),
+            ec.getCurrentlyValid(),
+            ec.getHide()
+        ))
+        .toList();
+  }
+
+  public List<Overtime> getOvertimeAdjustmentsByEmployeeContractId(long employeeContractId) {
+    return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
+  }
+
+  public List<Employeecontract> getFutureContracts(long employeecontractId) {
+    var employeecontract = getEmployeecontractById(employeecontractId);
+    if(employeecontract != null) {
+      Specification<Employeecontract> spec = (root, query, builder) -> {
+        var equalEmployeeId = builder.equal(root.get(Employeecontract_.employee).get(Employee_.id), employeecontract.getEmployee().getId());
+        var greaterValidFrom = builder.greaterThan(root.get(Employeecontract_.validFrom), employeecontract.getValidFrom());
+        return builder.and(equalEmployeeId, greaterValidFrom);
+      };
+      return employeecontractRepository.findAll(spec);
+    }
+    return List.of();
+  }
+
+  @Getter
+  @RequiredArgsConstructor
+  public static class ContractStoredInfo {
+    private final long id;
+    private List<String> log = new ArrayList<>();
+
+    public void addLog(String logEntry) {
+      log.add(logEntry);
+    }
+
+    public void addLogs(List<String> logs) {
+      log.addAll(logs);
+    }
+
+  }
+
+}

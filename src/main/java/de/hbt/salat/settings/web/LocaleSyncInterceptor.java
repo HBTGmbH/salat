@@ -1,0 +1,62 @@
+package de.hbt.salat.settings.web;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.Locale;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
+import org.springframework.web.util.WebUtils;
+import de.hbt.salat.settings.service.UiPreferenceService;
+
+import static de.hbt.salat.common.configuration.InternationalizationConfiguration.LOCALE_COOKIE_VALUE_AUTO;
+
+@Component
+@RequiredArgsConstructor
+public class LocaleSyncInterceptor implements HandlerInterceptor {
+
+    private final UiPreferenceService uiPreferenceService;
+    private final CookieLocaleResolver localeResolver;
+
+    @Value("${salat.locale-cookie-name}")
+    private String cookieName;
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if (!isAuthenticated()) return true;
+        if (WebUtils.getCookie(request, cookieName) != null) return true;
+
+        String savedLocale = uiPreferenceService.getLocaleForCurrentUser();
+        Locale locale = switch (savedLocale) {
+            case "de" -> Locale.GERMAN;
+            case "en" -> Locale.ENGLISH;
+            default -> null;
+        };
+        if (locale != null) {
+            localeResolver.setLocale(request, response, locale);
+        } else {
+            writeSentinelCookie(response);
+        }
+        return true;
+    }
+
+    public void writeSentinelCookie(HttpServletResponse response) {
+        var cookie = new Cookie(cookieName, LOCALE_COOKIE_VALUE_AUTO);
+        cookie.setPath("/");
+        cookie.setMaxAge(-1); // until browser closed
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
+    }
+
+    private static boolean isAuthenticated() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
+    }
+
+}

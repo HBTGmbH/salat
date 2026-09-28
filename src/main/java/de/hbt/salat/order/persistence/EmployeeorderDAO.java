@@ -1,0 +1,291 @@
+package de.hbt.salat.order.persistence;
+
+import static java.lang.Boolean.TRUE;
+import static java.util.Comparator.comparing;
+import static java.util.List.of;
+import static de.hbt.salat.common.GlobalConstants.CUSTOMERORDER_SIGN_VACATION;
+
+import jakarta.persistence.criteria.Predicate;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
+import de.hbt.salat.auth.domain.AccessLevel;
+import de.hbt.salat.common.Hiding;
+import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.Validity;
+import de.hbt.salat.customer.domain.Customer_;
+import de.hbt.salat.employee.domain.Employeecontract_;
+import de.hbt.salat.order.auth.EmployeeorderAuthorization;
+import de.hbt.salat.order.domain.Customerorder_;
+import de.hbt.salat.order.domain.Employeeorder;
+import de.hbt.salat.order.domain.Employeeorder_;
+import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.domain.Suborder_;
+
+@Component
+@RequiredArgsConstructor
+public class EmployeeorderDAO {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EmployeeorderDAO.class);
+
+    private final EmployeeorderRepository employeeorderRepository;
+    private final EmployeeorderAuthorization employeeorderAuthorization;
+    private final SuborderDAO suborderDAO;
+
+    /**
+     * Gets the employeeorder for the given id.
+     */
+    public Employeeorder getEmployeeorderById(long id) {
+        return employeeorderRepository.findById(id).orElse(null);
+    }
+
+    public List<Employeeorder> getVacationEmployeeOrdersByEmployeeContractIdAndDate(long employeecontractId, final LocalDate date) {
+        var customerOrderSigns = of(CUSTOMERORDER_SIGN_VACATION);
+        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
+            employeecontractId,
+            customerOrderSigns
+        );
+        return employeeorders.stream().filter(eo -> eo.isValidAt(date)).collect(Collectors.toList());
+    }
+
+    public List<Employeeorder> getVacationEmployeeOrders(long employeecontractId, final LocalDateRange range) {
+        var customerOrderSigns = of(CUSTOMERORDER_SIGN_VACATION);
+        var employeeorders = employeeorderRepository.findAllByEmployeecontractIdAndSuborderCustomerorderSignIn(
+            employeecontractId,
+            customerOrderSigns
+        );
+        return employeeorders.stream().filter(eo -> eo.getValidity().overlaps(range)).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the {@link Employeeorder} associated to the given employeecontractID and suborderId, that is valid for the given date.
+     */
+    public Employeeorder getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(long employeecontractId, long suborderId, LocalDate date) {
+        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderId(employeecontractId, suborderId).stream()
+            .filter(e -> e.isValidAt(date))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Gets the list of employeeorders for the given employee contract id.
+     */
+    public List<Employeeorder> getEmployeeOrdersByEmployeeContractId(long employeeContractId) {
+        return employeeorderRepository.findAllByEmployeecontractId(employeeContractId).stream()
+            .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets the list of employeeorders for the given suborder id.
+     */
+    public List<Employeeorder> getEmployeeOrdersBySuborderId(long suborderId) {
+        return employeeorderRepository.findAllBySuborderId(suborderId).stream()
+            .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets the list of employeeorders for the given employee contract and suborder id.
+     */
+    public List<Employeeorder> getEmployeeOrdersByEmployeeContractIdAndSuborderId(long employeeContractId, long suborderId) {
+        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderId(
+            employeeContractId,
+            suborderId
+        ).stream()
+            .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets the list of employeeorders for the given employee contract and suborder id and date.
+     */
+    public List<Employeeorder> getEmployeeOrderByEmployeeContractIdAndSuborderIdAndDate2(long employeeContractId, long suborderId, LocalDate date) {
+        return employeeorderRepository.findAllByEmployeecontractIdAndSuborderIdAndUntilDateGreaterThanEqual(
+            employeeContractId,
+            suborderId,
+            date
+        ).stream()
+            .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets the list of employeeorders for the given employee contract and suborder id and date.
+     */
+    public long getEmployeeorderCount(long employeeContractId, long suborderId) {
+        return employeeorderRepository.countEmployeeorders(
+            employeeContractId,
+            suborderId
+        );
+    }
+
+    /**
+     * Get a list of all Employeeorders ordered by their sign.
+     *
+     * @return List<Employeeorder>
+     */
+    public List<Employeeorder> getEmployeeorders() {
+        return StreamSupport.stream(employeeorderRepository.findAll().spliterator(), false)
+            .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * @return Returns a list of all {@link Employeeorder}s associated to the given orderId and employeeContractId.
+     */
+    public List<Employeeorder> getEmployeeordersByOrderIdAndEmployeeContractId(long orderId, long employeeContractId) {
+        return employeeorderRepository.findAllByCustomerorderIdAndEmployeecontractId(orderId, employeeContractId).stream()
+            .sorted(comparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Nicht verborgen — {@link Employeeorder} hat kein eigenes {@code hide} und erbt die
+     * Sichtbarkeit von seinen Eltern, erreicht also beide Flags über einen Join. Die Regel dahinter
+     * ist dieselbe wie überall und steht in {@link Hiding} (#1104): {@code null} zählt als nicht
+     * verborgen.
+     */
+    private Specification<Employeeorder> notHidden() {
+        return (root, query, builder) -> {
+            var suborder = root.join(Employeeorder_.suborder);
+            return builder.and(
+                Hiding.notHidden(builder, suborder.get(Suborder_.hide)),
+                Hiding.notHidden(builder, suborder.join(Suborder_.customerorder).get(Customerorder_.hide))
+            );
+        };
+    }
+
+    private Specification<Employeeorder> matchingEmployeecontractId(long employeecontractId) {
+        return (root, query, builder) -> builder.equal(
+            root.join(Employeeorder_.employeecontract).get(Employeecontract_.id),
+            employeecontractId
+        );
+    }
+
+    private Specification<Employeeorder> matchingCustomerorderId(long customerorderId) {
+        return (root, query, builder) -> builder.equal(
+            root.join(Employeeorder_.suborder)
+                .join(Suborder_.customerorder)
+                .get(Customerorder_.id),
+            customerorderId
+        );
+    }
+
+    private Specification<Employeeorder> matchingCustomerId(long customerId) {
+        return (root, query, builder) -> builder.equal(
+            root.join(Employeeorder_.suborder)
+                .join(Suborder_.customerorder)
+                .join(Customerorder_.customer)
+                .get(Customer_.id),
+            customerId
+        );
+    }
+
+    private Specification<Employeeorder> matchingSuborderIds(Set<Long> suborderIds) {
+        return (root, query, builder) -> root.join(Employeeorder_.suborder).get(Suborder_.id).in(suborderIds);
+    }
+
+    private boolean filterMatchesInMemory(Employeeorder eo, String filter) {
+        var upper = filter.toUpperCase();
+        var sub = eo.getSuborder();
+        var emp = eo.getEmployeecontract().getEmployee();
+        var co = sub.getCustomerorder();
+        var customer = co.getCustomer();
+        return containsIgnoreCase(emp.getSign(), upper)
+            || containsIgnoreCase(emp.getFirstname(), upper)
+            || containsIgnoreCase(emp.getLastname(), upper)
+            || containsIgnoreCase(customer.getShortname(), upper)
+            || containsIgnoreCase(customer.getName(), upper)
+            || containsIgnoreCase(co.getSign(), upper)
+            || containsIgnoreCase(co.getShortdescription(), upper)
+            || containsIgnoreCase(sub.getSign(), upper)
+            || containsIgnoreCase(sub.getShortdescription(), upper)
+            || containsIgnoreCase(sub.getCompleteOrderSign(), upper)
+            || containsIgnoreCase(sub.getCompleteOrderDescription(true, false), upper);
+    }
+
+    private static boolean containsIgnoreCase(String value, String upper) {
+        return value != null && value.toUpperCase().contains(upper);
+    }
+
+    /**
+     * Get a list of all Employeeorders fitting to the given filters ordered by employee, customer order, and suborder.
+     */
+    public List<Employeeorder> getEmployeeordersByFilters(Boolean showInactive, String filter, Long employeeContractId, Long customerId, Long customerOrderId, Long customerSuborderId, Boolean showHidden) {
+        boolean isFilter = filter != null && !filter.trim().isEmpty();
+        return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
+                Set<Predicate> predicates = new HashSet<>();
+                if(!TRUE.equals(showInactive)) {
+                    predicates.add(Validity.<Employeeorder>notInactive(Employeeorder_.untilDate).toPredicate(root, query, builder));
+                }
+                if(!TRUE.equals(showHidden)) {
+                    predicates.add(notHidden().toPredicate(root, query, builder));
+                }
+                if(employeeContractId != null && employeeContractId > 0) {
+                    predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
+                }
+                if(customerId != null && customerId > 0) {
+                    predicates.add(matchingCustomerId(customerId).toPredicate(root, query, builder));
+                }
+                if(customerOrderId != null && customerOrderId > 0) {
+                    predicates.add(matchingCustomerorderId(customerOrderId).toPredicate(root, query, builder));
+                }
+                if(customerSuborderId != null && customerSuborderId > 0) {
+                    var suborder = suborderDAO.getSuborderById(customerSuborderId);
+                    if(suborder != null) {
+                        var ids = suborder.getAllChildren().stream()
+                            .map(Suborder::getId)
+                            .collect(Collectors.toSet());
+                        predicates.add(matchingSuborderIds(ids).toPredicate(root, query, builder));
+                    }
+                }
+                return builder.and(predicates.toArray(new Predicate[0]));
+            }).stream()
+            .filter(eo -> employeeorderAuthorization.isAuthorized(eo, AccessLevel.READ))
+            .filter(eo -> !isFilter || filterMatchesInMemory(eo, filter))
+            .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+    public List<Employeeorder> getEmployeeordersByEmployeeContractIdAndValidAt(long employeeContractId,
+        LocalDate date) {
+        return employeeorderRepository.findAll((Specification<Employeeorder>) (root, query, builder) -> {
+                Set<Predicate> predicates = new HashSet<>();
+                predicates.add(Validity.<Employeeorder>notInactiveOn(Employeeorder_.untilDate, date).toPredicate(root, query, builder));
+                predicates.add(matchingEmployeecontractId(employeeContractId).toPredicate(root, query, builder));
+                return builder.and(predicates.toArray(new Predicate[0]));
+            }).stream()
+            .sorted(comparing((Employeeorder e) -> e.getEmployeecontract().getEmployee().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCustomerorder().getSign())
+                .thenComparing((Employeeorder e) -> e.getSuborder().getCompleteOrderSign())
+                .thenComparing(Employeeorder::getFromDate))
+            .collect(Collectors.toList());
+    }
+
+}

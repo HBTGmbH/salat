@@ -1,0 +1,296 @@
+package de.hbt.salat.order.service;
+
+import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
+import static de.hbt.salat.order.command.GetTimereportMinutesCommandEvent.OrderType.CUSTOMER;
+
+import com.google.common.collect.Lists;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.command.CommandPublisher;
+import de.hbt.salat.common.exception.ErrorCode;
+import de.hbt.salat.common.exception.InvalidDataException;
+import de.hbt.salat.common.exception.ServiceFeedbackMessage;
+import de.hbt.salat.common.exception.VetoedException;
+import de.hbt.salat.common.palette.PaletteQuery;
+import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.common.util.DurationUtils;
+import de.hbt.salat.customer.event.CustomerDeleteEvent;
+import de.hbt.salat.customer.persistence.CustomerDAO;
+import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.employee.persistence.EmployeeDAO;
+import de.hbt.salat.order.command.GetTimereportMinutesCommandEvent;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.CustomerorderDTO;
+import de.hbt.salat.order.domain.CustomerorderSearchRow;
+import de.hbt.salat.order.event.CustomerorderDeleteEvent;
+import de.hbt.salat.order.event.CustomerorderUpdateEvent;
+import de.hbt.salat.order.persistence.CustomerorderDAO;
+import de.hbt.salat.order.persistence.CustomerorderRepository;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+@Authorized
+public class CustomerorderService {
+
+  private final ApplicationEventPublisher eventPublisher;
+  private final CommandPublisher commandPublisher;
+  private final CustomerorderDAO customerorderDAO;
+  private final CustomerDAO customerDAO;
+  private final EmployeeDAO employeeDAO;
+  private final CustomerorderRepository customerorderRepository;
+
+  /**
+   * The orders the command palette considers for a query (#1157), hidden and ended ones last. There
+   * is no rule per order: whoever is not restricted sees every order on the list pages, so no filter
+   * applies here beyond the query — the palette's provider keeps restricted users out.
+   */
+  @Transactional(readOnly = true)
+  public List<CustomerorderSearchRow> getPaletteCandidates(PaletteQuery query) {
+    return customerorderRepository.findPaletteCandidates(query.likeWord(0), query.likeWord(1),
+        query.likeWord(2), DateUtils.today(), PageRequest.of(0, PaletteQuery.CANDIDATE_LIMIT));
+  }
+
+  public List<Customerorder> getCustomerordersWithValidEmployeeOrders(long employeeContractId, final LocalDate date) {
+    return customerorderDAO.getCustomerordersWithValidEmployeeOrders(employeeContractId, date);
+  }
+
+  @Authorized(requiresManager = true)
+  public Customerorder create(CustomerorderDTO dto) {
+    return createOrUpdate(null, dto);
+  }
+
+  @Authorized(requiresManager = true)
+  public void update(long customerorderId, CustomerorderDTO dto) {
+    createOrUpdate(customerorderId, dto);
+  }
+
+  private Customerorder createOrUpdate(Long coId, CustomerorderDTO dto) {
+
+    Customerorder co;
+    if (coId != null) {
+      co = customerorderDAO.getCustomerorderById(coId);
+    } else {
+      // new customer order
+      co = new Customerorder();
+    }
+
+    /* set attributes */
+    co.setCustomer(customerDAO.getCustomerById(dto.customerId()));
+
+    co.setUntilDate(dto.untilDate());
+    co.setFromDate(dto.fromDate());
+
+    co.setSign(dto.sign());
+    co.setDescription(dto.description());
+    co.setShortdescription(dto.shortdescription());
+    co.setOrder_customer(dto.orderCustomer());
+
+    co.setResponsible_customer_contractually(dto.responsibleCustomerContractually());
+    co.setResponsible_customer_technical(dto.responsibleCustomerTechnical());
+
+    if (dto.responsibleHbtIds() == null || dto.responsibleHbtIds().isEmpty()) {
+      throw new InvalidDataException(ErrorCode.CO_RESPONSIBLE_HBT_REQUIRED);
+    }
+    if (dto.respEmpHbtContractId() == null) {
+      throw new InvalidDataException(ErrorCode.CO_RESP_CONTRACT_EMPLOYEE_REQUIRED);
+    }
+    co.setResponsibleHbt(dto.responsibleHbtIds().stream().map(employeeDAO::getEmployeeById).toList());
+    co.setRespEmpHbtContract(employeeDAO.getEmployeeById(dto.respEmpHbtContractId()));
+
+    if (dto.debithours() == null
+        || dto.debithours().isEmpty()
+        || DurationUtils.parseDuration(dto.debithours()).isZero()) {
+      co.setDebithours(Duration.ZERO);
+      co.setDebithoursunit(null);
+    } else {
+      co.setDebithours(DurationUtils.parseDuration(dto.debithours()));
+      co.setDebithoursunit(dto.debithoursunit());
+    }
+
+    co.setHide(dto.hide());
+
+    co.setOrderType(dto.orderType());
+
+    if(!co.isNew()) {
+      var event = new CustomerorderUpdateEvent(co);
+      try {
+        eventPublisher.publishEvent(event);
+      } catch(VetoedException e) {
+        // adding context to the veto to make it easier to understand the complete picture
+        var allMessages = new ArrayList<ServiceFeedbackMessage>();
+        allMessages.add(error(
+            ErrorCode.CO_UPDATE_GOT_VETO,
+            co.getSign()
+        ));
+        allMessages.addAll(e.getMessages());
+        event.veto(allMessages);
+      }
+    }
+    return customerorderRepository.save(co);
+  }
+
+  public Customerorder getCustomerorderBySign(String selectedOrder) {
+    return customerorderDAO.getCustomerorderBySign(selectedOrder);
+  }
+
+  /**
+   * The orders behind a set of signs, hidden and expired ones included — for labelling records that
+   * reference their order by sign and outlive it (#949).
+   */
+  @Transactional(readOnly = true)
+  public List<Customerorder> getCustomerordersBySigns(Collection<String> signs) {
+    return signs.isEmpty() ? List.of() : customerorderRepository.findBySignIn(signs);
+  }
+
+  public List<Customerorder> getCustomerordersByEmployeeContractId(long employeeContractId) {
+    return customerorderDAO.getCustomerordersByEmployeeContractId(employeeContractId);
+  }
+
+  /** The orders with these ids, in one statement — for a caller that resolved the ids elsewhere (#1092). */
+  public List<Customerorder> getCustomerordersByIds(Collection<Long> ids) {
+    if (ids.isEmpty()) return List.of();
+    return Lists.newArrayList(customerorderRepository.findAllById(ids));
+  }
+
+  public List<Customerorder> getAllCustomerorders() {
+    return customerorderDAO.getCustomerorders();
+  }
+
+  /**
+   * Customer orders offered in a select box: everything not hidden, plus the one carrying
+   * {@code keepSign} even if it is hidden. Orders are routinely hidden once they are finished, and a
+   * record already referencing such an order has to stay editable.
+   */
+  public List<Customerorder> getSelectableCustomerorders(String keepSign) {
+    return getAllCustomerorders().stream()
+        .filter(customerorder -> !customerorder.getHide()
+            || Objects.equals(customerorder.getSign(), keepSign))
+        .toList();
+  }
+
+  public List<Customerorder> getInvoiceableCustomerorders() {
+    return customerorderDAO.getInvoiceableCustomerorders();
+  }
+
+  public Customerorder getCustomerorderById(long customerorderId) {
+    return customerorderDAO.getCustomerorderById(customerorderId);
+  }
+
+  @Authorized(requiresManager = true)
+  public Customerorder toggleHide(long id) {
+    Customerorder co = customerorderDAO.getCustomerorderById(id);
+    if (co == null) throw new InvalidDataException(ErrorCode.CO_NOT_FOUND);
+    co.setHide(!co.getHide());
+    return customerorderRepository.save(co);
+  }
+
+  public List<Customerorder> getCustomerOrdersByResponsibleEmployeeId(Long responsibleEmployeeId) {
+    return customerorderDAO.getCustomerOrdersByResponsibleEmployeeId(responsibleEmployeeId);
+  }
+
+  /**
+   * The signs of every customer order belonging to a customer of this segment. Returns signs rather
+   * than orders because the callers use them to restrict a query, not to display the orders.
+   */
+  public List<String> getSignsByCustomerSegmentId(long segmentId) {
+    return customerorderRepository.findSignsByCustomerSegmentId(segmentId);
+  }
+
+  /** The signs of every customer order this employee is responsible for. */
+  public List<String> getSignsByResponsibleEmployeeId(long responsibleEmployeeId) {
+    return customerorderRepository.findSignsByResponsibleHbt(responsibleEmployeeId);
+  }
+
+  /**
+   * The ids of every order this employee is responsible for, in either role — {@code responsibleHbt} or
+   * {@code respEmpHbtContract} (#1092). Ids rather than orders: the caller turns them into a condition of its own
+   * query and never displays them.
+   */
+  public List<Long> getIdsByResponsibleEmployeeId(long responsibleEmployeeId) {
+    return customerorderRepository.findIdsByResponsibleEmployee(responsibleEmployeeId);
+  }
+
+  /**
+   * Every employee who is responsible for at least one customer order, ordered by sign — offered in
+   * select boxes, so hidden orders and hidden employees are left out. A responsibility on a hidden
+   * order has expired with it, which is also how budget access is decided.
+   */
+  /**
+   * The employees offered by a "responsible" filter: everyone responsible for at least one visible
+   * order, narrowed to one customer segment when {@code customerSegmentId} is given (#952).
+   */
+  public List<Employee> getVisibleResponsibleEmployees(Long customerSegmentId) {
+    return customerSegmentId == null
+        ? customerorderRepository.findAllVisibleResponsibleHbt()
+        : customerorderRepository.findVisibleResponsibleHbtByCustomerSegmentId(customerSegmentId);
+  }
+
+  public List<Customerorder> getVisibleCustomerorders() {
+    return customerorderDAO.getVisibleCustomerorders();
+  }
+
+  /**
+   * The orders a filter over existing bookings may offer: not hidden, inactive ones included
+   * (#1106). A list of what has already happened has to name the orders it happened on, and those
+   * expire while their bookings stay.
+   *
+   * <p>For a select box that picks something new this is the wrong list — that one is
+   * {@link #getVisibleCustomerorders()}.
+   */
+  public List<Customerorder> getNotHiddenCustomerorders() {
+    return customerorderDAO.getNotHiddenCustomerorders();
+  }
+
+  @Authorized(requiresManager = true)
+  public void deleteCustomerorderById(long customerOrderId) {
+    var event = new CustomerorderDeleteEvent(customerOrderId);
+    var customerorder = customerorderDAO.getCustomerorderById(customerOrderId);
+    try {
+      eventPublisher.publishEvent(event);
+    } catch(VetoedException e) {
+      // adding context to the veto to make it easier to understand the complete picture
+      var allMessages = new ArrayList<ServiceFeedbackMessage>();
+      allMessages.add(error(
+          ErrorCode.CO_DELETE_GOT_VETO,
+          customerorder.getSign()
+      ));
+      allMessages.addAll(e.getMessages());
+      event.veto(allMessages);
+    }
+    customerorderRepository.deleteById(customerOrderId);
+  }
+
+  public List<Customerorder> getCustomerordersByFilters(Boolean showInactive, String filter, Long customerId, Boolean showHidden) {
+    return customerorderDAO.getCustomerordersByFilters(showInactive, filter, customerId, showHidden);
+  }
+
+  @EventListener
+  void onCustomerDelete(CustomerDeleteEvent event) {
+    var customerorders = customerorderRepository.findAllByCustomerId(event.getId());
+    for (Customerorder customerorder : customerorders) {
+      deleteCustomerorderById(customerorder.getId());
+    }
+  }
+
+  public Duration getTotalDuration(long customerorderId) {
+    var command = GetTimereportMinutesCommandEvent.builder()
+        .orderType(CUSTOMER)
+        .orderIds(List.of(customerorderId))
+        .build();
+    commandPublisher.publish(command);
+    return command.getResult().getOrDefault(customerorderId, Duration.ZERO);
+  }
+
+}

@@ -7,7 +7,7 @@ Status: Accepted
 
 ADR-0014 führte `UiState` und `UiStateKey` als zentralen Mechanismus für benutzerbezogenen Selektionszustand ein. Die ursprüngliche Implementierung definierte alle Schlüsselkonstanten (`SELECTED_CONTRACT`, `SELECTED_CUSTOMER`, `SELECTED_ORDER`, `SELECTED_SUBORDER`) und das HTTP-Param-Mapping als statische Member in `UiStateKey` im `common`-Modul.
 
-Das `common`-Modul hat dadurch Kenntnis von domänenspezifischen Konzepten aus `employee` (Mitarbeitervertrag) und `order` (Kunde, Auftrag, Unterauftrag). Das verstößt gegen die Regel, dass `common` keine Abhängigkeiten zu anderen `org.tb.*`-Modulen haben darf. Außerdem muss jede neue UiState-Dimension eine Änderung in `common` erfordern, was das Modul unnötig koppelt.
+Das `common`-Modul hat dadurch Kenntnis von domänenspezifischen Konzepten aus `employee` (Mitarbeitervertrag) und `order` (Kunde, Auftrag, Unterauftrag). Das verstößt gegen die Regel, dass `common` keine Abhängigkeiten zu anderen `de.hbt.salat.*`-Modulen haben darf. Außerdem muss jede neue UiState-Dimension eine Änderung in `common` erfordern, was das Modul unnötig koppelt.
 
 ## Considered Options
 

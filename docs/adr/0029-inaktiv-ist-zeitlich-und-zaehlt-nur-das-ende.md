@@ -104,7 +104,7 @@ tatsächlich vorgekommen:
    Auftrag noch nicht begonnen hat, darf nicht auf ihn gebucht werden. Als Aktiv-Filter ist sie
    falsch. Ein `isValidAt` hinter einem Schalter namens `showInactive` ist ein Fehler.
 
-### Die Regel steht einmal im Code: `org.tb.common.Validity`
+### Die Regel steht einmal im Code: `de.hbt.salat.common.Validity`
 
 ```java
 public static boolean isInactive(LocalDate untilDate)

@@ -37,4 +37,4 @@ Chosen: **UTF-8-Encoding** (seit 2026-06-21, nach Abschluss der Struts-Migration
 
 ## Beteiligte Dateien
 
-`src/main/resources/org/tb/web/MessageResources.properties`, `MessageResources_en.properties`
+`src/main/resources/de/hbt/salat/web/MessageResources.properties`, `MessageResources_en.properties`

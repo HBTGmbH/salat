@@ -1,0 +1,72 @@
+package de.hbt.salat.common.filter;
+
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+/**
+ * Legt Anfrage und Nutzer in den MDC, damit jede Logzeile der Anfrage sie trägt.
+ *
+ * <p>Läuft hinter {@link UiStateFilter}: erst der lädt einen Sichtwechsel aus dem Cookie. Davor
+ * stand in {@code effective-login-sign} immer der angemeldete Nutzer, auch in fremder Sicht (#1145).
+ */
+@Slf4j
+@RequiredArgsConstructor
+@Component
+@Order(102)
+public class LoggingFilter extends HttpFilter {
+
+  /**
+   * Die Werte der {@link MdcDataSource}s, wie sie nach der Anfrage stehen. {@link RequestLogFilter}
+   * läuft außerhalb der Sicherheitskette und kennt den Nutzer dort nicht mehr.
+   */
+  public static final String MDC_DATA_ATTRIBUTE = LoggingFilter.class.getName() + ".mdcData";
+
+  private final Set<MdcDataSource> mdcDataSources;
+
+  @Override
+  protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+
+    MDC.put("request-uri", request.getRequestURI());
+    MDC.put("request-method", request.getMethod());
+    MDC.put("request-query-string", ofNullable(request.getQueryString()).orElse("<empty>"));
+    var data = collectMdcData();
+    data.forEach(MDC::put);
+
+    try {
+      super.doFilter(request, response, chain);
+    } finally {
+      data.keySet().forEach(MDC::remove);
+      MDC.remove("request-query-string");
+      MDC.remove("request-method");
+      MDC.remove("request-uri");
+      // Neu gelesen statt data: die Anfrage selbst kann die Sicht wechseln.
+      request.setAttribute(MDC_DATA_ATTRIBUTE, collectMdcData());
+    }
+  }
+
+  private Map<String, String> collectMdcData() {
+    return mdcDataSources.stream()
+        .flatMap(ds -> ds.getData().entrySet().stream())
+        .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  public interface MdcDataSource {
+    Map<String, String> getData();
+  }
+
+}

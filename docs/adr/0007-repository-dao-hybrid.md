@@ -83,4 +83,4 @@ Der Klassen-Javadoc von `TimereportDTO` hält fest: `Timereport`-Entities dürfe
 
 ## Beteiligte Klassen (Beispiel: dailyreport-Modul)
 
-`org.tb.dailyreport.persistence.TimereportDAO`, `TimereportRepository`, `dailyreport/domain/TimereportDTO.java`, `dailyreport/auth/TimereportAuthorization.java`
+`de.hbt.salat.dailyreport.persistence.TimereportDAO`, `TimereportRepository`, `dailyreport/domain/TimereportDTO.java`, `dailyreport/auth/TimereportAuthorization.java`

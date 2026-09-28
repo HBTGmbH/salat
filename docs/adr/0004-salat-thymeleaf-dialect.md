@@ -30,4 +30,4 @@ Chosen: **Custom Thymeleaf Dialect (`salat:`)**, weil Thymeleaf Dialects nativ u
 
 `salat:form`, `salat:inputs`, `salat:buttons`, `salat:textInput`, `salat:textarea`, `salat:checkboxSwitch`, `salat:formButtons`
 
-Implementierung: `org.tb.common.thymeleaf.processor`; Registrierung via `SalatDialect.getProcessors()`.
+Implementierung: `de.hbt.salat.common.thymeleaf.processor`; Registrierung via `SalatDialect.getProcessors()`.

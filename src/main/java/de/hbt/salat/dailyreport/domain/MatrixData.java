@@ -1,0 +1,60 @@
+package de.hbt.salat.dailyreport.domain;
+
+import java.time.LocalDate;
+import java.util.List;
+
+public record MatrixData(
+    List<DayHeader> dayHeaders,
+    List<Row> rows,
+    /**
+     * The standby orders, shown below the sum row and counted in no sum of it (#463). They keep
+     * their own row total; an aggregated standby sum is deliberately not offered.
+     */
+    List<Row> standbyRows,
+    List<FooterDay> footerDays,
+    String totalString,
+    String targetString,
+    String diffString,
+    boolean diffNegative,
+    String prevDayDiffString,
+    boolean prevDayDiffNegative) {
+
+    public record DayHeader(
+        int day,
+        LocalDate date,
+        String weekdayKey,
+        boolean weekend,
+        boolean publicHoliday,
+        boolean today) {}
+
+    public record Row(
+        String customerOrderSign,
+        String suborderSign,
+        String customer,
+        String customerOrderDesc,
+        String suborderDesc,
+        List<Cell> cells,
+        String totalString) {}
+
+    public record ReportDetail(String durationString, String taskDescription) {}
+
+    public record Cell(
+        String durationString,
+        boolean empty,
+        boolean weekend,
+        boolean publicHoliday,
+        List<ReportDetail> details) {}
+
+    public record FooterDay(
+        String workingTimeString,
+        boolean notWorked,
+        boolean weekend,
+        boolean publicHoliday,
+        boolean empty,
+        String beginString,
+        String breakString,
+        String endString,
+        boolean beginError,
+        boolean breakError,
+        boolean totalError) {}
+}

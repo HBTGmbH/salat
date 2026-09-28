@@ -1,0 +1,155 @@
+package de.hbt.salat.customer.controller;
+
+import static de.hbt.salat.common.GlobalConstants.CUSTOMERADDRESS_MAX_LENGTH;
+import static de.hbt.salat.common.GlobalConstants.CUSTOMERNAME_MAX_LENGTH;
+import static de.hbt.salat.common.GlobalConstants.CUSTOMERSHORTNAME_MAX_LENGTH;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.customer.domain.CustomerDTO;
+import de.hbt.salat.customer.service.CustomerSegmentService;
+import de.hbt.salat.customer.service.CustomerService;
+
+@Controller
+@RequestMapping("/customers")
+@RequiredArgsConstructor
+@Authorized(requireUnrestricted = true)
+public class CustomerController {
+
+  private final CustomerService customerService;
+  private final CustomerSegmentService customerSegmentService;
+  private final MessageSourceAccessor messageSourceAccessor;
+  private final ErrorCodeViewHelper errorCodeViewHelper;
+  private final FilterHintViewHelper filterHintViewHelper;
+
+  @GetMapping
+  public String list(@RequestParam(required = false) String fCustomerFilter,
+                     @RequestParam(required = false) Boolean fCustomerShowHidden,
+                     Model model) {
+    boolean showHiddenFlag = Boolean.TRUE.equals(fCustomerShowHidden);
+    model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.mainmenu.customers.text", "Customers"));
+    model.addAttribute("fCustomerFilter", fCustomerFilter);
+    model.addAttribute("fCustomerShowHidden", showHiddenFlag);
+    model.addAttribute("customers", customerService.getAllCustomerDTOsByFilter(fCustomerFilter, showHiddenFlag));
+    return "customer/customer-list";
+  }
+
+  @Authorized(requiresManager = true)
+  @GetMapping("/create")
+  public String createForm(Model model) {
+    model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.addcustomer.text", "Create Customer"));
+    model.addAttribute("isEdit", false);
+    model.addAttribute("customer", CustomerDTO.builder().build());
+    model.addAttribute("segments", customerSegmentService.getAll());
+    return "customer/customer-form";
+  }
+
+  @Authorized(requiresManager = true)
+  @GetMapping("/edit")
+  public String editForm(@RequestParam("id") Long id, Model model) {
+    var dto = customerService.getCustomerById(id);
+    model.addAttribute("pageTitle", messageSourceAccessor.getMessage("main.general.editcustomer.text", "Edit Customer"));
+    model.addAttribute("isEdit", true);
+    model.addAttribute("customer", dto);
+    model.addAttribute("segments", customerSegmentService.getAll());
+    return "customer/customer-form";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/store")
+  public String store(@Valid @ModelAttribute("customer") CustomerDTO form,
+                      BindingResult bindingResult,
+                      Model model,
+                      RedirectAttributes redirectAttributes) {
+    if (form.getShortName() == null || form.getShortName().isBlank()) {
+      bindingResult.rejectValue("shortName", "error.shortName",
+          messageSourceAccessor.getMessage("form.customer.error.shortname.required", "Short name is required"));
+    }
+    if (form.getShortName() != null && form.getShortName().length() > CUSTOMERSHORTNAME_MAX_LENGTH) {
+      bindingResult.rejectValue("shortName", "error.shortName",
+          messageSourceAccessor.getMessage("form.customer.error.shortname.toolong", "Name is required"));
+    }
+    if (form.getName() == null || form.getName().isBlank()) {
+      bindingResult.rejectValue("name", "error.name",
+          messageSourceAccessor.getMessage("form.customer.error.name.required", "Name is required"));
+    }
+    if (form.getName() != null && form.getName().length() > CUSTOMERNAME_MAX_LENGTH) {
+      bindingResult.rejectValue("name", "error.name",
+          messageSourceAccessor.getMessage("form.customer.error.name.toolong", "Name is required"));
+    }
+    if (form.getAddress() == null || form.getAddress().isBlank()) {
+      bindingResult.rejectValue("address", "error.address",
+          messageSourceAccessor.getMessage("form.customer.error.address.required", "Name is required"));
+    }
+    if (form.getAddress() != null && form.getAddress().length() > CUSTOMERADDRESS_MAX_LENGTH) {
+      bindingResult.rejectValue("address", "error.address",
+          messageSourceAccessor.getMessage("form.customer.error.address.toolong", "Name is required"));
+    }
+
+    boolean isCreate = form.getId() == null;
+    var errors = !bindingResult.getFieldErrors().isEmpty();
+
+    if(!errors) {
+      try {
+        customerService.createOrUpdate(form);
+      } catch(ErrorCodeException ex) {
+        model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
+        errors = true;
+      }
+    }
+
+    if (errors) {
+      String titleKey = isCreate ? "main.general.addcustomer.text" : "main.general.editcustomer.text";
+      String titleFallback = isCreate ? "Create Customer" : "Edit Customer";
+      model.addAttribute("pageTitle", messageSourceAccessor.getMessage(titleKey, titleFallback));
+      model.addAttribute("isEdit", !isCreate);
+      model.addAttribute("segments", customerSegmentService.getAll());
+      return "customer/customer-form";
+    }
+
+    // The filter stays as the user left it (ADR-0023); where it hides the saved customer, the
+    // message says so instead of the list silently not showing it.
+    filterHintViewHelper.addSuccess(redirectAttributes,
+        messageSourceAccessor.getMessage("form.customer.message.stored", "Customer saved successfully"),
+        CustomerUiStateKeyContributor.CUSTOMER_FILTER);
+    return "redirect:/customers";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/{id}/toggle-hide")
+  public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    try {
+      var cu = customerService.toggleHide(id);
+      model.addAttribute("cu", cu);
+      return "fragments/hide-toggle :: customerHideFlag";
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+      return "redirect:/customers";
+    }
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/delete")
+  public String delete(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+    customerService.deleteCustomerById(id);
+    redirectAttributes.addFlashAttribute("toastSuccess",
+        messageSourceAccessor.getMessage("form.customer.message.deleted", "Customer deleted successfully"));
+    return "redirect:/customers";
+  }
+}

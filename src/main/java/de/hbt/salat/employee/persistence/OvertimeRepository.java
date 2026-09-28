@@ -1,0 +1,14 @@
+package de.hbt.salat.employee.persistence;
+
+import java.util.List;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.stereotype.Repository;
+import de.hbt.salat.employee.domain.Overtime;
+
+@Repository
+public interface OvertimeRepository extends PagingAndSortingRepository<Overtime, Long>, CrudRepository<Overtime, Long> {
+
+  List<Overtime> findAllByEmployeecontractId(long employeeContractId);
+
+}

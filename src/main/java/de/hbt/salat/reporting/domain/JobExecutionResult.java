@@ -1,0 +1,4 @@
+package de.hbt.salat.reporting.domain;
+
+public record JobExecutionResult(String jobName, int rowCount, String recipientEmails, boolean suppressed, boolean error, ReportResult.ErrorInfo errorInfo) {
+}

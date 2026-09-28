@@ -1,0 +1,282 @@
+package de.hbt.salat.e2e.dailyreport;
+
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
+import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import de.hbt.salat.common.test.FixedClock;
+import de.hbt.salat.e2e.E2EBrowser;
+import de.hbt.salat.e2e.E2ETestData;
+import de.hbt.salat.e2e.PlaywrightE2ETestBase;
+import de.hbt.salat.employee.persistence.EmployeeRepository;
+import de.hbt.salat.employee.persistence.EmployeecontractRepository;
+
+/**
+ * Verifies the dailyreport dashboard (the post-login landing page, see the
+ * {@code /welcome -> /dailyreport/dashboard} legacy redirect in AGENTS.md) renders its core
+ * widgets for a logged-in employee.
+ */
+class DashboardE2ETest extends PlaywrightE2ETestBase {
+
+  private static final LocalDate MATRIX_BOOKING_DATE = LocalDate.parse("2026-06-18");
+  private static final String MATRIX_BOOKING_COMMENT = "E2E-Dashboard-Matrix-Testbuchung";
+
+  @Autowired
+  private EmployeeRepository employeeRepository;
+  @Autowired
+  private EmployeecontractRepository employeecontractRepository;
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void dashboard_renders_kpi_widgets_after_login(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/dashboard.*"));
+      assertThat(page.locator("body")).containsText("Diese Woche");
+      assertThat(page.locator("body")).containsText("Manuela Angestellt");
+    });
+  }
+
+  /**
+   * The legend takes its bounds from {@code OvertimeScale}, so each cell explains its own scale
+   * (#1030). Asserting on the numbers is what makes the single source visible from the outside: a
+   * bound moved in the code moves here, and a bound copied into a message text would not. The
+   * assertions run against the opened popover, not against the hidden block it is built from —
+   * otherwise the test would pass even if the explanation never reached the screen.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void overtime_cells_explain_their_own_scale(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      var popover = page.locator(".overtime-legend-popover");
+
+      legendToggleOf(page, "gesamt").click();
+      assertThat(popover).isVisible();
+      assertThat(popover).containsText("Minus- und Überstunden zählen gleich");
+      assertThat(popover).containsText("-20 bis +40 h");
+      assertThat(popover).containsText("-40 bis -20 h und +40 bis +80 h");
+      assertThat(popover).containsText("unter -40 h oder über +80 h");
+
+      // the month cell carries its own bounds, not those of the total; wait for the first popover
+      // to be gone, otherwise two of them match the locator while the fade-out is still running
+      page.locator("h2.page-title").click();
+      assertThat(popover).not().isAttached();
+      legendToggleOf(page, "2026-06").click();
+      assertThat(popover).containsText("-15 bis +15 h");
+      assertThat(popover).containsText("unter -30 h oder über +30 h");
+    });
+  }
+
+  /** The explanation stays behind the icon: no legend text sits in the card itself. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void overtime_cells_keep_the_legend_out_of_the_card(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      assertThat(cardOf(page, "gesamt").getByText("in Ordnung")).not().isVisible();
+      assertThat(page.locator(".overtime-legend-popover")).not().isAttached();
+    });
+  }
+
+  /**
+   * {@code fEmployeeContractId} of a contract the login may not read shows the own contract, not the
+   * foreign one (#1134). The release date tells the two apart: the regular employee's contract is
+   * released, the restricted one's is not. Comparing against the own dashboard instead of a fixed
+   * date keeps the test independent of other tests that release bookings. The restricted login also
+   * shows that the controller's {@code @Authorized} still admits status {@code restricted}.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_foreign_contract_shows_the_own_one(E2EBrowser browser) {
+    var foreignContractId = contractIdOf(E2ETestData.EMPLOYEE_MA_SIGN);
+    runAsUser(browser, E2ETestData.EMPLOYEE_RESTRICTED_SIGN, "/dailyreport/dashboard", page -> {
+      var ownRelease = releaseCardOf(page).innerText();
+
+      page.navigate(urlWithLogin("/dailyreport/dashboard?fEmployeeContractId=" + foreignContractId,
+          E2ETestData.EMPLOYEE_RESTRICTED_SIGN));
+
+      assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/dashboard.*"));
+      assertThat(releaseCardOf(page)).hasText(ownRelease);
+    });
+  }
+
+  /** A people lead reads the contract of their team member, as before #1134. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_people_lead_sees_the_contract_of_the_team_member(E2EBrowser browser) {
+    var teamContractId = contractIdOf(E2ETestData.EMPLOYEE_MA_SIGN);
+    var teamRelease = new AtomicReference<String>();
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard",
+        page -> teamRelease.set(releaseCardOf(page).innerText()));
+
+    runAsUser(browser, E2ETestData.EMPLOYEE_PV_SIGN,
+        "/dailyreport/dashboard?fEmployeeContractId=" + teamContractId,
+        page -> assertThat(releaseCardOf(page)).hasText(teamRelease.get()));
+  }
+
+  private long contractIdOf(String employeeSign) {
+    var employee = employeeRepository.findBySign(employeeSign).orElseThrow();
+    return employeecontractRepository.findAllByEmployeeId(employee.getId()).getFirst().getId();
+  }
+
+  private static Locator releaseCardOf(Page page) {
+    return cardOf(page, "Freigegeben bis").locator(".badge");
+  }
+
+  /**
+   * The hint on working days of the previous week without a booking (#1124), for a person of its
+   * own whose contract begins on Wednesday of that week: it names each remaining weekday, and each
+   * day leads into the daily view of that date, for that contract. The clock stands on Monday,
+   * 2026-06-15 — without its own {@code @FixedClock} the method would run a week and a half later,
+   * on the base class's day.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  @FixedClock("2026-06-15T09:00:00")
+  void names_each_working_day_of_the_previous_week_without_a_booking(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN, "/dailyreport/dashboard", page -> {
+      var hint = page.locator("#unbooked-days-hint");
+      assertThat(hint).containsText("3 Arbeitstage der Vorwoche ohne Buchung");
+
+      // Monday and Tuesday lie before the contract, the weekend is no working day
+      var days = hint.locator("a");
+      assertThat(days).hasText(new String[]{
+          "Mittwoch, 10.06.2026", "Donnerstag, 11.06.2026", "Freitag, 12.06.2026"});
+      // the contract the dashboard shows, not just any id
+      assertThat(days.first()).hasAttribute("href",
+          "/dailyreport/daily?mode=daily&date=2026-06-10&fEmployeeContractId=" + contractIdWithoutBookings());
+
+      page.navigate(urlWithLogin(days.first().getAttribute("href"), E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN));
+      assertThat(page.locator("#daily-mode-nav h3")).hasText("Mittwoch, 10. Juni 2026");
+    });
+  }
+
+  /**
+   * On the first day of the contract the previous week lies entirely before it: no working day is
+   * missing, and the page shows no hint rather than an empty one.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  @FixedClock("2026-06-10T09:00:00")
+  void shows_no_hint_when_no_working_day_is_missing(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN, "/dailyreport/dashboard", page -> {
+      assertThat(page.locator("body")).containsText("Diese Woche");
+      assertThat(page.locator("#unbooked-days-hint")).not().isAttached();
+    });
+  }
+
+  private long contractIdWithoutBookings() {
+    var employee = employeeRepository.findBySign(E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN).orElseThrow();
+    return employeecontractRepository
+        .findByEmployeeIdAndValidAt(employee.getId(), E2ETestData.WITHOUT_BOOKINGS_CONTRACT_START)
+        .orElseThrow()
+        .getId();
+  }
+
+  private static Locator cardOf(Page page, String text) {
+    return page.locator(".card").filter(new Locator.FilterOptions().setHasText(text)).first();
+  }
+
+  private static Locator legendToggleOf(Page page, String cardText) {
+    return cardOf(page, cardText).locator(".overtime-legend-toggle");
+  }
+
+  /**
+   * The matrix of the running month replaced the card "Stunden nach Auftrag (Monat)" (#878). The
+   * clock stands on the base class's day, 2026-06-25, so the booking lands in the month the
+   * dashboard shows. The cell is found by the test's own comment: other test classes book in June
+   * too (see PlaywrightE2ETestBase).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void shows_the_matrix_of_the_running_month_with_an_own_booking(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN,
+        "/dailyreport/timereports/new?date=" + MATRIX_BOOKING_DATE, page -> {
+      page.fill("#durationTime", "02:00");
+      selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_GLOBEX_CONSULT_SIGN);
+      page.fill("#commentField", MATRIX_BOOKING_COMMENT);
+      page.click("button[type=submit]");
+      page.waitForLoadState();
+
+      page.navigate(urlWithLogin("/dailyreport/dashboard", E2ETestData.EMPLOYEE_MA_SIGN));
+
+      Locator card = page.locator("#dashboard-matrix");
+      assertThat(card.locator(".card-title")).containsText("Juni 2026");
+      assertThat(card.locator("#matrix tbody td:has(.matrix-cell-detail)")
+          .filter(new Locator.FilterOptions().setHasText(MATRIX_BOOKING_COMMENT))).hasCount(1);
+      assertThat(page.locator("body")).not().containsText("Stunden nach Auftrag");
+      // display only: the action that changes every open day of the month stays on the matrix page
+      assertThat(page.locator("#matrix-fill-not-worked")).not().isAttached();
+    });
+  }
+
+  /**
+   * The link names month, year and contract: the matrix remembers all three as UiState and would
+   * otherwise open whatever was selected there last (#923).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_matrix_card_leads_to_the_same_month_and_contract(E2EBrowser browser) {
+    var contractId = contractIdOf(E2ETestData.EMPLOYEE_MA_SIGN);
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      Locator link = page.locator("#dashboard-matrix .card-actions a");
+      assertThat(link).hasAttribute("href",
+          "/dailyreport/matrix?fMonth=6&fYear=2026&fEmployeeContractId=" + contractId);
+    });
+  }
+
+  /**
+   * The whole week card leads into the booking list of that week, for the person the dashboard
+   * shows (#1175). The list remembers its filter as UiState; the link names every filter, so one
+   * set there before does not narrow what the card promises. The clock stands on the base class's
+   * day, Thursday 2026-06-25.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_week_card_leads_to_the_bookings_of_the_week(E2EBrowser browser) {
+    var employeeId = employeeRepository.findBySign(E2ETestData.EMPLOYEE_MA_SIGN).orElseThrow().getId();
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/list?fBookingsBillable=NOT_BILLABLE", page -> {
+      page.navigate(urlWithLogin("/dailyreport/dashboard", E2ETestData.EMPLOYEE_MA_SIGN));
+
+      // A mouse click where the number stands, not a click on the number: the stretched link lies
+      // over the whole card on purpose, so Playwright's own click would refuse the covered element.
+      var number = cardOf(page, "Diese Woche").locator(".h1").boundingBox();
+      page.mouse().click(number.x + number.width / 2, number.y + number.height / 2);
+
+      assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/list\\?.*"));
+      var url = page.url();
+      org.assertj.core.api.Assertions.assertThat(url)
+          .contains("fBookingsEmployees=" + employeeId)
+          .contains("fBookingsFrom=2026-06-22")
+          .contains("fBookingsUntil=2026-06-28")
+          .contains("fBookingsBillable=ALL");
+    });
+  }
+
+  /** On a phone the table scrolls inside its card; the page itself keeps the width of the screen. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void on_a_phone_the_matrix_scrolls_inside_its_card(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      page.setViewportSize(390, 844);
+      Locator scroller = page.locator("#dashboard-matrix .table-responsive");
+      assertThat(scroller).isVisible();
+
+      assertEquals(true, scroller.evaluate("el => el.scrollWidth > el.clientWidth"));
+      assertEquals(true, page.evaluate(
+          "() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"));
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void root_redirects_to_dashboard(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/welcome", page ->
+        assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/dashboard.*")));
+  }
+
+}

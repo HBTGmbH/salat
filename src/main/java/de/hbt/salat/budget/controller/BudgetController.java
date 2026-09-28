@@ -1,0 +1,456 @@
+package de.hbt.salat.budget.controller;
+
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static de.hbt.salat.budget.controller.BudgetUiStateKeyContributor.CUSTOMER_ORDER_SIGN;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.budget.auth.BudgetAuthorization;
+import de.hbt.salat.budget.domain.BudgetEmployeeSign;
+import de.hbt.salat.budget.domain.OrderBudget;
+import de.hbt.salat.budget.domain.OrderBudgetAdjustmentData;
+import de.hbt.salat.budget.domain.OrderBudgetData;
+import de.hbt.salat.budget.domain.OrderBudgetScopeEntryData;
+import de.hbt.salat.budget.domain.ProgressMode;
+import de.hbt.salat.budget.service.BudgetEmployeeService;
+import de.hbt.salat.budget.service.OrderBudgetService;
+import de.hbt.salat.budget.service.OrderFlatRateService;
+import de.hbt.salat.budget.service.OrderPricingService;
+import de.hbt.salat.budget.service.TimereportBudgetAssignmentService;
+import de.hbt.salat.budget.viewhelper.AssignedTimereportViewHelper;
+import de.hbt.salat.budget.viewhelper.BudgetEmployeesViewHelper;
+import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.util.DurationUtils;
+import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.service.SuborderService;
+
+@Controller
+@RequestMapping("/budget")
+@RequiredArgsConstructor
+@Authorized(requireUnrestricted = true)
+public class BudgetController {
+
+    /**
+     * How many assigned bookings the detail page renders. Beyond this the page says how many were
+     * left out and offers the period filter — a silently truncated list would read as complete.
+     */
+    private static final int ASSIGNED_LIST_LIMIT = 200;
+
+    private final OrderBudgetService orderBudgetService;
+    private final TimereportBudgetAssignmentService assignmentService;
+    private final BudgetEmployeeService budgetEmployeeService;
+    private final OrderPricingService orderPricingService;
+    private final OrderFlatRateService orderFlatRateService;
+    private final CustomerorderService customerorderService;
+    private final SuborderService suborderService;
+    private final AuthorizedUser authorizedUser;
+    private final BudgetAuthorization budgetAuthorization;
+    private final ErrorCodeViewHelper errorCodeViewHelper;
+    private final FilterHintViewHelper filterHintViewHelper;
+    private final MessageSourceAccessor messages;
+
+    /**
+     * The parameter is {@code fBudgetShowInactive} rather than {@code showInactive} because the
+     * UiState mapping is global: the rate list has a switch of the same name that means something
+     * else, and both would otherwise share one remembered value (#952).
+     */
+    @GetMapping
+    public String list(@RequestParam(required = false) String fCustomerOrderSign,
+                       @RequestParam(required = false) Boolean fBudgetShowInactive,
+                       Model model) {
+        List<OrderBudget> budgets;
+        if (fCustomerOrderSign != null && !fCustomerOrderSign.isBlank()) {
+            budgets = orderBudgetService.getVisibleByCustomerorderSign(
+                fCustomerOrderSign, Boolean.TRUE.equals(fBudgetShowInactive));
+        } else {
+            budgets = orderBudgetService.getAllVisible();
+            if (!Boolean.TRUE.equals(fBudgetShowInactive)) {
+                budgets = budgets.stream().filter(b -> Boolean.TRUE.equals(b.getActive())).toList();
+            }
+        }
+        model.addAttribute("budgets", budgets);
+        model.addAttribute("fCustomerOrderSign", fCustomerOrderSign);
+        model.addAttribute("showInactive", Boolean.TRUE.equals(fBudgetShowInactive));
+        model.addAttribute("isManager", authorizedUser.isManager());
+        model.addAttribute("customerorders", budgetAuthorization.authorizedCustomerorders());
+        // The rows name their order and suborder by sign; description and customer hang off those.
+        // Both maps are built once per page instead of one lookup per row.
+        model.addAttribute("orders", ordersOf(budgets));
+        model.addAttribute("suborders", subordersOf(budgets));
+        model.addAttribute("employeesByBudget", employeeSignsOf(budgets));
+        return "budget/budget-list";
+    }
+
+    /**
+     * Who booked on each plan (#964) — one aggregate query for the whole page, not one per row.
+     * Asking {@code getAssignedBookings} per row would be two statements <em>and</em> the bookings
+     * of the plan's whole order every time, which is the pattern the budget dashboard broke on
+     * (→ {@code docs/performance-tips.md}).
+     */
+    private Map<Long, List<BudgetEmployeeSign>> employeeSignsOf(List<OrderBudget> budgets) {
+        return signsByBudget(budgets, budgetEmployeeService.employeesOf(budgets));
+    }
+
+    /**
+     * Every plan of the page gets an entry, the ones without a booking an empty list (#1047): the
+     * aggregate holds only plans somebody booked on, and the cell must not run onto a {@code null}.
+     *
+     * <p>The signs are handed on in the order the query delivered them — alphabetical by sign
+     * ({@code BudgetEmployeeQueryTest}) — and complete: the column lists everybody, however many
+     * that is, and lets the badges wrap inside the cell instead.
+     */
+    static Map<Long, List<BudgetEmployeeSign>> signsByBudget(
+        List<OrderBudget> budgets, Map<Long, List<BudgetEmployeeSign>> byBudget) {
+        return budgets.stream().collect(toMap(OrderBudget::getId,
+            budget -> byBudget.getOrDefault(budget.getId(), List.of()),
+            (first, second) -> first));
+    }
+
+    private Map<String, Customerorder> ordersOf(List<OrderBudget> budgets) {
+        var signs = budgets.stream().map(OrderBudget::getCustomerorderSign).distinct().toList();
+        return customerorderService.getCustomerordersBySigns(signs).stream()
+            .collect(toMap(Customerorder::getSign, identity(), (a, b) -> a));
+    }
+
+    private Map<String, Suborder> subordersOf(List<OrderBudget> budgets) {
+        var signs = budgets.stream()
+            .map(OrderBudget::getSuborderSign)
+            .filter(sign -> sign != null && !sign.isBlank())
+            .distinct()
+            .toList();
+        var orderSigns = budgets.stream()
+            .filter(b -> b.getSuborderSign() != null && !b.getSuborderSign().isBlank())
+            .map(OrderBudget::getCustomerorderSign)
+            .distinct()
+            .toList();
+        return suborderService.getSubordersByCustomerorderSigns(orderSigns).stream()
+            .filter(suborder -> signs.contains(suborder.getCompleteOrderSign()))
+            .collect(toMap(Suborder::getCompleteOrderSign, identity(), (a, b) -> a));
+    }
+
+    @Authorized(requiresManager = true)
+    @GetMapping("/create")
+    public String createForm(Model model) {
+        var form = new OrderBudgetForm();
+        addFormModel(model, form, false);
+        return "budget/budget-form";
+    }
+
+    @Authorized(requiresManager = true)
+    @GetMapping("/{id}/edit")
+    public String editForm(@PathVariable long id, Model model) {
+        var budget = orderBudgetService.getById(id);
+        var form = new OrderBudgetForm();
+        form.setId(budget.getId());
+        form.setName(budget.getName());
+        form.setCustomerorderSign(budget.getCustomerorderSign());
+        form.setSuborderSign(budget.getSuborderSign());
+        form.setValidFrom(budget.getValidFrom());
+        form.setValidUntil(budget.getValidUntil());
+        form.setActive(budget.getActive());
+        form.setAlertThresholdPercent(budget.getAlertThresholdPercent());
+        form.setProgressMode(budget.getProgressMode());
+        addFormModel(model, form, true);
+        return "budget/budget-form";
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/store")
+    public String store(@ModelAttribute("budgetForm") OrderBudgetForm form,
+                        Model model,
+                        RedirectAttributes redirectAttributes) {
+        if (form.getName() == null || form.getName().isBlank()) {
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.name.required")));
+            addFormModel(model, form, !form.isNew());
+            return "budget/budget-form";
+        }
+        if (form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()) {
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.order.required")));
+            addFormModel(model, form, !form.isNew());
+            return "budget/budget-form";
+        }
+        if (form.getValidFrom() == null || form.getValidUntil() == null) {
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.dates.required")));
+            addFormModel(model, form, !form.isNew());
+            return "budget/budget-form";
+        }
+        if (form.getValidFrom().isAfter(form.getValidUntil())) {
+            model.addAttribute("formErrors", List.of(messages.getMessage("main.budget.error.dates.invalid")));
+            addFormModel(model, form, !form.isNew());
+            return "budget/budget-form";
+        }
+
+        var data = new OrderBudgetData(
+            form.getName(),
+            form.getCustomerorderSign(),
+            trimToNull(form.getSuborderSign()),
+            form.getValidFrom(),
+            form.getValidUntil(),
+            Boolean.TRUE.equals(form.getActive()),
+            form.getAlertThresholdPercent(),
+            form.getProgressMode()
+        );
+
+        try {
+            if (form.isNew()) {
+                orderBudgetService.create(data);
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.budget.message.created"), CUSTOMER_ORDER_SIGN);
+            } else {
+                orderBudgetService.update(form.getId(), data);
+                filterHintViewHelper.addSuccess(redirectAttributes,
+                    messages.getMessage("main.budget.message.updated"), CUSTOMER_ORDER_SIGN);
+            }
+        } catch (ErrorCodeException ex) {
+            model.addAttribute("formErrors",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).toList());
+            addFormModel(model, form, !form.isNew());
+            return "budget/budget-form";
+        }
+        return "redirect:/budget";
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/toggle-active")
+    public String toggleActive(@PathVariable long id, RedirectAttributes redirectAttributes) {
+        try {
+            var budget = orderBudgetService.getById(id);
+            var newActive = !Boolean.TRUE.equals(budget.getActive());
+            orderBudgetService.setActive(id, newActive);
+            redirectAttributes.addFlashAttribute("toastSuccess", newActive
+                ? messages.getMessage("main.budget.message.activated")
+                : messages.getMessage("main.budget.message.deactivated"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget";
+    }
+
+    @GetMapping("/{id}")
+    public String detail(@PathVariable long id,
+                         @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate from,
+                         @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate until,
+                         Model model) {
+        var budget = orderBudgetService.getById(id);
+        model.addAttribute("budget", budget);
+        model.addAttribute("adjustmentForm", new OrderBudgetAdjustmentForm());
+        model.addAttribute("scopeEntryForm", new OrderBudgetScopeEntryForm());
+        model.addAttribute("progressModes", ProgressMode.values());
+        model.addAttribute("isManager", authorizedUser.isManager());
+        // The conditions negotiated for this work package (#1065). Shown to everybody who reaches
+        // the plan, like the rates of the "Mitarbeitende" card; only editing them stays with
+        // managers, which is where the links lead.
+        model.addAttribute("boundPricings", orderPricingService.getByOrderBudgetId(id));
+        model.addAttribute("boundFlatRates", orderFlatRateService.getByOrderBudgetId(id));
+        addAssignedTimereports(budget, from, until, model);
+        return "budget/budget-detail";
+    }
+
+    /**
+     * The bookings assigned to the plan, and where they could be moved to (#912).
+     *
+     * <p>The period defaults to the plan's validity, which is where its bookings are. A plan can
+     * hold thousands of them, so the list is capped and says so — the alternative would be a page
+     * that takes seconds to render and is unusable exactly for the plans that need attention.
+     *
+     * <p>Sorting, capping and the figures of the header all come out of the database already shaped
+     * (#997); nothing is counted or reordered here.
+     *
+     * <p>The "Mitarbeitende" card hangs on the same period (#964). It is resolved in one pass with
+     * the rates of the rendered rows, so the card and the rows cannot name different rates for the
+     * same work — and it reads the whole period rather than the capped list, which would understate
+     * the hours of exactly the plans that need attention.
+     */
+    private void addAssignedTimereports(OrderBudget budget, LocalDate from, LocalDate until, Model model) {
+        var periodFrom = from != null ? from : budget.getValidFrom();
+        var periodUntil = until != null ? until : budget.getValidUntil();
+        var assigned = assignmentService.getAssignedBookings(
+            budget.getId(), periodFrom, periodUntil, ASSIGNED_LIST_LIMIT);
+        var rates = budgetEmployeeService.resolve(budget, periodFrom, periodUntil, assigned.newest());
+
+        model.addAttribute("assignedFrom", periodFrom);
+        model.addAttribute("assignedUntil", periodUntil);
+        model.addAttribute("assignedCount", assigned.count());
+        model.addAttribute("assignedHours", DurationUtils.format(assigned.totalDuration()));
+        model.addAttribute("assignedTimereports",
+            AssignedTimereportViewHelper.from(assigned.newest(), rates));
+        model.addAttribute("employees", BudgetEmployeesViewHelper.from(rates.employees()));
+        model.addAttribute("assignedLimit", ASSIGNED_LIST_LIMIT);
+        model.addAttribute("assignedTruncated", assigned.truncated());
+        // Only the other active plans of the same order are possible targets: an inactive plan
+        // cannot hold bookings, and a plan of another order can never cover them.
+        model.addAttribute("moveTargets",
+            orderBudgetService.getActiveByCustomerorderSign(budget.getCustomerorderSign()).stream()
+                .filter(other -> !other.getId().equals(budget.getId()))
+                .toList());
+    }
+
+    /**
+     * Moves the selected bookings to another plan, or dissolves their assignment when no target was
+     * chosen. Rejected as a whole if one booking does not fit the target, so the error names what is
+     * wrong instead of leaving a half-moved selection behind.
+     */
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/assignments/move")
+    public String moveAssignments(@PathVariable long id,
+                                  @RequestParam(required = false) List<Long> timereportIds,
+                                  @RequestParam(required = false) Long targetBudgetId,
+                                  RedirectAttributes redirectAttributes) {
+        var selected = timereportIds == null ? List.<Long>of() : timereportIds;
+        if (selected.isEmpty()) {
+            redirectAttributes.addFlashAttribute("toastError",
+                messages.getMessage("main.budget.assignments.error.noselection"));
+            return "redirect:/budget/" + id;
+        }
+        try {
+            assignmentService.move(selected, targetBudgetId);
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage(
+                targetBudgetId == null
+                    ? "main.budget.assignments.message.unassigned"
+                    : "main.budget.assignments.message.moved",
+                new Object[] {selected.size()}));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/adjustments/add")
+    public String addAdjustment(@PathVariable long id,
+                                @ModelAttribute("adjustmentForm") OrderBudgetAdjustmentForm form,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.addAdjustment(id, new OrderBudgetAdjustmentData(
+                form.getAmount(), form.getEffective(), form.getComment()));
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.adjustment.message.added"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/adjustments/{adjId}/delete")
+    public String deleteAdjustment(@PathVariable long id, @PathVariable long adjId,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.removeAdjustment(id, adjId);
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.adjustment.message.deleted"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/scope-entries/add")
+    public String addScopeEntry(@PathVariable long id,
+                                @ModelAttribute("scopeEntryForm") OrderBudgetScopeEntryForm form,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.addScopeEntry(id, new OrderBudgetScopeEntryData(
+                form.getRefdate(), form.getPercent(), form.getComment()));
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.scope.message.added"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
+    @Authorized(requiresManager = true)
+    @PostMapping("/{id}/scope-entries/{entryId}/delete")
+    public String deleteScopeEntry(@PathVariable long id, @PathVariable long entryId,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            orderBudgetService.removeScopeEntry(id, entryId);
+            redirectAttributes.addFlashAttribute("toastSuccess", messages.getMessage("main.budget.scope.message.deleted"));
+        } catch (ErrorCodeException ex) {
+            redirectAttributes.addFlashAttribute("toastError",
+                errorCodeViewHelper.toViewMessages(ex).stream().map(m -> m.resolved()).findFirst()
+                    .orElse(messages.getMessage("main.general.error.unknown")));
+        }
+        return "redirect:/budget/" + id;
+    }
+
+    /**
+     * Refills the suborder list when the customer order changes. Offering the suborders of every
+     * order let a budget be pointed at a suborder outside the chosen order — rejected on save since
+     * #890, but only after the user had already picked it.
+     */
+    @Authorized(requiresManager = true)
+    @PostMapping("/suborders")
+    public String suborders(@ModelAttribute("budgetForm") OrderBudgetForm form, Model model,
+                            HttpServletRequest request) {
+        form.setSuborderSign(null); // the previous pick belongs to the order that was just replaced
+        addFormModel(model, form, !form.isNew());
+        model.addAttribute("htmxRequest", "true".equals(request.getHeader("HX-Request")));
+        model.addAttribute("subordersChanged", true);
+        return "budget/budget-form";
+    }
+
+    private void addFormModel(Model model, OrderBudgetForm form, boolean isEdit) {
+        model.addAttribute("budgetForm", form);
+        model.addAttribute("isEdit", isEdit);
+        model.addAttribute("customerorders",
+            customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
+        model.addAttribute("suborders",
+            subordersOf(form.getCustomerorderSign(), form.getSuborderSign()));
+        model.addAttribute("progressModes", ProgressMode.values());
+        // The level in force for the selected order: overlaps within a level are fine, mixing two
+        // levels is what gets rejected (#914, #1004). Since the list offers the whole suborder tree,
+        // this is the only place the person sees which level the next plan has to match.
+        model.addAttribute("currentLevel",
+            form.getCustomerorderSign() == null || form.getCustomerorderSign().isBlank()
+                ? null
+                : orderBudgetService.currentLevel(form.getCustomerorderSign()));
+    }
+
+    /**
+     * The suborders of the selected customer order, at any depth (#1004) — empty while none is
+     * selected. The suborder the budget already references stays in the list even once it is hidden,
+     * so that editing does not drop it.
+     */
+    private List<Suborder> subordersOf(String customerorderSign, String keepSuborderSign) {
+        if (trimToNull(customerorderSign) == null) {
+            return List.of();
+        }
+        var customerorder = customerorderService.getCustomerorderBySign(customerorderSign);
+        return customerorder == null ? List.of()
+            : suborderService.getSelectableSubordersByCustomerorderId(customerorder.getId(), keepSuborderSign);
+    }
+
+}

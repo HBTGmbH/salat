@@ -125,7 +125,7 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
   des Servers, nicht der des Browsers: der Dialog trägt Zeitpunkt und Zeitzone des Servers
   (`data-now`, `data-time-zone`), und die Uhr des Browsers zählt von dort weiter.
 - **Geschäftsobjekte kommen vom Server** (#1157, ADR-0031): jedes Modul mit Objekten oder Zielen
-  setzt `org.tb.common.palette.PaletteProvider` um, in seinem `controller`-Paket neben dem
+  setzt `de.hbt.salat.common.palette.PaletteProvider` um, in seinem `controller`-Paket neben dem
   `UiStateKeyContributor`; das Modul `palette` sammelt sie (`GET /palette/search`). **Jeder Anbieter
   entscheidet selbst, was die Person sieht, je Treffer und je Ziel** — mit den Klassen, die die
   Zielseite fragt, nicht mit einer Kopie ihrer Regel —, und die Palette zeigt nichts, dessen Seite
@@ -224,7 +224,7 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
 
 ## Legacy URL Redirects
 
-When a URL changes (controller rename, module move, path restructuring), register a permanent redirect in `org.tb.common.configuration.LegacyUrlRedirectConfig` so that bookmarks, history, and external links continue to work.
+When a URL changes (controller rename, module move, path restructuring), register a permanent redirect in `de.hbt.salat.common.configuration.LegacyUrlRedirectConfig` so that bookmarks, history, and external links continue to work.
 
 ```java
 // in LegacyUrlRedirectConfig.addViewControllers():
@@ -608,7 +608,7 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 
 ### Implementation notes
 
-- Processors live in `org.tb.common.thymeleaf.processor`, extend `AbstractSalatProcessor` → `AbstractElementTagProcessor`.
+- Processors live in `de.hbt.salat.common.thymeleaf.processor`, extend `AbstractSalatProcessor` → `AbstractElementTagProcessor`.
 - `th:label`, `th:saveLabel`, `th:cancelHref`, and `th:helpText` accept any Thymeleaf expression (`#{...}`, `${...}`, `@{...}`, or composite).
 - The replacement model is processed (`replaceWith(model, true)`), so `th:field` / `th:errors` in generated output are handled by the standard dialect.
 - When adding a new processor: register it in `SalatDialect.getProcessors()`.
@@ -618,7 +618,7 @@ The `SalatDialect` (prefix `sal`, registered via `ThymeleafDialectConfiguration`
 ## Code Structure and Patterns
 
 ### Module Overview
-Top-level packages under `org.tb`, one module per domain capability:
+Top-level packages under `de.hbt.salat`, one module per domain capability:
 
 | Package | Responsibility |
 |---|---|
@@ -841,7 +841,7 @@ in SQL ist `hide <> 1` für `NULL` *unbekannt* statt wahr, die Zeile fällt also
 obwohl niemand sie verborgen hat. Die Detailansicht desselben Datensatzes zeigte ihn weiter als
 nicht verborgen.
 
-**Die Regel steht genau einmal im Code: `org.tb.common.Hiding`** — beide Seiten nebeneinander, wie
+**Die Regel steht genau einmal im Code: `de.hbt.salat.common.Hiding`** — beide Seiten nebeneinander, wie
 `Validity` es für den Gültigkeitszeitraum tut:
 
 ```java
@@ -911,7 +911,7 @@ Warum nur das Ende zählt, steht in [ADR-0029](docs/adr/0029-inaktiv-ist-zeitlic
 samt der verworfenen Alternative: wer eine Änderung im Voraus anlegt und sie danach nicht mehr
 sieht, legt sie ein zweites Mal an.
 
-**Die Regel steht genau einmal im Code: `org.tb.common.Validity`.** Beide Seiten derselben Frage
+**Die Regel steht genau einmal im Code: `de.hbt.salat.common.Validity`.** Beide Seiten derselben Frage
 liegen dort nebeneinander, damit eine Liste und die Zeile, die sie rendert, nicht auseinanderlaufen
 können:
 
@@ -1222,7 +1222,7 @@ beantwortet**:
   Fehler-Dispatch von sich aus aus, und genau das ist hier die Zusage.
 - Ausgenommen bleiben statische Dateien (die Fehlerseite braucht ihr Stylesheet) und
   `/auth/exit-impersonation` (sonst ist der Weg zurück aus einer übernommenen Anmeldung gesperrt).
-  Die Pfadlisten stehen einmal in `org.tb.common.filter.RequestPaths`.
+  Die Pfadlisten stehen einmal in `de.hbt.salat.common.filter.RequestPaths`.
 
 ### Flags Column Pattern
 List views that expose boolean state flags on rows use a dedicated **Flags** column rather than inline badges or text next to the primary field.
@@ -1279,7 +1279,7 @@ Rules:
 
 ### i18n Message Bundles
 - **The application is German-first.** German is the primary/default language.
-- Files: `src/main/resources/org/tb/web/MessageResources.properties` (German, default) and `MessageResources_en.properties` (English)
+- Files: `src/main/resources/de/hbt/salat/web/MessageResources.properties` (German, default) and `MessageResources_en.properties` (English)
   - Both files contain the full set of `main.*` Thymeleaf keys.
   - `MessageResources.properties` is the German default bundle; it is served for `de_DE` and any locale that has no specific bundle.
   - `MessageResources_en.properties` is served for the `en` locale.

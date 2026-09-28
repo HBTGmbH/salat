@@ -1,0 +1,424 @@
+package de.hbt.salat.e2e.dailyreport;
+
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.KeyboardModifier;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import de.hbt.salat.e2e.E2EBrowser;
+import de.hbt.salat.e2e.E2ETestData;
+import de.hbt.salat.e2e.PlaywrightE2ETestBase;
+
+/**
+ * Covers the new time and duration input (#830) in both states of its opt-in beta flag.
+ *
+ * <p>The flag is persisted per user, so every test sets it explicitly through the settings form
+ * first instead of relying on the state a previous test left behind.
+ */
+class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
+
+  private static final String EMPLOYEE = E2ETestData.EMPLOYEE_MA_SIGN;
+  private static final String STEPPER_INCREASE = "#durationTime + button";
+  private static final String STEPPER_DECREASE = "#durationSection .input-group > button:first-child";
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void without_the_beta_the_field_stays_plain_but_accepts_flexible_input(E2EBrowser browser) {
+    var date = LocalDate.parse("2026-06-18");
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, false);
+      openNewBooking(page, date);
+
+      // classic field: no stepper, but the in-context beta hint is offered
+      assertThat(page.locator(STEPPER_INCREASE)).hasCount(0);
+      assertThat(page.getByText("Schnelleingabe testen")).isVisible();
+
+      // "2h30" is normalised to HH:MM on blur and accepted by the server
+      page.fill("#durationTime", "2h30");
+      page.locator("#commentField").click();
+      assertThat(page.locator("#durationTime")).hasValue("02:30");
+
+      book(page, date);
+      assertThat(page.locator("#daily-bookings-area")).containsText("2:30");
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_beta_adds_a_snapping_stepper_and_additive_chips(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+      openNewBooking(page, LocalDate.parse("2026-06-19"));
+
+      // the hint gives way to the beta badge, which carries the Slack feedback channel
+      assertThat(page.getByText("Schnelleingabe testen")).hasCount(0);
+      assertThat(page.locator("span.badge[title*='#salat']")).isVisible();
+
+      // empty field: the first step lands on the grid
+      page.click(STEPPER_INCREASE);
+      assertThat(page.locator("#durationTime")).hasValue("00:15");
+
+      // an off-grid value snaps onto the grid first, then moves in full steps
+      page.fill("#durationTime", "08:07");
+      page.click(STEPPER_INCREASE);
+      assertThat(page.locator("#durationTime")).hasValue("08:15");
+      page.click(STEPPER_INCREASE);
+      assertThat(page.locator("#durationTime")).hasValue("08:30");
+      page.click(STEPPER_DECREASE);
+      assertThat(page.locator("#durationTime")).hasValue("08:15");
+      page.click(STEPPER_DECREASE);
+      assertThat(page.locator("#durationTime")).hasValue("08:00");
+
+      // chips add up, the reset chip clears the field again
+      page.fill("#durationTime", "01:00");
+      chip(page, "+30").click();
+      chip(page, "+30").click();
+      assertThat(page.locator("#durationTime")).hasValue("02:00");
+      chip(page, "+1h").click();
+      assertThat(page.locator("#durationTime")).hasValue("03:00");
+      page.locator("#durationChips button[aria-label='Dauer zurücksetzen']").click();
+      assertThat(page.locator("#durationTime")).isEmpty();
+
+      // the chips belong to the duration field and must not linger in begin/end mode
+      page.click("#btnBeginEnd");
+      assertThat(page.locator("#durationChips")).isHidden();
+      page.click("#btnDuration");
+      assertThat(page.locator("#durationChips")).isVisible();
+    });
+  }
+
+  /**
+   * Buttons, arrow keys and the wheel are three ways to do the same thing, so the modifiers have to
+   * mean the same thing in all three: plain steps on the grid, Shift a full hour, Alt one minute.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void modifiers_work_the_same_for_buttons_arrow_keys_and_the_wheel(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+      openNewBooking(page, LocalDate.parse("2026-06-19"));
+
+      var shift = new Page.ClickOptions().setModifiers(List.of(KeyboardModifier.SHIFT));
+      var alt = new Page.ClickOptions().setModifiers(List.of(KeyboardModifier.ALT));
+
+      page.fill("#durationTime", "02:07");
+      page.click(STEPPER_INCREASE, shift);
+      assertThat(page.locator("#durationTime")).hasValue("03:07");
+      page.click(STEPPER_DECREASE, shift);
+      assertThat(page.locator("#durationTime")).hasValue("02:07");
+
+      page.click(STEPPER_INCREASE, alt);
+      assertThat(page.locator("#durationTime")).hasValue("02:08");
+      page.click(STEPPER_DECREASE, alt);
+      assertThat(page.locator("#durationTime")).hasValue("02:07");
+
+      // the same combinations on the keyboard
+      page.locator("#durationTime").click();
+      page.keyboard().press("Shift+ArrowUp");
+      assertThat(page.locator("#durationTime")).hasValue("03:07");
+      page.keyboard().press("Alt+ArrowDown");
+      assertThat(page.locator("#durationTime")).hasValue("03:06");
+      page.keyboard().press("ArrowUp");
+      assertThat(page.locator("#durationTime")).hasValue("03:15");
+
+      // and on the wheel, which only acts while the field has the focus
+      page.locator("#durationTime").click();
+      page.mouse().wheel(0, -100);
+      assertThat(page.locator("#durationTime")).hasValue("03:30");
+      page.keyboard().down("Shift");
+      page.mouse().wheel(0, -100);
+      page.keyboard().up("Shift");
+      assertThat(page.locator("#durationTime")).hasValue("04:30");
+
+      // scrolling without the focus must not touch the value
+      page.locator("#commentField").click();
+      page.mouse().move(80, 80);
+      page.mouse().wheel(0, -100);
+      assertThat(page.locator("#durationTime")).hasValue("04:30");
+    });
+  }
+
+  /**
+   * The inline duration edit in the daily list uses the same widget. Two things make it delicate:
+   * the display and the field are found through the wrapper rather than as adjacent siblings, since
+   * an enhanced field sits inside an input-group; and the field saves on blur, so a stepper click
+   * must not commit and swap the row away mid-edit.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_inline_duration_edit_uses_the_new_input(E2EBrowser browser) {
+    var date = LocalDate.parse("2026-07-08");
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, false);
+      openNewBooking(page, date);
+      page.fill("#durationTime", "02:00");
+      book(page, date);
+
+      // classic: plain field, but the tolerant parsing still applies
+      var wrap = inlineDurationWrap(page);
+      assertThat(wrap.locator(".input-group > button")).hasCount(0);
+      wrap.locator(".inline-edit-display").click();
+      wrap.locator(".inline-edit-input").fill("2h30");
+      page.locator("h3").first().click();
+      page.waitForTimeout(1200);
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:30");
+
+      setBeta(page, true);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+
+      List<String> saves = new ArrayList<>();
+      page.onRequest(request -> {
+        if (request.url().contains("update-inline")) {
+          saves.add(request.url());
+        }
+      });
+
+      // the badge reveals field and stepper together, and hands over its value
+      wrap = inlineDurationWrap(page);
+      assertThat(wrap.locator(".inline-edit-field")).isHidden();
+      wrap.locator(".inline-edit-display").click();
+      assertThat(wrap.locator(".inline-edit-field")).isVisible();
+      assertThat(wrap.locator(".inline-edit-input")).hasValue("2:30");
+
+      // stepping snaps onto the grid, saves nothing yet and keeps the focus in the field
+      wrap.locator(".input-group > button").last().click();
+      assertThat(wrap.locator(".inline-edit-input")).hasValue("02:45");
+      page.waitForTimeout(1000);
+      assertEquals(0, saves.size(), "stepping must not commit the inline edit");
+      assertEquals(true, page.evaluate(
+          "() => document.activeElement.classList.contains('inline-edit-input')"));
+
+      // leaving the field saves once and the value survives a reload
+      page.locator("h3").first().click();
+      page.waitForTimeout(1200);
+      assertEquals(1, saves.size(), "leaving the field must save exactly once");
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:45");
+
+      // Escape still discards: display comes back and nothing is written
+      saves.clear();
+      wrap = inlineDurationWrap(page);
+      wrap.locator(".inline-edit-display").click();
+      wrap.locator(".input-group > button").last().click();
+      page.keyboard().press("Escape");
+      page.waitForTimeout(1200);
+      assertThat(wrap.locator(".inline-edit-display")).isVisible();
+      assertThat(wrap.locator(".inline-edit-field")).isHidden();
+      assertEquals(0, saves.size(), "Escape must not write anything");
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+      assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:45");
+    });
+  }
+
+  /** The first wrapper is the task description; the duration is the one holding the duration field. */
+  private Locator inlineDurationWrap(Page page) {
+    return page.locator("#daily-bookings-area .inline-edit-wrap:has(input[name='duration'])").first();
+  }
+
+  /**
+   * The duration badge next to begin/end is computed on the client, so it has to be filled once
+   * after the page has loaded — otherwise a form that comes back in begin/end mode shows the two
+   * times without their duration. The computation lives in salat.js, which is loaded at the end of
+   * the body, so the page must not reach for it while it is still parsing either.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_duration_badge_is_filled_when_the_form_loads_in_begin_end_mode(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+
+      List<String> scriptErrors = new ArrayList<>();
+      page.onPageError(scriptErrors::add);
+
+      openNewBooking(page, LocalDate.parse("2026-06-25"));
+      page.click("#btnBeginEnd");
+      page.fill("#beginTimeInput", "900");
+      page.fill("#endTimeInput", "1730");
+      page.locator("#commentField").click();
+      assertThat(page.locator("#durationBadge")).hasText("8h30");
+
+      // clearing the preselected suborder makes the server re-render the form, which is the
+      // reproducible way to get a freshly loaded page in begin/end mode
+      page.evaluate("() => document.getElementById('suborderId').tomselect.clear()");
+      page.click("#timereportMainForm button[type=submit]");
+      page.waitForLoadState();
+
+      assertThat(page.locator("#beginEndSection")).isVisible();
+      assertThat(page.locator("#beginTimeInput")).hasValue("09:00");
+      assertThat(page.locator("#endTimeInput")).hasValue("17:30");
+      assertThat(page.locator("#durationBadge")).hasText("8h30");
+
+      // "bootstrap is not defined" comes from a Tabler script unrelated to this feature
+      assertEquals(List.of(), scriptErrors.stream()
+              .filter(error -> !error.contains("bootstrap")).toList(),
+          "the page must load without script errors");
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void an_off_grid_duration_can_still_be_typed_and_saved_with_the_beta_on(E2EBrowser browser) {
+    var date = LocalDate.parse("2026-06-22");
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+      openNewBooking(page, date);
+
+      page.fill("#durationTime", "01:07");
+      book(page, date);
+
+      assertThat(page.locator("#daily-bookings-area")).containsText("1:07");
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_beta_turns_the_workingday_times_into_typeable_fields(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, false);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+      // classic: the native picker stays
+      assertThat(page.locator("#startTime")).hasAttribute("type", "time");
+
+      setBeta(page, true);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+
+      // beta: a text field, so a phone shows the numeric keypad instead of the OS wheel
+      assertThat(page.locator("#startTime")).hasAttribute("type", "text");
+
+      // sized by character count rather than by a pinned pixel value, so the width follows the
+      // font size (12px on the desktop, 16px below the md breakpoint) instead of fighting it
+      assertThat(page.locator("#startTime")).hasAttribute("size", "5");
+      assertEquals(false, page.locator("#startTime").evaluate(
+          "el => { el.value = '08:30'; return el.scrollWidth > el.clientWidth + 1; }"),
+          "an HH:MM value must fit without scrolling");
+
+      List<String> saves = new ArrayList<>();
+      page.onRequest(request -> {
+        if (request.url().contains("/dailyreport/daily/workingday")) {
+          saves.add(request.url());
+        }
+      });
+
+      // typing must not save: the response swaps the form out of the page and would take the
+      // caret with it while the user is still entering digits
+      page.fill("#startTime", "");
+      page.locator("#startTime").click();
+      page.locator("#startTime").pressSequentially("0745", new Locator.PressSequentiallyOptions().setDelay(80));
+      assertThat(page.locator("#startTime")).hasValue("07:45");
+
+      // the stepper snaps on the grid, saves nothing yet and leaves the focus in the field
+      page.click("#start-field .input-group > button:last-child");
+      assertThat(page.locator("#startTime")).hasValue("08:00");
+      page.waitForTimeout(1200);
+      assertEquals(0, saves.size(), "neither typing nor stepping may trigger a save");
+      assertEquals("startTime", page.evaluate("() => document.activeElement.id"));
+
+      // moving on to the next field saves once and leaves the caret there: the response must not
+      // swap the form back when only a time changed
+      page.locator("#breakTime").click();
+      page.waitForTimeout(1200);
+      assertEquals(1, saves.size(), "leaving the field must save exactly once");
+      assertEquals("breakTime", page.evaluate("() => document.activeElement.id"),
+          "the save must not pull the focus out of the next field");
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
+      assertThat(page.locator("#startTime")).hasValue("08:00");
+    });
+  }
+
+  /**
+   * The counterpart to the test above: a changed not-worked flag adds or removes the time fields, so
+   * here the form does have to be swapped back.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void toggling_not_worked_still_swaps_the_form_and_hides_the_time_fields(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, true);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-29", EMPLOYEE));
+      assertThat(page.locator("#start-field")).isVisible();
+
+      page.locator("#notWorked").check();
+      page.waitForTimeout(1200);
+      assertThat(page.locator("#start-field")).hasCount(0);
+      assertThat(page.locator("#break-field")).hasCount(0);
+
+      page.locator("#notWorked").uncheck();
+      page.waitForTimeout(1200);
+      assertThat(page.locator("#start-field")).isVisible();
+      // and the field is enhanced again after the swap
+      assertThat(page.locator("#start-field .input-group")).isVisible();
+    });
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_hint_on_the_daily_page_activates_the_feature(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+
+      setBeta(page, false);
+      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-23", EMPLOYEE));
+
+      assertThat(page.locator("#beta-timeinput-hint")).isVisible();
+      page.locator("#beta-timeinput-hint").getByText("Aktivieren").click();
+
+      // the HX-Refresh response reloads the page: hint gone, workingday fields enhanced
+      page.waitForSelector("#start-field .input-group");
+      assertThat(page.locator("#beta-timeinput-hint")).hasCount(0);
+      assertThat(page.locator("#break-field .input-group")).isVisible();
+    });
+  }
+
+  private void openNewBooking(Page page, LocalDate date) {
+    page.navigate(urlWithLogin("/dailyreport/timereports/new?date=" + date, EMPLOYEE));
+  }
+
+  private void book(Page page, LocalDate date) {
+    selectTomSelectOption(page, "suborderId", E2ETestData.SUBORDER_ALPHA_DEV_SIGN);
+    page.click("#timereportMainForm button[type=submit]");
+    page.waitForLoadState();
+    page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
+  }
+
+  private Locator chip(Page page, String label) {
+    return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(label));
+  }
+
+  /**
+   * Switches the beta flag and verifies it stuck — a silently unauthenticated POST would otherwise
+   * leave the tests asserting against the wrong variant.
+   */
+  private void setBeta(Page page, boolean enabled) {
+    page.navigate(urlWithLogin("/settings", EMPLOYEE));
+    var checkbox = page.locator("input[name='betaFeatures'][value='timeinput']");
+    if (enabled) {
+      checkbox.check();
+    } else {
+      checkbox.uncheck();
+    }
+    page.click("button[type=submit]");
+    page.waitForLoadState();
+    // the redirect after saving drops the dev-login query parameter, so navigate back explicitly
+    page.navigate(urlWithLogin("/settings", EMPLOYEE));
+    if (enabled) {
+      assertThat(checkbox).isChecked();
+    } else {
+      assertThat(checkbox).not().isChecked();
+    }
+  }
+
+}

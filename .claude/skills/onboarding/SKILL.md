@@ -152,7 +152,7 @@ beschreibt den Unterschied.
 
 ### 4. Architektur und Module
 
-Modularer Monolith (→ ADR-0001). Ein Modul je fachlicher Fähigkeit unter `org.tb`, die Tabelle
+Modularer Monolith (→ ADR-0001). Ein Modul je fachlicher Fähigkeit unter `de.hbt.salat`, die Tabelle
 steht in `AGENTS.md`. Innerhalb eines Moduls die Schichten `domain`, `persistence`, `service`,
 `controller`, `event`, `listener`, `viewhelper`.
 

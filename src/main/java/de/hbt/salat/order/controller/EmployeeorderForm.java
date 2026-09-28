@@ -1,0 +1,38 @@
+package de.hbt.salat.order.controller;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import lombok.Data;
+import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.common.util.DurationUtils;
+
+@Data
+public class EmployeeorderForm {
+
+    private Long id;
+    private Long customerId;
+    private Long employeeContractId;
+    private Long orderId;
+    private Long suborderId;
+    /** The suborder ID as stored in the DB when the edit form was opened; never mutated by HTMX handlers. */
+    private Long storedSuborderId;
+    private String validFrom;
+    private String validUntil;
+    private String debithours;
+    private Byte debithoursunit;
+
+    public LocalDate getValidFromTyped() {
+        return DateUtils.parseOrNull(validFrom);
+    }
+
+    public LocalDate getValidUntilTyped() {
+        if (validUntil == null || validUntil.isBlank()) return null;
+        return DateUtils.parseOrNull(validUntil);
+    }
+
+    public Duration getDebithoursTyped() {
+        if (debithours == null || debithours.isBlank()) return Duration.ZERO;
+        return DurationUtils.parseDuration(debithours);
+    }
+
+}

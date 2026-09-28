@@ -1,0 +1,556 @@
+package de.hbt.salat.order.controller;
+
+import static de.hbt.salat.common.GlobalConstants.YESNO_NO;
+import static de.hbt.salat.common.GlobalConstants.YESNO_YES;
+import static de.hbt.salat.common.util.DateUtils.format;
+import static de.hbt.salat.order.controller.OrderUiStateKeyContributor.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.common.GlobalConstants;
+import de.hbt.salat.common.LocalDateRange;
+import de.hbt.salat.common.domain.AuditedEntity;
+import de.hbt.salat.common.exception.ErrorCodeException;
+import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.common.util.DurationUtils;
+import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
+import de.hbt.salat.common.viewhelper.FilterHintViewHelper;
+import de.hbt.salat.customer.service.CustomerService;
+import de.hbt.salat.order.domain.Customerorder;
+import de.hbt.salat.order.domain.OrderType;
+import de.hbt.salat.order.domain.Suborder;
+import de.hbt.salat.order.service.CustomerorderService;
+import de.hbt.salat.order.domain.SuborderDTO;
+import de.hbt.salat.order.service.SuborderService;
+import de.hbt.salat.order.viewhelper.SuborderViewDecorator;
+
+@Controller
+@RequestMapping("/orders/suborders")
+@RequiredArgsConstructor
+@Authorized(requireUnrestricted = true)
+public class SuborderController {
+
+  private final SuborderService suborderService;
+  private final CustomerorderService customerorderService;
+  private final CustomerService customerService;
+  private final MessageSourceAccessor messages;
+  private final ErrorCodeViewHelper errorCodeViewHelper;
+  private final FilterHintViewHelper filterHintViewHelper;
+
+  @GetMapping
+  public String list(
+      @RequestParam(required = false) String fSuborderFilter,
+      @RequestParam(required = false) Long fCustomerOrderId,
+      @RequestParam(required = false) Long fCustomerId,
+      @RequestParam(required = false) Boolean fSuborderShowInactive,
+      @RequestParam(required = false) Boolean fSuborderShowActualHours,
+      @RequestParam(required = false) Boolean fSuborderShowHidden,
+      HttpServletRequest request,
+      Model model) {
+    var filterSet = (fSuborderFilter != null && !fSuborderFilter.isEmpty()) || fCustomerId != null || fCustomerOrderId != null;
+    var suborders = filterSet ? suborderService.getSubordersByFilters(fSuborderShowInactive, fSuborderFilter, fCustomerOrderId, fCustomerId, fSuborderShowHidden) : List.<Suborder>of();
+    if (Boolean.TRUE.equals(fSuborderShowActualHours)) {
+      List<SuborderViewDecorator> decorators = new LinkedList<>();
+      for (Suborder so : suborders) {
+        decorators.add(new SuborderViewDecorator(suborderService, so));
+      }
+      model.addAttribute("suborders", decorators);
+    } else {
+      model.addAttribute("suborders", suborders);
+    }
+    var visibleCustomerOrders = customerorderService.getVisibleCustomerorders();
+    final var selectedCustomerId = fCustomerId;
+    if (fCustomerId != null && fCustomerId > 0) {
+      visibleCustomerOrders = visibleCustomerOrders.stream()
+          .filter(co -> co.getCustomer().getId().equals(selectedCustomerId))
+          .toList();
+    }
+    model.addAttribute("customers", customerService.getSelectableCustomers(fCustomerId));
+    model.addAttribute("visibleCustomerOrders", visibleCustomerOrders);
+    model.addAttribute("fSuborderFilter", fSuborderFilter);
+    model.addAttribute("fCustomerId", fCustomerId);
+    model.addAttribute("fCustomerOrderId", fCustomerOrderId);
+    model.addAttribute("fSuborderShowInactive", fSuborderShowInactive);
+    model.addAttribute("fSuborderShowHidden", fSuborderShowHidden);
+    model.addAttribute("fSuborderShowActualHours", Boolean.TRUE.equals(fSuborderShowActualHours));
+    model.addAttribute("section", "orders");
+    model.addAttribute("subSection", "suborders");
+    model.addAttribute("pageTitle", messages.getMessage("main.general.mainmenu.suborders.text", "Suborders"));
+    model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    return htmxRequest ? "order/sub-order-list :: results" : "order/sub-order-list";
+  }
+
+  /**
+   * The "add another suborder" action after saving names the order it just created as
+   * {@code customerorderId}, the form field — a button that opens a form must not change the
+   * filter of the list behind it (ADR-0023). Without it the form is prefilled with what the list
+   * is filtered to.
+   */
+  @Authorized(requiresManager = true)
+  @GetMapping("/create")
+  public String createForm(
+      @RequestParam(required = false) Long customerorderId,
+      @RequestParam(required = false) Long fCustomerOrderId,
+      @RequestParam(required = false) Long fCustomerId,
+      Model model) {
+    var orderId = customerorderId != null ? customerorderId : fCustomerOrderId;
+    var form = new SuborderForm();
+    form.setInvoice(true);
+    form.setStandard(false);
+    form.setCommentnecessary(true);
+    form.setFixedPrice(false);
+    form.setTrainingFlag(false);
+    form.setHide(false);
+    form.setOrderType(OrderType.STANDARD);
+    form.setCustomerId(fCustomerId);
+    form.setCustomerorderId(orderId);
+    form.setParentId(orderId);
+    addFormModel(model, form, false, true);
+    prefillValidity(form);
+    return "order/sub-order-form";
+  }
+
+  @Authorized(requiresManager = true)
+  @GetMapping("/{id}/edit")
+  public String editForm(@PathVariable Long id, Model model) {
+    Suborder so = suborderService.getSuborderById(id);
+    var form = toForm(so);
+    addFormModel(model, form, true, true);
+    return "order/sub-order-form";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/store")
+  public String store(@ModelAttribute("suborderForm") SuborderForm form,
+                      BindingResult bindingResult,
+                      Model model,
+                      RedirectAttributes redirectAttributes) {
+    validateForm(form, bindingResult);
+
+    boolean hasErrors = bindingResult.hasErrors();
+    boolean isCreate = form.getId() == null;
+    Long customerorderId = form.getCustomerorderId();
+    if (!hasErrors) {
+      try {
+        char invoice = form.getInvoice() != null && form.getInvoice() ? YESNO_YES : YESNO_NO;
+        SuborderDTO data = new SuborderDTO(
+            form.getCustomerorderId(),
+            form.getSign(),
+            form.getDescription(),
+            form.getShortdescription(),
+            form.getSuborder_customer(),
+            invoice,
+            form.getStandard(),
+            form.getCommentnecessary(),
+            form.getFixedPrice(),
+            form.getTrainingFlag(),
+            form.getOrderType(),
+            form.getValidFrom(),
+            form.getValidUntil(),
+            form.getDebithours(),
+            form.getDebithoursunit(),
+            form.getHide(),
+            form.getParentId()
+        );
+        if (isCreate) {
+          suborderService.create(data, form.getCustomerorderId());
+        } else {
+          suborderService.update(form.getId(), data, form.getCustomerorderId());
+        }
+      } catch (ErrorCodeException ex) {
+        model.addAttribute("errors", errorCodeViewHelper.toViewMessages(ex));
+        hasErrors = true;
+      }
+    }
+
+    if (hasErrors) {
+      addFormModel(model, form, form.getId() != null);
+      return "order/sub-order-form";
+    }
+
+    // The filter stays as the user left it (ADR-0023); where it hides the saved suborder, the
+    // message says so instead of the list silently not showing it.
+    filterHintViewHelper.addSuccess(redirectAttributes,
+        messages.getMessage("form.suborder.message.stored", "Suborder saved successfully"),
+        SUBORDER_FILTER, CUSTOMER_ID, CUSTOMER_ORDER_ID);
+    if (isCreate && customerorderId != null) {
+      redirectAttributes.addFlashAttribute("toastAction", "/orders/suborders/create?customerorderId=" + customerorderId);
+      redirectAttributes.addFlashAttribute("toastActionLabel",
+          messages.getMessage("main.general.button.add.another.suborder.text", "Add Another Suborder"));
+    }
+    return "redirect:/orders/suborders";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/{id}/toggle-hide")
+  public String toggleHide(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    try {
+      var so = suborderService.toggleHide(id);
+      model.addAttribute("so", so);
+      return "fragments/hide-toggle :: suborderHideFlag";
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream().map(Object::toString).findFirst().orElse("Error"));
+      return "redirect:/orders/suborders";
+    }
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/{id}/delete")
+  public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    try {
+      suborderService.deleteSuborderById(id);
+      redirectAttributes.addFlashAttribute("toastSuccess",
+          messages.getMessage("form.suborder.message.deleted", "Suborder deleted successfully"));
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError",
+          errorCodeViewHelper.toViewMessages(ex).stream()
+              .map(Object::toString).findFirst().orElse("Error deleting suborder"));
+    }
+    return "redirect:/orders/suborders";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/{id}/copy")
+  public String copy(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    suborderService.createCopy(id);
+    redirectAttributes.addFlashAttribute("toastSuccess",
+        messages.getMessage("form.suborder.message.copied", "Suborder copied successfully"));
+    return "redirect:/orders/suborders";
+  }
+
+  @Authorized(requiresManager = true)
+  @GetMapping("/sign")
+  @ResponseBody
+  public String generateSign(
+      @RequestParam Long customerorderId,
+      @RequestParam Long parentId,
+      @RequestParam(required = false) Long currentId) {
+    List<Suborder> siblings;
+    if (Objects.equals(parentId, customerorderId)) {
+      siblings = suborderService.getSubordersByCustomerorderId(customerorderId).stream()
+          .filter(so -> so.getParentorder() == null)
+          .toList();
+    } else {
+      siblings = suborderService.getSuborderChildren(parentId);
+    }
+    int version = 1;
+    DecimalFormat df = new DecimalFormat("00");
+    for (Suborder sibling : siblings) {
+      if (sibling.getCompleteOrderSign().endsWith("/" + df.format(version))
+          && !Objects.equals(sibling.getId(), currentId)) {
+        version++;
+      }
+    }
+    return df.format(version);
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/change-customer")
+  public String changeCustomer(@ModelAttribute("suborderForm") SuborderForm form, Model model,
+                               HttpServletRequest request) {
+    form.setCustomerorderId(null);
+    form.setParentId(null);
+    addFormModel(model, form, form.getId() != null);
+    prefillValidity(form);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("customerordersChanged", true);
+    model.addAttribute("parentSubordersChanged", true);
+    model.addAttribute("datesChanged", true);
+    return "order/sub-order-form";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/change-customerorder")
+  public String changeCustomerorder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
+                                    HttpServletRequest request) {
+    form.setParentId(form.getCustomerorderId());
+    addFormModel(model, form, form.getId() != null);
+    prefillValidity(form);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("parentSubordersChanged", true);
+    model.addAttribute("datesChanged", true);
+    return "order/sub-order-form";
+  }
+
+  @Authorized(requiresManager = true)
+  @PostMapping("/change-parent-order")
+  public String changeParentOrder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
+      HttpServletRequest request) {
+    addFormModel(model, form, form.getId() != null);
+    prefillValidity(form);
+    boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
+    model.addAttribute("htmxRequest", htmxRequest);
+    model.addAttribute("datesChanged", true);
+    return "order/sub-order-form";
+  }
+
+  private void prefillValidity(SuborderForm form) {
+    if(form.getParentId() != null) {
+      if(Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+        var order = customerorderService.getCustomerorderById(form.getCustomerorderId());
+        var from = order.getFromDate();
+        var until = order.getUntilDate();
+        form.setValidFrom(format(from));
+        form.setValidUntil(until != null ? format(until) : "");
+      } else {
+        Suborder order = suborderService.getSuborderById(form.getParentId());
+        var from = order.getFromDate();
+        var until = order.getUntilDate();
+        form.setValidFrom(format(from));
+        form.setValidUntil(until != null ? format(until) : "");
+      }
+    }
+  }
+
+  private void validateForm(SuborderForm form, BindingResult bindingResult) {
+    // Sign
+    if (form.getSign() == null || form.getSign().isEmpty()) {
+      bindingResult.rejectValue("sign", "error.sign",
+          messages.getMessage("form.suborder.error.sign.required", "Sign is required"));
+    } else if (form.getSign().length() > GlobalConstants.CUSTOMERORDER_SIGN_MAX_LENGTH) {
+      bindingResult.rejectValue("sign", "error.sign",
+          messages.getMessage("form.suborder.error.sign.toolong", "Sign is too long"));
+    }
+
+    // Description
+    if (form.getDescription() == null || form.getDescription().trim().isEmpty()) {
+      bindingResult.rejectValue("description", "error.description",
+          messages.getMessage("form.error.description.necessary", "Description is required"));
+    } else if (form.getDescription().length() > GlobalConstants.SUBORDER_DESCRIPTION_MAX_LENGTH) {
+      bindingResult.rejectValue("description", "error.description",
+          messages.getMessage("form.suborder.error.description.toolong", "Description is too long"));
+    }
+
+    if (form.getShortdescription() != null
+        && form.getShortdescription().length() > GlobalConstants.SUBORDER_SHORT_DESCRIPTION_MAX_LENGTH) {
+      bindingResult.rejectValue("shortdescription", "error.shortdescription",
+          messages.getMessage("form.suborder.error.shortdescription.toolong", "Short description is too long"));
+    }
+
+    if (form.getSuborder_customer() != null
+        && form.getSuborder_customer().length() > GlobalConstants.SUBORDER_SUBORDER_CUSTOMER_MAX_LENGTH) {
+      bindingResult.rejectValue("suborder_customer", "error.suborder_customer",
+          messages.getMessage("form.suborder.error.suborder_customer.toolong", "Suborder customer is too long"));
+    }
+
+    // Dates
+    LocalDate suborderFromDate = null;
+    if (DateUtils.validateDate(form.getValidFrom())) {
+      suborderFromDate = DateUtils.parse(form.getValidFrom());
+    } else {
+      bindingResult.rejectValue("validFrom", "error.validFrom",
+          messages.getMessage("form.timereport.error.date.wrongformat", "Invalid date format"));
+    }
+
+    LocalDate suborderUntilDate = null;
+    if (form.getValidUntil() != null && !form.getValidUntil().trim().isEmpty()) {
+      if (DateUtils.validateDate(form.getValidUntil())) {
+        suborderUntilDate = DateUtils.parse(form.getValidUntil());
+      } else {
+        bindingResult.rejectValue("validUntil", "error.validUntil",
+            messages.getMessage("form.timereport.error.date.wrongformat", "Invalid date format"));
+      }
+    }
+
+    if (suborderFromDate != null && suborderUntilDate != null
+        && suborderUntilDate.isBefore(suborderFromDate)) {
+      bindingResult.rejectValue("validUntil", "error.validUntil",
+          messages.getMessage("form.suborder.error.date.untilbeforefrom", "Until date must not be before from date"));
+    }
+
+    // Debit hours
+    if (!DurationUtils.validateDuration(form.getDebithours())) {
+      bindingResult.rejectValue("debithours", "error.debithours",
+          messages.getMessage("form.customerorder.error.debithours.wrongformat", "Invalid debit hours format"));
+    }
+
+    // Customer order date range check
+    if (form.getCustomerorderId() != null) {
+      Customerorder customerorder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+      if (customerorder == null) {
+        bindingResult.rejectValue("customerorderId", "error.customerorderId",
+            messages.getMessage("form.suborder.error.customerorder.notfound", "Customer order not found"));
+      } else if (suborderFromDate != null) {
+        LocalDate coFromDate = customerorder.getFromDate();
+        LocalDate coUntilDate = customerorder.getUntilDate();
+        if (coFromDate != null && suborderFromDate.isBefore(coFromDate)) {
+          bindingResult.rejectValue("validFrom", "error.validFrom",
+              messages.getMessage("form.suborder.error.date.outofrange.order", "From date is out of range of the customer order"));
+        }
+        if (!(coUntilDate == null || suborderUntilDate != null && !suborderUntilDate.isAfter(coUntilDate))) {
+          bindingResult.rejectValue("validUntil", "error.validUntil",
+              messages.getMessage("form.suborder.error.date.outofrange.order", "Until date is out of range of the customer order"));
+        }
+      }
+    }
+
+    // Parent suborder date range check
+    if (form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+      Suborder parentSuborder = suborderService.getSuborderById(form.getParentId());
+      if (parentSuborder != null
+          && Objects.equals(parentSuborder.getCustomerorder().getId(), form.getCustomerorderId())
+          && suborderFromDate != null) {
+        LocalDate parentFromDate = parentSuborder.getFromDate();
+        LocalDate parentUntilDate = parentSuborder.getUntilDate();
+        if (parentFromDate != null && suborderFromDate.isBefore(parentFromDate)) {
+          bindingResult.rejectValue("validFrom", "error.validFrom",
+              messages.getMessage("form.suborder.error.date.outofrange.suborder", "From date is out of range of the parent suborder"));
+        }
+        if (!(parentUntilDate == null || suborderUntilDate != null && !suborderUntilDate.isAfter(parentUntilDate))) {
+          bindingResult.rejectValue("validUntil", "error.validUntil",
+              messages.getMessage("form.suborder.error.date.outofrange.suborder", "Until date is out of range of the parent suborder"));
+        }
+      }
+    }
+
+    // Sign uniqueness among siblings
+    if (form.getSign() != null && !form.getSign().isBlank() && suborderFromDate != null) {
+      var validityToCheck = new LocalDateRange(suborderFromDate, suborderUntilDate);
+      Long currentId = form.getId();
+      String signToCheck = form.getSign();
+      List<Suborder> siblings;
+      if (form.getParentId() == null || Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+        siblings = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()).stream()
+            .filter(s -> s.getParentorder() == null)
+            .filter(s -> !s.getId().equals(currentId))
+            .toList();
+      } else {
+        siblings = suborderService.getSuborderChildren(form.getParentId()).stream()
+            .filter(s -> s.getParentorder() != null && s.getParentorder().getId().equals(form.getParentId()))
+            .filter(s -> !s.getId().equals(currentId))
+            .toList();
+      }
+      for (Suborder sibling : siblings) {
+        if (sibling.getValidity().overlaps(validityToCheck)
+            && sibling.getSign().equalsIgnoreCase(signToCheck)) {
+          bindingResult.rejectValue("sign", "error.sign",
+              messages.getMessage("form.suborder.error.sign.alreadyexists", "Sign already exists for this period"));
+          break;
+        }
+      }
+    }
+  }
+
+  private void addFormModel(Model model, SuborderForm form, boolean isEdit) {
+    addFormModel(model, form, isEdit, false);
+  }
+
+  private void addFormModel(Model model, SuborderForm form, boolean isEdit, boolean initialize) {
+    model.addAttribute("suborderForm", form);
+    model.addAttribute("orderTypes", OrderType.values());
+    model.addAttribute("isEdit", isEdit);
+    model.addAttribute("section", "orders");
+    model.addAttribute("subSection", "suborders");
+    model.addAttribute("sectionTitle", messages.getMessage("main.general.mainmenu.orders.text", "Orders"));
+    String titleKey = isEdit ? "main.general.editsuborder.text" : "main.general.addsuborder.text";
+    model.addAttribute("pageTitle", messages.getMessage(titleKey, isEdit ? "Edit Suborder" : "Create Suborder"));
+
+    if(initialize) {
+      if(form.getCustomerorderId() != null && form.getCustomerId() == null) {
+        var order = customerorderService.getCustomerorderById(form.getCustomerorderId());
+        if(order != null) {
+          form.setCustomerId(order.getCustomer().getId());
+        }
+      }
+    }
+
+    var customers = customerService.getSelectableCustomers(form.getCustomerId());
+    model.addAttribute("customers", customers);
+    if (form.getCustomerId() == null && !customers.isEmpty()) {
+      form.setCustomerId(customers.getFirst().getId());
+    }
+
+    // Customer orders for the dropdown (all visible if manager, else only responsible ones)
+    var customerorders = new ArrayList<>(customerorderService.getVisibleCustomerorders().stream()
+            .filter(co -> co.getCustomer().getId().equals(form.getCustomerId()))
+            .toList());
+    // In edit mode, ensure the stored order appears even if hidden or expired
+    if (isEdit && form.getCustomerorderId() != null
+            && customerorders.stream().noneMatch(co -> Objects.equals(co.getId(), form.getCustomerorderId()))) {
+      Customerorder storedOrder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+      if (storedOrder != null) {
+        customerorders.add(storedOrder);
+      }
+    }
+    customerorders.sort(Comparator.comparing(Customerorder::getSign));
+    model.addAttribute("customerorders", customerorders);
+    if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
+      form.setCustomerorderId(customerorders.getFirst().getId());
+      form.setParentId(form.getCustomerorderId());
+    }
+
+    // Suborders of the current customer order for parent dropdown — exclude the suborder being
+    // edited, and keep the stored parent even when it is hidden: without it the guard below would
+    // drop the parent and the save would move the suborder to the top level (#1005)
+    var parentSuborders = suborderService
+        .getSelectableSubordersByCustomerorderId(form.getCustomerorderId(), form.getParentId())
+        .stream()
+        .filter(so -> !Objects.equals(so.getId(), form.getId()))
+        .toList();
+    var currentCustomerorder = customerorderService.getCustomerorderById(form.getCustomerorderId());
+    model.addAttribute("parentSuborders", parentSuborders);
+    model.addAttribute("currentCustomerorder", currentCustomerorder);
+
+    if(form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+      var matched = parentSuborders.stream()
+              .map(AuditedEntity::getId)
+              .anyMatch(id -> Objects.equals(id, form.getParentId()));
+      if(!matched) {
+        form.setParentId(null);
+      }
+    }
+
+  }
+
+  private SuborderForm toForm(Suborder so) {
+    var form = new SuborderForm();
+    form.setId(so.getId());
+    form.setCustomerId(so.getCustomerorder().getCustomer().getId());
+    form.setCustomerorderId(so.getCustomerorder().getId());
+    form.setSign(so.getSign());
+    form.setDescription(so.getDescription());
+    form.setShortdescription(so.getShortdescription());
+    form.setSuborder_customer(so.getSuborder_customer());
+    form.setInvoice(YESNO_YES == so.getInvoice());
+    form.setStandard(so.getStandard());
+    form.setCommentnecessary(so.getCommentnecessary());
+    form.setFixedPrice(so.getFixedPrice());
+    form.setTrainingFlag(so.getTrainingFlag());
+    form.setHide(so.isHide());
+    form.setOrderType(so.getOrderType());
+    form.setValidFrom(format(so.getFromDate()));
+    form.setValidUntil(so.getUntilDate() != null ? format(so.getUntilDate()) : "");
+    if (so.getDebithours() != null && !so.getDebithours().isZero()) {
+      form.setDebithours(DurationUtils.format(so.getDebithours()));
+      form.setDebithoursunit(so.getDebithoursunit());
+    }
+    Long parentId = so.getParentorder() != null ? so.getParentorder().getId() : so.getCustomerorder().getId();
+    form.setParentId(parentId);
+    return form;
+  }
+}
