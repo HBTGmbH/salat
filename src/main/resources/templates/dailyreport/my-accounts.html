@@ -225,6 +225,21 @@
         <!-- ── Tab 3: Training ────────────────────────────────────────── -->
         <div class="tab-pane" id="tab-training">
 
+          <!--/* Zeitraum des Reiters (#1175): jede Wahl laedt die Seite fuer denselben Vertrag neu und
+                 oeffnet wieder diesen Reiter. Links statt Radio-Knoepfen, weil die Wahl eine andere
+                 Seite ist; aria-current nennt die gewaehlte. */-->
+          <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+            <div class="btn-group" role="group" th:aria-label="#{main.my.accounts.training.period.label}">
+              <a th:each="p : ${trainingPeriods}" class="btn"
+                 th:classappend="${p.name() == trainingPeriod} ? 'active'"
+                 th:attr="aria-current=${p.name() == trainingPeriod} ? 'true' : null"
+                 th:href="@{/my-accounts(fEmployeeContractId=${selectedContractId},trainingPeriod=${p.name()})} + '#tab-training'"
+                 th:text="#{${p.messageKey}}">Aktuelles Jahr</a>
+            </div>
+            <span class="text-muted"
+                  th:text="${#temporals.format(trainingFrom, 'dd.MM.yyyy')} + ' – ' + ${#temporals.format(trainingUntil, 'dd.MM.yyyy')}">01.01.2026 – 28.09.2026</span>
+          </div>
+
           <!-- Summary KPIs -->
           <div class="row g-3 mb-3">
             <div class="col-12 col-sm-6 d-flex">
@@ -266,7 +281,7 @@
           </div>
 
           <!-- Monthly training chart -->
-          <div class="card mb-3" th:if="${not #lists.isEmpty(trainingChartLabels)}">
+          <div class="card mb-3" th:if="${not #lists.isEmpty(trainingBookings)}">
             <div class="card-header">
               <h3 class="card-title">
                 <i class="bi bi-bar-chart me-2 text-muted"></i>
@@ -424,6 +439,7 @@
       const vacationMonthSpecialPlannedDays = [[${vacationMonthSpecialPlannedDays}]];
       const trainingChartLabels = [[${trainingChartLabels}]];
       const trainingChartHours = [[${trainingChartHours}]];
+      const trainingChartOrderHours = [[${trainingChartOrderHours}]];
 
       /* Die Balkenfarben kommen aus den Tabler-Tokens statt als Literale aus dem JavaScript
          (#1022). Gelesen wird wie in tabler.getColor die Variable --tblr-<name> vom Body; der
@@ -443,7 +459,7 @@
          "Bewegung reduzieren" gewaehlt; dann stehen sie sofort da. */
       const animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const barChart = (element, categories, series, colors, stacked, tooltip) => new ApexCharts(element, {
+      const barChart = (element, { categories, series, colors, stacked = false, tooltip, legend }) => new ApexCharts(element, {
         chart: {
           type: 'bar', stacked: stacked, height: parseInt(element.style.height, 10), fontFamily: 'inherit',
           parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false },
@@ -461,7 +477,8 @@
           tooltip: { enabled: false }, labels: { style: { fontSize: '13px' } }
         },
         yaxis: { labels: { formatter: number, style: { fontSize: '13px' } } },
-        legend: { show: series.length > 1, position: 'top', horizontalAlign: 'left', fontSize: '13px', markers: { strokeWidth: 0 } },
+        legend: { show: series.length > 1, position: 'top', horizontalAlign: 'left', fontSize: '13px',
+          ...legend, markers: { strokeWidth: 0, ...(legend && legend.markers) } },
         tooltip: tooltip || { y: { formatter: number } }
       });
 
@@ -477,13 +494,29 @@
         document.getElementById(paneId + '-button').addEventListener('shown.bs.tab', render);
       };
 
-      // Working time chart
+      /* Arbeitszeit als "Column with Markers": die Ist-Stunden als Saeule, das Soll als Markierung
+         quer ueber ihr (ApexCharts goals). Ob ein Monat darueber oder darunter liegt, steht so an
+         einer Saeule statt im Vergleich zweier nebeneinander. Die Legende nennt beide, auch wenn
+         es nur eine Reihe gibt. */
       const workingTimeChart = document.getElementById('workingTimeChart');
       if (workingTimeChart) {
-        renderWhenShown('tab-working-time', () => barChart(workingTimeChart, chartLabels, [
-          { name: /*[[#{main.my.accounts.working.chart.actual}]]*/ 'Ist', data: chartActual },
-          { name: /*[[#{main.my.accounts.working.chart.target}]]*/ 'Soll', data: chartTarget }
-        ], [tblrColor('primary'), tblrColor('gray-400')], false));
+        const actualName = /*[[#{main.my.accounts.working.chart.actual}]]*/ 'Ist';
+        const targetName = /*[[#{main.my.accounts.working.chart.target}]]*/ 'Soll';
+        const actualColor = tblrColor('primary');
+        const targetColor = tblrColor('orange');
+        renderWhenShown('tab-working-time', () => barChart(workingTimeChart, {
+          categories: chartLabels,
+          series: [{
+            name: actualName,
+            data: chartActual.map((value, index) => ({
+              x: chartLabels[index], y: value,
+              goals: [{ name: targetName, value: chartTarget[index], strokeHeight: 4, strokeLineCap: 'round', strokeColor: targetColor }]
+            }))
+          }],
+          colors: [actualColor],
+          legend: { show: true, showForSingleSeries: true, customLegendItems: [actualName, targetName],
+            markers: { fillColors: [actualColor, targetColor] } }
+        }));
       }
 
       /* Urlaub in den Farben der Fortschrittsbalken darueber - azure, geplant in hellerer Stufe
@@ -505,20 +538,42 @@
         const daysUnit = /*[[#{main.my.accounts.vacation.days}]]*/ 'Tage';
         const days = (value) => number(value) + ' ' + (value === 1 ? dayUnit : daysUnit);
         const monthTotal = (index) => series.reduce((sum, s) => sum + (s.data[index] || 0), 0);
-        renderWhenShown('tab-vacation', () => barChart(vacationChart, vacationMonthLabels,
-            series.map(s => ({ name: s.name, data: s.data })), series.map(s => s.color), true, {
-              shared: true, intersect: false, hideEmptySeries: true,
-              x: { formatter: (label, context) => label + ': ' + days(monthTotal(context.dataPointIndex)) },
-              y: { formatter: days }
-            }));
+        renderWhenShown('tab-vacation', () => barChart(vacationChart, {
+          categories: vacationMonthLabels,
+          series: series.map(s => ({ name: s.name, data: s.data })),
+          colors: series.map(s => s.color),
+          stacked: true,
+          tooltip: {
+            shared: true, intersect: false, hideEmptySeries: true,
+            x: { formatter: (label, context) => label + ': ' + days(monthTotal(context.dataPointIndex)) },
+            y: { formatter: days }
+          }
+        }));
       }
 
-      // Training monthly chart
+      /* Fortbildung gestapelt: regulaere und projektbezogene je in eigener Farbe, wie die beiden
+         Kennzahlen darueber sie trennen (#1175). Ein Popup je Monat mit beiden Werten und ihrer
+         Summe; eine Art ohne Stunden im Zeitraum bleibt aus Legende und Popup. */
       const trainingChart = document.getElementById('trainingChart');
       if (trainingChart && trainingChartLabels.length > 0) {
-        renderWhenShown('tab-training', () => barChart(trainingChart, trainingChartLabels, [
-          { name: /*[[#{main.my.accounts.training.booking.hours}]]*/ 'Stunden', data: trainingChartHours }
-        ], [tblrColor('purple')], false));
+        const trainingSeries = [
+          { name: /*[[#{main.my.accounts.training.regular.hours}]]*/ 'Reguläre Fortbildung', data: trainingChartHours, color: tblrColor('purple') },
+          { name: /*[[#{main.my.accounts.training.order.hours}]]*/ 'Projektbezogene Fortbildung', data: trainingChartOrderHours, color: tblrColor('teal') }
+        ].filter(s => s.data.some(v => v > 0));
+        const hoursUnit = /*[[#{main.my.accounts.training.booking.hours}]]*/ 'Stunden';
+        const hours = (value) => number(value) + ' ' + hoursUnit;
+        const trainingTotal = (index) => trainingSeries.reduce((sum, s) => sum + (s.data[index] || 0), 0);
+        renderWhenShown('tab-training', () => barChart(trainingChart, {
+          categories: trainingChartLabels,
+          series: trainingSeries.map(s => ({ name: s.name, data: s.data })),
+          colors: trainingSeries.map(s => s.color),
+          stacked: true,
+          tooltip: {
+            shared: true, intersect: false, hideEmptySeries: true,
+            x: { formatter: (label, context) => label + ': ' + hours(trainingTotal(context.dataPointIndex)) },
+            y: { formatter: hours }
+          }
+        }));
       }
 
       // Sync URL hash with active tab
