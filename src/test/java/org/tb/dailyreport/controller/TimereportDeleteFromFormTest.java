@@ -120,7 +120,7 @@ class TimereportDeleteFromFormTest {
   void the_create_form_never_offers_deleting() {
     var model = new ExtendedModelMap();
 
-    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, null, model);
+    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, null, null, null, model);
 
     assertThat(model.containsAttribute("deletableTimereport")).isFalse();
     verify(timereportService, never()).isWriteAllowed(anyLong());
