@@ -76,7 +76,7 @@ class AuthorizationRuleControllerTest {
     @Test
     void editingKeepsWhatTheRuleAlreadyNamesEvenWhenItIsHidden() {
         when(authorizationRuleService.getById(1L)).thenReturn(new AuthorizationRuleInfo(
-            1L, "EMPLOYEE", "main.auth.rule.category.employee",
+            1L, "Vertretung", "EMPLOYEE", "main.auth.rule.category.employee",
             List.of(HIDDEN_LOGIN), List.of(HIDDEN_LOGIN), List.of(LOGIN), null, null));
         var model = new ExtendedModelMap();
 

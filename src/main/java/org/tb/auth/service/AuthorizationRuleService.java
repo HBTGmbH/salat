@@ -1,11 +1,16 @@
 package org.tb.auth.service;
 
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.nullsLast;
 import static org.tb.auth.service.AuthService.ANY_MATCH;
 import static org.tb.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static org.tb.common.exception.ErrorCode.AR_ACCESS_LEVEL_REQUIRED;
 import static org.tb.common.exception.ErrorCode.AR_CATEGORY_REQUIRED;
 import static org.tb.common.exception.ErrorCode.AR_GRANTEE_REQUIRED;
+import static org.tb.common.exception.ErrorCode.AR_NAME_REQUIRED;
+import static org.tb.common.exception.ErrorCode.AR_NAME_TAKEN;
+import static org.tb.common.exception.ErrorCode.AR_NAME_TOO_LONG;
 import static org.tb.common.exception.ErrorCode.AR_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.AR_OBJECT_MALFORMED;
 import static org.tb.common.exception.ErrorCode.AR_VALIDITY_INVALID;
@@ -44,6 +49,10 @@ import org.tb.common.util.DateUtils;
  *
  * <p>Every write clears the rule cache. Without that the rule sits in the database and stays without effect for up to
  * {@code salat.auth-service.cache-expiry} — precisely the confusion that maintaining rules by hand produces today.
+ *
+ * <p>Every rule carries a name that says what it is for (#1168) — required when saving, unique regardless of case. The
+ * name is for people only; {@link AuthService} never reads it. Rules from before the name stay valid without one and
+ * get it the next time they are saved.
  */
 @Slf4j
 @Service
@@ -61,12 +70,14 @@ public class AuthorizationRuleService {
   private final AuthService authService;
   private final AuthorizedUser authorizedUser;
 
+  /** Sorted by name; the rules without one come last, in the order the list had before names existed. */
   @Transactional(readOnly = true)
   public List<AuthorizationRuleInfo> getAll() {
     requireManager();
     return StreamSupport.stream(authorizationRuleRepository.findAll().spliterator(), false)
         .map(this::toInfo)
-        .sorted(comparing(AuthorizationRuleInfo::category)
+        .sorted(comparing(AuthorizationRuleInfo::name, nullsLast(CASE_INSENSITIVE_ORDER))
+            .thenComparing(AuthorizationRuleInfo::category)
             .thenComparing(info -> String.join(",", info.granteeIds())))
         .toList();
   }
@@ -124,12 +135,12 @@ public class AuthorizationRuleService {
    */
   public List<String> create(AuthorizationRuleData data) {
     requireManager();
-    validate(data);
+    validate(data, null);
     var rule = new AuthorizationRule();
     apply(data, rule);
     authorizationRuleRepository.save(rule);
-    log.info("Authorization rule created by {}: category={} grantees={} objects={} levels={} validity={}..{}",
-        authorizedUser.getLoginSign(), data.category(), data.granteeIds(), data.objectIds(), data.accessLevels(),
+    log.info("Authorization rule '{}' created by {}: category={} grantees={} objects={} levels={} validity={}..{}",
+        rule.getName(), authorizedUser.getLoginSign(), data.category(), data.granteeIds(), data.objectIds(), data.accessLevels(),
         data.validFrom(), data.validUntil());
     authService.clearCache();
     return unknownObjects(data);
@@ -140,12 +151,12 @@ public class AuthorizationRuleService {
    */
   public List<String> update(long id, AuthorizationRuleData data) {
     requireManager();
-    validate(data);
+    validate(data, id);
     var rule = load(id);
     apply(data, rule);
     authorizationRuleRepository.save(rule);
-    log.info("Authorization rule {} changed by {}: category={} grantees={} objects={} levels={} validity={}..{}",
-        id, authorizedUser.getLoginSign(), data.category(), data.granteeIds(), data.objectIds(), data.accessLevels(),
+    log.info("Authorization rule {} '{}' changed by {}: category={} grantees={} objects={} levels={} validity={}..{}",
+        id, rule.getName(), authorizedUser.getLoginSign(), data.category(), data.granteeIds(), data.objectIds(), data.accessLevels(),
         data.validFrom(), data.validUntil());
     authService.clearCache();
     return unknownObjects(data);
@@ -160,20 +171,25 @@ public class AuthorizationRuleService {
     var rule = load(id);
     rule.setValidUntil(DateUtils.today());
     authorizationRuleRepository.save(rule);
-    log.info("Authorization rule {} ended by {} as of {}", id, authorizedUser.getLoginSign(), DateUtils.today());
+    log.info("Authorization rule {} '{}' ended by {} as of {}",
+        id, rule.getName(), authorizedUser.getLoginSign(), DateUtils.today());
     authService.clearCache();
   }
 
   public void delete(long id) {
     requireManager();
     var rule = load(id);
-    log.info("Authorization rule {} deleted by {}: category={} grantees={} objects={}",
-        id, authorizedUser.getLoginSign(), rule.getCategory(), rule.getGranteeId(), rule.getObjectId());
+    log.info("Authorization rule {} '{}' deleted by {}: category={} grantees={} objects={}",
+        id, rule.getName(), authorizedUser.getLoginSign(), rule.getCategory(), rule.getGranteeId(), rule.getObjectId());
     authorizationRuleRepository.delete(rule);
     authService.clearCache();
   }
 
-  private void validate(AuthorizationRuleData data) {
+  /**
+   * @param id the rule being changed, {@code null} for a new one — a rule keeping its own name is no conflict
+   */
+  private void validate(AuthorizationRuleData data, Long id) {
+    validateName(data.name(), id);
     if (data.category() == null || data.category().isBlank()) {
       throw new InvalidDataException(AR_CATEGORY_REQUIRED);
     }
@@ -197,6 +213,21 @@ public class AuthorizationRuleService {
         .ifPresent(entry -> {
           throw new InvalidDataException(AR_OBJECT_MALFORMED, entry.getKey());
         });
+  }
+
+  private void validateName(String name, Long id) {
+    var trimmed = trimmed(name);
+    if (trimmed == null) {
+      throw new InvalidDataException(AR_NAME_REQUIRED);
+    }
+    if (trimmed.length() > COLUMN_LENGTH) {
+      throw new InvalidDataException(AR_NAME_TOO_LONG);
+    }
+    var taken = authorizationRuleRepository.findAllByNameIgnoreCase(trimmed).stream()
+        .anyMatch(other -> !other.getId().equals(id));
+    if (taken) {
+      throw new InvalidDataException(AR_NAME_TAKEN, trimmed);
+    }
   }
 
   private List<String> unknownObjects(AuthorizationRuleData data) {
@@ -225,6 +256,7 @@ public class AuthorizationRuleService {
   }
 
   private void apply(AuthorizationRuleData data, AuthorizationRule rule) {
+    rule.setName(trimmed(data.name()));
     rule.setCategory(data.category().trim());
     rule.setGranteeId(new LinkedHashSet<>(cleaned(data.granteeIds())));
     rule.setObjectId(new LinkedHashSet<>(cleaned(data.objectIds())));
@@ -236,6 +268,7 @@ public class AuthorizationRuleService {
   private AuthorizationRuleInfo toInfo(AuthorizationRule rule) {
     return new AuthorizationRuleInfo(
         rule.getId(),
+        rule.getName(),
         rule.getCategory(),
         providerOf(rule.getCategory()).map(AuthorizationObjectProvider::labelKey).orElse(null),
         List.copyOf(rule.getGranteeId()),
@@ -261,6 +294,13 @@ public class AuthorizationRuleService {
         .filter(value -> !value.isEmpty())
         .distinct()
         .toList();
+  }
+
+  private static String trimmed(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    return value.trim();
   }
 
   private static String joined(List<String> values) {

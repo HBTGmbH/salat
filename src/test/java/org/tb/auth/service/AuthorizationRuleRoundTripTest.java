@@ -13,6 +13,7 @@ import static org.tb.common.util.DateUtils.today;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -108,6 +109,31 @@ class AuthorizationRuleRoundTripTest {
     }
 
     @Test
+    void theNameComesBackAsItWasWrittenAndDoesNotTakePartInTheEvaluation() {
+        ruleService.create(rule("ETL", List.of("umsatz"), EXECUTE));
+
+        assertThat(ruleService.getById(1L).name()).isEqualTo("Regel ETL");
+        assertThat(ruleService.getAll()).singleElement().extracting(info -> info.name()).isEqualTo("Regel ETL");
+        // the name is no object id: asking with it grants nothing
+        assertThat(authService.isAuthorized("ETL", today(), EXECUTE, "Regel ETL")).isFalse();
+        assertThat(authService.isAuthorized("ETL", today(), EXECUTE, "umsatz")).isTrue();
+    }
+
+    @Test
+    void aRuleFromBeforeNamesKeepsGrantingAndIsListedWithoutOne() {
+        var legacy = new AuthorizationRule();
+        legacy.setCategory("ETL");
+        legacy.setGranteeId(Set.of(GRANTEE));
+        legacy.setObjectId(Set.of("umsatz"));
+        legacy.setAccessLevels(Set.of(EXECUTE));
+        legacy.setValidFrom(of(2011, 1, 1));
+        authorizationRuleRepository.save(legacy); // as entered before #1168: no name
+
+        assertThat(authService.isAuthorized("ETL", today(), EXECUTE, "umsatz")).isTrue();
+        assertThat(ruleService.getAll()).singleElement().extracting(info -> info.name()).isNull();
+    }
+
+    @Test
     void anEndedRuleStopsGranting() {
         ruleService.create(rule("ETL", List.of("umsatz"), EXECUTE));
         assertThat(authService.isAuthorized("ETL", today(), EXECUTE, "umsatz")).isTrue();
@@ -119,7 +145,7 @@ class AuthorizationRuleRoundTripTest {
 
     private AuthorizationRuleData rule(String category, List<String> objects, AccessLevel accessLevel) {
         return new AuthorizationRuleData(
-            category, List.of(GRANTEE), objects, List.of(accessLevel), of(2011, 1, 1), null);
+            "Regel " + category, category, List.of(GRANTEE), objects, List.of(accessLevel), of(2011, 1, 1), null);
     }
 
 }

@@ -15,6 +15,14 @@ import org.tb.common.domain.AuditedEntity;
 @Table(name = "authorization_rule")
 public class AuthorizationRule extends AuditedEntity {
 
+    /**
+     * What the rule is for (#1168). Only for people: {@link org.tb.auth.service.AuthService} never reads it. Unique
+     * regardless of case, checked by the service; {@code null} for a rule that predates the column until it is next
+     * saved.
+     */
+    @Column(name = "name")
+    private String name;
+
     @Column(name = "category", nullable = false)
     private String category;
 

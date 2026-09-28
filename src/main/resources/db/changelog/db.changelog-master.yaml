@@ -3260,3 +3260,26 @@ databaseChangeLog:
         - dropColumn:
             tableName: authorization_rule
             columnName: grantor_id
+
+  - changeSet:
+      id: 90
+      author: kr
+      comment: Berechtigungsregel bekommt einen Namen (#1168)
+      # Nullable, damit der Bestand ohne erfundene Namen weiterlaeuft: eine Regel ohne Namen bekommt
+      # ihn beim naechsten Speichern im Editor. Kein Unique-Index - die Eindeutigkeit gilt ohne
+      # Ruecksicht auf Gross-/Kleinschreibung und wird im AuthorizationRuleService geprueft.
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: authorization_rule
+                columnName: name
+      changes:
+        - addColumn:
+            tableName: authorization_rule
+            columns:
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: true

@@ -8,6 +8,7 @@ import java.util.List;
  * takes it, and a duplicate is dropped there rather than silently reordering the input on the way back to the form.
  */
 public record AuthorizationRuleData(
+    String name,
     String category,
     List<String> granteeIds,
     List<String> objectIds,

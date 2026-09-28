@@ -22,6 +22,9 @@ public enum ErrorCode {
   AR_OBJECT_MALFORMED("AR-0005", "the object does not fit the format of this category"),
   AR_VALIDITY_INVALID("AR-0006", "the rule ends before it starts"),
   AR_VALUE_TOO_LONG("AR-0007", "the list of values is longer than the column holds"),
+  AR_NAME_REQUIRED("AR-0008", "a name is required"),
+  AR_NAME_TOO_LONG("AR-0009", "the name is longer than the column holds"),
+  AR_NAME_TAKEN("AR-0010", "another authorization rule already has this name"),
 
   CO_UPDATE_GOT_VETO("CO-0001", "customer order cannot be changed due to veto"),
   CO_DELETE_GOT_VETO("CO-0002", "customer order cannot be deleted due to veto"),

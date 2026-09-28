@@ -7,11 +7,14 @@ import org.tb.common.util.DateUtils;
 /**
  * One rule as the list and the form show it (#1074).
  *
+ * @param name             what the rule is for, or {@code null} for a rule that predates names (#1168) and has not been
+ *                         saved since
  * @param categoryLabelKey message key of the category, or {@code null} where no module offers this category — such a
  *                         rule stays visible with its raw category rather than being quietly left out
  */
 public record AuthorizationRuleInfo(
     Long id,
+    String name,
     String category,
     String categoryLabelKey,
     List<String> granteeIds,
