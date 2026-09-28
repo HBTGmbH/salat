@@ -9,6 +9,7 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +20,9 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.ExtendedModelMap;
 import org.tb.common.test.FixedClock;
 import org.tb.dailyreport.domain.OvertimeReport;
+import org.tb.dailyreport.domain.OvertimeReportTotal;
+import org.tb.dailyreport.domain.OvertimeStatus;
+import org.tb.dailyreport.domain.OvertimeStatus.OvertimeStatusInfo;
 import org.tb.dailyreport.service.OvertimeService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
@@ -118,6 +122,32 @@ class MyAccountsControllerTest {
     myAccountsController.show(CONTRACT_ID, model);
 
     assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("30,0");
+  }
+
+  /* Die Dauer des Saldos traegt ihr Vorzeichen schon (OvertimeService.toStatusInfo). Die
+     Kontenuebersicht wandte isNegative ein zweites Mal an und bewertete Minusstunden damit auf der
+     positiven Seite der Skala: -25 h standen gruen da, waehrend das Dashboard sie gelb zeigt
+     (#1030, #1175). */
+  @Test
+  void grades_a_negative_balance_on_the_negative_side_of_the_scale() {
+    balanceOf(Duration.ofHours(-25));
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, model);
+
+    assertThat(model.getAttribute("balanceColorClass")).isEqualTo("warning");
+  }
+
+  private void balanceOf(Duration balance) {
+    var info = new OvertimeStatusInfo();
+    info.setDuration(balance);
+    info.setNegative(balance.isNegative());
+    var status = new OvertimeStatus();
+    status.setTotal(info);
+    when(overtimeService.calculateOvertime(CONTRACT_ID, false)).thenReturn(Optional.of(status));
+    // der Reiter Ueberstundenkonto vergleicht den gespeicherten Saldo mit dem Bericht
+    when(overtimeService.createDetailedReportForEmployee(CONTRACT_ID, false)).thenReturn(new OvertimeReport(
+        OvertimeReportTotal.builder().diffCumulative(balance).build(), List.of()));
   }
 
   private void vacationOrderEndingOn(LocalDate untilDate) {

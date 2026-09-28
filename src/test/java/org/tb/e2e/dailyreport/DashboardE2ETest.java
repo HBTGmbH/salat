@@ -229,6 +229,31 @@ class DashboardE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * The whole week card leads into the booking list of that week, for the person the dashboard
+   * shows (#1175). The list remembers its filter as UiState; the link names every filter, so one
+   * set there before does not narrow what the card promises. The clock stands on the base class's
+   * day, Thursday 2026-06-25.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")
+  void the_week_card_leads_to_the_bookings_of_the_week(E2EBrowser browser) {
+    var employeeId = employeeRepository.findBySign(E2ETestData.EMPLOYEE_MA_SIGN).orElseThrow().getId();
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/list?fBookingsBillable=NOT_BILLABLE", page -> {
+      page.navigate(urlWithLogin("/dailyreport/dashboard", E2ETestData.EMPLOYEE_MA_SIGN));
+
+      cardOf(page, "Diese Woche").locator(".h1").click();
+
+      assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/dailyreport/list\\?.*"));
+      var url = page.url();
+      org.assertj.core.api.Assertions.assertThat(url)
+          .contains("fBookingsEmployees=" + employeeId)
+          .contains("fBookingsFrom=2026-06-22")
+          .contains("fBookingsUntil=2026-06-28")
+          .contains("fBookingsBillable=ALL");
+    });
+  }
+
   /** On a phone the table scrolls inside its card; the page itself keeps the width of the screen. */
   @ParameterizedTest(name = "{0}")
   @MethodSource("org.tb.e2e.PlaywrightE2ETestBase#browsers")

@@ -30,6 +30,7 @@ import org.tb.dailyreport.service.PublicholidayService;
 import org.tb.dailyreport.service.ReleaseService;
 import org.tb.dailyreport.service.TimereportService;
 import org.tb.dailyreport.service.VacationService;
+import org.tb.dailyreport.service.WorkingdayService;
 import org.tb.employee.domain.Employee;
 import org.tb.employee.domain.Employeecontract;
 import org.tb.employee.service.EmployeeService;
@@ -65,6 +66,7 @@ class DashboardContractSelectionTest {
   @Mock private MessageSourceAccessor messageSourceAccessor;
   @Mock private ReleaseService releaseService;
   @Mock private MatrixService matrixService;
+  @Mock private WorkingdayService workingdayService;
 
   @InjectMocks private DashboardController dashboardController;
 

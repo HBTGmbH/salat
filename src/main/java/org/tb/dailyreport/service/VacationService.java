@@ -1,6 +1,7 @@
 package org.tb.dailyreport.service;
 
 import static org.tb.common.GlobalConstants.SUBRORDER_SIGN_VACATION_SPECIAL;
+import static org.tb.common.util.DateUtils.today;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,11 @@ public class VacationService {
             var budget = employeeorder.getDebithours();
             long usedVacationMinutes = timereportService.getTotalDurationMinutesForSuborderAndEmployeeContract(
                 employeeorder.getSuborder().getId(), employeecontract.getId());
-            vacations.add(new VacationInfo(suborderSign, budget, usedVacationMinutes));
+            // schon gebucht, aber noch nicht genommen: gehoert zum Verbrauch und wird eigens ausgewiesen (#1175)
+            long plannedVacationMinutes = timereportService.getTotalDurationMinutesForSuborderAndEmployeeContractAfter(
+                employeeorder.getSuborder().getId(), employeecontract.getId(), today());
+            vacations.add(new VacationInfo(suborderSign, budget, usedVacationMinutes, plannedVacationMinutes,
+                employeeorder.getSuborder().getId(), employeeorder.getFromDate(), employeeorder.getEffectiveUntilDate()));
         }
         return vacations;
     }

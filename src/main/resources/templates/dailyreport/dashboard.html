@@ -14,6 +14,9 @@
      Farben: text-muted im Ruhezustand (4,83:1 hell / 5,78:1 dunkel), im Hover und bei Tastaturfokus
      die volle Textfarbe (10,31:1 / 11,86:1) - beide Zustaende gemessen, wie ADR-0025 es verlangt. */
   .overtime-legend-toggle {
+    /* ueber dem stretched-link der Karte, dessen Flaeche sonst den Klick bekaeme (#1175) */
+    position: relative;
+    z-index: 2;
     background: none;
     border: 0;
     line-height: 1;
@@ -61,7 +64,16 @@
   </div>
 
   <!-- KPI row: week hours, month hours, last log, reports status -->
-  <div class="row g-3 mb-3">
+  <!--/* Farben: jede Kennzahl bekommt ihre Farbe aus DashboardGrades bzw. OvertimeScale, die Vorlage
+         setzt sie nur ein (#1175). Links: jede Karte fuehrt dorthin, wo man die Details sieht oder
+         die Warnung aufloest, immer fuer den angezeigten Vertrag. Der Link steht als sichtbarer Text
+         in der Karte - das ist sein Name fuer Tastatur und Screenreader - und macht als
+         stretched-link die ganze Karte klickbar.
+         Die Buchungsliste bekommt jeden Filter ausdruecklich mit, auch die leeren: sie merkt sich
+         ihren Filter ueber UiState und setzte fehlende Werte sonst aus dem zuletzt benutzten ein.
+         Fuer restricted ist sie gesperrt; Woche und Monat fuehren dann in die Matrix. */-->
+  <div class="row g-3 mb-3"
+       th:with="bookingListAllowed=${not #authorization.expression('hasRole(''RESTRICTED'')')}">
 
     <!-- Hours this week -->
     <div class="col-12 col-sm-6 col-xl-3 d-flex">
@@ -72,17 +84,22 @@
             <div class="h1 mb-0" th:text="${weekLogged}">0:00</div>
             <div class="text-muted" th:text="'/ ' + ${weekTarget}">/ 40:00</div>
             <div class="ms-auto">
-              <span class="fw-semibold"
-                    th:classappend="${weekPercent >= 100} ? 'text-success' : (${weekPercent >= 75} ? 'text-warning' : 'text-secondary')"
+              <span class="fw-semibold" th:classappend="'text-' + ${weekColorClass}"
                     th:text="${weekPercent} + '%'">0%</span>
             </div>
           </div>
-          <div class="progress" style="height: 6px;">
+          <div class="progress mb-3" style="height: 6px;">
             <div class="progress-bar"
-                 th:classappend="${weekPercent >= 100} ? 'bg-success' : 'bg-azure'"
+                 th:classappend="${weekColorClass == 'success'} ? 'bg-success' : 'bg-azure'"
                  th:style="'width: ' + ${weekPercentCapped} + '%'">
             </div>
           </div>
+          <a th:if="${bookingListAllowed}" class="stretched-link small mt-auto"
+             th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${weekStart},fBookingsUntil=${weekEnd})}"
+             th:text="#{main.welcome.kpi.week.link.text}">Buchungen der Woche anzeigen</a>
+          <a th:unless="${bookingListAllowed}" class="stretched-link small mt-auto"
+             th:href="@{/dailyreport/matrix(fMonth=${matrixMonth.monthValue},fYear=${matrixMonth.year},fEmployeeContractId=${shownContractId})}"
+             th:text="#{main.welcome.action.matrix.subtitle.text}">Buchungsmatrix anzeigen</a>
         </div>
       </div>
     </div>
@@ -96,32 +113,44 @@
             <div class="h1 mb-0" th:text="${monthLogged}">0:00</div>
             <div class="text-muted" th:text="'/ ' + ${monthTarget}">/ 160:00</div>
             <div class="ms-auto">
-              <span class="fw-semibold"
-                    th:classappend="${monthPercent >= 100} ? 'text-success' : (${monthPercent >= 75} ? 'text-warning' : 'text-secondary')"
+              <span class="fw-semibold" th:classappend="'text-' + ${monthColorClass}"
                     th:text="${monthPercent} + '%'">0%</span>
             </div>
           </div>
-          <div class="progress" style="height: 6px;">
+          <div class="progress mb-3" style="height: 6px;">
             <div class="progress-bar"
-                 th:classappend="${monthPercent >= 100} ? 'bg-success' : 'bg-azure'"
+                 th:classappend="${monthColorClass == 'success'} ? 'bg-success' : 'bg-azure'"
                  th:style="'width: ' + ${monthPercentCapped} + '%'">
             </div>
           </div>
+          <a th:if="${bookingListAllowed}" class="stretched-link small mt-auto"
+             th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders='',fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${monthStart},fBookingsUntil=${monthEnd})}"
+             th:text="#{main.welcome.kpi.month.link.text}">Buchungen des Monats anzeigen</a>
+          <a th:unless="${bookingListAllowed}" class="stretched-link small mt-auto"
+             th:href="@{/dailyreport/matrix(fMonth=${matrixMonth.monthValue},fYear=${matrixMonth.year},fEmployeeContractId=${shownContractId})}"
+             th:text="#{main.welcome.action.matrix.subtitle.text}">Buchungsmatrix anzeigen</a>
         </div>
       </div>
     </div>
 
     <!-- Last log indicator -->
+    <!--/* Die Farbe folgt den offenen Arbeitstagen bis heute (UnbookedWorkingDays), der Text dem
+           Kalender: nach einem als nicht gearbeitet markierten Freitag ist der Montag neutral, und
+           die Karte sagt trotzdem wahrheitsgemaess "Vor 4 Tagen". */-->
     <div class="col-12 col-sm-6 col-xl-3 d-flex">
       <div class="card h-100 w-100">
         <div class="card-body d-flex flex-column">
           <p class="subheader mb-2" th:text="#{main.welcome.kpi.lastlog.text}">Letzte Buchung</p>
           <div class="h1 mb-3 badge" th:if="${lastLogDate != null}"
-               th:classappend="${lastLogIsLagging} ? 'bg-danger-lt text-danger' : (${businessDaysLagging > 0} ? 'bg-warning-lt text-warning' : 'bg-success-lt text-success')"
-               th:text="#{main.welcome.kpi.lastlog.days.text(${businessDaysLagging})}">Gestern
+               th:classappend="'bg-' + ${lastLogColorClass} + '-lt text-' + ${lastLogColorClass}"
+               th:text="#{main.welcome.kpi.lastlog.days.text(${lastLogDaysAgo})}">Gestern
           </div>
-          <div class="h1 mb-3 badge bg-danger-lt text-danger" th:unless="${lastLogDate != null}"
+          <div class="h1 mb-3 badge" th:unless="${lastLogDate != null}"
+               th:classappend="'bg-' + ${lastLogColorClass} + '-lt text-' + ${lastLogColorClass}"
                th:text="#{main.welcome.kpi.lastlog.never.text}">Keine Buchung</div>
+          <a class="stretched-link small mt-auto"
+             th:href="@{/dailyreport/timereports/new(date=${nextBookingDate},employeecontractId=${shownContractId})}"
+             th:text="#{main.welcome.kpi.lastlog.link.text(${#temporals.format(nextBookingDate, 'EE, dd.MM.')})}">Buchung für Mo, 28.09. erfassen</a>
         </div>
       </div>
     </div>
@@ -131,11 +160,12 @@
       <div class="card h-100 w-100">
         <div class="card-body d-flex flex-column">
           <p class="subheader mb-2" th:text="#{main.release.released.until.text}">Freigegeben bis</p>
-          <div class="h1 mb-3 badge" th:if="${releasedUntil != null}"
+          <div class="h1 mb-3 badge"
                th:classappend="'bg-' + ${releaseColorClass} + '-lt text-' + ${releaseColorClass}"
-               th:text="${#temporals.format(releasedUntil,'dd.MM.yyyy')}">11.10.2022</div>
-          <div class="h1 mb-3 badge bg-warning-lt text-warning" th:if="${releasedUntil == null}"
-            th:text="#{main.release.released.never.text}">nie</div>
+               th:text="${releasedUntil != null} ? ${#temporals.format(releasedUntil,'dd.MM.yyyy')} : #{main.release.released.never.text}">11.10.2022</div>
+          <a class="stretched-link small mt-auto"
+             th:href="@{/release(fEmployeeContractId=${shownContractId})}"
+             th:text="#{main.welcome.action.release.subtitle.text}">Buchungen freigeben</a>
         </div>
       </div>
     </div>
@@ -146,6 +176,7 @@
          Inhalt. displayEmployeeInfo bedeutet allein "kein Freelancer" und deckt weder
          Sollstunden 0 noch einen Vertrag ohne Gueltigkeit im laufenden Monat ab (#1031). */-->
   <div class="row g-3 mb-3"
+       th:with="bookingListAllowed=${not #authorization.expression('hasRole(''RESTRICTED'')')}"
        th:if="${displayEmployeeInfo and (not #strings.isEmpty(overtime)
                or not #strings.isEmpty(monthlyOvertime) or not #lists.isEmpty(vacations))}">
 
@@ -179,7 +210,10 @@
                   th:classappend="'text-' + ${overtimeColorClass}"
                   th:text="${overtime}">0:00</span>
           </div>
-          <div class="text-muted small mt-2" th:text="#{main.welcome.total.text}">gesamt</div>
+          <div class="text-muted small mt-2 mb-3" th:text="#{main.welcome.total.text}">gesamt</div>
+          <a class="stretched-link small mt-auto"
+             th:href="@{/my-accounts(fEmployeeContractId=${shownContractId})} + '#tab-working-time'"
+             th:text="#{main.welcome.overtime.link.text}">Arbeitszeitkonto anzeigen</a>
         </div>
       </div>
     </div>
@@ -212,12 +246,19 @@
                   th:classappend="'text-' + ${monthlyOvertimeColorClass}"
                   th:text="${monthlyOvertime}">0:00</span>
           </div>
-          <div class="text-muted small mt-2" th:text="${overtimeMonth}">2026-05</div>
+          <div class="text-muted small mt-2 mb-3" th:text="${overtimeMonth}">2026-05</div>
+          <a class="stretched-link small mt-auto"
+             th:href="@{/my-accounts(fEmployeeContractId=${shownContractId})} + '#tab-overtime'"
+             th:text="#{main.welcome.monthly.overtime.link.text}">Überstundenkonto anzeigen</a>
         </div>
       </div>
     </div>
 
     <!-- Vacation -->
+    <!--/* Gezaehlt ist jede Buchung auf den Urlaub, auch die geplanten nach heute; die stehen im
+           Balken schraffiert und darunter mit ihrer Menge. Rot erst ueber dem Budget (#1175).
+           Jeder Urlaub fuehrt in die Buchungsliste, gefiltert auf seinen Unterauftrag ueber die
+           Gueltigkeit des Mitarbeiterauftrags: ihre Summe ist dann dieselbe wie hier. */-->
     <div class="col-12 col-md-4 d-flex" th:if="${not #lists.isEmpty(vacations)}">
       <div class="card h-100 w-100">
         <div class="card-header">
@@ -225,22 +266,35 @@
             <i class="bi bi-sun me-2 text-muted"></i>
             <span th:text="#{main.welcome.vacation.text}">Urlaub</span>
           </h3>
+          <div class="card-actions">
+            <a th:href="@{/my-accounts(fEmployeeContractId=${shownContractId})} + '#tab-vacation'"
+               th:text="#{main.welcome.vacation.link.text}">Urlaubskonto anzeigen</a>
+          </div>
         </div>
         <div class="card-body">
           <div th:each="v : ${vacations}" class="mb-3">
             <div class="d-flex justify-content-between align-items-baseline mb-1">
-              <span class="fw-semibold small" th:text="${v.suborderSign}">Urlaub 2025</span>
+              <a th:if="${bookingListAllowed}" class="fw-semibold small"
+                 th:href="@{/dailyreport/list(fBookingsEmployees=${shownEmployeeId},fBookingsCustomers='',fBookingsOrders='',fBookingsSuborders=${v.suborderId},fBookingsTickets='',fBookingsBillable='ALL',fBookingsFrom=${v.validFrom},fBookingsUntil=${v.bookingsUntil})}"
+                 th:aria-label="#{main.welcome.vacation.bookings.link.text(${v.suborderSign})}"
+                 th:text="${v.suborderSign}">Urlaub 2025</a>
+              <span th:unless="${bookingListAllowed}" class="fw-semibold small" th:text="${v.suborderSign}">Urlaub 2025</span>
               <span class="small"
                     th:classappend="${v.vacationBudgetExceeded} ? 'text-danger fw-bold' : 'text-muted'"
-                    th:title="#{main.welcome.vacation.title.text}"
                     th:text="${v.usedVacationString + ' / ' + v.budgetVacationString}"></span>
             </div>
-            <div class="progress" style="height: 8px;" th:title="#{main.welcome.vacation.title.text}">
+            <div class="progress" style="height: 8px;">
               <div class="progress-bar"
-                   th:classappend="${v.vacationBudgetExceeded} ? 'bg-danger' : (${v.usedPercent >= 80} ? 'bg-warning' : 'bg-success')"
-                   th:style="'width: ' + ${v.usedPercent} + '%'">
+                   th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                   th:style="'width: ' + ${v.takenPercent} + '%'">
+              </div>
+              <div class="progress-bar progress-bar-striped" th:if="${v.hasPlannedVacation()}"
+                   th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                   th:style="'width: ' + ${v.plannedPercent} + '%'">
               </div>
             </div>
+            <div class="text-muted small mt-1" th:if="${v.hasPlannedVacation()}"
+                 th:text="#{main.welcome.vacation.planned.text(${v.plannedVacationString})}">davon 3,00 Tage (24:00) geplant</div>
           </div>
         </div>
       </div>
@@ -272,10 +326,11 @@
   </div>
 
   <!-- Quick Actions -->
+  <!--/* Wie die Links der Kennzahlen fuer den angezeigten Vertrag, nicht fuer den eigenen (#1175). */-->
   <div class="row g-3 mb-3">
 
     <div class="col-12 col-sm-4 d-flex">
-      <a th:href="@{/dailyreport/timereports/new}" class="card card-link h-100 w-100 text-decoration-none">
+      <a th:href="@{/dailyreport/timereports/new(employeecontractId=${shownContractId})}" class="card card-link h-100 w-100 text-decoration-none">
         <div class="card-body">
           <div class="row g-3 align-items-center">
             <div class="col-auto">
@@ -296,7 +351,7 @@
     </div>
 
     <div class="col-12 col-sm-4 d-flex">
-      <a th:href="@{/dailyreport/matrix}" class="card card-link h-100 w-100 text-decoration-none">
+      <a th:href="@{/dailyreport/matrix(fMonth=${matrixMonth.monthValue},fYear=${matrixMonth.year},fEmployeeContractId=${shownContractId})}" class="card card-link h-100 w-100 text-decoration-none">
         <div class="card-body">
           <div class="row g-3 align-items-center">
             <div class="col-auto">
@@ -317,7 +372,7 @@
     </div>
 
     <div class="col-12 col-sm-4 d-flex">
-      <a th:href="@{/release}" class="card card-link h-100 w-100 text-decoration-none">
+      <a th:href="@{/release(fEmployeeContractId=${shownContractId})}" class="card card-link h-100 w-100 text-decoration-none">
         <div class="card-body">
           <div class="row g-3 align-items-center">
             <div class="col-auto">

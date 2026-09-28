@@ -143,7 +143,7 @@
                   </div>
                   <div class="progress" style="height: 8px;">
                     <div class="progress-bar"
-                         th:classappend="${vacationUsedPercent >= 100} ? 'bg-danger' : (${vacationUsedPercent >= 80} ? 'bg-warning' : 'bg-success')"
+                         th:classappend="${vacationUsedPercent >= 100} ? 'bg-danger' : 'bg-azure'"
                          th:style="'width: ' + ${vacationUsedPercent} + '%'">
                     </div>
                   </div>
@@ -167,7 +167,7 @@
                     </div>
                     <div class="progress" style="height: 6px;">
                       <div class="progress-bar"
-                           th:classappend="${v.vacationBudgetExceeded} ? 'bg-danger' : (${v.usedPercent >= 80} ? 'bg-warning' : 'bg-success')"
+                           th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
                            th:style="'width: ' + ${v.usedPercent} + '%'">
                       </div>
                     </div>
