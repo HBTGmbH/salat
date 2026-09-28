@@ -1210,6 +1210,16 @@ body:not(.salat-confirm-ready) button[data-confirm] {
   display: none;
 }
 
+/* Die Parameter eines Befehls sind sein Inhalt, kein Hinweis: sie werden nicht gekuerzt wie der
+   Hinweis eines Objekts (oben), sondern brechen rechtsbuendig um, wenn die Zeile nicht reicht. */
+.command-palette-option-verb .command-palette-kind {
+  flex-shrink: 1;
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  text-align: right;
+}
+
 /* Ein Wert, der sich nicht waehlen laesst, steht in der Sekundaerfarbe; die gewaehlte Zeile wird er
    nie, deshalb misst er nur gegen die Karte. */
 .command-palette-option-disabled {

@@ -255,6 +255,8 @@ People Lead.
 - **Platz:** Chips werden nicht gekürzt. Reicht die Zeile nicht für Chips und Feld, rutscht das Feld
   unter die Chips; gekürzt wird nur ein Chip, der allein breiter ist als die Zeile. Solange ein Befehl
   eingegeben wird, wird die Palette ab `sm` bis zu 56rem breit, soweit der Bildschirm es zulässt.
+  Auch die Parameter rechts neben einem Befehl werden nicht gekürzt wie der Hinweis eines Objekts,
+  sie brechen rechtsbündig um.
 - **In einem Zug:** jedes vollständige Wort, das genau einen Wert meint, wird Chip. Passt ein Wort
   nicht zu einem optionalen Parameter, bleibt dieser leer (`buchen wart 1,5` bucht heute). Was
   mehrdeutig ist, bleibt offen und wird vorgeschlagen; die Wörter dahinter bleiben stehen.

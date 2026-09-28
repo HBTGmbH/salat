@@ -1259,6 +1259,8 @@ function paletteOption(hit, index, dialog) {
     option.setAttribute('aria-disabled', 'true');
     option.classList.add('command-palette-option-disabled');
   }
+  // its parameters are what tells a command apart, so they are not cut short (salat.css)
+  if (hit.command.type === 'verb') option.classList.add('command-palette-option-verb');
   if (hit.command.type === 'object' && hit.command.targets.length > 1) {
     const more = document.createElement('span');
     more.className = 'command-palette-more';
