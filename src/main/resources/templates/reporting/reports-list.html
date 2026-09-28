@@ -25,6 +25,7 @@
     <table class="table table-vcenter card-table">
       <thead>
         <tr>
+          <th class="w-1">ID</th>
           <th>Name</th>
           <th class="d-none d-sm-table-cell">Last Updated</th>
           <th class="d-none d-sm-table-cell">Last Updated By</th>
@@ -35,6 +36,7 @@
       </thead>
       <tbody>
         <tr th:each="report : ${reports}">
+          <td class="text-muted" th:text="${report.id}"></td>
           <td th:text="${report.name}"></td>
           <td class="d-none d-sm-table-cell" th:text="${#temporals.format(report.lastupdate, 'yyyy-MM-dd HH:mm')}"></td>
           <td class="d-none d-sm-table-cell" th:text="${report.lastupdatedby}"></td>

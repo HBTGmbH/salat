@@ -5,6 +5,7 @@ import static org.tb.auth.domain.AccessLevel.EXECUTE;
 import static org.tb.auth.domain.AccessLevel.WRITE;
 import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static org.tb.common.exception.ErrorCode.RP_REPORT_EXECUTION_FAILED;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.RP_REPORT_NAME_AMBIGUOUS;
 import static org.tb.common.exception.ErrorCode.RP_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSING;
@@ -99,6 +100,20 @@ public class ReportService {
     }
     var report = matches.stream().findFirst()
         .orElseThrow(() -> new InvalidDataException(RP_REPORT_NOT_FOUND, name));
+    if (!reportAuthorization.isAuthorized(report, EXECUTE)) {
+      throw new AuthorizationException(AA_NOT_ATHORIZED);
+    }
+    return report;
+  }
+
+  /**
+   * Liefert den Report mit dieser Id und sagt wie {@link #getReportDefinitionByName(String)}, warum
+   * es keinen gibt: eine unbekannte Id und eine fehlende Berechtigung sind verschiedene Fehler.
+   * {@link #getReportDefinition(long)} liefert in beiden Fällen {@code null}.
+   */
+  public ReportDefinition getReportDefinitionById(long reportDefinitionId) {
+    var report = reportDefinitionRepository.findById(reportDefinitionId)
+        .orElseThrow(() -> new InvalidDataException(RP_REPORT_ID_NOT_FOUND, String.valueOf(reportDefinitionId)));
     if (!reportAuthorization.isAuthorized(report, EXECUTE)) {
       throw new AuthorizationException(AA_NOT_ATHORIZED);
     }

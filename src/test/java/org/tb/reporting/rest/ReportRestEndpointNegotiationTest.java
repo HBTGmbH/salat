@@ -2,6 +2,8 @@ package org.tb.reporting.rest;
 
 import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.tb.common.exception.ErrorCode.AA_NOT_ATHORIZED;
+import static org.tb.common.exception.ErrorCode.RP_REPORT_ID_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.RP_REPORT_NOT_FOUND;
 import static org.tb.common.exception.ErrorCode.RP_REPORT_PARAMETERS_MISSING;
 import static org.mockito.Mockito.mock;
@@ -21,6 +23,7 @@ import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.tb.auth.domain.AuthorizedUser;
+import org.tb.common.exception.AuthorizationException;
 import org.tb.common.exception.InvalidDataException;
 import org.tb.common.test.FixedClock;
 import org.tb.reporting.domain.ReportDefinition;
@@ -140,9 +143,45 @@ class ReportRestEndpointNegotiationTest {
   }
 
   @Test
-  void withoutAReportNameTheRequestIsIncomplete() throws Exception {
+  void withoutAReportIdOrNameTheRequestIsIncompleteAndSaysWhatIsMissing() throws Exception {
     mockMvc.perform(get("/api/reports/execute").header(ACCEPT, "application/json"))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.title").value("RP-0008"))
+        .andExpect(jsonPath("$.arguments[0]").value("reportId"))
+        .andExpect(jsonPath("$.arguments[1]").value("report"));
+  }
+
+  @Test
+  void aReportIsExecutedByItsId() throws Exception {
+    when(reportService.getReportDefinitionById(42L)).thenReturn(definition());
+
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "42").header(ACCEPT, "application/json"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.report").value("Stunden"));
+  }
+
+  @Test
+  void anIdThatIsNotANumberIsAProblemDocument() throws Exception {
+    // bound by Spring, the type mismatch would bypass the advice and answer with the error page
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "abc").header(ACCEPT, "application/json"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.title").value("RP-0007"))
+        .andExpect(jsonPath("$.arguments[0]").value("abc"));
+  }
+
+  @Test
+  void anUnknownIdAndAMissingPermissionAreTwoDifferentAnswers() throws Exception {
+    when(reportService.getReportDefinitionById(7L)).thenThrow(new InvalidDataException(RP_REPORT_ID_NOT_FOUND, "7"));
+    when(reportService.getReportDefinitionById(8L)).thenThrow(new AuthorizationException(AA_NOT_ATHORIZED));
+
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "7").header(ACCEPT, "application/json"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.title").value("RP-0006"))
+        .andExpect(jsonPath("$.arguments[0]").value("7"));
+    mockMvc.perform(get("/api/reports/execute").param("reportId", "8").header(ACCEPT, "application/json"))
+        .andExpect(status().isForbidden());
   }
 
   private static ReportDefinition definition() {
