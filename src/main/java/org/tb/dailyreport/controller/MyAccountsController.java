@@ -67,7 +67,8 @@ public class MyAccountsController {
     private final EmployeeService employeeService;
 
     @GetMapping
-    public String show(@RequestParam(required = false) Long fEmployeeContractId, Model model) {
+    public String show(@RequestParam(required = false) Long fEmployeeContractId,
+                       @RequestParam(required = false) String trainingPeriod, Model model) {
         var contract = currentContract(fEmployeeContractId);
         var today = today();
         var currentYear = today.getYear();
@@ -86,7 +87,7 @@ public class MyAccountsController {
         populateVacationTab(model, contract, today, currentYear, yearStart, yearEnd);
 
         // --- Tab 3: Training ---
-        populateTrainingTab(model, contract, today, yearStart);
+        populateTrainingTab(model, contract, today, TrainingPeriod.of(trainingPeriod));
 
         // --- Tab 4: Overtime ---
         populateOvertimeTab(model, contract);
@@ -340,10 +341,49 @@ public class MyAccountsController {
         return SUBRORDER_SIGN_VACATION_SPECIAL.equals(order.getSuborder().getSign());
     }
 
-    private void populateTrainingTab(Model model, Employeecontract contract, LocalDate today, LocalDate yearStart) {
-        var from = contract.getValidFrom().isAfter(yearStart) ? contract.getValidFrom() : yearStart;
-        var until = today();
-        var allReports = timereportService.getTimereportsByDatesAndEmployeeContractId(contract.getId(), from, until);
+    /**
+     * Der Zeitraum des Reiters Fortbildung (#1175). Ein unbekannter oder fehlender Wert ist das
+     * laufende Jahr, wie bisher. Kein UiState-Parameter: die Wahl gilt fuer diesen Aufruf, und die
+     * Seite oeffnet wie gewohnt mit dem laufenden Jahr.
+     */
+    public enum TrainingPeriod {
+        /** 1. Januar bis heute. */
+        CURRENT_YEAR,
+        /** 1. Januar bis 31. Dezember des Vorjahres. */
+        LAST_YEAR,
+        /** Die elf Monate vor dem laufenden und der laufende bis heute - zwoelf Balken im Diagramm. */
+        LAST_12_MONTHS;
+
+        static TrainingPeriod of(String value) {
+            if (value == null || value.isBlank()) return CURRENT_YEAR;
+            try {
+                return valueOf(value.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                return CURRENT_YEAR;
+            }
+        }
+
+        public String getMessageKey() {
+            return "main.my.accounts.training.period." + name().toLowerCase(Locale.ROOT).replace('_', '.');
+        }
+
+        LocalDateRange range(LocalDate today) {
+            return switch (this) {
+                case CURRENT_YEAR -> new LocalDateRange(today.withDayOfYear(1), today);
+                case LAST_YEAR -> new LocalDateRange(today.minusYears(1).withDayOfYear(1),
+                        today.minusYears(1).withMonth(12).withDayOfMonth(31));
+                case LAST_12_MONTHS -> new LocalDateRange(today.withDayOfMonth(1).minusMonths(11), today);
+            };
+        }
+    }
+
+    private void populateTrainingTab(Model model, Employeecontract contract, LocalDate today, TrainingPeriod period) {
+        var range = period.range(today);
+        // nie vor Vertragsbeginn; ein Zeitraum ganz vor dem Vertrag bleibt leer
+        var from = contract.getValidFrom().isAfter(range.getFrom()) ? contract.getValidFrom() : range.getFrom();
+        var until = range.getUntil();
+        var allReports = from.isAfter(until) ? List.<TimereportDTO>of() : timereportService
+                .getTimereportsByDatesAndEmployeeContractId(contract.getId(), from, until);
 
         var trainingReports = allReports.stream().filter(this::isTraining).toList();
         long totalTrainingMinutes = trainingReports.stream().mapToLong(t -> t.getDuration().toMinutes()).sum();
@@ -367,27 +407,26 @@ public class MyAccountsController {
                         DurationUtils.format(t.getDuration())))
                 .toList();
 
-        // Monthly bar chart
-        var monthMinutes = new TreeMap<String, Long>();
-        var cur = from.withDayOfMonth(1);
-        while (!cur.isAfter(today)) {
-            monthMinutes.put(cur.getYear() + "-" + String.format("%02d", cur.getMonthValue()), 0L);
-            cur = cur.plusMonths(1);
-        }
+        // Monatsdiagramm, regulaere und projektbezogene Fortbildung getrennt gestapelt (#1175)
+        var regularMonthMinutes = new TreeMap<YearMonth, Long>();
+        var orderMonthMinutes = new TreeMap<YearMonth, Long>();
         for (var report : trainingReports) {
-            var key = report.getReferenceday().getYear() + "-"
-                    + String.format("%02d", report.getReferenceday().getMonthValue());
-            monthMinutes.merge(key, report.getDuration().toMinutes(), Long::sum);
+            var target = COMPLETE_ORDER_SIGN_TRAINING.equals(report.getCompleteOrderSign())
+                    ? regularMonthMinutes : orderMonthMinutes;
+            target.merge(YearMonth.from(report.getReferenceday()), report.getDuration().toMinutes(), Long::sum);
         }
         var trainingChartLabels = new ArrayList<String>();
         var trainingChartHours = new ArrayList<Double>();
-        for (var entry : monthMinutes.entrySet()) {
-            var parts = entry.getKey().split("-");
-            int y = Integer.parseInt(parts[0]);
-            int m = Integer.parseInt(parts[1]);
-            trainingChartLabels.add(LocalDate.of(y, m, 1).getMonth()
-                    .getDisplayName(TextStyle.SHORT, Locale.GERMAN) + " '" + String.valueOf(y).substring(2));
-            trainingChartHours.add(Math.round(entry.getValue() / 6.0) / 10.0);
+        var trainingChartOrderHours = new ArrayList<Double>();
+        if (!from.isAfter(until)) {
+            // das Jahr steht nur dabei, wenn der Zeitraum ueber ein Kalenderjahr hinausreicht - wie beim Urlaub
+            var spansYears = from.getYear() != until.getYear();
+            for (var month = YearMonth.from(from); !month.isAfter(YearMonth.from(until)); month = month.plusMonths(1)) {
+                var name = month.getMonth().getDisplayName(TextStyle.SHORT, Locale.GERMAN);
+                trainingChartLabels.add(spansYears ? name + " '" + String.valueOf(month.getYear()).substring(2) : name);
+                trainingChartHours.add(Math.round(regularMonthMinutes.getOrDefault(month, 0L) / 6.0) / 10.0);
+                trainingChartOrderHours.add(Math.round(orderMonthMinutes.getOrDefault(month, 0L) / 6.0) / 10.0);
+            }
         }
 
         model.addAttribute("totalTrainingHours", DurationUtils.format(Duration.ofMinutes(totalTrainingMinutes)));
@@ -397,6 +436,11 @@ public class MyAccountsController {
         model.addAttribute("trainingBookings", bookings);
         model.addAttribute("trainingChartLabels", trainingChartLabels);
         model.addAttribute("trainingChartHours", trainingChartHours);
+        model.addAttribute("trainingChartOrderHours", trainingChartOrderHours);
+        model.addAttribute("trainingPeriods", TrainingPeriod.values());
+        model.addAttribute("trainingPeriod", period.name());
+        model.addAttribute("trainingFrom", range.getFrom());
+        model.addAttribute("trainingUntil", until);
     }
 
     private void populateOvertimeTab(Model model, Employeecontract contract) {

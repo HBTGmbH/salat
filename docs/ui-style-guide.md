@@ -34,6 +34,7 @@ Drag&Drop-Interaktionen sind mit dem Stack nur mit erheblichem Aufwand umsetzbar
 | **Schrift** | Inter Var (extern von `rsms.me`), Fallback System-Sans; `font-feature-settings: "cv03","cv04","cv11"` |
 | **Farben** | ausschließlich Tabler-Tokens (`--tblr-*`); keine eigene Marken-Palette. Die verbliebenen Literale sind in [§7.1](#71-kontrast--verbindlicher-maßstab) benannt |
 | **Projekt-CSS** | `static/css/salat.css` — Token-Bridging (`--bs-*` → `--tblr-*`), TomSelect-Angleichung, Textselektion, die Kontrastkorrekturen aus [§7.1](#71-kontrast--verbindlicher-maßstab) und der vergrößerbare Dialog |
+| **Diagramme** | ApexCharts aus dem Tabler-WebJar, nur auf Seiten mit Diagramm eingebunden; Regeln in [§5.8](#58-diagramme) |
 | **Theme** | Light/Dark umschaltbar (Tabler-Theme-Script, Buttons in der Kopfzeile); Sidebar ist **immer** dunkel (`data-bs-theme="dark"`) |
 | **Druck** | Kopfzeile/Fußzeile via `d-print-none` ausgeblendet; eine dedizierte Druckansicht (`invoice/invoice-print.html`) |
 
@@ -752,6 +753,74 @@ Fragment, nicht an ein umgebendes Element mit `hx-trigger="change from:#feld"` �
 nach dem Swap neu verdrahtet (`flat-rate-form :: suborderSelect`, #1065). Umgekehrt ist das
 umgebende Element das Mittel der Wahl, wo die Felder bleiben, aber `salat:`-Tags keine
 `hx-*`-Attribute durchreichen (`pricing-form.html`).
+
+### 5.8 Diagramme
+
+Referenz ist die Kontenübersicht (`dailyreport/my-accounts.html`, #1175): Arbeitszeit, Urlaub und
+Fortbildung. Die Regeln gelten für jedes neue Diagramm.
+
+**Bibliothek.** ApexCharts, und zwar das aus dem Tabler-WebJar
+(`/webjars/tabler__core/dist/libs/apexcharts/dist/apexcharts.min.js`). Keine eigene Abhängigkeit
+und keine zweite Diagrammbibliothek (Plotly ist mit #1175 entfernt). Das Skript steht in der
+Seite mit dem Diagramm, nicht in `base.html`. Tablers `tabler-vendors.css` wird **nicht**
+eingebunden: Sie gestaltet auch Tom Select um, und die Vertragsauswahl im Kopf jeder Seite sähe
+dort anders aus als überall sonst. Die Diagrammregeln daraus stehen in `salat.css`.
+
+**Farben.**
+- Aus den Tabler-Tokens, zur Laufzeit über `--tblr-<name>` gelesen, nie als Literal im Skript
+  ([§7](#7-farbsemantik)).
+- Was auf der Seite schon eine Farbe hat, behält sie im Diagramm. Urlaub steht in Azure wie sein
+  Fortschrittsbalken darüber, die Soll-Markierung in einer Farbe, die sich von der Säule abhebt.
+- Jede Art in einem Stapel bekommt einen eigenen Farbton, etwa Urlaub und Sonderurlaub oder
+  reguläre und projektbezogene Fortbildung.
+- **Geplant** (gebucht, aber noch nicht erreicht) ist derselbe Farbton in hellerer Stufe, Deckkraft
+  0,45. Das ist dieselbe Stufe wie `.progress-bar-planned` in den Balken.
+
+**Beschriftung.** Achsen und Legende in der normalen Textfarbe und der Seitenschrift (Inter),
+13 px: hell 10,31:1, dunkel 11,86:1. ApexCharts setzt seine Beschriftungsfarbe als SVG-Attribut
+auf ein helles Grau; `salat.css` überschreibt das mit `fill: var(--tblr-body-color)`. Gitter,
+Tooltip und Legende folgen den Tokens in beiden Farbmodi. Im Skript steht deshalb nichts
+Modusabhängiges, und beim Umschalten des Farbmodus muss nichts nachgezogen werden.
+
+**Form.**
+- Säulen sind an beiden Enden abgerundet (Radius 5), wie die Fortschrittsbalken. Ein Stapel wird
+  als ein Stück gerundet, nicht jedes Teilstück.
+- Teile eines Ganzen stehen **gestapelt**, nicht nebeneinander.
+- Ein Ziel- oder Sollwert steht als **Markierung** auf der Säule („Column with Markers“, ApexCharts
+  `goals`), nicht als zweite Säule daneben. Ob ein Wert darüber oder darunter liegt, ist so an
+  einer Säule abzulesen.
+
+**Legende.** Oben links. Bei nur einer Reihe entfällt sie, außer sie erklärt eine Markierung
+(`customLegendItems`). Eine Reihe ohne Wert im gezeigten Zeitraum fehlt in Legende und Popup,
+statt als leerer Eintrag dazustehen.
+
+**Popup.**
+- Bei gestapelten Säulen **ein** Popup je Säule (`shared`, `intersect: false`) mit allen Teilen und
+  ihrer Summe im Titel, zum Beispiel „Okt. '26: 6 Tage“. Teile ohne Wert fehlen darin
+  (`hideEmptySeries`).
+- Zahlen stehen im Format der Sprache, mit Einheit und Einzahl: „1 Tag“, „5 Tage“.
+
+**Zeitachse.**
+- Sie deckt den gewählten Zeitraum ab. Liegen schon geplante Werte dahinter, reicht sie bis zum
+  letzten davon (Urlaub bis in das Folgejahr).
+- Monate heißen wie in Java kurz („Jan.“, „März“). Das Jahr steht nur dabei, wenn die Achse über
+  ein Kalenderjahr hinausreicht („Feb. '27“).
+
+**Zeitraum wählen.** Eine `btn-group` aus Links (`a.btn`), die gewählte mit `active` und
+`aria-current`; jede Wahl lädt die Seite neu und öffnet denselben Reiter wieder. Daneben steht der
+gewählte Zeitraum als Datum („01.10.2025 – 28.09.2026“). Ein unbekannter Parameterwert fällt auf
+die Voreinstellung zurück.
+
+**Verhalten.**
+- Beim ersten Zeichnen bauen sich die Säulen kurz auf (etwa 600 ms). Bei
+  `prefers-reduced-motion: reduce` stehen sie sofort da.
+- Ein Diagramm in einem Reiter wird erst gezeichnet, wenn der Reiter sichtbar ist. ApexCharts misst
+  in einem verborgenen Element die Breite 0. Das gilt auch, wenn Tabler den Reiter aus dem
+  Adress-Fragment öffnet.
+
+**Nie allein.** Ein Diagramm ergänzt, es trägt keine Information allein. Die Werte, auf die es
+ankommt, stehen auch als Text daneben (Kennzahlen, Tabelle, „davon … geplant“). Deshalb gilt für
+die Säulen gegen den Hintergrund kein eigener Kontrastnachweis.
 
 ## 6. Eingabekomponenten nach Datentyp
 

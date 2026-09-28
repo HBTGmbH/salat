@@ -1,9 +1,11 @@
 package org.tb.dailyreport.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.tb.common.GlobalConstants.COMPLETE_ORDER_SIGN_TRAINING;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
@@ -83,7 +85,7 @@ class MyAccountsControllerTest {
     vacationOrderEndingOn(null);
 
     var model = new ExtendedModelMap();
-    var view = myAccountsController.show(CONTRACT_ID, model);
+    var view = myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(view).isEqualTo("dailyreport/my-accounts");
   }
@@ -96,7 +98,7 @@ class MyAccountsControllerTest {
     bookedUntilToday(Duration.ofHours(8 * 10)); // 10 Tage bereits gebucht
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("30,0");
     assertThat(model.getAttribute("takenDays")).isEqualTo("10,0");
@@ -110,7 +112,7 @@ class MyAccountsControllerTest {
     bookedUntilToday(Duration.ofHours(8 * 10));
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("10,0");
   }
@@ -122,7 +124,7 @@ class MyAccountsControllerTest {
     bookedUntilToday(Duration.ofHours(8 * 10));
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("annualEntitlementDays")).isEqualTo("30,0");
   }
@@ -136,7 +138,7 @@ class MyAccountsControllerTest {
     balanceOf(Duration.ofHours(-25));
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("balanceColorClass")).isEqualTo("warning");
   }
@@ -150,7 +152,7 @@ class MyAccountsControllerTest {
         .thenReturn(Duration.ofHours(8 * 5).toMinutes());
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("vacationUsedPercent")).isEqualTo(50);
     assertThat(model.getAttribute("vacationTakenPercent")).isEqualTo(33);
@@ -167,7 +169,7 @@ class MyAccountsControllerTest {
     plannedAfterToday(Duration.ofHours(8 * 20));
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("vacationUsedPercent")).isEqualTo(100);
     assertThat(model.getAttribute("vacationBudgetExceeded")).isEqualTo(false);
@@ -180,7 +182,7 @@ class MyAccountsControllerTest {
     plannedAfterToday(Duration.ofHours(8 * 21));
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("vacationBudgetExceeded")).isEqualTo(true);
   }
@@ -202,7 +204,7 @@ class MyAccountsControllerTest {
         .thenReturn(Duration.ofHours(8 * 5).toMinutes());
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("hasNextYearPlannedDays")).isEqualTo(true);
     assertThat(model.getAttribute("nextYear")).isEqualTo("2027");
@@ -212,7 +214,7 @@ class MyAccountsControllerTest {
   @Test
   void says_nothing_without_vacation_in_the_following_year() {
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("hasNextYearPlannedDays")).isEqualTo(false);
   }
@@ -231,7 +233,7 @@ class MyAccountsControllerTest {
         .thenReturn(List.of(booking("2026-10-15")));
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat((List<String>) model.getAttribute("vacationMonthLabels")).hasSize(14)
         .startsWith("Jan. '26").endsWith("Feb. '27");
@@ -247,7 +249,7 @@ class MyAccountsControllerTest {
     vacationOrderEndingOn(null);
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat((List<String>) model.getAttribute("vacationMonthLabels")).hasSize(12).startsWith("Jan.").endsWith("Dez.");
   }
@@ -260,11 +262,54 @@ class MyAccountsControllerTest {
         .thenReturn(Duration.ofHours(8).toMinutes());
 
     var model = new ExtendedModelMap();
-    myAccountsController.show(CONTRACT_ID, model);
+    myAccountsController.show(CONTRACT_ID, null, model);
 
     assertThat(model.getAttribute("hasSpecialDays")).isEqualTo(true);
     assertThat(model.getAttribute("specialDays")).isEqualTo("1,0");
     assertThat(model.getAttribute("specialPlannedDays")).isEqualTo("1,0");
+  }
+
+  /* Der Zeitraum der Fortbildung ist waehlbar (#1175); heute ist der 25.06.2026. Ein unbekannter
+     Wert faellt auf das laufende Jahr zurueck. */
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+      ",               2026-01-01, 2026-06-25, 6",
+      "CURRENT_YEAR,   2026-01-01, 2026-06-25, 6",
+      "LAST_YEAR,      2025-01-01, 2025-12-31, 12",
+      "LAST_12_MONTHS, 2025-07-01, 2026-06-25, 12",
+      "unbekannt,      2026-01-01, 2026-06-25, 6"
+  })
+  @SuppressWarnings("unchecked")
+  void reads_the_training_of_the_chosen_period(String period, LocalDate from, LocalDate until, int months) {
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, period, model);
+
+    verify(timereportService).getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, from, until);
+    assertThat(model.getAttribute("trainingFrom")).isEqualTo(from);
+    assertThat(model.getAttribute("trainingUntil")).isEqualTo(until);
+    assertThat((List<String>) model.getAttribute("trainingChartLabels")).hasSize(months);
+  }
+
+  /* Regulaere und projektbezogene Fortbildung stehen im Diagramm getrennt (#1175). */
+  @Test
+  @SuppressWarnings("unchecked")
+  void separates_regular_from_order_training_in_the_chart() {
+    when(timereportService.getTimereportsByDatesAndEmployeeContractId(CONTRACT_ID, LocalDate.of(2026, 1, 1), TODAY))
+        .thenReturn(List.of(
+            training("2026-02-10", COMPLETE_ORDER_SIGN_TRAINING, 4),
+            training("2026-02-12", "4711/01", 2),
+            training("2026-05-05", "4711/01", 3)));
+
+    var model = new ExtendedModelMap();
+    myAccountsController.show(CONTRACT_ID, null, model);
+
+    assertThat((List<Double>) model.getAttribute("trainingChartHours")).containsExactly(0.0, 4.0, 0.0, 0.0, 0.0, 0.0);
+    assertThat((List<Double>) model.getAttribute("trainingChartOrderHours")).containsExactly(0.0, 2.0, 0.0, 0.0, 3.0, 0.0);
+  }
+
+  private static TimereportDTO training(String day, String orderSign, long hours) {
+    return TimereportDTO.builder().referenceday(LocalDate.parse(day)).completeOrderSign(orderSign).training(true)
+        .duration(Duration.ofHours(hours)).build();
   }
 
   private static final long SPECIAL_ORDER_ID = 300L;
