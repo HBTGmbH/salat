@@ -145,10 +145,12 @@
                   <div class="progress" style="height: 8px;">
                     <div class="progress-bar"
                          th:classappend="${vacationBudgetExceeded} ? 'bg-danger' : 'bg-azure'"
+                         th:title="#{main.welcome.vacation.taken.title(${takenDays + ' ' + #messages.msg('main.my.accounts.vacation.days')})}"
                          th:style="'width: ' + ${vacationTakenPercent} + '%'">
                     </div>
                     <div class="progress-bar progress-bar-planned" th:if="${vacationPlannedPercent > 0}"
                          th:classappend="${vacationBudgetExceeded} ? 'bg-danger' : 'bg-azure'"
+                         th:title="#{main.welcome.vacation.planned.title(${plannedDays + ' ' + #messages.msg('main.my.accounts.vacation.days')})}"
                          th:style="'width: ' + ${vacationPlannedPercent} + '%'">
                     </div>
                   </div>
@@ -173,13 +175,17 @@
                     <div class="progress" style="height: 6px;">
                       <div class="progress-bar"
                            th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                           th:title="#{main.welcome.vacation.taken.title(${v.takenVacationString})}"
                            th:style="'width: ' + ${v.takenPercent} + '%'">
                       </div>
                       <div class="progress-bar progress-bar-planned" th:if="${v.hasPlannedVacation()}"
                            th:classappend="${v.colorClass == 'danger'} ? 'bg-danger' : 'bg-azure'"
+                           th:title="#{main.welcome.vacation.planned.title(${v.plannedVacationString})}"
                            th:style="'width: ' + ${v.plannedPercent} + '%'">
                       </div>
                     </div>
+                    <div class="text-muted small mt-1" th:if="${v.hasPlannedVacation()}"
+                         th:text="#{main.welcome.vacation.planned.text(${v.plannedVacationString})}">davon 3,00 Tage (24:00) geplant</div>
                   </div>
                 </div>
               </div>

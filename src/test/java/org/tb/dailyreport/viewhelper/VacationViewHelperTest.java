@@ -39,6 +39,7 @@ class VacationViewHelperTest {
     assertThat(helper.getPlannedPercent()).isEqualTo(25);
     assertThat(helper.hasPlannedVacation()).isTrue();
     assertThat(helper.getPlannedVacationString()).isEqualTo("5,00 Tage (40:00)");
+    assertThat(helper.getTakenVacationString()).isEqualTo("5,00 Tage (40:00)");
   }
 
   /* Ueber dem Budget reicht der Balken bis zum Ende, nicht darueber hinaus; der geplante Teil ist

@@ -82,6 +82,11 @@ public class VacationViewHelper {
         return plannedVacationMinutes > 0;
     }
 
+    /** Genommener Urlaub ohne den geplanten, in derselben Form wie {@link #getUsedVacationString()}. */
+    public String getTakenVacationString() {
+        return daysThenHours(usedVacationMinutes - plannedVacationMinutes);
+    }
+
     /** Geplanter Urlaub in derselben Form wie {@link #getUsedVacationString()}. */
     public String getPlannedVacationString() {
         return daysThenHours(plannedVacationMinutes);
