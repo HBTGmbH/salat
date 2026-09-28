@@ -17,13 +17,53 @@
        meint wie die Einzeluebersicht: die Seite bringt Uhrzeit und Zeitzone des Servers mit.
 
        Nur die Geschaeftsobjekte kommen vom Server (#1157, ADR-0031): data-search-url ist die
-       Objektsuche, deren Fragment salat.js unter die Treffer der Seite haengt. */-->
+       Objektsuche, deren Fragment salat.js unter die Treffer der Seite haengt.
+
+       Befehle mit Parametern (#1158): welche es gibt, sagt die Sidebar - ein Eintrag mit
+       data-palette-verb bietet den Befehl seiner Seite an, so sieht nur eine People Lead "abnahme".
+       Hier stehen ihre Woerter, die Namen der Parameter, die Vorschau und die Ziele; die Werte fuer
+       Unterauftrag, Person, Auftrag, den letzten Arbeitstag und die Monate von Freigabe und Abnahme
+       kommen von data-suggest-url, die Tickets von derselben Stelle wie im Buchungsformular. */-->
 <dialog th:fragment="commandPalette" id="commandPalette" class="command-palette p-0"
         aria-labelledby="commandPaletteTitle"
         th:with="now=${@serverTimeHelper.epochMillis}, zone=${@serverTimeHelper.timeZone}"
         th:data-now="${now}"
         th:data-time-zone="${zone}"
         th:data-search-url="@{/palette/search}"
+        th:data-suggest-url="@{/palette/suggest}"
+        th:data-ticket-url="@{/jira/tickets/suggestions}"
+        th:data-target-book="@{/dailyreport/timereports/new}"
+        th:data-target-matrix="@{/dailyreport/matrix}"
+        th:data-target-release="@{/release/review}"
+        th:data-target-accept="@{/acceptance/accept/review}"
+        th:data-target-controlling="@{/budget/controlling}"
+        th:data-verb-book="#{main.palette.verb.book}"
+        th:data-verb-day="#{main.palette.verb.day}"
+        th:data-verb-matrix="#{main.palette.verb.matrix}"
+        th:data-verb-release="#{main.palette.verb.release}"
+        th:data-verb-accept="#{main.palette.verb.accept}"
+        th:data-verb-controlling="#{main.palette.verb.controlling}"
+        th:data-preview-book="#{main.palette.preview.book}"
+        th:data-preview-day="#{main.palette.preview.day}"
+        th:data-preview-matrix="#{main.palette.preview.matrix}"
+        th:data-preview-release="#{main.palette.preview.release}"
+        th:data-preview-accept="#{main.palette.preview.accept}"
+        th:data-preview-controlling="#{main.palette.preview.controlling}"
+        th:data-preview-page="#{main.palette.preview.page}"
+        th:data-preview-comment-required="#{main.palette.preview.commentrequired}"
+        th:data-param-day="#{main.palette.param.day}"
+        th:data-param-month="#{main.palette.param.month}"
+        th:data-param-suborder="#{main.palette.param.suborder}"
+        th:data-param-duration="#{main.palette.param.duration}"
+        th:data-param-ticket="#{main.palette.param.ticket}"
+        th:data-param-comment="#{main.palette.param.comment}"
+        th:data-param-person="#{main.palette.param.person}"
+        th:data-param-customerorder="#{main.palette.param.customerorder}"
+        th:data-day-lastworkday="#{main.palette.day.lastworkday}"
+        th:data-month-last="#{main.palette.month.last}"
+        th:data-chip-remove="#{main.palette.chip.remove}"
+        th:data-group-commands="#{main.palette.group.commands}"
+        th:data-suborder-notbookable="#{main.palette.suggestion.notbookable}"
         th:data-targets-more="#{main.palette.targets.more}"
         th:data-daily-url="@{/dailyreport/daily}"
         th:data-label-daily="#{main.general.mainmenu.daily.text}"
@@ -50,12 +90,15 @@
       <span class="text-secondary" aria-hidden="true">›</span>
       <span class="command-palette-crumb-object" data-part="object"></span>
     </span>
+    <!--/* Der Befehl und die uebernommenen Werte (#1158); ein Klick nimmt einen Wert zurueck. */-->
+    <span class="command-palette-chips" id="commandPaletteChips" hidden></span>
     <input type="text" class="command-palette-input" id="commandPaletteInput"
            role="combobox" aria-autocomplete="list" aria-expanded="true"
            aria-controls="commandPaletteList"
            autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"
            th:aria-label="#{main.palette.input.label}"
            th:placeholder="#{main.palette.input.placeholder}"/>
+    <span class="command-palette-param text-secondary" id="commandPaletteParam" hidden></span>
     <!--/* Auf dem Telefon gibt es kein Esc, und eine lange Trefferliste laesst vom Hintergrund zum
            Danebentippen nichts uebrig. */-->
     <button type="button" class="btn btn-ghost-secondary btn-icon command-palette-close"
@@ -63,6 +106,13 @@
             th:aria-label="#{main.button.close}" th:title="#{main.button.close}">
       <i class="ti ti-x" aria-hidden="true"></i>
     </button>
+  </div>
+  <!--/* Was Enter bei einem Befehl tut (#1158): das Ziel und die Werte, mit denen es sich oeffnet.
+         Eine Statusregion, damit ein Screenreader die Aenderung beim Tippen hoert. */-->
+  <div class="command-palette-preview" id="commandPalettePreview" role="status" hidden>
+    <div><kbd aria-hidden="true">↵</kbd> <span data-part="title"></span></div>
+    <div class="text-secondary" data-part="values"></div>
+    <div class="text-danger" data-part="warning"></div>
   </div>
   <!--/* tabindex="-1": eine Liste, die scrollt, nehmen Chrome und Firefox sonst in die
          Tab-Reihenfolge auf - der Fokus gehoert aber ins Feld, dort wirken Pfeile und Enter. */-->
@@ -76,6 +126,7 @@
     <span><kbd>↑</kbd> <kbd>↓</kbd> <span th:text="#{main.palette.hint.select}">auswählen</span></span>
     <span><kbd>↵</kbd> <span th:text="#{main.palette.hint.run}">ausführen</span></span>
     <span><kbd>→</kbd> <span th:text="#{main.palette.hint.targets}">Ziele</span></span>
+    <span><kbd>Tab</kbd> <span th:text="#{main.palette.hint.take}">übernehmen</span></span>
     <span><kbd>Esc</kbd> <span th:text="#{main.palette.hint.close}">schließen</span></span>
   </div>
 </dialog>

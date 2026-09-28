@@ -45,3 +45,4 @@ Format: [MADR](https://adr.github.io/madr/) — Markdown Any Decision Records.
 | [0029](0029-inaktiv-ist-zeitlich-und-zaehlt-nur-das-ende.md) | „Inaktiv“ ist zeitlich definiert und zählt nur das Ende | Accepted | 2026-09-25 |
 | [0030](0030-befehlspalette-liest-die-seite-und-speichert-nichts.md) | Die Befehlspalette liest die Seite, und sie speichert nichts | Accepted | 2026-09-27 |
 | [0031](0031-objektsuche-der-befehlspalette-anbieter-je-modul.md) | Objektsuche der Befehlspalette: ein Anbieter je Modul, Ziele auch aus fremden Modulen | Accepted | 2026-09-27 |
+| [0032](0032-befehle-mit-parametern-in-der-befehlspalette.md) | Befehle mit Parametern: die Sidebar bietet sie an, der Browser liest, die Seite vervollständigt | Accepted | 2026-09-28 |

@@ -207,16 +207,16 @@
                          Kopfzeile, der Tag und Rueckweg der Seite traegt (#1155); auf dem
                          Buchungsformular, wo der Knopf fehlt, bleibt es bei diesem Link. */-->
                   <a class="dropdown-item" th:href="@{/dailyreport/timereports/new}"
-                     data-palette-href-from="#header-new-booking"
+                     data-palette-href-from="#header-new-booking" data-palette-verb="book"
                      th:text="#{main.general.mainmenu.newreport.text}">
                     Neue Buchung
                   </a>
-                  <a class="dropdown-item" th:href="@{/dailyreport/daily}"
+                  <a class="dropdown-item" th:href="@{/dailyreport/daily}" data-palette-verb="day"
                      th:classappend="${subSection == 'daily'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.daily.text}">
                     Einzelübersicht
                   </a>
-                  <a class="dropdown-item" th:href="@{/dailyreport/matrix}"
+                  <a class="dropdown-item" th:href="@{/dailyreport/matrix}" data-palette-verb="matrix"
                      th:classappend="${subSection == 'matrix'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.matrixmenu.text}">
                     Matrixübersicht
@@ -232,12 +232,12 @@
                      th:text="#{main.general.mainmenu.csv.text}">
                     CSV Import / Export
                   </a>
-                  <a class="dropdown-item" th:href="@{/release}"
+                  <a class="dropdown-item" th:href="@{/release}" data-palette-verb="release"
                      th:classappend="${subSection == 'release'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.release.text}">
                     Freigabe
                   </a>
-                  <a class="dropdown-item" th:href="@{/acceptance}"
+                  <a class="dropdown-item" th:href="@{/acceptance}" data-palette-verb="accept"
                      th:if="${#authorization.expression('hasRole(''PEOPLE_LEAD'')')}"
                      th:classappend="${subSection == 'acceptance'} ? 'active' : ''"
                      th:text="#{main.general.mainmenu.acceptance.text}">
@@ -336,7 +336,7 @@
                      th:text="#{main.budget.dashboard.nav}">
                     Dashboard
                   </a>
-                  <a class="dropdown-item" th:href="@{/budget/controlling}"
+                  <a class="dropdown-item" th:href="@{/budget/controlling}" data-palette-verb="controlling"
                      th:classappend="${subSection == 'controlling'} ? 'active' : ''"
                      th:text="#{main.controlling.title}">
                     Soll-Ist-Controlling

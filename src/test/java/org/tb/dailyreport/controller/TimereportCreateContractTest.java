@@ -125,18 +125,32 @@ class TimereportCreateContractTest {
   void a_form_opened_for_a_named_contract_offers_its_orders_and_carries_it() {
     var model = new ExtendedModelMap();
 
-    controller.createForm(REMEMBERED_CONTRACT_ID, NAMED_CONTRACT_ID, DATE, null, null, null, null, null, model);
+    controller.createForm(REMEMBERED_CONTRACT_ID, NAMED_CONTRACT_ID, DATE, null, null, null, null, null, null, null, model);
 
     assertThat(model.get("selectedContractId")).isEqualTo(NAMED_CONTRACT_ID);
     assertThat(((TimereportForm) model.get("timereportForm")).getEmployeecontractId()).isEqualTo(NAMED_CONTRACT_ID);
     verify(customerorderService).getCustomerordersWithValidEmployeeOrders(NAMED_CONTRACT_ID, DATE);
   }
 
+  /** The command palette (#1158) hands over the ticket beside the comment, and the field to start on. */
+  @Test
+  void a_form_prefilled_by_the_palette_takes_the_ticket_and_names_the_field_to_start_on() {
+    var model = new ExtendedModelMap();
+
+    controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, "1:30", "ABC-1 - Titel", "ABC-1", null, null,
+        "save", model);
+
+    var form = (TimereportForm) model.get("timereportForm");
+    assertThat(form.getTicketReference()).isEqualTo("ABC-1");
+    assertThat(form.getComment()).isEqualTo("ABC-1 - Titel");
+    assertThat(model.get("entryFocus")).isEqualTo(TimereportController.EntryFocus.SAVE);
+  }
+
   @Test
   void without_a_named_contract_the_form_follows_the_remembered_one() {
     var model = new ExtendedModelMap();
 
-    controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, null, null, null, null, model);
+    controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, null, null, null, null, null, null, model);
 
     assertThat(model.get("selectedContractId")).isEqualTo(REMEMBERED_CONTRACT_ID);
     assertThat(model.get("selectedEmployeeName")).asString().startsWith("Max Fremd | mfr");
@@ -155,7 +169,7 @@ class TimereportCreateContractTest {
     when(employeecontractService.getReadableEmployeecontract(REMEMBERED_CONTRACT_ID)).thenReturn(Optional.empty());
     var model = new ExtendedModelMap();
 
-    controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, null, null, null, null, model);
+    controller.createForm(REMEMBERED_CONTRACT_ID, null, DATE, null, null, null, null, null, null, null, model);
 
     assertThat(model.get("selectedContractId")).isEqualTo(OWN_CONTRACT_ID);
     assertThat(model.get("selectedEmployeeName")).asString().startsWith("Olga Eigen | oei");
@@ -206,7 +220,7 @@ class TimereportCreateContractTest {
         .thenThrow(new AuthorizationException(AA_NOT_ATHORIZED));
 
     assertThatThrownBy(() -> controller.createForm(REMEMBERED_CONTRACT_ID, NAMED_CONTRACT_ID, DATE, null, null,
-        null, null, null, new ExtendedModelMap()))
+        null, null, null, null, null, new ExtendedModelMap()))
         .isInstanceOf(AuthorizationException.class);
   }
 

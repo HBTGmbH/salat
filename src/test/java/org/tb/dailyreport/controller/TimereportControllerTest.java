@@ -11,14 +11,15 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The decisions the booking form controller makes without touching a service: the default state of
- * the training switch (#836) and where "Speichern und neu" goes next (#843).
+ * the training switch (#836), where "Speichern und neu" goes next (#843) and where a form prefilled by
+ * the command palette starts (#1158).
  */
 class TimereportControllerTest {
 
   private static final SuborderOption TRAINING =
-      new SuborderOption(1L, "FORTBILDUNG", "HBT", false, true);
+      new SuborderOption(1L, "FORTBILDUNG", "FORTBILDUNG", "HBT", false, true);
   private static final SuborderOption PROJECT =
-      new SuborderOption(2L, "ALPHA-DEV", "Contoso", false, false);
+      new SuborderOption(2L, "ALPHA-DEV", "ALPHA-DEV", "Contoso", false, false);
   private static final LocalDate DATE = LocalDate.parse("2026-06-18");
 
   @Test
@@ -40,6 +41,16 @@ class TimereportControllerTest {
   void a_suborder_outside_the_offered_options_leaves_the_switch_off() {
     // the deeplink parameter suborderId is not validated against the employee's orders here
     assertThat(trainingDefaultOf(List.of(PROJECT, TRAINING), 99L)).isFalse();
+  }
+
+  /** The field a form prefilled by the command palette starts on (#1158); anything else keeps the page's own. */
+  @Test
+  void the_palette_names_the_field_the_form_starts_on() {
+    assertThat(TimereportController.EntryFocus.of("duration")).isEqualTo(TimereportController.EntryFocus.DURATION);
+    assertThat(TimereportController.EntryFocus.of("SAVE")).isEqualTo(TimereportController.EntryFocus.SAVE);
+    assertThat(TimereportController.EntryFocus.of("comment")).isEqualTo(TimereportController.EntryFocus.COMMENT);
+    assertThat(TimereportController.EntryFocus.of("referenceday")).isNull();
+    assertThat(TimereportController.EntryFocus.of(null)).isNull();
   }
 
   @Test

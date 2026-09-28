@@ -230,6 +230,50 @@ höchstens fünf. Die Anbieter je Modul und ihre Regeln stehen in
 | Zeile über den Zielen: Suche / Objekt | 4,83 / 10,31 | 5,78 / 11,86 |
 | Pfeil zurück (Nicht-Text) | 4,83 | 5,78 |
 
+#### Befehle mit Parametern (#1158)
+
+Sechs Befehle nehmen Parameter; die Entscheidung steht in
+[ADR-0032](adr/0032-befehle-mit-parametern-in-der-befehlspalette.md). Angeboten wird ein Befehl nur,
+wenn die Sidebar den Eintrag seiner Seite zeigt (`data-palette-verb`) — `abnahme` also nur einer
+People Lead.
+
+| Befehl | Parameter (`?` optional) | Enter öffnet |
+|---|---|---|
+| `buchen` | Tag?, Unterauftrag, Dauer?, Ticket?, Kommentar? | das Buchungsformular, vorbelegt |
+| `tag` | Tag | die Einzelübersicht des Tages |
+| `matrix` | Monat, Person? | die Matrixübersicht, ohne Monat den laufenden |
+| `freigabe` | Monat | die Prüfseite vor der Freigabe |
+| `abnahme` | Person, Monat | die Prüfseite vor der Abnahme |
+| `controlling` | Auftrag | das Controlling, ausgewertet |
+
+- **Bedienung:** Der Befehl wird Chip, sobald sein Wort mit einem Leerzeichen dasteht oder Tab ihn
+  übernimmt. Rechts steht, welcher Parameter dran ist (`Tag?`). Tab übernimmt den gewählten
+  Vorschlag, die Rücktaste im leeren Feld nimmt den letzten Chip zurück, zuletzt den Befehl; ein
+  Klick auf einen Chip nimmt genau ihn zurück. Die Pfeile überspringen, was sich nicht wählen lässt.
+- **In einem Zug:** jedes vollständige Wort, das genau einen Wert meint, wird Chip. Passt ein Wort
+  nicht zu einem optionalen Parameter, bleibt dieser leer (`buchen wart 1,5` bucht heute). Was
+  mehrdeutig ist, bleibt offen und wird vorgeschlagen; die Wörter dahinter bleiben stehen.
+- **Werte:** Tag wie in der Palette, dazu `letzter Arbeitstag` (Wochenende und Feiertage übersprungen,
+  vom Server). Monat: `9`, `9/2026`, `sep`, `september`, `letzter`; ohne Jahr der jüngste, der
+  laufende eingeschlossen. Dauer wie im Zeitfeld (`1:30`, `1h30`, `90m`, `1,5`). Unterauftrag: was
+  der Vertrag am Tag buchen darf, Favorit und zuletzt Gebuchtes vorn; was er heute, aber nicht an
+  dem Tag buchen darf, steht ausgegraut mit dem Grund. Ein Ticket nur mit seiner ganzen Nummer, sonst
+  beginnt dort der Kommentar; ohne eigenen Kommentar wird er mit Nummer und Titel des Tickets
+  vorbelegt, wie beim Auswählen im Formular. Person und Auftrag vom Server, ab dem ersten Buchstaben.
+- **Vorschau:** zwischen Eingabe und Liste steht, was Enter öffnet, mit den Werten — genau so, wie
+  Enter sie übernimmt. Darunter in Fehlerfarbe, was nicht stimmt: ein Unterauftrag, der nach einem
+  Tageswechsel nicht mehr buchbar ist (sein Chip ebenso), „Kommentar erforderlich".
+- **Formular:** Der Fokus steht im ersten Feld, das die Palette nicht belegt hat (Dauer, Unterauftrag,
+  Kommentar), sind alle belegt, auf „Speichern" (`focus=` in der Adresse, `data-entry-focus`).
+- **Rangfolge:** Das ganze Wort eines Befehls steht vor allem; ein Befehl, der nur mit seinem Anfang
+  passt, unter den Seiten und dem Tagessprung — `mat` und Enter führen weiter zur Matrixübersicht.
+
+| Probe | hell | dunkel |
+|---|---|---|
+| Chip (`badge bg-primary-lt`), Fehler-Chip (`bg-danger-lt`) | 5,00 / 5,10 | 5,00 / 5,10 |
+| Parameter rechts, Werte der Vorschau, ausgegrauter Vorschlag | 4,83 | 5,78 |
+| Warnung der Vorschau (`text-danger`) | 5,10 | 4,92 |
+
 ### 3.3 Tastenkürzel (#1016)
 
 | Taste | wo | was |

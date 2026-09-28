@@ -11,6 +11,7 @@ import static org.tb.dailyreport.service.TimereportService.normalizeTicketRefere
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
 import lombok.RequiredArgsConstructor;
@@ -89,8 +90,10 @@ public class TimereportController {
                              @RequestParam(required = false) Long suborderId,
                              @RequestParam(required = false) String duration,
                              @RequestParam(required = false) String comment,
+                             @RequestParam(required = false) String ticketReference,
                              @RequestParam(required = false) Boolean training,
                              @RequestParam(required = false) String returnUrl,
+                             @RequestParam(required = false) String focus,
             Model model) {
 
         LocalDate effectiveDate = date != null ? date : today();
@@ -120,12 +123,32 @@ public class TimereportController {
         if (comment != null && !comment.isBlank()) {
             form.setComment(comment);
         }
+        if (ticketReference != null && !ticketReference.isBlank()) {
+            form.setTicketReference(ticketReference);
+        }
         // #836: a suborder can carry a default flag for project based training. The explicit request
         // parameter comes from the share-with-colleagues deeplink and has to win over that default.
         form.setTraining(training != null ? training : trainingDefaultOf(suborders, defaultSuborderId));
 
         populateModel(fEmployeeContractId, model, form, suborders, ecId, effectiveDate, false, returnUrl);
+        model.addAttribute("entryFocus", EntryFocus.of(focus));
         return "dailyreport/timereport-form";
+    }
+
+    /**
+     * Where the keyboard starts on a form the command palette prefilled (#1158): on the first field it
+     * left empty, on "Speichern" when it filled them all. The palette knows which those are and names
+     * the field; anything else keeps the entry focus of the page (#1064).
+     */
+    enum EntryFocus {
+        DURATION, SUBORDER, COMMENT, SAVE;
+
+        static EntryFocus of(String value) {
+            if (value == null) {
+                return null;
+            }
+            return Arrays.stream(values()).filter(focus -> focus.name().equalsIgnoreCase(value)).findFirst().orElse(null);
+        }
     }
 
     @GetMapping("/{id}/edit")
@@ -594,20 +617,7 @@ public class TimereportController {
     }
 
     private List<SuborderOption> suborderOptions(long ecId, LocalDate date) {
-        return customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, date)
-            .stream()
-            .flatMap(order -> suborderService.getSuborderSummaries(ecId, order.getId(), date).stream()
-                .map(s -> {
-                    var desc = s.shortdescription();
-                    var label = (desc != null && !desc.isBlank())
-                        ? s.completeOrderSign() + " · " + desc
-                        : s.completeOrderSign();
-                    var subtext = order.getSign() + " · " + order.getShortdescription()
-                        + " · " + order.getCustomer().getShortname();
-                    return new SuborderOption(s.id(), label, subtext, s.commentNecessary(),
-                        s.trainingFlag());
-                }))
-            .toList();
+        return SuborderOption.bookable(customerorderService, suborderService, ecId, date);
     }
 
     /** Default state of the training switch for a suborder; false when nothing is preselected. */

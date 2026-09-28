@@ -3,6 +3,7 @@ package org.tb.dailyreport.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,8 @@ import org.tb.dailyreport.persistence.PublicholidayRepository;
 @Transactional
 @Authorized
 public class PublicholidayService {
+
+  static final int LAST_WORKDAY_LOOKBACK_DAYS = 14;
 
   private final PublicholidayRepository publicholidayRepository;
   private final PublicholidayDAO publicholidayDAO;
@@ -48,6 +51,22 @@ public class PublicholidayService {
 
   public List<Publicholiday> getPublicHolidaysBetween(LocalDate dateFirst, LocalDate dateLast) {
     return publicholidayDAO.getPublicHolidaysBetween(dateFirst, dateLast);
+  }
+
+  /**
+   * The last working day before {@code day}, weekends and public holidays skipped — "letzter
+   * Arbeitstag" of the command palette (#1158). The holidays of the fortnight before are read at
+   * once; no run of free days is longer than that.
+   */
+  @Transactional(readOnly = true)
+  public LocalDate getLastWorkdayBefore(LocalDate day) {
+    var holidays = publicholidayDAO.getPublicHolidaysBetween(day.minusDays(LAST_WORKDAY_LOOKBACK_DAYS), day.minusDays(1))
+        .stream().map(Publicholiday::getRefdate).collect(Collectors.toSet());
+    var candidate = day.minusDays(1);
+    while (!DateUtils.isWeekday(candidate) || holidays.contains(candidate)) {
+      candidate = candidate.minusDays(1);
+    }
+    return candidate;
   }
 
   /**

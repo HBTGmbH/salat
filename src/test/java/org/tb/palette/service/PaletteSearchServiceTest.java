@@ -9,6 +9,7 @@ import static org.tb.common.palette.PaletteKind.PERSON;
 import static org.tb.common.palette.PaletteKind.SUBORDER;
 import static org.tb.common.palette.PaletteQuery.HITS_PER_KIND;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -22,10 +23,14 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.tb.common.exception.AuthorizationException;
+import org.tb.common.palette.PaletteCommand;
 import org.tb.common.palette.PaletteHit;
 import org.tb.common.palette.PaletteKind;
+import org.tb.common.palette.PaletteParameter;
 import org.tb.common.palette.PaletteProvider;
 import org.tb.common.palette.PaletteQuery;
+import org.tb.common.palette.PaletteSuggestion;
+import org.tb.common.palette.PaletteSuggestionRequest;
 import org.tb.common.palette.PaletteTarget;
 import org.tb.common.palette.PaletteText;
 
@@ -279,6 +284,84 @@ class PaletteSearchServiceTest {
 
     assertThat(service(people, customers, orders).search("muster")).extracting(PaletteGroup::kind)
         .containsExactly(CUSTOMERORDER, CUSTOMER, PERSON);
+  }
+
+  // --- the parameters of the commands (#1158) -----------------------------------------------------
+
+  @Test
+  void hands_every_provider_the_request_and_keeps_their_order() {
+    var requests = new ArrayList<PaletteSuggestionRequest>();
+    PaletteProvider first = new PaletteProvider() { };
+    PaletteProvider months = new PaletteProvider() {
+      @Override
+      public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+        requests.add(request);
+        return List.of(PaletteSuggestion.of("2026-09", "2026-09", null, null), PaletteSuggestion.of("2026-08", "2026-08", null, null));
+      }
+    };
+    PaletteProvider more = new PaletteProvider() {
+      @Override
+      public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+        return List.of(PaletteSuggestion.of("2026-07", "2026-07", null, null));
+      }
+    };
+
+    var suggestions = service(first, months, more).suggest(PaletteCommand.ACCEPT, PaletteParameter.MONTH, "  SEP ",
+        LocalDate.of(2026, 9, 25), 7L);
+
+    assertThat(suggestions).extracting(PaletteSuggestion::value).containsExactly("2026-09", "2026-08", "2026-07");
+    assertThat(requests).singleElement().satisfies(request -> {
+      assertThat(request.command()).isEqualTo(PaletteCommand.ACCEPT);
+      assertThat(request.parameter()).isEqualTo(PaletteParameter.MONTH);
+      assertThat(request.query().text()).isEqualTo("sep");
+      assertThat(request.date()).isEqualTo(LocalDate.of(2026, 9, 25));
+      assertThat(request.contractId()).isEqualTo(7L);
+    });
+  }
+
+  /** Unlike the search, an empty query is asked: the providers then offer what they would put first. */
+  @Test
+  void asks_the_providers_with_an_empty_query_as_well() {
+    PaletteProvider months = new PaletteProvider() {
+      @Override
+      public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+        return List.of(PaletteSuggestion.of("2026-09", "2026-09", null, null));
+      }
+    };
+
+    assertThat(service(months).suggest(PaletteCommand.RELEASE, PaletteParameter.MONTH, "", null, null)).hasSize(1);
+  }
+
+  @Test
+  void offers_at_most_the_limit_of_values() {
+    PaletteProvider many = new PaletteProvider() {
+      @Override
+      public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+        return IntStream.range(0, 20).mapToObj(i -> PaletteSuggestion.of("v" + i, "v" + i, null, null)).toList();
+      }
+    };
+
+    assertThat(service(many).suggest(PaletteCommand.BOOK, PaletteParameter.SUBORDER, "v", null, null))
+        .hasSize(PaletteSearchService.SUGGESTIONS);
+  }
+
+  @Test
+  void a_denied_provider_offers_no_values_and_takes_nobody_elses_along() {
+    PaletteProvider denied = new PaletteProvider() {
+      @Override
+      public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+        throw new AuthorizationException(AA_NOT_ATHORIZED);
+      }
+    };
+    PaletteProvider orders = new PaletteProvider() {
+      @Override
+      public List<PaletteSuggestion> suggest(PaletteSuggestionRequest request) {
+        return List.of(PaletteSuggestion.of("MUSTER-01", "MUSTER-01", null, null));
+      }
+    };
+
+    assertThat(service(denied, orders).suggest(PaletteCommand.CONTROLLING, PaletteParameter.CUSTOMERORDER, "mu", null, null))
+        .extracting(PaletteSuggestion::value).containsExactly("MUSTER-01");
   }
 
   // --- the transaction ----------------------------------------------------------------------------

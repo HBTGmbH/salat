@@ -102,4 +102,5 @@ fachliche Schlüssel; eine Datenbank-id steht höchstens in einer Adresse.
   kennt (`fCustomerOrderFilter` …) — ein Modul wie `customer` darf die Schlüssel von `order` nicht
   importieren.
 * Neutral: Die Befehle mit Parametern aus #1158 brauchen je Parametertyp Vorschläge von denselben
-  Anbietern; `PaletteProvider` bekommt dafür eine weitere Methode, die Aufteilung bleibt.
+  Anbietern; `PaletteProvider` bekommt dafür eine weitere Methode, die Aufteilung bleibt. Umgesetzt
+  als `suggest` (ADR-0032).

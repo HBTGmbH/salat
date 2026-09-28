@@ -226,4 +226,29 @@ class PaletteQueryTest {
     assertThat(PaletteQuery.of("uber").match("MUSTER-01", "Wartung/Übergabe")).isEqualTo(3);
     assertThat(PaletteQuery.of("bergabe").match("MUSTER-01", "Übergabe")).isEqualTo(2);
   }
+
+  // --- the parameters of the commands (#1158) ---------------------------------------------------
+
+  @Test
+  void is_the_key_only_where_it_is_the_whole_key() {
+    assertThat(PaletteQuery.of("PPP").isKey("ppp")).isTrue();
+    assertThat(PaletteQuery.of("pp").isKey("ppp")).isFalse();
+    assertThat(PaletteQuery.of("").isKey("")).isFalse();
+    assertThat(PaletteQuery.of("ppp").isKey(null)).isFalse();
+  }
+
+  @Test
+  void is_contained_where_every_word_stands_in_one_of_the_fields() {
+    var query = PaletteQuery.of("wart kunde");
+
+    assertThat(query.isContainedIn("MUSTER-01.03 · Wartung", "MUSTER · Musterkunde")).isTrue();
+    assertThat(query.isContainedIn("MUSTER-01.03 · Wartung", null)).isFalse();
+    assertThat(PaletteQuery.of("ubergabe").isContainedIn("Übergabe")).isTrue();
+  }
+
+  @Test
+  void an_empty_query_is_contained_in_anything() {
+    assertThat(PaletteQuery.of("").isContainedIn("MUSTER-01")).isTrue();
+    assertThat(PaletteQuery.of(null).isContainedIn()).isTrue();
+  }
 }

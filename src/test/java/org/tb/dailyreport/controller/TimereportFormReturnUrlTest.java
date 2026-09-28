@@ -124,7 +124,7 @@ class TimereportFormReturnUrlTest {
   void the_create_form_drops_an_unsafe_return_target(String returnUrl) {
     var model = new ExtendedModelMap();
 
-    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, returnUrl, model);
+    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, null, returnUrl, null, model);
 
     assertThat(model.get("returnUrl")).isNull();
   }
@@ -183,7 +183,7 @@ class TimereportFormReturnUrlTest {
     var returnUrl = "/release/review?until=2026-03&view=day#day-2026-03-02";
     var model = new ExtendedModelMap();
 
-    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, returnUrl, model);
+    controller.createForm(CONTRACT_ID, null, DATE, null, null, null, null, null, returnUrl, null, model);
 
     assertThat(model.get("returnUrl")).isEqualTo(returnUrl);
   }
