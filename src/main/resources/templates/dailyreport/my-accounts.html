@@ -439,10 +439,15 @@
       const number = (value) => Number(value).toLocaleString(document.documentElement.lang || 'de',
           { maximumFractionDigits: 1 });
 
+      /* Die Balken wachsen beim ersten Zeichnen ein Stueck heran - ausser, jemand hat im System
+         "Bewegung reduzieren" gewaehlt; dann stehen sie sofort da. */
+      const animate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
       const barChart = (element, categories, series, colors, stacked) => new ApexCharts(element, {
         chart: {
           type: 'bar', stacked: stacked, height: parseInt(element.style.height, 10), fontFamily: 'inherit',
-          parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false }, animations: { enabled: false }
+          parentHeightOffset: 0, toolbar: { show: false }, zoom: { enabled: false },
+          animations: { enabled: animate, speed: 600, animateGradually: { enabled: true, delay: 40 } }
         },
         series: series,
         colors: colors,
@@ -480,16 +485,16 @@
         ], [tblrColor('primary'), tblrColor('gray-400')], false));
       }
 
-      /* Urlaub und Sonderurlaub je in eigener Farbe, gestapelt; geplante Tage in hellerer Stufe
-         derselben Farbe wie in den Balken (.progress-bar-planned). Das Diagramm reicht bis zum
+      /* Urlaub in den Farben der Fortschrittsbalken darueber - azure, geplant in hellerer Stufe
+         (.progress-bar-planned) -, Sonderurlaub orange, gestapelt. Das Diagramm reicht bis zum
          letzten Monat mit geplantem Urlaub (#1175). Eine Reihe ohne Tage bleibt aus der Legende. */
       const vacationChart = document.getElementById('vacationChart');
       if (vacationChart && vacationMonthLabels.length > 0) {
-        const green = tblrColor('green');
+        const azure = tblrColor('azure');
         const orange = tblrColor('orange');
         const series = [
-          { name: /*[[#{main.my.accounts.vacation.chart.taken}]]*/ 'Urlaub', data: vacationMonthDays, color: green },
-          { name: /*[[#{main.my.accounts.vacation.chart.planned}]]*/ 'Urlaub geplant', data: vacationMonthPlannedDays, color: planned(green) },
+          { name: /*[[#{main.my.accounts.vacation.chart.taken}]]*/ 'Urlaub', data: vacationMonthDays, color: azure },
+          { name: /*[[#{main.my.accounts.vacation.chart.planned}]]*/ 'Urlaub geplant', data: vacationMonthPlannedDays, color: planned(azure) },
           { name: /*[[#{main.my.accounts.vacation.chart.special.taken}]]*/ 'Sonderurlaub', data: vacationMonthSpecialDays, color: orange },
           { name: /*[[#{main.my.accounts.vacation.chart.special.planned}]]*/ 'Sonderurlaub geplant', data: vacationMonthSpecialPlannedDays, color: planned(orange) }
         ].filter(s => s.data.some(v => v > 0));
