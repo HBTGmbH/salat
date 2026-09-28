@@ -22,6 +22,7 @@ import java.util.List;
  * the person's work on it.
  */
 public record BudgetEmployee(
+    long employeeId,
     String employeeSign,
     String employeeName,
     long bookings,

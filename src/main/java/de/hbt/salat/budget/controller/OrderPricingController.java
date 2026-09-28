@@ -90,11 +90,11 @@ public class OrderPricingController {
     @GetMapping("/create")
     public String createForm(@RequestParam(required = false) String customerorderSign,
                              @RequestParam(required = false) String fCustomerOrderSign,
-                             @RequestParam(required = false) String employeeSign,
+                             @RequestParam(required = false) Long employeeId,
                              Model model) {
         var form = new OrderPricingForm();
         form.setCustomerorderSign(trimToNull(customerorderSign != null ? customerorderSign : fCustomerOrderSign));
-        form.setEmployeeSign(trimToNull(employeeSign));
+        form.setEmployeeId(employeeId);
         addFormModel(model, form, false);
         return "budget/pricing-form";
     }
@@ -107,7 +107,7 @@ public class OrderPricingController {
         form.setId(pricing.getId());
         form.setCustomerorderSign(pricing.getCustomerorderSign());
         form.setSuborderSign(pricing.getSuborderSign());
-        form.setEmployeeSign(pricing.getEmployeeSign());
+        form.setEmployeeId(pricing.getEmployeeId());
         form.setOrderBudgetId(pricing.getOrderBudgetId());
         form.setDescription(pricing.getDescription());
         form.setPriceEuro(new BigDecimal(pricing.getPriceCentsPerHour()).movePointLeft(2));
@@ -149,7 +149,7 @@ public class OrderPricingController {
         var data = new OrderPricingData(
             form.getCustomerorderSign(),
             trimToNull(form.getSuborderSign()),
-            trimToNull(form.getEmployeeSign()),
+            form.getEmployeeId(),
             form.getOrderBudgetId(),
             trimToNull(form.getDescription()),
             form.getPriceEuro().movePointRight(2).intValue(),
@@ -223,13 +223,28 @@ public class OrderPricingController {
             .toList();
     }
 
+    /**
+     * The sign a rate was stored with when the migration could not resolve its person (#968), or
+     * {@code null}. The select cannot offer that person, so its empty choice names the sign instead
+     * of "everyone" — saving without a person leaves such a rate as it is ({@code
+     * OrderPricingService#update}).
+     */
+    private String unresolvedEmployeeSignOf(OrderPricingForm form) {
+        if (form.isNew() || form.getEmployeeId() != null) {
+            return null;
+        }
+        var pricing = orderPricingService.getById(form.getId());
+        return pricing.isEmployeeUnresolved() ? pricing.getEmployeeSign() : null;
+    }
+
     private void addFormModel(Model model, OrderPricingForm form, boolean isEdit) {
         model.addAttribute("pricingForm", form);
         model.addAttribute("isEdit", isEdit);
         model.addAttribute("customerorders",
             customerorderService.getSelectableCustomerorders(form.getCustomerorderSign()));
         model.addAttribute("suborders", subordersOf(form.getCustomerorderSign()));
-        model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeSign()));
+        model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
+        model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
         // The plans that can ever apply to what the form currently says — the same set the saving
         // judges by (#1065). The stored one stays in the list even once it is inactive.
         model.addAttribute("budgetPlans", orderPricingService.getSelectablePlans(

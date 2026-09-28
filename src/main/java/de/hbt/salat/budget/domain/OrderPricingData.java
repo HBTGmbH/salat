@@ -5,13 +5,14 @@ import java.time.LocalDate;
 /**
  * A customer rate as it is written.
  *
+ * @param employeeId    the person the rate applies to, or {@code null} for everyone on the order
  * @param orderBudgetId the budget plan the rate is bound to, or {@code null} for a rate that
  *                      applies whatever plan a booking belongs to (#1065)
  */
 public record OrderPricingData(
     String customerorderSign,
     String suborderSign,
-    String employeeSign,
+    Long employeeId,
     Long orderBudgetId,
     String description,
     Integer priceCentsPerHour,

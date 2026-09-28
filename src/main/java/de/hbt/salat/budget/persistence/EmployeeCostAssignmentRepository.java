@@ -14,7 +14,7 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 public interface EmployeeCostAssignmentRepository
     extends CrudRepository<EmployeeCostAssignment, Long>, PagingAndSortingRepository<EmployeeCostAssignment, Long> {
 
-    List<EmployeeCostAssignment> findAllByOrderByEmployeeCostNameAscEmployeeSignAsc();
+    List<EmployeeCostAssignment> findAllByOrderByEmployeeCostNameAscIdAsc();
 
     List<EmployeeCostAssignment> findByEmployeeCostName(String employeeCostName);
 
@@ -22,39 +22,40 @@ public interface EmployeeCostAssignmentRepository
 
     @Query("""
         SELECT a FROM EmployeeCostAssignment a
-        WHERE a.employeeSign = :emp
+        WHERE a.employeeId = :emp
           AND ((:so IS NULL AND a.suborderSign IS NULL) OR a.suborderSign = :so)
           AND a.validFrom <= :until AND a.validUntil >= :from
           AND (:excludeId IS NULL OR a.id != :excludeId)
         """)
     List<EmployeeCostAssignment> findOverlapping(
-        @Param("emp") String employeeSign,
+        @Param("emp") long employeeId,
         @Param("so") String suborderSign,
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
         @Param("excludeId") Long excludeId);
 
-    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeSign = :emp"
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
         + " AND a.suborderSign = :so"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveSuborderSpecific(
-        @Param("emp") String employeeSign,
+        @Param("emp") long employeeId,
         @Param("so") String suborderSign,
         @Param("date") LocalDate date);
 
-    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeSign = :emp"
+    @Query("SELECT a FROM EmployeeCostAssignment a WHERE a.employeeId = :emp"
         + " AND a.suborderSign IS NULL"
         + " AND a.validFrom <= :date AND a.validUntil >= :date")
     List<EmployeeCostAssignment> findEffectiveGeneral(
-        @Param("emp") String employeeSign,
+        @Param("emp") long employeeId,
         @Param("date") LocalDate date);
 
-    @Query("SELECT DISTINCT a.employeeSign FROM EmployeeCostAssignment a")
-    List<String> findDistinctEmployeeSigns();
-
-    /** Carries the assignments of an employee over to a new sign (#966). */
+    /**
+     * Keeps the sign column in step with the person (#966, #968). The application resolves by
+     * {@code employeeId} and no longer needs it; views, ETL definitions and reports still join on
+     * it until they have moved to {@code employee_id}.
+     */
     @Modifying
-    @Query("UPDATE EmployeeCostAssignment a SET a.employeeSign = :newSign WHERE a.employeeSign = :oldSign")
-    int updateEmployeeSign(@Param("oldSign") String oldSign, @Param("newSign") String newSign);
+    @Query("UPDATE EmployeeCostAssignment a SET a.employeeSign = :sign WHERE a.employeeId = :employeeId")
+    int updateEmployeeSign(@Param("employeeId") long employeeId, @Param("sign") String sign);
 
 }

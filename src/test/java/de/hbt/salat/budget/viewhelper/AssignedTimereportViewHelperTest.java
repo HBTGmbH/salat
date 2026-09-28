@@ -117,7 +117,7 @@ public class AssignedTimereportViewHelperTest {
   }
 
   private static AssignedBooking booking(long id, LocalDate day) {
-    return new AssignedBooking(id, day, 7L, "CO/01", "abc", "Abc Person",
+    return new AssignedBooking(id, day, 7L, "CO/01", 1L, "abc", "Abc Person",
         Duration.ofMinutes(150), "task");
   }
 

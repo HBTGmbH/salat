@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 public record EmployeeCostAssignmentData(
     String employeeCostName,
-    String employeeSign,
+    Long employeeId,
     String suborderSign,
     LocalDate validFrom,
     LocalDate validUntil

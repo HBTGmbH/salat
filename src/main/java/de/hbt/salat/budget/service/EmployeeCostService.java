@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +27,7 @@ import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateUtils;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.order.service.SuborderService;
 
@@ -54,19 +54,28 @@ public class EmployeeCostService {
      * <p>A category is a name. It shows up here as soon as a cost record or an assignment carries the
      * name — an assignment left behind by a deleted rate (#895) keeps its category listed, otherwise
      * it could no longer be reached through the UI at all.
+     *
+     * <p>The signs are read off the people (#968), so they follow a rename by themselves. An
+     * assignment the migration could not resolve costs nobody and names nobody here; the category
+     * page lists and marks it.
      */
     @Transactional(readOnly = true)
     public List<EmployeeCostCategory> getCategories() {
-        var assignments = assignmentRepository.findAllByOrderByEmployeeCostNameAscEmployeeSignAsc();
+        var assignments = assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc();
         var names = new TreeSet<>(employeeCostRepository.findDistinctNames());
         assignments.forEach(assignment -> names.add(assignment.getEmployeeCostName()));
+        var signs = employeeService.getSignsByIds(assignments.stream()
+            .map(EmployeeCostAssignment::getEmployeeId)
+            .filter(Objects::nonNull)
+            .collect(toSet()));
 
         var today = DateUtils.today();
         return names.stream()
             .map(name -> new EmployeeCostCategory(name, assignments.stream()
                 .filter(assignment -> assignment.getEmployeeCostName().equals(name))
                 .filter(assignment -> !assignment.getValidUntil().isBefore(today))
-                .map(EmployeeCostAssignment::getEmployeeSign)
+                .map(assignment -> signs.get(assignment.getEmployeeId()))
+                .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
                 .toList()))
@@ -88,7 +97,7 @@ public class EmployeeCostService {
 
     @Transactional(readOnly = true)
     public List<EmployeeCostAssignment> getAllAssignments() {
-        return assignmentRepository.findAllByOrderByEmployeeCostNameAscEmployeeSignAsc();
+        return assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc();
     }
 
     @Transactional(readOnly = true)
@@ -97,30 +106,14 @@ public class EmployeeCostService {
     }
 
     /**
-     * The employee signs of the assignments that no person carries any more (#966). Since a sign
-     * change is followed, these can only be leftovers from before — the category page marks them so
-     * they can be corrected instead of costing 0 EUR unnoticed.
-     *
-     * <p>Compared in Java rather than by a query on purpose: {@link EmployeeCostLookup} resolves the
-     * sign with {@code equals}, so it has to be judged the same way. A database comparison folds
-     * case together on the usual collation and would call a sign resolvable that the lookup will
-     * never match.
+     * Writes the new sign of a person into the sign column of their assignments (#966, #968). The
+     * resolution goes by id and does not need it; the column is kept in step only for the views,
+     * ETL definitions and reports that still join on it. Driven by the event of the employee
+     * module; changing a sign takes a manager there just as the class-level authorization demands
+     * one here.
      */
-    @Transactional(readOnly = true)
-    public Set<String> getUnknownEmployeeSigns() {
-        var knownSigns = employeeService.getAllEmployeeSigns();
-        return assignmentRepository.findDistinctEmployeeSigns().stream()
-            .filter(sign -> sign != null && !knownSigns.contains(sign))
-            .collect(toSet());
-    }
-
-    /**
-     * Carries every assignment of {@code oldSign} over to {@code newSign} (#966). Driven by the
-     * event of the employee module; changing a sign takes a manager there just as the class-level
-     * authorization demands one here.
-     */
-    public void moveAssignmentsToSign(String oldSign, String newSign) {
-        assignmentRepository.updateEmployeeSign(oldSign, newSign);
+    public void followSignChange(long employeeId, String newSign) {
+        assignmentRepository.updateEmployeeSign(employeeId, newSign);
     }
 
     @Transactional(readOnly = true)
@@ -152,7 +145,7 @@ public class EmployeeCostService {
     @Transactional(readOnly = true)
     public EmployeeCostLookup lookup() {
         return EmployeeCostLookup.of(
-            assignmentRepository.findAllByOrderByEmployeeCostNameAscEmployeeSignAsc(),
+            assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc(),
             employeeCostRepository.findAllByOrderByNameAscValidFromAsc());
     }
 
@@ -165,10 +158,10 @@ public class EmployeeCostService {
      * its own it costs nothing (#463).
      */
     @Transactional(readOnly = true)
-    public Optional<EmployeeCost> findEffectiveCost(String employeeSign, String suborderSign,
+    public Optional<EmployeeCost> findEffectiveCost(long employeeId, String suborderSign,
                                                     OrderType orderType, LocalDate date) {
         if (suborderSign != null) {
-            var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeSign, suborderSign, date);
+            var assignments = assignmentRepository.findEffectiveSuborderSpecific(employeeId, suborderSign, date);
             if (!assignments.isEmpty()) {
                 return employeeCostRepository.findEffectiveByName(assignments.get(0).getEmployeeCostName(), date);
             }
@@ -176,7 +169,7 @@ public class EmployeeCostService {
         if (orderType == OrderType.BEREITSCHAFT) {
             return Optional.empty();
         }
-        var assignments = assignmentRepository.findEffectiveGeneral(employeeSign, date);
+        var assignments = assignmentRepository.findEffectiveGeneral(employeeId, date);
         if (!assignments.isEmpty()) {
             return employeeCostRepository.findEffectiveByName(assignments.get(0).getEmployeeCostName(), date);
         }
@@ -311,39 +304,52 @@ public class EmployeeCostService {
 
     @Authorized(requiresManager = true)
     public EmployeeCostAssignment createAssignment(EmployeeCostAssignmentData data) {
+        var employee = employeeOf(data);
         checkReferences(data);
-        checkNoAssignmentOverlap(data.employeeSign(), data.suborderSign(), data.validFrom(),
+        checkNoAssignmentOverlap(employee.getId(), data.suborderSign(), data.validFrom(),
             endOfValidity(data.validUntil()), null);
         var assignment = new EmployeeCostAssignment();
-        applyAssignment(assignment, data);
+        applyAssignment(assignment, data, employee);
         return assignmentRepository.save(assignment);
     }
 
     @Authorized(requiresManager = true)
     public void updateAssignment(long id, EmployeeCostAssignmentData data) {
+        var employee = employeeOf(data);
         checkReferences(data);
-        checkNoAssignmentOverlap(data.employeeSign(), data.suborderSign(), data.validFrom(),
+        checkNoAssignmentOverlap(employee.getId(), data.suborderSign(), data.validFrom(),
             endOfValidity(data.validUntil()), id);
         var assignment = getAssignmentById(id);
-        applyAssignment(assignment, data);
+        applyAssignment(assignment, data, employee);
         assignmentRepository.save(assignment);
     }
 
     /**
-     * An assignment names its employee, its suborder and its cost category by sign, so all three can
-     * be anything the request sends (#958). The select of the form is no protection: a post with
-     * other values, or none at all, reaches the same endpoint. An unknown sign makes
-     * {@link #findEffectiveCost} resolve nothing, and that shows up as work costing 0 EUR in
-     * controlling rather than as an error — so it is refused here.
+     * The person the assignment is for. The foreign key would refuse an id nobody carries as well,
+     * but only as a failed statement; and the person is needed anyway, for the sign column that is
+     * still written alongside the id (#968).
+     */
+    private Employee employeeOf(EmployeeCostAssignmentData data) {
+        var employee = data.employeeId() == null ? null : employeeService.getEmployeeById(data.employeeId());
+        if (employee == null) {
+            throw new InvalidDataException(ErrorCode.EM_NOT_FOUND, data.employeeId());
+        }
+        return employee;
+    }
+
+    /**
+     * An assignment names its suborder and its cost category by sign, so both can be anything the
+     * request sends (#958). The select of the form is no protection: a post with other values, or
+     * none at all, reaches the same endpoint. An unknown sign makes {@link #findEffectiveCost}
+     * resolve nothing, and that shows up as work costing 0 EUR in controlling rather than as an
+     * error — so it is refused here. The person is referenced by id (#968) and checked by
+     * {@link #employeeOf}.
      *
      * <p>The category is checked through {@link #categoryExists}, which counts a name that only
      * assignments still carry. An assignment left behind by a deleted cost rate (#895) therefore
      * stays editable, which is the way to move it onto a rate that exists.
      */
     private void checkReferences(EmployeeCostAssignmentData data) {
-        if (employeeService.getEmployeeBySign(data.employeeSign()) == null) {
-            throw new InvalidDataException(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN, data.employeeSign());
-        }
         // No suborder means the assignment applies regardless of suborder — nothing to check.
         if (data.suborderSign() != null
             && !suborderService.existsSuborderWithCompleteOrderSign(data.suborderSign())) {
@@ -365,8 +371,8 @@ public class EmployeeCostService {
         }
     }
 
-    private void checkNoAssignmentOverlap(String employeeSign, String suborderSign, LocalDate from, LocalDate until, Long excludeId) {
-        if (!assignmentRepository.findOverlapping(employeeSign, suborderSign, from, until, excludeId).isEmpty()) {
+    private void checkNoAssignmentOverlap(long employeeId, String suborderSign, LocalDate from, LocalDate until, Long excludeId) {
+        if (!assignmentRepository.findOverlapping(employeeId, suborderSign, from, until, excludeId).isEmpty()) {
             throw new BusinessRuleException(ErrorCode.BU_EMPLOYEE_COST_ASSIGNMENT_OVERLAP);
         }
     }
@@ -378,9 +384,11 @@ public class EmployeeCostService {
         cost.setValidUntil(endOfValidity(data.validUntil()));
     }
 
-    private void applyAssignment(EmployeeCostAssignment assignment, EmployeeCostAssignmentData data) {
+    private void applyAssignment(EmployeeCostAssignment assignment, EmployeeCostAssignmentData data,
+                                 Employee employee) {
         assignment.setEmployeeCostName(data.employeeCostName());
-        assignment.setEmployeeSign(data.employeeSign());
+        assignment.setEmployeeId(employee.getId());
+        assignment.setEmployeeSign(employee.getSign());
         assignment.setSuborderSign(data.suborderSign());
         assignment.setValidFrom(data.validFrom());
         assignment.setValidUntil(endOfValidity(data.validUntil()));

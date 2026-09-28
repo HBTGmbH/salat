@@ -78,16 +78,16 @@ public final class AppliedRateLookup {
      * invoiceable. That is a booking whose suborder could not be read at all — the caller already
      * says so in the log; inventing a rate for it would be the worse answer.
      */
-    public AppliedRate resolve(String employeeSign, long suborderId, LocalDate day) {
+    public AppliedRate resolve(long employeeId, long suborderId, LocalDate day) {
         var suborder = subordersById.get(suborderId);
         if (suborder == null) {
             return AppliedRate.none(includesCosts());
         }
         var cost = costLookup == null ? null : costLookup
-            .findEffectiveCost(employeeSign, suborder.completeOrderSign(), suborder.orderType(), day)
+            .findEffectiveCost(employeeId, suborder.completeOrderSign(), suborder.orderType(), day)
             .orElse(null);
         var price = pricingLookup
-            .findEffectiveRate(customerorderSign, suborder.completeOrderSign(), employeeSign,
+            .findEffectiveRate(customerorderSign, suborder.completeOrderSign(), employeeId,
                 orderBudgetId, day)
             .orElse(null);
         return new AppliedRate(

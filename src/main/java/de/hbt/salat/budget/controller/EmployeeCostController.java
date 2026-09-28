@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.controller;
 
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.math.BigDecimal;
@@ -7,6 +8,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Controller;
@@ -24,6 +27,7 @@ import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.EmployeeCostAssignmentData;
 import de.hbt.salat.budget.domain.EmployeeCostData;
 import de.hbt.salat.budget.service.EmployeeCostService;
+import de.hbt.salat.budget.viewhelper.EmployeeCostAssignmentViewHelper;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.employee.service.EmployeeService;
@@ -233,11 +237,11 @@ public class EmployeeCostController {
      */
     @GetMapping("/assignments/create")
     public String createAssignmentForm(@RequestParam(required = false) String name,
-                                       @RequestParam(required = false) String employeeSign,
+                                       @RequestParam(required = false) Long employeeId,
                                        Model model) {
         var form = new EmployeeCostAssignmentForm();
         form.setEmployeeCostName(trimToNull(name));
-        form.setEmployeeSign(trimToNull(employeeSign));
+        form.setEmployeeId(employeeId);
         addAssignmentFormModel(model, form);
         return "budget/employee-cost-assignment-form";
     }
@@ -248,7 +252,7 @@ public class EmployeeCostController {
         var form = new EmployeeCostAssignmentForm();
         form.setId(assignment.getId());
         form.setEmployeeCostName(assignment.getEmployeeCostName());
-        form.setEmployeeSign(assignment.getEmployeeSign());
+        form.setEmployeeId(assignment.getEmployeeId());
         form.setSuborderSign(assignment.getSuborderSign());
         form.setValidFrom(assignment.getValidFrom());
         form.setValidUntil(openEnd(assignment.getValidUntil()));
@@ -309,20 +313,31 @@ public class EmployeeCostController {
     }
 
     private List<EmployeeCostAssignment> assignmentsOf(String name) {
-        return employeeCostService.getAssignmentsByName(name).stream()
-            .sorted(Comparator.comparing(EmployeeCostAssignment::getEmployeeSign)
-                .thenComparing(EmployeeCostAssignment::getValidFrom))
-            .toList();
+        return employeeCostService.getAssignmentsByName(name);
     }
 
+    /**
+     * The signs are read off the people (#968), so they follow a rename. An assignment whose person
+     * the migration could not resolve shows the sign it was stored with and is marked: it costs the
+     * work 0 EUR without a word, which is what the mark is for.
+     */
     private void addCategoryModel(Model model, String name, List<EmployeeCost> rates,
                                   List<EmployeeCostAssignment> assignments) {
+        var signs = employeeService.getSignsByIds(assignments.stream()
+            .map(EmployeeCostAssignment::getEmployeeId)
+            .filter(Objects::nonNull)
+            .collect(toSet()));
+        Function<EmployeeCostAssignment, String> signOf = assignment -> assignment.isEmployeeUnresolved()
+            ? assignment.getEmployeeSign()
+            : signs.get(assignment.getEmployeeId());
         model.addAttribute("categoryName", name);
         model.addAttribute("rates", rates);
-        model.addAttribute("assignments", assignments);
-        // An assignment on a sign nobody carries resolves to nothing and costs the work 0 EUR
-        // without a word (#966) — the list marks it so it can be corrected.
-        model.addAttribute("unknownEmployeeSigns", employeeCostService.getUnknownEmployeeSigns());
+        model.addAttribute("assignments", assignments.stream()
+            .map(assignment -> new EmployeeCostAssignmentViewHelper(assignment, signOf.apply(assignment)))
+            .sorted(Comparator.comparing(EmployeeCostAssignmentViewHelper::employeeSign,
+                    Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(row -> row.assignment().getValidFrom()))
+            .toList());
     }
 
     private String rateFormWithErrors(Model model, EmployeeCostForm form, List<String> errors) {
@@ -340,9 +355,23 @@ public class EmployeeCostController {
     private void addAssignmentFormModel(Model model, EmployeeCostAssignmentForm form) {
         model.addAttribute("assignmentForm", form);
         model.addAttribute("costNames", employeeCostService.getSelectableCostNames(form.getEmployeeCostName()));
-        model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeSign()));
+        model.addAttribute("employees", employeeService.getSelectableEmployees(form.getEmployeeId()));
+        model.addAttribute("unresolvedEmployeeSign", unresolvedEmployeeSignOf(form));
         model.addAttribute("suborders", suborderService.getAllSelectableSuborders(form.getSuborderSign()));
         model.addAttribute("isEdit", !form.isNew());
+    }
+
+    /**
+     * The sign an assignment was stored with when the migration could not resolve its person (#968),
+     * or {@code null} — named in the empty choice of the select, which cannot offer that person. The
+     * person is required, so saving asks for one.
+     */
+    private String unresolvedEmployeeSignOf(EmployeeCostAssignmentForm form) {
+        if (form.isNew() || form.getEmployeeId() != null) {
+            return null;
+        }
+        var assignment = employeeCostService.getAssignmentById(form.getId());
+        return assignment.isEmployeeUnresolved() ? assignment.getEmployeeSign() : null;
     }
 
     private List<String> validateAssignment(EmployeeCostAssignmentForm form) {
@@ -350,7 +379,7 @@ public class EmployeeCostController {
         if (form.getEmployeeCostName() == null || form.getEmployeeCostName().isBlank()) {
             errors.add(messages.getMessage("main.employeecost.assignment.error.category.required"));
         }
-        if (form.getEmployeeSign() == null || form.getEmployeeSign().isBlank()) {
+        if (form.getEmployeeId() == null) {
             errors.add(messages.getMessage("main.employeecost.assignment.error.employee.required"));
         }
         if (form.getValidFrom() == null) {
@@ -364,7 +393,7 @@ public class EmployeeCostController {
     private static EmployeeCostAssignmentData toAssignmentData(EmployeeCostAssignmentForm form) {
         return new EmployeeCostAssignmentData(
             trimToNull(form.getEmployeeCostName()),
-            trimToNull(form.getEmployeeSign()),
+            form.getEmployeeId(),
             trimToNull(form.getSuborderSign()),
             form.getValidFrom(),
             form.getValidUntil()

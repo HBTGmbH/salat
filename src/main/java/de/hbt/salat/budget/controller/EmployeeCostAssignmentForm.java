@@ -11,7 +11,7 @@ public class EmployeeCostAssignmentForm {
 
     private Long id;
     private String employeeCostName;
-    private String employeeSign;
+    private Long employeeId;
     private String suborderSign;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

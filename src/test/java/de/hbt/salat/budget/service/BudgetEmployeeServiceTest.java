@@ -358,18 +358,27 @@ public class BudgetEmployeeServiceTest {
     return service.resolve(plan, FROM, UNTIL, List.of()).employees().rows();
   }
 
+  /**
+   * The tests name people by sign for readability; the rates resolve them by id (#968), which is
+   * derived from the sign here so that bookings and rates of one sign meet.
+   */
+  private static long idOf(String employeeSign) {
+    return Math.abs((long) employeeSign.hashCode());
+  }
+
   private void day(String employeeSign, long suborderId, LocalDate day, long bookings, Duration duration) {
-    days.add(new AssignedEmployeeDay(employeeSign, employeeSign + " Person", suborderId, day,
-        bookings, duration.toMinutes()));
+    days.add(new AssignedEmployeeDay(idOf(employeeSign), employeeSign, employeeSign + " Person",
+        suborderId, day, bookings, duration.toMinutes()));
   }
 
   private static AssignedBooking booking(long id, String employeeSign, long suborderId, LocalDate day) {
-    return new AssignedBooking(id, day, suborderId, "co/01", employeeSign, employeeSign + " Person",
-        Duration.ofHours(4), "task");
+    return new AssignedBooking(id, day, suborderId, "co/01", idOf(employeeSign), employeeSign,
+        employeeSign + " Person", Duration.ofHours(4), "task");
   }
 
   private void costAssignment(String employeeSign, String suborderSign, String costName) {
     var assignment = new EmployeeCostAssignment();
+    assignment.setEmployeeId(idOf(employeeSign));
     assignment.setEmployeeSign(employeeSign);
     assignment.setSuborderSign(suborderSign);
     assignment.setEmployeeCostName(costName);
@@ -392,6 +401,7 @@ public class BudgetEmployeeServiceTest {
     var pricing = new OrderPricing();
     pricing.setCustomerorderSign("co");
     pricing.setSuborderSign(suborderSign);
+    pricing.setEmployeeId(employeeSign == null ? null : idOf(employeeSign));
     pricing.setEmployeeSign(employeeSign);
     pricing.setPriceCentsPerHour(centsPerHour);
     pricing.setValidFrom(from);

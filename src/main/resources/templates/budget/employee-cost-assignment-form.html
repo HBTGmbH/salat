@@ -26,10 +26,12 @@
         <option th:each="name : ${costNames}" th:value="${name}" th:text="${name}"></option>
       </salat:select>
       <!--/* A hidden employee only appears when the assignment already references them; say so. */-->
-      <salat:select th:field="*{employeeSign}" th:label="#{main.employeecost.assignment.field.employeeSign}" required="true">
-        <option value="" th:text="#{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
+      <!--/* A person the migration could not resolve cannot be offered; the empty choice names the stored sign. */-->
+      <salat:select th:field="*{employeeId}" th:label="#{main.employeecost.assignment.field.employeeSign}" required="true">
+        <option value=""
+                th:text="${unresolvedEmployeeSign} != null ? #{main.budget.employeesign.unresolved.option(${unresolvedEmployeeSign})} : #{main.employeecost.assignment.select.employee}">--- Mitarbeiter ---</option>
         <option th:each="emp : ${employees}"
-                th:value="${emp.sign}"
+                th:value="${emp.id}"
                 th:text="|${emp.sign} - ${emp.firstname} ${emp.lastname}| + ${@hiddenMarkerViewHelper.suffix(emp.hide)}"></option>
       </salat:select>
       <!--/* A hidden suborder only appears when the assignment already references it; say so. */-->

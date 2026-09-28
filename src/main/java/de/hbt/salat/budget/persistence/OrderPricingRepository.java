@@ -37,14 +37,18 @@ public interface OrderPricingRepository
      * the plan-less one it narrows (#1065). {@code NULL} and the empty string mean the same thing to
      * the matching, so they are folded together here as well; legacy rows hold both.
      *
-     * <p>The plan needs no such folding: it is a foreign key and is either set or {@code NULL}.
-     * {@code p.orderBudget.id} reads that key without joining the plan.
+     * <p>Person and plan need no such folding: both are foreign keys and either set or {@code NULL}.
+     * {@code p.orderBudget.id} reads that key without joining the plan. A rate whose person the
+     * migration could not resolve (#968) carries no id but still its sign; it applies to nobody and
+     * therefore competes with nothing, which is what the sign condition says. It goes away together
+     * with the sign column.
      */
     @Query("""
         SELECT p FROM OrderPricing p
         WHERE p.customerorderSign = :co
           AND COALESCE(p.suborderSign, '') = COALESCE(:so, '')
-          AND COALESCE(p.employeeSign, '') = COALESCE(:emp, '')
+          AND ((:emp IS NULL AND p.employeeId IS NULL AND COALESCE(p.employeeSign, '') = '')
+               OR p.employeeId = :emp)
           AND ((:budgetId IS NULL AND p.orderBudget.id IS NULL) OR p.orderBudget.id = :budgetId)
           AND p.validFrom <= :until AND p.validUntil >= :from
           AND (:excludeId IS NULL OR p.id != :excludeId)
@@ -52,7 +56,7 @@ public interface OrderPricingRepository
     List<OrderPricing> findOverlapping(
         @Param("co") String customerorderSign,
         @Param("so") String suborderSign,
-        @Param("emp") String employeeSign,
+        @Param("emp") Long employeeId,
         @Param("budgetId") Long orderBudgetId,
         @Param("from") LocalDate validFrom,
         @Param("until") LocalDate validUntil,
@@ -67,11 +71,12 @@ public interface OrderPricingRepository
     List<OrderPricing> findByOrderBudgetId(@Param("budgetId") long orderBudgetId);
 
     /**
-     * Carries the rates of an employee over to a new sign (#966). Rates without an employee apply
-     * to everyone and are left alone by the {@code =} comparison.
+     * Keeps the sign column in step with the person (#966, #968) — see
+     * {@code EmployeeCostAssignmentRepository#updateEmployeeSign}. Rates for everyone carry no id
+     * and are left alone.
      */
     @Modifying
-    @Query("UPDATE OrderPricing p SET p.employeeSign = :newSign WHERE p.employeeSign = :oldSign")
-    int updateEmployeeSign(@Param("oldSign") String oldSign, @Param("newSign") String newSign);
+    @Query("UPDATE OrderPricing p SET p.employeeSign = :sign WHERE p.employeeId = :employeeId")
+    int updateEmployeeSign(@Param("employeeId") long employeeId, @Param("sign") String sign);
 
 }

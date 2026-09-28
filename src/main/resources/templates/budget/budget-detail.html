@@ -213,7 +213,7 @@
         <tbody>
           <tr th:each="p : ${boundPricings}">
             <td th:text="${p.suborderSign} ?: '-'"></td>
-            <td th:text="${p.employeeSign} ?: '-'"></td>
+            <td th:text="${p.employeeUnresolved} ? ${p.employeeSign} : (${p.employeeId} != null ? ${boundPricingSigns.get(p.employeeId)} : '-')"></td>
             <td th:text="${p.description} ?: '-'"></td>
             <td class="text-end" th:text="#{main.budget.format.amount(${p.priceCentsPerHour / 100.0})}"></td>
             <td class="d-none d-md-table-cell small text-muted">
@@ -345,12 +345,12 @@
                    the person filled in. Creating either takes a manager, hence the links do too. */-->
             <td class="text-nowrap" th:if="${isManager}">
               <a class="btn btn-outline-secondary btn-sm"
-                 th:href="@{/budget/employee-cost/assignments/create(employeeSign=${e.employeeSign})}"
+                 th:href="@{/budget/employee-cost/assignments/create(employeeId=${e.employeeId})}"
                  th:title="#{main.budget.employees.link.cost(${e.employeeSign})}">
                 <i class="icon ti ti-coin m-0"></i>
               </a>
               <a class="btn btn-outline-secondary btn-sm ms-1"
-                 th:href="@{/budget/pricing/create(customerorderSign=${budget.customerorderSign},employeeSign=${e.employeeSign})}"
+                 th:href="@{/budget/pricing/create(customerorderSign=${budget.customerorderSign},employeeId=${e.employeeId})}"
                  th:title="#{main.budget.employees.link.rate(${e.employeeSign})}">
                 <i class="icon ti ti-receipt m-0"></i>
               </a>

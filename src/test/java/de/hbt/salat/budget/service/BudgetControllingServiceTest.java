@@ -33,6 +33,9 @@ import de.hbt.salat.budget.domain.OrderFlatRateInstalment;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
 import de.hbt.salat.budget.domain.OrderPricing;
 import de.hbt.salat.budget.domain.OrderPricingLookup;
+import de.hbt.salat.budget.domain.EmployeeCostLookup;
+import de.hbt.salat.budget.domain.EmployeeCostAssignment;
+import de.hbt.salat.budget.domain.EmployeeCost;
 import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.domain.ProgressStatus;
 import de.hbt.salat.budget.domain.SectionKind;
@@ -73,6 +76,8 @@ public class BudgetControllingServiceTest {
   private static final LocalDate IN_H1 = LocalDate.of(2026, 3, 10);
   private static final LocalDate IN_H2 = LocalDate.of(2026, 9, 10);
 
+  private static final long EMPLOYEE_ID = 5L;
+
   private final List<OrderBudget> plans = new ArrayList<>();
   private final List<OrderFlatRate> flatRates = new ArrayList<>();
   private final List<TimereportDTO> reports = new ArrayList<>();
@@ -83,6 +88,8 @@ public class BudgetControllingServiceTest {
   private TimereportBudgetAssignmentRepository assignmentRepository;
   private TimereportService timereportService;
   private SuborderService suborderService;
+  private OrderPricingService orderPricingService;
+  private EmployeeCostService employeeCostService;
   private BudgetControllingService service;
   private Customerorder customerorder;
 
@@ -93,9 +100,9 @@ public class BudgetControllingServiceTest {
     timereportService = mock(TimereportService.class);
     orderBudgetRepository = mock(OrderBudgetRepository.class);
     assignmentRepository = mock(TimereportBudgetAssignmentRepository.class);
-    var orderPricingService = mock(OrderPricingService.class);
+    orderPricingService = mock(OrderPricingService.class);
     var orderFlatRateService = mock(OrderFlatRateService.class);
-    var employeeCostService = mock(EmployeeCostService.class);
+    employeeCostService = mock(EmployeeCostService.class);
     var publicholidayService = mock(PublicholidayService.class);
 
     customerorder = mock(Customerorder.class);
@@ -145,6 +152,45 @@ public class BudgetControllingServiceTest {
     service = new BudgetControllingService(customerorderService, suborderService, timereportService,
         orderBudgetRepository, assignmentRepository, orderPricingService, orderFlatRateService,
         employeeCostService, publicholidayService, budgetAuthorization);
+  }
+
+  /**
+   * Anonymizing a person overwrites their sign by design (#966), and budgets reach into the past:
+   * the controlling has to value their work exactly as before. Rate and cost assignment still carry
+   * the old sign — nothing has followed it — and apply all the same, because both resolve the
+   * person by id (#968).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_value_the_work_of_an_anonymized_person_unchanged() {
+    var personalRate = orderWideRate();
+    personalRate.setPriceCentsPerHour(15000);
+    personalRate.setEmployeeId(EMPLOYEE_ID);
+    personalRate.setEmployeeSign("emp");
+    when(orderPricingService.lookupFor(any()))
+        .thenReturn(OrderPricingLookup.of(List.of(orderWideRate(), personalRate)));
+    var assignment = new EmployeeCostAssignment();
+    assignment.setEmployeeId(EMPLOYEE_ID);
+    assignment.setEmployeeSign("emp");
+    assignment.setEmployeeCostName("senior");
+    assignment.setValidFrom(FROM);
+    assignment.setValidUntil(UNTIL);
+    var cost = new EmployeeCost();
+    cost.setName("senior");
+    cost.setCostCentsPerHour(6000);
+    cost.setValidFrom(FROM);
+    cost.setValidUntil(UNTIL);
+    when(employeeCostService.lookup()).thenReturn(EmployeeCostLookup.of(List.of(assignment), List.of(cost)));
+
+    var before = service.compute("co", FROM, UNTIL, true).total();
+    givenReports(eightHoursOn(11L, IN_H1, "ANON-5"), eightHoursOn(20L, IN_H2, "ANON-5"));
+    var after = service.compute("co", FROM, UNTIL, true).total();
+
+    // 16 h at the personal rate of 150 EUR/h, and at the cost of 60 EUR/h
+    assertThat(before.revenueEuro()).isEqualByComparingTo("2400.00");
+    assertThat(before.costEuro()).isEqualByComparingTo("960.00");
+    assertThat(after.revenueEuro()).isEqualByComparingTo(before.revenueEuro());
+    assertThat(after.costEuro()).isEqualByComparingTo(before.costEuro());
   }
 
   /**
@@ -1122,13 +1168,19 @@ public class BudgetControllingServiceTest {
   private static long nextId = 1;
 
   private TimereportDTO eightHoursOn(long suborderId, LocalDate day) {
+    return eightHoursOn(suborderId, day, "emp");
+  }
+
+  /** The booking side reads the sign live off the person, so it carries whatever they are called now. */
+  private TimereportDTO eightHoursOn(long suborderId, LocalDate day, String employeeSign) {
     var suborder = suborders.stream().filter(so -> so.getId() == suborderId).findFirst();
     return TimereportDTO.builder()
         .id(nextId++)
         .customerorderSign("co")
         .completeOrderSign(suborder.map(Suborder::getCompleteOrderSign).orElse("co/?"))
         .suborderId(suborderId)
-        .employeeSign("emp")
+        .employeeId(EMPLOYEE_ID)
+        .employeeSign(employeeSign)
         .referenceday(day)
         .duration(Duration.ofHours(8))
         .build();

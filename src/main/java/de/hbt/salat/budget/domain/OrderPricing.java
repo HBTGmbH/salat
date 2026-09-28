@@ -32,6 +32,20 @@ public class OrderPricing extends AuditedEntity {
     @Column(name = "suborder_sign")
     private String suborderSign;
 
+    /**
+     * The person the rate applies to (#968); {@code null} means everyone on the order — unless
+     * {@link #employeeSign} is set, see {@link #isEmployeeUnresolved()}.
+     */
+    @Column(name = "employee_id")
+    private Long employeeId;
+
+    /**
+     * The sign of {@link #employeeId}, kept only because views, ETL definitions and reports still
+     * join on it (#968). The application reads it for one thing alone, telling an unresolved rate
+     * from one for everyone; otherwise it is written on save from the chosen person and follows a
+     * sign change ({@code EmployeeSignChangedListener}). It goes away once those readers have moved
+     * to {@code employee_id}.
+     */
     @Column(name = "employee_sign")
     private String employeeSign;
 
@@ -90,7 +104,22 @@ public class OrderPricing extends AuditedEntity {
      * silence the gap warning.
      */
     public boolean isOrderWide() {
-        return isBlank(suborderSign) && isBlank(employeeSign) && orderBudget == null;
+        return isBlank(suborderSign) && isForEveryone() && orderBudget == null;
+    }
+
+    /** Whether the rate applies to every person on the order — it names no person at all. */
+    public boolean isForEveryone() {
+        return employeeId == null && isBlank(employeeSign);
+    }
+
+    /**
+     * Whether the rate names a person the migration could not resolve (#968): a sign carried by no
+     * person or by several, and no id. Such a rate applies to nobody, exactly as it did while rates
+     * were matched by sign — reading the missing id as "everyone" would hand one person's rate to
+     * the whole order.
+     */
+    public boolean isEmployeeUnresolved() {
+        return employeeId == null && !isBlank(employeeSign);
     }
 
     private static boolean isBlank(String value) {

@@ -1,5 +1,6 @@
 package de.hbt.salat.budget.service;
 
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,10 +14,11 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -56,6 +58,13 @@ public class EmployeeCostServiceTest {
   private static final LocalDate DEC = LocalDate.of(2026, 12, 31);
   private static final LocalDate OPEN_END = LocalDate.of(2999, 12, 31);
 
+  /**
+   * The people the tests name by sign, and their ids — the assignments reference them by id since
+   * #968. Writing the tests with signs keeps them readable; {@code ghost} is nobody.
+   */
+  private static final Map<String, Long> PEOPLE = Map.of("emp", 1L, "other", 2L);
+  private static final long GHOST = 99L;
+
   private final List<EmployeeCost> costs = new ArrayList<>();
   private final List<EmployeeCostAssignment> assignments = new ArrayList<>();
 
@@ -71,9 +80,13 @@ public class EmployeeCostServiceTest {
     assignmentRepository = mock(EmployeeCostAssignmentRepository.class);
     employeeService = mock(EmployeeService.class);
     suborderService = mock(SuborderService.class);
-    // Every sign exists unless a test says otherwise (#958) — the point of those tests is the
-    // rejection, and every other test would otherwise have to know about the check.
-    when(employeeService.getEmployeeBySign(any())).thenReturn(new Employee());
+    // The people of PEOPLE exist, nobody else does.
+    when(employeeService.getEmployeeById(anyLong())).thenAnswer(invocation -> employee(invocation.getArgument(0)));
+    when(employeeService.getSignsByIds(any())).thenAnswer(invocation -> {
+      Collection<Long> ids = invocation.getArgument(0);
+      return PEOPLE.entrySet().stream().filter(person -> ids.contains(person.getValue()))
+          .collect(toMap(Map.Entry::getValue, Map.Entry::getKey));
+    });
     when(suborderService.existsSuborderWithCompleteOrderSign(any())).thenReturn(true);
     stubCostRepository();
     stubAssignmentRepository();
@@ -136,6 +149,7 @@ public class EmployeeCostServiceTest {
 
     verify(assignmentRepository, never()).deleteById(anyLong());
     assertThat(edited.getEmployeeCostName()).isEqualTo("junior");
+    assertThat(edited.getEmployeeId()).isEqualTo(PEOPLE.get("other"));
     assertThat(edited.getEmployeeSign()).isEqualTo("other");
     assertThat(edited.getSuborderSign()).isEqualTo("co/01");
     assertThat(edited.getValidFrom()).isEqualTo(JUL);
@@ -150,32 +164,62 @@ public class EmployeeCostServiceTest {
     assertThat(edited.getValidUntil()).isEqualTo(OPEN_END);
   }
 
-  // --- the signs an assignment references (#958) ----------------------------------------------
+  // --- the references of an assignment (#958, #968) -------------------------------------------
 
   /**
-   * The form protects the signs only as long as the input comes from its selects. A post with other
-   * values reaches the same endpoint, and an unknown sign resolves to no cost at all — silently.
+   * The form protects the person only as long as the input comes from its select. A post with
+   * another id reaches the same endpoint; the foreign key would refuse it too, but only as a failed
+   * statement.
    */
   @Test
   public void should_reject_an_assignment_for_an_employee_that_does_not_exist() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
-    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
 
     assertThatThrownBy(() -> service.createAssignment(assignmentData("senior", "ghost", null, JAN, DEC)))
         .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
+        .hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
     verify(assignmentRepository, never()).save(any());
   }
 
   @Test
-  public void should_accept_an_assignment_for_an_employee_that_exists() {
+  public void should_reject_an_assignment_without_an_employee() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+
+    assertThatThrownBy(() -> service.createAssignment(
+        new EmployeeCostAssignmentData("senior", null, null, JAN, DEC)))
+        .isInstanceOf(InvalidDataException.class)
+        .hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
+    verify(assignmentRepository, never()).save(any());
+  }
+
+  /**
+   * The id is the reference; the sign is written next to it only for the views, ETL definitions and
+   * reports that still join on it (#968) — and it is the person's sign, not one the request sends.
+   */
+  @Test
+  public void should_store_the_person_by_id_and_their_current_sign_next_to_it() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
 
     service.createAssignment(assignmentData("senior", "emp", null, JAN, DEC));
 
     var saved = ArgumentCaptor.forClass(EmployeeCostAssignment.class);
     verify(assignmentRepository).save(saved.capture());
+    assertThat(saved.getValue().getEmployeeId()).isEqualTo(PEOPLE.get("emp"));
     assertThat(saved.getValue().getEmployeeSign()).isEqualTo("emp");
+  }
+
+  /** Editing an assignment the migration could not resolve is how its person gets picked. */
+  @Test
+  public void should_resolve_an_unresolved_assignment_when_its_person_is_picked() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    var unresolved = givenAssignment("senior", "gone", null, JAN, DEC, 1L);
+    unresolved.setEmployeeId(null);
+
+    service.updateAssignment(unresolved.getId(), assignmentData("senior", "emp", null, JAN, DEC));
+
+    assertThat(unresolved.getEmployeeId()).isEqualTo(PEOPLE.get("emp"));
+    assertThat(unresolved.getEmployeeSign()).isEqualTo("emp");
+    assertThat(unresolved.isEmployeeUnresolved()).isFalse();
   }
 
   @Test
@@ -225,13 +269,12 @@ public class EmployeeCostServiceTest {
   public void should_reject_an_edit_that_moves_an_assignment_to_an_unknown_employee() {
     givenCost("senior", 8000, JAN, OPEN_END, 1L);
     var edited = givenAssignment("senior", "emp", null, JAN, DEC, 1L);
-    when(employeeService.getEmployeeBySign("ghost")).thenReturn(null);
 
     assertThatThrownBy(() -> service.updateAssignment(edited.getId(),
         assignmentData("senior", "ghost", null, JAN, DEC)))
         .isInstanceOf(InvalidDataException.class)
-        .hasMessageContaining(ErrorCode.BU_EMPLOYEE_SIGN_UNKNOWN.getCode());
-    assertThat(edited.getEmployeeSign()).isEqualTo("emp");
+        .hasMessageContaining(ErrorCode.EM_NOT_FOUND.getCode());
+    assertThat(edited.getEmployeeId()).isEqualTo(PEOPLE.get("emp"));
   }
 
   // --- renaming a cost rate -------------------------------------------------------------------
@@ -571,6 +614,7 @@ public class EmployeeCostServiceTest {
                                                  LocalDate from, LocalDate until, long id) {
     var assignment = new EmployeeCostAssignment();
     assignment.setEmployeeCostName(costName);
+    assignment.setEmployeeId(idOf(employeeSign));
     assignment.setEmployeeSign(employeeSign);
     assignment.setSuborderSign(suborderSign);
     assignment.setValidFrom(from);
@@ -586,7 +630,22 @@ public class EmployeeCostServiceTest {
 
   private static EmployeeCostAssignmentData assignmentData(String costName, String employeeSign,
                                                            String suborderSign, LocalDate from, LocalDate until) {
-    return new EmployeeCostAssignmentData(costName, employeeSign, suborderSign, from, until);
+    return new EmployeeCostAssignmentData(costName, idOf(employeeSign), suborderSign, from, until);
+  }
+
+  private static long idOf(String employeeSign) {
+    return PEOPLE.getOrDefault(employeeSign, GHOST);
+  }
+
+  private static Employee employee(long id) {
+    return PEOPLE.entrySet().stream().filter(person -> person.getValue() == id).findFirst()
+        .map(person -> {
+          var employee = new Employee();
+          setId(employee, id);
+          employee.setSign(person.getKey());
+          return employee;
+        })
+        .orElse(null);
   }
 
   /**
@@ -625,44 +684,38 @@ public class EmployeeCostServiceTest {
     });
   }
 
-  // --- assignments left behind on a sign nobody carries (#966) ---------------------------------
+  // --- assignments the migration could not resolve (#968) --------------------------------------
 
+  /** It costs nobody's work, so the overview names nobody for it — the category page marks it. */
   @Test
-  public void should_name_an_assignment_sign_no_employee_carries() {
-    givenAssignment("senior", "ghost", null, JAN, DEC, 1L);
-    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of("emp"));
-
-    assertThat(service.getUnknownEmployeeSigns()).containsExactly("ghost");
-  }
-
-  /**
-   * Hiding somebody declutters the select boxes and nothing else — their assignment resolves
-   * exactly as before (#956), so calling it lost would raise an alarm about a healthy record.
-   */
-  @Test
-  public void should_stay_silent_about_a_sign_an_employee_carries() {
+  public void should_name_nobody_for_an_assignment_whose_person_is_unresolved() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
     givenAssignment("senior", "emp", null, JAN, DEC, 1L);
-    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of("emp"));
+    givenAssignment("senior", "gone", null, JAN, DEC, 2L).setEmployeeId(null);
 
-    assertThat(service.getUnknownEmployeeSigns()).isEmpty();
+    assertThat(service.getCategories()).singleElement()
+        .extracting(EmployeeCostCategory::employeeSigns).asInstanceOf(list(String.class))
+        .containsExactly("emp");
   }
 
-  /** The lookup resolves the sign with {@code equals}, so a differing case is a differing sign. */
+  /** The overview shows the person's current sign, not the one stored with the assignment. */
   @Test
-  public void should_name_a_sign_that_matches_an_employee_only_apart_from_case() {
-    givenAssignment("senior", "EMP", null, JAN, DEC, 1L);
-    when(employeeService.getAllEmployeeSigns()).thenReturn(Set.of("emp"));
+  public void should_name_an_employee_by_their_current_sign() {
+    givenCost("senior", 8000, JAN, OPEN_END, 1L);
+    givenAssignment("senior", "emp", null, JAN, DEC, 1L).setEmployeeSign("old-sign");
 
-    assertThat(service.getUnknownEmployeeSigns()).containsExactly("EMP");
+    assertThat(service.getCategories()).singleElement()
+        .extracting(EmployeeCostCategory::employeeSigns).asInstanceOf(list(String.class))
+        .containsExactly("emp");
   }
 
   private void stubAssignmentRepository() {
     when(assignmentRepository.findById(anyLong())).thenAnswer(invocation ->
         assignments.stream().filter(a -> a.getId().equals(invocation.getArgument(0))).findFirst());
-    when(assignmentRepository.findAllByOrderByEmployeeCostNameAscEmployeeSignAsc()).thenAnswer(invocation ->
+    when(assignmentRepository.findAllByOrderByEmployeeCostNameAscIdAsc()).thenAnswer(invocation ->
         assignments.stream()
             .sorted(Comparator.comparing(EmployeeCostAssignment::getEmployeeCostName)
-                .thenComparing(EmployeeCostAssignment::getEmployeeSign))
+                .thenComparing(EmployeeCostAssignment::getId))
             .toList());
     when(assignmentRepository.findByEmployeeCostName(any())).thenAnswer(invocation ->
         assignments.stream()
@@ -672,16 +725,14 @@ public class EmployeeCostServiceTest {
         assignments.stream()
             .filter(a -> a.getEmployeeCostName().equals(invocation.<String>getArgument(0)))
             .count());
-    when(assignmentRepository.findDistinctEmployeeSigns()).thenAnswer(invocation ->
-        assignments.stream().map(EmployeeCostAssignment::getEmployeeSign).distinct().toList());
-    when(assignmentRepository.findOverlapping(any(), any(), any(), any(), any())).thenAnswer(invocation -> {
-      String employeeSign = invocation.getArgument(0);
+    when(assignmentRepository.findOverlapping(anyLong(), any(), any(), any(), any())).thenAnswer(invocation -> {
+      long employeeId = invocation.getArgument(0);
       String suborderSign = invocation.getArgument(1);
       LocalDate from = invocation.getArgument(2);
       LocalDate until = invocation.getArgument(3);
       Long excludeId = invocation.getArgument(4);
       return assignments.stream()
-          .filter(a -> a.getEmployeeSign().equals(employeeSign))
+          .filter(a -> a.getEmployeeId() != null && a.getEmployeeId() == employeeId)
           .filter(a -> suborderSign == null
               ? a.getSuborderSign() == null
               : suborderSign.equals(a.getSuborderSign()))

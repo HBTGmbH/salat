@@ -28,12 +28,13 @@ public class AppliedRateLookupTest {
   private static final LocalDate UNTIL = LocalDate.of(2026, 12, 31);
 
   private static final long SUBORDER_ID = 7L;
+  private static final long EMPLOYEE_ID = 42L;
 
   @Test
   public void names_the_cost_category_and_the_condition_that_apply() {
     var rate = lookup(suborder(true, OrderType.STANDARD),
         costLookup("Senior", 9500), pricingLookup(14000))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.costName()).isEqualTo("Senior");
     assertThat(rate.costCentsPerHour()).isEqualTo(9500);
@@ -49,7 +50,7 @@ public class AppliedRateLookupTest {
   public void reports_a_missing_cost_rate() {
     var rate = lookup(suborder(true, OrderType.STANDARD),
         EmployeeCostLookup.of(List.of(), List.of()), pricingLookup(14000))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.hasCost()).isFalse();
     assertThat(rate.missingCost()).isTrue();
@@ -59,7 +60,7 @@ public class AppliedRateLookupTest {
   public void reports_a_missing_condition() {
     var rate = lookup(suborder(true, OrderType.STANDARD),
         costLookup("Senior", 9500), OrderPricingLookup.of(List.of()))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.hasPrice()).isFalse();
     assertThat(rate.missingPrice()).isTrue();
@@ -73,7 +74,7 @@ public class AppliedRateLookupTest {
   public void treats_a_condition_of_zero_euro_as_a_condition() {
     var rate = lookup(suborder(true, OrderType.STANDARD),
         costLookup("Senior", 9500), pricingLookup(0))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.hasPrice()).isTrue();
     assertThat(rate.priceEuroPerHour()).isEqualByComparingTo("0.00");
@@ -85,7 +86,7 @@ public class AppliedRateLookupTest {
   public void does_not_fault_a_missing_condition_on_a_suborder_that_is_not_invoiceable() {
     var rate = lookup(suborder(false, OrderType.STANDARD),
         costLookup("Senior", 9500), OrderPricingLookup.of(List.of()))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.notInvoiceable()).isTrue();
     assertThat(rate.missingPrice()).isFalse();
@@ -96,7 +97,7 @@ public class AppliedRateLookupTest {
   public void still_reports_a_missing_cost_rate_on_a_suborder_that_is_not_invoiceable() {
     var rate = lookup(suborder(false, OrderType.STANDARD),
         EmployeeCostLookup.of(List.of(), List.of()), pricingLookup(14000))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.missingCost()).isTrue();
   }
@@ -107,7 +108,7 @@ public class AppliedRateLookupTest {
     var lookup = AppliedRateLookup.of("co", null, List.of(suborder(true, OrderType.STANDARD)),
         null, pricingLookup(14000));
 
-    var rate = lookup.resolve("abc", SUBORDER_ID, DAY);
+    var rate = lookup.resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(lookup.includesCosts()).isFalse();
     assertThat(rate.hasCost()).isFalse();
@@ -120,7 +121,7 @@ public class AppliedRateLookupTest {
   public void takes_no_general_cost_assignment_for_a_standby_suborder() {
     var rate = lookup(suborder(true, OrderType.BEREITSCHAFT),
         costLookup("Senior", 9500), pricingLookup(14000))
-        .resolve("abc", SUBORDER_ID, DAY);
+        .resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.missingCost()).isTrue();
   }
@@ -133,7 +134,7 @@ public class AppliedRateLookupTest {
   public void resolves_nothing_for_an_unknown_suborder() {
     var lookup = AppliedRateLookup.of("co", null, List.of(), costLookup("Senior", 9500), pricingLookup(14000));
 
-    var rate = lookup.resolve("abc", SUBORDER_ID, DAY);
+    var rate = lookup.resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(rate.hasCost()).isFalse();
     assertThat(rate.hasPrice()).isFalse();
@@ -153,7 +154,7 @@ public class AppliedRateLookupTest {
     onOtherSign.setValidUntil(UNTIL);
 
     var rate = AppliedRateLookup.of("co", null, List.of(suborder), costLookup("Senior", 9500),
-        OrderPricingLookup.of(List.of(onOtherSign))).resolve("abc", SUBORDER_ID, DAY);
+        OrderPricingLookup.of(List.of(onOtherSign))).resolve(EMPLOYEE_ID, SUBORDER_ID, DAY);
 
     assertThat(suborder.getCompleteOrderSign()).isEqualTo("co/01");
     assertThat(rate.hasPrice()).isFalse();
@@ -166,6 +167,7 @@ public class AppliedRateLookupTest {
 
   private static EmployeeCostLookup costLookup(String name, int centsPerHour) {
     var assignment = new EmployeeCostAssignment();
+    assignment.setEmployeeId(EMPLOYEE_ID);
     assignment.setEmployeeSign("abc");
     assignment.setEmployeeCostName(name);
     assignment.setValidFrom(FROM);

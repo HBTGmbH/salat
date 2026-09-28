@@ -21,10 +21,14 @@ import de.hbt.salat.order.domain.OrderType;
  * <p>Overlapping validity ranges are rejected on save, so at most one row can match a key and
  * date. Should overlaps exist anyway, the row with the lowest id wins — that is what the
  * repository queries returned as {@code get(0)}.
+ *
+ * <p>The person is matched by id (#968), so a sign change — a correction as much as an
+ * anonymization — leaves the resolution alone. An assignment the migration could not resolve
+ * carries no id and matches no booking, just as its sign matched none before.
  */
 public final class EmployeeCostLookup {
 
-    private record AssignmentKey(String employeeSign, String suborderSign) {}
+    private record AssignmentKey(Long employeeId, String suborderSign) {}
 
     private final Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey;
     private final Map<String, List<EmployeeCost>> costsByName;
@@ -41,7 +45,7 @@ public final class EmployeeCostLookup {
         Map<AssignmentKey, List<EmployeeCostAssignment>> assignmentsByKey = new HashMap<>();
         for (var assignment : assignments) {
             assignmentsByKey.computeIfAbsent(
-                new AssignmentKey(assignment.getEmployeeSign(), assignment.getSuborderSign()),
+                new AssignmentKey(assignment.getEmployeeId(), assignment.getSuborderSign()),
                 k -> new ArrayList<>()).add(assignment);
         }
         Map<String, List<EmployeeCost>> costsByName = new HashMap<>();
@@ -59,10 +63,10 @@ public final class EmployeeCostLookup {
      * no rate — and no rate means 0 EUR, deliberately, rather than the general rate of the
      * employee, which would be wrong by a wide margin.
      */
-    public Optional<EmployeeCost> findEffectiveCost(String employeeSign, String suborderSign,
+    public Optional<EmployeeCost> findEffectiveCost(long employeeId, String suborderSign,
                                                     OrderType orderType, LocalDate date) {
         if (suborderSign != null) {
-            var assignment = findAssignment(new AssignmentKey(employeeSign, suborderSign), date);
+            var assignment = findAssignment(new AssignmentKey(employeeId, suborderSign), date);
             if (assignment.isPresent()) {
                 return findCost(assignment.get().getEmployeeCostName(), date);
             }
@@ -70,7 +74,7 @@ public final class EmployeeCostLookup {
         if (orderType == OrderType.BEREITSCHAFT) {
             return Optional.empty();
         }
-        return findAssignment(new AssignmentKey(employeeSign, null), date)
+        return findAssignment(new AssignmentKey(employeeId, null), date)
             .flatMap(a -> findCost(a.getEmployeeCostName(), date));
     }
 
