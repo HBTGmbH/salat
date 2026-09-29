@@ -18,6 +18,7 @@ import java.time.LocalDate;
  * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
  * @param worklogSyncFrom first day the worklog sync covers; filled with today when the switch is
  *     turned on without one, so switching it on never writes the whole history at once
+ * @param worklogSyncInvoiceableOnly whether only bookings on invoiceable suborders are written (#1218)
  */
 public record JiraReplicationConfigData(
     String name,
@@ -33,7 +34,8 @@ public record JiraReplicationConfigData(
     Integer pageSize,
     boolean enabled,
     boolean worklogSyncEnabled,
-    LocalDate worklogSyncFrom
+    LocalDate worklogSyncFrom,
+    boolean worklogSyncInvoiceableOnly
 ) {
 
 }

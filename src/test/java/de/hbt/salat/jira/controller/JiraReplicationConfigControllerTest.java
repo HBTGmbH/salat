@@ -112,7 +112,7 @@ class JiraReplicationConfigControllerTest {
 
   private static JiraReplicationConfigInfo info(String scopeSign) {
     return new JiraReplicationConfigInfo(7L, "Alpha", scopeSign, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, null);
+        JiraApiFlavor.SERVER, "jira-user", "project = ALPHA", null, null, null, 100, true, false, null, false, null);
   }
 
   private static Authorized guardOf(Method method) {

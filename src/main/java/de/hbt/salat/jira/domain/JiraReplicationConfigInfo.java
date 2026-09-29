@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
  *     order, or the fully qualified sign of one suborder, {@code AUFTRAG/01/02}
  * @param worklogSyncEnabled whether the run writes the booked hours back as worklogs (#1007)
  * @param worklogSyncFrom first day the worklog sync covers
+ * @param worklogSyncInvoiceableOnly whether only bookings on invoiceable suborders are written (#1218)
  * @param lastMaxUpdated the watermark the replication has reached — the one field that tells whether
  *     a replication is still running at all
  */
@@ -32,6 +33,7 @@ public record JiraReplicationConfigInfo(
     boolean enabled,
     boolean worklogSyncEnabled,
     LocalDate worklogSyncFrom,
+    boolean worklogSyncInvoiceableOnly,
     LocalDateTime lastMaxUpdated
 ) {
 
@@ -51,6 +53,7 @@ public record JiraReplicationConfigInfo(
         Boolean.TRUE.equals(config.getEnabled()),
         Boolean.TRUE.equals(config.getWorklogSyncEnabled()),
         config.getWorklogSyncFrom(),
+        Boolean.TRUE.equals(config.getWorklogSyncInvoiceableOnly()),
         config.getLastMaxUpdated()
     );
   }

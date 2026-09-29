@@ -96,7 +96,8 @@ public class JiraReplicationConfigController {
         form.getPageSize(),
         form.isEnabled(),
         form.isWorklogSyncEnabled(),
-        form.getWorklogSyncFrom()
+        form.getWorklogSyncFrom(),
+        form.isWorklogSyncInvoiceableOnly()
     );
 
     try {

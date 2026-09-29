@@ -330,6 +330,93 @@ class JiraWorklogSyncServiceTest {
   }
 
   @Test
+  void the_bookings_are_asked_for_without_restriction_unless_it_is_switched_on() {
+    givenBookings();
+
+    classUnderTest.sync(config());
+
+    var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
+    verify(commandPublisher).publish(command.capture());
+    assertThat(command.getValue().isInvoiceableOnly()).isFalse();
+  }
+
+  @Test
+  void the_restriction_to_invoiceable_bookings_is_passed_on_with_the_question() {
+    givenBookings();
+
+    classUnderTest.sync(invoiceableOnly(config()));
+
+    var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
+    verify(commandPublisher).publish(command.capture());
+    assertThat(command.getValue().isInvoiceableOnly()).isTrue();
+  }
+
+  @Test
+  void switching_the_restriction_on_lowers_a_mixed_day_to_its_invoiceable_minutes() {
+    // #1218: the worklog was written with everything; the next run keeps only what is billed.
+    givenBookings(
+        List.of(new TicketDaySum(DAY, "ALPHA-1", 60)),
+        List.of(new TicketDaySum(DAY, "ALPHA-1", 30)));
+    givenReplicatedTickets("ALPHA-1");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+
+    classUnderTest.sync(invoiceableOnly(config()));
+
+    var entry = ArgumentCaptor.forClass(JiraWorklogEntry.class);
+    verify(worklogClient).update(any(), eq("10101"), entry.capture());
+    assertThat(entry.getValue().minutes()).isEqualTo(60);
+    assertThat(stored.getMinutes()).isEqualTo(60);
+  }
+
+  @Test
+  void switching_the_restriction_on_removes_a_worklog_of_nothing_but_non_invoiceable_bookings() {
+    givenBookings(List.of(), List.of(new TicketDaySum(DAY, "ALPHA-1", 90)));
+    givenReplicatedTickets("ALPHA-1");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+
+    classUnderTest.sync(invoiceableOnly(config()));
+
+    verify(worklogClient).delete(any(), eq("10101"));
+    verify(syncRepository).delete(stored);
+  }
+
+  @Test
+  void lifting_the_restriction_writes_the_non_invoiceable_minutes_again() {
+    givenBookings(
+        List.of(new TicketDaySum(DAY, "ALPHA-1", 60)),
+        List.of(new TicketDaySum(DAY, "ALPHA-1", 30), new TicketDaySum(DAY, "ALPHA-2", 45)));
+    givenReplicatedTickets("ALPHA-1", "ALPHA-2");
+    var stored = givenStoredWorklog("ALPHA-1", DAY, "10101", 60);
+    when(worklogClient.create(any(), any())).thenReturn("10202");
+
+    classUnderTest.sync(config());
+
+    // The mixed day goes back up to the full sum …
+    assertThat(stored.getMinutes()).isEqualTo(90);
+    verify(worklogClient).update(any(), eq("10101"), any());
+    // … and the day that only carried non-invoiceable bookings gets its worklog back.
+    var target = ArgumentCaptor.forClass(JiraWorklogTarget.class);
+    verify(worklogClient).create(target.capture(), any());
+    assertThat(target.getValue().issueKey()).isEqualTo("ALPHA-2");
+  }
+
+  @Test
+  void a_scope_of_nothing_but_non_invoiceable_suborders_is_still_a_scope() {
+    // The restriction filters bookings, not suborders: a scope with no invoiceable suborder must
+    // lose its worklogs, not be skipped as if it named nothing.
+    givenBookings(List.of(), List.of(new TicketDaySum(DAY, "ALPHA-1", 90)));
+    givenReplicatedTickets("ALPHA-1");
+    givenStoredWorklog("ALPHA-1", DAY, "10101", 90);
+
+    classUnderTest.sync(invoiceableOnly(config()));
+
+    var command = ArgumentCaptor.forClass(GetTicketWorklogSumsCommandEvent.class);
+    verify(commandPublisher).publish(command.capture());
+    assertThat(command.getValue().getSuborderIds()).containsExactly(1L, 2L);
+    verify(worklogClient).delete(any(), eq("10101"));
+  }
+
+  @Test
   void a_scope_that_matches_no_suborder_writes_nothing() {
     when(scopeSuborders.idsOf(SCOPE)).thenReturn(List.of());
 
@@ -359,6 +446,27 @@ class JiraWorklogSyncServiceTest {
       event.setResult(Arrays.asList(sums));
       return null;
     }).when(commandPublisher).publish(any());
+  }
+
+  /**
+   * Answers the command event the way the owning module does (#1218): the sums of non-invoiceable
+   * suborders only count while the question carries no restriction.
+   */
+  private void givenBookings(List<TicketDaySum> invoiceable, List<TicketDaySum> notInvoiceable) {
+    doAnswer(invocation -> {
+      var event = (GetTicketWorklogSumsCommandEvent) invocation.getArgument(0);
+      var sums = new ArrayList<>(invoiceable);
+      if (!event.isInvoiceableOnly()) {
+        sums.addAll(notInvoiceable);
+      }
+      event.setResult(sums);
+      return null;
+    }).when(commandPublisher).publish(any());
+  }
+
+  private static JiraReplicationConfig invoiceableOnly(JiraReplicationConfig config) {
+    config.setWorklogSyncInvoiceableOnly(true);
+    return config;
   }
 
   private void givenReplicatedTickets(String... keys) {

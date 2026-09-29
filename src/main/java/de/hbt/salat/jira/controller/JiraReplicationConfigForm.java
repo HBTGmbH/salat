@@ -63,6 +63,9 @@ public class JiraReplicationConfigForm {
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
   private LocalDate worklogSyncFrom;
 
+  /** Whether only bookings on invoiceable suborders are written (#1218). Off by default. */
+  private boolean worklogSyncInvoiceableOnly;
+
   public boolean isNew() {
     return id == null;
   }
@@ -94,6 +97,7 @@ public class JiraReplicationConfigForm {
     form.setEnabled(info.enabled());
     form.setWorklogSyncEnabled(info.worklogSyncEnabled());
     form.setWorklogSyncFrom(info.worklogSyncFrom());
+    form.setWorklogSyncInvoiceableOnly(info.worklogSyncInvoiceableOnly());
     return form;
   }
 

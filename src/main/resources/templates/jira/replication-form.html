@@ -129,15 +129,16 @@
       <!--/* Writing back to JIRA (#1007). The one switch here that needs more permission than the
              replication itself, so the help text says so right next to it.
 
-             The start date only appears once the switch is on: without the sync it decides nothing,
-             and an empty date field next to a switched-off option reads like something left
-             unfilled. It is not removed from the form, only hidden — the stored value has to come
-             back unchanged when the form is saved with the sync switched off. */-->
+             The start date and the restriction to invoiceable bookings (#1218) only appear once the
+             switch is on: without the sync they decide nothing, and an empty date field next to a
+             switched-off option reads like something left unfilled. They are not removed from the
+             form, only hidden — the stored values have to come back unchanged when the form is
+             saved with the sync switched off. */-->
       <div class="row">
         <div class="col-md-6">
           <label class="form-check form-switch">
             <input class="form-check-input" type="checkbox" th:field="*{worklogSyncEnabled}"
-                   onchange="salatToggleWorklogSyncFrom()" />
+                   onchange="salatToggleWorklogSyncOptions()" />
             <span class="form-check-label"
                   th:text="#{main.jira.replication.field.worklogSyncEnabled}">Worklogs schreiben</span>
           </label>
@@ -145,13 +146,21 @@
             Schreibrechte noetig.
           </div>
         </div>
-        <div class="col-md-6" id="worklogSyncFromSection"
+        <div class="col-md-6" id="worklogSyncOptionsSection"
              th:classappend="${replicationForm.worklogSyncEnabled} ? '' : 'd-none'">
           <div th:replace="~{fragments/form-fields :: dateInput(
             field='worklogSyncFrom', label=#{main.jira.replication.field.worklogSyncFrom}, required=false
           )}"></div>
           <div class="form-text mb-3" th:text="#{main.jira.replication.field.worklogSyncFrom.help}">
             Buchungen ab diesem Tag werden geschrieben.
+          </div>
+          <label class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" th:field="*{worklogSyncInvoiceableOnly}" />
+            <span class="form-check-label"
+                  th:text="#{main.jira.replication.field.worklogSyncInvoiceableOnly}">Nur fakturierbare Buchungen</span>
+          </label>
+          <div class="form-text mb-3" th:text="#{main.jira.replication.field.worklogSyncInvoiceableOnly.help}">
+            Nur Buchungen auf fakturierbaren Unteraufträgen werden geschrieben.
           </div>
         </div>
       </div>
@@ -232,12 +241,13 @@
   </form>
 
   <script th:inline="none">
-    // The start date belongs to the worklog sync and is shown with it (#1007). Hidden, not removed:
-    // the field keeps submitting its stored value, so switching the sync off and saving does not
-    // silently clear the date the next switch-on would need.
-    function salatToggleWorklogSyncFrom() {
+    // The start date (#1007) and the restriction to invoiceable bookings (#1218) belong to the
+    // worklog sync and are shown with it. Hidden, not removed: the fields keep submitting their
+    // stored values, so switching the sync off and saving does not silently clear what the next
+    // switch-on would need.
+    function salatToggleWorklogSyncOptions() {
       const toggle = document.querySelector('input[name="worklogSyncEnabled"]');
-      const section = document.getElementById('worklogSyncFromSection');
+      const section = document.getElementById('worklogSyncOptionsSection');
       if (!toggle || !section) return;
       section.classList.toggle('d-none', !toggle.checked);
     }

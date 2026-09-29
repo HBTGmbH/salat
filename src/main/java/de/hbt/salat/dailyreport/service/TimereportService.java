@@ -780,7 +780,8 @@ public class TimereportService {
       event.setResult(List.of());
       return;
     }
-    event.setResult(timereportRepository.getTicketDaySums(suborderIds, event.getFrom(), event.getUntil()));
+    event.setResult(timereportRepository.getTicketDaySums(
+        suborderIds, event.getFrom(), event.getUntil(), event.isInvoiceableOnly()));
   }
 
   @EventListener
