@@ -28,6 +28,7 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.service.CustomerorderService;
 
@@ -101,7 +102,7 @@ class TimereportAuthorizationObjectProviderTest {
         when(timereport.getSuborder().getCustomerorder().getResponsibleHbt()).thenReturn(List.of());
         when(timereport.getReferenceday().getRefdate()).thenReturn(of(2011, 1, 2));
 
-        new TimereportAuthorization(authorizedUser, authService).isAuthorized(timereport, READ);
+        new TimereportAuthorization(authorizedUser, authService, mock(EmployeecontractService.class)).isAuthorized(timereport, READ);
 
         // a captor of the array type takes the whole vararg list, not just a single value
         var objectIds = ArgumentCaptor.forClass(String[].class);

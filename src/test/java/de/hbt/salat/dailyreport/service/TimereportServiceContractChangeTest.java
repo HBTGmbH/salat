@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +45,7 @@ import de.hbt.salat.dailyreport.persistence.TimereportRepository;
 import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
@@ -111,7 +113,7 @@ class TimereportServiceContractChangeTest {
   void setUp() {
     timereportService = new TimereportService(eventPublisher, employeecontractDAO, referencedayRepository,
         employeeorderDAO, timereportDAO, timereportRepository, publicholidayDAO, workingdayDAO, authorizedUser,
-        new TimereportAuthorization(authorizedUser, authService));
+        new TimereportAuthorization(authorizedUser, authService, mock(EmployeecontractService.class)));
 
     var employee = employee(EmployeeTestUtils.TESTY_SIGN, EMPLOYEE_ID);
     firstContract = contract(FIRST_CONTRACT_ID, employee, LocalDate.of(YEAR - 1, 1, 1), FIRST_CONTRACT_END);

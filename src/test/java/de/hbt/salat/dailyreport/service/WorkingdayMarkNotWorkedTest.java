@@ -31,6 +31,7 @@ import de.hbt.salat.auth.domain.SalatUser;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.BusinessRuleException;
+import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.persistence.TimereportDAO;
@@ -63,6 +64,8 @@ class WorkingdayMarkNotWorkedTest {
   private AuthService authService;
   @Mock
   private PlatformTransactionManager transactionManager;
+  @Mock
+  private TimereportAuthorization timereportAuthorization;
 
   private Employeecontract contract;
 

@@ -3368,3 +3368,69 @@ databaseChangeLog:
             columns:
               - column:
                   name: employee_id
+  - changeSet:
+      id: 93
+      author: kr
+      comment: Beendete Vertraege mit freigegebenem Folgevertrag bis zum Vertragsende freigeben (#1215)
+      changes:
+        # Freigabe und Abnahme laufen je Vertrag, und die Seite der Freigabe schlaegt den laufenden
+        # vor. Der letzte Monat eines alten Vertrags blieb deshalb oft offen - und damit fuer die
+        # Person selbst aenderbar, auch Jahre spaeter. Gemeint sind dieselben Vertraege, die die Regel
+        # in TimereportAuthorization ab jetzt fuer die Person schliesst: beendet, und auf einem
+        # spaeteren Vertrag derselben Person wurde schon freigegeben. Ein Vertrag, dessen letzter
+        # Monat gerade noch nachgebucht wird, ist nicht dabei. Das GROUP BY laesst MySQL die
+        # abgeleitete Tabelle materialisieren; ohne es verweigert MySQL das Lesen der Tabelle, die das
+        # UPDATE schreibt (Fehler 1093).
+        #
+        # Nur freigegeben, nicht abgenommen: die Abnahme setzt overtimeStatic, und das rechnet nur die
+        # Anwendung. Das Abnahmedatum bleibt, damit bleibt auch der Ueberstundensaldo, wie er ist. Die
+        # Abnahme selbst bleibt Sache der Geschaeftsfuehrung.
+        - sql:
+            sql: >-
+              UPDATE employeecontract ec
+              JOIN (
+                SELECT p.id FROM employeecontract p
+                JOIN employeecontract s ON s.employee_id = p.employee_id
+                  AND s.validfrom > p.validuntil
+                  AND s.reportreleasedate IS NOT NULL
+                GROUP BY p.id
+              ) succeeded ON succeeded.id = ec.id
+              SET ec.reportreleasedate = ec.validuntil,
+                  ec.lastupdate = NOW(),
+                  ec.lastupdatedby = 'SYSTEM',
+                  ec.updatecounter = COALESCE(ec.updatecounter, 0) + 1
+              WHERE (ec.reportreleasedate IS NULL OR ec.reportreleasedate < ec.validuntil)
+                AND (ec.reportacceptancedate IS NULL OR ec.reportacceptancedate <= ec.validuntil)
+        # Danach traegt jede nicht geloeschte Buchung den Status, den ihr Tag nach den Daten ihres
+        # Vertrags hat (ReportPeriod.statusOn) - das fasst auch die vereinzelten Buchungen, die vor dem
+        # Freigabe- oder Abnahmedatum noch offen oder nur freigegeben waren. Es geht nur in Richtung
+        # abgeschlossen: eine Buchung, die strenger steht als ihr Tag, wird nicht wieder geoeffnet.
+        # Der Status allein aendert keinen Saldo, der haengt am Abnahmedatum des Vertrags.
+        - sql:
+            sql: >-
+              UPDATE timereport tr
+              JOIN referenceday r ON r.id = tr.referenceday_id
+              JOIN employeecontract ec ON ec.id = tr.employeecontract_id
+              SET tr.status = 'commited',
+                  tr.released = COALESCE(tr.released, NOW()),
+                  tr.releasedby = COALESCE(tr.releasedby, 'SYSTEM'),
+                  tr.lastupdate = NOW(),
+                  tr.lastupdatedby = 'SYSTEM',
+                  tr.updatecounter = COALESCE(tr.updatecounter, 0) + 1
+              WHERE tr.deleted = 0
+                AND tr.status = 'open'
+                AND r.refdate <= ec.reportreleasedate
+        - sql:
+            sql: >-
+              UPDATE timereport tr
+              JOIN referenceday r ON r.id = tr.referenceday_id
+              JOIN employeecontract ec ON ec.id = tr.employeecontract_id
+              SET tr.status = 'closed',
+                  tr.accepted = COALESCE(tr.accepted, NOW()),
+                  tr.acceptedby = COALESCE(tr.acceptedby, 'SYSTEM'),
+                  tr.lastupdate = NOW(),
+                  tr.lastupdatedby = 'SYSTEM',
+                  tr.updatecounter = COALESCE(tr.updatecounter, 0) + 1
+              WHERE tr.deleted = 0
+                AND tr.status = 'commited'
+                AND r.refdate <= ec.reportacceptancedate

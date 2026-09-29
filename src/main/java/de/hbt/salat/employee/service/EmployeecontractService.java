@@ -539,6 +539,17 @@ public class EmployeecontractService {
     return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
   }
 
+  /**
+   * Ob auf den Vertrag ein Vertrag derselben Person folgt, für den sie schon freigegeben hat (#1215). Von da an ist der
+   * alte Vertrag für sie abgeschlossen, auch wenn sein letzter Monat nie freigegeben wurde. Ein laufender Vertrag hat
+   * keinen solchen Nachfolger; für ihn fragt die Methode die Datenbank gar nicht erst, denn Tagesansicht und Matrix
+   * stellen die Frage je Buchung und je Tag.
+   */
+  public boolean hasReleasedSuccessor(Employeecontract contract) {
+    return contract.getValidUntil() != null && contract.getValidUntil().isBefore(today())
+        && employeecontractRepository.existsReleasedContractAfter(contract.getEmployee().getId(), contract.getValidUntil());
+  }
+
   public List<Employeecontract> getFutureContracts(long employeecontractId) {
     var employeecontract = getEmployeecontractById(employeecontractId);
     if(employeecontract != null) {

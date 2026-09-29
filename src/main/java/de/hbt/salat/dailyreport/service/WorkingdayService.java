@@ -9,7 +9,9 @@ import static de.hbt.salat.common.exception.ErrorCode.WD_COMMITTED_REQ_PEOPLE_LE
 import static de.hbt.salat.common.exception.ErrorCode.WD_DELETE_REQ_EMPLOYEE_OR_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.WD_OUTSIDE_CONTRACT;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SUCCEEDED_CONTRACT_NOT_SELF;
 import static de.hbt.salat.common.exception.ErrorCode.WD_READ_REQ_EMPLOYEE_OR_MANAGER;
+import static de.hbt.salat.common.exception.ErrorCode.WD_SUCCEEDED_CONTRACT_NOT_SELF;
 import static de.hbt.salat.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
 import static de.hbt.salat.common.GlobalConstants.MAX_HOURS_PER_DAY;
 import static de.hbt.salat.common.util.DateUtils.today;
@@ -275,7 +277,8 @@ public class WorkingdayService {
    * gilt dieselbe Regel wie für die Buchungen des Tages (#1164): freigegeben die Geschäftsführung und
    * die zuständige People Lead, aber nie die Person selbst, abgenommen nur noch ein Admin. Beginn und
    * Pause gehören zu dem, was freigegeben und abgenommen wird — sie ändern sonst nachträglich, was die
-   * Prüfung vor der Freigabe über den Tag gesagt hat.
+   * Prüfung vor der Freigabe über den Tag gesagt hat. Wie bei den Buchungen schreibt die Person selbst im offenen
+   * Zeitraum eines beendeten Vertrags nicht mehr, sobald sie auf einem Folgevertrag freigegeben hat (#1215).
    */
   private void checkWriteAllowed(Employeecontract employeecontract, LocalDate day, ErrorCode openPeriodDenial) {
     writeDenial(employeecontract, day, openPeriodDenial).ifPresent(denial -> {
@@ -300,7 +303,10 @@ public class WorkingdayService {
          !authService.isAuthorized(AUTH_CATEGORY_WORKINGDAY, today(), WRITE, employeeSign)) {
         return Optional.of(openPeriodDenial);
       }
-      return Optional.empty();
+      // the one denial of the open period that applies to the working day as well (#1215)
+      return timereportAuthorization.writeDenialOn(employeecontract, day)
+          .filter(TR_SUCCEEDED_CONTRACT_NOT_SELF::equals)
+          .map(denial -> WD_SUCCEEDED_CONTRACT_NOT_SELF);
     }
     return timereportAuthorization.writeDenialOn(employeecontract, day).map(denial -> switch (denial) {
       case TR_CLOSED_TIME_REPORT_REQ_ADMIN -> WD_CLOSED_REQ_ADMIN;

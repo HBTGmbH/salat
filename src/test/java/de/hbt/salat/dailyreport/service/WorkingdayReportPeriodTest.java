@@ -11,6 +11,7 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static de.hbt.salat.common.exception.ErrorCode.WD_CLOSED_REQ_ADMIN;
 import static de.hbt.salat.common.exception.ErrorCode.WD_COMMITTED_NOT_SELF;
 import static de.hbt.salat.common.exception.ErrorCode.WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER;
+import static de.hbt.salat.common.exception.ErrorCode.WD_SUCCEEDED_CONTRACT_NOT_SELF;
 import static de.hbt.salat.dailyreport.domain.Workingday.WorkingDayType.WORKED;
 
 import java.time.LocalDate;
@@ -90,7 +91,7 @@ class WorkingdayReportPeriodTest {
   void setUp() {
     workingdayService = new WorkingdayService(workingdayRepository, publicholidayRepository, timereportDAO,
         authorizedUser, workingdayDAO, authService, employeecontractService, dailyPreferenceService,
-        transactionManager, new TimereportAuthorization(authorizedUser, authService));
+        transactionManager, new TimereportAuthorization(authorizedUser, authService, employeecontractService));
 
     contract = new Employeecontract();
     setField(contract, "id", CONTRACT_ID);
@@ -110,6 +111,27 @@ class WorkingdayReportPeriodTest {
   @Test
   void the_person_changes_their_working_day_in_the_open_period() {
     loggedInAs(OWNER, false, false);
+
+    workingdayService.upsertWorkingday(storedWorkingday(OPEN_DAY));
+
+    verify(workingdayRepository).save(any());
+  }
+
+  /** Wie bei den Buchungen des Tages (#1215): der alte Vertrag ist mit der ersten Freigabe auf dem Folgevertrag zu. */
+  @Test
+  void the_person_cannot_change_their_working_day_of_an_ended_contract_once_the_successor_is_released() {
+    contract.setValidUntil(OPEN_DAY);
+    when(employeecontractService.hasReleasedSuccessor(contract)).thenReturn(true);
+    loggedInAs(OWNER, false, false);
+
+    assertRefused(() -> workingdayService.upsertWorkingday(storedWorkingday(OPEN_DAY)), WD_SUCCEEDED_CONTRACT_NOT_SELF);
+  }
+
+  @Test
+  void a_manager_changes_the_working_day_of_an_ended_contract_after_the_successor_is_released() {
+    contract.setValidUntil(OPEN_DAY);
+    when(employeecontractService.hasReleasedSuccessor(contract)).thenReturn(true);
+    loggedInAs(MANAGER, true, false);
 
     workingdayService.upsertWorkingday(storedWorkingday(OPEN_DAY));
 

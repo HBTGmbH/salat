@@ -73,7 +73,7 @@ class DailyServiceReportPeriodTest {
   @BeforeEach
   void setUp() {
     dailyService = new DailyService(timereportService, workingdayService, publicholidayService, overtimeService,
-        employeecontractService, new TimereportAuthorization(authorizedUser, authService));
+        employeecontractService, new TimereportAuthorization(authorizedUser, authService, employeecontractService));
 
     contract = new Employeecontract();
     setField(contract, "id", CONTRACT_ID);
