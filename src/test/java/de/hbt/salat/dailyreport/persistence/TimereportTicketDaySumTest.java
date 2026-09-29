@@ -128,13 +128,37 @@ public class TimereportTicketDaySumTest {
     book(suborder, contract, DAY.minusDays(10), "ALPHA-1", 4, 0);
 
     assertThat(timereportRepository.getTicketDaySums(
-        List.of(suborder.getId()), DAY.minusDays(1), DAY.plusDays(1)))
+        List.of(suborder.getId()), DAY.minusDays(1), DAY.plusDays(1), false))
+        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", 60));
+  }
+
+  @Test
+  public void keeps_a_non_invoiceable_suborder_without_the_restriction() {
+    var internal = suborder("so-internal", GlobalConstants.YESNO_NO);
+    book(suborder, employeecontract("aaa"), DAY, "ALPHA-1", 1, 0);
+    book(internal, employeecontract("bbb"), DAY, "ALPHA-1", 0, 30);
+
+    assertThat(timereportRepository.getTicketDaySums(
+        List.of(suborder.getId(), internal.getId()), DAY.minusDays(1), DAY.plusDays(1), false))
+        .containsExactly(new TicketDaySum(DAY, "ALPHA-1", 90));
+  }
+
+  @Test
+  public void leaves_out_a_non_invoiceable_suborder_with_the_restriction() {
+    // #1218: the same ticket and day, but only the billed part reaches JIRA.
+    var internal = suborder("so-internal", GlobalConstants.YESNO_NO);
+    book(suborder, employeecontract("aaa"), DAY, "ALPHA-1", 1, 0);
+    book(internal, employeecontract("bbb"), DAY, "ALPHA-1", 0, 30);
+    book(internal, employeecontract("ccc"), DAY, "ALPHA-2", 2, 0);
+
+    assertThat(timereportRepository.getTicketDaySums(
+        List.of(suborder.getId(), internal.getId()), DAY.minusDays(1), DAY.plusDays(1), true))
         .containsExactly(new TicketDaySum(DAY, "ALPHA-1", 60));
   }
 
   private List<TicketDaySum> sums() {
     return timereportRepository.getTicketDaySums(
-        List.of(suborder.getId()), DAY.minusDays(30), DAY.plusDays(30));
+        List.of(suborder.getId()), DAY.minusDays(30), DAY.plusDays(30), false);
   }
 
   private Timereport book(Suborder onSuborder, Employeecontract contract, LocalDate date,
@@ -167,12 +191,16 @@ public class TimereportTicketDaySumTest {
   }
 
   private Suborder suborder(String sign) {
+    return suborder(sign, GlobalConstants.INVOICE_YES);
+  }
+
+  private Suborder suborder(String sign, char invoice) {
     var newSuborder = new Suborder();
     newSuborder.setCustomerorder(customerorder);
     newSuborder.setSign(sign);
     newSuborder.setDescription(sign);
     newSuborder.setShortdescription(sign);
-    newSuborder.setInvoice(GlobalConstants.INVOICE_YES);
+    newSuborder.setInvoice(invoice);
     newSuborder.setFromDate(DAY.minusYears(1));
     newSuborder.setDebithours(Duration.ZERO);
     newSuborder.setHide(false);

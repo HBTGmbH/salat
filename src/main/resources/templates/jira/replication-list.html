@@ -91,6 +91,13 @@
                   th:title="#{main.jira.replication.flag.worklogsync}">
               <i class="bi bi-arrow-left-right"></i>
             </span>
+            <!--/* Which bookings it writes (#1218) — with the icon the suborder list uses for
+                   invoiceable. Only next to the sync flag: without the sync it restricts nothing. */-->
+            <span th:if="${replication.worklogSyncEnabled and replication.worklogSyncInvoiceableOnly}"
+                  class="badge bg-success-lt fs-5 align-middle ms-1"
+                  th:title="#{main.jira.replication.flag.worklogsyncinvoiceableonly}">
+              <i class="bi bi-cash-stack"></i>
+            </span>
           </td>
           <td class="d-none d-md-table-cell small">
             <!--/* This is where you see whether a replication still runs at all — an old date or none

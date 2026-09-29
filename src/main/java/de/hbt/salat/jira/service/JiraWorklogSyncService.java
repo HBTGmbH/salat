@@ -86,7 +86,8 @@ public class JiraWorklogSyncService {
       return;
     }
 
-    var wanted = wantedWorklogs(cfg, bookedMinutes(suborderIds, from, until));
+    var invoiceableOnly = TRUE.equals(cfg.getWorklogSyncInvoiceableOnly());
+    var wanted = wantedWorklogs(cfg, bookedMinutes(suborderIds, from, until, invoiceableOnly));
     var stored = storedWorklogs(cfg, from);
 
     log.info("Starting JIRA worklog sync: name={}, scopeSign={}, from={}, until={}, "
@@ -133,11 +134,13 @@ public class JiraWorklogSyncService {
    * The booked minutes per day and ticket reference, asked of the module that owns the bookings.
    * jira must not import dailyreport, so the answer comes back through a command event.
    */
-  private List<TicketDaySum> bookedMinutes(List<Long> suborderIds, LocalDate from, LocalDate until) {
+  private List<TicketDaySum> bookedMinutes(List<Long> suborderIds, LocalDate from, LocalDate until,
+                                           boolean invoiceableOnly) {
     var command = GetTicketWorklogSumsCommandEvent.builder()
         .suborderIds(suborderIds)
         .from(from)
         .until(until)
+        .invoiceableOnly(invoiceableOnly)
         .build();
     commandPublisher.publish(command);
     var result = command.getResult();

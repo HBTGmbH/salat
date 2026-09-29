@@ -256,6 +256,7 @@ public class JiraReplicationConfigService {
    */
   private void applyWorklogSync(JiraReplicationConfigData data, JiraReplicationConfig config) {
     config.setWorklogSyncEnabled(data.worklogSyncEnabled());
+    config.setWorklogSyncInvoiceableOnly(data.worklogSyncInvoiceableOnly());
     if (data.worklogSyncFrom() != null) {
       config.setWorklogSyncFrom(data.worklogSyncFrom());
     } else if (data.worklogSyncEnabled() && config.getWorklogSyncFrom() == null) {

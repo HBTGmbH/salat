@@ -200,7 +200,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_replication_without_a_jql_query_could_only_ever_fail() {
     var withoutJql = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true, false, null);
+        JiraApiFlavor.SERVER, "jira-user", "token", "  ", null, null, null, null, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(withoutJql))
         .isInstanceOf(InvalidDataException.class)
@@ -211,7 +211,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_base_url_without_a_scheme_is_rejected() {
     var badUrl = new JiraReplicationConfigData("Alpha", "ALPHA", "jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null);
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(badUrl))
         .isInstanceOf(InvalidDataException.class)
@@ -222,7 +222,7 @@ class JiraReplicationConfigServiceTest {
   @Test
   void a_page_size_of_zero_or_less_is_rejected() {
     var zeroPageSize = new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true, false, null);
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 0, true, false, null, false);
 
     assertThatThrownBy(() -> classUnderTest.create(zeroPageSize))
         .isInstanceOf(InvalidDataException.class)
@@ -234,7 +234,7 @@ class JiraReplicationConfigServiceTest {
   void a_missing_flavor_is_stored_as_server() {
     // What a row without an explicit flavor has always meant.
     classUnderTest.create(new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        null, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null));
+        null, "jira-user", "token", "project = ALPHA", null, null, null, null, true, false, null, false));
 
     assertThat(saved().getApiFlavor()).isEqualTo(JiraApiFlavor.SERVER);
   }
@@ -277,6 +277,33 @@ class JiraReplicationConfigServiceTest {
 
     assertThat(stored.getWorklogSyncFrom()).isEqualTo(LocalDate.of(2026, 1, 1));
     assertThat(stored.getWorklogSyncEnabled()).isFalse();
+  }
+
+  @Test
+  void the_restriction_to_invoiceable_bookings_is_stored() {
+    classUnderTest.create(withInvoiceableOnly(true));
+
+    assertThat(saved().getWorklogSyncInvoiceableOnly()).isTrue();
+  }
+
+  @Test
+  void a_replication_without_the_restriction_writes_every_booking() {
+    classUnderTest.create(withInvoiceableOnly(false));
+
+    assertThat(saved().getWorklogSyncInvoiceableOnly()).isFalse();
+  }
+
+  @Test
+  void the_restriction_can_be_lifted_again() {
+    var stored = existingConfig();
+    stored.setWorklogSyncEnabled(true);
+    stored.setWorklogSyncFrom(LocalDate.of(2026, 1, 1));
+    stored.setWorklogSyncInvoiceableOnly(true);
+    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
+
+    classUnderTest.update(ID, withInvoiceableOnly(false));
+
+    assertThat(stored.getWorklogSyncInvoiceableOnly()).isFalse();
   }
 
   @Test
@@ -709,13 +736,13 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData withJql(String jql) {
     return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", null, jql, null, null, null, 100, true, false, null);
+        JiraApiFlavor.SERVER, "jira-user", null, jql, null, null, null, 100, true, false, null, false);
   }
 
   private static JiraReplicationConfigData withFields(String additional, String inherited) {
     return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", null, "project = ALPHA", null, additional, inherited,
-        100, true, false, null);
+        100, true, false, null, false);
   }
 
   private JiraReplicationConfig existingConfig() {
@@ -741,14 +768,20 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData withScope(String scopeSign, String password) {
     return new JiraReplicationConfigData("Alpha", scopeSign, "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null);
+        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
   }
 
   private static JiraReplicationConfigData withWorklogSync(String scopeSign, boolean enabled,
                                                            LocalDate from) {
     return new JiraReplicationConfigData("Alpha", scopeSign, "https://jira.example.com",
         JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
-        enabled, from);
+        enabled, from, false);
+  }
+
+  private static JiraReplicationConfigData withInvoiceableOnly(boolean invoiceableOnly) {
+    return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
+        JiraApiFlavor.SERVER, "jira-user", "token", "project = ALPHA", null, null, null, 100, true,
+        true, LocalDate.of(2026, 1, 1), invoiceableOnly);
   }
 
   /** A scope that is a suborder path under the given customer order, not an order of its own. */
@@ -770,7 +803,7 @@ class JiraReplicationConfigServiceTest {
 
   private static JiraReplicationConfigData data(String password) {
     return new JiraReplicationConfigData("Alpha", "ALPHA", "https://jira.example.com",
-        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null);
+        JiraApiFlavor.SERVER, "jira-user", password, "project = ALPHA", null, null, null, 100, true, false, null, false);
   }
 
   private JiraReplicationConfig saved() {

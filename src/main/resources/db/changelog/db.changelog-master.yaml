@@ -3434,3 +3434,26 @@ databaseChangeLog:
               WHERE tr.deleted = 0
                 AND tr.status = 'commited'
                 AND r.refdate <= ec.reportacceptancedate
+
+  - changeSet:
+      id: 94
+      author: kr
+      comment: Worklog-Abgleich wahlweise nur mit fakturierbaren Buchungen (#1218)
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: jira_replication_config
+                columnName: worklog_sync_invoiceable_only
+      changes:
+        - addColumn:
+            tableName: jira_replication_config
+            columns:
+              # Ausgeschaltet fuer jede bestehende Konfiguration: sie schreibt weiter, was sie bisher
+              # geschrieben hat, bis jemand den Schalter setzt.
+              - column:
+                  name: worklog_sync_invoiceable_only
+                  type: bit(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

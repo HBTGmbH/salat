@@ -99,6 +99,17 @@ public class JiraReplicationConfig extends AuditedEntity {
   @Column(name = "worklog_sync_from")
   private LocalDate worklogSyncFrom;
 
+  /**
+   * Whether the worklog sync counts only bookings on invoiceable suborders (#1218). Off, every
+   * booking of the scope with a ticket reference counts, as it has since #1007.
+   *
+   * <p>Switching it either way needs nothing of its own: every run sums the whole period again and
+   * compares against what was last written, so the next run lowers, removes or restores the
+   * worklogs from {@link #worklogSyncFrom} on. Worklogs before that day stay as they are.
+   */
+  @Column(name = "worklog_sync_invoiceable_only")
+  private Boolean worklogSyncInvoiceableOnly;
+
   @Column(name = "last_max_updated")
   private LocalDateTime lastMaxUpdated;
 

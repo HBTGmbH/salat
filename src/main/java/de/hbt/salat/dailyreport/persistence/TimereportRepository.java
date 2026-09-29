@@ -230,6 +230,11 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
    * not run on a delete. A deleted booking is therefore recognisable by no timestamp at all, and
    * exactly its disappearance has to lower the sum. Comparing full sums against what was last
    * written sidesteps that: what is gone is simply not in the answer.
+   *
+   * <p>With {@code invoiceableOnly} only bookings on invoiceable suborders count (#1218) — the same
+   * {@code invoice = 'Y'} the billable filter of the booking list asks for. A booking that drops
+   * out this way is gone from the sum just like a deleted one, which is what lowers or removes the
+   * worklogs already written for it.
    */
   @Query("""
       select new de.hbt.salat.jira.command.TicketDaySum(
@@ -241,9 +246,11 @@ public interface TimereportRepository extends CrudRepository<Timereport, Long>, 
         and tr.ticketReference is not null
         and tr.suborder.id in (:suborderIds)
         and tr.referenceday.refdate >= :from and tr.referenceday.refdate <= :until
+        and (:invoiceableOnly = false or tr.suborder.invoice = 'Y')
       group by tr.referenceday.refdate, tr.ticketReference
   """)
-  List<TicketDaySum> getTicketDaySums(Collection<Long> suborderIds, LocalDate from, LocalDate until);
+  List<TicketDaySum> getTicketDaySums(Collection<Long> suborderIds, LocalDate from, LocalDate until,
+                                      boolean invoiceableOnly);
 
   @Modifying
   @NativeQuery("DELETE FROM timereport WHERE employeeorder_id = :employeeorderId and deleted = true")

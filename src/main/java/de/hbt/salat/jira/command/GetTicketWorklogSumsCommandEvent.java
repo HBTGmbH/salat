@@ -20,6 +20,10 @@ import de.hbt.salat.common.command.CommandEvent;
  * @param suborderIds every suborder the scope covers, the branch below it included
  * @param from first day to sum, inclusive
  * @param until last day to sum, inclusive
+ * @param invoiceableOnly whether only bookings on invoiceable suborders count (#1218). A filter on
+ *     the bookings rather than on {@code suborderIds}: a scope made up of non-invoiceable suborders
+ *     only is still a scope, and its worklogs have to be removed rather than skipped as if the
+ *     scope named nothing.
  */
 @Builder
 @Data
@@ -29,6 +33,7 @@ public class GetTicketWorklogSumsCommandEvent implements CommandEvent<List<Ticke
   private final List<Long> suborderIds;
   private final LocalDate from;
   private final LocalDate until;
+  private final boolean invoiceableOnly;
   private List<TicketDaySum> result;
 
   @Override
