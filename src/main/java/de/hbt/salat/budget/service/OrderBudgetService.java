@@ -169,7 +169,8 @@ public class OrderBudgetService {
     /**
      * What a plan covers: the period it is valid in and the scope it applies to. Deactivating a plan
      * is deliberately not part of it — an inactive plan keeps its assignments, and the controlling
-     * reports its bookings under "without budget" (→ {@code BudgetControllingService}).
+     * reports its bookings under the plan, marked as deactivated (#1217,
+     * → {@code BudgetControllingService}).
      */
     private record Coverage(LocalDate validFrom, LocalDate validUntil, String suborderSign) {}
 
@@ -279,8 +280,8 @@ public class OrderBudgetService {
      * <p>Changing the level stays possible as soon as the periods do not overlap — order-wide until
      * the end of the year, per suborder from January.
      *
-     * <p>Only active plans take part; an inactive one is in no calculation and may stay on as an
-     * archive. Activating one therefore has to check again.
+     * <p>Only active plans take part; an inactive one may stay on as an archive, and the controlling
+     * gives it a section of its own (#1217). Activating one therefore has to check again.
      */
     private void checkLevelNotMixed(String customerorderSign, String suborderSign,
                                     LocalDate validFrom, LocalDate validUntil,

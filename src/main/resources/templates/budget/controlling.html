@@ -74,7 +74,9 @@
                         : result.customerShortname() + ' - ' + result.customerName()}">Kunde</div>
         <!--/*
           Auf welcher Ebene die Pläne dieses Abschnitts liegen, gehört in die Überschrift (#1004):
-          zwei Abschnitte verschiedener Ebenen unterscheiden sich sonst nur im Zeitraum.
+          zwei Abschnitte verschiedener Ebenen unterscheiden sich sonst nur im Zeitraum. Ein
+          deaktivierter Plan trägt das direkt hinter seinem Namen (#1217): seine Buchungen sind ihm
+          zugeordnet, und ohne den Zusatz sähe der Abschnitt aus wie der eines laufenden Plans.
         */-->
         <div class="text-muted small"
              th:with="kindLabel=${section.level() > 0}
@@ -84,7 +86,9 @@
                 th:text="${#strings.listJoin(section.budgetNames(), ', ')} + ' '"></span>
           <span th:text="${#lists.isEmpty(section.budgetNames())}
                          ? ${kindLabel}
-                         : '(' + ${kindLabel} + ')'">Auftragsweites Budget</span>
+                         : (${section.deactivated()}
+                            ? '(' + #{main.controlling.section.deactivated} + ', ' + ${kindLabel} + ')'
+                            : '(' + ${kindLabel} + ')')">Auftragsweites Budget</span>
         </div>
         <div class="text-muted small" th:if="${section.hasPlanPeriod()}"
              th:text="|${#temporals.format(section.planFrom(), 'dd.MM.yyyy')} – ${#temporals.format(section.planUntil(), 'dd.MM.yyyy')}|">

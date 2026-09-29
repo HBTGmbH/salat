@@ -29,11 +29,14 @@ public final class FlatRateAllocation {
     /**
      * The single plan that may hold this amount, or empty when none or several qualify.
      *
-     * <p>A named plan counts only while it is among the plans passed in — the active ones. A
-     * deactivated plan is not evaluated, so its amounts are reported as being without a budget,
-     * exactly as the bookings of a deactivated plan are (→ AGENTS.md, "Budget Assignments Follow a
-     * Changed Plan"). Falling back to the derivation instead would move the amount to a plan
-     * somebody else picked.
+     * <p>A named plan counts only while it is among the plans passed in, and it counts whether or
+     * not it is active: the controlling passes every plan of the order, so an amount follows a
+     * deactivated plan into its section exactly as the bookings assigned to it do (#1217). The
+     * dashboard passes the active plans only, and there the amount holds nothing. Falling back to
+     * the derivation instead would move the amount to a plan somebody else picked.
+     *
+     * <p>The derivation itself only ever picks an active plan. Letting a deactivated one qualify
+     * would make amounts ambiguous that are unambiguous today.
      */
     public static Optional<OrderBudget> uniquePlanFor(FlatRateDueAmount dueAmount,
                                                       Collection<OrderBudget> plans) {
