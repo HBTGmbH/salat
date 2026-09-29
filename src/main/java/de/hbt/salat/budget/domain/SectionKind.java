@@ -15,7 +15,8 @@ public enum SectionKind {
     /**
      * Bookings that belong to no plan (#913): no assignment at all, or one pointing at a plan the
      * evaluation excludes. Since only the stored assignment counts, this is where hours would
-     * otherwise stop appearing in any number — it is not a period, it is a residue.
+     * otherwise stop appearing in any number — it is not a period, it is a residue. The bookings of
+     * a deactivated plan are not part of it; they stay under their plan (#1217).
      */
     UNPLANNED
 }

@@ -996,7 +996,7 @@ An order earns from two sources, and they add up (#972):
 Rules that follow from this:
 - `BudgetControllingRow.revenueEuro` is the **hourly** part only. Every figure derived from revenue — budget utilization, overrun, gross profit, margin — must read `totalRevenueEuro()`, which is the sum of both. Reading `revenueEuro` for those would silently drop the flat rates.
 - A flat rate schedule is derived in exactly one place, `OrderFlatRate.dueAmountsWithin`. The form preview and the controlling both call it, so a rate cannot be previewed as one calendar and evaluated as another.
-- Which plan a flat rate amount counts against follows `FlatRateAllocation.uniquePlanFor`: the plan the flat rate **names**, or — where it names none — the one active plan whose period contains the due date and whose scope covers it. Where several plans qualify and none is named, none is chosen; the amount is reported as being without a budget, exactly as an ambiguous booking is. Never guess a plan; double counting and silent reassignment are both worse than an explicit "without budget". A named plan is not weighed against period and scope again — the saving did that (→ Konditionen an einem Budgetplan) — but it only counts while it is **active**, so a deactivated plan drops its amounts to "without budget" just as it does its bookings.
+- Which plan a flat rate amount counts against follows `FlatRateAllocation.uniquePlanFor`: the plan the flat rate **names**, or — where it names none — the one active plan whose period contains the due date and whose scope covers it. Where several plans qualify and none is named, none is chosen; the amount is reported as being without a budget, exactly as an ambiguous booking is. Never guess a plan; double counting and silent reassignment are both worse than an explicit "without budget". A named plan is not weighed against period and scope again — the saving did that (→ Konditionen an einem Budgetplan). It holds its amounts even while it is **deactivated**: in the controlling they follow the plan into its section just as its bookings do (#1217); dashboard and alerts look at active plans only. The derivation, by contrast, only ever picks an active plan.
 - The unit of allocation is a single due amount, not the definition: a monthly rate spanning two plans has each month counted against the plan it falls into.
 - **Dashboard and alerts end their window today**, never at the plan's own end (`BudgetControllingService.evaluatedUntil`). They answer "where does this plan stand", which is a question about the present; reading a plan to its end counted what has not happened yet — a monthly flat rate running to December contributed all twelve months in June. The cut applies to the budget as well: an adjustment taking effect in November has not been granted yet. With both ends cut, a dashboard row says exactly what a controlling evaluation up to today says, and the row links to that window rather than to a wider one. The controlling view itself keeps its explicit `from`/`until` filter and is not capped.
 
@@ -1055,7 +1055,10 @@ evaluation reads. Editing the plan therefore has to bring its assignments back i
   change invalidated moves to the single other active plan covering the booking, or is dropped when
   none or several do — the booking then shows up under "without budget".
 - Deactivating a plan is deliberately **not** part of its coverage: an inactive plan keeps its
-  assignments, and the controlling reports its bookings as unplanned.
+  assignments, and the controlling reports its bookings under the plan, marked as deactivated
+  (#1217) — in a section of its own, never together with an active plan, and only while it holds
+  something in the window. "Without budget" then holds only what no plan holds, which is what its
+  "assign" action is for.
 - `TimereportBudgetAssignmentService` loads and authorizes a plan through `OrderBudgetRepository` +
   `BudgetAuthorization` rather than through `OrderBudgetService`. That service has to be able to call
   this one, so going the other way would close a bean cycle.

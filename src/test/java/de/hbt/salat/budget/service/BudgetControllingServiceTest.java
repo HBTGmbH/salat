@@ -395,10 +395,15 @@ public class BudgetControllingServiceTest {
     assertThat(compute().sections()).noneMatch(s -> s.kind() == SectionKind.SUBORDER_LEVEL);
   }
 
+  /**
+   * An inactive plan that holds nothing in the window has nothing to answer for — not even with the
+   * planned hours of its scope, which would otherwise be enough to give it a section (#1217).
+   */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_ignore_inactive_plans() {
-    var archived = plan("archived", null, FROM, UNTIL, "1000");
+  public void should_leave_out_an_inactive_plan_that_holds_no_booking_in_the_window() {
+    suborders.get(0).setDebithours(Duration.ofHours(40));
+    var archived = plan("archived", "co/01", FROM, UNTIL, "1000");
     archived.setActive(false);
     givenBudgets(archived);
 
@@ -453,13 +458,16 @@ public class BudgetControllingServiceTest {
     assertThat(sectionOf(SectionKind.UNPLANNED).total().revenueEuro()).isEqualByComparingTo("1600.00");
   }
 
+  // --- deactivated plans (#1217) -----------------------------------------------------------------
+
   /**
-   * A plan can be deactivated after its bookings were assigned. Its hours must not vanish from every
-   * number — they belong under "without budget", where the bulk assignment can pick them up.
+   * A plan can be deactivated after its bookings were assigned. They stay assigned to it, so they
+   * are reported under that plan, marked as deactivated — not as being without a budget, which
+   * offers to assign what already is assigned.
    */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_bookings_of_a_deactivated_plan_as_without_budget() {
+  public void should_report_bookings_of_a_deactivated_plan_under_that_plan() {
     var archived = plan("archived", null, FROM, UNTIL, "1000");
     givenBudgets(archived);
     // Assigned while the plan was still active, then archived.
@@ -469,8 +477,133 @@ public class BudgetControllingServiceTest {
 
     var sections = compute().sections();
 
-    assertThat(sections).extracting(BudgetControllingSection::kind).containsExactly(SectionKind.UNPLANNED);
+    assertThat(sections).extracting(BudgetControllingSection::kind).containsExactly(SectionKind.ORDER_LEVEL);
+    assertThat(sections.get(0).deactivated()).isTrue();
+    assertThat(sections.get(0).budgetNames()).containsExactly("archived");
+    assertThat(sections.get(0).groups().get(0).budgetId()).isEqualTo(archived.getId());
     assertThat(sections.get(0).total().revenueEuro()).isEqualByComparingTo("1600.00");
+    assertThat(sections.get(0).total().budgetEuro()).isEqualByComparingTo("1000");
+  }
+
+  /** An active plan is not marked, so the view has nothing to add to its name. */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_mark_the_section_of_an_active_plan_as_deactivated() {
+    givenBudgets(plan("whole year", null, FROM, UNTIL, "2000"));
+
+    assertThat(sectionOf(SectionKind.ORDER_LEVEL).deactivated()).isFalse();
+  }
+
+  /**
+   * Holding a booking <em>before</em> the window is not enough: the evaluation talks about the
+   * window, and the plan has nothing in it. Its earlier revenue must not leak into the section
+   * without a budget either.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_leave_out_a_deactivated_plan_whose_bookings_all_lie_before_the_window() {
+    var archived = plan("archived", "co/01", FROM, UNTIL, "1000");
+    givenBudgets(archived);
+    archived.setActive(false);
+
+    var sections = compute(JUL, UNTIL).sections();
+
+    assertThat(sections).extracting(BudgetControllingSection::kind).containsExactly(SectionKind.UNPLANNED);
+    assertThat(sections.get(0).rows()).extracting(BudgetControllingRow::sign).containsExactly("co/02");
+    assertThat(sections.get(0).total().revenueBeforeWindowEuro()).isEqualByComparingTo(BigDecimal.ZERO);
+  }
+
+  /**
+   * A deactivated plan never shares a section with an active one, even on the same level and over
+   * the same period: the section total would add both budgets up, and the reader could not tell
+   * which figure belongs to the archive.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_keep_a_deactivated_plan_apart_from_an_active_plan_of_the_same_period() {
+    var archived = plan("archived", null, FROM, UNTIL, "1000");
+    var current = plan("current", null, FROM, UNTIL, "500");
+    givenBudgets(archived, current);
+    givenAssignment(reports.get(0), archived);
+    givenAssignment(reports.get(1), current);
+    archived.setActive(false);
+
+    var sections = compute().sections();
+
+    assertThat(sections).extracting(BudgetControllingSection::kind)
+        .containsExactly(SectionKind.ORDER_LEVEL, SectionKind.ORDER_LEVEL);
+    var deactivated = sections.stream().filter(BudgetControllingSection::deactivated).findFirst().orElseThrow();
+    var active = sections.stream().filter(section -> !section.deactivated()).findFirst().orElseThrow();
+    assertThat(deactivated.total().budgetEuro()).isEqualByComparingTo("1000");
+    assertThat(deactivated.total().revenueEuro()).isEqualByComparingTo("800.00");
+    assertThat(active.total().budgetEuro()).isEqualByComparingTo("500");
+    assertThat(active.total().revenueEuro()).isEqualByComparingTo("800.00");
+  }
+
+  /**
+   * The case the issue came from: the expired plan still covers the first day of its successor,
+   * and a booking of that day is assigned to it. Evaluated from the successor's start — which is
+   * the window the dashboard links to — that one booking appears under the expired plan, and what
+   * the plan earned before still counts towards its budget (#779).
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_the_booking_on_the_day_of_the_switch_under_the_deactivated_plan() {
+    var switchDay = eightHoursOn(20L, APR);
+    givenReports(eightHoursOn(11L, IN_H1), switchDay, eightHoursOn(20L, IN_H2));
+    var expired = plan("expired", null, FROM, APR, "3000");
+    var successor = plan("successor", null, APR, UNTIL, "5000");
+    givenBudgets(expired, successor);
+    // Both plans cover the day of the switch, so only a manual assignment decides it.
+    givenAssignment(switchDay, expired);
+    expired.setActive(false);
+
+    var sections = compute(APR, UNTIL).sections();
+
+    assertThat(sections).extracting(BudgetControllingSection::budgetNames)
+        .containsExactly(List.of("expired"), List.of("successor"));
+    var expiredSection = sections.get(0);
+    assertThat(expiredSection.deactivated()).isTrue();
+    assertThat(expiredSection.total().bookedHours()).isEqualTo(Duration.ofHours(8));
+    assertThat(expiredSection.total().revenueBeforeWindowEuro()).isEqualByComparingTo("800.00");
+    assertThat(sections.get(1).total().bookedHours()).isEqualTo(Duration.ofHours(8));
+  }
+
+  /**
+   * An archived plan is not behind anything any more. Reporting its progress would raise an alarm
+   * nobody can act on, so the group carries none.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_no_progress_for_a_deactivated_plan() {
+    var archived = plan("archived", null, FROM, UNTIL, "1000");
+    withScopeProgress(archived, 20);
+    givenBudgets(archived);
+    archived.setActive(false);
+
+    var group = sectionOf(SectionKind.ORDER_LEVEL).groups().get(0);
+
+    assertThat(group.hasProgress()).isFalse();
+    assertThat(group.hasProgressStatus()).isFalse();
+  }
+
+  /**
+   * Moving the bookings of a deactivated plan into a section of their own moves figures between
+   * sections, never in or out of the order: the order total — the very line the segment listing
+   * shows — stays what it was.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_not_change_the_order_total_when_a_plan_is_deactivated() {
+    var archived = plan("archived", null, FROM, JUN, "1000");
+    givenBudgets(archived, plan("H2", null, JUL, UNTIL, "500"));
+    var whileActive = compute().total();
+
+    archived.setActive(false);
+    var afterwards = compute().total();
+
+    assertThat(afterwards.bookedHours()).isEqualTo(whileActive.bookedHours());
+    assertThat(afterwards.revenueEuro()).isEqualByComparingTo(whileActive.revenueEuro());
   }
 
   @Test
@@ -975,16 +1108,42 @@ public class BudgetControllingServiceTest {
     assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo("500");
   }
 
-  /** An inactive plan holds nothing, so its flat rates surface instead of disappearing. */
+  /**
+   * A flat rate that merely falls into the period and scope of a deactivated plan is not derived
+   * into it — the derivation only ever picks an active plan, and widening it would change which
+   * amounts are unambiguous. It surfaces as being without a budget instead of disappearing.
+   */
   @Test
   @FixedClock("2026-06-15T10:00:00")
-  public void should_report_the_flat_rates_of_a_deactivated_plan_as_without_budget() {
+  public void should_report_a_derived_flat_rate_of_a_deactivated_plan_as_without_budget() {
     var archived = plan("archived", null, FROM, UNTIL, "1000");
     archived.setActive(false);
     givenBudgets(archived);
     givenFlatRates(once("initial fee", null, IN_H1, "500"));
 
     assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo("500");
+  }
+
+  /**
+   * A flat rate that names its plan is assigned to it as firmly as a booking is (#1065), so it
+   * follows the plan into its deactivated section (#1217) — on its own, too, without any booking
+   * next to it.
+   */
+  @Test
+  @FixedClock("2026-06-15T10:00:00")
+  public void should_report_a_flat_rate_naming_a_deactivated_plan_under_that_plan() {
+    var archived = plan("archived", null, FROM, UNTIL, "1000");
+    archived.setActive(false);
+    givenBudgets(archived);
+    var fee = once("initial fee", null, IN_H1, "500");
+    fee.setOrderBudget(archived);
+    givenFlatRates(fee);
+
+    var sections = compute().sections();
+
+    var archivedSection = sections.stream().filter(BudgetControllingSection::deactivated).findFirst().orElseThrow();
+    assertThat(archivedSection.total().flatRateRevenueEuro()).isEqualByComparingTo("500");
+    assertThat(sectionOf(SectionKind.UNPLANNED).total().flatRateRevenueEuro()).isEqualByComparingTo(BigDecimal.ZERO);
   }
 
   /** Nothing outside the window, whatever the definition runs to. */

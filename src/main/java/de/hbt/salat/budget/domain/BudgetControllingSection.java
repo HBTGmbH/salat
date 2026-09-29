@@ -25,6 +25,12 @@ public record BudgetControllingSection(
     LocalDateRange period,
     List<String> budgetNames,
     /**
+     * Whether the plans of this section are deactivated (#1217). A deactivated plan keeps its
+     * assignments, so what it holds is reported under it rather than as being without a budget —
+     * and never together with an active plan, so the flag holds for the whole section.
+     */
+    boolean deactivated,
+    /**
      * Validity of the plans in this section — their own period, not the evaluated window. The header
      * shows it so a reader sees how long the budget runs, next to the window it is looking at.
      * {@code null} for UNPLANNED, which has no plan.

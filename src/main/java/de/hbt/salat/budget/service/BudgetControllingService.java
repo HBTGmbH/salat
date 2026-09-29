@@ -11,9 +11,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -93,19 +95,28 @@ public class BudgetControllingService {
         // and it is what allows plans to overlap from #914 on.
         var planOfBooking = planOfBooking(customerorderSign);
 
-        var plans = evaluatedPlans(budgets, filter);
+        // A deactivated plan keeps its assignments (#1217), so every plan whose validity touches the
+        // window is a candidate at first. Whether a deactivated one takes part depends on what it
+        // holds inside the window, and that is only known once bookings and flat rates are read.
+        var candidates = evaluatedPlans(budgets, filter);
+        var candidateTimereports = timereportService.getTimereportsByDatesAndCustomerOrderId(
+            readFrom(candidates, from), until, customerorder.getId());
+        var flatRateLookup = orderFlatRateService.lookupFor(List.of(customerorderSign));
+        var plans = withoutIdleDeactivatedPlans(candidates, candidateTimereports, planOfBooking,
+            allocate(flatRateLookup.dueAmounts(customerorderSign, from, until), budgets), from);
         var evaluatedPlanIds = plans.stream().map(p -> p.plan().getId()).collect(Collectors.toSet());
 
         // One read over the whole span this evaluation talks about: from the earliest plan start to
         // the end of the window. Everything before the window feeds exactly one figure — what was
         // earned back then (#779) — which is what the budget columns add to the window's own revenue;
         // hours, revenue and cost themselves stay inside the window. A second query for the earlier
-        // part would only add a round trip.
-        var readFrom = plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder())
-            .filter(planStart -> planStart.isBefore(from))
-            .orElse(from);
-        var timereports = timereportService.getTimereportsByDatesAndCustomerOrderId(
-            readFrom, until, customerorder.getId());
+        // part would only add a round trip. The read above spans the candidates, so it is cut back to
+        // the plans that take part: one that dropped out must leave no trace, not even as revenue
+        // from before the window in the section without a budget.
+        var readFrom = readFrom(plans, from);
+        var timereports = candidateTimereports.stream()
+            .filter(report -> !report.getReferenceday().isBefore(readFrom))
+            .toList();
 
         // Every report is priced exactly once here. Sections then only filter and add, which matters
         // because the same report is looked at by every section it could fall into.
@@ -113,9 +124,10 @@ public class BudgetControllingService {
             pricingLookup, costLookup, from);
 
         // Flat rates over the same span, allocated to a plan by due date and scope (#972). Judged
-        // against the active plans of the order rather than against the evaluated ones, so that the
-        // allocation of an amount does not depend on the window somebody is looking at.
-        var flatRatesByPlan = allocateFlatRates(customerorderSign, activePlans(budgets), readFrom, until);
+        // against every plan of the order rather than against the evaluated ones, so that the
+        // allocation of an amount does not depend on the window somebody is looking at. Only a flat
+        // rate naming its plan can land on a deactivated one (→ FlatRateAllocation).
+        var flatRatesByPlan = allocate(flatRateLookup.dueAmounts(customerorderSign, readFrom, until), budgets);
 
         var sections = new ArrayList<BudgetControllingSection>();
         for (var group : sectionGroups(plans)) {
@@ -208,21 +220,7 @@ public class BudgetControllingService {
         }
     }
 
-    private static List<OrderBudget> activePlans(List<OrderBudget> budgets) {
-        return budgets.stream().filter(b -> TRUE.equals(b.getActive())).toList();
-    }
-
-    /**
-     * Expands the flat rates of the order over the span and allocates every amount to the one plan
-     * that may hold it (→ {@link FlatRateAllocation}).
-     */
-    private AllocatedFlatRates allocateFlatRates(String customerorderSign, List<OrderBudget> plans,
-                                                 LocalDate from, LocalDate until) {
-        var dueAmounts = orderFlatRateService.lookupFor(List.of(customerorderSign))
-            .dueAmounts(customerorderSign, from, until);
-        return allocate(dueAmounts, plans);
-    }
-
+    /** Allocates every amount to the one plan that may hold it (→ {@link FlatRateAllocation}). */
     private static AllocatedFlatRates allocate(List<FlatRateDueAmount> dueAmounts, List<OrderBudget> plans) {
         Map<Long, List<FlatRateDueAmount>> byPlanId = new LinkedHashMap<>();
         var unallocated = new ArrayList<FlatRateDueAmount>();
@@ -284,19 +282,21 @@ public class BudgetControllingService {
         int level() {
             return BudgetScope.levelOf(plan.getSuborderSign());
         }
+
+        boolean deactivated() {
+            return !TRUE.equals(plan.getActive());
+        }
     }
 
     /**
-     * The plans that take part in this evaluation: active, and with a validity that reaches into the
-     * evaluated period.
+     * The plans whose validity reaches into the evaluated period, active or not — the candidates of
+     * this evaluation (→ {@link #withoutIdleDeactivatedPlans}).
      *
      * <p>This is a filter, not a coverage derivation — no plan takes anything away from another one
-     * any more. A booking assigned to a plan that is excluded here is reported as being without a
-     * budget, so deactivating a plan does not make its hours disappear from every number.
+     * any more.
      */
     private List<PlanPeriod> evaluatedPlans(List<OrderBudget> budgets, LocalDateRange filter) {
         return budgets.stream()
-            .filter(b -> Boolean.TRUE.equals(b.getActive()))
             // A plan takes part when its validity touches the window, whether or not it began inside
             // it (#916). The clipped period below is only what the section header shows.
             .filter(b -> new LocalDateRange(b.getValidFrom(), b.getValidUntil()).overlaps(filter))
@@ -313,16 +313,58 @@ public class BudgetControllingService {
     }
 
     /**
+     * The candidates without the deactivated plans that hold nothing inside the window: no booking
+     * of the window assigned to them and no flat rate of the window allocated to them (#1217). Such
+     * a plan has nothing to answer for — and the planned hours of its scope alone would otherwise
+     * give it a section. An active plan always takes part, as it always has.
+     *
+     * <p>A deactivated plan that does hold something is reported under its own name, because its
+     * bookings are assigned to it: reporting them as being without a budget offered to assign what
+     * already is assigned.
+     */
+    private static List<PlanPeriod> withoutIdleDeactivatedPlans(List<PlanPeriod> candidates,
+                                                                List<TimereportDTO> timereports,
+                                                                Map<Long, Long> planOfBooking,
+                                                                AllocatedFlatRates flatRatesInWindow,
+                                                                LocalDate windowStart) {
+        Set<Long> holding = new HashSet<>(flatRatesInWindow.byPlanId().keySet());
+        timereports.stream()
+            // The reports end with the window, so only its start needs checking.
+            .filter(report -> !report.getReferenceday().isBefore(windowStart))
+            .map(report -> planOfBooking.get(report.getId()))
+            .filter(Objects::nonNull)
+            .forEach(holding::add);
+        return candidates.stream()
+            .filter(p -> !p.deactivated() || holding.contains(p.plan().getId()))
+            .toList();
+    }
+
+    /**
+     * The first day the evaluation reads: the earliest start of the plans where it lies before the
+     * window, otherwise the start of the window itself.
+     */
+    private static LocalDate readFrom(List<PlanPeriod> plans, LocalDate windowStart) {
+        return plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder())
+            .filter(planStart -> planStart.isBefore(windowStart))
+            .orElse(windowStart);
+    }
+
+    /**
      * Plans of the same level and the same period share one section, as they always have — the
      * section total over them is the number a reader compares against the order. Since all plans in
      * force at one time sit on the same level (→ {@code OrderBudgetService}), the level only ever
      * separates sections whose periods differ anyway; it is in the key so that a section stays one
      * level even where two periods merely touch.
+     *
+     * <p>A deactivated plan never shares a section with an active one (#1217): the section total
+     * would add both budgets up. The level rule does not bind it either — it only holds among active
+     * plans — so a deactivated plan may even sit on a level the active ones of its time do not.
      */
     private List<List<PlanPeriod>> sectionGroups(List<PlanPeriod> plans) {
         Map<String, List<PlanPeriod>> grouped = new LinkedHashMap<>();
         for (var plan : plans) {
-            grouped.computeIfAbsent(plan.level() + "|" + plan.period(), k -> new ArrayList<>()).add(plan);
+            grouped.computeIfAbsent(plan.level() + "|" + plan.period() + "|" + plan.deactivated(),
+                k -> new ArrayList<>()).add(plan);
         }
         return List.copyOf(grouped.values());
     }
@@ -351,6 +393,8 @@ public class BudgetControllingService {
         var level = plans.get(0).level();
         var orderWide = level == 0;
         var period = plans.get(0).period();
+        // A section never mixes deactivated and active plans (→ sectionGroups).
+        var deactivated = plans.get(0).deactivated();
         // Collected first and turned into groups below: a group carries its plan's progress status,
         // and for an order-wide plan that status is judged against the section total, which does not
         // exist until every plan has been walked.
@@ -372,7 +416,10 @@ public class BudgetControllingService {
             var rows = concat(suborderRows, flatRateRows(flatRates.of(plan.getId()), window.getFrom(),
                 includeCosts));
             var budget = cumulativeBudgetOf(plan, window.getUntil());
-            var progress = computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
+            // An archived plan is behind nothing any more; judging it would raise an alarm nobody
+            // can act on (#1217).
+            var progress = deactivated ? null
+                : computeProgress(plan, period.getFrom(), period.getUntil(), today, holidays);
             // An order-wide plan is the whole section, so its figures belong on the section total.
             var subtotal = orderWide ? null
                 : aggregate(plan.getSuborderSign(), plan.getName(), rows, budget, includeCosts);
@@ -400,6 +447,7 @@ public class BudgetControllingService {
             level,
             period,
             plans.stream().map(p -> p.plan().getName()).toList(),
+            deactivated,
             plans.stream().map(p -> p.plan().getValidFrom()).min(naturalOrder()).orElse(null),
             plans.stream().map(p -> p.plan().getValidUntil()).max(naturalOrder()).orElse(null),
             groups, total);
@@ -407,9 +455,13 @@ public class BudgetControllingService {
 
     /**
      * The bookings that belong to no budget: no assignment at all, or one pointing at a plan this
-     * evaluation excludes — an inactive plan, or one whose validity lies outside the period. Both
-     * cases have to surface, otherwise hours would silently stop appearing in any number, which is
-     * exactly what the explicit assignment must not cost us (#913).
+     * evaluation excludes. Both cases have to surface, otherwise hours would silently stop appearing
+     * in any number, which is exactly what the explicit assignment must not cost us (#913).
+     *
+     * <p>A deactivated plan is no longer excluded as soon as it holds something in the window
+     * (#1217), so what lands here really is unassigned — which is what the "assign" action of the
+     * section offers to fix. The exclusion stays as the net for an assignment that points at a plan
+     * whose validity does not reach into the window, a state the assignment rules do not produce.
      */
     private BudgetControllingSection withoutBudgetSection(List<Suborder> suborders,
                                                           Map<Long, List<ScoredReport>> scored,
@@ -435,7 +487,7 @@ public class BudgetControllingService {
         }
         var total = aggregate(null, null, rows, null, includeCosts);
         // No plan, so no progress either — these bookings answer to nothing that could be behind.
-        return new BudgetControllingSection(SectionKind.UNPLANNED, 0, null, List.of(), null, null,
+        return new BudgetControllingSection(SectionKind.UNPLANNED, 0, null, List.of(), false, null, null,
             List.of(new BudgetControllingGroup(null, null, null, rows, null, null, null)), total);
     }
 
