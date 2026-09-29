@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.auth;
 
+import static org.mockito.Mockito.mock;
 import static java.time.LocalDate.of;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +24,7 @@ import de.hbt.salat.auth.persistence.AuthorizationRuleRepository;
 import de.hbt.salat.auth.service.AuthService;
 import de.hbt.salat.common.SalatProperties;
 import de.hbt.salat.dailyreport.domain.Timereport;
+import de.hbt.salat.employee.service.EmployeecontractService;
 
 /**
  * A rule of the category TIMEREPORT may name whose bookings and on which order at once, both in the one object of a
@@ -63,7 +65,7 @@ class TimereportAuthorizationTest {
 
         var authService = new AuthService(authorizedUser, authorizationRuleRepository, null, salatProperties, null, null);
         authService.init();
-        timereportAuthorization = new TimereportAuthorization(authorizedUser, authService);
+        timereportAuthorization = new TimereportAuthorization(authorizedUser, authService, mock(EmployeecontractService.class));
 
         // a booking of somebody else, so none of the checks before the rules applies
         when(timereport.getEmployeecontract().getEmployee().getSign()).thenReturn(BOOKING_EMPLOYEE);

@@ -95,7 +95,7 @@ class TimereportVisibilityConsistencyTest {
 
     var authService = new AuthService(authorizedUser, authorizationRuleRepository, null, salatProperties, null, null);
     authService.init();
-    timereportAuthorization = new TimereportAuthorization(authorizedUser, authService);
+    timereportAuthorization = new TimereportAuthorization(authorizedUser, authService, employeecontractService);
     visibilityService = new TimereportVisibilityService(authorizedUser, authorizedEmployee, authService,
         employeeService, employeecontractService, customerorderService, suborderService);
 

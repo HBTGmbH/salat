@@ -104,6 +104,7 @@ public enum ErrorCode {
   TR_BOOKING_ORDER_CONTRADICTS_SIGN("TR-0044", "the employee order id and the suborder sign of the booking contradict each other"),
   TR_CSV_LINE_REJECTED("TR-0045", "a line of the uploaded CSV file names a booking that cannot be assigned"),
   TR_MOVE_ACCEPTED_REQ_ADMIN("TR-0046", "the range contains accepted time reports, which only admins may move"),
+  TR_SUCCEEDED_CONTRACT_NOT_SELF("TR-0047", "own time reports of an ended contract cannot be changed once a later contract has been released"),
 
   RL_RELEASE_NOT_ALLOWED("RL-0001", "release not allowed"),
   RL_ACCEPT_NOT_ALLOWED("RL-0002", "accept not allowed"),
@@ -132,6 +133,7 @@ public enum ErrorCode {
   WD_COMMITTED_REQ_PEOPLE_LEAD_OR_MANAGER("WD-0015", "in the released period only people leads and managers may change the working day"),
   WD_COMMITTED_NOT_SELF("WD-0016", "the own working day cannot be changed in the released period"),
   WD_CLOSED_REQ_ADMIN("WD-0017", "in the accepted period only admins may change the working day; reopen the period first"),
+  WD_SUCCEEDED_CONTRACT_NOT_SELF("WD-0018", "the own working day of an ended contract cannot be changed once a later contract has been released"),
 
   ETL_INVALID_DATE_RANGE("ETL-0001", "etl definition executed with invalid date range"),
   ETL_RUN_ALREADY_RUNNING("ETL-0002", "an etl run is already running"),

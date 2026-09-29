@@ -12,6 +12,7 @@ import static de.hbt.salat.common.exception.ErrorCode.TR_CLOSED_TIME_REPORT_REQ_
 import static de.hbt.salat.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_NOT_SELF;
 import static de.hbt.salat.common.exception.ErrorCode.TR_COMMITTED_TIME_REPORT_REQ_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.TR_OPEN_TIME_REPORT_REQ_EMPLOYEE;
+import static de.hbt.salat.common.exception.ErrorCode.TR_SUCCEEDED_CONTRACT_NOT_SELF;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +28,7 @@ import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.dailyreport.domain.ReportPeriod;
 import de.hbt.salat.dailyreport.domain.Timereport;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.service.EmployeecontractService;
 
 @Component
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class TimereportAuthorization {
 
   private final AuthorizedUser authorizedUser;
   private final AuthService authService;
+  private final EmployeecontractService employeecontractService;
 
   public boolean isAuthorized(Timereport timereport, AccessLevel accessLevel) {
     if(accessLevel == READ && authorizedUser.isManager()) return true;
@@ -134,7 +137,8 @@ public class TimereportAuthorization {
    * <p>Es ist die Vorprüfung nach dem Status, die {@link #checkAuthorized} selbst aufruft, keine
    * Kopie davon: offene Buchungen schreiben die Person selbst und die Geschäftsführung, freigegebene
    * die Geschäftsführung und die zuständige People Lead, aber nie die Person selbst, abgenommene nur
-   * noch ein Admin (#1164) — alle anderen öffnen den Zeitraum erst wieder. Besteht eine Buchung mit einem dieser drei
+   * noch ein Admin (#1164) — alle anderen öffnen den Zeitraum erst wieder. Offene Buchungen eines beendeten Vertrags
+   * schreibt die Person selbst nicht mehr, sobald sie auf einem Folgevertrag freigegeben hat (#1215). Besteht eine Buchung mit einem dieser drei
    * Status die Vorprüfung, lässt {@link #isAuthorized} sie über seine ausdrücklichen Zweige ebenfalls
    * zu, und keine Regel ändert daran noch etwas — die Antwort ist dieselbe wie die von
    * {@code checkAuthorized}.
@@ -176,7 +180,24 @@ public class TimereportAuthorization {
        !isOwner) {
       return Optional.of(TR_OPEN_TIME_REPORT_REQ_EMPLOYEE);
     }
+    if(TIMEREPORT_STATUS_OPEN.equals(status) &&
+       !authorizedUser.isManager() &&
+       hasReleasedSuccessor(contract)) {
+      return Optional.of(TR_SUCCEEDED_CONTRACT_NOT_SELF);
+    }
     return Optional.empty();
+  }
+
+  /**
+   * Ob die Person selbst den Vertrag hinter sich hat: er ist beendet, und auf einem Folgevertrag hat sie schon
+   * freigegeben (#1215). Freigabe und Abnahme laufen je Vertrag, und die Seite der Freigabe schlägt den laufenden vor —
+   * so blieb der letzte Monat eines alten Vertrags oft für immer offen und damit für die Person änderbar. Das Vertragsende
+   * allein genügt nicht: bis zur ersten Freigabe auf dem Folgevertrag bucht die Person den letzten Monat des alten noch
+   * nach und gibt ihn frei. Nur die Person selbst ist gemeint — die Geschäftsführung schreibt offene Buchungen weiter.
+   * Die Frage geht an die Datenbank und steht deshalb hinter den Prüfungen, die ohne sie auskommen.
+   */
+  private boolean hasReleasedSuccessor(Employeecontract contract) {
+    return employeecontractService.hasReleasedSuccessor(contract);
   }
 
   private boolean isSupervisedByCurrentUser(Employeecontract ec) {

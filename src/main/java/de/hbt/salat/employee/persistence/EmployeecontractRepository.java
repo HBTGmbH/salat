@@ -31,6 +31,13 @@ public interface EmployeecontractRepository extends PagingAndSortingRepository<E
 
   List<Employeecontract> findAllByEmployeeId(Long employeeId);
 
+  /** Ob die Person nach {@code validUntil} einen Vertrag hat, für den schon freigegeben wurde (#1215). */
+  @Query("""
+      select count(e) > 0 from Employeecontract e
+      where e.employee.id = :employeeId and e.validFrom > :validUntil and e.reportReleaseDate is not null
+      """)
+  boolean existsReleasedContractAfter(long employeeId, LocalDate validUntil);
+
   /**
    * {@code hide is null} zählt als nicht verborgen — die eine Schreibweise aus
    * {@link de.hbt.salat.common.Hiding} (#1104), hier als JPQL, weil ein {@code @Query} nur eine

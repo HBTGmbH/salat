@@ -1,5 +1,6 @@
 package de.hbt.salat.dailyreport.service;
 
+import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -46,6 +47,7 @@ import de.hbt.salat.dailyreport.persistence.TimereportDAO;
 import de.hbt.salat.dailyreport.persistence.TimereportRepository;
 import de.hbt.salat.dailyreport.persistence.WorkingdayDAO;
 import de.hbt.salat.employee.domain.Employeecontract;
+import de.hbt.salat.employee.service.EmployeecontractService;
 import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.order.domain.Customerorder;
 import de.hbt.salat.order.domain.Employeeorder;
@@ -117,7 +119,7 @@ class TimereportServiceDateChangeTest {
   void setUp() {
     timereportService = new TimereportService(eventPublisher, employeecontractDAO, referencedayRepository,
         employeeorderDAO, timereportDAO, timereportRepository, publicholidayDAO, workingdayDAO, authorizedUser,
-        new TimereportAuthorization(authorizedUser, authService));
+        new TimereportAuthorization(authorizedUser, authService, mock(EmployeecontractService.class)));
 
     contract = new Employeecontract();
     ReflectionTestUtils.setField(contract, "id", EMPLOYEE_CONTRACT_ID);

@@ -1713,7 +1713,7 @@ class ReleaseServiceTest {
             lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(sign);
             lenient().when(authorizedUser.isManager()).thenReturn(manager);
             lenient().when(authorizedUser.isPeopleLead()).thenReturn(peopleLead);
-            final var rule = new TimereportAuthorization(authorizedUser, null);
+            final var rule = new TimereportAuthorization(authorizedUser, null, employeecontractService);
             when(timereportAuthorization.isWriteAllowed(any(), any()))
                 .thenAnswer(invocation -> rule.isWriteAllowed(invocation.getArgument(0), invocation.getArgument(1)));
         }
@@ -2446,7 +2446,7 @@ class ReleaseServiceTest {
             lenient().when(authorizedUser.getEffectiveLoginSign()).thenReturn(sign);
             lenient().when(authorizedUser.isManager()).thenReturn(manager);
             lenient().when(authorizedUser.isPeopleLead()).thenReturn(peopleLead);
-            final var rule = new TimereportAuthorization(authorizedUser, null);
+            final var rule = new TimereportAuthorization(authorizedUser, null, employeecontractService);
             when(timereportAuthorization.isWriteAllowed(any(), any()))
                 .thenAnswer(invocation -> rule.isWriteAllowed(invocation.getArgument(0), invocation.getArgument(1)));
         }
