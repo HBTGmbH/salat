@@ -304,6 +304,30 @@
             <name>${salat.image.name}:${salat.image.tag}</name>
             <env>
               <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
+              <!--
+              Metaspace-Grenze (#1213). Der Memory Calculator schätzt die geladenen Klassen als
+              (JVM- + App- + Agent-Klassen) x Faktor x 0,35 und setzt MaxMetaspaceSize auf
+              Klassen x 5.800 Byte + 14 MiB. Mit dem Vorgabefaktor 100 % kommt er auf 29.089
+              Klassen und 178.433K (174 MiB). Zur Laufzeit geladen sind bis zu 34.600 Klassen mit
+              159 MiB Metaspace, das 1,19-Fache der Schätzung; beim Erreichen der Grenze endet die
+              JVM mit OutOfMemoryError: Metaspace.
+
+              Faktor 160 %: 46.543 Klassen, MaxMetaspaceSize 277.294K (271 MiB). Das liegt 34 %
+              über der höchsten beobachteten Klassenzahl und 70 % über dem höchsten beobachteten
+              Metaspace; 155 % wären das Minimum für 30 % Reserve auf die Klassenzahl.
+
+              Ein Faktor statt einer festen Zahl (BPL_JVM_LOADED_CLASS_COUNT): die Zählung aus dem
+              Archiv läuft bei jedem Build neu und wächst mit den Abhängigkeiten mit. Metaspace wird
+              erst bei Bedarf belegt; der Heap wird um die Differenz kleiner gerechnet, rund 97 MiB
+              bei jedem Speicherlimit. Die festen Bereiche brauchen damit 771 MiB, darunter meldet
+              der Memory Calculator einen Fehler und die Anwendung startet nicht.
+
+              BPE_DEFAULT_* schreibt die Laufzeitvariable als Vorgabe ins Image (Buildpack
+              environment-variables, vom Java-Buildpack eingebunden, sobald eine BPE_-Variable
+              gesetzt ist); ein BPL_JVM_CLASS_ADJUSTMENT der Laufzeitumgebung geht weiter vor.
+              Prüfen lässt sich der Wert an der Startzeile "Calculated JVM Memory Configuration".
+              -->
+              <BPE_DEFAULT_BPL_JVM_CLASS_ADJUSTMENT>160%</BPE_DEFAULT_BPL_JVM_CLASS_ADJUSTMENT>
             </env>
           </image>
         </configuration>
