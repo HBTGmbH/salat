@@ -1,6 +1,7 @@
 package de.hbt.salat.budget.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
@@ -19,6 +20,7 @@ import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.persistence.AuthorizedUserAuditorAware;
 import de.hbt.salat.budget.domain.AssignedBooking;
 import de.hbt.salat.budget.domain.OrderBudget;
+import de.hbt.salat.budget.domain.PlanBooking;
 import de.hbt.salat.budget.domain.TimereportBudgetAssignment;
 import de.hbt.salat.common.GlobalConstants;
 import de.hbt.salat.customer.domain.Customer;
@@ -180,6 +182,31 @@ public class AssignedBookingRepositoryTest {
 
     assertThat(totals.bookings()).isZero();
     assertThat(totals.totalDuration()).isEqualTo(Duration.ZERO);
+  }
+
+  /**
+   * The bookings the dashboard prices (#1222): those of the plans asked about, up to the day, with
+   * the plan, suborder, person, day and duration each — and without a deleted one.
+   */
+  @Test
+  public void reads_the_bookings_of_the_plans_asked_about_up_to_the_day() {
+    var other = plan("other plan");
+    var unasked = plan("unasked plan");
+    book(plan, DAY, "abc", suborderA, 1, 15, "");
+    book(other, DAY.minusDays(1), "def", suborderB, 2, 0, "");
+    book(plan, DAY.plusDays(1), "abc", suborderA, 3, 0, "");
+    book(unasked, DAY, "abc", suborderA, 4, 0, "");
+    softDelete(book(plan, DAY, "abc", suborderB, 5, 0, ""));
+
+    var rows = assignmentRepository.findPlanBookings(java.util.List.of(plan.getId(), other.getId()), DAY);
+
+    assertThat(rows).extracting(PlanBooking::orderBudgetId, PlanBooking::suborderId, PlanBooking::day,
+            PlanBooking::duration)
+        .containsExactlyInAnyOrder(
+            tuple(plan.getId(), suborderA.getId(), DAY, Duration.ofMinutes(75)),
+            tuple(other.getId(), suborderB.getId(), DAY.minusDays(1),
+                Duration.ofHours(2)));
+    assertThat(rows).extracting(PlanBooking::employeeId).doesNotContainNull().doesNotHaveDuplicates();
   }
 
   /** Written straight to the column: reading the booking back would already be filtered out. */

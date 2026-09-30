@@ -1,5 +1,6 @@
 package de.hbt.salat.order.service;
 
+import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.not;
 import static de.hbt.salat.common.exception.ServiceFeedbackMessage.error;
 import static de.hbt.salat.order.command.GetTimereportMinutesCommandEvent.OrderType.SUB;
@@ -355,16 +356,16 @@ public class SuborderService {
    * their suborder by its complete order sign and need its description next to it (#952).
    *
    * <p>The complete order sign is derived rather than stored, so it cannot be queried; the orders
-   * are matched over one query instead of one query per row.
+   * are matched over one query instead of one query per row. That query selects the suborders of
+   * these orders only (#1222) — it used to read every suborder of the installation and pick the
+   * matching ones in Java. Sorted by complete order sign, as before.
    */
   public List<Suborder> getSubordersByCustomerorderSigns(Collection<String> customerorderSigns) {
     if (customerorderSigns.isEmpty()) {
       return List.of();
     }
-    var signs = Set.copyOf(customerorderSigns);
-    return suborderDAO.getSuborders().stream()
-        .filter(suborder -> suborder.getCustomerorder() != null
-            && signs.contains(suborder.getCustomerorder().getSign()))
+    return suborderRepository.findAllByCustomerorderSigns(Set.copyOf(customerorderSigns)).stream()
+        .sorted(comparing(Suborder::getCompleteOrderSign))
         .toList();
   }
 

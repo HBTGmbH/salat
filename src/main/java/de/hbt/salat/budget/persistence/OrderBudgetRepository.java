@@ -46,6 +46,25 @@ public interface OrderBudgetRepository
         """)
     List<OrderBudget> findAllActiveWithAdjustmentsBySigns(@Param("signs") Collection<String> signs);
 
+    /**
+     * The plans of several customer orders at once, for the dashboard (#1222). Callers must not pass
+     * an empty collection.
+     */
+    List<OrderBudget> findByCustomerorderSignInAndActive(Collection<String> customerorderSigns, Boolean active);
+
+    /**
+     * The given plans with their scope entries fetched — in one statement for all of them instead of
+     * one per plan when the progress reads them (#1222). Separate from the adjustments because
+     * Hibernate cannot fetch two lists in one query. The plans the caller holds are managed by the
+     * same session, so this initializes their collections in place. Callers must not pass an empty
+     * collection.
+     */
+    @Query("""
+        SELECT DISTINCT b FROM OrderBudget b LEFT JOIN FETCH b.scopeEntries
+        WHERE b.id IN :ids
+        """)
+    List<OrderBudget> findWithScopeEntriesByIdIn(@Param("ids") Collection<Long> ids);
+
     List<OrderBudget> findByActiveAndAlertThresholdPercentIsNotNull(Boolean active);
 
     /**

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -33,6 +34,7 @@ import de.hbt.salat.budget.domain.OrderFlatRateInstalment;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
 import de.hbt.salat.budget.domain.OrderPricing;
 import de.hbt.salat.budget.domain.OrderPricingLookup;
+import de.hbt.salat.budget.domain.PlanBooking;
 import de.hbt.salat.budget.domain.EmployeeCostLookup;
 import de.hbt.salat.budget.domain.EmployeeCostAssignment;
 import de.hbt.salat.budget.domain.EmployeeCost;
@@ -135,6 +137,22 @@ public class BudgetControllingServiceTest {
               .toList();
         });
     when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> List.copyOf(suborders));
+    // The utilization reads the same fixture in bulk, over every order and plan asked about (#1222).
+    when(customerorderService.getCustomerordersBySigns(any())).thenReturn(List.of(customerorder));
+    when(suborderService.getSubordersByCustomerorderSigns(any())).thenAnswer(i -> List.copyOf(suborders));
+    when(orderBudgetRepository.findByCustomerorderSignInAndActive(any(), any())).thenAnswer(i ->
+        plans.stream().filter(p -> p.getActive().equals(i.getArgument(1))).toList());
+    when(assignmentRepository.findPlanBookings(any(), any())).thenAnswer(i -> {
+      Collection<Long> planIds = i.getArgument(0);
+      LocalDate until = i.getArgument(1);
+      return reports.stream()
+          .filter(r -> !r.getReferenceday().isAfter(until))
+          .flatMap(r -> links.stream()
+              .filter(link -> link.timereportId().equals(r.getId()) && planIds.contains(link.orderBudgetId()))
+              .map(link -> new PlanBooking(link.orderBudgetId(), r.getSuborderId(), r.getEmployeeId(),
+                  r.getReferenceday(), r.getDuration())))
+          .toList();
+    });
     when(suborderService.getSuborderById(anyLong())).thenAnswer(i ->
         suborders.stream().filter(so -> so.getId().equals(i.<Long>getArgument(0))).findFirst().orElse(null));
 

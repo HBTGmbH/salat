@@ -104,8 +104,9 @@ aufgerufen, multipliziert das jede dieser Ladungen mit der Listenlänge.
 
 Gemessener Fall: `computeUtilizationInfo(budget)` lud Kundenauftrag, Unteraufträge und
 Zeitbuchungen. Das Dashboard rief es je aktivem Budgetplan auf — bei mehreren Plänen auf demselben
-Auftrag dieselben Daten mehrfach. `computeUtilizationInfos(List)` teilt sie jetzt pro Auftragsschlüssel
-und lädt den Pricing-Lookup einmal für alle.
+Auftrag dieselben Daten mehrfach. `computeUtilizationInfos(List)` teilte sie danach pro
+Auftragsschlüssel und lud den Pricing-Lookup einmal für alle; seit #1222 lädt es alles für alle Pläne
+zugleich (siehe 10.).
 
 **Regel:** Neben die Einzelmethode eine Batch-Variante stellen, die die gemeinsamen Ladevorgänge
 außerhalb der Schleife erledigt, und Listen-Aufrufer darauf umstellen. Die Einzelmethode bleibt für
@@ -172,3 +173,26 @@ nicht abgefragt: die fünfte der Abfragen lieferte Ticketnummern, die nirgends v
 * Ohne Profil `local-qa` fehlen Asset-Caching und Thymeleaf-Template-Cache, und der
   Autorisierungs-Cache läuft im Sekundentakt statt stündlich ab.
 * Die ersten Requests nach dem Start messen JIT-Compilation, nicht die Anwendung.
+
+## 10. Für Kennzahlen Buchungen als Projektion laden, nicht als Entität
+
+**Regel:** Wo eine Rechnung von einer Buchung nur wenige Werte braucht, liest sie diese Werte als
+Record aus einer JPQL-Abfrage (→ ADR-0021) — für alle Pläne oder Aufträge der Seite in einem
+Statement —, statt `TimereportDTO`s über den `TimereportDAO` zu laden. Jede Buchungs-Entität zieht
+Tag, Vertrag, Person und Mitarbeiterauftrag nach, die meisten davon einzeln, dazu die
+Lesefilterung je Buchung.
+
+Gemessener Fall (#1222): `/budget/dashboard` ohne Filter, Rolle Manager, 48 aktive Pläne auf 38
+Aufträgen, rund 8.000 Buchungen. Die Auslastung lud Auftrag, Unteraufträge, Buchungen und deren
+Zuordnung je Auftrag; allein die Buchungen brachten 445 Selects auf `Employeeorder` und 434 auf
+`Referenceday` mit. Ersetzt durch eine Projektion über die Zuordnung (`findPlanBookings`) und je
+eine Sammelabfrage für Aufträge, Unteraufträge und aktive Pläne:
+
+| n=40 nach 10 Aufrufen Warmlauf | Statements je Aufruf | davon Auslastung | Auslastung | Antwortzeit (Median) | Mittelwert ± SE |
+|---|---|---|---|---|---|
+| vorher | 1.311 | 1.209 | 964 ms | 1,203 s | 1,194 s ± 0,021 |
+| nachher | 108 | 6 | 54 ms | **0,252 s** | 0,256 s ± 0,004 |
+
+Die sechs Statements der Auslastung bleiben dieselben, ob 6, 42 oder 48 Pläne auf der Seite stehen.
+Die reine SQL-Zeit lag schon vorher nur bei rund 220 ms: auch hier kostete nicht die Datenbank,
+sondern die Zahl der Roundtrips und das Aufbauen der Entitäten.
