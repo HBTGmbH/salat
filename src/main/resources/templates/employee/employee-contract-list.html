@@ -108,8 +108,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr th:each="ec : ${group}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
-              <td th:text="${ec.employeeName}"></td>
+            <tr th:each="ec : ${group}">
+              <td><span th:text="${ec.employeeName}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!ec.currentlyValid})}"></span></td>
               <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
               <td class="d-none d-md-table-cell" th:text="${ec.supervisorNames}"></td>
               <td>
@@ -177,8 +177,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr th:each="ec : ${group}" th:classappend="${!ec.currentlyValid} ? 'table-danger' : ''">
-              <td th:text="${ec.employeeName}"></td>
+            <tr th:each="ec : ${group}">
+              <td><span th:text="${ec.employeeName}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!ec.currentlyValid})}"></span></td>
               <td class="d-none d-md-table-cell" th:text="${ec.taskDescription}"></td>
               <td class="d-none d-md-table-cell" th:text="${ec.supervisorNames}"></td>
               <td>

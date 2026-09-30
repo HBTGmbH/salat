@@ -111,7 +111,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="so : ${suborders}" th:classappend="${!so.currentlyValid} ? 'table-danger' : ''">
+        <tr th:each="so : ${suborders}">
           <td class="d-none d-md-table-cell">
             <div th:text="${so.customerorder.customer.shortname}" class="text-nowrap">Customer Short</div>
             <small class="text-muted" th:text="${so.customerorder.customer.name}">Customer Name</small>
@@ -120,8 +120,11 @@
             <div th:text="${so.customerorder.sign}">Customer Order</div>
             <small class="text-muted" th:text="${so.customerorder.shortdescription}">Customer order short description</small>
           </td>
+          <!--/* Das Badge steht hinter dem Kürzel des Unterauftrags, nicht in den Spalten davor:
+                 die sind auf schmalen Bildschirmen ausgeblendet, und mit ihnen verschwände die
+                 Kennzeichnung. */-->
           <td>
-            <div th:text="${so.completeOrderSign}">Suborder Sign</div>
+            <div><span th:text="${so.completeOrderSign}">Suborder Sign</span><span th:replace="~{fragments/inactive-badge :: badge(${!so.currentlyValid})}"></span></div>
             <small class="text-muted" th:text="${so.getCompleteOrderDescription(true, false)}">short description</small>
           </td>
           <td class="d-none d-sm-table-cell">

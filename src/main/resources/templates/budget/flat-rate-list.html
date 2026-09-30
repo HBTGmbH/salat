@@ -74,12 +74,12 @@
         <tr th:if="${#lists.isEmpty(rows)}">
           <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
-        <tr th:each="row : ${rows}" th:classappend="${!row.flatRate().currentlyValid} ? 'table-danger' : ''"
+        <tr th:each="row : ${rows}"
             th:with="f=${row.flatRate()}, order=${row.customerorder()}">
           <td>
             <div>
               <span th:text="${f.customerorderSign}"></span>
-              <span class="ms-1 small" th:text="${order?.shortdescription}"></span>
+              <span class="ms-1 small" th:text="${order?.shortdescription}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!f.currentlyValid})}"></span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
