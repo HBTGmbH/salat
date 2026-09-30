@@ -602,7 +602,8 @@ Optionen können über `data-subtext` eine zweite Zeile anzeigen (z. B. Vertrags
 
 ### 5.4 Badges & Flags-Spalte
 Boolesche Zustände in Listen stehen gesammelt in einer **Flags-Spalte**
-(`d-none d-lg-table-cell`), nie inline neben dem Namen. Jedes Flag ist eine Badge mit Icon und
+(`d-none d-lg-table-cell`), nie inline neben dem Namen — einzige Ausnahme ist „Inaktiv"
+([unten](#inaktiv-in-listen-1220)). Jedes Flag ist eine Badge mit Icon und
 `title`-Tooltip. Die Klassen heißen weiterhin `bg-*-lt`, Badges sind aber **gefüllt und tragen helle
 Schrift** statt der Tönung — ihr Farbsignal steckt seit der Kontrastkorrektur allein in der Fläche
 ([§7.1](#badges-gefüllt-statt-getönt)); die hellen Töne Gelb, Grün und Lime sind die Ausnahme und
@@ -633,6 +634,71 @@ Icon jetzt bei **5,20:1**.
 **Wer nicht umschalten darf, sieht weiter nur den ausgeblendeten Zustand** als Flag. Ein Zustand, der
 die Regel ist, braucht keine Markierung in jeder Zeile; der Umschalter dagegen muss zeigen, woran man
 gerade dreht.
+
+#### „Inaktiv" in Listen (#1220)
+
+Ein inaktiver Eintrag steht in einer Liste **ohne getönte Zeile**. Er trägt hinter seinem Namen
+bzw. Kürzel ein Badge „Inaktiv": `fragments/inactive-badge :: badge(${inaktiv})`, `bg-secondary-lt`
+mit dem Text aus `main.general.inactive.text`. Keine Liste baut es selbst, und keine setzt für
+inaktive Einträge ein `table-*` an das `<tr>`. `InactiveRowMarkingTest` prüft beides.
+
+Das ist die eine Ausnahme von „nie inline neben dem Namen": „Inaktiv" beschreibt nicht eine
+Eigenschaft unter mehreren, sondern ob der Eintrag überhaupt noch gilt. Und die Flags-Spalte ist
+unterhalb von `lg` ausgeblendet.
+
+- **Was inaktiv heißt, bleibt je Liste, wie es war.** Beim Budgetplan ist es das Flag `active`, bei
+  Einträgen mit Gültigkeitszeitraum `currentlyValid` (→ ADR-0029: nur das Ende zählt, ein Beginn in
+  der Zukunft ist nicht inaktiv).
+- **Das Badge steht in der ersten Spalte, die immer sichtbar ist.** In Kunden- und
+  Unterauftragsliste sind die Spalten vor dem Kürzel unterhalb von `md` ausgeblendet. Dort steht das
+  Badge hinter dem Kürzel des Auftrags, sonst verschwände es auf dem Smartphone mit der Spalte.
+- **Mitarbeiterliste:** Ausgeblendete Personen (`hide`) sind nicht inaktiv. Sie stehen ohne Badge in
+  der Liste und sind über die Flags-Spalte markiert.
+- In der Budgetplanliste sind die Kürzel der Mitarbeitenden ebenfalls `bg-secondary-lt`.
+  Verwechseln kann man die beiden trotzdem nicht: Das Badge steht in der ersten Spalte hinter dem
+  Plannamen, die Kürzel stehen in einer eigenen Spalte.
+
+**Warum keine Tönung.** Vorher hinterlegten die Listen inaktive Zeilen mit `table-danger` bzw.
+`table-secondary`. Das ging aus zwei Gründen schief:
+
+- **Kontrast.** Tablers `table-*`-Tönungen sind im dunklen Modus helle Flächen. Helle Schrift wie
+  Links und `text-muted` verliert darauf fast allen Kontrast. Auch im hellen Modus blieb sie unter
+  4,5:1. Die Tönung steckt dabei im Innenschatten der Zelle, nicht im Hintergrund
+  ([§7.1](#messverfahren)).
+
+  | Zeile | Text | dunkel | hell |
+  |---|---|---|---|
+  | `table-secondary` (Budgetpläne) | Link (Planname) | **1,94** ✘ | **3,89** ✘ |
+  | `table-secondary` (Budgetpläne) | `text-muted` | **1,97** ✘ | **3,76** ✘ |
+  | `table-danger` (Kundenstundensätze) | `text-muted` | **1,89** ✘ | **3,60** ✘ |
+
+- **Ecken.** Tabler rundet in Kartentabellen die erste und letzte Zelle **jeder** Zeile
+  (`.card-table tr td:first-child { border-start-start-radius: var(--tblr-card-border-radius) }`,
+  entsprechend `:last-child`). Ohne eigenen Hintergrund sieht man das nicht. Mit Tönung hatte jede
+  inaktive Zeile oben links und oben rechts eine Rundung, mitten in der Tabelle.
+
+Das Badge umgeht beides: Die Zeile behält den Untergrund der Karte, und das Badge ist eine gefüllte
+Fläche mit eigener Schriftfarbe ([Badges](#badges-gefüllt-statt-getönt)). Nachgemessen in der
+laufenden Anwendung, in beiden Modi nach dem Ausklingen der Übergänge, über alle Texte der
+inaktiven Zeilen in Budgetplänen, Kundenstundensätzen, Aufträgen, Unteraufträgen,
+Mitarbeiteraufträgen und Verträgen:
+
+| Probe | hell | dunkel |
+|---|---|---|
+| Badge „Inaktiv" | 4,83 | 4,84 |
+| Link (Planname) | 5,00 | 5,87 |
+| `text-muted` | 4,83 | 5,78 |
+| Standardtext | 10,31 | 11,86 |
+| Icons der Zeilenaktionen (Nicht-Text, 3:1) | 4,83 | 4,92 |
+
+Die Rundung der ersten und letzten Zelle bleibt in Tablers Regel stehen. Sichtbar wird sie nicht
+mehr, weil die Zelle weder Hintergrund noch Innenschatten trägt.
+
+**Wer eine Zeile in einer `card-table` tönen will, hat dasselbe Problem**, auch wenn der Grund
+nicht „inaktiv" ist. Offen ist das bei `table-warning` in der Mitarbeiterauftragsliste: ein
+Auftrag, der nicht zu seinen übergeordneten Objekten passt (`fitsToSuperiorObjects`). Dort sind
+es dunkel `text-muted` 2,18:1 und die Icons der Zeilenaktionen 2,56:1 (unter 3:1), hell `text-muted`
+4,15:1, und die Ecken sind sichtbar.
 
 #### „Nicht gearbeitet" (#1159)
 

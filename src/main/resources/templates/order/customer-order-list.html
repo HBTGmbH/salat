@@ -102,13 +102,16 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="co : ${customerorders}" th:classappend="${!co.currentlyValid} ? 'table-danger' : ''">
+        <tr th:each="co : ${customerorders}">
           <td class="d-none d-md-table-cell">
             <div th:text="${co.customer.shortname}" class="text-nowrap">Customer Short</div>
             <small class="text-muted" th:text="${co.customer.name}">Customer Name</small>
           </td>
+          <!--/* Das Badge steht hinter dem Kürzel des Auftrags, nicht in der Kundenspalte davor:
+                 die ist auf schmalen Bildschirmen ausgeblendet, und mit ihr verschwände die
+                 Kennzeichnung. */-->
           <td>
-            <div th:text="${co.sign}" class="text-nowrap">Sign Customer Order</div>
+            <div class="text-nowrap"><span th:text="${co.sign}">Sign Customer Order</span><span th:replace="~{fragments/inactive-badge :: badge(${!co.currentlyValid})}"></span></div>
             <small class="text-muted" th:text="${co.description}">Description</small>
           </td>
           <td class="d-none d-md-table-cell">

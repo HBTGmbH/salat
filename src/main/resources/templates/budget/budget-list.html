@@ -70,10 +70,10 @@
         <tr th:if="${#lists.isEmpty(budgets)}">
           <td th:colspan="${isManager} ? 8 : 6" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
-        <tr th:each="b : ${budgets}" th:classappend="${b.active != true} ? 'table-secondary' : ''"
+        <tr th:each="b : ${budgets}"
             th:with="order=${orders.get(b.customerorderSign)},suborder=${suborders.get(b.suborderSign)},employees=${employeesByBudget.get(b.id)}">
           <td>
-            <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a>
+            <a th:href="@{/budget/{id}(id=${b.id})}" th:text="${b.name}"></a><span th:replace="~{fragments/inactive-badge :: badge(${b.active != true})}"></span>
           </td>
           <td class="d-none d-md-table-cell">
             <div>

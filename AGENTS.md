@@ -1246,6 +1246,11 @@ Rules:
   ```
 - Other flag icons used in the project (suborder list as reference): `bi-cash-stack` (invoiceable), `bi-bookmark-star-fill` (standard), `bi-chat-square-text` (comment required), `bi-tag-fill` (fixed price), `bi-mortarboard` (training)
 - Do not put flag badges inline in the primary/name column — use the flags column instead
+- **Exception: „Inaktiv"** (#1220). An inactive entry gets no row tint (`table-*`); it carries
+  `fragments/inactive-badge :: badge(${…})` behind its name or sign, in the first column that is
+  always visible. The condition stays the list's own — `active` for a budget plan, `currentlyValid`
+  otherwise (→ ADR-0029). Reason and measurements in [`docs/ui-style-guide.md`
+  §5.4](docs/ui-style-guide.md).
 
 ### Grouped List View Pattern
 When a list should be partitioned by a categorical field, render one card+table per group instead of a single flat table.

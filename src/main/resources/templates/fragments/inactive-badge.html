@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  „Inaktiv" in Listen (#1220): ein Badge hinter dem Namen bzw. Kürzel des Eintrags, keine getönte
+  Zeile. Die table-*-Tönungen sind im dunklen Modus helle Flächen, auf denen Links und text-muted
+  unter 2:1 fallen, und in einer Kartentabelle rundet Tabler die erste und letzte Zelle jeder Zeile
+  (.card-table tr td:first-child/:last-child) - mit eigenem Hintergrund hatte jede inaktive Zeile
+  Ecken mitten in der Tabelle. Details im Style Guide, 5.4.
+
+  Was inaktiv heißt, entscheidet der Aufrufer: currentlyValid bei Einträgen mit Gültigkeitszeitraum
+  (ADR-0029), das Flag active beim Budgetplan. Die Badge setzt kein eigenes text-*: ihre Schriftfarbe
+  kommt aus salat.css (#1039).
+*/-->
+<span th:fragment="badge(inactive)" th:if="${inactive}" class="badge bg-secondary-lt ms-1"
+      th:text="#{main.general.inactive.text}">Inaktiv</span>
+
+</body>
+</html>

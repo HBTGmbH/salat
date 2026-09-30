@@ -76,12 +76,12 @@
         <tr th:if="${#lists.isEmpty(rows)}">
           <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">Keine Einträge vorhanden</td>
         </tr>
-        <tr th:each="row : ${rows}" th:classappend="${!row.pricing().currentlyValid} ? 'table-danger' : ''"
+        <tr th:each="row : ${rows}"
             th:with="p=${row.pricing()}, order=${row.customerorder()}, deviation=${row.deviation()}">
           <td>
             <div>
               <span th:text="${p.customerorderSign}"></span>
-              <span class="ms-1 small" th:text="${order?.shortdescription}"></span>
+              <span class="ms-1 small" th:text="${order?.shortdescription}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!p.currentlyValid})}"></span>
             </div>
             <div class="small text-muted" th:text="${@customerorderViewHelper.customerLabel(order)}"></div>
           </td>
@@ -106,8 +106,9 @@
             –
             <span th:if="${p.validUntil.year != 2999}" th:text="${#temporals.format(p.validUntil, 'dd.MM.yyyy')}"></span>
             <span th:unless="${p.validUntil.year != 2999}" th:text="#{main.general.validity.open}">offen</span>
-            <!--/* The row colour already says "expired" (#949), so a deviation from the order's
-                   validity needs a mark of its own — one badge per deviation, named in its title. */-->
+            <!--/* The badge in the first column already says "inactive" (#949, #1220), so a deviation
+                   from the order's validity needs a mark of its own — one badge per deviation, named
+                   in its title. */-->
             <span th:if="${deviation.startsBeforeOrder()}" class="badge bg-warning-lt ms-1"
                   th:title="#{main.pricing.deviation.startsbeforeorder}">
               <i class="icon ti ti-alert-triangle m-0"></i>

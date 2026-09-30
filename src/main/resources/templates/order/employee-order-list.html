@@ -140,8 +140,8 @@
         <tr th:if="${#lists.isEmpty(employeeorders)}">
           <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">No records found</td>
         </tr>
-        <tr th:each="eo : ${employeeorders}" th:classappend="${!eo.currentlyValid} ? 'table-danger' : ((!eo.fitsToSuperiorObjects) ? 'table-warning' : '')">
-          <td th:text="${eo.employeeName}"></td>
+        <tr th:each="eo : ${employeeorders}" th:classappend="${eo.currentlyValid && !eo.fitsToSuperiorObjects} ? 'table-warning' : ''">
+          <td><span th:text="${eo.employeeName}"></span><span th:replace="~{fragments/inactive-badge :: badge(${!eo.currentlyValid})}"></span></td>
           <td class="d-none d-md-table-cell">
             <div th:text="${eo.customerShortName}" class="text-nowrap">Customer Short</div>
             <small class="text-muted" th:text="${eo.customerName}">Customer Name</small>
