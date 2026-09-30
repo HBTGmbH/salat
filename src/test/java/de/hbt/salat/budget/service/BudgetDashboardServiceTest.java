@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -36,9 +35,9 @@ import de.hbt.salat.budget.domain.OrderFlatRate;
 import de.hbt.salat.budget.domain.OrderFlatRateLookup;
 import de.hbt.salat.budget.domain.OrderPricing;
 import de.hbt.salat.budget.domain.OrderPricingLookup;
+import de.hbt.salat.budget.domain.PlanBooking;
 import de.hbt.salat.budget.domain.ProgressMode;
 import de.hbt.salat.budget.domain.ProgressStatus;
-import de.hbt.salat.budget.domain.TimereportBudgetLink;
 import de.hbt.salat.budget.persistence.OrderBudgetRepository;
 import de.hbt.salat.budget.persistence.TimereportBudgetAssignmentRepository;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -329,37 +328,34 @@ public class BudgetDashboardServiceTest {
       var orderFlatRateService = mock(OrderFlatRateService.class);
       var publicholidayService = mock(PublicholidayService.class);
 
-      when(customerorderService.getCustomerorderBySign(anyString())).thenAnswer(i -> {
-        String sign = ask(i.getArgument(0));
-        return orders.stream().filter(o -> o.getSign().equals(sign)).findFirst().orElse(null);
+      when(customerorderService.getCustomerordersBySigns(any())).thenAnswer(i -> {
+        Collection<String> signs = askAll(i.getArgument(0));
+        return orders.stream().filter(o -> signs.contains(o.getSign())).toList();
       });
-      // Like the real method: the suborders of the order without the hidden ones.
-      when(suborderService.getSubordersByCustomerorderId(anyLong())).thenAnswer(i -> {
-        long orderId = ask(i.<Long>getArgument(0));
-        return suborders.stream()
-            .filter(so -> so.getCustomerorder().getId() == orderId && !so.isHide())
-            .toList();
+      // Like the real method: hidden suborders included.
+      when(suborderService.getSubordersByCustomerorderSigns(any())).thenAnswer(i -> {
+        Collection<String> signs = askAll(i.getArgument(0));
+        return suborders.stream().filter(so -> signs.contains(so.getCustomerorder().getSign())).toList();
       });
-      when(timereportService.getTimereportsByDatesAndCustomerOrderId(any(), any(), anyLong())).thenAnswer(i -> {
-        LocalDate from = i.getArgument(0);
-        LocalDate until = i.getArgument(1);
-        long orderId = ask(i.<Long>getArgument(2));
-        return bookings.stream().map(Booking::report)
-            .filter(r -> r.getCustomerorderId() == orderId)
-            .filter(r -> !r.getReferenceday().isBefore(from) && !r.getReferenceday().isAfter(until))
-            .toList();
-      });
-      when(assignmentRepository.findLinksByCustomerorderSign(anyString())).thenAnswer(i -> {
-        String sign = ask(i.getArgument(0));
-        return bookings.stream()
-            .filter(bk -> bk.planId() != null && sign.equals(planById(bk.planId()).getCustomerorderSign()))
-            .map(bk -> new TimereportBudgetLink(bk.report().getId(), bk.planId()))
-            .toList();
-      });
-      when(orderBudgetRepository.findByCustomerorderSignAndActive(anyString(), any())).thenAnswer(i -> {
-        String sign = ask(i.getArgument(0));
+      when(orderBudgetRepository.findByCustomerorderSignInAndActive(any(), any())).thenAnswer(i -> {
+        Collection<String> signs = askAll(i.getArgument(0));
         return plans.stream()
-            .filter(p -> p.getCustomerorderSign().equals(sign) && p.getActive().equals(i.getArgument(1)))
+            .filter(p -> signs.contains(p.getCustomerorderSign()) && p.getActive().equals(i.getArgument(1)))
+            .toList();
+      });
+      when(orderBudgetRepository.findWithScopeEntriesByIdIn(any())).thenAnswer(i -> {
+        Collection<Long> ids = askAll(i.getArgument(0));
+        return plans.stream().filter(p -> ids.contains(p.getId())).toList();
+      });
+      // Like the real query: the assigned bookings of the plans up to the day, without a lower bound.
+      when(assignmentRepository.findPlanBookings(any(), any())).thenAnswer(i -> {
+        Collection<Long> ids = askAll(i.getArgument(0));
+        LocalDate until = i.getArgument(1);
+        return bookings.stream()
+            .filter(bk -> bk.planId() != null && ids.contains(bk.planId()))
+            .filter(bk -> !bk.report().getReferenceday().isAfter(until))
+            .map(bk -> new PlanBooking(bk.planId(), bk.report().getSuborderId(), bk.report().getEmployeeId(),
+                bk.report().getReferenceday(), bk.report().getDuration()))
             .toList();
       });
       when(orderPricingService.lookupFor(any())).thenAnswer(i -> {
@@ -393,10 +389,6 @@ public class BudgetDashboardServiceTest {
     private <T> Collection<T> askAll(Collection<T> values) {
       asked.addAll(values);
       return values;
-    }
-
-    private OrderBudget planById(long id) {
-      return plans.stream().filter(p -> p.getId() == id).findFirst().orElseThrow();
     }
 
     private Customerorder order(long id, String sign) {

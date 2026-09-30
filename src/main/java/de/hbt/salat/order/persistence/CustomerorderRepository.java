@@ -75,7 +75,20 @@ public interface CustomerorderRepository extends PagingAndSortingRepository<Cust
    * The orders behind a set of signs, hidden and expired ones included. Records that refer to an
    * order by sign rather than by id outlive it, and labelling them must not depend on the order
    * still being offered anywhere.
+   *
+   * <p>The eager associations of an order come along in the same statement (#1222). Selected one
+   * by one, they cost a statement per order for its responsibles and one per customer — the budget
+   * dashboard asks for every order that has an active plan.
    */
+  @Query("""
+      select distinct c from Customerorder c
+      left join fetch c.customer
+      left join fetch c.responsibleHbt r
+      left join fetch r.salatUser
+      left join fetch c.respEmpHbtContract e
+      left join fetch e.salatUser
+      where c.sign in :signs
+      """)
   List<Customerorder> findBySignIn(Collection<String> signs);
 
   @Query("""

@@ -57,6 +57,18 @@ public interface SuborderRepository extends CrudRepository<Suborder, Long>, JpaS
   List<Suborder> findAllByCustomerorderId(long customerorderId, Sort sort);
 
   /**
+   * The suborders of the given customer orders, hidden ones included, in one statement (#1222).
+   * The order comes along in the same statement: {@code Suborder#getCompleteOrderSign()} reads it
+   * for every suborder, and the eager association would otherwise select it once per order.
+   * Callers must not pass an empty collection — {@code IN ()} is not valid SQL.
+   */
+  @Query("""
+      select s from Suborder s join fetch s.customerorder c
+      where c.sign in :customerorderSigns
+      """)
+  List<Suborder> findAllByCustomerorderSigns(Collection<String> customerorderSigns);
+
+  /**
    * Candidates for the object search of the command palette (#1157): every suborder whose sign or
    * short description, whose order's sign or short description, or whose customer contains each of
    * the words. A missing word is {@code null} and no condition. The long description is a

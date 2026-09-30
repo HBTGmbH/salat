@@ -15,6 +15,7 @@ import de.hbt.salat.budget.domain.AssignedBooking;
 import de.hbt.salat.budget.domain.AssignedBookingTotals;
 import de.hbt.salat.budget.domain.AssignedEmployeeDay;
 import de.hbt.salat.budget.domain.BudgetEmployeeSign;
+import de.hbt.salat.budget.domain.PlanBooking;
 import de.hbt.salat.budget.domain.TimereportBudgetAssignment;
 import de.hbt.salat.budget.domain.TimereportBudgetLink;
 
@@ -183,6 +184,33 @@ public interface TimereportBudgetAssignmentRepository
                  t.employeecontract.employee.sign ASC
         """)
     List<BudgetEmployeeSign> findEmployeeSignsByBudgetIds(@Param("budgetIds") Collection<Long> budgetIds);
+
+    /**
+     * The bookings of the given plans up to a day, for the utilization of the dashboard (#1222) —
+     * one statement for every plan on the page instead of the customer order, its suborders, its
+     * bookings and their assignment per order.
+     *
+     * <p>No lower bound: an assignment only ever exists for a booking inside the plan's validity
+     * (see {@link #findEmployeeSignsByBudgetIds}); the caller cuts the rows to the window it
+     * evaluates. Deleted bookings fall away through {@code @SQLRestriction("deleted = false")} on
+     * {@code Timereport}. Callers must not pass an empty collection.
+     *
+     * <p><b>Authorization.</b> The argument of {@link #findEmployeeSignsByBudgetIds} carries
+     * unchanged, premise included: <b>the ids have to arrive already filtered</b> by
+     * {@code OrderBudgetService}, and the containment in what {@code TimereportAuthorization} grants
+     * READ to then holds per customer order. The alert job runs as manager and reads every plan.
+     */
+    @Query("""
+        SELECT new de.hbt.salat.budget.domain.PlanBooking(
+               a.orderBudget.id, t.suborder.id, t.employeecontract.employee.id,
+               t.referenceday.refdate, t.durationhours, t.durationminutes)
+        FROM TimereportBudgetAssignment a, Timereport t
+        WHERE t.id = a.timereportId
+          AND a.orderBudget.id IN :budgetIds
+          AND t.referenceday.refdate <= :until
+        """)
+    List<PlanBooking> findPlanBookings(@Param("budgetIds") Collection<Long> budgetIds,
+                                       @Param("until") LocalDate until);
 
     /**
      * The bookings already assigned to any plan of the customer order. A booking of this order can
