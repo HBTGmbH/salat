@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class EmployeeContractSelectorHeaderTest {
 
     var html = renderHeader(List.of(ended, running), ended);
 
-    assertThat(html).contains("bg-warning-lt").doesNotContain("bg-secondary-lt");
+    assertThat(badgeClasses(html)).containsExactlyInAnyOrder("badge", "text-nowrap", "w-100", "bg-warning-lt");
   }
 
   @Test
@@ -59,7 +60,17 @@ class EmployeeContractSelectorHeaderTest {
 
     var html = renderHeader(List.of(ended, running), running);
 
-    assertThat(html).contains("bg-secondary-lt").doesNotContain("bg-warning-lt");
+    assertThat(badgeClasses(html)).containsExactlyInAnyOrder("badge", "text-nowrap", "w-100", "bg-secondary-lt");
+  }
+
+  /**
+   * Die Klassen des Badges einzeln: ein fehlendes Leerzeichen beim Zusammensetzen ergab einmal
+   * {@code w-100badge}, und damit griff keine der beiden Klassen.
+   */
+  private static List<String> badgeClasses(String html) {
+    var matcher = Pattern.compile("<span class=\"([^\"]*)\"").matcher(html);
+    assertThat(matcher.find()).as("Badge gerendert").isTrue();
+    return List.of(matcher.group(1).trim().split("\\s+"));
   }
 
   private static String renderHeader(List<Employeecontract> contracts, Employeecontract selected) {
