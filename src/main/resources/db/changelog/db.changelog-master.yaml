@@ -3457,3 +3457,42 @@ databaseChangeLog:
                   defaultValueBoolean: false
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 95
+      author: kr
+      comment: View suborder_fqs zurueck auf die flache Form mit fester Tiefe (#1224)
+      # Die rekursive Form aus Changeset 88 kann MySQL nicht in die aufrufende Abfrage einfalten. Es
+      # baut sie in jeder Abfrage als Zwischenergebnis ohne Index auf und verbindet sie je nach
+      # Schaetzung als Kreuzprodukt mit den Tagen: die ETL auftrag-umsatz-kosten brauchte damit 737
+      # statt 66 s. Die flache Form faltet MySQL ein, der Zugriff laeuft wieder ueber die Indizes von
+      # suborder.
+      #
+      # Der Preis ist die feste Tiefe: zehn Ebenen, heute ist der Baum hoechstens fuenf tief. Bei einer
+      # elften Ebene fiele der oberste Teil des Schluessels kommentarlos weg.
+      #
+      # Der Schluessel traegt wieder die Kollation der Spalten, utf8mb3_bin. Die rekursive Form lieferte
+      # ueber ihr CAST utf8mb4_0900_ai_ci, und damit verglichen die LIKE-Muster der Preis- und
+      # Kostenregeln ohne Unterschied von Gross- und Kleinschreibung - anders als OrderPricingLookup in
+      # der Anwendung, das dieselben Muster mit Unterschied vergleicht.
+      changes:
+        - createView:
+            viewName: suborder_fqs
+            replaceIfExists: true
+            selectQuery: |-
+              SELECT s0.id AS suborder_id,
+                     CONCAT(c.sign, '/',
+                            CONCAT_WS('/', s9.sign, s8.sign, s7.sign, s6.sign, s5.sign,
+                                      s4.sign, s3.sign, s2.sign, s1.sign, s0.sign),
+                            '/') AS sign_fully_qualified
+              FROM suborder s0
+                       JOIN customerorder c ON c.id = s0.CUSTOMERORDER_ID
+                       LEFT JOIN suborder s1 ON s1.id = s0.PARENTORDER_ID
+                       LEFT JOIN suborder s2 ON s2.id = s1.PARENTORDER_ID
+                       LEFT JOIN suborder s3 ON s3.id = s2.PARENTORDER_ID
+                       LEFT JOIN suborder s4 ON s4.id = s3.PARENTORDER_ID
+                       LEFT JOIN suborder s5 ON s5.id = s4.PARENTORDER_ID
+                       LEFT JOIN suborder s6 ON s6.id = s5.PARENTORDER_ID
+                       LEFT JOIN suborder s7 ON s7.id = s6.PARENTORDER_ID
+                       LEFT JOIN suborder s8 ON s8.id = s7.PARENTORDER_ID
+                       LEFT JOIN suborder s9 ON s9.id = s8.PARENTORDER_ID
