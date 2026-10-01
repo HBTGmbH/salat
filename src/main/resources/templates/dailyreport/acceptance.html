@@ -114,8 +114,11 @@
          th:text="#{main.release.review.open.accept.notallowed.text}">Die Buchungen dieses Vertrags kannst du nicht abnehmen. Eigene Buchungen nimmt die zuständige People Lead oder die Geschäftsführung ab.</p>
 
       <!-- Reopen form (admin only) -->
+      <!--/* data-submit-once (#1237): Oeffnen schreibt den Vertrag wie Freigabe und Abnahme; ein zweiter
+             Klick waehrend der Antwort schickt nichts ab und fragt nicht noch einmal. */-->
       <form th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
             method="post" th:action="@{/acceptance/reopen}"
+            data-submit-once
             data-confirm
             th:data-confirm-title="#{main.release.reopen.confirm.title}"
             th:data-confirm-text="#{main.general.confirmreopen.text}"
