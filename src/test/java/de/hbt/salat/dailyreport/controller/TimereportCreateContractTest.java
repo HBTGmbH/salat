@@ -112,7 +112,7 @@ class TimereportCreateContractTest {
     when(customerorderService.getCustomerordersWithValidEmployeeOrders(anyLong(), eq(DATE))).thenReturn(List.of());
     when(timereportPreferenceService.getForCurrentUser())
         .thenReturn(new TimereportPreferences(null, DurationInputMode.DURATION, DurationInputMode.DURATION));
-    when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0)));
+    when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
     when(timereportService.getWorkableSerialDates(eq(DATE), anyInt())).thenReturn(List.of(DATE));
     when(messages.getMessage(anyString())).thenReturn("ok");
     var employeeorder = mock(Employeeorder.class);

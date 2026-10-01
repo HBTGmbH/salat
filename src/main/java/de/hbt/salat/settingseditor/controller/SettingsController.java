@@ -67,6 +67,7 @@ public class SettingsController {
 
     SettingsForm form = new SettingsForm();
     form.setWorkDayStart(daily.workDayStart());
+    form.setConsiderMandatoryBreak(daily.considerMandatoryBreak());
     form.setFavoriteSuborderId(timereport.favoriteSuborderId() != null
         ? timereport.favoriteSuborderId().toString() : "");
     form.setDurationInputMode(timereport.durationInputMode().getKey());
@@ -94,7 +95,7 @@ public class SettingsController {
                       HttpServletRequest request,
                       HttpServletResponse response) {
     uiPreferenceService.saveLocaleForCurrentUser(form.getLocale());
-    dailyPreferenceService.saveForCurrentUser(new DailyPreferences(form.getWorkDayStart()));
+    dailyPreferenceService.saveForCurrentUser(new DailyPreferences(form.getWorkDayStart(), form.isConsiderMandatoryBreak()));
 
     Long favSuborderId = null;
     if (form.getFavoriteSuborderId() != null && !form.getFavoriteSuborderId().isBlank()) {
@@ -167,6 +168,9 @@ public class SettingsController {
 
     @DateTimeFormat(pattern = "HH:mm")
     private LocalTime workDayStart = LocalTime.of(DEFAULT_WORK_DAY_START, 0);
+
+    /** Whether the contract target of the daily view counts the mandatory break (#1236). */
+    private boolean considerMandatoryBreak = true;
 
     private String favoriteSuborderId = "";
 

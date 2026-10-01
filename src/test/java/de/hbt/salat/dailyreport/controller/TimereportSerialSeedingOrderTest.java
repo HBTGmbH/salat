@@ -115,7 +115,7 @@ class TimereportSerialSeedingOrderTest {
     when(employeeorderService.getEmployeeorderByEmployeeContractIdAndSuborderIdAndDate(EC_ID, SUBORDER_ID, DATE))
         .thenReturn(employeeorder);
     when(dailyPreferenceService.getForEmployeeContractId(EC_ID))
-        .thenReturn(new DailyPreferences(LocalTime.of(9, 0)));
+        .thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
     when(timereportService.getWorkableSerialDates(eq(DATE), anyInt()))
         .thenReturn(List.of(DATE, DATE.plusDays(1), DATE.plusDays(2)));
     when(messages.getMessage(anyString())).thenReturn("ok");

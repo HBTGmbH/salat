@@ -40,6 +40,7 @@ import de.hbt.salat.common.util.DateUtils;
 import de.hbt.salat.dailyreport.auth.TimereportAuthorization;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
 import de.hbt.salat.dailyreport.domain.ReportPeriod;
+import de.hbt.salat.dailyreport.domain.TargetEnd;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.persistence.PublicholidayRepository;
@@ -357,11 +358,19 @@ public class WorkingdayService {
     return endOfDay(getWorkingday(employeecontractId, date), employeecontractId, laborTime);
   }
 
-  /** When the day would be done if the full daily working time were booked. */
-  public String calculateWorkingDayEnds(long employeecontractId, LocalDate date) {
-    var dailyWorkingTime = employeecontractService.getEmployeecontractById(employeecontractId)
-        .getDailyWorkingTime();
-    return endOfDay(getWorkingday(employeecontractId, date), employeecontractId, dailyWorkingTime);
+  /**
+   * When the day would be done if its full target were booked, with the mandatory break as the
+   * person whose day it is has set it (#1236). Takes the already loaded working day (may be
+   * {@code null}), like {@link #getEffectiveStart}.
+   */
+  public TargetEnd calculateTargetEnd(Workingday workingday, long employeecontractId, Duration dayTarget) {
+    var bookedBreak = workingday != null
+        ? Duration.ofHours(workingday.getBreakhours()).plusMinutes(workingday.getBreakminutes())
+        : Duration.ZERO;
+    var considerMandatoryBreak = dailyPreferenceService.getForEmployeeContractId(employeecontractId)
+        .considerMandatoryBreak();
+    return TargetEnd.of(getEffectiveStart(workingday, employeecontractId), bookedBreak, dayTarget,
+        considerMandatoryBreak);
   }
 
   private String endOfDay(Workingday workingday, long employeecontractId, Duration worked) {

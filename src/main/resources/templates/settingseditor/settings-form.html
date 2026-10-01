@@ -19,6 +19,9 @@
                        th:label="#{main.settings.workdaystart.label}"
                        required="true" />
 
+      <salat:checkboxSwitch th:field="*{considerMandatoryBreak}"
+                            th:label="#{main.settings.mandatorybreak.label}" />
+
       <salat:select th:field="*{locale}"
                     th:label="#{main.settings.locale.label}">
         <option value="-browser-" th:text="#{main.settings.locale.browser}">— Browser —</option>

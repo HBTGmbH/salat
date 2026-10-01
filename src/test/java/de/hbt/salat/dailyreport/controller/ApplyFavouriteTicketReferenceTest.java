@@ -67,7 +67,7 @@ class ApplyFavouriteTicketReferenceTest {
   @BeforeEach
   void theViewItRendersAfterwards() {
     when(dailyPreferenceService.getForEmployeeContractId(anyLong()))
-        .thenReturn(new DailyPreferences(LocalTime.of(9, 0)));
+        .thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
     when(dailyService.buildDailyView(any(), anyLong())).thenReturn(mock(DailyViewData.class));
     var employee = mock(Employee.class);
     when(employee.getId()).thenReturn(1L);
