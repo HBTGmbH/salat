@@ -459,7 +459,10 @@ class CommandPaletteE2ETest extends PlaywrightE2ETestBase {
       page.goBack();
       page.waitForFunction("() => document.getElementById('commandPalette') !== window.paletteBeforeBack");
 
-      assertEquals(false, page.evaluate("() => document.getElementById('commandPalette').open"));
+      // the copy is in place before it is cleaned up: hx-history-cache fires the restore event, on
+      // which the palette is dropped, one animation frame after the swap (#1241). A single read can
+      // fall in between, so wait for the dialog to close
+      assertThat(page.locator("#commandPalette")).not().hasAttribute("open", Pattern.compile(".*"));
       page.locator("#header-command-palette").click();
       assertEquals(true, page.evaluate("() => document.getElementById('commandPalette').matches(':modal')"));
       input(page).fill("mat");
