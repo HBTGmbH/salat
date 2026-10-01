@@ -232,9 +232,9 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   in eine `BusinessRuleException` `XX-0003`. Der Aspekt liegt außen um die Transaktion, weil der
   Konflikt meist erst beim Commit entsteht, also nach dem Methodenrumpf. Ein `catch` im Service
   sähe ihn nicht.
-- **Ein Formular, dessen Antwort spürbar dauert und dessen zweites Absenden kollidiert, trägt
-  `data-submit-once`** (heute die Prüfseiten von Freigabe und Abnahme und das Öffnen auf der Seite
-  der Abnahme). Einzelheiten in
+- **Ein Formular, dessen Antwort spürbar dauert und dessen zweites Absenden kollidiert oder etwas
+  doppelt anlegt, trägt `data-submit-once`** (heute die Prüfseiten von Freigabe und Abnahme, das
+  Öffnen auf der Seite der Abnahme und das Buchungsformular). Einzelheiten in
   [`docs/ui-style-guide.md` §5.5](docs/ui-style-guide.md).
 
 ## Legacy URL Redirects

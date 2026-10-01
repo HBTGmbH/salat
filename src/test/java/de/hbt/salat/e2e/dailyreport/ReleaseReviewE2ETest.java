@@ -335,24 +335,6 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
     return posted;
   }
 
-  /**
-   * Records every submit that reaches {@code document} after the handlers of salat.js — registered
-   * later, the recorder runs last — and whether one of them prevented it, that is whether it would
-   * have gone out. Then it prevents the submit itself: the page stays, as it does while the answer
-   * is still on its way. A real navigation cannot be held for that: Playwright waits for it to finish
-   * before it evaluates or asserts anything on the page again.
-   */
-  private static void recordSubmits(Page page) {
-    page.evaluate("() => { window.e2eSubmits = [];"
-        + " document.addEventListener('submit', event => {"
-        + " window.e2eSubmits.push(event.defaultPrevented); event.preventDefault(); }); }");
-  }
-
-  @SuppressWarnings("unchecked")
-  private static List<Boolean> submits(Page page) {
-    return (List<Boolean>) page.evaluate("() => window.e2eSubmits");
-  }
-
   private static String reviewUrl() {
     return "/release/review?until=" + E2ETestData.REVIEWED_MONTH;
   }
