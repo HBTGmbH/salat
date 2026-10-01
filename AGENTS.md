@@ -117,11 +117,16 @@ Fragment (`fragments/command-palette.html`) in `layout/base.html`, das Verhalten
 - **Die Palette navigiert oder öffnet ein vorbelegtes Formular. Sie speichert nichts und schickt
   kein Formular ab** — gespeichert wird mit dem Knopf der Seite, Freigabe und Abnahme laufen über
   ihre Prüfseiten. Deshalb braucht kein Befehl eine Rückfrage. Das gilt für jeden Befehl, der
-  dazukommt.
+  dazukommt. Einzige Ausnahme ist die Anmeldung selbst (#1231, ADR-0030, Nachtrag): Benutzerwechsel
+  und dessen Ende lösen das Formular des Wechseldialogs bzw. des Nutzermenüs aus — sie ändern keine
+  Daten. Sie und das Abmelden werden nicht unter „Zuletzt verwendet" gemerkt (`data-palette-forget`).
 - **Was sie anbietet, liest sie aus der gerenderten Seite**, statt eine zweite Liste zu führen: die
   Navigation aus `#sidebar-menu .dropdown-item[href]`, die Einstellungen aus den Bedienelementen
-  mit `data-palette-command` (Moduswechsel und Einstellungsseite in der Kopfzeile, der Faltknopf
-  der Sidebar, die Tastenkürzel im Fuß). Die Rollenfrage beantwortet damit allein die Sidebar; eine
+  mit `data-palette-command` (die Einträge des Nutzermenüs, der Faltknopf der Sidebar, die
+  Tastenkürzel im Fuß), die Personen für den Benutzerwechsel aus den Formularen von
+  `#loginSwitchModal`. Ein Bedienelement wird nur angeboten, solange es angezeigt wird — im
+  Nutzermenü (`data-palette-menu`), sobald es gerendert ist, denn das geschlossene Menü verbirgt
+  alles. Die Rollenfrage beantwortet damit allein die Sidebar; eine
   Seite, die dort nicht steht, findet auch die Palette nicht. Wo ein Element der Seite das bessere
   Ziel kennt, verweist der Sidebar-Eintrag mit `data-palette-href-from` darauf.
 - Seiten, Tage und zuletzt Verwendetes kommen **ohne Anfrage an den Server** aus. Heute ist der Tag

@@ -11,6 +11,21 @@ Status: Accepted
 > öffnet vorbelegte Formulare, speichert nichts) und „keine Seite, die mit 403 antwortet" gelten
 > für die Objekte unverändert.
 
+> **Nachtrag 2026-10-01 (#1231):** Einstellungsseite und Moduswechsel sind aus der Kopfzeile ins
+> Nutzermenü unten links gewandert. Die Palette bietet dessen Einträge an, obwohl das geschlossene
+> Menü sie verbirgt: unter `[data-palette-menu]` zählt, ob der Server einen Eintrag **gerendert**
+> hat, nicht, ob er angezeigt wird — Grundsatz A bleibt also gewahrt, die Palette liest die Seite
+> und fragt nicht nach. Dazu kommen die Funktionen der Anmeldung selbst: Abmelden (ein Link),
+> Benutzer wechseln — auch direkt zu einer Person, aus den Formularen des Wechseldialogs — und
+> dessen Ende. Die beiden letzten schicken ein Formular ab, und das ist die eine, bewusste Ausnahme
+> von Grundsatz C: Sie speichern keine Daten, sondern wechseln die Anmeldung, ausgelöst über das
+> Formular der Seite mit genau der Prüfung, die Dialog und Menü schon haben, und sie sind jederzeit
+> umkehrbar. Eine Rückfrage brauchen sie deshalb so wenig wie ein Klick im Menü. Was C schützt —
+> eine Handlung an Fachdaten bleibt dort, wo sie geprüft wird —, berühren sie nicht. Abmelden,
+> Benutzerwechsel und dessen Ende werden nicht unter „Zuletzt verwendet" gemerkt: der oberste
+> gemerkte Eintrag ist bei leerer Eingabe vorgewählt, und ein versehentliches Enter meldete sonst ab
+> oder wechselte die Identität.
+
 ## Context and Problem Statement
 
 #1016 wünschte feste Tastenkürzel je Ansicht: `Ctrl+M` für die Matrixübersicht, `Ctrl+T` für die
