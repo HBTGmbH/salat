@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator.ReplaceUnderscores;
@@ -15,20 +16,27 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.auth.service.AuthorizationAspect;
 import de.hbt.salat.common.exception.AuthorizationException;
 import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.domain.Overtime;
+import de.hbt.salat.employee.persistence.EmployeecontractDAO;
 import de.hbt.salat.employee.persistence.OvertimeRepository;
 
 /**
  * Eine Überstundenkorrektur legt nur das Management an (#1256). Bis dahin schützte allein der
- * Controller sie; der Service selbst prüfte nichts, und jeder weitere Aufrufer hätte Überstundenstände
- * ohne Berechtigung ändern können.
+ * Controller sie; der Service selbst prüfte nichts.
+ *
+ * <p>Seitdem verlangt die Klasse das Management, und was jede angemeldete Person aufrufen darf, sagt
+ * das an der Methode — die lesenden Methoden und die Freigabedaten, die eine Person beim Freigeben
+ * ihrer eigenen Buchungen schreibt. Geprüft wird deshalb durch den echten {@link AuthorizationAspect}
+ * hindurch, wie es der Spring-Proxy tut.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class EmployeecontractServiceOvertimeTest {
@@ -36,15 +44,24 @@ class EmployeecontractServiceOvertimeTest {
   @Mock
   private OvertimeRepository overtimeRepository;
   @Mock
+  private EmployeecontractDAO employeecontractDAO;
+  @Mock
   private ApplicationEventPublisher eventPublisher;
   @Mock
   private AuthorizedUser authorizedUser;
   @InjectMocks
+  private EmployeecontractService target;
+
   private EmployeecontractService service;
 
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+    when(authorizedUser.isAuthenticated()).thenReturn(true);
+    var proxyFactory = new AspectJProxyFactory(target);
+    proxyFactory.setProxyTargetClass(true);
+    proxyFactory.addAspect(new AuthorizationAspect(authorizedUser));
+    service = proxyFactory.getProxy();
   }
 
   @Test
@@ -68,6 +85,18 @@ class EmployeecontractServiceOvertimeTest {
 
     assertThat(service.create(overtime)).isEqualTo(42L);
     verify(overtimeRepository).save(overtime);
+  }
+
+  /** Lesen und die eigene Freigabe brauchen nur die Anmeldung, nicht das Management. */
+  @Test
+  void reading_and_the_release_data_stay_open_to_every_login() {
+    when(authorizedUser.isManager()).thenReturn(false);
+    var contract = overtime().getEmployeecontract();
+    when(employeecontractDAO.getEmployeecontractById(7L)).thenReturn(contract);
+
+    assertThat(service.getEmployeecontractById(7L)).isSameAs(contract);
+    service.updateReportReleaseData(7L, LocalDate.of(2026, 5, 31), null);
+    assertThat(contract.getReportReleaseDate()).isEqualTo(LocalDate.of(2026, 5, 31));
   }
 
   private static Overtime overtime() {
