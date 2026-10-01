@@ -146,7 +146,9 @@
             <!-- Employee order (HTMX swap target for date changes) -->
             <!--/* data-absence-minutes (#1214): der Rest des Tagessolls, mit dem eine Abwesenheit
                    vorbelegt wird. Nur beim Anlegen gesetzt, und mit diesem Fragment bei jedem
-                   Datumswechsel neu gerendert, damit er zum Tag im Formular passt */-->
+                   Datumswechsel neu gerendert, damit er zum Tag im Formular passt.
+                   data-preselected-by-default: vorgewaehlt ist nur der erste der Liste, gewaehlt
+                   hat ihn niemand */-->
             <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment" class="mb-3">
               <label class="form-label required" th:text="#{main.timereport.form.suborder.label}">Unterauftrag</label>
               <select class="form-select tomselect"
@@ -154,6 +156,7 @@
                       data-favorite-target="/dailyreport/timereports/preferences/favorite-suborder"
                       th:attr="data-favorite-id=${favoriteSuborderId},
                                data-absence-minutes=${absenceDurationMinutes},
+                               data-preselected-by-default=${suborderPreselectedByDefault == true} ? 'true' : null,
                                data-entry-focus=${entryFocus != null and entryFocus.name() == 'SUBORDER'} ? 'true' : null"
                       hx-post="/dailyreport/timereports/refresh-sidebar"
                       hx-include="closest form"
@@ -464,16 +467,24 @@
       if (opt && opt.dataset.training === 'true') box.checked = true;
     }
     // #1214: an absence - sickness, vacation and the like - is booked with what is left of the
-    // target of the day, which the server renders on the select for a new booking only. A field is
+    // target of the day, which the server renders on the select for a new booking only. Only an
+    // absence somebody chose counts: picked in the list, or handed to the form as favourite,
+    // deeplink or palette command. The first of the list, preselected for want of anything else,
+    // proposes nothing - otherwise every new booking would open with the rest of the day, and it
+    // would stay when the project is picked. A field is
     // filled only while it is untouched: empty, or still holding exactly what an earlier prefill
     // wrote there - the same rule as data-fill-target in salat.js. Whatever somebody typed stays,
     // also on the next change of the suborder. Another order type proposes nothing and leaves an
     // earlier proposal standing; a new day without a rest takes back a proposal still untouched.
+    var chosenSuborderId = null;
+    function rememberChosenSuborder(e) {
+      chosenSuborderId = e.target.value;
+    }
     function applyAbsenceDuration() {
       var sel = document.getElementById('suborderId');
       if (!sel || !('absenceMinutes' in sel.dataset)) return;
       var opt = sel.options[sel.selectedIndex];
-      if (!opt || opt.dataset.absence !== 'true') return;
+      if (!opt || opt.dataset.absence !== 'true' || sel.value !== chosenSuborderId) return;
       var minutes = Number(sel.dataset.absenceMinutes) || 0;
       prefillUntouched(document.getElementById('durationTime'), minutes > 0 ? timeInputFormat(minutes) : '');
       // in begin/end mode the end follows the begin; without a begin, or past midnight, there is no end
@@ -499,19 +510,22 @@
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
         sel.addEventListener('change', applySuborderTrainingDefault);
+        sel.addEventListener('change', rememberChosenSuborder);
         sel.addEventListener('change', applyAbsenceDuration);
         sel.addEventListener('change', clearTicketSuggestions);
       }
+      if (sel && sel.dataset.preselectedByDefault !== 'true') chosenSuborderId = sel.value;
       document.getElementById('beginTimeInput').addEventListener('change', applyAbsenceDuration);
       updateCommentRequired();
     });
-    // also after a change of date: the swapped select brings the rest of the new day along, and
-    // refresh-orders may have chosen another suborder for it
+    // also after a change of date: the swapped select brings the rest of the new day along. Where
+    // refresh-orders had to fall back to the first suborder of the new day, nobody chose that one
     document.addEventListener('htmx:after:swap', function() {
       var sel = document.getElementById('suborderId');
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
         sel.addEventListener('change', applySuborderTrainingDefault);
+        sel.addEventListener('change', rememberChosenSuborder);
         sel.addEventListener('change', applyAbsenceDuration);
         sel.addEventListener('change', clearTicketSuggestions);
       }

@@ -116,11 +116,13 @@ public class TimereportController {
         var suborders = suborderOptions(ecId, effectiveDate);
         var preferences = timereportPreferenceService.getForCurrentUser();
         Long favoriteId = preferences.favoriteSuborderId();
-        Long defaultSuborderId = suborderId != null ? suborderId : suborders.stream()
+        Long chosenSuborderId = suborderId != null ? suborderId : suborders.stream()
                 .map(SuborderOption::id)
                 .filter(id -> id.equals(favoriteId))
                 .findFirst()
-                .orElse(suborders.isEmpty() ? null : suborders.get(0).id());
+                .orElse(null);
+        Long defaultSuborderId = chosenSuborderId != null ? chosenSuborderId
+                : suborders.isEmpty() ? null : suborders.get(0).id();
 
         var form = new TimereportForm();
         form.setEmployeecontractId(isSet(employeecontractId) ? employeecontractId : null);
@@ -145,6 +147,9 @@ public class TimereportController {
         form.setTraining(training != null ? training : trainingDefaultOf(suborders, defaultSuborderId));
 
         populateModel(fEmployeeContractId, model, form, suborders, ecId, effectiveDate, false, returnUrl);
+        // #1214: the first of the list is preselected without anybody having chosen it, so it must
+        // not bring the duration of an absence along
+        model.addAttribute("suborderPreselectedByDefault", chosenSuborderId == null);
         model.addAttribute("entryFocus", EntryFocus.of(focus));
         return "dailyreport/timereport-form";
     }

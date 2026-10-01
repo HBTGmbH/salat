@@ -142,6 +142,38 @@ class TimereportAbsenceDurationTest {
     assertThat(model.get("absenceDurationMinutes")).isEqualTo(5 * 60 + 15L);
   }
 
+  /** Gewählt ist ein Unterauftrag aus der Adresse (Deeplink, Befehlspalette) oder der Favorit. */
+  @Test
+  void a_suborder_from_the_address_counts_as_chosen() {
+    var model = new ExtendedModelMap();
+
+    controller.createForm(null, null, DATE, SICK_SUBORDER_ID, null, null, null, null, null, null, model);
+
+    assertThat(model.get("suborderPreselectedByDefault")).isEqualTo(false);
+  }
+
+  @Test
+  void the_favourite_counts_as_chosen() {
+    when(timereportPreferenceService.getForCurrentUser())
+        .thenReturn(new TimereportPreferences(SICK_SUBORDER_ID, DurationInputMode.DURATION, DurationInputMode.DURATION));
+    var model = new ExtendedModelMap();
+
+    controller.createForm(null, null, DATE, null, null, null, null, null, null, null, model);
+
+    assertThat(model.get("suborderPreselectedByDefault")).isEqualTo(false);
+  }
+
+  /** Ohne beides steht der erste der Liste vorgewählt — hier die Abwesenheit, gewählt hat sie niemand. */
+  @Test
+  void the_first_of_the_list_is_only_preselected_by_default() {
+    var model = new ExtendedModelMap();
+
+    controller.createForm(null, null, DATE, null, null, null, null, null, null, null, model);
+
+    assertThat(((TimereportForm) model.get("timereportForm")).getSuborderId()).isEqualTo(SICK_SUBORDER_ID);
+    assertThat(model.get("suborderPreselectedByDefault")).isEqualTo(true);
+  }
+
   @Test
   void a_new_date_brings_the_rest_of_that_day() {
     var form = newBooking();
