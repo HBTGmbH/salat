@@ -13,6 +13,18 @@ Status: Accepted
 > steht weiterhin; was fällt, ist die zweite Ausdrucksform für dieselbe Aussage. Siehe „Ebene 1"
 > unten für die Begründung und für die eine Verhaltensänderung, die daraus folgt.
 
+> **Nachtrag 2026-10-01 (#1256):** Die Rolle prüft allein `@Authorized` — an der Methode oder als
+> Vorgabe der Klasse, wenn ein Service überwiegend dem Management vorbehalten ist; was jede Anmeldung
+> darf, trägt dann ein schlichtes `@Authorized` an der Methode. Eine Abfrage im Methodenrumpf, die
+> nur die Annotation wiederholt (`if (!authorizedUser.isManager()) throw …`), entfällt: Die Abwägung
+> oben hat manuelle Guards in jedem Service gerade als fehleranfällig verworfen. Ebene 3 bleibt für
+> das, was die Rolle allein nicht beantwortet, ebenso eine Abfrage, nach der eine Methode abhängig
+> von der Rolle zusätzlich etwas tut. Richtigzustellen ist die Begründung unter „Decision Outcome":
+> Ein **interner** Aufruf im selben Service läuft am Proxy vorbei, die Annotation greift dort nicht.
+> Eine öffentliche Service-Methode ruft deshalb keine andere öffentliche Methode desselben Services
+> auf; gemeinsame Logik liegt in einer privaten Methode oder im Repository. Wo es doch geschieht,
+> tragen beide dieselbe `@Authorized`-Regel.
+
 ## Context and Problem Statement
 
 Die Anwendung verwaltet sensible Daten (Zeitberichte, Verträge, Rechnungen) und muss sicherstellen, dass Benutzer nur auf die für ihre Rolle erlaubten Operationen zugreifen können. Es gibt klar unterscheidbare Rollen mit hierarchischen Rechten. Die Herausforderung: Wie werden diese Rechte zuverlässig durchgesetzt — auch wenn ein Controller-Aufruf umgangen wird oder ein Service direkt aus einem Job oder einem anderen Service aufgerufen wird?

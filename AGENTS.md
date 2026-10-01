@@ -397,7 +397,7 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] All existing tests pass; new behaviour should be covered by tests
 - [ ] No new cross-module cycles introduced; cross-module side-effects go through Spring events
 - [ ] Controllers are thin — business logic lives in a service within the same module
-- [ ] Security: `@Authorized(requires…)` on every controller write method; `@Authorized` + runtime guard in the service. No `@PreAuthorize` (#926)
+- [ ] Security: `@Authorized(requires…)` on every controller write method and on the service (method or class). A runtime guard only where the role alone does not answer the question (→ Service Pattern). No `@PreAuthorize` (#926)
 - [ ] No unused imports in the changed files. Removing code tends to leave its imports behind, and
   the compiler does not complain. Check the files the task touched — not the whole codebase.
 - [ ] Gestapelte Umgehungen sind **benannt statt fertiggebaut**: wo eine Lösung erst über die
@@ -762,10 +762,20 @@ Repository und `Specification`.
 ### Service Pattern
 - Class annotations: `@Service @RequiredArgsConstructor @Transactional @Authorized`
 - Read-only queries: annotate the method with `@Transactional(readOnly = true)`
-- Privileged operations use `@Authorized(requiresManager = true)` on the method plus an explicit runtime guard:
-  ```java
-  if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
-  ```
+- **The role is checked by `@Authorized` alone** (#1256, → ADR-0006): `@Authorized(requiresManager = true)`
+  on the method, or on the class when most of the service is management only — then every method
+  open to any login says so with a plain `@Authorized` (`EmployeecontractService`: the reads, and the
+  release data a person writes when releasing their own bookings). A method-level annotation
+  replaces the class-level one.
+- **No `if (!authorizedUser.isManager()) throw …` that merely repeats the annotation.** A check in the
+  method body belongs where the role alone does not answer the question — the person's own data, a
+  supervisor, an `AuthorizationRule` (ADR-0006, level 3) — or where a method does something
+  *additional* depending on the role.
+- **A public service method does not call another public method of the same service.** An internal
+  call (`this.x()`) bypasses the aspect, so the callee's `@Authorized` is not checked there. Shared
+  logic goes into a private method or straight to the repository/DAO. Where one public method does
+  call another, both carry the same `@Authorized` rule — that includes `@EventListener` methods,
+  which the aspect intercepts as well.
 - Services throw typed `ErrorCodeException` subclasses (`InvalidDataException`, `BusinessRuleException`, `AuthorizationException`) — never a raw `RuntimeException` for business errors
 - Before destructive DB operations, publish a domain event via `ApplicationEventPublisher`; catch `VetoedException` and re-throw with added context (see Event / Veto Pattern)
 
@@ -1206,7 +1216,9 @@ try {
 Two stacked layers provide defence in depth — **both spelled `@Authorized`** (#926, → ADR-0006):
 - **HTTP boundary** (`@Authorized` on the controller class, and on a method where it differs):
   enforced by `AuthorizationAspect` before the handler method runs
-- **Service boundary** (`@Authorized` + runtime guard): enforced inside the service regardless of caller
+- **Service boundary** (`@Authorized` on the service class or method): enforced by the same aspect on
+  every call through the Spring proxy, regardless of the caller. A runtime guard in the method body
+  only for what the role alone does not answer (see Service Pattern)
 - **The answer to a denial comes from one place**: `AuthorizationException` is a plain
   `RuntimeException`, so nothing in Spring Security sees it — unhandled it leaves the
   `DispatcherServlet` as a **500**. `AuthorizationExceptionHandler` (`common/web`) answers it with
