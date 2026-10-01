@@ -15,7 +15,9 @@
          und die Karte nennt Person, Zeitraum und Folge. Der Knopf gibt genau den gezeigten
          Zeitraum frei (periodBegin/periodEnd); hat er sich inzwischen geaendert, etwa durch eine
          Freigabe in einem zweiten Fenster, weist der Server ab (RL-0008). Der gesperrte Knopf ist
-         Hoeflichkeit, nicht die Sperre: releaseTimereports prueft vor dem Freigeben erneut. */-->
+         Hoeflichkeit, nicht die Sperre: releaseTimereports prueft vor dem Freigeben erneut.
+         data-submit-once (#1237): ein zweiter Klick, waehrend die Freigabe noch laeuft, schickt
+         nichts ab; kommt trotzdem eine zweite Anfrage an, fuehrt der Controller in die Uebersicht. */-->
   <div class="card mb-3 d-print-none" id="review-action"
        th:with="beginText=${#temporals.format(review.begin, 'dd.MM.yyyy')},
                 endText=${#temporals.format(review.end, 'dd.MM.yyyy')}">
@@ -35,7 +37,8 @@
       </p>
     </div>
     <div class="card-footer d-flex flex-wrap align-items-center gap-2">
-      <form th:if="${review.detailed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0">
+      <form th:if="${review.detailed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0"
+            data-submit-once>
         <input type="hidden" name="contractId" th:value="${review.employeecontractId}"/>
         <input type="hidden" name="periodBegin" th:value="${review.begin}"/>
         <input type="hidden" name="periodEnd" th:value="${review.end}"/>

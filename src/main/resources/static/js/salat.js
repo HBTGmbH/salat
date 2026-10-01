@@ -426,6 +426,8 @@ document.addEventListener('submit', function (event) {
   const submitter = event.submitter;
   const source = confirmSource(form, submitter);
   if (!source) return;
+  // already on its way (data-submit-once, below): nothing to ask, the lock drops this submit
+  if (form.salatSubmitted) return;
   if (form.salatConfirmed) {
     // the re-submit below, on its way through: let it pass exactly once
     form.salatConfirmed = false;
@@ -445,6 +447,52 @@ document.addEventListener('submit', function (event) {
 // there is no dialog, and a destructive action that simply fires would be worse than one that is
 // missing (see salat.css).
 document.body.classList.add('salat-confirm-ready');
+
+/* ─── Submit once (#1237) ────────────────────────────────────────────────────
+ *
+ * A form marked data-submit-once goes out once: its buttons are locked from the submit until the
+ * answer replaces the page, and a second click or Enter in that time sends nothing. Release and
+ * acceptance take a second or two to answer, and a second request racing the first one fails on
+ * the version of the contract.
+ *
+ * The listener sits on `document` in the bubble phase, behind the confirmation handler above. A
+ * submit that handler holds back for its question never gets here; only the confirmed re-submit
+ * does, and that one is the submit that locks. A second click on a locked form does not ask again:
+ * the confirmation handler lets it through to be dropped here. A submit somebody else prevented
+ * locks nothing — HTMX prevents its own and has its own means. The buttons are not set `disabled`,
+ * which would drop the pressed one from the form data; they get `disabled` as a class (no pointer
+ * events) and `aria-disabled`. Keyboard and the shortcut still reach the form and are dropped here.
+ *
+ * The browser restores a page from its back-forward cache as it was left, locked; `pageshow`
+ * unlocks it again.
+ * -------------------------------------------------------------------------- */
+
+function lockSubmitButtons(form, locked) {
+  form.querySelectorAll('button[type="submit"], button:not([type]), input[type="submit"]').forEach(function (button) {
+    button.classList.toggle('disabled', locked);
+    if (locked) button.setAttribute('aria-disabled', 'true');
+    else button.removeAttribute('aria-disabled');
+  });
+}
+
+document.addEventListener('submit', function (event) {
+  const form = event.target;
+  if (!form.hasAttribute('data-submit-once') || event.defaultPrevented) return;
+  if (form.salatSubmitted) {
+    event.preventDefault();
+    return;
+  }
+  form.salatSubmitted = true;
+  lockSubmitButtons(form, true);
+});
+
+window.addEventListener('pageshow', function (event) {
+  if (!event.persisted) return;
+  document.querySelectorAll('form[data-submit-once]').forEach(function (form) {
+    form.salatSubmitted = false;
+    lockSubmitButtons(form, false);
+  });
+});
 
 /* ─── Time and duration input (#830) ─────────────────────────────────────────
  *
