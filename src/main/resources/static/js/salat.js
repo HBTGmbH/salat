@@ -40,6 +40,46 @@ function selectContract(id) {
   location.href = url.toString();
 }
 
+// the other contracts of the person in the bar above the header switch like the selector (#1231)
+document.addEventListener('click', event => {
+  const link = event.target.closest('[data-select-contract]');
+  if (link) selectContract(link.dataset.selectContract);
+});
+
+/* The settings moved from the header into the user menu (#1231). A dot on the trigger and "Neu" on
+ * the entry point there until the menu has been opened once; then both stay away. The dot goes on
+ * opening, the badge only when the menu closes again, so that it is seen once. Both are taken out
+ * again with a follow-up commit after some weeks, and the key with them. */
+const USER_MENU_SEEN_KEY = 'salat-user-menu-seen';
+
+function userMenuNews() {
+  return document.querySelectorAll('[data-user-menu-news]');
+}
+
+(function () {
+  let seen = false;
+  try {
+    seen = localStorage.getItem(USER_MENU_SEEN_KEY) === 'true';
+  } catch (e) {
+    // private mode: the marker shows on, it only cannot be dismissed for good
+  }
+  if (!seen) userMenuNews().forEach(el => { el.hidden = false; });
+})();
+
+document.addEventListener('shown.bs.dropdown', event => {
+  if (event.target.id !== 'user-menu-toggle') return;
+  try {
+    localStorage.setItem(USER_MENU_SEEN_KEY, 'true');
+  } catch (e) {
+    // see above
+  }
+  event.target.querySelectorAll('[data-user-menu-news]').forEach(el => { el.hidden = true; });
+});
+
+document.addEventListener('hidden.bs.dropdown', event => {
+  if (event.target.id === 'user-menu-toggle') userMenuNews().forEach(el => { el.hidden = true; });
+});
+
 // The translated name sits on <body>, so no template with a multi-select has to bring it along. The
 // plugin puts it into the title only, and a role="button" takes its accessible name from its
 // content first — a screen reader would announce "×". Hence an element of our own with aria-label.
@@ -860,7 +900,9 @@ focusEntryField();
  *
  * Ctrl+K (⌘K on macOS) or the search entry in the header open it on every page
  * (fragments/command-palette.html, included once by layout/base.html). It navigates — it never
- * saves anything and never submits a form, which is why no command needs a confirmation.
+ * saves anything, which is why no command needs a confirmation. The one form it submits is the
+ * login's own (#1231, ADR-0030 addendum): a login switch and its end, through the forms of the user
+ * menu and of the switch dialog; they change no data.
  *
  * What it offers is read from the rendered page instead of from a list of its own:
  *
@@ -868,12 +910,16 @@ focusEntryField();
  *                                       along, and a new menu entry shows up without further ado.
  *   data-palette-href-from              on a sidebar entry: selector of an element whose href wins
  *                                       over the entry's own, where that element is on the page
- *   data-palette-command                on a control of the header, the sidebar or the footer:
+ *   data-palette-command                on a control of the sidebar, the footer or the user menu:
  *                                       the key a settings command is remembered by. Its accessible name is
  *                                       the label, clicking it is the action, and it is offered
- *                                       only while displayed.
+ *                                       only while displayed — in the user menu (data-palette-menu)
+ *                                       whenever rendered, see paletteOffers.
  *   data-palette-keywords               further words a command is found by
  *   data-palette-label-pressed          the label while the control is aria-pressed
+ *   data-palette-kind                   the kind shown next to it, where it is not a setting
+ *   data-palette-forget                 not remembered under "recently used"
+ *   #loginSwitchModal form              one hit per person to switch to, found only by typing
  *
  * Day jumps into the daily view are read in the browser, against the server's today carried by
  * the dialog (see paletteToday). Neither opening the palette nor any of these hits sends a request;
@@ -1158,20 +1204,58 @@ function paletteNavigationCommands() {
   });
 }
 
+/**
+ * Whether a control is offered. Elsewhere that is whether it is displayed; in the user menu
+ * (data-palette-menu, #1231) it is whether the server rendered it, since the closed menu hides
+ * every entry. Only the colour mode needs a word more: there both entries are rendered and CSS
+ * hides the one for the mode in force — the palette asks the mode instead.
+ */
+function paletteOffers(el) {
+  if (el.closest('[data-palette-menu]')) {
+    return !el.dataset.paletteTheme
+      || el.dataset.paletteTheme !== document.documentElement.getAttribute('data-bs-theme');
+  }
+  return el.checkVisibility ? el.checkVisibility() : el.offsetParent !== null;
+}
+
 function paletteSettingsCommands(dialog) {
   return Array.from(document.querySelectorAll('[data-palette-command]'))
-    .filter(el => el.checkVisibility ? el.checkVisibility() : el.offsetParent !== null)
+    .filter(paletteOffers)
     .map(el => ({
       type: 'cmd',
       key: el.dataset.paletteCommand,
       label: el.getAttribute('aria-pressed') === 'true' && el.dataset.paletteLabelPressed
         ? el.dataset.paletteLabelPressed
         : (el.getAttribute('aria-label') || paletteCleanText(el)),
-      kind: dialog.dataset.kindSettings,
+      kind: el.dataset.paletteKind || dialog.dataset.kindSettings,
       keywords: el.dataset.paletteKeywords || '',
+      forget: el.hasAttribute('data-palette-forget'),
       href: el.href || null,
-      run: () => el.click(),
+      // a submit button goes through its form, so that the form's own checks run as on a click
+      run: () => (el.type === 'submit' && el.form ? el.form.requestSubmit(el) : el.click()),
     }));
+}
+
+/**
+ * One hit per person the login switch offers (#1231): the forms of #loginSwitchModal, which the
+ * server renders only for whoever may switch, and to exactly the persons allowed. Enter submits
+ * that form — the palette sends no request of its own and asks nothing the dialog does not. They
+ * follow the entry of the menu: while a switch is running, the menu offers only its end.
+ */
+function paletteLoginSwitchCommands(dialog) {
+  if (!document.querySelector('[data-palette-menu] [data-palette-command="login-switch"]')) return [];
+  return Array.from(document.querySelectorAll('#loginSwitchModal form')).map(form => {
+    const name = form.querySelector('[data-switch-name]')?.textContent.trim() || '';
+    const sign = form.querySelector('[data-switch-sign]')?.textContent.trim() || '';
+    return {
+      type: 'login',
+      key: sign,
+      label: dialog.dataset.labelSwitchTo + ' ' + name + ' (' + sign + ')',
+      kind: dialog.dataset.kindAccount,
+      href: null,
+      run: () => form.requestSubmit(),
+    };
+  });
 }
 
 function paletteDayCommand(dialog, iso, expression) {
@@ -1246,6 +1330,14 @@ function paletteSearch(dialog, commands, query, today, vocabulary) {
   const hits = [];
   commands.forEach((command, order) => {
     let match = paletteMatch(command.label, query);
+    // A person to switch to is found by name, sign or the words of its label, never by letters in
+    // order: "buch" would otherwise run through "Benutzer wechseln" and list every person (#1231).
+    if (command.type === 'login') {
+      if (match && match.tier >= PALETTE_TIER_INSIDE) {
+        hits.push({ command, ranges: match.ranges, tier: match.tier, pos: match.pos, order });
+      }
+      return;
+    }
     if (match && command.type === 'verb') {
       match = paletteFold(command.label).folded === paletteFold(query.trim()).folded
         ? { tier: PALETTE_TIER_WORD_START, pos: -1, ranges: match.ranges }
@@ -1424,8 +1516,9 @@ function paletteRun(index) {
     return;
   }
   // An object is not remembered: whether it may still be opened is the server's question, and a
-  // remembered entry is shown without asking it.
-  if (command.type !== 'object' && command.type !== 'target') {
+  // remembered entry is shown without asking it. Neither is a change of the login (#1231): the top
+  // remembered entry is preselected on an empty input, and a stray Enter would log out or switch.
+  if (command.type !== 'object' && command.type !== 'target' && command.type !== 'login' && !command.forget) {
     paletteRemember({ t: command.type, k: command.key });
   }
   document.getElementById('commandPalette').close();
@@ -2486,7 +2579,8 @@ function paletteOpen() {
   paletteWire(dialog);
   paletteState.origin = document.activeElement;
   // the commands first: on an equal hit "buchen" stands above "Buchungsliste"
-  paletteState.commands = paletteVerbCommands(dialog).concat(paletteNavigationCommands(), paletteSettingsCommands(dialog));
+  paletteState.commands = paletteVerbCommands(dialog).concat(paletteNavigationCommands(),
+    paletteSettingsCommands(dialog), paletteLoginSwitchCommands(dialog));
   paletteState.drill = null;
   paletteState.objects = null;
   paletteState.invocation = null;

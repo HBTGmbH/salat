@@ -45,8 +45,10 @@ Die Referenz ist der Tabler-Standard.
 
 ```
 ┌──────────┬──────────────────────────────────────────────┐
-│ Sidebar  │ page-header:  pretitle / page-title │ Aktionen│
+│ Sidebar  │ Vertragsbalken (nur Buchungen, mehrere Verträge)│
 │ (dunkel) ├──────────────────────────────────────────────┤
+│          │ page-header:  pretitle / page-title │ Aktionen│
+│          ├──────────────────────────────────────────────┤
 │ 16rem    │ page-body                                    │
 │ ⇄ 4rem   │   Alerts (Toast-Bereich)                     │
 │          │   container-fluid → layout:fragment="content" │
@@ -74,13 +76,55 @@ Die Referenz ist der Tabler-Standard.
   `active`-Klassen.
 - **Kopfzeile:** `page-pretitle` (Bereich) + `page-title` (Seite), rechts ein `btn-list` mit
   dem Einstieg in die Befehlspalette („Suchen …", [§3.2](#32-befehlspalette-1155)), „Neue
-  Buchung", Benachrichtigungsglocke, Einstellungen, Theme-Umschalter — sowie im Bereich
-  *Buchungen* ein globaler Vertrags-Selektor (`globalEmployeeContractId`).
+  Buchung" und der Benachrichtigungsglocke — nur Arbeitswerkzeuge; Einstellungen und
+  Theme-Umschalter stehen seit #1231 im Nutzermenü. Im Bereich *Buchungen* (außer der Abnahme)
+  steht davor der globale Vertrags-Selektor (`globalEmployeeContractId`); wo er wirkt, beantwortet
+  `EmployeeContractSelectorViewHelper#appliesTo` für Selektor und Vertragsbalken gemeinsam.
+  - **Umbrechen statt Überdecken** (#1231): der Titel steht in `col-auto flex-grow-1`, nimmt also
+    so viel Breite, wie er braucht. Passt die Werkzeugleiste nicht daneben, rückt sie in die
+    nächste Zeile; reicht die Zeile nicht einmal für den Titel allein, bricht er um. Bootstraps
+    `col` mit Basis 0 quetschte ihn stattdessen zusammen.
+  - Unterhalb von `md` bekommt der Selektor eine eigene Zeile, sobald neben den Knöpfen weniger
+    als 14rem bleiben (`.header-contract-selector`); vorher war er dort ausgeblendet.
+- **Vertragsbalken** (#1231) über der Kopfzeile, über die ganze Breite des Inhalts: alle
+  Buchungsseiten zeigen nur die Daten des gewählten Vertrags. Hat die gewählte Person mehrere,
+  nennt der Balken Person und Gültigkeit des gewählten Vertrags (ein offenes Ende als
+  „unbefristet"), sagt, dass nur seine Daten gezeigt werden, und bietet die übrigen Verträge der
+  Person als Wechsel an — so gelingt der Wechsel innerhalb derselben Person auch auf dem Telefon.
+  - Gelb (`warning`), volle Farbe mit dunkler Schrift in beiden Modi, wie die gelbe Badge
+    ([§7.1](#71-kontrast--verbindlicher-maßstab)): Aufmerksamkeit ohne Fehler, nicht `danger`.
+    Gemessen 9,71:1 für Text und Wechsel-Links, hell wie dunkel.
+  - Ein Zustand, keine Meldung: nicht wegklickbar, kein `role="alert"` (würde auf jeder Seite
+    vorgelesen), sondern eine Region mit `aria-label`. Er gilt der gewählten Person des Selektors,
+    nicht einem Benutzerwechsel; beides kann gleichzeitig aktiv sein.
+  - Die Wechsel-Links sind Knöpfe (`data-select-contract`), die wie der Selektor über
+    `selectContract()` neu laden. Das Badge mit dem Zeitraum neben dem Selektor ist entfallen,
+    damit dieselbe Aussage nicht an zwei Stellen steht.
 - **Nutzerblock** in der `navbar-footer`-Zone der Sidebar: Bild, Name und darunter das Rollen-Badge
-  bleiben unten stehen, während die Menüliste darüber scrollt. Alles Weitere — Gravatar-Link,
-  Login-Kürzel, dasselbe Rollen-Badge, Benutzerwechsel (Impersonation) über ein Modal, Abmelden —
-  liegt in einem nach oben klappenden Menü. Unterhalb von `md` rückt der Block in die mobile
-  Kopfzeile, dort bleibt nur das Bild und das Menü klappt nach unten.
+  bleiben unten stehen, während die Menüliste darüber scrollt. Das nach oben klappende Menü zeigt
+  kein zweites Bild, sondern knapp, was der Auslöser nicht zeigt, und die persönlichen Funktionen
+  (#1231):
+  ```
+  Angemeldet als kr                [Rolle]
+  ⇄ Handelt als Max Mustermann (mm)          ← nur bei Benutzerwechsel, text-orange
+  ─────────────
+  ⚙ Benutzereinstellungen            [Neu]
+  ☾ Dunkles Design aktivieren                ← bzw. „Helles Design aktivieren"
+  ⇄ Benutzer wechseln                        ← nur mit Berechtigung; bzw. „Benutzer-Wechsel beenden"
+  ─────────────
+  ⎋ Abmelden                                 ← nur bei eingeschaltetem Logout
+  ```
+  Unterhalb von `md` rückt der Block in die mobile Kopfzeile, dort bleibt nur das Bild und das
+  Menü klappt nach unten. Der Gravatar-Link steht auf der Einstellungsseite neben der
+  Gravatar-Adresse (`#gravatar-link`, die Probe am Ende von `layout/base.html` tauscht Text und
+  Ziel, wenn zur Adresse kein Gravatar hinterlegt ist).
+  - **Hinweis auf die Änderung:** ein grüner Punkt am Bild des Auslösers und „Neu" am Eintrag
+    Einstellungen, bis das Menü einmal offen war (`localStorage['salat-user-menu-seen']`). Grün wie
+    die übrigen „New"-Badges und ohne Blinken — rot und blinkend ist die Glocke mit ungelesenen
+    Benachrichtigungen. Der Punkt sitzt am Bild und nicht als Tabler-Eckpunkt am Link, damit er
+    auch gefaltet und in der mobilen Kopfzeile neben dem Bild bleibt. Beides fällt mit einem
+    Folge-Commit nach einigen Wochen wieder weg. Gemessen: Punkt gegen die Sidebar 5,35:1,
+    „Neu" 5,35:1, „Handelt als" (`text-orange`) gegen das Menü 4,82:1.
   - Das Badge steht im `nav-link-title` und trägt deshalb `nav-link-badge`: ohne diese Klasse macht
     Tabler aus jedem `.badge` in einem `.nav-link` einen absolut gesetzten Eckpunkt und schöbe es
     über den Rand der Sidebar ([§7.1](#71-kontrast--verbindlicher-maßstab) misst die Farbe,
@@ -139,13 +183,32 @@ Einstieg ist. Die Entscheidung und ihre Alternativen stehen in
   auf dem Auswahlfeld, ohne dass es erneut aufklappt. Maus und Tipp führen einen Treffer direkt
   aus; das Eingabefeld behält dabei den Fokus, damit die Bildschirmtastatur den Treffer nicht unter
   dem Finger wegschiebt.
-- **Treffer:** alle Seiten der Sidebar, die Einstellungen (Moduswechsel und Einstellungsseite aus
-  der Kopfzeile, Falten aus der Sidebar) und Tagessprünge in die Einzelübersicht — `heute`, `gestern`,
+- **Treffer:** alle Seiten der Sidebar, die Einstellungen (Einstellungsseite und Moduswechsel aus
+  dem Nutzermenü, Falten aus der Sidebar, Tastenkürzel aus dem Fuß), die Funktionen des Nutzermenüs
+  (Benutzer wechseln bzw. Benutzer-Wechsel beenden, Abmelden; Bereich „Konto") und Tagessprünge in
+  die Einzelübersicht — `heute`, `gestern`,
   `vorgestern`, `morgen` ab drei Buchstaben, ein Wochentag ab zwei (`fr` ist der jüngste Freitag,
   heute eingeschlossen), `T.M.`, `T.M.JJ`, `T.M.JJJJ`. Die Zeile nennt immer das aufgelöste Datum.
   Heute ist der Tag des Servers in dessen Zeitzone, weitergezählt mit der Uhr des Browsers: ein
   Tab, der über Mitternacht offen bleibt, rechnet vom neuen Tag aus, gleich in welcher Zone der
   Browser läuft.
+- **Nutzermenü (#1231):** Sonst bietet die Palette einen `data-palette-command` nur an, solange er
+  angezeigt wird. Im geschlossenen Menü wäre das keiner; für die Einträge unter
+  `[data-palette-menu]` zählt deshalb, ob der Server sie **gerendert** hat. Was er per `th:if`
+  weglässt — der Benutzerwechsel ohne Berechtigung oder während eines laufenden Wechsels, dessen
+  Ende ohne einen, Abmelden bei abgeschaltetem Logout —, fehlt auch in der Palette. Vom
+  Moduswechsel gibt es nur die Richtung in den anderen Modus: dort entscheidet
+  `data-palette-theme` gegen `data-bs-theme` am `<html>`, weil im geschlossenen Menü beide
+  Einträge verborgen sind.
+- **Benutzer wechseln zu …:** Wer wechseln darf, findet jede wechselbare Person über Name oder
+  Kürzel („Benutzer wechseln zu Max Mustermann (mm)"); Enter schickt das Formular dieser Person aus
+  dem Wechseldialog `#loginSwitchModal` ab — ohne eigene Anfrage und mit genau der Prüfung, die der
+  Dialog hat. Diese Treffer erscheinen nur auf passende Eingabe, nicht in der Liste bei leerer
+  Eingabe, und nur als Wortanfang oder Teilwort, nicht über Buchstaben in Folge: `buch` liefe sonst
+  durch „Benutzer wechseln" und listete jede Person. Der allgemeine Eintrag „Benutzer wechseln"
+  öffnet weiter den Dialog. Das Absenden ist die eine Ausnahme vom Grundsatz, dass die Palette
+  kein Formular abschickt ([ADR-0030](adr/0030-befehlspalette-liest-die-seite-und-speichert-nichts.md),
+  Nachtrag).
 - **Rangfolge:** Wortanfang vor Tagessprung vor Teilwort vor Buchstaben in Folge. Dahinter kommt,
   was nur ein weiteres Suchwort trifft, von dem also nichts Sichtbares passt (`dunkel`, `modus`) —
   sonst stünde bei `mo` der Moduswechsel vor dem Montag und vor „Meine Konten" —, und ganz hinten,
@@ -153,7 +216,9 @@ Einstieg ist. Die Entscheidung und ihre Alternativen stehen in
   mit derselben Tönung wie in den Auswahlfeldern.
 - **Leere Eingabe:** die zuletzt ausgeführten Befehle, höchstens zehn; solange es keine gibt, alle
   Seiten und darunter die Einstellungen, jeweils als eigene Gruppe. Ein Tagessprung wird als
-  Ausdruck gemerkt und beim Öffnen neu aufgelöst.
+  Ausdruck gemerkt und beim Öffnen neu aufgelöst. Abmelden, Benutzerwechsel und dessen Ende werden
+  nicht gemerkt (`data-palette-forget`): der oberste gemerkte Befehl ist vorgewählt, und ein
+  versehentliches Enter meldete sonst ab oder wechselte die Identität.
 - **Barrierefreiheit:** ARIA-Combobox (`role="combobox"` am Feld, `role="listbox"` darunter,
   `aria-activedescendant` für die gewählte Zeile). Die Zeilen selbst sind nicht fokussierbar, die
   Liste trägt `tabindex="-1"` — scrollt sie, nähmen Chrome und Firefox sie sonst in die
@@ -1455,10 +1520,14 @@ text-muted small       Metainformation, zweite Zeile
 
 ## 9. Responsive-Strategie
 
-Ein einziges Muster: **Spalten ausblenden statt umbrechen.** Tabellenspalten tragen
+Für Tabellen gilt ein einziges Muster: **Spalten ausblenden statt umbrechen.** Tabellenspalten tragen
 `d-none d-sm-table-cell` / `d-md-` / `d-lg-` und verschwinden von rechts nach links; die
 Flags-Spalte erst ab `lg`. Die Sidebar kollabiert unter `md` in einen Navbar-Toggler; ab `md` lässt
 sie sich zur 4rem breiten Icon-Leiste falten.
+Die **Kopfzeile** dagegen bricht um (#1231): die Werkzeugleiste rückt unter den Titel, sobald beide
+nicht nebeneinander passen, und die Vertragswahl bekommt unterhalb von `md` eine eigene Zeile, statt
+ausgeblendet zu werden ([§3](#3-layout--navigation)). Geprüft von 360 px bis Desktop: Bereich und
+Titel bleiben vollständig lesbar.
 Es gibt keine dedizierten mobilen Layouts, keine Karten-Ansicht als Tabellen-Ersatz.
 Faktisch ist SALAT eine Desktop-Anwendung, die auf kleinen Displays benutzbar bleibt.
 

@@ -76,6 +76,15 @@ public class E2ETestData {
   public static final String EMPLOYEE_WITHOUT_BOOKINGS_SIGN = "evw";
   public static final LocalDate WITHOUT_BOOKINGS_CONTRACT_START = LocalDate.of(2026, 6, 10);
 
+  /**
+   * A person with two contracts, an ended one and the running one — for the bar above the header
+   * that names the selected contract and offers the other one (#1231). A person of its own, so
+   * that switching between the two changes nothing another test looks at.
+   */
+  public static final String EMPLOYEE_TWO_CONTRACTS_SIGN = "ezv";
+  public static final LocalDate TWO_CONTRACTS_FIRST_UNTIL = LocalDate.of(2025, 12, 31);
+  public static final LocalDate TWO_CONTRACTS_SECOND_FROM = LocalDate.of(2026, 1, 1);
+
   public static final String CUSTOMERORDER_CONTOSO_SIGN = "CONTOSO-01";
   public static final String SUBORDER_ALPHA_DEV_SIGN = "ALPHA-DEV";
   public static final String CUSTOMERORDER_GLOBEX_SIGN = "GLOBEX-01";
@@ -279,6 +288,8 @@ public class E2ETestData {
         "Manuela", "Angestellt", GlobalConstants.EMPLOYEE_STATUS_MA);
     Employee withoutBookings = employee(employeeRepository, salatUserRepository, EMPLOYEE_WITHOUT_BOOKINGS_SIGN,
         "Vera", "Vorwoche", GlobalConstants.EMPLOYEE_STATUS_MA);
+    Employee twoContracts = employee(employeeRepository, salatUserRepository, EMPLOYEE_TWO_CONTRACTS_SIGN,
+        "Zora", "Zweivertrag", GlobalConstants.EMPLOYEE_STATUS_MA);
 
     employeecontract(employeecontractRepository, peopleLead, null);
     employeecontract(employeecontractRepository, manager, null);
@@ -296,6 +307,13 @@ public class E2ETestData {
     Employeecontract withoutBookingsContract = employeecontract(employeecontractRepository, withoutBookings, null);
     withoutBookingsContract.setValidFrom(WITHOUT_BOOKINGS_CONTRACT_START);
     employeecontractRepository.save(withoutBookingsContract);
+
+    Employeecontract firstContract = employeecontract(employeecontractRepository, twoContracts, null);
+    firstContract.setValidUntil(TWO_CONTRACTS_FIRST_UNTIL);
+    employeecontractRepository.save(firstContract);
+    Employeecontract secondContract = employeecontract(employeecontractRepository, twoContracts, null);
+    secondContract.setValidFrom(TWO_CONTRACTS_SECOND_FROM);
+    employeecontractRepository.save(secondContract);
 
     // --- The overview before a release (#760): one person to look at, one per browser to release ---
     var bookings = new Bookings(referencedayRepository, timereportRepository, workingdayRepository);

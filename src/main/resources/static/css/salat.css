@@ -798,6 +798,83 @@ body {
   max-width: calc(100vw - 1rem);
 }
 
+/* Der Aenderungsmarker am Bild des Nutzermenues (#1231). Eigene Klasse statt .badge: Tabler setzt
+   jede .badge in einem .nav-link als Eckpunkt rechts an den Link, gefaltet also neben die schmale
+   Leiste. Hier sitzt er am Bild und bleibt damit in jeder Form des Ausloesers sichtbar - aufgeklappt,
+   gefaltet und in der mobilen Kopfzeile. Links oben, weil rechts gleich der Name beginnt. Der Ring
+   in der Farbe der Sidebar trennt ihn vom Bild. */
+.user-menu-avatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.user-menu-marker {
+  position: absolute;
+  top: -.1875rem;
+  left: -.1875rem;
+  width: .625rem;
+  height: .625rem;
+  border-radius: 50%;
+  background-color: var(--tblr-green);
+  box-shadow: 0 0 0 2px var(--tblr-bg-surface);
+}
+
+/* Vertragshinweis ueber der Kopfzeile (#1231). Volle Farbe mit dunkler Schrift in beiden Modi,
+   wie die gelbe Badge: als Schrift laesst sich Gelb auf heller Flaeche nicht halten (§7.1). */
+.contract-bar {
+  background-color: var(--tblr-warning);
+  color: var(--tblr-dark);
+  font-size: .875rem;
+}
+
+.contract-bar > .container-fluid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: .75rem;
+  row-gap: .25rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+}
+
+/* Ein Knopf, weil er die Seite mit anderem Vertrag neu laedt wie der Selektor, gestaltet als Link -
+   dunkel und unterstrichen statt Tablers Linkblau, das auf Gelb nicht traegt. */
+.contract-bar-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: var(--tblr-font-weight-medium);
+  text-decoration: underline;
+  text-underline-offset: .125rem;
+}
+
+.contract-bar-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.contract-bar-link:focus-visible {
+  outline: 2px solid var(--tblr-dark);
+  outline-offset: 2px;
+  border-radius: var(--tblr-border-radius-sm);
+}
+
+/* Vertragswahl in der Kopfzeile: ab md so breit wie bisher neben den Knoepfen. Darunter waechst sie
+   mit der Zeile und rueckt in eine eigene, sobald neben den Knoepfen weniger als 14rem bleiben -
+   bis #1231 war sie dort ganz ausgeblendet. */
+.header-contract-selector {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .header-contract-selector {
+    flex: 0 0 auto;
+    min-width: 220px;
+  }
+}
+
 /* Der Seiteninhalt haelt mehr Abstand zur Sidebar als Tablers Vorgabe. Global und nicht
    sidebar-spezifisch: die Regel betrifft Kopfzeile, Inhalt, Meldungen und Fussleiste gleichermassen.
    Tablers eigene Regel dafuer greift hier nicht, weil das <aside> innerhalb von .page liegt und

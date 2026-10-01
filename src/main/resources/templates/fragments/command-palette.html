@@ -10,8 +10,9 @@
        Modal nimmt die Tastatur erst nach seiner Einblendung an.
 
        Was die Palette anbietet, liest sie aus der gerenderten Seite: die Navigation aus der
-       Sidebar, die Einstellungen aus den Bedienelementen mit data-palette-command (Moduswechsel
-       und Einstellungsseite in der Kopfzeile, der Faltknopf der Sidebar). Hier stehen nur die
+       Sidebar, die Einstellungen aus den Bedienelementen mit data-palette-command (die Eintraege
+       des Nutzermenues, der Faltknopf der Sidebar, die Tastenkuerzel im Fuss) und die Personen
+       fuer den Benutzerwechsel aus dessen Dialog (#1231). Hier stehen nur die
        Texte, die es auf der Seite sonst nicht gibt - die Woerter fuer die Tagesspruenge, die
        Gruppen und die Bedienhinweise. Heute ist der Tag des Servers, damit "gestern" denselben Tag
        meint wie die Einzeluebersicht: die Seite bringt Uhrzeit und Zeitzone des Servers mit.
@@ -69,6 +70,8 @@
         th:data-label-daily="#{main.general.mainmenu.daily.text}"
         th:data-kind-day="#{main.palette.kind.day}"
         th:data-kind-settings="#{main.palette.kind.settings}"
+        th:data-kind-account="#{main.palette.kind.account}"
+        th:data-label-switch-to="#{main.palette.loginswitch.to}"
         th:data-group-recent="#{main.palette.group.recent}"
         th:data-group-pages="#{main.palette.group.pages}"
         th:data-day-today="#{main.palette.day.today}"

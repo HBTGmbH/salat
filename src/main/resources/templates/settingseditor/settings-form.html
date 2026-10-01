@@ -56,6 +56,23 @@
                        th:helpText="#{main.settings.gravatar.email.help}"
                        th:placeholder="${defaultEmail}"
                        maxlength="255" />
+      <!--/* Bild und Link zum Gravatar standen bis #1231 im Nutzermenue unten links; dort ist kein
+             zweites Bild mehr, und gepflegt wird die Adresse hier. Die Probe am Ende von
+             layout/base.html sucht den Link ueber seine id und tauscht Text und Ziel, wenn
+             zur Adresse kein Gravatar hinterlegt ist. */-->
+      <div class="mb-3 d-flex align-items-center gap-3"
+           th:with="gravatarEmail=${@employeePreferenceService.gravatarEmailForCurrentUser}">
+        <img class="avatar avatar-md rounded flex-shrink-0" alt=""
+             th:with="url=${@gravatarViewHelper.gravatarUrl(gravatarEmail)}" th:src="${url}"/>
+        <a th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(gravatarEmail)}"
+           href="https://gravatar.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           id="gravatar-link"
+           th:text="#{main.gravatar.link.manage}"
+           th:data-title-register="#{main.gravatar.link.register}"
+           th:data-check-url="${checkUrl}">Gravatar verwalten</a>
+      </div>
 
       <!--/* Beta features: one switch per BetaFeature constant, removed with the feature itself */-->
       <hr id="beta"/>

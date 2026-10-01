@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--/* data-bs-theme="light" setzt den Farbmodus, den Tabler bis 1.4 selbst als Voreinstellung
        hatte; ab 1.5 steht dessen Voreinstellung auf "auto", also auf dem Theme des Betriebssystems.
-       Massgeblich ist in Salat aber der Umschalter in der Kopfzeile, und der wirkt weiterhin: der
+       Massgeblich ist in Salat aber der Umschalter im Nutzermenue, und der wirkt weiterhin: der
        Theme-Loader (Zeile darunter im Body) liest die gespeicherte Wahl vor dem serverseitigen
        Attribut - URL-Parameter vor localStorage vor Attribut vor Voreinstellung. Weil das Attribut
        schon im ersten Byte der Antwort steht, flackert nichts. */-->
@@ -83,17 +83,26 @@
                    Sidebar auf Breite 0 geht und unterhalb von md ganz verschwindet - dort bleibt
                    wie bisher nur das Bild.
                    Bei uebernommenem Benutzer zeigen Name und Rolle die fremde Person; die zweite
-                   Badge ist der Hinweis darauf, der sonst mit dem eigenen Kuerzel verschwaende. */-->
+                   Badge ist der Hinweis darauf, der sonst mit dem eigenen Kuerzel verschwaende.
+                   Der Punkt am Bild sagt, dass sich im Menue etwas geaendert hat (#1231): die
+                   Einstellungen stehen jetzt dort. salat.js blendet ihn ein, solange das Menue nie
+                   offen war, und merkt das Oeffnen in localStorage. Gruen wie "Neu" und ohne
+                   Blinken - rot und blinkend ist die Glocke mit ungelesenen Benachrichtigungen.
+                   Mit einem Folge-Commit nach einigen Wochen faellt er wieder weg. */-->
             <a href="#" class="nav-link" data-bs-toggle="dropdown" role="button" aria-expanded="false"
+               id="user-menu-toggle"
                th:with="userName=${@authorizedEmployee.name},
                         roleLabel=#{${'main.employee.status.' + @authorizedUser.loginStatus}},
                         actsAs=${@authorizedUser.impersonateLoginSign}"
                th:aria-label="${actsAs == null}
                         ? #{main.general.loggedinas.aria(${userName},${roleLabel})}
                         : #{main.general.impersonation.aria(${userName},${roleLabel})}">
-              <img class="avatar avatar-sm rounded" alt=""
-                   th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
-                   th:src="${url}"/>
+              <span class="user-menu-avatar">
+                <img class="avatar avatar-sm rounded" alt=""
+                     th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
+                     th:src="${url}"/>
+                <span class="user-menu-marker" data-user-menu-news hidden aria-hidden="true"></span>
+              </span>
               <span class="nav-link-title">
                 <span th:text="${userName}">Max Mustermann</span>
                 <span class="d-block">
@@ -105,66 +114,86 @@
                 </span>
               </span>
             </a>
-            <div class="dropdown-menu">
-              <h6 class="dropdown-header" th:text="#{main.general.loggedinas.text}">Angemeldet als</h6>
-              <div class="dropdown-item-text d-flex align-items-center gap-3">
-                <!--/* id und data-Attribute unveraendert: die Probe am Seitenende sucht genau
-                       diesen Link und tauscht Titel und Ziel, wenn zur Adresse kein Gravatar
-                       hinterlegt ist. Ein <a> im <a> waere ungueltig, deshalb bleibt der Link hier
-                       im Menue und wandert nicht auf den Ausloeser darueber.
-                       flex-shrink-0: auf dem Telefon ist das Menue nur so breit wie seine
-                       min-width, sonst quetscht die Spalte daneben das Bild zum Streifen. */-->
-                <a class="flex-shrink-0"
-                   th:with="checkUrl=${@gravatarViewHelper.gravatarCheckUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
-                   href="https://gravatar.com"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   id="gravatar-sidebar-link"
-                   th:title="#{main.gravatar.link.manage}"
-                   th:data-title-register="#{main.gravatar.link.register}"
-                   th:data-check-url="${checkUrl}">
-                  <img class="avatar avatar-md rounded"
-                       th:with="url=${@gravatarViewHelper.gravatarUrl(@employeePreferenceService.gravatarEmailForCurrentUser)}"
-                       th:src="${url}" alt="User avatar"/>
-                </a>
-                <div>
-                  <div th:text="${@authorizedEmployee.name}">Max Mustermann</div>
-                  <!--/* Das Kuerzel bleibt hier stehen - im Ausloeser darueber steht seit #1033 die
-                         Rolle an seiner Stelle.
-                         actsAs kommt aus th:with und nicht direkt aus ${@authorizedUser...}: eine
-                         Bohne als Parameter einer Nachricht wertet Thymeleaf im eingeschraenkten
-                         Kontext aus und bricht die Seite ab. */-->
-                  <div class="text-secondary small d-flex align-items-center gap-1"
-                       th:with="actsAs=${@authorizedUser.impersonateLoginSign}">
-                    <span th:text="${@authorizedUser.loginSign}">kr</span>
-                    <span th:if="${actsAs ne null}"
-                          th:text="#{main.general.impersonation.actsas.text(${actsAs})}">acts as mm</span>
-                  </div>
-                  <span class="badge bg-purple-lt mt-1"
+            <!--/* Das Menue nennt, was der Ausloeser nicht zeigt, und bietet die persoenlichen
+                   Funktionen an (#1231): kein zweites Bild, sondern das echte Login-Kuerzel und bei
+                   einem Benutzerwechsel die uebernommene Person. Der Gravatar wird auf der
+                   Einstellungsseite gepflegt, dort steht auch der Link dazu.
+                   data-palette-menu: die Befehlspalette bietet jeden Eintrag mit
+                   data-palette-command hier an, obwohl das Menue zu ist - massgeblich ist, ob der
+                   Server ihn gerendert hat, nicht ob er gerade zu sehen ist (salat.js). */-->
+            <div class="dropdown-menu" data-palette-menu
+                 th:with="actsAs=${@authorizedUser.impersonateLoginSign}">
+              <!--/* actsAs kommt aus th:with und nicht direkt aus ${@authorizedUser...}: eine Bohne
+                     als Parameter einer Nachricht wertet Thymeleaf im eingeschraenkten Kontext aus
+                     und bricht die Seite ab. */-->
+              <div class="dropdown-item-text">
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                  <span th:with="loginSign=${@authorizedUser.loginSign}">
+                    <span th:text="#{main.general.loggedinas.text}">Angemeldet als</span>
+                    <strong th:text="${loginSign}">kr</strong>
+                  </span>
+                  <span class="badge bg-purple-lt"
                         th:text="#{${'main.employee.status.' + @authorizedUser.loginStatus}}">Administrator</span>
                 </div>
+                <div th:if="${actsAs ne null}" class="text-orange small mt-1"
+                     th:with="actsAsName=${@authorizedEmployee.name}">
+                  <i class="ti ti-switch-2 me-1" aria-hidden="true"></i>
+                  <span th:text="#{main.general.impersonation.actsas.full(${actsAsName},${actsAs})}">Handelt als Max Mustermann (mm)</span>
+                </div>
               </div>
-              <th:block th:if="${@loginSwitchViewHelper.visible and @authorizedUser.impersonateLoginSign == null}">
-                <div class="dropdown-divider"></div>
-                <button type="button" class="dropdown-item"
-                        data-bs-toggle="modal" data-bs-target="#loginSwitchModal">
-                  <i class="ti ti-switch-2 dropdown-item-icon"></i>
-                  <span th:text="#{main.general.loginswitch.title}">Benutzer wechseln</span>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" th:href="@{/settings}"
+                 data-palette-command="settings" th:data-palette-keywords="#{main.palette.keywords.settings}">
+                <i class="ti ti-settings dropdown-item-icon" aria-hidden="true"></i>
+                <span th:text="#{main.settings.title}">Benutzereinstellungen</span>
+                <span class="badge bg-green-lt ms-auto" data-user-menu-news hidden
+                      th:text="#{main.general.new.badge}">Neu</span>
+              </a>
+              <!--/* Der Moduswechsel bietet nur die Richtung in den anderen Modus an; Tabler blendet
+                     den Eintrag fuer den geltenden per CSS aus. Die Palette fragt dafuer
+                     data-palette-theme gegen data-bs-theme am <html>, weil im geschlossenen Menue
+                     beide Eintraege verborgen sind. */-->
+              <button type="button" class="dropdown-item hide-theme-dark" onclick="toggleTheme('dark')"
+                      data-palette-command="theme-dark" data-palette-theme="dark"
+                      th:data-palette-keywords="#{main.palette.keywords.theme.dark}">
+                <i class="ti ti-moon dropdown-item-icon" aria-hidden="true"></i>
+                <span th:text="#{main.general.theme.dark.title}">Dunkles Design aktivieren</span>
+              </button>
+              <button type="button" class="dropdown-item hide-theme-light" onclick="toggleTheme('light')"
+                      data-palette-command="theme-light" data-palette-theme="light"
+                      th:data-palette-keywords="#{main.palette.keywords.theme.light}">
+                <i class="ti ti-sun-high dropdown-item-icon" aria-hidden="true"></i>
+                <span th:text="#{main.general.theme.light.title}">Helles Design aktivieren</span>
+              </button>
+              <!--/* Benutzerwechsel, dessen Ende und Abmelden merkt die Palette nicht unter "Zuletzt
+                     verwendet" (data-palette-forget): bei leerer Eingabe ist der oberste gemerkte
+                     Befehl vorgewaehlt, ein versehentliches Enter wechselte sonst die Identitaet
+                     oder meldete ab. */-->
+              <button type="button" class="dropdown-item"
+                      th:if="${@loginSwitchViewHelper.visible and actsAs == null}"
+                      data-bs-toggle="modal" data-bs-target="#loginSwitchModal"
+                      data-palette-command="login-switch" data-palette-forget
+                      th:data-palette-kind="#{main.palette.kind.account}"
+                      th:data-palette-keywords="#{main.palette.keywords.loginswitch}">
+                <i class="ti ti-switch-2 dropdown-item-icon" aria-hidden="true"></i>
+                <span th:text="#{main.general.loginswitch.title}">Benutzer wechseln</span>
+              </button>
+              <form th:if="${actsAs != null}" th:action="@{/auth/exit-impersonation}" method="post">
+                <button type="submit" class="dropdown-item text-danger"
+                        data-palette-command="login-switch-exit" data-palette-forget
+                        th:data-palette-kind="#{main.palette.kind.account}"
+                        th:data-palette-keywords="#{main.palette.keywords.loginswitch}">
+                  <i class="ti ti-x dropdown-item-icon" aria-hidden="true"></i>
+                  <span th:text="#{main.general.loginswitch.exit.title}">Benutzer-Wechsel beenden</span>
                 </button>
-              </th:block>
-              <th:block th:if="${@authorizedUser.impersonateLoginSign != null}">
-                <div class="dropdown-divider"></div>
-                <form th:action="@{/auth/exit-impersonation}" method="post">
-                  <button type="submit" class="dropdown-item text-danger">
-                    <i class="ti ti-x dropdown-item-icon"></i>
-                    <span th:text="#{main.general.loginswitch.exit.title}">Benutzer-Wechsel beenden</span>
-                  </button>
-                </form>
-              </th:block>
+              </form>
               <th:block th:if="${@salatProperties.auth.logout.enabled}">
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" th:with="url=${@salatProperties.auth.logout.logoutUrl}" th:href="${url}">
-                  <i class="ti ti-logout dropdown-item-icon"></i>
+                <a class="dropdown-item" th:with="url=${@salatProperties.auth.logout.logoutUrl}" th:href="${url}"
+                   data-palette-command="logout" data-palette-forget
+                   th:data-palette-kind="#{main.palette.kind.account}"
+                   th:data-palette-keywords="#{main.palette.keywords.logout}">
+                  <i class="ti ti-logout dropdown-item-icon" aria-hidden="true"></i>
                   <span th:text="#{main.general.logout.text}">Abmelden</span>
                 </a>
               </th:block>
@@ -509,10 +538,45 @@
 
   <!-- Page content -->
   <div class="page-wrapper">
+    <!--/* Vertragshinweis (#1231): alle Buchungsseiten zeigen nur die Daten des gewaehlten Vertrags.
+           Hat die gewaehlte Person mehrere, sagt das dieser Balken, und er bietet die anderen
+           Vertraege direkt als Wechsel an - auch auf dem Telefon.
+           Gelb (warning) und nicht rot: Aufmerksamkeit ohne Fehler (Style Guide §7). Ein Zustand,
+           keine Meldung - nicht wegklickbar und kein role="alert", das auf jeder Seite vorgelesen
+           wuerde, sondern eine benannte Region. Er gilt fuer die gewaehlte Person des Selektors,
+           nicht fuer einen Benutzerwechsel. */-->
+    <div class="contract-bar d-print-none" role="region" th:aria-label="#{main.contractbar.aria}"
+         th:if="${@employeeContractSelectorViewHelper.appliesTo(section, subSection)
+                  and @employeeContractSelectorViewHelper.multiContractEmployee}"
+         th:with="sel=${@employeeContractSelectorViewHelper.selectedContract}">
+      <div class="container-fluid">
+        <span>
+          <i class="ti ti-file-certificate me-1" aria-hidden="true"></i>
+          <strong th:text="${sel.employee.name}">Max Mustermann</strong>:
+          <span th:text="${sel.openEnd}
+                  ? #{main.contractbar.contract.open(${#temporals.format(sel.validFrom, 'dd.MM.yyyy')})}
+                  : #{main.contractbar.contract(${#temporals.format(sel.validFrom, 'dd.MM.yyyy')},${#temporals.format(sel.validUntil, 'dd.MM.yyyy')})}">Vertrag 01.01.2019 – 31.12.2022</span>.
+          <span th:text="#{main.contractbar.onlythis}">Angezeigt werden nur Daten dieses Vertrags.</span>
+        </span>
+        <span>
+          <span th:text="#{main.contractbar.switch}">Für einen anderen Zeitraum wechseln zu:</span>
+          <th:block th:each="ec, it : ${@employeeContractSelectorViewHelper.otherContractsOfSelectedEmployee}">
+            <button type="button" class="contract-bar-link" th:data-select-contract="${ec.id}"
+                    th:text="${ec.openEnd}
+                      ? #{main.contractbar.period.open(${#temporals.format(ec.validFrom, 'dd.MM.yyyy')})}
+                      : #{main.contractbar.period(${#temporals.format(ec.validFrom, 'dd.MM.yyyy')},${#temporals.format(ec.validUntil, 'dd.MM.yyyy')})}">01.01.2023 – unbefristet</button><span th:unless="${it.last}" aria-hidden="true"> · </span>
+          </th:block>
+        </span>
+      </div>
+    </div>
     <header class="page-header d-print-none">
       <div class="container-fluid">
+        <!--/* Umbrechen statt Ueberdecken (#1231): der Titel nimmt so viel Breite, wie er braucht
+               (col-auto, flex-grow-1). Passt die Werkzeugleiste nicht mehr daneben, rueckt sie in
+               die naechste Zeile, statt den Titel zusammenzuquetschen - Bootstraps col mit Basis 0
+               tat genau das. Reicht die Zeile nicht einmal fuer den Titel allein, bricht er um. */-->
         <div class="row g-2 align-items-center">
-          <div class="col">
+          <div class="col-auto flex-grow-1">
             <!-- Page pre-title -->
             <div class="page-pretitle" th:text="${sectionTitle}">
               Section
@@ -522,15 +586,14 @@
             </h2>
           </div>
           <!-- Page title actions -->
-          <div class="col-auto ms-auto d-print-none">
-            <div class="d-flex align-items-center gap-2">
-              <div class="d-none d-md-flex align-items-center gap-2" th:if="${section == 'dailyreport' and subSection != 'acceptance' and @employeeContractSelectorViewHelper.visible}" style="min-width: 220px">
-                <th:block th:if="${@employeeContractSelectorViewHelper.multiContractEmployee}"
-                          th:with="sel=${@employeeContractSelectorViewHelper.selectedContract}">
-                  <span th:class="'badge text-nowrap w-100 ' + ${sel.currentlyValid ? 'bg-secondary-lt' : 'bg-warning-lt'}"
-                        th:text="${sel.timeString + (sel.openEnd ? ' ∞' : '')}"></span>
-                </th:block>
+          <!--/* Mit Vertragswahl nimmt die Leiste unterhalb von md die ganze Breite, damit die Wahl
+                 dort eine eigene Zeile bekommen kann; ohne bleibt sie neben dem Titel. */-->
+          <th:block th:with="contractSelector=${@employeeContractSelectorViewHelper.appliesTo(section, subSection)}">
+          <div class="ms-auto d-print-none" th:classappend="${contractSelector} ? 'col-12 col-md-auto' : 'col-auto'">
+            <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+              <div class="header-contract-selector" th:if="${contractSelector}">
                 <select class="form-select tomselect" id="globalEmployeeContractId"
+                        th:aria-label="#{main.contractbar.select.aria}"
                         onchange="selectContract(this.value)">
                   <option th:each="ec : ${@employeeContractSelectorViewHelper.viewableContracts}"
                           th:value="${ec.id}"
@@ -540,7 +603,7 @@
                   </option>
                 </select>
               </div>
-              <div class="btn-list">
+              <div class="btn-list flex-nowrap">
                 <!--/* Einstieg in die Befehlspalette (#1155): mit der Maus, auf dem Telefon per Tipp,
                        und zugleich der Hinweis auf das Kuerzel. Dessen Beschriftung setzt salat.js
                        je nach System (Ctrl K oder ⌘ K); bis dahin bleibt sie verborgen, statt kurz
@@ -589,26 +652,10 @@
                        style="min-width: 340px; max-height: 480px; overflow-y: auto;">
                   </div>
                 </div>
-                <!--/* data-palette-command: die Befehlspalette bietet diese drei Knoepfe als Einstellungen
-                       an und loest sie aus (#1155). Was hier gerade verborgen ist - der Moduswechsel in
-                       den Modus, der schon gilt -, bietet sie auch nicht an. */-->
-                <a th:href="@{/settings}" class="btn" th:aria-label="#{main.settings.title}" th:title="#{main.settings.title}"
-                   data-palette-command="settings" th:data-palette-keywords="#{main.palette.keywords.settings}">
-                  <i class="ti ti-settings ti-size-3"></i>
-                </a>
-                <button class="btn hide-theme-dark" th:aria-label="#{main.general.theme.dark.title}"
-                        th:title="#{main.general.theme.dark.title}" onclick="toggleTheme('dark')"
-                        data-palette-command="theme-dark" th:data-palette-keywords="#{main.palette.keywords.theme.dark}">
-                  <i class="ti ti-moon ti-size-3"></i>
-                </button>
-                <button class="btn hide-theme-light" th:aria-label="#{main.general.theme.light.title}"
-                        th:title="#{main.general.theme.light.title}" onclick="toggleTheme('light')"
-                        data-palette-command="theme-light" th:data-palette-keywords="#{main.palette.keywords.theme.light}">
-                  <i class="ti ti-sun-high ti-size-3"></i>
-                </button>
               </div>
             </div>
           </div>
+          </th:block>
         </div>
       </div>
     </header>
@@ -754,13 +801,15 @@
 <script th:src="@{/webjars/tom-select/dist/js/tom-select.complete.min.js}"></script>
 <script th:src="@{/js/salat.js}"></script>
 <th:block layout:fragment="scripts"></th:block>
+<!--/* Steht zur Adresse kein Gravatar, fuehrt der Link auf der Einstellungsseite zur Registrierung
+       statt zur Verwaltung. */-->
 <script>
   (function () {
-    var link = document.getElementById('gravatar-sidebar-link');
+    var link = document.getElementById('gravatar-link');
     if (!link) return;
     var probe = new Image();
     probe.onerror = function () {
-      link.title = link.dataset.titleRegister;
+      link.textContent = link.dataset.titleRegister;
       link.href = 'https://gravatar.com/signup';
     };
     probe.src = link.dataset.checkUrl;
@@ -801,8 +850,10 @@
                    th:src="${url}"
                    th:alt="${emp.name}"/>
               <div class="flex-fill text-start">
-                <div class="fw-medium" th:text="${emp.name}">Max Mustermann</div>
-                <div class="text-muted small" th:text="${emp.sign}">mm</div>
+                <!--/* data-switch-*: die Befehlspalette bildet aus jedem Formular hier einen Treffer
+                       "Benutzer wechseln zu ..." und schickt es ab (#1231). */-->
+                <div class="fw-medium" th:text="${emp.name}" data-switch-name>Max Mustermann</div>
+                <div class="text-muted small" th:text="${emp.sign}" data-switch-sign>mm</div>
               </div>
               <i class="ti ti-chevron-right text-muted"></i>
             </button>

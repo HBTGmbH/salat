@@ -74,10 +74,6 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
       assertThat(footer).hasCount(1);
       assertThat(footer).containsText("Angemeldet als");
 
-      // the probe at the end of the page swaps title and target of exactly this link when the
-      // address has no gravatar - it finds it by id, so the id has to survive the move
-      assertThat(page.locator("#salat-nav #gravatar-sidebar-link")).hasCount(1);
-
       footer.locator("[data-bs-toggle='dropdown']").click();
       assertThat(footer.locator(".dropdown-menu")).isVisible();
     });
@@ -109,11 +105,10 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
 
   /**
    * On a phone the open user menu shrank to its {@code min-width}, because it hangs off the list
-   * item of the trigger, which there is only as wide as the picture. The column with name and role
-   * badge then claimed the room: the flex row squeezed the gravatar link, and the picture inside
-   * with it ({@code max-width: 100%}), to a narrow strip of full height, and the badge still ran
-   * past the edge of the menu. Geschaeftsfuehrung is the longest role label, the shorter ones fit
-   * into the {@code min-width} and would not show the overflow.
+   * item of the trigger, which there is only as wide as the picture, and the role badge ran past the
+   * edge of the menu. Geschaeftsfuehrung is the longest role label, the shorter ones fit into the
+   * {@code min-width} and would not show the overflow. Since #1231 the menu carries no picture of
+   * its own any more, but the sign and the role badge share a row.
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
@@ -123,15 +118,7 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
       Locator footer = page.locator("#salat-nav .navbar-footer");
       footer.locator("[data-bs-toggle='dropdown']").click();
 
-      Locator picture = page.locator("#gravatar-sidebar-link img.avatar");
-      assertThat(picture).isVisible();
-      assertEquals(true, picture.evaluate("""
-          el => {
-            const box = el.getBoundingClientRect();
-            return box.width > 0 && box.width === box.height;
-          }"""));
-
-      Locator badge = footer.locator(".dropdown-menu .badge");
+      Locator badge = footer.locator(".dropdown-menu .dropdown-item-text .badge");
       assertEquals(true, badge.evaluate("""
           el => el.getBoundingClientRect().right
               <= el.closest('.dropdown-menu').getBoundingClientRect().right"""));
@@ -147,8 +134,7 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
   void a_folded_sidebar_leaves_only_the_picture_in_the_user_block(E2EBrowser browser) {
     runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard?sidebar=folded", page -> {
       Locator footer = page.locator("#salat-nav .navbar-footer");
-      // the menu below carries a second avatar, so name the one on the trigger
-      assertThat(footer.locator(".nav-link > img.avatar")).isVisible();
+      assertThat(footer.locator(".nav-link img.avatar")).isVisible();
       assertThat(footer.locator(".nav-link-title")).not().isVisible();
 
       // The badge keeps its own box and Playwright would call it visible - Tabler folds the title

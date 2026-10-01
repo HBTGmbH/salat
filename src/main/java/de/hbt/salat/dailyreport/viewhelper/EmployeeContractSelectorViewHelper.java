@@ -40,6 +40,14 @@ public class EmployeeContractSelectorViewHelper {
         return getViewableContracts().size() > 1;
     }
 
+    /**
+     * Ob die Auswahl auf dieser Seite wirkt: im Bereich Buchungen, außer in der Abnahme, die ihre
+     * Personen selbst wählt. Selektor und Vertragsbalken in {@code layout/base.html} fragen beide hier.
+     */
+    public boolean appliesTo(String section, String subSection) {
+        return "dailyreport".equals(section) && !"acceptance".equals(subSection) && isVisible();
+    }
+
     public Long getSelectedContractId() {
         var id = uiState.getLongValue(EMPLOYEE_CONTRACT_ID);
         if (id != null) return id;
@@ -65,12 +73,22 @@ public class EmployeeContractSelectorViewHelper {
     }
 
     public boolean isMultiContractEmployee() {
+        return !getOtherContractsOfSelectedEmployee().isEmpty();
+    }
+
+    /**
+     * Die übrigen Verträge der gewählten Person, die der Selektor auch anbietet — der Balken über
+     * der Kopfzeile (#1231) bietet sie als Wechsel in einen anderen Zeitraum an. Leer, wenn nichts
+     * gewählt ist oder die Person nur diesen einen Vertrag hat.
+     */
+    public List<Employeecontract> getOtherContractsOfSelectedEmployee() {
         var selected = getSelectedContract();
-        if (selected == null) return false;
+        if (selected == null) return List.of();
         long empId = selected.getEmployee().getId();
         return getViewableContracts().stream()
                 .filter(ec -> ec.getEmployee().getId() == empId)
-                .count() > 1;
+                .filter(ec -> !ec.getId().equals(selected.getId()))
+                .toList();
     }
 
 }
