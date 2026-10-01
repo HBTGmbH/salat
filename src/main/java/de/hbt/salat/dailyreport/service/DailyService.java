@@ -28,6 +28,7 @@ import de.hbt.salat.dailyreport.domain.ListViewData;
 import de.hbt.salat.dailyreport.domain.ListViewData.ListDay;
 import de.hbt.salat.dailyreport.domain.Publicholiday;
 import de.hbt.salat.dailyreport.domain.ReportPeriod;
+import de.hbt.salat.dailyreport.domain.TargetEnd;
 import de.hbt.salat.dailyreport.domain.TimereportDTO;
 import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.employee.service.EmployeecontractService;
@@ -66,7 +67,6 @@ public class DailyService {
         // the quitting time follows from what has been booked, not from a target - it is useful on a
         // day without one too, so it stays (#857)
         String quittingTime = workingdayService.calculateQuittingTime(employeeContractId, date);
-        String targetEndTime = hasDayTarget ? workingdayService.calculateWorkingDayEnds(employeeContractId, date) : null;
         boolean overMaxHours = workingdayService.checkLaborTimeMaximum(timereports);
 
         long targetMinutes = dayTarget.toMinutes();
@@ -75,6 +75,20 @@ public class DailyService {
         List<WeekStripDay> weekStrip = buildWeekStrip(date, employeeContractId);
 
         boolean notWorked = workingday != null && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
+
+        // the contract target and the distance to it only mean something on a day that is to be
+        // worked (#1236); the target of the day, not the daily working time of the contract, is what
+        // "von Y h" shows next to it
+        TargetEnd targetEnd = null;
+        String targetDifference = null;
+        boolean targetReached = false;
+        if (hasDayTarget && !notWorked) {
+            targetEnd = workingdayService.calculateTargetEnd(workingday, employeeContractId, dayTarget);
+            Duration remaining = dayTarget.minus(totalBooked);
+            targetReached = !remaining.isPositive();
+            targetDifference = targetReached ? "+" + DurationUtils.format(remaining.negated()) : DurationUtils.format(remaining);
+        }
+
         var effectiveStart = workingdayService.getEffectiveStart(workingday, employeeContractId);
         String startTime = String.format("%02d:%02d", effectiveStart.getHour(), effectiveStart.getMinute());
         String breakTime = workingday != null
@@ -94,8 +108,8 @@ public class DailyService {
         boolean workingdayEditable = canWriteDay;
         boolean canCreate = canWriteDay;
 
-        return new DailyViewData(timereports, totalBooked, workingday, quittingTime, targetEndTime,
-            hasTarget, hasDayTarget, overMaxHours, progressPercent, weekStrip,
+        return new DailyViewData(timereports, totalBooked, workingday, quittingTime,
+            targetEnd, targetDifference, targetReached, hasTarget, hasDayTarget, overMaxHours, progressPercent, weekStrip,
             notWorked, startTime, breakTime, dailyWorkingTimeFormatted,
             editableIds, workingdayEditable, canCreate, ReportPeriod.statusOn(contract, date));
     }

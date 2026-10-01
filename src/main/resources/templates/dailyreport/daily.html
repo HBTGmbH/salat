@@ -235,29 +235,53 @@
             <!--/* The content is a fragment because the OOB refresh below renders the same block. It
                    used to be copied, and a change in one place silently drifted from the other. */-->
             <div th:fragment="dailyProgressContent">
-              <!--/* flex-wrap: the booked duration and the quitting time must not squeeze each other
-                     on a narrow window */-->
-              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-                <span class="text-muted small">
-                  <span th:text="#{main.daily.booked.label}">Gebucht:</span>
-                  <!--/* both values are durations; without the unit they read like a time of day,
-                         especially next to the quitting time in the same h:mm format (#831) */-->
-                  <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
-                  <span th:text="#{main.daily.duration.unit}">h</span>
-                  <!--/* the booked value stays visible on a day without a target - whoever works on a
-                         Saturday wants to see what they booked. Only the target itself goes (#857). */-->
-                  <th:block th:if="${dailyData.hasDayTarget}">
-                    <span th:text="#{main.daily.of.label}">von</span>
-                    <strong th:text="${dailyData.dailyWorkingTimeFormatted}"></strong>
+              <!--/* flex-wrap: the values must not squeeze each other on a narrow window. A line breaks
+                     between the groups only, never inside one - label, value and unit belong
+                     together, so every group is text-nowrap (#1236). */-->
+              <div class="d-flex flex-wrap justify-content-between align-items-center column-gap-3 row-gap-1 mb-1 text-muted small">
+                <div class="d-flex flex-wrap column-gap-2">
+                  <span class="text-nowrap">
+                    <span th:text="#{main.daily.booked.label}">Gebucht:</span>
+                    <!--/* both values are durations; without the unit they read like a time of day,
+                           especially next to the quitting time in the same h:mm format (#831) */-->
+                    <strong th:text="${@durationUtils.format(dailyData.totalBooked)}"></strong>
                     <span th:text="#{main.daily.duration.unit}">h</span>
-                  </th:block>
-                </span>
-                <!--/* no longer bound to a stored working day: the quitting time is computed from the
-                       effective start, so it is there before the first booking too (#831) */-->
-                <span class="text-muted small">
-                  <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
-                  <strong th:text="${dailyData.quittingTime}"></strong>
-                </span>
+                    <!--/* the booked value stays visible on a day without a target - whoever works on a
+                           Saturday wants to see what they booked. Only the target itself goes (#857). */-->
+                    <th:block th:if="${dailyData.hasDayTarget}">
+                      <span th:text="#{main.daily.of.label}">von</span>
+                      <strong th:text="${dailyData.dailyWorkingTimeFormatted}"></strong>
+                      <span th:text="#{main.daily.duration.unit}">h</span>
+                    </th:block>
+                  </span>
+                  <!--/* what is left to the target, and once it is reached what lies beyond it, with
+                         a sign instead of a label (#1236) */-->
+                  <span class="text-nowrap" th:if="${dailyData.targetDifference != null}">
+                    <span th:unless="${dailyData.targetReached}" th:text="#{main.daily.target.remaining.label}">noch</span>
+                    <strong th:text="${dailyData.targetDifference}"></strong>
+                    <span th:text="#{main.daily.duration.unit}">h</span>
+                  </span>
+                </div>
+                <div class="d-flex flex-wrap column-gap-2">
+                  <!--/* no longer bound to a stored working day: the quitting time is computed from the
+                         effective start, so it is there before the first booking too (#831) */-->
+                  <span class="text-nowrap">
+                    <span th:text="#{main.daily.quitting.label}">Feierabend ~</span>
+                    <strong th:text="${dailyData.quittingTime}"></strong>
+                  </span>
+                  <!--/* The hint on the mandatory break is text, not a tooltip: a touch device shows
+                         no tooltip. It may wrap below the time, but stays next to it (#1236). */-->
+                  <span th:if="${dailyData.targetEnd != null}"
+                        th:with="targetEnd=${dailyData.targetEnd}">
+                    <span class="text-nowrap">
+                      <span th:text="#{main.daily.target.end.label}">Vertrag-Soll</span>
+                      <strong th:text="${#temporals.format(targetEnd.time, 'HH:mm')}"></strong>
+                    </span>
+                    <span class="text-nowrap" th:if="${targetEnd.mandatoryBreak != null}"
+                          th:with="mandatoryBreak=${@durationUtils.format(targetEnd.mandatoryBreak)}"
+                          th:text="#{main.daily.target.mandatorybreak.hint(${mandatoryBreak})}">(inkl. 0:30 h Pflichtpause)</span>
+                  </span>
+                </div>
               </div>
               <!--/* On a day without a target the empty track stays as a hint: it keeps the block at
                      the same height as on a working day, and without a target there is nothing the

@@ -81,7 +81,7 @@ class DailyViewReturnTest {
     when(loginEmployee.getId()).thenReturn(1L);
     when(employeeService.getLoginEmployee()).thenReturn(loginEmployee);
     when(employeecontractService.getCurrentContract(1L)).thenReturn(Optional.empty());
-    when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0)));
+    when(dailyPreferenceService.getForEmployeeContractId(anyLong())).thenReturn(new DailyPreferences(LocalTime.of(9, 0), true));
   }
 
   @ParameterizedTest
