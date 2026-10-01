@@ -350,7 +350,7 @@ public class EmployeecontractService {
   }
 
   public void deleteEmployeeContractById(long employeeContractId) {
-    Employeecontract ec = getEmployeecontractById(employeeContractId);
+    Employeecontract ec = employeecontractDAO.getEmployeecontractById(employeeContractId);
 
     if (ec != null) {
 
@@ -416,7 +416,6 @@ public class EmployeecontractService {
     return saved.getId();
   }
 
-  @Authorized
   @EventListener
   void onEmployeeAnonymized(EmployeeAnonymizedEvent event) {
     var contracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getEmployeeId());
@@ -426,7 +425,6 @@ public class EmployeecontractService {
     }
   }
 
-  @Authorized
   @EventListener
   void onEmployeeDelete(EmployeeDeleteEvent event) {
     var employeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getId());
