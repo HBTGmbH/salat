@@ -5,13 +5,91 @@
 <section layout:fragment="content">
 
 <style>
-  .daily-today {
-    border-top: 2px solid var(--tblr-red) !important;
-    border-bottom: 2px solid var(--tblr-red) !important;
+  /* Heute traegt neben der Badge an beiden Enden der Zeile einen Balken, in der Liste wie in der
+     Wochenleiste. Der Schatten liegt innen, damit sich nichts verschiebt, und in der Tabelle vor
+     Tablers eigenem Zustandsschatten der Zelle. */
+  #daily-list tr.daily-today > td:first-child {
+    box-shadow: inset 4px 0 0 var(--salat-today),
+                inset 0 0 0 9999px var(--tblr-table-bg-state, var(--tblr-table-bg-type, var(--tblr-table-accent-bg)));
   }
-  /* Blue row hover for list view, matching matrix */
+  #daily-list tr.daily-today > td:last-child {
+    box-shadow: inset -4px 0 0 var(--salat-today),
+                inset 0 0 0 9999px var(--tblr-table-bg-state, var(--tblr-table-bg-type, var(--tblr-table-accent-bg)));
+  }
+  #daily-week-strip .daily-today {
+    box-shadow: inset 4px 0 0 var(--salat-today), inset -4px 0 0 var(--salat-today);
+  }
+  /* Den gewaehlten Tag zeigt allein die graue Flaeche. Tablers blauer Rand links laege sonst unter
+     dem Balken von heute und waere davon nicht zu unterscheiden. Die Toenung liegt als Bild ueber
+     der Flaeche: Wochenende und Feiertag setzen die Hintergrundfarbe mit !important und blieben
+     sonst allein stehen. */
+  #daily-week-strip .list-group-item.active {
+    border-inline-start-width: 0;
+    background-color: transparent;
+    background-image: linear-gradient(color-mix(in srgb, var(--tblr-secondary) 8%, transparent),
+                                      color-mix(in srgb, var(--tblr-secondary) 8%, transparent));
+  }
+  /* Heute und Feiertag stehen oben rechts in der Ecke des Tages, neben den Buchungskarten. Die
+     Karten haben eine feste Breite von hoechstens 20rem; ist daneben kein Platz mehr fuer eine,
+     rutschen sie in die naechste Zeile, statt unter die Badges zu laufen - auf dem Smartphone
+     immer. Die Zelle ist dafuer oben ausgerichtet wie die Datumskachel; die negativen Raender ziehen
+     die Badges in die Ecke. min-width 0 laesst die Karten weiter kuerzen (#835). */
+  .daily-day {
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.25rem 0.5rem;
+  }
+  /* Mittig zur Datumskachel wie vorher, als die Zelle noch mittig ausgerichtet war: 3rem sind die
+     Hoehe der Kachel und der Unterschied der Zellenabstaende oben und unten (12px gegen 8px). */
+  .daily-day-content {
+    flex: 1 1 20rem;
+    min-width: 0;
+    min-height: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .daily-day-badges {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: -0.25rem;
+    margin-right: -0.75rem;
+  }
+  /* In der Wochenleiste ist rechts in der Mitte der Platz fuer Nicht gearbeitet und die Stunden;
+     die Ecke darueber bleibt frei, die Badges stehen dort immer. */
+  .daily-strip-badges {
+    position: absolute;
+    top: 0.25rem;
+    /* rechtsbuendig mit der Badge der Stunden darunter */
+    right: var(--tblr-list-group-item-padding-x);
+    /* nicht ueber die Kachel: Einzug des Eintrags, Kachel 3rem, etwas Luft */
+    left: calc(var(--tblr-list-group-item-padding-x) + 3.5rem);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+  }
+  /* Tablers Badge ist inline-flex; text-overflow greift nur an einem Block. */
+  .daily-strip-badges .badge {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Hover wie in der Matrix (--salat-day-hover-* in salat.css): die Zeile getoent, die Datumskachel
+     wie der Spaltenkopf kraeftiger und Tag und Wochentag blau. Die Schrift der Zeile bleibt - die
+     Buchungskarten erben sie. */
   #daily-list tbody tr:hover td {
-    background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
+    background-color: var(--salat-day-hover-bg) !important;
+  }
+  #daily-list tbody tr:hover .daily-tile,
+  #daily-week-strip .list-group-item-action:hover:not(.active) .daily-tile {
+    background-color: var(--salat-day-hover-head-bg) !important;
+  }
+  #daily-list tbody tr:hover .daily-tile *,
+  #daily-week-strip .list-group-item-action:hover:not(.active) .daily-tile * {
+    color: var(--salat-day-hover-color) !important;
   }
   /* The order column takes what it needs and no more; a long customer description must not eat
      the width of the booking text next to it (#834). */
@@ -27,8 +105,8 @@
   }
   /* Blue hover for week strip, matching matrix */
   #daily-week-strip .list-group-item-action:hover:not(.active) {
-    background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
-    color: var(--tblr-primary) !important;
+    background-color: var(--salat-day-hover-bg) !important;
+    color: var(--salat-day-hover-color) !important;
   }
   #daily-week-strip .list-group-item-action {
     text-decoration: none;
@@ -504,9 +582,15 @@
         <a th:each="wd : ${weekStripData}"
            th:href="@{/dailyreport/daily(mode='daily',date=${wd.date})}"
            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-           th:classappend="(${wd.isSelected} ? 'active ' : '') + (${wd.isToday} ? 'daily-today' : '')">
+           th:classappend="(${wd.isSelected} ? 'active ' : '') + (${wd.isToday} ? 'daily-today ' : '') + (${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : ''))">
+          <div th:if="${wd.isToday or (wd.isHoliday and wd.holidayName != null)}" class="daily-strip-badges">
+            <span th:if="${wd.isToday}" class="badge bg-primary-lt"
+                  th:text="#{main.daily.nav.today.text}">Heute</span>
+            <span th:if="${wd.isHoliday and wd.holidayName != null}" class="badge bg-warning-lt" th:title="${wd.holidayName}"
+                  th:text="${wd.holidayName}"></span>
+          </div>
           <div>
-            <div class="d-inline-block text-center rounded px-2 py-1"
+            <div class="daily-tile d-inline-block text-center rounded px-2 py-1"
                  th:classappend="(${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                  style="width:3rem">
               <div class="fw-bold lh-1"
@@ -518,8 +602,6 @@
                    style="font-size:0.65rem"
                    th:text="${#temporals.format(wd.date, 'EEE')}"></div>
             </div>
-            <div th:if="${wd.isHoliday and wd.holidayName != null}" class="text-warning mt-1"
-                 style="font-size:0.7rem;white-space:nowrap" th:text="${wd.holidayName}"></div>
           </div>
           <span th:if="${wd.bookingCount > 0}"
                 class="text-muted small"
@@ -645,9 +727,15 @@
           <a th:each="wd : ${weekStripData}"
              th:href="@{/dailyreport/daily(mode='daily',date=${wd.date})}"
              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-             th:classappend="(${wd.isSelected} ? 'active ' : '') + (${wd.isToday} ? 'daily-today' : '')">
+             th:classappend="(${wd.isSelected} ? 'active ' : '') + (${wd.isToday} ? 'daily-today ' : '') + (${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : ''))">
+            <div th:if="${wd.isToday or (wd.isHoliday and wd.holidayName != null)}" class="daily-strip-badges">
+              <span th:if="${wd.isToday}" class="badge bg-primary-lt"
+                    th:text="#{main.daily.nav.today.text}">Heute</span>
+              <span th:if="${wd.isHoliday and wd.holidayName != null}" class="badge bg-warning-lt" th:title="${wd.holidayName}"
+                    th:text="${wd.holidayName}"></span>
+            </div>
             <div>
-              <div class="d-inline-block text-center rounded px-2 py-1"
+              <div class="daily-tile d-inline-block text-center rounded px-2 py-1"
                    th:classappend="(${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                    style="width:3rem">
                 <div class="fw-bold lh-1"
@@ -659,8 +747,6 @@
                      style="font-size:0.65rem"
                      th:text="${#temporals.format(wd.date, 'EEE')}"></div>
               </div>
-              <div th:if="${wd.isHoliday and wd.holidayName != null}" class="text-warning mt-1"
-                   style="font-size:0.7rem;white-space:nowrap" th:text="${wd.holidayName}"></div>
             </div>
             <span th:if="${wd.bookingCount > 0}"
                   class="text-muted small"
@@ -698,6 +784,9 @@
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div th:if="${mode == 'list'}">
   <div class="row align-items-start">
+    <!--/* Ohne Spalte gaebe .row > * den Karten selbst den Spaltenabstand als Innenabstand, und die
+           Zeilen der Tabelle reichten nicht bis an den Rand der Karte. */-->
+    <div class="col-12">
 
       <!-- Month navigation card -->
       <div class="card mb-3" id="daily-mode-nav">
@@ -754,41 +843,49 @@
         <tbody>
           <th:block th:each="day : ${listData.days}">
             <!-- Day row -->
-            <tr th:classappend="${day.isToday} ? 'daily-today' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : ''))">
+            <tr th:classappend="(${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : '')) + (${day.isToday} ? ' daily-today' : '')">
               <td class="w-1 text-center align-top text-nowrap">
                 <a th:href="@{/dailyreport/daily(mode='daily',date=${day.date},fEmployeeContractId=${selectedContractId})}"
-                   class="d-inline-block text-decoration-none text-center rounded px-2 py-1"
-                   th:classappend="${day.isToday} ? 'bg-primary-lt' : (${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
+                   class="daily-tile d-inline-block text-decoration-none text-center rounded px-2 py-1"
+                   th:classappend="${day.isHoliday} ? 'bg-warning-lt' : (${day.isWeekend} ? 'bg-azure-lt' : (${day.isToday} ? 'bg-primary-lt' : 'bg-secondary-lt'))"
                    th:title="#{main.daily.viewday.title}"
                    style="width:3rem">
                   <div class="fw-bold lh-1"
-                       th:classappend="${day.isToday} ? 'text-primary' : (${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : 'text-muted'))"
+                       th:classappend="${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : (${day.isToday} ? 'text-primary' : 'text-muted'))"
                        style="font-size:1.1rem"
                        th:text="${day.date.dayOfMonth}"></div>
                   <div class="opacity-75"
-                       th:classappend="${day.isToday} ? 'text-primary' : (${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : 'text-muted'))"
+                       th:classappend="${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : (${day.isToday} ? 'text-primary' : 'text-muted'))"
                        style="font-size:0.65rem"
                        th:text="${#temporals.format(day.date, 'EEE')}"></div>
                 </a>
               </td>
-              <td colspan="4" class="py-2">
-                <div th:if="${day.notWorked or day.isHoliday}" class="mb-2">
-                  <th:block th:if="${day.notWorked}"><span th:replace="~{fragments/not-worked :: badge(false)}"></span></th:block>
-                  <span th:if="${day.isHoliday}" class="badge bg-red-lt text-red ms-1"
-                        th:text="${day.holidayName}"></span>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                  <th:block th:each="tr : ${day.timereports}"
-                            th:with="singleTr=${tr}, singleTrEditable=${listData.editableTimereportIds.contains(tr.id)}, singleTrDate=${day.date}, singleTrYearMonth=${yearMonth}">
-                    <div th:replace="~{dailyreport/daily-list-card :: listTimereportCard}"></div>
-                  </th:block>
-                  <!-- Add new timereport card -->
-                  <a th:if="${day.canCreate and !day.notWorked}"
-                     th:href="@{/dailyreport/timereports/new(date=${day.date},returnUrl='/dailyreport/daily?mode=list&fMonth='+${yearMonth.monthValue}+'&fYear='+${yearMonth.year})}"
-                     class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
-                     style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
-                    <i class="ti ti-plus" style="font-size:1.5rem"></i>
-                  </a>
+              <td colspan="4" class="py-2 align-top">
+                <div class="daily-day">
+                  <div th:if="${day.isToday or day.isHoliday}" class="daily-day-badges">
+                    <span th:if="${day.isToday}" class="badge bg-primary-lt"
+                          th:text="#{main.daily.nav.today.text}">Heute</span>
+                    <span th:if="${day.isHoliday}" class="badge bg-warning-lt"
+                          th:text="${day.holidayName}"></span>
+                  </div>
+                  <div class="daily-day-content">
+                    <div th:if="${day.notWorked}" class="mb-2">
+                      <span th:replace="~{fragments/not-worked :: badge(false)}"></span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                      <th:block th:each="tr : ${day.timereports}"
+                                th:with="singleTr=${tr}, singleTrEditable=${listData.editableTimereportIds.contains(tr.id)}, singleTrDate=${day.date}, singleTrYearMonth=${yearMonth}">
+                        <div th:replace="~{dailyreport/daily-list-card :: listTimereportCard}"></div>
+                      </th:block>
+                      <!-- Add new timereport card -->
+                      <a th:if="${day.canCreate and !day.notWorked}"
+                         th:href="@{/dailyreport/timereports/new(date=${day.date},returnUrl='/dailyreport/daily?mode=list&fMonth='+${yearMonth.monthValue}+'&fYear='+${yearMonth.year})}"
+                         class="card card-sm mb-0 flex-shrink-0 d-flex align-items-center justify-content-center text-muted text-decoration-none"
+                         style="min-width:60px; max-width:60px; border: 2px dashed currentColor; opacity:0.45">
+                        <i class="ti ti-plus" style="font-size:1.5rem"></i>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -816,10 +913,9 @@
         <strong th:text="${listData.prevDayDiffString}">+0:00</strong>
       </span>
       <span class="ms-auto small">
-        <span class="badge bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
-        <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
+        <span class="badge badge-tint bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
+        <span class="badge badge-tint bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
         <span class="me-1"><span th:replace="~{fragments/not-worked :: badge(false)}"></span></span>
-        <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
       </span>
     </div>
     <!--/* deliberately at the very end of the month, far away from the navigation: the action
@@ -851,6 +947,7 @@
     </div>
       </div><!-- end day list card -->
 
+    </div>
   </div>
 </div><!-- end list mode -->
 

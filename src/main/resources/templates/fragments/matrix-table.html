@@ -38,8 +38,9 @@
     border-right: 1px solid;
   }
 
-  #matrix > tfoot * td.bg-danger-lt {
-    border: 1.5px solid !important;
+  /* Der Rand nimmt die Farbe der Fuellung; in der Schriftfarbe waere er auf dem Rot weiss. */
+  #matrix > tfoot * td.matrix-error {
+    border: 1.5px solid var(--salat-danger-fill) !important;
   }
 
   #matrix > tfoot {
@@ -59,15 +60,34 @@
     cursor: pointer;
   }
   #matrix .matrix-col-hover {
-    background-color: rgba(var(--tblr-primary-rgb), 0.18) !important;
-    color: var(--tblr-primary) !important;
+    background-color: var(--salat-day-hover-bg) !important;
+    color: var(--salat-day-hover-color) !important;
   }
   #matrix thead .matrix-col-hover {
-    background-color: rgba(var(--tblr-primary-rgb), 0.28) !important;
+    background-color: var(--salat-day-hover-head-bg) !important;
   }
-  .matrix-today {
-    border-left: 2px solid var(--tblr-red) !important;
-    border-right: 2px solid var(--tblr-red) !important;
+  /* Fehlerzellen tragen das satte Rot der roten Badge mit heller Schrift (--salat-danger-fill in
+     salat.css, 4,8:1). Die Regel steht nach dem Spalten-Hover: ein Fehler bleibt auch dann rot. */
+  #matrix .matrix-error {
+    background-color: var(--salat-danger-fill) !important;
+    color: var(--tblr-white) !important;
+  }
+  /* Heute traegt an beiden Enden der Spalte einen Balken: oben an der Kopfzelle, unten an der
+     letzten Zeile der Tabelle. Ein Rahmen wuerde in der zusammengelegten Tabelle die ganze Zeile
+     verschieben; der Schatten liegt innen und vor Tablers eigenem Zustandsschatten der Zelle. An
+     einem nicht gearbeiteten Tag reicht die Zelle in Beginn ueber Pause und Ende hinweg. */
+  #matrix { --matrix-today-bar: 4px; }
+  #matrix > thead .matrix-today {
+    box-shadow: inset 0 var(--matrix-today-bar) 0 var(--salat-today),
+                inset 0 0 0 9999px var(--tblr-table-bg-state, var(--tblr-table-bg-type, var(--tblr-table-accent-bg)));
+  }
+  #matrix > tfoot > tr:last-child > .matrix-today,
+  #matrix > tfoot td[rowspan="3"].matrix-today {
+    box-shadow: inset 0 calc(-1 * var(--matrix-today-bar)) 0 var(--salat-today),
+                inset 0 0 0 9999px var(--tblr-table-bg-state, var(--tblr-table-bg-type, var(--tblr-table-accent-bg)));
+  }
+  .matrix-today-legend {
+    box-shadow: inset 0 3px 0 var(--salat-today), inset 0 -3px 0 var(--salat-today);
   }
   /* Das Zebra mischt gegen die Textfarbe statt gegen Schwarz bzw. Weiss und dreht sich damit mit
      dem Farbmodus von selbst - eine Regel statt zweier. Ergebnis hell #f7f8f8, dunkel #27303e. */
@@ -108,11 +128,15 @@
             th:text="#{main.matrixoverview.table.order}">Auftrag</th>
         <th th:each="dh : ${matrixData.dayHeaders}"
             class="text-center matrix-day-col px-1 text-nowrap"
-            th:classappend="${dh.weekend ? 'bg-azure-lt ' : (dh.publicHoliday ? 'bg-warning-lt ' : '')} + ${dh.today ? 'matrix-today' : ''}"
+            th:classappend="${dh.publicHoliday ? 'bg-warning-lt ' : (dh.weekend ? 'bg-azure-lt ' : '')} + ${dh.today ? 'matrix-today' : ''}"
+            th:title="${dh.holidayName}"
             th:attr="data-daily-url=@{/dailyreport/daily(mode='daily',date=${dh.date})}">
           [[${dh.day}]]<br>
           <span style="font-size:0.7rem"
                 th:text="${#strings.substring(#messages.msg(dh.weekdayKey), 0, 2)}">Mo</span>
+          <!--/* Fuer den Namen ist die Spalte zu schmal: Tooltip, und fuer Screenreader steht er im Text.
+                 Auf dem Smartphone fuehrt ein Tipp in die Tagesansicht, die ihn nennt. */-->
+          <span th:if="${dh.holidayName != null}" class="visually-hidden" th:text="${dh.holidayName}"></span>
         </th>
         <th class="matrix-last-col text-center px-1 fw-bold text-nowrap"
             th:text="#{main.matrixoverview.table.sum.text}">Σ</th>
@@ -143,7 +167,7 @@
             th:text="#{main.matrixoverview.table.overall.text}">GESAMT</td>
         <td th:each="fd, fs : ${matrixData.footerDays}"
             class="text-center px-1"
-            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.totalError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
+            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.totalError ? 'matrix-error' : (fd.publicHoliday ? 'bg-warning-lt' : (fd.weekend ? 'bg-azure-lt' : ''))}">
           <span th:if="${not fd.empty}" th:text="${fd.workingTimeString}">7:30</span>
           <!--/* ohne Beginn, Pause und Ende (externer Vertrag) steht die Markierung hier, #1159 */-->
           <th:block th:if="${showNotWorked and fd.notWorked and not showBeginBreakEnd}"><span
@@ -166,12 +190,12 @@
         <th:block th:each="fd, fs : ${matrixData.footerDays}">
           <td th:if="${showNotWorked and fd.notWorked}" rowspan="3"
               class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.publicHoliday ? 'bg-warning-lt' : (fd.weekend ? 'bg-azure-lt' : '')}">
             <span th:replace="~{fragments/not-worked :: badge(true)}"></span>
           </td>
           <td th:unless="${showNotWorked and fd.notWorked}"
               class="text-center px-1"
-              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.beginError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
+              th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.beginError ? 'matrix-error' : (fd.publicHoliday ? 'bg-warning-lt' : (fd.weekend ? 'bg-azure-lt' : ''))}">
             <span th:if="${fd.beginString != null}" th:text="${fd.beginString}">08:00</span>
           </td>
         </th:block>
@@ -183,7 +207,7 @@
         <td th:each="fd, fs : ${matrixData.footerDays}"
             th:unless="${showNotWorked and fd.notWorked}"
             class="text-center px-1"
-            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.breakError ? 'bg-danger-lt text-danger' : (fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : ''))}">
+            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.breakError ? 'matrix-error' : (fd.publicHoliday ? 'bg-warning-lt' : (fd.weekend ? 'bg-azure-lt' : ''))}">
           <span th:if="${fd.breakString != null}" th:text="${fd.breakString}">0:30</span>
         </td>
         <td class="matrix-last-col"></td>
@@ -194,7 +218,7 @@
         <td th:each="fd, fs : ${matrixData.footerDays}"
             th:unless="${showNotWorked and fd.notWorked}"
             class="text-center px-1"
-            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.weekend ? 'bg-azure-lt' : (fd.publicHoliday ? 'bg-warning-lt' : '')}">
+            th:classappend="${matrixData.dayHeaders[fs.index].today ? 'matrix-today ' : ''} + ${fd.publicHoliday ? 'bg-warning-lt' : (fd.weekend ? 'bg-azure-lt' : '')}">
           <span th:if="${fd.endString != null}" th:text="${fd.endString}">17:00</span>
         </td>
         <td class="matrix-last-col"></td>
@@ -225,10 +249,10 @@
     <strong th:text="${matrixData.prevDayDiffString}">+0:00</strong>
   </span>
   <span class="ms-auto small">
-    <span class="badge bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
-    <span class="badge bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
+    <span class="badge badge-tint bg-azure-lt me-1" th:text="#{main.matrixoverview.legend.weekend.text}">Sa/So</span>
+    <span class="badge badge-tint bg-warning-lt me-1" th:text="#{main.matrixoverview.legend.publicholiday.text}">Feiertag</span>
     <span class="me-1" th:if="${showNotWorked}"><span th:replace="~{fragments/not-worked :: badge(false)}"></span></span>
-    <span class="badge me-1 matrix-today" th:text="#{main.daily.nav.today.text}">Heute</span>
+    <span class="badge me-1 matrix-today-legend" th:text="#{main.daily.nav.today.text}">Heute</span>
   </span>
 </div>
 </th:block>

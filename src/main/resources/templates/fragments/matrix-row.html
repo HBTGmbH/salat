@@ -19,7 +19,7 @@
   </td>
   <td th:each="cell, cs : ${row.cells}"
       class="text-center px-1"
-      th:classappend="${dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.weekend ? 'bg-azure-lt' : (cell.publicHoliday ? 'bg-warning-lt' : '')}">
+      th:classappend="${dayHeaders[cs.index].today ? 'matrix-today ' : ''} + ${cell.publicHoliday ? 'bg-warning-lt' : (cell.weekend ? 'bg-azure-lt' : '')}">
     <span th:if="${not cell.empty}" th:text="${cell.durationString}">7:30</span>
     <div th:if="${not cell.empty and not #lists.isEmpty(cell.details)}" class="matrix-cell-detail d-none">
       <div th:each="d : ${cell.details}"
