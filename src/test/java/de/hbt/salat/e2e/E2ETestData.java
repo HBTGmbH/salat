@@ -85,6 +85,22 @@ public class E2ETestData {
   public static final LocalDate TWO_CONTRACTS_FIRST_UNTIL = LocalDate.of(2025, 12, 31);
   public static final LocalDate TWO_CONTRACTS_SECOND_FROM = LocalDate.of(2026, 1, 1);
 
+  /**
+   * A person for the duration an absence is prefilled with (#1214): the rest of the target of the
+   * day, so every day of the week of 2026-06-22 stands for one case. A person of its own, because
+   * the rest depends on what has been booked on the day.
+   */
+  public static final String EMPLOYEE_ABSENCE_SIGN = "eaz";
+  /** Nothing booked: the whole target of eight hours is left. */
+  public static final LocalDate ABSENCE_FREE_DAY = LocalDate.of(2026, 6, 22);
+  /** Three hours booked on a project and two on standby, which is no working time: five are left. */
+  public static final LocalDate ABSENCE_PARTLY_BOOKED_DAY = LocalDate.of(2026, 6, 23);
+  public static final String ABSENCE_PARTLY_BOOKED_COMMENT = "Teilweise gebucht vor der Abwesenheit";
+  /** Booked to the target: nothing is left. */
+  public static final LocalDate ABSENCE_FULLY_BOOKED_DAY = LocalDate.of(2026, 6, 24);
+  /** A Saturday: no target at all (#857). */
+  public static final LocalDate ABSENCE_WEEKEND_DAY = LocalDate.of(2026, 6, 27);
+
   public static final String CUSTOMERORDER_CONTOSO_SIGN = "CONTOSO-01";
   public static final String SUBORDER_ALPHA_DEV_SIGN = "ALPHA-DEV";
   public static final String CUSTOMERORDER_GLOBEX_SIGN = "GLOBEX-01";
@@ -317,6 +333,16 @@ public class E2ETestData {
 
     // --- The overview before a release (#760): one person to look at, one per browser to release ---
     var bookings = new Bookings(referencedayRepository, timereportRepository, workingdayRepository);
+
+    // --- The duration an absence is prefilled with (#1214) ---
+    Employee absent = employee(employeeRepository, salatUserRepository, EMPLOYEE_ABSENCE_SIGN,
+        "Anna", "Abwesend", GlobalConstants.EMPLOYEE_STATUS_MA);
+    Employeecontract absentContract = employeecontract(employeecontractRepository, absent, null);
+    Employeeorder absentAlpha = employeeorder(employeeorderRepository, absentContract, alphaDev);
+    Employeeorder absentStandby = employeeorder(employeeorderRepository, absentContract, standby);
+    bookings.book(absentAlpha, ABSENCE_PARTLY_BOOKED_DAY, Duration.ofHours(3), ABSENCE_PARTLY_BOOKED_COMMENT);
+    bookings.book(absentStandby, ABSENCE_PARTLY_BOOKED_DAY, Duration.ofHours(2), "Rufbereitschaft");
+    bookings.book(absentAlpha, ABSENCE_FULLY_BOOKED_DAY, Duration.ofHours(8), "Ganzer Tag im Projekt");
 
     Employee reviewed = employee(employeeRepository, salatUserRepository, EMPLOYEE_REVIEWED_SIGN,
         "Vera", "Vorschau", GlobalConstants.EMPLOYEE_STATUS_MA);

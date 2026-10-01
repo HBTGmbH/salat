@@ -40,6 +40,7 @@ import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.RecentBooking;
 import de.hbt.salat.dailyreport.domain.Workingday;
+import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -68,6 +69,7 @@ public class TimereportController {
     private final SuborderService suborderService;
     private final EmployeeorderService employeeorderService;
     private final WorkingdayService workingdayService;
+    private final DailyService dailyService;
     private final FavoriteService favoriteService;
     private final EmployeeService employeeService;
     private final MessageSourceAccessor messages;
@@ -253,6 +255,7 @@ public class TimereportController {
         } else {
             model.addAttribute("todaysBookings", List.of());
         }
+        addAbsenceDuration(model, ecId, date, form.getId() != null);
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         model.addAttribute("oobSidebar", true);
         return "dailyreport/timereport-form :: ordersRefreshCompositeFragment";
@@ -550,6 +553,7 @@ public class TimereportController {
         var todaysBookings = timereportService.getTimereportsByDateAndEmployeeContractId(ecId, date);
         model.addAttribute("todaysBookings", todaysBookings);
         model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
+        addAbsenceDuration(model, ecId, date, isEdit);
         if (!isEdit && date != null && date.equals(today())) {
             var workingday = workingdayService.getWorkingday(ecId, date);
             // A day marked as not worked has no starting point. The suppression hangs on the type,
@@ -622,6 +626,19 @@ public class TimereportController {
             }
         }
         return List.of();
+    }
+
+    /**
+     * The duration an absence is booked with (#1214): what is left of the target of the day, in
+     * minutes, rendered on the suborder select. Only a new booking gets it — a change of the
+     * suborder must never change the duration of a booking being edited, and without the value the
+     * form proposes nothing. Rendered on every path, including the refresh after a change of date,
+     * so the value always belongs to the day the form shows.
+     */
+    private void addAbsenceDuration(Model model, long ecId, LocalDate date, boolean isEdit) {
+        if (!isEdit && ecId > 0 && date != null) {
+            model.addAttribute("absenceDurationMinutes", dailyService.getRemainingDayTarget(date, ecId).toMinutes());
+        }
     }
 
     private void seedWorkingday(long ecId, LocalDate date, LocalTime beginTime) {

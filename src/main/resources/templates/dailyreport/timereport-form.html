@@ -144,12 +144,16 @@
             </div>
 
             <!-- Employee order (HTMX swap target for date changes) -->
+            <!--/* data-absence-minutes (#1214): der Rest des Tagessolls, mit dem eine Abwesenheit
+                   vorbelegt wird. Nur beim Anlegen gesetzt, und mit diesem Fragment bei jedem
+                   Datumswechsel neu gerendert, damit er zum Tag im Formular passt */-->
             <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment" class="mb-3">
               <label class="form-label required" th:text="#{main.timereport.form.suborder.label}">Unterauftrag</label>
               <select class="form-select tomselect"
                       name="suborderId" id="suborderId"
                       data-favorite-target="/dailyreport/timereports/preferences/favorite-suborder"
                       th:attr="data-favorite-id=${favoriteSuborderId},
+                               data-absence-minutes=${absenceDurationMinutes},
                                data-entry-focus=${entryFocus != null and entryFocus.name() == 'SUBORDER'} ? 'true' : null"
                       hx-post="/dailyreport/timereports/refresh-sidebar"
                       hx-include="closest form"
@@ -160,7 +164,7 @@
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
                         th:text="${s.label}"
-                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag}"
+                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
@@ -459,6 +463,30 @@
       var opt = sel.options[sel.selectedIndex];
       if (opt && opt.dataset.training === 'true') box.checked = true;
     }
+    // #1214: an absence - sickness, vacation and the like - is booked with what is left of the
+    // target of the day, which the server renders on the select for a new booking only. A field is
+    // filled only while it is untouched: empty, or still holding exactly what an earlier prefill
+    // wrote there - the same rule as data-fill-target in salat.js. Whatever somebody typed stays,
+    // also on the next change of the suborder. Another order type proposes nothing and leaves an
+    // earlier proposal standing; a new day without a rest takes back a proposal still untouched.
+    function applyAbsenceDuration() {
+      var sel = document.getElementById('suborderId');
+      if (!sel || !('absenceMinutes' in sel.dataset)) return;
+      var opt = sel.options[sel.selectedIndex];
+      if (!opt || opt.dataset.absence !== 'true') return;
+      var minutes = Number(sel.dataset.absenceMinutes) || 0;
+      prefillUntouched(document.getElementById('durationTime'), minutes > 0 ? timeInputFormat(minutes) : '');
+      // in begin/end mode the end follows the begin; without a begin, or past midnight, there is no end
+      var begin = parseTimeValue(document.getElementById('beginTimeInput').value);
+      var end = minutes > 0 && begin !== null && begin + minutes < 24 * 60 ? timeInputFormat(begin + minutes) : '';
+      prefillUntouched(document.getElementById('endTimeInput'), end);
+      updateDurationBadge();
+    }
+    function prefillUntouched(field, value) {
+      if (!field || (field.value !== '' && field.value !== field.salatPrefilled)) return;
+      field.value = value;
+      field.salatPrefilled = value;
+    }
     // #982/#1025: the suggestions belong to the branch of the selected suborder, and the select
     // itself is what the remote field reads as its context - so there is nothing to keep in step,
     // only the loaded list to throw away. The entered reference is deliberately left alone: it is
@@ -471,18 +499,24 @@
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
         sel.addEventListener('change', applySuborderTrainingDefault);
+        sel.addEventListener('change', applyAbsenceDuration);
         sel.addEventListener('change', clearTicketSuggestions);
       }
+      document.getElementById('beginTimeInput').addEventListener('change', applyAbsenceDuration);
       updateCommentRequired();
     });
+    // also after a change of date: the swapped select brings the rest of the new day along, and
+    // refresh-orders may have chosen another suborder for it
     document.addEventListener('htmx:after:swap', function() {
       var sel = document.getElementById('suborderId');
       if (sel) {
         sel.addEventListener('change', updateCommentRequired);
         sel.addEventListener('change', applySuborderTrainingDefault);
+        sel.addEventListener('change', applyAbsenceDuration);
         sel.addEventListener('change', clearTicketSuggestions);
       }
       updateCommentRequired();
+      applyAbsenceDuration();
     });
     function updateDurationBadge() {
       // parseTimeValue (salat.js) also understands the half-typed values a text field produces
@@ -575,6 +609,8 @@
           var endMins = nowMins === 0 ? 0 : Math.ceil(nowMins / 15) * 15;
           endInput.value =
             String(Math.floor(endMins / 60) % 24).padStart(2, '0') + ':' + String(endMins % 60).padStart(2, '0');
+          // a proposal like the absence's (#1214), which may therefore replace it
+          endInput.salatPrefilled = endInput.value;
         }
       }
 
@@ -585,6 +621,10 @@
       } else {
         showDuration();
       }
+      // a form opened on an absence without a duration (favourite, deeplink, command palette) gets
+      // the rest of the day as well; a duration it was handed is not empty and therefore wins.
+      // After the live booking, whose begin the end of the absence follows
+      applyAbsenceDuration();
       // the badge is computed on the client only, so it has to be filled once for whatever
       // begin/end values the server rendered
       updateDurationBadge();
