@@ -740,7 +740,9 @@ unterhalb von `lg` ausgeblendet.
 - **Ecken.** Tabler rundet in Kartentabellen die erste und letzte Zelle **jeder** Zeile
   (`.card-table tr td:first-child { border-start-start-radius: var(--tblr-card-border-radius) }`,
   entsprechend `:last-child`). Ohne eigenen Hintergrund sieht man das nicht. Mit Tönung hatte jede
-  inaktive Zeile oben links und oben rechts eine Rundung, mitten in der Tabelle.
+  inaktive Zeile oben links und oben rechts eine Rundung, mitten in der Tabelle. Seit #1261 setzt
+  `salat.css` die Rundung für alle Kartentabellen zurück; gerundet bleibt nur die oberste sichtbare
+  Zeile. Die Regel muss Tablers Spezifität erreichen und endet deshalb auf `:is(td, th)`.
 
 Das Badge umgeht beides: Die Zeile behält den Untergrund der Karte, und das Badge ist eine gefüllte
 Fläche mit eigener Schriftfarbe ([Badges](#badges-gefüllt-statt-getönt)). Nachgemessen in der
@@ -793,6 +795,41 @@ Text nebeneinander.
   für Hover und Klick aus dem Raster.
 - Im Druck der Matrix (#1148) trägt die Badge ihre Füllung auch ohne „Hintergrundgrafiken": die
   Tabellenzellen setzen `print-color-adjust: exact`, und die Eigenschaft wird vererbt.
+
+#### Heute, Feiertag und Fehler in Matrix und Einzelübersicht (#1261)
+
+Rot steht in diesen Ansichten nur für Fehler. Heute war früher rot umrandet und wurde als
+Fehlerhinweis gelesen.
+
+| Kennzeichnung | Matrix | Monatsübersicht, Wochenleiste |
+|---|---|---|
+| Heute | innerer Balken oben an der Kopfzelle und unten an der letzten Zeile | innerer Balken links und rechts, Badge „Heute“ oben rechts |
+| Feiertag | Spalte `bg-warning-lt`, Name als Tooltip am Kopf (`visually-hidden` für Screenreader) | Zeile bzw. Eintrag `bg-warning-lt`, Name als `bg-warning-lt`-Badge oben rechts |
+| Wochenende | Spalte `bg-azure-lt` | Zeile bzw. Eintrag `bg-azure-lt` |
+| Fehler | Zelle `.matrix-error`, gefüllt im Ton der roten Badge | – |
+
+- **Der Feiertag geht dem Wochenende vor**, überall. Wochenende ist jede Woche, der Feiertag ist die
+  genauere Auskunft.
+- **Heute verdrängt nichts.** Balken und Badge kommen zu Wochenende, Feiertag und Fehler hinzu, statt
+  deren Fläche zu ersetzen.
+- **Balken als innerer Schatten, nicht als Rand.** Ein breiter `border` verschiebt in der
+  zusammengelegten Tabelle die ganze Zeile. Der Schatten wird mit Bootstraps eigenem
+  Zustandsschatten der Zelle zusammengefasst, sonst gingen Hover und Zebra verloren. Die Farbe ist
+  `--salat-today`, im dunklen Modus aufgehellt wie `text-primary`.
+- **Badges oben rechts brechen die Karten um.** Badges und Buchungskarten stehen in einer Flex-Zeile
+  mit `flex-wrap`; ist neben den Badges kein Platz für eine Karte (20rem), rutschen die Karten in die
+  nächste Zeile. In der Wochenleiste reicht die Badge nicht über die Datumskachel, ein langer Name
+  wird mit „…“ gekürzt.
+- **Der gewählte Tag der Wochenleiste ist nur grau getönt**, ohne Tablers blauen Rand links — der
+  läge unter dem Balken von heute. Die Tönung liegt als `background-image` über der Fläche, damit sie
+  auch auf einem Wochenend- oder Feiertag zu sehen ist.
+- **Legende:** „Sa/So“ und „Feiertag“ sind `.badge-tint` — Form der Badge, aber die Tönung der
+  Fläche, die sie erklären, mit einem Rand in der Farbe der Gitterlinien. „Heute“ zeigt in der Matrix
+  den Balken; die Einzelübersicht braucht keinen Eintrag, dort steht die Badge.
+- **Hover über einem Tag** ist in Matrix, Monatsübersicht und Wochenleiste gleich
+  (`--salat-day-hover-*`): Fläche 18 %, Kopf bzw. Datumskachel 28 %, Tag und Wochentag blau. Volles
+  Blau trägt auf diesen Tönungen nicht; die Schrift ist je Modus gemischt, bis die Datumskachel als
+  engste Stelle 4,58:1 erreicht (Werte an `--salat-day-hover-color` in `salat.css`).
 
 ### 5.5 Rückmeldungen
 - **Erfolg/Fehler nach Redirect:** Flash-Attribute `toastSuccess` / `toastError` / `toastErrors`
@@ -1032,9 +1069,9 @@ ohne Format-Hinweis.
 
 | Farbe | Bedeutung im Projekt |
 |---|---|
-| `primary` (blau) | Standard-/Bestätigungsaktion, Bearbeiten |
+| `primary` (blau) | Standard-/Bestätigungsaktion, Bearbeiten, heute (Balken und Badge, §5.4) |
 | `success` (grün) | Anlegen, fakturierbar, positiver Saldo, eingeblendet |
-| `warning` (gelb) | Aufmerksamkeit ohne Fehler (abgelaufener Vertrag, fehlende Freigabe), Standard-Flag, Rücknahme eines Vorgangs |
+| `warning` (gelb) | Aufmerksamkeit ohne Fehler (abgelaufener Vertrag, fehlende Freigabe), Standard-Flag, Rücknahme eines Vorgangs, Feiertage |
 | `danger` (rot) | Löschen, Fehler, ausgeblendet, Kommentarpflicht |
 | `secondary` (grau) | neutral/inaktiv, Abbrechen |
 | `purple` | Rollen-Badge, Schulung, „Beta"-Markierung |
@@ -1247,7 +1284,8 @@ dagegen ihre eigene Textfarbe und ist damit nicht nur kräftiger, sondern auch f
 **Nur `.badge` ist gemeint**, nicht `bg-*-lt` allgemein: dieselbe Klasse färbt ganze Tabellenzeilen,
 die Wochenend- und Feiertagsspalten der Matrix, die ungelesenen Meldungen des Glocken-Dropdowns, die
 Kacheln des Dashboards und die Avatare. Die bleiben getönt — eine ganze Tabellenzeile in voller Farbe
-wäre eine andere Änderung. Die höhere Spezifität von `.badge.bg-*-lt` ist zugleich nötig, weil
+wäre eine andere Änderung. Die einzige gefüllte Zelle ist die Fehlerzelle der Matrix (`.matrix-error`,
+#1261); sie liest ihre Füllung aus derselben Variable wie die rote Badge (`--salat-danger-fill`). Die höhere Spezifität von `.badge.bg-*-lt` ist zugleich nötig, weil
 Tablers eigene Regel `!important` trägt.
 
 Die klickbare `hide`-Badge ([§5.4](#54-badges--flags-spalte)) bleibt im Hover unverändert: weder
