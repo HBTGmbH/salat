@@ -11,6 +11,7 @@ import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -264,6 +265,26 @@ public abstract class PlaywrightE2ETestBase {
     confirmDialog(page).locator("[data-bs-dismiss=modal]").click();
     page.locator("#confirmModal").waitFor(
         new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+  }
+
+  /**
+   * Records every submit that reaches {@code document} after the handlers of salat.js — registered
+   * later, the recorder runs last — and whether one of them prevented it, that is whether it would
+   * have gone out. Then it prevents the submit itself: the page stays, as it does while the answer
+   * is still on its way. A real navigation cannot be held for that: Playwright waits for it to finish
+   * before it evaluates or asserts anything on the page again. Read the record with
+   * {@link #submits(Page)}.
+   */
+  protected static void recordSubmits(Page page) {
+    page.evaluate("() => { window.e2eSubmits = [];"
+        + " document.addEventListener('submit', event => {"
+        + " window.e2eSubmits.push(event.defaultPrevented); event.preventDefault(); }); }");
+  }
+
+  /** What {@link #recordSubmits(Page)} noted so far: per submit, whether salat.js prevented it. */
+  @SuppressWarnings("unchecked")
+  protected static List<Boolean> submits(Page page) {
+    return (List<Boolean>) page.evaluate("() => window.e2eSubmits");
   }
 
 }

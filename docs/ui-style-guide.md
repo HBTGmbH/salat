@@ -780,9 +780,10 @@ Text nebeneinander.
   Vom Absenden bis zur Antwort tragen seine Knöpfe die Klasse `disabled` und `aria-disabled`, nicht
   das Attribut `disabled` — das nähme den gedrückten Knopf aus den Formulardaten. Ein zweiter Klick
   oder Enter schickt nichts ab, und der Bestätigungsdialog fragt dann nicht noch einmal. Gesetzt
-  ist es an den Knöpfen der beiden Prüfseiten, deren Antwort ein, zwei Sekunden braucht, und am
-  Öffnen auf der Seite der Abnahme, das denselben Vertrag schreibt. Für HTMX gilt es nicht, HTMX
-  verhindert das Absenden selbst.
+  ist es an den Knöpfen der beiden Prüfseiten, deren Antwort ein, zwei Sekunden braucht, am
+  Öffnen auf der Seite der Abnahme, das denselben Vertrag schreibt, und am Buchungsformular (#1239),
+  dessen zweites Absenden eine zweite Buchung anlegt. Für HTMX gilt es nicht, HTMX verhindert das
+  Absenden selbst.
 
 - **Eigenständige modale Dialoge** bleiben, wo mehr als eine Bestätigung verlangt wird:
   Benutzerwechsel (`layout/base.html`, die Auswahl findet im Dialog selbst statt), Teilen

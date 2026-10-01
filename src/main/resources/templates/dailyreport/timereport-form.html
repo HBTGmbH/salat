@@ -11,10 +11,13 @@
     <div class="col-lg-7">
       <div class="card">
 
+        <!--/* data-submit-once (#1239): jeder Request legt eine eigene Buchung an; ein zweiter Klick,
+               waehrend das Speichern noch laeuft, buchte doppelt */-->
         <form id="timereportMainForm"
               th:action="${isEdit} ? @{/dailyreport/timereports/{id}(id=${timereportForm.id})} : @{/dailyreport/timereports}"
               method="post"
-              th:object="${timereportForm}">
+              th:object="${timereportForm}"
+              data-submit-once>
 
           <input type="hidden" th:if="${timereportForm.id != null}" th:field="*{id}"/>
           <!--/* nur wenn das Formular fuer einen genannten Vertrag geoeffnet wurde (#760); die
