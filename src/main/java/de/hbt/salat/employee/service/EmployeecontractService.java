@@ -1,6 +1,5 @@
 package de.hbt.salat.employee.service;
 
-import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static de.hbt.salat.common.exception.ErrorCode.EC_OVERLAPS;
@@ -31,7 +30,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.AccessLevel;
-import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -65,7 +63,7 @@ import de.hbt.salat.notification.service.NotificationService;
 @Service
 @Transactional
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requiresManager = true)
 public class EmployeecontractService {
 
   private final ApplicationEventPublisher eventPublisher;
@@ -75,9 +73,7 @@ public class EmployeecontractService {
   private final OvertimeRepository overtimeRepository;
   private final EmployeecontractAuthorization employeecontractAuthorization;
   private final NotificationService notificationService;
-  private final AuthorizedUser authorizedUser;
 
-  @Authorized(requiresManager = true)
   public ContractStoredInfo createEmployeecontract(
       long employeeId,
       LocalDate validFrom,
@@ -134,7 +130,6 @@ public class EmployeecontractService {
         null);
   }
 
-  @Authorized(requiresManager = true)
   public ContractStoredInfo updateEmployeecontract(
       long employeecontractId,
       LocalDate validFrom,
@@ -292,6 +287,7 @@ public class EmployeecontractService {
     return info;
   }
 
+  @Authorized
   @Transactional(readOnly = true)
   public Duration getEffectiveVacationEntitlement(long employeecontractId, Year year) {
     return getEmployeecontractById(employeecontractId).getEffectiveVacationEntitlement(year);
@@ -346,7 +342,6 @@ public class EmployeecontractService {
     return overlapping;
   }
 
-  @Authorized(requiresManager = true)
   public Employeecontract toggleHide(long id) {
     Employeecontract ec = employeecontractRepository.findById(id)
         .orElseThrow(() -> new InvalidDataException(ErrorCode.EC_EMPLOYEE_CONTRACT_NOT_FOUND));
@@ -354,7 +349,6 @@ public class EmployeecontractService {
     return employeecontractRepository.save(ec);
   }
 
-  @Authorized(requiresManager = true)
   public void deleteEmployeeContractById(long employeeContractId) {
     Employeecontract ec = getEmployeecontractById(employeeContractId);
 
@@ -387,10 +381,12 @@ public class EmployeecontractService {
     }
   }
 
+  @Authorized
   public void updateOvertimeStatic(Long employeecontractId, Duration overtimeStaticNewValue) {
     getEmployeecontractById(employeecontractId).setOvertimeStatic(overtimeStaticNewValue);
   }
 
+  @Authorized
   public void updateReportReleaseData(Long employeecontractId, LocalDate releaseDate, LocalDate acceptanceDate) {
     Employeecontract employeecontract = getEmployeecontractById(employeecontractId);
     employeecontract.setReportReleaseDate(releaseDate);
@@ -398,12 +394,10 @@ public class EmployeecontractService {
   }
 
   /**
-   * Legt eine Überstundenkorrektur an und liefert ihre id. Nur das Management; die Prüfung steht
-   * hier und nicht nur am Controller, damit kein weiterer Aufrufer an ihr vorbeikommt (#1256).
+   * Legt eine Überstundenkorrektur an und liefert ihre id. Nur das Management, wie die Klasse es
+   * vorgibt (#1256).
    */
-  @Authorized(requiresManager = true)
   public long create(Overtime overtime) {
-    if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
     var saved = overtimeRepository.save(overtime);
     var employeecontract = overtime.getEmployeecontract();
     var event = new EmployeecontractUpdateEvent(employeecontract);
@@ -422,6 +416,7 @@ public class EmployeecontractService {
     return saved.getId();
   }
 
+  @Authorized
   @EventListener
   void onEmployeeAnonymized(EmployeeAnonymizedEvent event) {
     var contracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getEmployeeId());
@@ -431,6 +426,7 @@ public class EmployeecontractService {
     }
   }
 
+  @Authorized
   @EventListener
   void onEmployeeDelete(EmployeeDeleteEvent event) {
     var employeecontracts = employeecontractDAO.getEmployeeContractsByEmployeeId(event.getId());
@@ -439,14 +435,17 @@ public class EmployeecontractService {
     }
   }
 
+  @Authorized
   public Employeecontract getEmployeeContractValidAt(long employeeId, LocalDate date) {
     return employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, date);
   }
 
+  @Authorized
   public List<Employeecontract> getVisibleEmployeeContracts() {
     return employeecontractDAO.getVisibleEmployeeContracts();
   }
 
+  @Authorized
   public List<Employeecontract> getVisibleEmployeeContractsForAuthorizedUser() {
     return employeecontractDAO.getVisibleEmployeeContractsForAuthorizedUser();
   }
@@ -462,12 +461,14 @@ public class EmployeecontractService {
    * die Sichtbarkeit von <em>Buchungen</em> und muss über beendete Verträge zurückreichen. Beide liegen auf einer
    * Umsetzung, und welche der beiden gestellt wird, steht im Namen und nicht in einem Argument (#1096).
    */
+  @Authorized
   public Set<Long> getTeamEmployeeIdsIncludingExpired(long supervisorEmployeeId) {
     return employeecontractDAO.getTeamContractsIncludingExpired(supervisorEmployeeId).stream()
         .map(ec -> ec.getEmployee().getId())
         .collect(toSet());
   }
 
+  @Authorized
   public Optional<Employeecontract> getCurrentContract(long employeeId) {
     var contract = employeecontractDAO.getEmployeeContractByEmployeeIdAndDate(employeeId, today());
     if(contract != null) {
@@ -484,10 +485,12 @@ public class EmployeecontractService {
     return employeecontractRepository.findOne(spec);
   }
 
+  @Authorized
   public Employeecontract getEmployeecontractById(long employeeContractId) {
     return employeecontractDAO.getEmployeecontractById(employeeContractId);
   }
 
+  @Authorized
   public Employeecontract getEmployeecontractForView(long employeeContractId) {
     var ec = employeecontractDAO.getEmployeecontractById(employeeContractId);
     if (ec == null) return null;
@@ -503,6 +506,7 @@ public class EmployeecontractService {
    * aus {@link #getEmployeecontractForView(long)} setzt eine umgebende Transaktion auf Rollback, auch
    * wenn der Aufrufer sie fängt; diese Methode wirft deshalb nicht.
    */
+  @Authorized
   public Optional<Employeecontract> getReadableEmployeecontract(long employeeContractId) {
     return Optional.ofNullable(employeecontractDAO.getEmployeecontractById(employeeContractId))
         .filter(ec -> employeecontractAuthorization.isAuthorized(ec, AccessLevel.READ));
@@ -513,19 +517,23 @@ public class EmployeecontractService {
    * beiden Fragen, und der Name sagt es (#1096). Für Freigabe und Abnahme ist genau das richtig:
    * ein Vertrag endet, die Abnahme seiner Buchungen endet damit nicht.
    */
+  @Authorized
   public List<Employeecontract> getTeamContractsIncludingExpired(long teamManagerEmployeeId) {
     return employeecontractDAO.getTeamContractsIncludingExpired(teamManagerEmployeeId);
   }
 
+  @Authorized
   public List<Employeecontract> getAllEmployeeContracts() {
     return employeecontractDAO.getEmployeeContracts();
   }
 
+  @Authorized
   public List<Employeecontract> getEmployeeContractsByFilters(Boolean showInactive, String filter,
       Long filterEmployeeId, Boolean showHidden) {
     return employeecontractDAO.getEmployeeContractsByFilters(showInactive, filter, filterEmployeeId, showHidden);
   }
 
+  @Authorized
   public List<EmployeecontractListItemDTO> getEmployeeContractViewsByFilters(Boolean showInactive, String filter,
       Long filterEmployeeId, Boolean showHidden) {
     return employeecontractDAO.getEmployeeContractsByFilters(showInactive, filter, filterEmployeeId, showHidden).stream()
@@ -545,6 +553,7 @@ public class EmployeecontractService {
         .toList();
   }
 
+  @Authorized
   public List<Overtime> getOvertimeAdjustmentsByEmployeeContractId(long employeeContractId) {
     return overtimeRepository.findAllByEmployeecontractId(employeeContractId);
   }
@@ -555,11 +564,13 @@ public class EmployeecontractService {
    * keinen solchen Nachfolger; für ihn fragt die Methode die Datenbank gar nicht erst, denn Tagesansicht und Matrix
    * stellen die Frage je Buchung und je Tag.
    */
+  @Authorized
   public boolean hasReleasedSuccessor(Employeecontract contract) {
     return contract.getValidUntil() != null && contract.getValidUntil().isBefore(today())
         && employeecontractRepository.existsReleasedContractAfter(contract.getEmployee().getId(), contract.getValidUntil());
   }
 
+  @Authorized
   public List<Employeecontract> getFutureContracts(long employeecontractId) {
     var employeecontract = getEmployeecontractById(employeecontractId);
     if(employeecontract != null) {
