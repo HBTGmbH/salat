@@ -34,8 +34,11 @@ window.addEventListener('afterprint', () => {
   }
 });
 
+/* A contract the link named for the booking form (#760) wins over the selection there, so it gives
+ * way to the one chosen now; otherwise the form stayed on the old contract and its suborders. */
 function selectContract(id) {
   const url = new URL(window.location.href);
+  url.searchParams.delete('employeecontractId');
   url.searchParams.set('fEmployeeContractId', String(id));
   location.href = url.toString();
 }
