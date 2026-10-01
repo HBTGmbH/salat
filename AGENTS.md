@@ -225,6 +225,17 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
   der Outline-Varianten. Ausnahme `btn-link`: dort überschreibt ein Literal die Variable, `color`
   muss direkt gesetzt werden.
 
+## Gleichzeitige Änderungen (→ ADR-0033)
+
+- **Kein Controller fängt eine Ausnahme der Persistenz.** Einen Konflikt der Versionsnummer
+  (`OptimisticLockingFailureException`) übersetzt `ConcurrentModificationAspect` an jedem `@Service`
+  in eine `BusinessRuleException` `XX-0003`. Der Aspekt liegt außen um die Transaktion, weil der
+  Konflikt meist erst beim Commit entsteht, also nach dem Methodenrumpf. Ein `catch` im Service
+  sähe ihn nicht.
+- **Ein Formular, dessen Antwort spürbar dauert und dessen zweites Absenden kollidiert, trägt
+  `data-submit-once`** (heute die Prüfseiten von Freigabe und Abnahme). Einzelheiten in
+  [`docs/ui-style-guide.md` §5.5](docs/ui-style-guide.md).
+
 ## Legacy URL Redirects
 
 When a URL changes (controller rename, module move, path restructuring), register a permanent redirect in `de.hbt.salat.common.configuration.LegacyUrlRedirectConfig` so that bookmarks, history, and external links continue to work.
