@@ -72,6 +72,7 @@ public class MatrixService {
                 weekdayKey(d.getDayOfWeek()),
                 isWeekend(d),
                 holidays.containsKey(d),
+                holidays.get(d),
                 d.isEqual(today)))
             .toList();
 

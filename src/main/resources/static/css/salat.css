@@ -236,6 +236,33 @@
   color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)) !important; /* dunkel 4,92:1 */
 }
 
+/* Heute: Balken an beiden Enden des Tages in Einzel- und Matrixuebersicht. Dunkel dieselbe
+   Aufhellung wie bei text-primary: das volle Blau traegt dort 2,94:1 auf der Karte und 2,24:1 auf
+   dem gehoverten Kopf. Gemessen gegen Karte, Wochenende, Feiertag und Hover (WCAG 1.4.11, 3:1):
+   hell 3,34 bis 5,00:1, dunkel 3,76 bis 4,93:1 - am knappsten jeweils der gehoverte Kopf. */
+:root {
+  --salat-today: var(--tblr-primary);
+}
+
+[data-bs-theme="dark"] {
+  --salat-today: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white));
+}
+
+/* Hover ueber einem Tag - Spalte der Matrix, Zeile der Monatsuebersicht, Eintrag der Wochenleiste -
+   ueberall gleich: die Flaeche getoent, Kopf bzw. Datumskachel kraeftiger, Tag und Wochentag blau.
+   Das volle Blau traegt auf diesen Toenungen nirgends 4,5:1 (hell 2,73 bis 3,88:1, dunkel 1,94 bis
+   2,49:1); es wird deshalb je Modus gemischt, bis die engste Stelle reicht - die Datumskachel, auf
+   der beide Toenungen uebereinanderliegen. Gemessen: Kachel / Matrixzelle / Matrixkopf. */
+:root {
+  --salat-day-hover-bg: rgba(var(--tblr-primary-rgb), 0.18);
+  --salat-day-hover-head-bg: rgba(var(--tblr-primary-rgb), 0.28);
+  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 70%, #000); /* hell 4,58 / 6,51 / 5,61:1 */
+}
+
+[data-bs-theme="dark"] {
+  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 50%, var(--tblr-white)); /* dunkel 4,58 / 5,86 / 5,28:1 */
+}
+
 /* Rot geht dunkel nicht ueber die Beimischung von Weiss: die hellt zwar auf, nimmt dem Ton dabei
    aber die Saettigung - #e27474 stand neben der Badge desselben Namens wie ein ausgeblichenes Rot.
    Aufhellen muss es trotzdem, --tblr-danger selbst traegt auf der Karte nur 3,15:1.
@@ -364,8 +391,13 @@
   background-color: var(--tblr-purple) !important;
 }
 
+/* Die Fuellung steht als Variable, weil die Fehlerzellen der Matrix dasselbe Rot tragen. */
+:root {
+  --salat-danger-fill: color-mix(in srgb, var(--tblr-danger) 95%, #000);
+}
+
 .badge.bg-danger-lt {
-  background-color: color-mix(in srgb, var(--tblr-danger) 95%, #000) !important;
+  background-color: var(--salat-danger-fill) !important;
 }
 
 .badge.bg-red-lt {
@@ -443,6 +475,25 @@
    unveraendert, dunkel muss sie dafuer erst abgedunkelt werden. */
 .badge.bg-secondary-lt {
   background-color: var(--tblr-secondary) !important;
+}
+
+/* Legenden fuer getoente Flaechen: die Form der Badge, aber die Toenung der Flaeche, die sie
+   erklaeren - Wochenende und Feiertag sind in Matrix und Monatsuebersicht getoent, nicht gefuellt.
+   Die Schrift ist die normale Textfarbe wie auf jeder getoenten Flaeche, der Rand die Farbe der
+   Gitterlinien der Matrix - hell fast schwarz, dunkel hell, wie die Linien selbst. Er faerbt nur
+   den Rand, den die Badge ohnehin hat, die Groesse bleibt. Steht hinter den Badge-Regeln, weil
+   .badge-tint deren weisse bzw. dunkle Schrift ersetzt. */
+.badge.badge-tint {
+  color: var(--tblr-body-color) !important;
+  border-color: var(--tblr-body-color);
+}
+
+.badge.badge-tint.bg-azure-lt {
+  background-color: var(--tblr-azure-lt) !important;
+}
+
+.badge.badge-tint.bg-warning-lt {
+  background-color: var(--tblr-warning-lt) !important;
 }
 
 [data-bs-theme="dark"] .badge.bg-secondary-lt {
@@ -761,6 +812,18 @@ body {
    hier nichts bei, weil .card-table tfoot tr:first-child { border-top: 0 } spezifischer ist. */
 .card-table > tbody:has(+ tfoot) > tr:last-child > * {
   border-bottom: var(--tblr-border-width) solid var(--tblr-table-border-color);
+}
+
+/* Tabler rundet in Kartentabellen die obere Ecke der ersten und letzten Zelle jeder Zeile
+   (.card-table tr td:first-child { border-start-start-radius: var(--tblr-card-border-radius) },
+   entsprechend :last-child). Zu sehen ist das erst mit einem Hintergrund der Zelle - Hover, Zebra,
+   Toenung, ein Balken -, dann aber in jeder Zeile. An die Ecken der Karte stoesst nur die erste
+   Zeile der Tabelle: die des Kopfes oder, ist er ausgeblendet, die erste des Rumpfs.
+   :is(td, th) statt * hebt beide Selektoren auf Tablers Spezifitaet (0,2,2); gleich stark
+   entscheidet die Reihenfolge, und salat.css laedt nach Tabler. Mit * verlor der erste. */
+.card-table > * > tr:not(:first-child) > :is(td, th),
+.card-table > :is(thead, tbody, tfoot):not(.d-none) ~ * > tr > :is(td, th) {
+  border-radius: 0;
 }
 
 .navbar-brand a:hover {

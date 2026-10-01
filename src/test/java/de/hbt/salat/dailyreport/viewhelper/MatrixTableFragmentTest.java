@@ -20,14 +20,19 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.StringTemplateResolver;
 import de.hbt.salat.dailyreport.domain.MatrixData;
+import de.hbt.salat.dailyreport.domain.MatrixData.Cell;
 import de.hbt.salat.dailyreport.domain.MatrixData.DayHeader;
 import de.hbt.salat.dailyreport.domain.MatrixData.FooterDay;
+import de.hbt.salat.dailyreport.domain.MatrixData.Row;
 
 /**
  * „Nicht gearbeitet" hatte in der Matrix eine eigene Zeile unter Beginn, Pause und Ende, mit einem Punkt ohne Text
  * darin (#1159). Jetzt nimmt die Markierung an diesem Tag den Platz der drei Zeilen ein, die dort ohnehin leer sind:
  * eine Zelle mit {@code rowspan="3"} in der Zeile Beginn, keine in Pause und Ende. Ohne diese drei Zeilen (externer
  * Vertrag) steht sie in der Zeile GESAMT.
+ *
+ * <p>Ein Feiertag am Wochenende ist ein Feiertag: In der Matrix gewann das Wochenende, in der Einzelübersicht der
+ * Feiertag (#1261). Der Kopf nennt seinen Namen, und eine Fehlerzelle ist gefüllt statt getönt.
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 class MatrixTableFragmentTest {
@@ -40,9 +45,9 @@ class MatrixTableFragmentTest {
   /** Montag gearbeitet, Dienstag nicht gearbeitet, Mittwoch leer. */
   private static final MatrixData MONTH = new MatrixData(
       List.of(
-          new DayHeader(7, LocalDate.of(2026, 9, 7), "main.matrixoverview.weekdays.monday.text", false, false, false),
-          new DayHeader(8, LocalDate.of(2026, 9, 8), "main.matrixoverview.weekdays.tuesday.text", false, false, false),
-          new DayHeader(9, LocalDate.of(2026, 9, 9), "main.matrixoverview.weekdays.wednesday.text", false, false, false)),
+          new DayHeader(7, LocalDate.of(2026, 9, 7), "main.matrixoverview.weekdays.monday.text", false, false, null, false),
+          new DayHeader(8, LocalDate.of(2026, 9, 8), "main.matrixoverview.weekdays.tuesday.text", false, false, null, false),
+          new DayHeader(9, LocalDate.of(2026, 9, 9), "main.matrixoverview.weekdays.wednesday.text", false, false, null, false)),
       List.of(),
       List.of(),
       List.of(
@@ -50,6 +55,24 @@ class MatrixTableFragmentTest {
           new FooterDay("0:00", true, false, false, true, null, null, null, false, false, false),
           new FooterDay("0:00", false, false, false, true, null, null, null, false, false, false)),
       "7:30", null, null, false, null, false);
+
+  /** Freitag mit zu viel Arbeitszeit, Samstag ein Feiertag, Sonntag nur Wochenende. */
+  private static final MatrixData HOLIDAY_WEEKEND = new MatrixData(
+      List.of(
+          new DayHeader(2, LocalDate.of(2026, 10, 2), "main.matrixoverview.weekdays.friday.text", false, false, null, true),
+          new DayHeader(3, LocalDate.of(2026, 10, 3), "main.matrixoverview.weekdays.saturday.text", true, true,
+              "Tag der Deutschen Einheit", false),
+          new DayHeader(4, LocalDate.of(2026, 10, 4), "main.matrixoverview.weekdays.sunday.text", true, false, null, false)),
+      List.of(new Row("A1", "A1/01", "Kunde", "Auftrag", "Unterauftrag", List.of(
+          new Cell("11:00", false, false, false, List.of()),
+          new Cell("1:00", false, true, true, List.of()),
+          new Cell(null, true, true, false, List.of())), "12:00")),
+      List.of(),
+      List.of(
+          new FooterDay("11:00", false, false, false, false, "07:00", "0:30", "18:30", false, false, true),
+          new FooterDay("1:00", false, true, true, false, "10:00", "0:00", "11:00", false, false, false),
+          new FooterDay("0:00", false, true, false, true, null, null, null, false, false, false)),
+      "12:00", null, null, false, null, false);
 
   @Test
   void a_not_worked_day_takes_the_place_of_begin_break_and_end_with_one_marker() {
@@ -104,7 +127,37 @@ class MatrixTableFragmentTest {
     assertThat(row(html, "Pausendauer")).hasSize(1 + 3 + 1);
   }
 
+  @Test
+  void a_holiday_on_a_weekend_is_shown_as_holiday_in_head_body_and_footer() {
+    var html = render(HOLIDAY_WEEKEND, true, true);
+
+    var saturday = rows(html).stream().map(cells -> cells.get(2)).toList();
+    assertThat(saturday).hasSize(1 + 1 + 4);
+    assertThat(saturday).allSatisfy(cell -> assertThat(cell).contains("bg-warning-lt").doesNotContain("bg-azure-lt"));
+    assertThat(rows(html)).allSatisfy(cells -> assertThat(cells.get(3)).contains("bg-azure-lt"));
+  }
+
+  @Test
+  void the_head_of_a_holiday_names_it_as_tooltip_and_for_screen_readers() {
+    var head = rows(render(HOLIDAY_WEEKEND, true, true)).getFirst();
+
+    assertThat(head.get(2)).contains("title=\"Tag der Deutschen Einheit\"");
+    assertThat(head.get(2)).containsPattern("class=\"visually-hidden\"\\s*>Tag der Deutschen Einheit<");
+    assertThat(head.get(1)).doesNotContain("title=").doesNotContain("visually-hidden");
+  }
+
+  @Test
+  void an_error_cell_is_filled_instead_of_tinted() {
+    var total = row(render(HOLIDAY_WEEKEND, true, true), "GESAMT").get(1);
+
+    assertThat(total).contains("matrix-error").doesNotContain("bg-danger-lt").doesNotContain("text-danger");
+  }
+
   private static String render(boolean showBeginBreakEnd, boolean showNotWorked) {
+    return render(MONTH, showBeginBreakEnd, showNotWorked);
+  }
+
+  private static String render(MatrixData matrixData, boolean showBeginBreakEnd, boolean showNotWorked) {
     var fragments = new ClassLoaderTemplateResolver();
     fragments.setPrefix("templates/");
     fragments.setSuffix(".html");
@@ -132,7 +185,7 @@ class MatrixTableFragmentTest {
     });
 
     var context = new Context(Locale.GERMANY, Map.of(
-        "matrixData", MONTH, "showBeginBreakEnd", showBeginBreakEnd, "showNotWorked", showNotWorked));
+        "matrixData", matrixData, "showBeginBreakEnd", showBeginBreakEnd, "showNotWorked", showNotWorked));
     return engine.process(
         "<th:block th:replace=\"~{fragments/matrix-table :: matrixTable(${matrixData}, ${showBeginBreakEnd}, ${showNotWorked})}\"></th:block>",
         context);

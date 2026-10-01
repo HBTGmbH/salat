@@ -25,6 +25,7 @@ public record MatrixData(
         String weekdayKey,
         boolean weekend,
         boolean publicHoliday,
+        String holidayName,
         boolean today) {}
 
     public record Row(
