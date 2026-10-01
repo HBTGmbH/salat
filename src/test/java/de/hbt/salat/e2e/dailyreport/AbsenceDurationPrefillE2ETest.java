@@ -6,6 +6,7 @@ import static de.hbt.salat.e2e.E2ETestData.ABSENCE_FULLY_BOOKED_DAY;
 import static de.hbt.salat.e2e.E2ETestData.ABSENCE_PARTLY_BOOKED_DAY;
 import static de.hbt.salat.e2e.E2ETestData.ABSENCE_WEEKEND_DAY;
 import static de.hbt.salat.e2e.E2ETestData.EMPLOYEE_ABSENCE_SIGN;
+import static de.hbt.salat.e2e.E2ETestData.EMPLOYEE_WITHOUT_BOOKINGS_SIGN;
 import static de.hbt.salat.e2e.E2ETestData.SUBORDER_ALPHA_DEV_SIGN;
 import static de.hbt.salat.e2e.E2ETestData.SUBORDER_KRANKHEIT_SIGN;
 import static de.hbt.salat.e2e.E2ETestData.SUBORDER_STANDBY_SIGN;
@@ -156,6 +157,26 @@ class AbsenceDurationPrefillE2ETest extends PlaywrightE2ETestBase {
       page.navigate(urlWithLogin(NEW_BOOKING + "?date=" + ABSENCE_PARTLY_BOOKED_DAY + "&suborderId=" + sick
           + "&duration=1:00", EMPLOYEE_ABSENCE_SIGN));
       assertThat(duration(page)).hasValue("1:00");
+    });
+  }
+
+  /**
+   * Ohne Favorit und ohne Unterauftrag in der Adresse steht der erste der Liste vorgewählt — bei
+   * einer Person mit nur den Standardaufträgen ist das {@code KRANK}. Gewählt hat sie niemand, also
+   * schlägt das Formular nichts vor, auch nicht nach einem Datumswechsel. Sonst trüge jede „Neue
+   * Buchung" den Resttag ein, und er bliebe beim Wechsel auf ein Projekt stehen. Die Person ohne
+   * Buchungen hat nur die Standardaufträge; der Test speichert nichts, sie bleibt also ohne.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void an_absence_preselected_only_as_the_first_of_the_list_proposes_nothing(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE_WITHOUT_BOOKINGS_SIGN, NEW_BOOKING + "?date=" + ABSENCE_FREE_DAY, page -> {
+      assertThat(page.locator("#suborderId option:checked")).hasAttribute("data-absence", "true");
+      assertThat(duration(page)).hasValue("");
+
+      changeDate(page, ABSENCE_PARTLY_BOOKED_DAY);
+
+      assertThat(duration(page)).hasValue("");
     });
   }
 
