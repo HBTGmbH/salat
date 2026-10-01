@@ -776,6 +776,13 @@ Text nebeneinander.
   Einen Arbeitstag ohne Buchung markiert „Nicht gearbeitet" in der Übersicht vor der Freigabe an
   seinem Tag ebenfalls ohne Dialog: die Tagesansicht nimmt die Markierung zurück.
 
+- **Einmal absenden** (#1237, → ADR-0033): Ein Formular mit `data-submit-once` geht einmal hinaus.
+  Vom Absenden bis zur Antwort tragen seine Knöpfe die Klasse `disabled` und `aria-disabled`, nicht
+  das Attribut `disabled` — das nähme den gedrückten Knopf aus den Formulardaten. Ein zweiter Klick
+  oder Enter schickt nichts ab, und der Bestätigungsdialog fragt dann nicht noch einmal. Gesetzt
+  ist es an den Knöpfen der beiden Prüfseiten, deren Antwort ein, zwei Sekunden braucht. Für HTMX
+  gilt es nicht, HTMX verhindert das Absenden selbst.
+
 - **Eigenständige modale Dialoge** bleiben, wo mehr als eine Bestätigung verlangt wird:
   Benutzerwechsel (`layout/base.html`, die Auswahl findet im Dialog selbst statt), Teilen
   (`daily.html`), Anonymisieren (`employee-form.html`, Danger Zone mit Doppelbestätigung) und der
