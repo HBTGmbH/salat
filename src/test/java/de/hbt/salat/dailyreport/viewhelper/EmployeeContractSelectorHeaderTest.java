@@ -112,6 +112,9 @@ class EmployeeContractSelectorHeaderTest {
     var messages = new ResourceBundleMessageSource();
     messages.setBasename("de/hbt/salat/web/MessageResources");
     messages.setDefaultEncoding("UTF-8");
+    // Deutsch ist das Bundle ohne Suffix. Mit Rückfall auf die Systemsprache fände Locale.GERMANY
+    // auf einem englischen Rechner — dem CI-Runner — zuerst MessageResources_en.
+    messages.setFallbackToSystemLocale(false);
     engine.setTemplateEngineMessageSource(messages);
 
     var context = new Context(Locale.GERMANY);
