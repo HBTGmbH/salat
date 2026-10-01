@@ -61,6 +61,7 @@ public enum ErrorCode {
   SO_DELETE_GOT_VETO("SO-0002", "suborder cannot be deleted due to veto"),
   SO_PARENTORDER_CYCLE("SO-0003", "parent would introduce a cycle or self-reference in the suborder hierarchy"),
   SO_NOT_FOUND("SO-0004", "suborder was not found"),
+  SO_PARENTORDER_INVALID("SO-0005", "parent suborder does not exist or belongs to another customer order"),
 
   TR_TIME_REPORT_NOT_FOUND("TR-0001", "timereportId must match a timereport"),
   TR_EMPLOYEE_CONTRACT_NOT_FOUND("TR-0002", "employeeContractById must match an employee contract"),

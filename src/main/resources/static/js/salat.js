@@ -68,6 +68,9 @@ const tomSelectConfig = (el) => {
     // A field whose values are not all known in advance says so with data-allow-create: the offered
     // options stay a convenience, and what somebody types is kept (#1074).
     create: el.dataset.allowCreate === 'true',
+    // TomSelect drops an option without a value unless told otherwise; a select whose empty value
+    // means something says so with data-allow-empty-option (#1243: the top level of a suborder)
+    allowEmptyOption: el.dataset.allowEmptyOption === 'true',
     maxItems: multi ? null : 1,
     maxOptions: 1000,
     // Without remove_button a chip goes away only by keyboard: activate it, then Backspace. On a
