@@ -191,13 +191,14 @@ public class SuborderService {
     }
 
     so.setHide(data.hide());
-    Suborder parentOrderCandidate = suborderDAO.getSuborderById(data.parentId());
-    // Falls die Suborder nicht zum Customerorder passt (Kollision der IDs), ist sie kein geeigneter Kandidat (HACK, da UI die ID manchmal auch mit CustomerOrderID besetzt)
-    if (parentOrderCandidate != null && !Objects.equals(parentOrderCandidate.getCustomerorder(), customerorder)) {
-      if (!data.parentId().equals(data.customerorderId())) {
-        throw new IllegalStateException("parentId is neither a valid suborderId nor the customerorderId, but: " + data.parentId());
+    // parentId null is the top level (#1243); any other value names a suborder of the same order —
+    // ids of orders and suborders are counted independently, so it is never read as the order's id
+    Suborder parentOrderCandidate = null;
+    if (data.parentId() != null) {
+      parentOrderCandidate = suborderDAO.getSuborderById(data.parentId());
+      if (parentOrderCandidate == null || !Objects.equals(parentOrderCandidate.getCustomerorder(), customerorder)) {
+        throw new BusinessRuleException(ErrorCode.SO_PARENTORDER_INVALID);
       }
-      parentOrderCandidate = null;
     }
     so.setParentorder(parentOrderCandidate);
 
@@ -273,7 +274,7 @@ public class SuborderService {
   }
 
   private SuborderDTO createSuborderDTO(Suborder so, LocalDate newFrom, LocalDate newUntil) {
-    Long parentId = so.getParentorder() != null ? so.getParentorder().getId() : so.getCustomerorder().getId();
+    Long parentId = so.getParentorder() != null ? so.getParentorder().getId() : null;
     String validUntil = newUntil != null ? DateUtils.format(newUntil) : "";
     String debithours = (so.getDebithours() != null && !so.getDebithours().isZero())
         ? DurationUtils.format(so.getDebithours()) : null;

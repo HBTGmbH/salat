@@ -126,7 +126,6 @@ public class SuborderController {
     form.setOrderType(OrderType.STANDARD);
     form.setCustomerId(fCustomerId);
     form.setCustomerorderId(orderId);
-    form.setParentId(orderId);
     addFormModel(model, form, false, true);
     prefillValidity(form);
     return "order/sub-order-form";
@@ -246,10 +245,10 @@ public class SuborderController {
   @ResponseBody
   public String generateSign(
       @RequestParam Long customerorderId,
-      @RequestParam Long parentId,
+      @RequestParam(required = false) Long parentId,
       @RequestParam(required = false) Long currentId) {
     List<Suborder> siblings;
-    if (Objects.equals(parentId, customerorderId)) {
+    if (parentId == null) {
       siblings = suborderService.getSubordersByCustomerorderId(customerorderId).stream()
           .filter(so -> so.getParentorder() == null)
           .toList();
@@ -287,7 +286,7 @@ public class SuborderController {
   @PostMapping("/change-customerorder")
   public String changeCustomerorder(@ModelAttribute("suborderForm") SuborderForm form, Model model,
                                     HttpServletRequest request) {
-    form.setParentId(form.getCustomerorderId());
+    form.setParentId(null);
     addFormModel(model, form, form.getId() != null);
     prefillValidity(form);
     boolean htmxRequest = "true".equals(request.getHeader("HX-Request"));
@@ -310,20 +309,20 @@ public class SuborderController {
   }
 
   private void prefillValidity(SuborderForm form) {
-    if(form.getParentId() != null) {
-      if(Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+    if (form.getParentId() == null) {
+      if (form.getCustomerorderId() != null) {
         var order = customerorderService.getCustomerorderById(form.getCustomerorderId());
         var from = order.getFromDate();
         var until = order.getUntilDate();
         form.setValidFrom(format(from));
         form.setValidUntil(until != null ? format(until) : "");
-      } else {
-        Suborder order = suborderService.getSuborderById(form.getParentId());
-        var from = order.getFromDate();
-        var until = order.getUntilDate();
-        form.setValidFrom(format(from));
-        form.setValidUntil(until != null ? format(until) : "");
       }
+    } else {
+      Suborder order = suborderService.getSuborderById(form.getParentId());
+      var from = order.getFromDate();
+      var until = order.getUntilDate();
+      form.setValidFrom(format(from));
+      form.setValidUntil(until != null ? format(until) : "");
     }
   }
 
@@ -410,7 +409,7 @@ public class SuborderController {
     }
 
     // Parent suborder date range check
-    if (form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+    if (form.getParentId() != null) {
       Suborder parentSuborder = suborderService.getSuborderById(form.getParentId());
       if (parentSuborder != null
           && Objects.equals(parentSuborder.getCustomerorder().getId(), form.getCustomerorderId())
@@ -434,7 +433,7 @@ public class SuborderController {
       Long currentId = form.getId();
       String signToCheck = form.getSign();
       List<Suborder> siblings;
-      if (form.getParentId() == null || Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+      if (form.getParentId() == null) {
         siblings = suborderService.getSubordersByCustomerorderId(form.getCustomerorderId()).stream()
             .filter(s -> s.getParentorder() == null)
             .filter(s -> !s.getId().equals(currentId))
@@ -501,7 +500,7 @@ public class SuborderController {
     model.addAttribute("customerorders", customerorders);
     if (form.getCustomerorderId() == null && !customerorders.isEmpty()) {
       form.setCustomerorderId(customerorders.getFirst().getId());
-      form.setParentId(form.getCustomerorderId());
+      form.setParentId(null);
     }
 
     // Suborders of the current customer order for parent dropdown — exclude the suborder being
@@ -516,7 +515,7 @@ public class SuborderController {
     model.addAttribute("parentSuborders", parentSuborders);
     model.addAttribute("currentCustomerorder", currentCustomerorder);
 
-    if(form.getParentId() != null && !Objects.equals(form.getParentId(), form.getCustomerorderId())) {
+    if(form.getParentId() != null) {
       var matched = parentSuborders.stream()
               .map(AuditedEntity::getId)
               .anyMatch(id -> Objects.equals(id, form.getParentId()));
@@ -549,8 +548,7 @@ public class SuborderController {
       form.setDebithours(DurationUtils.format(so.getDebithours()));
       form.setDebithoursunit(so.getDebithoursunit());
     }
-    Long parentId = so.getParentorder() != null ? so.getParentorder().getId() : so.getCustomerorder().getId();
-    form.setParentId(parentId);
+    form.setParentId(so.getParentorder() != null ? so.getParentorder().getId() : null);
     return form;
   }
 }

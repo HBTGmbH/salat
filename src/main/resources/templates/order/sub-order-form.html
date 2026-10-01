@@ -47,13 +47,17 @@
         <div class="col-md-4" id="parentIdInput">
           <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
           <select class="form-select tomselect" id="parentId" th:field="*{parentId}"
+                  data-allow-empty-option="true"
                   th:hx-post="@{/orders/suborders/change-parent-order}"
                   hx-swap="none"
                   hx-include="closest form"
                   hx-trigger="change">
             <!-- The current customer order as top-level (no parent suborder) -->
+            <!--/* #1243: die oberste Ebene traegt den leeren Wert, nicht die id des Auftrags — Auftraege
+                   und Unterauftraege zaehlen ihre ids unabhaengig, die id koennte auch einen Unterauftrag
+                   meinen. data-allow-empty-option haelt die Option in TomSelect waehlbar. */-->
             <option th:if="${currentCustomerorder != null}"
-                    th:value="${currentCustomerorder.id}"
+                    value=""
                     th:text="${currentCustomerorder.signAndDescription}">
             </option>
             <!-- All suborders of the selected customer order as optional parent -->
@@ -206,13 +210,17 @@
       <div class="col-md-4" id="parentIdInput" th:hx-swap-oob="${parentSubordersChanged}">
         <label class="form-label" th:for="parentId" th:text="#{main.suborder.parent.text}">Parent</label>
         <select class="form-select tomselect" id="parentId" th:field="*{parentId}"
+                data-allow-empty-option="true"
                 th:hx-post="@{/orders/suborders/change-parent-order}"
                 hx-swap="none"
                 hx-include="closest form"
                 hx-trigger="change">
           <!-- The current customer order as top-level (no parent suborder) -->
+          <!--/* #1243: die oberste Ebene traegt den leeren Wert, nicht die id des Auftrags — Auftraege
+                 und Unterauftraege zaehlen ihre ids unabhaengig, die id koennte auch einen Unterauftrag
+                 meinen. data-allow-empty-option haelt die Option in TomSelect waehlbar. */-->
           <option th:if="${currentCustomerorder != null}"
-                  th:value="${currentCustomerorder.id}"
+                  value=""
                   th:text="${currentCustomerorder.signAndDescription}">
           </option>
           <!-- All suborders of the selected customer order as optional parent -->
