@@ -372,6 +372,7 @@ Before writing any code:
 
 - [ ] An issue exists and its type is set (`Bug`, `Feature`, `Task`) — the type belongs to the issue, not to the pull request, and is set before the branch is created
 - [ ] The issue describes the current behaviour (with references into the code), the desired behaviour, and acceptance criteria as a checklist
+- [ ] The acceptance criteria are reviewed: each one can be checked, and together they say when the issue is done. Gaps are closed in the issue before coding starts
 - [ ] `main` is checked out and up-to-date: `git checkout main && git pull`
 - [ ] A dedicated branch has been created: name must start with `feature/` (new capability) or `bug/` (defect fix), e.g. `feature/683-multiple-supervisors`
 
@@ -431,6 +432,7 @@ A feature or fix is considered done when **all** of the following are true:
 - [ ] Every commit message starts with the issue ID (or `#noissue`), e.g. `#930 - <short description>`
 - [ ] PR body contains `Closes #NNN`
 - [ ] Issue type set via GitHub GraphQL API
+- [ ] The fulfilled acceptance criteria are ticked off in the issue, wherever their checklist stands (body or comment). A criterion that is not fulfilled stays open, and the PR says why
 - [ ] PR description includes: *"Reviewed AGENTS.md; changes comply with architecture, view, and security guidelines."*
 
 ---
