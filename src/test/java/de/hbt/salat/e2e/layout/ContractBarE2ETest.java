@@ -43,6 +43,28 @@ class ContractBarE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * A booking form opened for a named contract (#760) — the dashboard and the review pages link it
+   * that way — follows a switch in the header too. The named contract used to win over the new
+   * selection, so the form went on offering the suborders of the old one.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_form_opened_for_a_named_contract_follows_the_switch(E2EBrowser browser) {
+    runAsUser(browser, PERSON, "/dailyreport/timereports/new", page -> {
+      String current = page.locator("#globalEmployeeContractId").inputValue();
+      page.navigate(urlWithLogin("/dailyreport/timereports/new?employeecontractId=" + current, PERSON));
+      assertThat(page.locator("input[type=hidden][name=employeecontractId]")).hasValue(current);
+
+      bar(page).getByRole(AriaRole.BUTTON,
+          new Locator.GetByRoleOptions().setName("01.01.2020 – 31.12.2025")).click();
+
+      page.waitForURL(Pattern.compile(".*fEmployeeContractId=\\d+.*"));
+      assertThat(bar(page)).containsText("Vertrag 01.01.2020 – 31.12.2025");
+      assertThat(page.locator("input[type=hidden][name=employeecontractId]")).hasCount(0);
+    });
+  }
+
   /** One contract, nothing to say: the selector alone, without the bar. */
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
