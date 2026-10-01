@@ -18,7 +18,9 @@
          Tage, sie sperrt nur ein Befund ueber den Zeitraum - dann zeigt die Seite ihn statt Bilanz,
          Buchungen und Knopf.
          Ohne Tagesarbeitszeit wird kein Ueberstundenkonto gefuehrt (die Karte darueber sagt es),
-         also wird auch keines festgeschrieben: die Folge nennt dann nur, wer danach noch aendert. */-->
+         also wird auch keines festgeschrieben: die Folge nennt dann nur, wer danach noch aendert.
+         data-submit-once (#1237): ein zweiter Klick, waehrend die Abnahme noch laeuft, schickt
+         nichts ab; kommt trotzdem eine zweite Anfrage an, fuehrt der Controller in die Uebersicht. */-->
   <div class="card mb-3 d-print-none" id="review-action"
        th:with="beginText=${#temporals.format(review.begin, 'dd.MM.yyyy')},
                 endText=${#temporals.format(review.end, 'dd.MM.yyyy')}">
@@ -31,7 +33,8 @@
          th:text="#{main.release.review.action.accept.noaccount.hint.text}">Danach kann nur noch die Geschäftsführung die Buchungen ändern.</p>
     </div>
     <div class="card-footer d-flex flex-wrap align-items-center gap-2">
-      <form th:if="${review.detailed and review.actionAllowed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0">
+      <form th:if="${review.detailed and review.actionAllowed}" method="post" th:action="@{${reviewLinks.actionUrl}}" class="m-0"
+            data-submit-once>
         <input type="hidden" name="contractId" th:value="${review.employeecontractId}"/>
         <input type="hidden" name="periodBegin" th:value="${review.begin}"/>
         <input type="hidden" name="periodEnd" th:value="${review.end}"/>

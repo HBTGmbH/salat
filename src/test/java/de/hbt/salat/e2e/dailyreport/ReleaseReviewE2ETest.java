@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Request;
 import com.microsoft.playwright.options.AriaRole;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -22,8 +25,9 @@ import de.hbt.salat.e2e.PlaywrightE2ETestBase;
  *
  * <p>Every case runs on people of its own, seeded with their bookings by {@link E2ETestData}, so
  * no other class sees their periods and ema's June stays untouched. The first four cases only look
- * at {@link E2ETestData#EMPLOYEE_REVIEWED_SIGN}'s September and October, the fifth at
- * {@link E2ETestData#EMPLOYEE_STRAY_SIGN}'s September; the last one books,
+ * at {@link E2ETestData#EMPLOYEE_REVIEWED_SIGN}'s September and October, the fifth and the two on
+ * submitting once (#1237) at {@link E2ETestData#EMPLOYEE_STRAY_SIGN}'s September — those two hold
+ * their release back before it reaches the server; the last one books,
  * edits and releases, on a person of its own per browser, because a period can be released only
  * once. The clock stands after all of these periods — at the class default the months would lie
  * in the future.
@@ -187,6 +191,61 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * A second click while the release is still on its way sends nothing (#1237): a second request
+   * racing the first one fails on the version of the contract. The recorder stands in for the answer:
+   * it notes whether each submit would go out and then keeps the page, so "on its way" lasts as long
+   * as the test needs, and nothing reaches the server — the period stays open for both browsers.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_second_click_while_the_release_is_on_its_way_sends_nothing(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_STRAY_SIGN, "/release/review?until=" + E2ETestData.STRAY_MONTH, page -> {
+      List<Request> posted = blockReleaseRequests(page);
+      recordSubmits(page);
+      Locator release = releaseButton(page);
+
+      release.click();
+      // locked for the mouse and for assistive technology alike
+      assertThat(release).isDisabled();
+      assertThat(release).hasClass(Pattern.compile("\\bdisabled\\b"));
+      // Enter still reaches the form, and is dropped there
+      release.press("Enter");
+
+      assertEquals(List.of(false, true), submits(page), "first submit would go out, the second one is prevented");
+      assertEquals(List.of(), posted);
+    });
+  }
+
+  /**
+   * The lock and the confirmation dialog (#1032) both listen to the submit, and the dialog submits a
+   * second time once confirmed. A form with both goes out exactly once, and a click on it while it is
+   * on its way does not ask again. The release has no confirmation (ADR-0027, addendum), so the test
+   * gives its form one.
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_confirmed_form_goes_out_exactly_once(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_STRAY_SIGN, "/release/review?until=" + E2ETestData.STRAY_MONTH, page -> {
+      List<Request> posted = blockReleaseRequests(page);
+      page.locator("#review-action form").evaluate(
+          "form => { form.setAttribute('data-confirm', ''); form.dataset.confirmText = 'E2E-Rückfrage'; }");
+      recordSubmits(page);
+      Locator release = releaseButton(page);
+
+      release.click();
+      assertThat(confirmDialog(page)).containsText("E2E-Rückfrage");
+      confirmAction(page);
+      assertThat(release).isDisabled();
+      release.press("Enter");
+
+      assertThat(page.locator("#confirmModal")).not().isVisible();
+      // the submit held back for the question never reaches the recorder, the confirmed one does
+      assertEquals(List.of(false, true), submits(page), "confirmed submit would go out, the second one is prevented");
+      assertEquals(List.of(), posted);
+    });
+  }
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void the_missing_days_are_booked_or_marked_not_worked_a_booking_edited_and_the_period_released(E2EBrowser browser) {
@@ -257,6 +316,41 @@ class ReleaseReviewE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator(".alert-success")).containsText("Buchungen vom 23.11.2026 bis 30.11.2026 freigegeben.");
       assertThat(page.locator("body")).containsText("2026-11-30");
     });
+  }
+
+  /**
+   * A guard, not part of what is tested: should a release get past the recorder after all, it is
+   * aborted before it reaches the server and shows up in the returned list.
+   */
+  private static List<Request> blockReleaseRequests(Page page) {
+    List<Request> posted = new ArrayList<>();
+    page.route(Pattern.compile(".*/release$"), route -> {
+      if ("POST".equals(route.request().method())) {
+        posted.add(route.request());
+        route.abort();
+      } else {
+        route.resume();
+      }
+    });
+    return posted;
+  }
+
+  /**
+   * Records every submit that reaches {@code document} after the handlers of salat.js — registered
+   * later, the recorder runs last — and whether one of them prevented it, that is whether it would
+   * have gone out. Then it prevents the submit itself: the page stays, as it does while the answer
+   * is still on its way. A real navigation cannot be held for that: Playwright waits for it to finish
+   * before it evaluates or asserts anything on the page again.
+   */
+  private static void recordSubmits(Page page) {
+    page.evaluate("() => { window.e2eSubmits = [];"
+        + " document.addEventListener('submit', event => {"
+        + " window.e2eSubmits.push(event.defaultPrevented); event.preventDefault(); }); }");
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<Boolean> submits(Page page) {
+    return (List<Boolean>) page.evaluate("() => window.e2eSubmits");
   }
 
   private static String reviewUrl() {
