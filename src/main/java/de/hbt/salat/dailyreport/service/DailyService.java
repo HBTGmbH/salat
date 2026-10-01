@@ -114,6 +114,23 @@ public class DailyService {
             editableIds, workingdayEditable, canCreate, ReportPeriod.statusOn(contract, date));
     }
 
+    /**
+     * What is left of the target of the day once the working time already booked on it is taken off
+     * — the duration the booking form proposes for an absence (#1214). It is the target of the day,
+     * not the daily working time of the contract (#857), so a weekend, a public holiday or a day
+     * outside the contract leaves nothing, and so does a contract without daily working time. Standby
+     * is no working time and leaves the rest untouched (#463). The rest never turns negative: on a
+     * day booked to the target or beyond, a proposal would already break #397.
+     */
+    @Transactional(readOnly = true)
+    public Duration getRemainingDayTarget(LocalDate date, long employeeContractId) {
+        Duration dayTarget = overtimeService.calculateWorkingTimeTarget(employeeContractId, date, date);
+        Duration booked = timereportService.getTimereportsByDateAndEmployeeContractId(employeeContractId, date)
+            .stream().map(TimereportDTO::getWorkingTime).reduce(Duration.ZERO, Duration::plus);
+        Duration remaining = dayTarget.minus(booked);
+        return remaining.isPositive() ? remaining : Duration.ZERO;
+    }
+
     @Transactional(readOnly = true)
     public ListViewData buildListView(YearMonth yearMonth, long employeeContractId) {
         var contract = employeecontractService.getEmployeecontractById(employeeContractId);

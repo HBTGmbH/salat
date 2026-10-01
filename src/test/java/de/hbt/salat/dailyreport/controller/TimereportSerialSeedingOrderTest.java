@@ -36,6 +36,7 @@ import de.hbt.salat.dailyreport.preferences.DailyPreferences;
 import de.hbt.salat.dailyreport.preferences.DurationInputMode;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferenceService;
 import de.hbt.salat.dailyreport.preferences.TimereportPreferences;
+import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.AuthorizedEmployee;
@@ -73,6 +74,7 @@ class TimereportSerialSeedingOrderTest {
   @Mock private SuborderService suborderService;
   @Mock private EmployeeorderService employeeorderService;
   @Mock private WorkingdayService workingdayService;
+  @Mock private DailyService dailyService;
   @Mock private FavoriteService favoriteService;
   @Mock private EmployeeService employeeService;
   @Mock private MessageSourceAccessor messages;
