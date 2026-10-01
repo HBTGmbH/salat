@@ -25,6 +25,7 @@ import static de.hbt.salat.common.exception.ErrorCode.WD_BREAK_TOO_SHORT_6;
 import static de.hbt.salat.common.exception.ErrorCode.WD_NOT_WORKED_TIMEREPORTS_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.WD_NO_TIMEREPORT;
 import static de.hbt.salat.common.exception.ErrorCode.WD_UPSERT_REQ_EMPLOYEE_OR_MANAGER;
+import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
@@ -88,6 +89,8 @@ class ReleaseControllerTest {
   private static final long OTHER_CONTRACT_ID = 99L;
   private static final LocalDate BEGIN = LocalDate.of(2026, 8, 1);
   private static final LocalDate END = LocalDate.of(2026, 8, 31);
+  static final String CONCURRENT_MODIFICATION_TEXT = "Die Daten wurden gleichzeitig an anderer Stelle geändert, "
+      + "etwa durch einen doppelten Klick. Bitte prüfe den aktuellen Stand.";
 
   @Mock private EmployeecontractService employeecontractService;
   @Mock private EmployeeService employeeService;
@@ -260,6 +263,22 @@ class ReleaseControllerTest {
         .andExpect(flash().attribute("toastError",
             "Der Zeitraum hat sich geändert, seit die Übersicht angezeigt wurde, etwa durch eine Freigabe oder "
                 + "Abnahme in einem anderen Fenster. Bitte prüfe die aktualisierte Übersicht."));
+  }
+
+  /**
+   * Ein zweiter Klick schickt die Freigabe ein zweites Mal ab (#1237). Laufen beide gleichzeitig durch
+   * den Vergleich des Zeitraums, scheitert die zweite erst beim Schreiben an der Versionsnummer, und
+   * {@code ConcurrentModificationAspect} macht daraus {@code XX-0003}. Gespeichert hat die erste; der
+   * Toast sagt das, statt nur zu melden, dass nichts freigegeben wurde.
+   */
+  @Test
+  void a_concurrent_release_leads_back_into_the_review_and_says_why() throws Exception {
+    doThrow(new BusinessRuleException(XX_CONCURRENT_MODIFICATION))
+        .when(releaseService).releaseTimereports(CONTRACT_ID, BEGIN, END);
+
+    perform(release(CONTRACT_ID, BEGIN, END).param("view", "day").cookie(remembered(CONTRACT_ID)))
+        .andExpect(redirectedUrl("/release/review?until=2026-08&view=day"))
+        .andExpect(flash().attribute("toastError", CONCURRENT_MODIFICATION_TEXT));
   }
 
   /**

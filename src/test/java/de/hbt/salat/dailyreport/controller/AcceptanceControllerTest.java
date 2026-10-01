@@ -22,6 +22,7 @@ import static de.hbt.salat.common.exception.ErrorCode.RL_ACCEPT_NOT_ALLOWED;
 import static de.hbt.salat.common.exception.ErrorCode.RL_REVIEWED_PERIOD_CHANGED;
 import static de.hbt.salat.common.exception.ErrorCode.TR_EMPLOYEE_CONTRACT_NOT_FOUND;
 import static de.hbt.salat.common.exception.ErrorCode.WD_NO_TIMEREPORT;
+import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -260,6 +261,19 @@ class AcceptanceControllerTest {
             .param("contractId", "42").param("periodBegin", "2026-08-01").param("periodEnd", "2026-08-31"))
         .andExpect(redirectedUrl("/acceptance/accept/review?contractId=42&until=2026-08"))
         .andExpect(flash().attribute("toastError", "Die Buchungen wurden nicht abgenommen."));
+  }
+
+  /** Zwei gleichzeitige Klicks auf „Abnehmen“ (#1237): die zweite scheitert an der Versionsnummer. */
+  @Test
+  void a_concurrent_acceptance_leads_back_into_the_acceptance_review_and_says_why() throws Exception {
+    doThrow(new BusinessRuleException(XX_CONCURRENT_MODIFICATION))
+        .when(releaseService).acceptTimereports(CONTRACT_ID, BEGIN, END);
+
+    mockMvc.perform(post("/acceptance/accept")
+            .param("contractId", "42").param("periodBegin", "2026-08-01").param("periodEnd", "2026-08-31")
+            .param("view", "day"))
+        .andExpect(redirectedUrl("/acceptance/accept/review?contractId=42&until=2026-08&view=day"))
+        .andExpect(flash().attribute("toastError", ReleaseControllerTest.CONCURRENT_MODIFICATION_TEXT));
   }
 
   /** Eine fehlende Berechtigung bleibt die Ausnahme, aus der die Fehlerbehandlung eine 403 macht. */

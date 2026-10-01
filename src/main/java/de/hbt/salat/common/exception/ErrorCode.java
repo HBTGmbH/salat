@@ -214,6 +214,7 @@ public enum ErrorCode {
 
   XX_UNHANDLED_SERVLET_EXCEPTION("XX-0001", "Unhandled servlet exception"),
   XX_DATA_MISSING("XX-0002", "Required data missing"),
+  XX_CONCURRENT_MODIFICATION("XX-0003", "the data was changed concurrently"),
   ;
 
   private final String code;

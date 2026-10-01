@@ -1,14 +1,17 @@
 package de.hbt.salat.dailyreport.controller;
 
 import static de.hbt.salat.common.exception.ErrorCode.RL_REVIEWED_PERIOD_CHANGED;
+import static de.hbt.salat.common.exception.ErrorCode.XX_CONCURRENT_MODIFICATION;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.ui.Model;
+import de.hbt.salat.common.exception.ErrorCode;
 import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.TimereportReview;
@@ -23,8 +26,8 @@ import de.hbt.salat.dailyreport.viewhelper.TimereportReviewViewHelper;
  * <p>Scheitert das Abschicken, landet die Person wieder in der Übersicht, und die zeigt die Befunde
  * an ihrem Tag oder über dem Zeitraum. Ein Toast je Befund wiederholte sie nur (#760: nicht als
  * Toast); er sagt deshalb nur, dass nichts freigegeben oder abgenommen wurde. Einzig die geänderte
- * Übersicht ({@code RL-0008}) nennt er selbst — sie erklärt, warum die Seite jetzt anders aussieht
- * als vor dem Klick.
+ * Übersicht ({@code RL-0008}) und die gleichzeitige Änderung ({@code XX-0003}) nennt er selbst — sie
+ * erklären, warum die Seite jetzt anders aussieht als vor dem Klick.
  */
 final class ReviewPage {
 
@@ -32,6 +35,7 @@ final class ReviewPage {
   static final String ACCEPTANCE_VIEW_NAME = "dailyreport/acceptance-review";
 
   private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+  private static final Set<ErrorCode> NAMED_FAILURES = Set.of(RL_REVIEWED_PERIOD_CHANGED, XX_CONCURRENT_MODIFICATION);
 
   private ReviewPage() {
   }
@@ -79,19 +83,20 @@ final class ReviewPage {
         new Object[] {DATE.format(begin), DATE.format(end)});
   }
 
-  /**
-   * Die eine Meldung, wenn das Abschicken scheitert: die geänderte Übersicht beim Namen, alles andere
-   * unter {@code genericKey} — die Übersicht zeigt es ohnehin.
-   */
   /** Ein Tag, wie die Meldungen der Übersicht ihn nennen. */
   static String formatDate(LocalDate date) {
     return DATE.format(date);
   }
 
+  /**
+   * Die eine Meldung, wenn das Abschicken scheitert: die geänderte Übersicht beim Namen, ebenso eine
+   * gleichzeitige Änderung ({@code XX-0003}, #1237, meist ein doppelter Klick), alles andere unter
+   * {@code genericKey} — die Übersicht zeigt es ohnehin.
+   */
   static String failureMessage(ErrorCodeException ex, ErrorCodeViewHelper errorCodeViewHelper,
       MessageSourceAccessor messages, String genericKey) {
     return ex.getMessages().stream()
-        .filter(message -> message.getErrorCode() == RL_REVIEWED_PERIOD_CHANGED)
+        .filter(message -> NAMED_FAILURES.contains(message.getErrorCode()))
         .findFirst()
         .map(message -> errorCodeViewHelper.toViewMessage(message).resolved())
         .orElseGet(() -> messages.getMessage(genericKey));

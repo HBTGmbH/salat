@@ -130,9 +130,10 @@ public class ReleaseService {
    * <p>Zweimal hintereinander abgeschickt, trifft die zweite Freigabe auf den schon freigegebenen
    * Zeitraum und meldet {@code RL-0008}. Laufen zwei Freigaben wirklich gleichzeitig durch den
    * Vergleich, scheitert die zweite beim Schreiben an der Versionsnummer von Vertrag und Buchungen
-   * ({@code @Version} in {@link de.hbt.salat.common.domain.AuditedEntity}) und wird zurückgerollt; die
-   * Mail verschickt diese Methode aber innerhalb der Transaktion, sie kann dann doppelt ankommen.
-   * Eine eigene Sperre gibt es dafür bewusst nicht.
+   * ({@code @Version} in {@link de.hbt.salat.common.domain.AuditedEntity}) und wird zurückgerollt —
+   * meist erst beim Commit; {@link de.hbt.salat.common.service.ConcurrentModificationAspect} meldet das
+   * als {@code XX-0003} (#1237). Die Mail verschickt diese Methode aber innerhalb der Transaktion, sie
+   * kann dann doppelt ankommen. Eine eigene Sperre gibt es dafür bewusst nicht.
    *
    * @throws AuthorizationException ohne Freigabeberechtigung für den Vertrag
    * @throws BusinessRuleException  {@code RL-0008}, wenn sich der Zeitraum geändert hat, sonst die
@@ -408,8 +409,8 @@ public class ReleaseService {
    * <p>Zweimal hintereinander abgeschickt, trifft die zweite Abnahme auf den schon abgenommenen
    * Zeitraum und meldet {@code RL-0008}. Laufen zwei Abnahmen wirklich gleichzeitig durch den
    * Vergleich, scheitert die zweite beim Schreiben an der Versionsnummer von Vertrag und Buchungen
-   * ({@code @Version} in {@link de.hbt.salat.common.domain.AuditedEntity}) und wird zurückgerollt. Eine
-   * eigene Sperre gibt es dafür bewusst nicht.
+   * ({@code @Version} in {@link de.hbt.salat.common.domain.AuditedEntity}) und wird zurückgerollt, gemeldet
+   * als {@code XX-0003} wie bei der Freigabe. Eine eigene Sperre gibt es dafür bewusst nicht.
    *
    * @throws AuthorizationException ohne Abnahmeberechtigung für den Vertrag
    * @throws BusinessRuleException  {@code RL-0008}, wenn sich der Zeitraum geändert hat, sonst der
