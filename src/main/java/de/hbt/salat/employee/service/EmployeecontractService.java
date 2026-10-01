@@ -1,5 +1,6 @@
 package de.hbt.salat.employee.service;
 
+import static de.hbt.salat.common.exception.ErrorCode.AA_NEEDS_MANAGER;
 import static de.hbt.salat.common.exception.ErrorCode.AA_NOT_ATHORIZED;
 import static de.hbt.salat.common.exception.ErrorCode.EC_CONFLICT_RESOLUTION_GOT_VETO;
 import static de.hbt.salat.common.exception.ErrorCode.EC_OVERLAPS;
@@ -30,6 +31,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import de.hbt.salat.auth.domain.AccessLevel;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.common.LocalDateRange;
 import de.hbt.salat.common.domain.AuditedEntity;
@@ -73,6 +75,7 @@ public class EmployeecontractService {
   private final OvertimeRepository overtimeRepository;
   private final EmployeecontractAuthorization employeecontractAuthorization;
   private final NotificationService notificationService;
+  private final AuthorizedUser authorizedUser;
 
   @Authorized(requiresManager = true)
   public ContractStoredInfo createEmployeecontract(
@@ -394,8 +397,14 @@ public class EmployeecontractService {
     employeecontract.setReportAcceptanceDate(acceptanceDate);
   }
 
-  public void create(Overtime overtime) {
-    overtimeRepository.save(overtime);
+  /**
+   * Legt eine Überstundenkorrektur an und liefert ihre id. Nur das Management; die Prüfung steht
+   * hier und nicht nur am Controller, damit kein weiterer Aufrufer an ihr vorbeikommt (#1256).
+   */
+  @Authorized(requiresManager = true)
+  public long create(Overtime overtime) {
+    if (!authorizedUser.isManager()) throw new AuthorizationException(AA_NEEDS_MANAGER);
+    var saved = overtimeRepository.save(overtime);
     var employeecontract = overtime.getEmployeecontract();
     var event = new EmployeecontractUpdateEvent(employeecontract);
     try {
@@ -410,6 +419,7 @@ public class EmployeecontractService {
       allMessages.addAll(e.getMessages());
       event.veto(allMessages);
     }
+    return saved.getId();
   }
 
   @EventListener
