@@ -276,6 +276,17 @@ class AcceptanceControllerTest {
         .andExpect(flash().attribute("toastError", ReleaseControllerTest.CONCURRENT_MODIFICATION_TEXT));
   }
 
+  /** Öffnen schreibt den Vertrag ebenso (#1237): ein gleichzeitiges Öffnen endet als Meldung, nicht als 500. */
+  @Test
+  void a_concurrent_reopening_goes_back_to_the_acceptance_page_and_says_why() throws Exception {
+    doThrow(new BusinessRuleException(XX_CONCURRENT_MODIFICATION))
+        .when(releaseService).reopenTimereports(CONTRACT_ID, BEGIN);
+
+    mockMvc.perform(post("/acceptance/reopen").param("contractId", "42").param("reopenDate", "2026-08"))
+        .andExpect(redirectedUrl("/acceptance?contractId=42"))
+        .andExpect(flash().attribute("toastErrors", List.of(ReleaseControllerTest.CONCURRENT_MODIFICATION_TEXT)));
+  }
+
   /** Eine fehlende Berechtigung bleibt die Ausnahme, aus der die Fehlerbehandlung eine 403 macht. */
   @Test
   void a_missing_permission_to_accept_is_not_turned_into_a_message() {
