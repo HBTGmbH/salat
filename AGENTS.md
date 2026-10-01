@@ -774,8 +774,11 @@ Repository und `Specification`.
 - **A public service method does not call another public method of the same service.** An internal
   call (`this.x()`) bypasses the aspect, so the callee's `@Authorized` is not checked there. Shared
   logic goes into a private method or straight to the repository/DAO. Where one public method does
-  call another, both carry the same `@Authorized` rule — that includes `@EventListener` methods,
-  which the aspect intercepts as well.
+  call another, the caller's `@Authorized` demands at least what the callee's demands — the
+  roles are cumulative, so `requiresManager` covers `requiresBackoffice`, `requiresPeopleLead`,
+  `requireUnrestricted` and a plain `@Authorized`, and `requiresAdmin` covers `requiresManager`.
+  A manager-only method may read through a method open to every login; the reverse is the hole.
+  That includes `@EventListener` methods, which the aspect intercepts as well.
 - Services throw typed `ErrorCodeException` subclasses (`InvalidDataException`, `BusinessRuleException`, `AuthorizationException`) — never a raw `RuntimeException` for business errors
 - Before destructive DB operations, publish a domain event via `ApplicationEventPublisher`; catch `VetoedException` and re-throw with added context (see Event / Veto Pattern)
 

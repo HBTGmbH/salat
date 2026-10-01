@@ -23,7 +23,9 @@ Status: Accepted
 > Ein **interner** Aufruf im selben Service läuft am Proxy vorbei, die Annotation greift dort nicht.
 > Eine öffentliche Service-Methode ruft deshalb keine andere öffentliche Methode desselben Services
 > auf; gemeinsame Logik liegt in einer privaten Methode oder im Repository. Wo es doch geschieht,
-> tragen beide dieselbe `@Authorized`-Regel.
+> verlangt das `@Authorized` des Aufrufers mindestens, was das des Aufgerufenen verlangt — die Rollen
+> sind kumulativ, `requiresManager` deckt also `requiresBackoffice`, `requiresPeopleLead`,
+> `requireUnrestricted` und ein schlichtes `@Authorized` ab, `requiresAdmin` deckt `requiresManager`.
 
 ## Context and Problem Statement
 
