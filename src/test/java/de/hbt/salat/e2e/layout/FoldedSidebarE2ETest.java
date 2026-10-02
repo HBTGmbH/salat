@@ -97,6 +97,16 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /** Tabler shows the pin only while the sidebar is hovered; unfolded it stays in sight (#1264). */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_pin_is_in_sight_without_hovering(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      page.mouse().move(800, 400);
+      assertThat(page.locator(PIN)).hasCSS("opacity", "1");
+    });
+  }
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void the_pin_folds_the_sidebar_and_remembers_it(E2EBrowser browser) {
@@ -105,8 +115,6 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("html[data-bs-sidebar]")).hasCount(0);
       assertThat(page.locator(OPEN_SECTION_MENU)).hasCount(1);
 
-      // the pin is opacity:0 until the sidebar is hovered, which for Playwright still counts as
-      // visible and clickable - a non-empty bounding box and no visibility:hidden
       Locator pin = page.locator(PIN);
       pin.click();
 

@@ -62,7 +62,8 @@ Die Referenz ist der Tabler-Standard.
   Backoffice, System), jeder als aufklappbares Dropdown. Sichtbarkeit rollenabhängig
   (`#authorization.expression(...)` bzw. ViewHelper-Bean).
 - **Faltbar** über einen Knopf in der Markenzone (`data-bs-toggle="sidebar-folded"`, Tabler 1.5).
-  Er erscheint, sobald die Maus auf der Sidebar liegt oder der Tastaturfokus hineinwandert. Tabler
+  Aufgeklappt steht er immer da; Tabler würde ihn erst einblenden, sobald die Maus auf der Sidebar
+  liegt oder der Tastaturfokus hineinwandert (#1264). Gefaltet ist er ausgeblendet. Tabler
   setzt `data-bs-sidebar="folded-hover"` am `<html>`, merkt die Wahl unter
   `localStorage['tabler-sidebar']` und stellt sie beim nächsten Laden vor dem ersten Bildaufbau
   wieder her. Gefaltet ist die Leiste 4rem breit; Hover **und** Tastaturfokus klappen sie wieder auf,
