@@ -134,14 +134,8 @@ class JiraReplicationRunServiceTest {
 
     assertThatThrownBy(() -> runService.getLatestRuns(100, false)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> runService.markFinished(1L)).isInstanceOf(AuthorizationException.class);
-  }
-
-  @Test
-  void the_scheduled_run_may_open_a_run_without_being_a_manager() {
-    // the job user is no manager; the manager check of a manual start falls in the launcher
-    when(authorizedUser.isManager()).thenReturn(false);
-
-    assertThat(runService.startRun(ALPHA, SCHEDULED).getStatus()).isEqualTo(RUNNING);
+    // the lock as well: the scheduled run gets through as the job user, which is a manager
+    assertThatThrownBy(() -> runService.startRun(ALPHA, MANUAL)).isInstanceOf(AuthorizationException.class);
   }
 
 }

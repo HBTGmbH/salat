@@ -34,6 +34,9 @@ import de.hbt.salat.jira.persistence.JiraReplicationRunRepository;
  * of them at once. Two replications write into different scopes and get along; the same one twice
  * would write the same tickets from two threads.
  *
+ * <p>Management only, the scheduled run included: the job user is a manager
+ * ({@code AuthorizedUser#initForJob}, → ADR-0006).
+ *
  * <p><b>Deliberately without a class-level {@code @Transactional}</b>, unlike the pattern in
  * AGENTS.md: {@link #startRun} checks and writes inside a {@code synchronized} section, and a
  * surrounding transaction would commit the new row only after the section was left — a second
@@ -58,13 +61,8 @@ public class JiraReplicationRunService {
    * <p><b>Assumes a single instance of the application</b>, as the ETL lock and every
    * {@code @Scheduled} job of the application do already.
    *
-   * <p>Open to the scheduled run as well, which is why it carries a plain {@code @Authorized}: the
-   * job user is no manager, and the manager check of a manual start falls in
-   * {@code JiraReplicationLauncher}.
-   *
    * @throws BusinessRuleException when this replication is already running
    */
-  @Authorized
   public synchronized JiraReplicationRun startRun(long replicationId, Trigger trigger) {
     runRepository.findFirstByReplicationIdAndStatusOrderByStartedAtDesc(replicationId, RUNNING)
         .ifPresent(running -> {
@@ -80,7 +78,6 @@ public class JiraReplicationRunService {
   }
 
   /** Records that a run did not even begin, because the same replication was still running. */
-  @Authorized
   public void recordSkippedRun(long replicationId, Trigger trigger, String message) {
     var now = DateTimeUtils.now();
     runRepository.save(JiraReplicationRun.builder()
@@ -102,7 +99,6 @@ public class JiraReplicationRunService {
    * <p>A row that is gone altogether belongs to a replication deleted during its run — there is
    * nothing left to report to.
    */
-  @Authorized
   @Transactional
   public void finishRun(long runId, Status status, String message) {
     var run = runRepository.findById(runId).orElse(null);

@@ -32,13 +32,13 @@ import de.hbt.salat.jira.persistence.JiraTicketRepository;
 /**
  * Replicates the tickets of one scope from JIRA.
  *
- * <p>A plain {@code @Authorized}: the hourly run comes here as the job user (→ ADR-0006), a manual
- * one after the manager check of {@code JiraReplicationLauncher} or of the REST controller.
+ * <p>Management only, like everything around the replications. The hourly run passes as the job
+ * user, which {@code AuthorizedUser#initForJob} makes a manager (→ ADR-0006).
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Authorized
+@Authorized(requiresManager = true)
 public class JiraReplicationService {
 
   private final JiraSearchClients searchClients;

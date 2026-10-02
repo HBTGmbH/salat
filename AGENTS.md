@@ -1260,6 +1260,10 @@ Two stacked layers provide defence in depth — **both spelled `@Authorized`** (
   `sendError` so the application's own error page renders. Whoever adds a second place where an
   authorization decision is made has to answer this question again.
 - `AuthorizedUser` (**request-scoped** bean, `auth/domain/AuthorizedUser.java`): exposes `isManager()`, `isAdmin()`, `isPeopleLead()`, `isBackoffice()`, `isRestricted()`, and the current login sign. It holds no state of its own — it reads the `SecurityContext` per request. A scheduled job has no `SecurityContext`, so it must call `authorizedUser.initForJob()` first (→ ADR-0006).
+  In job mode the user is authenticated **and** manager, people lead and backoffice — not admin, not
+  restricted. A job path therefore never needs a weaker `@Authorized` than the manual way into the
+  same method; a method-level annotation that lowers the class level for a job is a mistake (#1282).
+  A test that mocks `AuthorizedUser` for a job path takes its roles from `initForJob`.
 - Spring Security roles: `USER`, `RESTRICTED`, `BACKOFFICE`, `PEOPLE_LEAD`, `MANAGER`, `ADMIN`; `manager` role includes admins; `backoffice` includes managers and admins; `people_lead` includes managers and admins
 - Role semantics (derived from `SalatUser.status` at login):
   - `USER` — base role granted to every authenticated user = every employee
