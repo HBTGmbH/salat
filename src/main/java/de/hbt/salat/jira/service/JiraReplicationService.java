@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
@@ -28,9 +29,16 @@ import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.jira.persistence.JiraTicketRepository;
 
+/**
+ * Replicates the tickets of one scope from JIRA.
+ *
+ * <p>A plain {@code @Authorized}: the hourly run comes here as the job user (→ ADR-0006), a manual
+ * one after the manager check of {@code JiraReplicationLauncher} or of the REST controller.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Authorized
 public class JiraReplicationService {
 
   private final JiraSearchClients searchClients;
