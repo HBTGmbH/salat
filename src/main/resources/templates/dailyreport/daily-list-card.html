@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
+<!--/* 200 to 320 px wide as before, but never wider than the day it stands in: on a phone that is
+       narrower than the card's longest line, which used to push the card and its hours past the
+       edge of the list (#1267). Capped, the order lines truncate and the booking text wraps; the
+       phone layout itself sits in daily.html next to .daily-day. */-->
 <div th:fragment="listTimereportCard"
      th:id="'tr-card-' + ${singleTr.id}"
      class="card card-sm mb-0 flex-shrink-0"
-     style="min-width:200px; max-width:320px">
+     style="min-width:min(200px, 100%); max-width:min(320px, 100%)">
   <div class="card-body py-2 px-3 d-flex flex-column">
     <div class="d-flex justify-content-between align-items-start gap-2 flex-grow-1">
       <!--/* The month view has no columns to move the text into, so it takes the other half of #834:
              the booking text is the main line of the card, the order the context above it. */-->
-      <div class="overflow-hidden flex-grow-1" th:with="hasText=${not #strings.isEmpty(singleTr.taskdescription)}">
+      <div class="daily-card-text overflow-hidden flex-grow-1" th:with="hasText=${not #strings.isEmpty(singleTr.taskdescription)}">
         <div class="text-muted text-truncate" style="font-size:0.75rem"
              th:text="|${singleTr.customerorderSign} · ${singleTr.customerorderDescription} · ${singleTr.customerShortname}|"></div>
         <div class="text-muted text-truncate" style="font-size:0.75rem"
@@ -19,7 +23,7 @@
           <div class="inline-edit-display"
                th:data-placeholder="#{main.daily.timereport.comment.placeholder}"
                th:classappend="${hasText} ? 'fw-medium' : 'is-empty text-muted'"
-               th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; min-height:1.4em'"
+               th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; overflow-wrap:break-word; min-height:1.4em'"
                th:text="${singleTr.taskdescription}"></div>
           <!--/* same size as the display it replaces, so the card does not jump on edit */-->
           <textarea class="form-control form-control-sm inline-edit-input d-none"
@@ -35,7 +39,7 @@
         <div th:unless="${singleTrEditable}"
              class="mt-1"
              th:classappend="${hasText} ? 'fw-medium' : 'text-muted'"
-             th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; min-height:1.4em'"
+             th:style="'font-size:' + (${hasText} ? '0.85rem' : '0.75rem') + '; white-space:pre-wrap; overflow-wrap:break-word; min-height:1.4em'"
              th:text="${singleTr.taskdescription}"></div>
       </div>
       <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
