@@ -61,7 +61,10 @@
                 th:data-palette-label-pressed="#{main.palette.sidebar.unfold}"
                 th:aria-label="#{main.general.nav.fold.title}"
                 th:title="#{main.general.nav.fold.title}">
-          <i class="ti ti-layout-sidebar-left-collapse"></i>
+          <!--/* Beide Icons stehen im Knopf, salat.css zeigt je nach data-bs-sidebar eines: das
+                 Attribut steht vor dem ersten Bildaufbau, aria-pressed setzt Tabler erst danach. */-->
+          <i class="ti ti-layout-sidebar-left-collapse sidebar-fold-icon" aria-hidden="true"></i>
+          <i class="ti ti-layout-sidebar-left-expand sidebar-unfold-icon" aria-hidden="true"></i>
         </button>
       </h1>
 
@@ -214,7 +217,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-timereports" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'dailyreport'}">
-              <i class="nav-link-icon bi bi-clock"></i>
+              <i class="nav-link-icon ti ti-clock"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.timereports.text}">Buchungen</span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'dailyreport'} ? 'show' : ''">
@@ -282,7 +285,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-employees" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'employees'}">
-              <i class="nav-link-icon bi bi-people"></i>
+              <i class="nav-link-icon ti ti-users"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.employees.text}">Mitarbeiter</span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'employees'} ? 'show' : ''">
@@ -308,7 +311,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-orders" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'orders'}">
-              <i class="nav-link-icon bi bi-briefcase"></i>
+              <i class="nav-link-icon ti ti-briefcase"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.orders.text}">Aufträge</span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'orders'} ? 'show' : ''">
@@ -346,7 +349,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-budget" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'budget'}">
-              <i class="nav-link-icon bi bi-calculator"></i>
+              <i class="nav-link-icon ti ti-coin-euro"></i>
               <span class="nav-link-title">
                 <span th:text="#{main.general.mainmenu.budget.text}">Budget</span>
                 <span class="badge bg-green-lt ms-2 nav-link-badge">New</span>
@@ -428,7 +431,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-reports" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'reports'}">
-              <i class="nav-link-icon bi bi-bar-chart"></i>
+              <i class="nav-link-icon ti ti-chart-bar"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.reporting.text}">Reports</span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'reports'} ? 'show' : ''">
@@ -456,7 +459,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-backoffice" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'backoffice'}">
-              <i class="nav-link-icon bi bi-building"></i>
+              <i class="nav-link-icon ti ti-building"></i>
               <span class="nav-link-title" th:text="#{main.general.mainmenu.backoffice.text}">Backoffice</span>
             </a>
             <div class="dropdown-menu" th:classappend="${section == 'backoffice'} ? 'show' : ''">
@@ -494,7 +497,7 @@
             <a class="nav-link dropdown-toggle" href="#navbar-systemsettings" data-bs-toggle="dropdown"
                data-bs-auto-close="false" role="button"
                th:attr="aria-expanded=${section == 'systemsettings'}">
-              <i class="nav-link-icon bi bi-gear"></i>
+              <i class="nav-link-icon ti ti-server-cog"></i>
               <!--/* The marker sits on the section, not on the single entry inside it: the whole area
                      is what is new here. */-->
               <span class="nav-link-title">

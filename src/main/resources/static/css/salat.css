@@ -852,6 +852,36 @@ body {
   transform: none;
 }
 
+/* Tabler reserviert fuer die Icons in Navigation und Dropdown 1.25rem und erwartet darin ein SVG,
+   das den Platz fuellt. Die Icon-Schrift richtet sich aber nach der font-size und zeichnete mit
+   der geerbten Schrift des Links nur 14px. */
+#salat-nav .nav-link-icon.ti,
+.dropdown-item-icon.ti {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* btn-sm haelt den Knopf schmal, setzt aber die Schrift und damit das Icon auf 12px. 2rem ist die
+   Hoehe des Logos daneben. */
+#salat-nav [data-bs-toggle="sidebar-folded"] {
+  width: 2rem;
+  height: 2rem;
+}
+
+#salat-nav [data-bs-toggle="sidebar-folded"] .ti {
+  font-size: 1.25rem;
+}
+
+/* Eingeklappt zeigt der Knopf nach rechts - er klappt dann aus (base.html). */
+#salat-nav .sidebar-unfold-icon,
+:root[data-bs-sidebar^="folded"] #salat-nav .sidebar-fold-icon {
+  display: none;
+}
+
+:root[data-bs-sidebar^="folded"] #salat-nav .sidebar-unfold-icon {
+  display: block;
+}
+
 /* Das Benutzermenue haengt am Listeneintrag des Ausloesers. In der mobilen Kopfzeile ist der nur so
    breit wie das Bild, und das absolut gesetzte Menue schrumpft dann auf seine min-width - die
    Rollen-Badge ragte ueber den Rand. max-content richtet die Breite nach dem Inhalt, max-width

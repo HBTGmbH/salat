@@ -83,6 +83,21 @@ document.addEventListener('hidden.bs.dropdown', event => {
   if (event.target.id === 'user-menu-toggle') userMenuNews().forEach(el => { el.hidden = true; });
 });
 
+/* Tabler faltet die Sidebar auf "folded-hover": gefaltet, solange die Maus nicht darueber steht.
+ * Beim Klick steht sie aber genau dort, und die Leiste blieb offen, bis die Maus sie verliess. Bis
+ * dahin gilt deshalb "folded", das kein Aufklappen beim Ueberfahren kennt; gespeichert bleibt
+ * "folded-hover". Mit der Tastatur bleibt es bei Tabler: der Knopf hat den Fokus, und gefaltet
+ * waere er ausgeblendet. */
+document.addEventListener('tabler:sidebar-folded', event => {
+  const nav = document.getElementById('salat-nav');
+  if (!event.detail.folded || !nav?.matches(':hover') || nav.matches(':has(:focus-visible)')) return;
+  const html = document.documentElement;
+  html.setAttribute('data-bs-sidebar', 'folded');
+  nav.addEventListener('mouseleave', () => {
+    if (html.getAttribute('data-bs-sidebar') === 'folded') html.setAttribute('data-bs-sidebar', 'folded-hover');
+  }, { once: true });
+});
+
 // The translated name sits on <body>, so no template with a multi-select has to bring it along. The
 // plugin puts it into the title only, and a role="button" takes its accessible name from its
 // content first — a screen reader would announce "×". Hence an element of our own with aria-label.
