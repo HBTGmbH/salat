@@ -101,9 +101,10 @@ class MultiSelectRemoveE2ETest extends PlaywrightE2ETestBase {
     assertThat(page).hasURL(Pattern.compile("fBookingsCustomers=" + contosoId + "(&|$)"));
   }
 
+  /** The option reads {@code Kurzname - Name} (#1266), or the short name alone where both are the same. */
   private static String customerId(Page page, String shortname) {
     return (String) page.locator("#customer-select option").evaluateAll(
-        "(options, text) => options.find(o => o.textContent.trim() === text).value", shortname);
+        "(options, text) => options.find(o => o.textContent.trim().split(' - ')[0] === text).value", shortname);
   }
 
   private static Locator wrapper(Page page) {
