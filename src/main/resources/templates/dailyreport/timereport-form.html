@@ -30,17 +30,6 @@
 
           <div class="card-body">
 
-            <!--/* Beta hint (#830): in-context entry point, sits at the top of the card so it cannot
-                   affect the width of the col-auto columns below. Gone once the feature is on. */-->
-            <div th:unless="${@betaViewHelper.timeInput}" class="d-flex justify-content-end mb-2">
-              <a class="small text-decoration-none"
-                 th:href="@{/settings} + '#beta'"
-                 th:title="#{main.beta.timeinput.link.tooltip}">
-                <i class="ti ti-bolt"></i>
-                <span th:text="#{main.beta.timeinput.link.label}">Schnelleingabe testen</span>
-              </a>
-            </div>
-
             <div th:if="${selectedEmployeeName != null}" class="mb-3">
               <div class="form-label mb-1" th:text="#{main.employeecontract.employee.text}">Mitarbeiter</div>
               <div th:text="${selectedEmployeeName}"></div>
@@ -61,14 +50,9 @@
 
               <!--/* beginEnd: the entry mode the user prefers (#844), rendered server-side so the
                      form does not visibly flip modes after the first paint */-->
-              <div class="col-auto" th:with="betaTimeInput=${@betaViewHelper.timeInput},
-                                             beginEnd=${timereportForm.durationMode == 'beginEnd'}">
+              <div class="col-auto" th:with="beginEnd=${timereportForm.durationMode == 'beginEnd'}">
                 <label class="form-label required" for="durationTime">
                   <span th:text="#{main.timereport.form.duration.label}">Dauer</span>
-                  <!--/* part of the label so it cannot widen the col-auto column on its own (#830) */-->
-                  <span th:if="${betaTimeInput}" class="badge bg-azure-lt ms-2"
-                        th:title="#{main.beta.feedback.hint}"
-                        th:text="#{main.beta.badge}">Beta</span>
                 </label>
                 <div class="d-flex flex-wrap align-items-start gap-2">
 
@@ -94,11 +78,9 @@
                     <input type="text" class="form-control" th:field="*{durationTime}"
                            placeholder="HH:MM" maxlength="8" inputmode="decimal"
                            style="width:auto" size="6"
-                           th:attr="data-time-mode=${betaTimeInput} ? 'duration' : null,
-                                    data-time-step=${betaTimeInput} ? '15' : null,
-                                    data-time-chips=${betaTimeInput} ? '15 30 60' : null,
-                                    data-time-chips-target=${betaTimeInput} ? '#durationChips' : null,
-                                    data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                           data-time-mode="duration" data-time-step="15"
+                           data-time-chips="15 30 60" data-time-chips-target="#durationChips"
+                           th:attr="data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                     data-time-label-increase=#{main.timeinput.increase.tooltip},
                                     data-time-label-reset=#{main.timeinput.reset.tooltip},
                                     data-entry-focus=${entryFocus != null and entryFocus.name() == 'DURATION'} ? 'true' : null"
@@ -118,27 +100,23 @@
                     <!--/* flex-wrap: the two fields plus their steppers do not fit next to each other
                            on a phone, so they stack there and stay inline from md upwards */-->
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                      <input type="time" class="form-control" th:field="*{beginTime}"
+                      <input type="text" class="form-control" th:field="*{beginTime}"
                              id="beginTimeInput" style="width:auto" size="5"
                              oninput="timeMask(event); updateDurationBadge()"
                              onblur="timeBlur(event); updateDurationBadge()"
                              inputmode="numeric" maxlength="5" placeholder="HH:MM"
-                             th:attr="type=${betaTimeInput} ? 'text' : 'time',
-                                      data-time-mode=${betaTimeInput} ? 'time' : null,
-                                      data-time-step=${betaTimeInput} ? '15' : null,
-                                      data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                             data-time-mode="time" data-time-step="15"
+                             th:attr="data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                       data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
                       <!--/* only meaningful while both fields sit next to each other */-->
                       <span class="text-muted d-none d-md-inline">–</span>
-                      <input type="time" class="form-control" th:field="*{endTime}"
+                      <input type="text" class="form-control" th:field="*{endTime}"
                              id="endTimeInput" style="width:auto" size="5"
                              oninput="timeMask(event); updateDurationBadge()"
                              onblur="timeBlur(event); updateDurationBadge()"
                              inputmode="numeric" maxlength="5" placeholder="HH:MM"
-                             th:attr="type=${betaTimeInput} ? 'text' : 'time',
-                                      data-time-mode=${betaTimeInput} ? 'time' : null,
-                                      data-time-step=${betaTimeInput} ? '15' : null,
-                                      data-time-label-decrease=#{main.timeinput.decrease.tooltip},
+                             data-time-mode="time" data-time-step="15"
+                             th:attr="data-time-label-decrease=#{main.timeinput.decrease.tooltip},
                                       data-time-label-increase=#{main.timeinput.increase.tooltip}"/>
                       <span class="badge bg-secondary-lt text-secondary ms-1" id="durationBadge"></span>
                     </div>
@@ -147,7 +125,7 @@
                 </div>
                 <!--/* Quick-add chips are rendered here (see data-time-chips-target) so that they get
                        the full width of the column instead of the width of the input itself */-->
-                <div id="durationChips" class="mt-2" th:if="${betaTimeInput}"
+                <div id="durationChips" class="mt-2"
                      th:classappend="${beginEnd} ? 'd-none' : ''"></div>
               </div>
             </div>

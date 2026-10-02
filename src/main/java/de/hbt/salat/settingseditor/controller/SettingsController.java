@@ -84,6 +84,8 @@ public class SettingsController {
     model.addAttribute("settingsForm", form);
     model.addAttribute("defaultEmail", employeePreferenceService.defaultEmailFor(loginEmployee));
     model.addAttribute("suborders", loadSuborders());
+    // the switch section is shown only while there is a beta to switch on
+    model.addAttribute("betaFeatureOptions", List.of(BetaFeature.values()));
     model.addAttribute("section", "settings");
     model.addAttribute("sectionTitle", messages.getMessage("main.settings.section.title"));
     model.addAttribute("title", messages.getMessage("main.settings.title"));
@@ -134,7 +136,7 @@ public class SettingsController {
   }
 
   /**
-   * Switches on a single beta feature from an in-context link (see the hint on the booking page).
+   * Switches on a single beta feature from an in-context link, such as a hint next to the feature.
    * Answers with {@code HX-Refresh} so HTMX reloads the current page with the feature applied,
    * instead of navigating the user away from the form they were filling in.
    */

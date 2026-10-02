@@ -33,9 +33,7 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void the_break_accepts_duration_input(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
-
-      setBeta(page, true);
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily?mode=daily&date=" + DAY, page -> {
 
       // two digits are minutes, as in every other duration field
       assertBreakInputStores(page, "30", "00:30");
@@ -46,23 +44,6 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
       assertBreakInputStores(page, "1,5", "01:30");
       // clearing the field means no break
       assertBreakInputStores(page, "", "00:00");
-    });
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
-  void the_classic_break_field_keeps_the_native_picker(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
-
-      setBeta(page, false);
-      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + DAY, EMPLOYEE));
-
-      // without the beta the browser control stays, and the duration mask must not interfere with it
-      assertThat(page.locator("#breakTime")).hasAttribute("type", "time");
-      page.fill("#breakTime", "00:45");
-      afterResponse(page, WORKINGDAY_SAVE, () -> page.locator("h3").first().click());
-      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + DAY, EMPLOYEE));
-      assertThat(page.locator("#breakTime")).hasValue("00:45");
     });
   }
 
@@ -77,18 +58,6 @@ class BreakAsDurationE2ETest extends PlaywrightE2ETestBase {
 
     page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + DAY, EMPLOYEE));
     assertThat(page.locator("#breakTime")).hasValue(stored);
-  }
-
-  private void setBeta(Page page, boolean enabled) {
-    page.navigate(urlWithLogin("/settings", EMPLOYEE));
-    var checkbox = page.locator("input[name='betaFeatures'][value='timeinput']");
-    if (enabled) {
-      checkbox.check();
-    } else {
-      checkbox.uncheck();
-    }
-    page.click("button[type=submit]");
-    page.waitForLoadState();
   }
 
 }

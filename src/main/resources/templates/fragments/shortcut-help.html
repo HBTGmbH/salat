@@ -65,13 +65,6 @@
           <dd th:text="#{main.shortcuts.time.minute}">Eine Minute</dd>
         </dl>
         <p class="text-secondary small mb-0" th:text="#{main.shortcuts.time.wheel}">Mausrad wie ↑ und ↓.</p>
-        <!--/* Die Pfeiltasten haengen an der Schnelleingabe (data-time-step, #830); ohne sie sind die
-               Zeitfelder die klassischen. Die Uebersicht sagt das, statt ein Kuerzel zu versprechen,
-               das nicht wirkt. */-->
-        <p class="text-secondary small mt-2 mb-0" th:unless="${@betaViewHelper.timeInput}">
-          <span th:text="#{main.shortcuts.time.beta}">Die Pfeiltasten gelten mit der Schnelleingabe (Beta).</span>
-          <a th:href="@{/settings} + '#beta'" th:text="#{main.shortcuts.time.beta.link}">In den Einstellungen einschalten</a>
-        </p>
 
       </div>
     </div>

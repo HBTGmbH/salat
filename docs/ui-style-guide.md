@@ -361,12 +361,11 @@ People Lead.
 | `?` | ohne Fokus in einem Eingabefeld | Übersicht der Tastenkürzel |
 | `i` | ohne Fokus in einem Eingabefeld | Neue Buchung — das Ziel des Knopfs in der Kopfzeile, also mit Tag und Vertrag der Seite; auf dem Buchungsformular, wo der Knopf fehlt, nichts |
 | `Ctrl ↵` / `⌘ ↵` | im Buchungsformular, auch im Kommentar — und mit dem Fokus neben dem Formular | Speichern |
-| `↑` `↓`, mit `Shift` bzw. `Alt` | im Zeitfeld mit Schnelleingabe | ein Schritt, eine Stunde, eine Minute ([§6](#6-eingabekomponenten-nach-datentyp)) |
+| `↑` `↓`, mit `Shift` bzw. `Alt` | im Zeitfeld | ein Schritt, eine Stunde, eine Minute ([§6](#6-eingabekomponenten-nach-datentyp)) |
 
 - **Die Übersicht** öffnet mit `?`, über den Eintrag „Tastenkürzel" im Fuß (ab `md`) und aus der
   Befehlspalette. Sie ist ein Bootstrap-Modal wie die übrigen Dialoge und gibt den Fokus beim
-  Schließen zurück. Die Pfeiltasten im Zeitfeld hängen an der Schnelleingabe (Beta); ist sie aus,
-  sagt die Übersicht das und verweist auf die Einstellungen.
+  Schließen zurück.
 - **`Ctrl ↵` nimmt mit, was noch getippt wird:** ein Ticket, das erst beim Verlassen des Felds
   übernommen würde, und eine Dauer, die erst beim Verlassen ins Format kommt. Gespeichert wird über
   den Knopf „Speichern", also mit derselben Prüfung wie per Klick, und bei gehaltener Taste einmal.
@@ -1032,7 +1031,7 @@ die Säulen gegen den Hintergrund kein eigener Kontrastnachweis.
 | Ja/Nein | `input type="checkbox"` in `form-check form-switch` | 42 | **immer als Schalter**, nie als klassische Checkbox-Optik |
 | Datum | `input type="date"` | 19 | **native Browser-Datumsauswahl**, kein JS-Datepicker im Projekt |
 | Monat | `input type="month"` | 6 | für monatsbezogene Vorgänge (Freigabe, Abnahme, Rechnung, Matrix) |
-| Uhrzeit | `input type="time"` | 7 | nur im Von/Bis-Modus der Buchungserfassung |
+| Uhrzeit | `input type="text"` + `data-time-mode="time"` | 4 | Von/Bis der Buchungserfassung, Start der Tagesansicht; native `type="time"` nur noch für den Arbeitsbeginn in den Einstellungen |
 | Dauer | `input type="text"` + Eingabemaske | — | Sonderfall, siehe unten |
 | Zahl | `input type="number"` | 3 | mit `step="0.01"` (Betrag) bzw. `min="0" max="100"` (Prozent) |
 | Geldbetrag | `input type="text"` | — | `priceEuro` / `costEuro` als **Text**, Einheit nur im Label („€/h") |
@@ -1053,8 +1052,12 @@ Erfassung in `timereport-form.html` über zwei Modi, umschaltbar per Icon-`btn-g
    `inputmode="numeric"`, `style="width:100px"`, `onfocus="this.select()"`.
    Eine JS-Maske (`durationMask`) setzt den Doppelpunkt während der Eingabe, `durationBlur`
    normalisiert beim Verlassen: `7` → `07:00`, `30` → `00:30`, `130` → `01:30`.
-2. **Von/Bis** — zwei `input type="time"` (`width:120px`) mit „–" dazwischen; die berechnete Dauer
-   erscheint live als `badge bg-secondary-lt` rechts daneben.
+2. **Von/Bis** — zwei `input type="text"` mit `data-time-mode="time"` und „–" dazwischen; die
+   berechnete Dauer erscheint live als `badge bg-secondary-lt` rechts daneben.
+
+Alle Zeit- und Dauerfelder der Buchung, der Tagesansicht und der Inline-Bearbeitung tragen
+`data-time-step="15"` und bekommen damit Schrittknöpfe, Pfeiltasten und Mausrad (#830, Standard
+seit #1248); das Dauerfeld der Buchung zusätzlich die Schnellwahl `data-time-chips`.
 
 Der gewählte Modus liegt in einem versteckten Feld (`durationMode`) und wird nach einem
 Validierungsfehler wiederhergestellt. Bei einer laufenden Buchung („live booking") schaltet die

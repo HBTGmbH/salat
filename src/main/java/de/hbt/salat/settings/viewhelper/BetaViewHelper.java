@@ -2,6 +2,8 @@ package de.hbt.salat.settings.viewhelper;
 
 import static org.springframework.web.context.WebApplicationContext.SCOPE_REQUEST;
 
+import java.util.EnumMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
@@ -19,8 +21,12 @@ import de.hbt.salat.settings.service.BetaFeatureService;
  * {@code #workingday-form}. A model attribute would have to be set in every one of those handlers,
  * and the flag would silently disappear from the next fragment endpoint somebody adds.
  *
- * <p>Request scoped with a memoized value, so a page with many fragments still reads the preference
+ * <p>Request scoped with memoized values, so a page with many fragments still reads the preference
  * once.
+ *
+ * <p>There is currently no beta (see {@link BetaFeature}). A new one gets a named getter here that
+ * delegates to {@link #isEnabled}, so templates read {@code @betaViewHelper.featureName} rather than
+ * spelling out the enum.
  */
 @Slf4j
 @Component
@@ -30,17 +36,13 @@ public class BetaViewHelper {
 
   private final BetaFeatureService betaFeatureService;
 
-  private Boolean timeInput;
+  private final Map<BetaFeature, Boolean> resolved = new EnumMap<>(BetaFeature.class);
 
-  /** #830 — new stepper based input for time and duration fields. */
-  public boolean isTimeInput() {
-    if (timeInput == null) {
-      timeInput = isEnabled(BetaFeature.TIME_INPUT);
-    }
-    return timeInput;
+  public boolean isEnabled(BetaFeature feature) {
+    return resolved.computeIfAbsent(feature, this::resolve);
   }
 
-  private boolean isEnabled(BetaFeature feature) {
+  private boolean resolve(BetaFeature feature) {
     try {
       return betaFeatureService.isEnabledForCurrentUser(feature);
     } catch (RuntimeException e) {
