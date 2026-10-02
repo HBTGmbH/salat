@@ -1107,7 +1107,7 @@ Icons ohne begleitende Beschriftung, WCAG 1.4.11). Es gibt keine Kulanzstufe fü
 eine Angabe, die zu unwichtig für lesbaren Kontrast wäre, gehört nicht auf die Seite.
 
 Der Maßstab gilt in **beiden Farbmodi**. Die Sidebar trägt `data-bs-theme="dark"` und ist damit
-immer dunkel — Textfarben darin sind auch im hellen Modus gegen `#1f2937` zu prüfen, nicht gegen
+immer dunkel — Textfarben darin sind auch im hellen Modus gegen `#262626` zu prüfen, nicht gegen
 Weiß.
 
 #### Messverfahren
@@ -1119,8 +1119,8 @@ Canvas — nötig, weil Chrome `color-mix()` als `color(srgb …)` zurückgibt u
 dabei Unsinn liefert. Je Probe wird der Hintergrund aus allen Schichten bis zum nächsten deckenden
 Elternelement zusammengesetzt, teiltransparente Vordergrundfarben werden darüber komponiert.
 
-Maßgeblich ist je Modus der **ungünstigste** Untergrund: hell die Seitenfläche `#f9fafb`, dunkel
-die Karte `#1f2937`.
+Maßgeblich ist je Modus der **ungünstigste** Untergrund: hell die Seitenfläche `#fafafa`, dunkel
+die Karte `#262626` (bis Tabler 1.5: `#f9fafb` und `#1f2937`).
 
 **In Tabellen liegt die Tönung der Zeile nicht im Hintergrund.** Streifung und `table-active`
 setzen in Bootstrap 5.3 keinen `background-color`, sondern einen deckenden Innenschatten
@@ -1171,13 +1171,45 @@ Die Zeile `text-*` gibt den Stand von #1022 wieder; die Mischung wurde mit #1043
 Weiß umgestellt, die geltenden Werte stehen unter
 [Wo Farbe erhalten bleibt](#wo-farbe-erhalten-bleibt).
 
+#### Nachmessung Tabler 1.6 (#1280)
+
+Tabler 1.6 stellt die Grauskala auf neutral um (Sekundärtext `#737373` statt `#6b7280`, dunkle Karte
+`#262626` statt `#1f2937`), definiert die Palette in `oklch()` und ändert drei Dinge, die den
+Kontrast betreffen: `-darken` dunkelt deckend ab statt mit Transparenz zu mischen, jeder `.btn`
+bekommt im Hover eine leichte Fläche (`--tblr-hover-bg`), und der Fokusring ist eine Kontur, deren
+Farbe Tabler aus Primärfarbe und Seitengrund mischt.
+
+Gemessen wurden alle Seiten der Sidebar in beiden Modi, einmal mit 1.5.1 und einmal mit 1.6.0 bei
+sonst gleicher Anwendung (17 390 Textproben, dazu jede Knopfvariante im Ruhe- und Hover-Zustand),
+außerdem die Proben dieses Abschnitts nach dem Verfahren oben.
+
+| Probe | hell 1.5 | hell 1.6 | dunkel 1.5 | dunkel 1.6 |
+|---|---|---|---|---|
+| Standardtext auf Karte | 10,31 | 10,37 | 11,86 | 12,01 |
+| `.text-muted` auf Karte | 4,83 | 4,74 | 5,78 | 6,00 |
+| `.text-muted` auf Seitenfläche | 4,63 | 4,54 | — | — |
+| `text-*` (semantisch) | 4,64–4,97 | 4,64–4,98 | 4,81–9,71 | 4,95–10,01 |
+| Badges (18 Töne) | 4,83–9,71 | 4,74–10,01 | 4,84–9,71 | 4,81–10,01 |
+| `bg-*-lt` (normale Textfarbe) | 8,53–9,40 | 8,59–9,44 | 9,52–11,09 | 9,58–11,12 |
+| `btn-success` im Hover | 6,47 | **4,38** ✘ → 6,38 | 6,19 | 6,38 |
+| `btn-link` im Hover | 7,02 | 7,91 | 4,92 | **4,11** ✘ → 5,07 |
+| Fokusring gegen Karte (3:1) | 5,00 | **2,10** ✘ → 5,00 | **2,94** ✘ | **2,11** ✘ → 3,03 |
+
+Unter den Maßstab fielen nur die markierten Fälle; `salat.css` korrigiert sie: Grün hellt im Hover
+auch im hellen Modus auf, `btn-link` bekommt keine Hover-Fläche, und der Fokusring steht in voller
+Primärfarbe (`--tblr-focus-ring-opacity` und `--tblr-focus-ring-opacity-dark` auf 1). Das neutrale
+Grau verschiebt alle übrigen Werte um weniger als ±0,25 und bringt keine neue Unterschreitung. Die
+Messkommentare in `salat.css` tragen die Werte unter 1.6; wo ein Kommentar begründet, warum es eine
+Regel gibt, steht der Wert unter 1.5 dabei und ist als solcher gekennzeichnet.
+
 #### Warum `.text-muted` betroffen war
 
 Die Ursache ist eine Token-Verwechslung in Tabler selbst: `.text-muted` zeigt auf `--tblr-muted`
 (`#6b7280`, eine Tabler-*Themefarbe*), nicht auf ein modusabhängiges Token. Der Wert ist deshalb in
-beiden Farbmodi derselbe und wird für Dunkel nie neu gesetzt — auf Weiß ergibt er 4,83:1, auf
-Dunkelgrau 3,04:1. `--tblr-muted` global umzubiegen scheidet aus: die Variable hängt an 42 weiteren
-Stellen im Tabler-CSS, unter anderem an `.bg-muted` und den List-Group-Tokens.
+beiden Farbmodi derselbe und wird für Dunkel nie neu gesetzt — auf Weiß ergab er 4,83:1, auf
+Dunkelgrau 3,04:1 (Tabler 1.5; seit 1.6 `#737373` mit 4,74:1 und 3,19:1). `--tblr-muted` global
+umzubiegen scheidet aus: die Variable hängt an 42 weiteren Stellen im Tabler-CSS, unter anderem an
+`.bg-muted` und den List-Group-Tokens.
 
 Die Korrektur hängt die Klasse stattdessen an `--tblr-secondary`, das den Moduswechsel mitmacht.
 `.text-muted` und `.text-secondary` sind damit deckungsgleich — was [§8.2](#82-sekundärtext--wann-text-muted-wann-small)
@@ -1193,8 +1225,9 @@ bleibt Bedeutungsträgerin, der Text bekommt die normale Textfarbe.
 
 Die Regel gilt für jede getönte Fläche, nicht nur für Badges: dieselbe Klasse trägt die Wochenend-
 und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards und die Avatare.
-Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` ist auf hellem Grund *heller* als der
-Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen (1,04:1–1,11:1).
+Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` war unter Tabler 1.5 auf hellem Grund
+*heller* als der Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen
+(1,04:1–1,11:1).
 
 #### Ein satteres Gelb als Tablers
 
@@ -1251,8 +1284,8 @@ Anteil, der farbige Text trägt dort genau diesen Ton
 | 100 %, **dunkle** Schrift | `lime` | 6,02 |
 
 `secondary` ist der einzige Ton mit zwei Werten: Tabler hellt die Sekundärfüllung im Dunkelmodus von
-`#6b7280` auf `#9ca3af` auf. Hell trägt sie helle Schrift unverändert (4,83:1), dunkel muss sie dafür
-erst auf 70 % abgedunkelt werden (4,84:1).
+`#737373` auf `#a3a3a3` auf. Hell trägt sie helle Schrift unverändert (4,74:1), dunkel muss sie
+dafür erst auf 70 % abgedunkelt werden (4,81:1).
 
 **Die hellen Töne gehen den umgekehrten Weg.** Gelb, Grün und Lime tragen helle Schrift auf dem
 vollen Ton nicht — 1,45:1, 2,63:1 und 2,33:1. Abdunkeln bis 4,8:1 geht, kostet aber jedes Mal genau
@@ -1342,8 +1375,8 @@ Farbwerte gegen beide Farbmodi geprüft sind. Ein Blick in `src/` reicht dafür 
 Tabler färbt den Text **jeder** gefüllten Variante über `--tblr-<farbe>-fg`, und das ist für alle
 dieselbe Fastweiß-Farbe (`--tblr-light`). Wie hell die Füllung darunter ist, spielt dabei keine
 Rolle — auf Grün ergab das 2,63:1, auf Gelb 1,45:1, in **beiden** Farbmodi. Im Dunkelmodus hellt
-Tabler zusätzlich die Sekundärfüllung von `#6b7280` auf `#9ca3af` auf, lässt den Text aber weiß:
-das war der gemeldete Abbrechen-Button mit 2,43:1.
+Tabler zusätzlich die Sekundärfüllung von `#6b7280` auf `#9ca3af` auf (seit 1.6: `#737373` auf
+`#a3a3a3`), lässt den Text aber weiß: das war der gemeldete Abbrechen-Button mit 2,43:1.
 
 | Variante | hell vorher | hell nachher | dunkel vorher | dunkel nachher |
 |---|---|---|---|---|
@@ -1359,7 +1392,7 @@ das war der gemeldete Abbrechen-Button mit 2,43:1.
 | `btn-link` | **4,13** ✘ | 6,54 | **3,55** ✘ | 4,86 |
 | `btn-azure` (#1159), Hover | **2,92** ✘ | 5,05, Hover 6,36 | **2,92** ✘ | 5,05, Hover 6,36 |
 
-Drei Dinge sind dabei zu wissen:
+Vier Dinge sind dabei zu wissen:
 
 - **`--tblr-<farbe>-fg` ist der richtige Hebel.** Die Variable färbt die gefüllte Variante, deren
   Hover- und Aktivzustand und die gefüllte Hover-Fläche der Outline- und Ghost-Varianten — eine
@@ -1369,16 +1402,21 @@ Drei Dinge sind dabei zu wissen:
   zwar auf `--tblr-link-color`, überschreibt die Farbe im selben Stylesheet aber mit einem festen
   `color: rgb(7, 124, 234)`. Ein gewöhnlicher Link löst aus demselben Token korrekt auf (5,00:1 /
   5,87:1) — nur der Button nicht. Hier muss `color` direkt gesetzt werden.
-- **Tablers Hover-Füllung heißt `-darken`, mischt aber mit 20 % Transparenz gegen den Untergrund.**
-  Auf hellem Grund hellt sie damit auf, auf dunklem dunkelt sie ab — jeweils in die Richtung, in der
-  der Text verliert. Hell fielen `btn-primary`, `btn-secondary` und `btn-danger` im Hover auf
-  3,39:1, 3,14:1 und 3,51:1; dunkel `btn-secondary` auf 4,24:1 und `btn-success` auf 3,93:1. Die
-  Korrektur dreht die Richtung je Modus um. **Ein Ruhezustand über 4,5:1 sagt nichts über den
-  Hover** — beide sind zu messen.
+- **Tablers Hover-Füllung `-darken` geht nicht in die Richtung, die die Schrift braucht.** Bis
+  Tabler 1.5 mischte sie mit 20 % Transparenz gegen den Untergrund und hellte damit auf hellem Grund
+  auf: hell fielen `btn-primary`, `btn-secondary` und `btn-danger` im Hover auf 3,39:1, 3,14:1 und
+  3,51:1, dunkel `btn-secondary` auf 4,24:1 und `btn-success` auf 3,93:1. Seit Tabler 1.6 dunkelt
+  sie in beiden Modi deckend ab — richtig für helle Schrift, falsch für dunkle: `btn-success` fiele
+  hell auf 4,38:1, dunkel `btn-secondary` auf 4,80:1 und `btn-success` auf 4,38:1. Die Korrektur
+  gibt jeder Füllung mit dunkler Schrift einen aufhellenden Hover. **Ein Ruhezustand über 4,5:1 sagt
+  nichts über den Hover** — beide sind zu messen.
+- **Seit Tabler 1.6 legt jeder `.btn` im Hover eine Fläche unter** (`--tblr-hover-bg`). Für einen
+  Textknopf hebt sie den Grund an: `btn-link` fiel dunkel von 5,07:1 auf 4,11:1 und bleibt deshalb
+  ohne Fläche.
 
 Nach der Änderung liegt keine Variante in keinem der beiden Modi unter 4,5:1, weder im Ruhe- noch im
-Hover-Zustand, weder auf der Karte noch in der stets dunklen Sidebar; Minimum hell 4,63:1, dunkel
-4,66:1.
+Hover-Zustand, weder auf der Karte noch in der stets dunklen Sidebar; Minimum unter Tabler 1.6 hell
+4,54:1, dunkel 4,66:1.
 
 #### Feldhöhe bei ersetzten Bedienelementen
 

@@ -30,6 +30,18 @@
   --tblr-warning-rgb: 255, 204, 0;
 }
 
+/* ===== Fokusring in voller Primaerfarbe =====
+   Seit Tabler 1.6 ist der Fokusring eine Kontur statt eines Schattens, und Tabler mischt ihre Farbe
+   aus der Primaerfarbe und dem Seitengrund: hell zur Haelfte, dunkel zu drei Vierteln. Gegen die
+   Karte erreicht der Ring damit hell 2,10:1 und dunkel 2,11:1, unter den 3:1, die ADR-0025 fuer ein
+   Nicht-Text-Element verlangt. In voller Primaerfarbe sind es 5,0:1 und 3,03:1 - hell wieder der
+   Wert des durchgezogenen Rings aus Tabler 1.5. Die Anteile sind die einzige Stellschraube: Breite,
+   Abstand und die Farbe je Validierungszustand leitet Tabler weiter selbst ab. */
+:root {
+  --tblr-focus-ring-opacity: 1;
+  --tblr-focus-ring-opacity-dark: 1;
+}
+
 /* ===== Manuelle Textselektion =====
    An data-bs-theme gekoppelt, nicht an prefers-color-scheme: der Salat-Umschalter
    ist maßgeblich, nicht das Theme des Betriebssystems. Seit Tabler 1.5 gilt das mit
@@ -54,7 +66,7 @@
    mischt die Primaerfarbe deshalb selbst gegen Weiss - 40% treffen mit #9bc5ed praktisch den
    Wert, der hier vorher als Literal stand. */
 [data-bs-theme="dark"] ::selection {
-  background-color: color-mix(in srgb, var(--tblr-primary) 40%, #fff); /* 8,1:1 gegen --tblr-dark */
+  background-color: color-mix(in srgb, var(--tblr-primary) 40%, #fff); /* 8,4:1 gegen --tblr-dark */
   color: var(--tblr-dark);
 }
 
@@ -117,27 +129,28 @@
 /* ===== Textkontrast: WCAG AA (4,5:1) fuer jeden Text =====
    Alle Werte in diesem Block sind im Browser gegen die echten Tabler-Stylesheets gemessen, nicht
    geschaetzt; das Verfahren und die Messtabellen stehen in docs/ui-style-guide.md (#1022).
-   Massgeblich ist je Modus der unguenstigste Untergrund: hell die Seitenflaeche (#f9fafb),
-   dunkel die Karte (#1f2937). Die Sidebar traegt data-bs-theme="dark" und ist damit immer
+   Massgeblich ist je Modus der unguenstigste Untergrund: hell die Seitenflaeche (#fafafa),
+   dunkel die Karte (#262626). Die Sidebar traegt data-bs-theme="dark" und ist damit immer
    dunkel: wo eine Regel ueber ein modusabhaengiges --tblr-* aufloest, gilt in ihr automatisch die
    dunkle Variante, auch im hellen Modus; wo sie je Modus getrennt steht, greift der
    Nachfahrenselektor. */
 
-/* .text-muted zeigt in Tabler auf --tblr-muted (#6b7280, eine Themefarbe) statt auf ein
-   modusabhaengiges Token. Der Wert ist deshalb in beiden Farbmodi derselbe und wird fuer Dunkel
-   nie neu gesetzt: hell 4,83:1, dunkel nur 3,04:1. --tblr-muted global umzubiegen scheidet aus,
-   die Variable haengt an 42 weiteren Stellen im Tabler-CSS. Stattdessen zeigt die Klasse hier auf
-   --tblr-secondary, das den Moduswechsel mitmacht: hell bleibt es bei #6b7280 und 4,83:1, dunkel
-   wird daraus #9ca3af und 5,78:1. Damit sind .text-muted und .text-secondary deckungsgleich -
-   was der Style Guide ohnehin als ihre gemeinsame Bedeutung beschreibt. */
+/* .text-muted zeigt in Tabler auf --tblr-muted (#737373, eine Themefarbe) statt auf ein
+   modusabhaengiges Token. Der Wert ist deshalb in beiden Farbmodi derselbe und wird fuer Dunkel nie
+   neu gesetzt: hell 4,74:1, dunkel nur 3,19:1. --tblr-muted global umzubiegen scheidet aus, die
+   Variable haengt an 42 weiteren Stellen im Tabler-CSS. Stattdessen zeigt die Klasse hier auf
+   --tblr-secondary, das den Moduswechsel mitmacht: hell bleibt es bei #737373 und 4,74:1 auf der
+   Karte (4,54:1 auf der Seitenflaeche), dunkel wird daraus #a3a3a3 und 6,00:1. Damit sind
+   .text-muted und .text-secondary deckungsgleich - was der Style Guide ohnehin als ihre gemeinsame
+   Bedeutung beschreibt. */
 .text-muted {
   color: var(--tblr-secondary) !important;
 }
 
-/* Dasselbe fuer die Fussleiste: --tblr-tertiary-color ist mit 50% Deckung gemischt und erreicht
-   hell nur 1,99:1 - der schlechteste Wert im ganzen Satz. --tblr-secondary-color hinter
-   .text-body-secondary ist mit 75% gemischt und kommt hell auf 3,00:1. Beide landen damit auf
-   demselben Ton wie .text-muted und .text-secondary: hell 4,83:1, dunkel 5,78:1. */
+/* Dasselbe fuer die Fussleiste: --tblr-tertiary-color ist mit 50% Deckung gemischt und erreichte
+   unter Tabler 1.5 hell nur 1,99:1 - der schlechteste Wert im ganzen Satz. --tblr-secondary-color
+   hinter .text-body-secondary ist mit 75% gemischt und kam hell auf 3,00:1. Beide landen damit auf
+   demselben Ton wie .text-muted und .text-secondary: hell 4,74:1, dunkel 6,00:1. */
 .text-body-secondary,
 .text-body-tertiary {
   color: var(--tblr-secondary) !important;
@@ -146,7 +159,8 @@
 /* Die semantischen Textfarben treffen den vollen Farbton und liegen damit je nach Modus zu hell
    oder zu dunkel. Gemischt wird deshalb - aber gegen Schwarz und Weiss, nicht gegen
    --tblr-body-color (#1043).
-   Zwei Gruende. Erstens der Farbton: --tblr-body-color ist im hellen Modus #374151, ein Blaugrau.
+   Zwei Gruende. Erstens der Farbton: --tblr-body-color war im hellen Modus #374151, ein Blaugrau
+   (seit Tabler 1.6 das neutrale #404040).
    Die Mischung dagegen dunkelt nicht nur ab, sie entsaettigt und zieht ins Blau - aus dem Ocker
    von warning wurde als Text ein Graubraun (#836731), waehrend dieselbe Farbe als Badge ein
    gesaettigtes Ocker ist (#935f00). Schwarz und Weiss dunkeln bzw. hellen nur auf und lassen den
@@ -171,7 +185,7 @@
    braucht hier einen eigenen, gemessenen Eintrag. */
 .text-primary,
 .text-blue {
-  color: var(--tblr-primary) !important; /* hell 4,78:1 - volle Farbe */
+  color: var(--tblr-primary) !important; /* hell 4,79:1 - volle Farbe */
 }
 
 .text-danger,
@@ -181,7 +195,7 @@
 
 .text-success,
 .text-green {
-  color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)) !important; /* hell 4,97:1 */
+  color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)) !important; /* hell 4,98:1 */
 }
 
 /* Gelb ist der Ton, der hier am meisten verliert, und das laesst sich nicht beheben: ein Text, der
@@ -190,7 +204,7 @@
    Anteil ist mit dem satteren Gelb von 60% auf 53% gesunken, weil der neue Ton heller ist. */
 .text-warning,
 .text-yellow {
-  color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)) !important; /* hell 4,80:1 */
+  color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)) !important; /* hell 4,82:1 */
 }
 
 /* Derselbe Fall eine Ebene hoeher: Tablers Warnhinweis setzt --tblr-alert-variant-color auf
@@ -198,27 +212,27 @@
    16%-Toenung und bleibt richtig; die Schrift traegt auf ihr gemessene 1,46:1 und ist nicht zu
    lesen. Ueberschrieben wird deshalb nur --tblr-alert-color, also die Schrift - mit demselben
    abgedunkelten Ton wie .text-warning, waehrend die Toenung ihr Gelb behaelt. Dunkel traegt die
-   volle Farbe schon 8,14:1 und bleibt stehen. */
+   volle Farbe schon 8,46:1 und bleibt stehen. */
 .alert-warning {
-  --tblr-alert-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)); /* hell 4,79:1 */
+  --tblr-alert-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)); /* hell 4,87:1 */
 }
 
 :where([data-bs-theme="dark"]) .alert-warning {
-  --tblr-alert-color: var(--tblr-warning); /* dunkel 8,14:1 - volle Farbe */
+  --tblr-alert-color: var(--tblr-warning); /* dunkel 8,46:1 - volle Farbe */
 }
 
 /* --tblr-info traegt denselben Wert wie --tblr-azure und teilt deshalb den Anteil. */
 .text-azure,
 .text-info {
-  color: color-mix(in srgb, var(--tblr-azure) 75%, var(--tblr-black)) !important; /* hell 4,83:1 */
+  color: color-mix(in srgb, var(--tblr-azure) 75%, var(--tblr-black)) !important; /* hell 4,84:1 */
 }
 
 .text-teal {
-  color: color-mix(in srgb, var(--tblr-teal) 75%, var(--tblr-black)) !important; /* hell 4,97:1 */
+  color: color-mix(in srgb, var(--tblr-teal) 75%, var(--tblr-black)) !important; /* hell 4,98:1 */
 }
 
 .text-orange {
-  color: color-mix(in srgb, var(--tblr-orange) 75%, var(--tblr-black)) !important; /* hell 4,87:1 */
+  color: color-mix(in srgb, var(--tblr-orange) 75%, var(--tblr-black)) !important; /* hell 4,88:1 */
 }
 
 .text-purple {
@@ -233,13 +247,14 @@
    damit auch im hellen Modus dunkel - der Nachfahrenselektor greift dort von selbst. */
 :where([data-bs-theme="dark"]) .text-primary,
 :where([data-bs-theme="dark"]) .text-blue {
-  color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)) !important; /* dunkel 4,92:1 */
+  color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)) !important; /* dunkel 5,07:1 */
 }
 
 /* Heute: Balken an beiden Enden des Tages in Einzel- und Matrixuebersicht. Dunkel dieselbe
-   Aufhellung wie bei text-primary: das volle Blau traegt dort 2,94:1 auf der Karte und 2,24:1 auf
-   dem gehoverten Kopf. Gemessen gegen Karte, Wochenende, Feiertag und Hover (WCAG 1.4.11, 3:1):
-   hell 3,34 bis 5,00:1, dunkel 3,76 bis 4,93:1 - am knappsten jeweils der gehoverte Kopf. */
+   Aufhellung wie bei text-primary: das volle Blau traegt dort 3,03:1 auf der Karte, auf dem
+   gehoverten Kopf unter Tabler 1.5 nur 2,24:1. Gemessen gegen Karte, Wochenende, Feiertag und Hover
+   (WCAG 1.4.11, 3:1): hell 3,35 bis 5,00:1, dunkel 3,92 bis 5,07:1 - am knappsten jeweils der
+   gehoverte Kopf. */
 :root {
   --salat-today: var(--tblr-primary);
 }
@@ -250,22 +265,23 @@
 
 /* Hover ueber einem Tag - Spalte der Matrix, Zeile der Monatsuebersicht, Eintrag der Wochenleiste -
    ueberall gleich: die Flaeche getoent, Kopf bzw. Datumskachel kraeftiger, Tag und Wochentag blau.
-   Das volle Blau traegt auf diesen Toenungen nirgends 4,5:1 (hell 2,73 bis 3,88:1, dunkel 1,94 bis
-   2,49:1); es wird deshalb je Modus gemischt, bis die engste Stelle reicht - die Datumskachel, auf
-   der beide Toenungen uebereinanderliegen. Gemessen: Kachel / Matrixzelle / Matrixkopf. */
+   Das volle Blau traegt auf diesen Toenungen nirgends 4,5:1 (unter Tabler 1.5 hell 2,73 bis 3,88:1,
+   dunkel 1,94 bis 2,49:1); es wird deshalb je Modus gemischt, bis die engste Stelle reicht - die
+   Datumskachel, auf der beide Toenungen uebereinanderliegen. Gemessen: Kachel / Matrixzelle /
+   Matrixkopf. */
 :root {
   --salat-day-hover-bg: rgba(var(--tblr-primary-rgb), 0.18);
   --salat-day-hover-head-bg: rgba(var(--tblr-primary-rgb), 0.28);
-  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 70%, #000); /* hell 4,58 / 6,51 / 5,61:1 */
+  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 70%, #000); /* hell 4,58 / 6,49 / 5,61:1 */
 }
 
 [data-bs-theme="dark"] {
-  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 50%, var(--tblr-white)); /* dunkel 4,58 / 5,86 / 5,28:1 */
+  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 50%, var(--tblr-white)); /* dunkel 5,00 / 6,08 / 5,50:1 */
 }
 
 /* Rot geht dunkel nicht ueber die Beimischung von Weiss: die hellt zwar auf, nimmt dem Ton dabei
    aber die Saettigung - #e27474 stand neben der Badge desselben Namens wie ein ausgeblichenes Rot.
-   Aufhellen muss es trotzdem, --tblr-danger selbst traegt auf der Karte nur 3,15:1.
+   Aufhellen muss es trotzdem, --tblr-danger selbst traegt auf der Karte nur 3,25:1.
    Beides zugleich geht nur ueber den Rand des sRGB-Raums: in oklch wird die Helligkeit gesetzt und
    die Buntheit hoeher angegeben, als der Farbraum sie an dieser Stelle hergibt - der Browser bildet
    auf den Rand ab und liefert damit das saettigste Rot, das bei dieser Helligkeit ueberhaupt
@@ -273,44 +289,45 @@
    gesetzt; 0,70 ist der Wert, bei dem der Rand noch 4,5:1 traegt. */
 :where([data-bs-theme="dark"]) .text-danger,
 :where([data-bs-theme="dark"]) .text-red {
-  color: oklch(from var(--tblr-danger) 0.7 0.2 h) !important; /* dunkel 4,92:1 */
+  color: oklch(from var(--tblr-danger) 0.7 0.2 h) !important; /* dunkel 5,07:1 */
 }
 
 :where([data-bs-theme="dark"]) .text-success,
 :where([data-bs-theme="dark"]) .text-green {
-  color: var(--tblr-success) !important; /* dunkel 5,35:1 - volle Farbe */
+  color: var(--tblr-success) !important; /* dunkel 5,51:1 - volle Farbe */
 }
 
 :where([data-bs-theme="dark"]) .text-warning,
 :where([data-bs-theme="dark"]) .text-yellow {
-  color: var(--tblr-warning) !important; /* dunkel 9,71:1 - volle Farbe */
+  color: var(--tblr-warning) !important; /* dunkel 10,01:1 - volle Farbe */
 }
 
 :where([data-bs-theme="dark"]) .text-azure,
 :where([data-bs-theme="dark"]) .text-info {
-  color: var(--tblr-azure) !important; /* dunkel 4,81:1 - volle Farbe */
+  color: var(--tblr-azure) !important; /* dunkel 4,95:1 - volle Farbe */
 }
 
 :where([data-bs-theme="dark"]) .text-teal {
-  color: color-mix(in srgb, var(--tblr-teal) 95%, var(--tblr-white)) !important; /* dunkel 4,96:1 */
+  color: color-mix(in srgb, var(--tblr-teal) 95%, var(--tblr-white)) !important; /* dunkel 5,11:1 */
 }
 
 :where([data-bs-theme="dark"]) .text-orange {
-  color: var(--tblr-orange) !important; /* dunkel 4,82:1 - volle Farbe */
+  color: var(--tblr-orange) !important; /* dunkel 4,97:1 - volle Farbe */
 }
 
 :where([data-bs-theme="dark"]) .text-purple {
-  color: color-mix(in srgb, var(--tblr-purple) 70%, var(--tblr-white)) !important; /* dunkel 4,96:1 */
+  color: color-mix(in srgb, var(--tblr-purple) 70%, var(--tblr-white)) !important; /* dunkel 5,11:1 */
 }
 
 :where([data-bs-theme="dark"]) .text-indigo {
-  color: color-mix(in srgb, var(--tblr-indigo) 70%, var(--tblr-white)) !important; /* dunkel 5,05:1 */
+  color: color-mix(in srgb, var(--tblr-indigo) 70%, var(--tblr-white)) !important; /* dunkel 5,21:1 */
 }
 
 /* Getoente Flaechen: bg-*-lt setzt in Tabler nicht nur den Hintergrund, sondern auch den Text auf
-   den vollen Farbton. Auf der 10%-Toenung erreicht der nirgends 4,5:1 - hell keine einzige der 18
-   Toenungen (1,97:1 bis 4,35:1), dunkel fuenf von 18. Die Toenung bleibt Bedeutungstraegerin, der
-   Text bekommt die normale Textfarbe und liegt damit in beiden Modi ueber 8,9:1.
+   den vollen Farbton. Auf der 10%-Toenung erreichte der unter Tabler 1.5 nirgends 4,5:1 - hell
+   keine einzige der 18 Toenungen (1,97:1 bis 4,35:1), dunkel fuenf von 18. Die Toenung bleibt
+   Bedeutungstraegerin, der Text bekommt die normale Textfarbe und liegt damit in beiden Modi ueber
+   8,5:1.
    Die Regel gilt fuer jede getoente Flaeche, nicht nur fuer Badges: dieselbe Klasse traegt die
    Wochenend- und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards und die
    Avatare.
@@ -451,27 +468,27 @@
 }
 
 .badge.bg-warning-lt {
-  background-color: var(--tblr-warning) !important; /* 9,71:1 */
+  background-color: var(--tblr-warning) !important; /* 10,01:1 */
 }
 
 .badge.bg-yellow-lt {
-  background-color: var(--tblr-yellow) !important; /* 9,71:1 */
+  background-color: var(--tblr-yellow) !important; /* 10,01:1 */
 }
 
 .badge.bg-success-lt {
-  background-color: var(--tblr-success) !important; /* 5,35:1 */
+  background-color: var(--tblr-success) !important; /* 5,51:1 */
 }
 
 .badge.bg-green-lt {
-  background-color: var(--tblr-green) !important; /* 5,35:1 */
+  background-color: var(--tblr-green) !important; /* 5,51:1 */
 }
 
 .badge.bg-lime-lt {
-  background-color: var(--tblr-lime) !important; /* 6,02:1 */
+  background-color: var(--tblr-lime) !important; /* 6,21:1 */
 }
 
 /* Grau ist der einzige Ton, dessen Fuellung sich mit dem Modus aendert: Tabler hellt die
-   Sekundaerfuellung im Dunkelmodus von #6b7280 auf #9ca3af auf. Hell traegt sie weisse Schrift
+   Sekundaerfuellung im Dunkelmodus von #737373 auf #a3a3a3 auf. Hell traegt sie weisse Schrift
    unveraendert, dunkel muss sie dafuer erst abgedunkelt werden. */
 .badge.bg-secondary-lt {
   background-color: var(--tblr-secondary) !important;
@@ -504,7 +521,7 @@
    Tabler faerbt den Text jeder gefuellten Variante ueber --tblr-<farbe>-fg, und das ist fuer alle
    Varianten dasselbe Fastweiss (--tblr-light). Wie hell die Fuellung darunter ist, spielt dabei
    keine Rolle - auf Gruen ergab das 2,63:1, auf Gelb 1,45:1, und zwar in beiden Farbmodi.
-   Im Dunkelmodus hellt Tabler zusaetzlich die Sekundaerfuellung von #6b7280 auf #9ca3af auf, laesst
+   Im Dunkelmodus hellt Tabler zusaetzlich die Sekundaerfuellung von #737373 auf #a3a3a3 auf, laesst
    den Text aber weiss: das war der gemeldete Abbrechen-Button mit 2,43:1.
    Die Variable sitzt an der richtigen Stelle, um das an einer Stelle zu loesen - sie faerbt die
    gefuellte Variante, deren Hover- und Aktivzustand und die gefuellte Hover-Flaeche der Outline-
@@ -512,54 +529,62 @@
 :root,
 [data-bs-theme="light"],
 [data-bs-theme="dark"] {
-  --tblr-success-fg: var(--tblr-dark); /* auf #2fb344: 5,35:1 statt 2,63:1 */
-  --tblr-warning-fg: var(--tblr-dark); /* auf #ffcc00: 9,71:1 statt 1,45:1 */
+  --tblr-success-fg: var(--tblr-dark); /* auf #2fb344: 5,51:1 statt 2,63:1 */
+  --tblr-warning-fg: var(--tblr-dark); /* auf #ffcc00: 10,01:1 statt 1,45:1 */
   --tblr-danger-fg: var(--tblr-white); /* auf #d63939: 4,67:1 statt 4,46:1 - reines Weiss statt --tblr-light reicht */
 }
 
 /* Die Sekundaerfuellung wechselt mit dem Farbmodus, ihre Textfarbe muss das deshalb auch:
-   hell #6b7280 traegt hellen Text (4,63:1), dunkel #9ca3af braucht dunklen (5,78:1).
+   hell #737373 traegt hellen Text (4,54:1), dunkel #a3a3a3 braucht dunklen (6,00:1).
    Der Block steht nach dem obigen, damit er dort gewinnt, wo beide Selektoren dasselbe Element
    treffen - und er greift auch in der Sidebar, die data-bs-theme="dark" traegt. */
 [data-bs-theme="dark"] {
   --tblr-secondary-fg: var(--tblr-dark);
 }
 
-/* Tablers Hover-Fuellung heisst -darken, mischt den Farbton aber mit 20% Transparenz gegen den
-   Untergrund - auf hellem Grund hellt sie damit auf und auf dunklem dunkelt sie ab, also jeweils
-   genau in die Richtung, in der der Text verliert. Deshalb die beiden folgenden Bloecke.
+/* Tablers Hover-Fuellung -darken dunkelt seit Tabler 1.6 in beiden Modi ab, deckend um sechs
+   Punkte Helligkeit. Fuer eine Fuellung mit hellem Text ist das die richtige Richtung, fuer eine
+   mit dunklem Text die falsche: dort verliert der Text. Die Richtung haengt damit an der Schrift,
+   nicht am Modus - und welche Fuellung welche Schrift traegt, wechselt mit dem Modus (siehe oben).
 
-   Hell: die Varianten mit hellem Text (Primaer, Sekundaer, Gefahr) wurden im Hover heller und
-   fielen auf 3,39:1, 3,14:1 und 3,51:1 - sie dunkeln jetzt ab. Gruen und Gelb tragen dunklen Text,
-   fuer sie ist Tablers Aufhellen richtig und sie bleiben unangetastet. */
+   Hell: Primaer, Sekundaer und Gefahr tragen hellen Text und dunkeln ab. Die Bloecke stammen aus
+   Tabler 1.5, dessen -darken mit 20% Transparenz auf hellem Grund aufhellte (3,39:1, 3,14:1 und
+   3,51:1); seit 1.6 dunkelt Tabler hier selbst ab (6,16:1, 5,84:1 und 5,99:1), die Bloecke halten
+   die Werte daneben. Gruen traegt dunklen Text und hellt deshalb auf: Tablers Abdunkeln fiele auf
+   4,38:1. Gelb traegt ebenfalls dunklen Text, bleibt aber auch abgedunkelt bei 8,21:1. */
 [data-bs-theme="light"] .btn-primary {
-  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-primary) 85%, #000); /* 6,18:1 statt 3,39:1 */
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-primary) 85%, #000); /* 6,19:1 */
   --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-primary) 85%, #000);
 }
 
 [data-bs-theme="light"] .btn-secondary {
-  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #000); /* 5,95:1 statt 3,14:1 */
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #000); /* 5,84:1 */
   --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #000);
 }
 
 [data-bs-theme="light"] .btn-danger {
-  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-danger) 85%, #000); /* 6,08:1 statt 3,51:1 */
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-danger) 85%, #000); /* 6,08:1 */
   --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-danger) 85%, #000);
 }
 
+[data-bs-theme="light"] .btn-success {
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff); /* 6,38:1 statt 4,38:1 */
+  --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff);
+}
+
 /* Dunkel: hier ist es umgekehrt. Sekundaer und Gruen tragen nach den Regeln oben dunklen Text und
-   fielen im Hover auf 4,24:1 bzw. 3,93:1 - sie hellen jetzt auf, was im Dunkelmodus ohnehin die
-   erwartete Richtung ist. Primaer und Gefahr behalten hellen Text, fuer sie passt Tablers
-   Abdunkeln.
+   fielen mit Tablers Abdunkeln im Hover auf 4,80:1 bzw. 4,38:1 - sie hellen jetzt auf, was im
+   Dunkelmodus ohnehin die erwartete Richtung ist. Primaer und Gefahr behalten hellen Text, fuer
+   sie passt Tablers Abdunkeln.
    Dieser Block steht bewusst nach dem hellen: in der Sidebar, die immer data-bs-theme="dark"
    traegt, treffen beide Selektoren gleich stark, und dann entscheidet die Reihenfolge. */
 [data-bs-theme="dark"] .btn-secondary {
-  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #fff); /* 6,81:1 statt 4,24:1 */
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #fff); /* 7,06:1 statt 4,80:1 */
   --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-secondary) 85%, #fff);
 }
 
 [data-bs-theme="dark"] .btn-success {
-  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff); /* 6,19:1 statt 3,93:1 */
+  --tblr-btn-hover-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff); /* 6,38:1 statt 4,38:1 */
   --tblr-btn-active-bg: color-mix(in srgb, var(--tblr-success) 85%, #fff);
 }
 
@@ -578,12 +603,20 @@
   --tblr-btn-disabled-bg: color-mix(in srgb, var(--tblr-azure) 75%, #000);
 }
 
+/* Seit Tabler 1.6 legt jeder .btn im Hover eine leichte Flaeche unter (--tblr-hover-bg, dunkel 8%
+   der Textfarbe). Ein btn-link ist aber Text auf der Karte: die Flaeche hebt dort den Grund an, und
+   der Link faellt dunkel von 5,07:1 auf 4,11:1. Er bleibt deshalb ohne Flaeche, wie bis
+   Tabler 1.5. */
+.btn-link {
+  --tblr-btn-hover-bg: transparent;
+}
+
 /* Outline- und Ghost-Varianten tragen den vollen Farbton als Text auf der Seitenflaeche und haben
    damit dasselbe Problem wie die text-*-Utilities weiter oben - je nach Modus zu hell oder zu
    dunkel. Sie bekommen deshalb dieselbe Mischung und dieselben Anteile; der Rahmen nimmt sie mit,
    weil er als Umriss des Bedienelements 3:1 tragen muss und der reine Farbton dunkel nur auf
    2,94:1 kam. Secondary fehlt bewusst: --tblr-secondary wechselt bereits mit dem Farbmodus und
-   liegt in beiden bei 4,83:1 bzw. 5,78:1.
+   liegt in beiden bei 4,74:1 bzw. 6,00:1.
    Die Aufschrift eines Ghost- oder Outline-Buttons ist farbiger Text, deshalb folgt sie den
    Anteilen von oben mit - je Modus getrennt (#1043). Bliebe sie bei der alten Mischung, stuenden
    auf einer Seite zwei verschiedene Rottoene fuer dieselbe Aussage: die Zahl im Utility und die
@@ -594,7 +627,7 @@
    dunkle ist spezifischer und gewinnt deshalb, wo er greift - auch in der Sidebar. */
 .btn-outline-primary,
 .btn-ghost-primary {
-  --tblr-btn-color: var(--tblr-primary); /* hell 4,78:1, Rahmen 4,78:1 */
+  --tblr-btn-color: var(--tblr-primary); /* hell 4,79:1, Rahmen 4,79:1 */
   --tblr-btn-border-color: var(--tblr-primary);
 }
 
@@ -606,37 +639,37 @@
 
 .btn-outline-success,
 .btn-ghost-success {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)); /* hell 4,97:1 */
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black)); /* hell 4,98:1 */
   --tblr-btn-border-color: color-mix(in srgb, var(--tblr-success) 70%, var(--tblr-black));
 }
 
 .btn-outline-warning,
 .btn-ghost-warning {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)); /* hell 4,80:1 */
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black)); /* hell 4,82:1 */
   --tblr-btn-border-color: color-mix(in srgb, var(--tblr-warning) 53%, var(--tblr-black));
 }
 
 [data-bs-theme="dark"] .btn-outline-primary,
 [data-bs-theme="dark"] .btn-ghost-primary {
-  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)); /* dunkel 4,92:1 */
+  --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)); /* dunkel 5,07:1 */
   --tblr-btn-border-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white));
 }
 
 [data-bs-theme="dark"] .btn-outline-danger,
 [data-bs-theme="dark"] .btn-ghost-danger {
-  --tblr-btn-color: oklch(from var(--tblr-danger) 0.7 0.2 h); /* dunkel 4,92:1 */
+  --tblr-btn-color: oklch(from var(--tblr-danger) 0.7 0.2 h); /* dunkel 5,07:1 */
   --tblr-btn-border-color: oklch(from var(--tblr-danger) 0.7 0.2 h);
 }
 
 [data-bs-theme="dark"] .btn-outline-success,
 [data-bs-theme="dark"] .btn-ghost-success {
-  --tblr-btn-color: var(--tblr-success); /* dunkel 5,35:1 - volle Farbe */
+  --tblr-btn-color: var(--tblr-success); /* dunkel 5,51:1 - volle Farbe */
   --tblr-btn-border-color: var(--tblr-success);
 }
 
 [data-bs-theme="dark"] .btn-outline-warning,
 [data-bs-theme="dark"] .btn-ghost-warning {
-  --tblr-btn-color: var(--tblr-warning); /* dunkel 9,71:1 - volle Farbe */
+  --tblr-btn-color: var(--tblr-warning); /* dunkel 10,01:1 - volle Farbe */
   --tblr-btn-border-color: var(--tblr-warning);
 }
 
@@ -647,12 +680,12 @@
    deshalb direkt gesetzt, die Variable der Vollstaendigkeit halber mit. */
 .btn-link {
   --tblr-btn-color: var(--tblr-primary);
-  color: var(--tblr-primary); /* hell 4,78:1 */
+  color: var(--tblr-primary); /* hell 4,79:1 */
 }
 
 [data-bs-theme="dark"] .btn-link {
   --tblr-btn-color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white));
-  color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)); /* dunkel 4,92:1 */
+  color: color-mix(in srgb, var(--tblr-primary) 70%, var(--tblr-white)); /* dunkel 5,07:1 */
 }
 
 /* ===== TomSelect an Tokens und Massstab angleichen =====
@@ -680,8 +713,8 @@
 /* Die gedaempften Teile des Dropdowns: Gruppenkopf, die Zeile "verwenden, was getippt wurde"
    (data-create-label) und der Platzhalter. Alle drei waren Literale und fielen je nach Modus
    durch - die Create-Zeile mit 1,21:1 im Dunkeln am deutlichsten. Sie landen auf demselben Ton
-   wie .text-muted: hell 4,83:1, dunkel 5,78:1. opacity, weil TomSelect den Platzhalter sonst
-   zusaetzlich abdunkelt. */
+   wie .text-muted: hell 4,54:1, dunkel auf dem Dropdown 7,11:1. opacity, weil TomSelect den
+   Platzhalter sonst zusaetzlich abdunkelt. */
 .ts-dropdown .optgroup-header,
 .ts-dropdown .create,
 .ts-control input::placeholder {
@@ -690,14 +723,14 @@
 }
 
 /* Die Trefferhervorhebung war ein festes Gelb mit 40% Deckung und kam im Dunkelmodus auf 4,32:1.
-   Aus dem Token gemischt traegt sie in beiden Modi: hell 7,62:1, dunkel 7,02:1. */
+   Aus dem Token gemischt traegt sie in beiden Modi: hell 8,58:1, dunkel 5,71:1. */
 .ts-dropdown [data-selectable] .highlight {
   background: color-mix(in srgb, var(--tblr-yellow) 35%, transparent);
 }
 
 /* Die Chips der Mehrfachauswahl waren ein festes Hellgrau mit dunkler Schrift - in sich lesbar,
    aber modusblind und im Dunkelmodus ein greller Fleck. Aus der Textfarbe gemischt heben sie sich
-   in beiden Modi vom Feld ab: hell 8,01:1, dunkel 9,71:1. */
+   in beiden Modi vom Feld ab: hell 7,76:1, dunkel 9,66:1. */
 .ts-wrapper.multi .ts-control > div {
   background: color-mix(in srgb, var(--tblr-body-color) 15%, transparent);
   border-color: var(--tblr-border-color);
@@ -705,7 +738,7 @@
 }
 
 /* Das x zum Entfernen eines Chips (#1149, Plugin remove_button). Es erbt die Chip-Schrift und
-   steht gegen den Chip bei 7,98:1 hell und 7,77:1 dunkel, mit Hover bei 6,83:1 und 6,03:1.
+   steht gegen den Chip bei 7,76:1 hell und 9,66:1 dunkel, mit Hover bei 6,66:1 und 7,36:1.
    Trennlinie und Hover waren Literale (#dee2e6, 5% Schwarz) und kommen aus denselben Tokens wie
    der Chip. Der aktive Chip behaelt TomSelects Primaerfarbe samt Linie und Hover (4,50:1).
    WCAG 2.5.8 verlangt 24 x 24px Tippflaeche, der Chip ist aber nur 22px hoch. Die Flaeche ragt
@@ -1084,9 +1117,9 @@ body:not(.salat-confirm-ready) button[data-confirm] {
    hier abgeraeumt. Die Beruehrflaeche kommt ueber den Innenabstand, den der negative Aussenabstand
    wieder aus dem Layout nimmt: mindestens 24px Ziel bei 16px Platzbedarf.
    Farben aus den bestehenden Tokens, alle vier Zustaende auf der Karte gemessen (ADR-0025), wo der
-   Ausloeser sitzt: im Ruhezustand --tblr-secondary, der Ton von .text-muted (#6b7280 auf #ffffff
-   4,67:1 / #9ca3af auf #1f2937 5,71:1), im Hover und bei Tastaturfokus die volle Textfarbe
-   (#374151 10,26:1 / #e5e7eb 11,72:1). Dieselben Tokens traegt das Einzelstueck in dashboard.html
+   Ausloeser sitzt: im Ruhezustand --tblr-secondary, der Ton von .text-muted (#737373 auf #ffffff
+   4,74:1 / #a3a3a3 auf #262626 6,00:1), im Hover und bei Tastaturfokus die volle Textfarbe
+   (#404040 10,37:1 / #e5e5e5 12,01:1). Dieselben Tokens traegt das Einzelstueck in dashboard.html
    (#1030), dort gegen die Seitenflaeche gemessen und deshalb mit leicht anderen Zahlen.
    Kein !important noetig, anders als dort: der Ausloeser traegt keine .text-muted-Klasse. */
 .info-popover-toggle {
@@ -1484,7 +1517,7 @@ body:not(.salat-confirm-ready) button[data-confirm] {
    saehe sie hier anders aus als ueberall sonst. Uebernommen sind deshalb nur die Diagrammregeln
    daraus, alle auf Tabler-Tokens (#1175).
    Dazu die Beschriftung: ApexCharts setzt ihre Farbe als SVG-Attribut, das jede CSS-Regel schlaegt.
-   Sie bekommt die normale Textfarbe - hell 10,31:1, dunkel 11,86:1 auf der Karte -, nicht das
+   Sie bekommt die normale Textfarbe - hell 10,37:1, dunkel 12,01:1 auf der Karte -, nicht das
    Grau, das ApexCharts voreinstellt. */
 .apexcharts-canvas .apexcharts-text,
 .apexcharts-canvas .apexcharts-xaxis-label,
