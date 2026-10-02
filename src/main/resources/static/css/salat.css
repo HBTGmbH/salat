@@ -156,6 +156,14 @@
   color: var(--tblr-secondary) !important;
 }
 
+/* Dasselbe fuer die Beschriftung inaktiver Reiter: Tabler setzt --tblr-nav-link-color an .nav auf
+   --tblr-gray-500 (#737373), in beiden Modi gleich - dunkel auf der Karte nur 3,19:1. Umgebogen
+   wird es nur fuer .nav-tabs; die Navigation der Sidebar setzt ihre Farbe ueber .navbar selbst.
+   Hell bleibt es beim selben Ton und 4,54:1, dunkel wird daraus #a3a3a3 und 6,00:1 (#1297). */
+.nav-tabs {
+  --tblr-nav-link-color: var(--tblr-secondary);
+}
+
 /* Die semantischen Textfarben treffen den vollen Farbton und liegen damit je nach Modus zu hell
    oder zu dunkel. Gemischt wird deshalb - aber gegen Schwarz und Weiss, nicht gegen
    --tblr-body-color (#1043).
@@ -276,7 +284,7 @@
 }
 
 [data-bs-theme="dark"] {
-  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 50%, var(--tblr-white)); /* dunkel 5,00 / 6,08 / 5,50:1 */
+  --salat-day-hover-color: color-mix(in srgb, var(--tblr-primary) 50%, var(--tblr-white)); /* dunkel 4,75 / 6,08 / 5,50:1 */
 }
 
 /* Rot geht dunkel nicht ueber die Beimischung von Weiss: die hellt zwar auf, nimmt dem Ton dabei
