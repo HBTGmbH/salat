@@ -5,6 +5,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import java.util.regex.Pattern;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -192,14 +193,16 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
   /**
    * The unreachable port fails the run at once, but in the background: the page shows the outcome
-   * after the next reload, and the reload keeps the run tab open through the address fragment.
+   * after the next reload. The reload goes through the refresh button in the head of the page
+   * (#1287), and that keeps the run tab open.
    */
   private static void assertRunFailed(Page page, String name) {
     for (int attempt = 0; attempt < 40; attempt++) {
       // the row is there from the start, as "running" - textContent does not wait for it
       if (latestRunOf(page, name).textContent().contains("Fehlgeschlagen")) break;
       page.waitForTimeout(250);
-      page.reload();
+      page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Aktualisieren")).click();
+      assertThat(page).hasURL(Pattern.compile(".*#tab-runs$"));
     }
     assertThat(latestRunOf(page, name)).containsText("Fehlgeschlagen");
     assertThat(page.locator("#tab-runs")).isVisible();
