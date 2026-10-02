@@ -297,6 +297,45 @@ public class ETLServiceTest {
   }
 
   @Test
+  void opening_a_run_needs_an_etl_right_of_its_own() {
+    // #1289: the row is the lock, so the method that writes it does not leave the check to its
+    // callers - a caller without one could otherwise turn away every further run
+    when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
+
+    assertThatThrownBy(() -> etlService.startRun(ONE_MONTH, MANUAL)).isInstanceOf(AuthorizationException.class);
+
+    verify(runHistoryRepo, never()).save(any());
+  }
+
+  @Test
+  void the_right_is_checked_before_the_period() {
+    // whoever may not start a run learns that, not something about their input
+    when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
+
+    assertThatThrownBy(() -> etlService.startRun(BACKWARDS, MANUAL)).isInstanceOf(AuthorizationException.class);
+  }
+
+  @Test
+  void recording_a_skipped_run_needs_an_etl_right_as_well() {
+    when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
+
+    assertThatThrownBy(() -> etlService.recordSkippedRun(ONE_MONTH, SCHEDULED, "Übersprungen"))
+        .isInstanceOf(AuthorizationException.class);
+
+    verify(runHistoryRepo, never()).save(any());
+  }
+
+  @Test
+  void whether_a_definition_exists_is_only_told_to_someone_with_an_etl_right() {
+    // #1289: otherwise 404 against 403 tells any login which definition names there are
+    when(authorization.isAuthorizedForAnyETL(EXECUTE)).thenReturn(false);
+
+    assertThatThrownBy(() -> etlService.isETLExisting("worked-hours")).isInstanceOf(AuthorizationException.class);
+
+    verify(definitionRepo, never()).findByName(anyString());
+  }
+
+  @Test
   void a_skipped_run_is_recorded_as_begun_and_ended_at_once() {
     // Der nächtliche Lauf, der gar nicht erst begann: ohne diese Zeile wäre sein Ausfall von einer
     // abgeschalteten Anwendung nicht zu unterscheiden.
