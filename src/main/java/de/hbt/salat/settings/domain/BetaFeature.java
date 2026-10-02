@@ -15,14 +15,14 @@ import java.util.Optional;
  * <p>Keys stored for users are matched by {@link #getKey()}; unknown keys — a beta that has since
  * been removed — are silently dropped when the preferences are read, so no cleanup migration is
  * needed.
+ *
+ * <p>There is currently no beta. The enum stays, empty, so that the next one costs a constant, its
+ * two texts ({@link #labelKey()}, {@link #helpKey()}) and a named getter in {@code BetaViewHelper};
+ * the settings page shows its switch section only while there is a constant. The last beta was the
+ * time and duration input of #830 ({@code TIME_INPUT}), made the default with #1248.
  */
 public enum BetaFeature {
-
-  /**
-   * #830 — stepper with 15 minute grid, additive quick-add chips and keyboard stepping for time and
-   * duration fields. Feedback goes to the Slack channel #salat.
-   */
-  TIME_INPUT("timeinput");
+  ;
 
   private final String key;
 
@@ -32,6 +32,16 @@ public enum BetaFeature {
 
   public String getKey() {
     return key;
+  }
+
+  /** Message key of the switch label on the settings page. */
+  public String labelKey() {
+    return "main.settings.beta." + key + ".label";
+  }
+
+  /** Message key of the one-line description below the switch on the settings page. */
+  public String helpKey() {
+    return "main.settings.beta." + key + ".help";
   }
 
   public static Optional<BetaFeature> ofKey(String key) {

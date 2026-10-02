@@ -21,12 +21,10 @@ import de.hbt.salat.e2e.E2ETestData;
 import de.hbt.salat.e2e.PlaywrightE2ETestBase;
 
 /**
- * Covers the new time and duration input (#830) in both states of its opt-in beta flag.
- *
- * <p>The flag is persisted per user, so every test sets it explicitly through the settings form
- * first instead of relying on the state a previous test left behind.
+ * Covers the time and duration input (#830), the only input for times and durations since its beta
+ * ended (#1248).
  */
-class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
+class TimeInputE2ETest extends PlaywrightE2ETestBase {
 
   private static final String EMPLOYEE = E2ETestData.EMPLOYEE_MA_SIGN;
   private static final String STEPPER_INCREASE = "#durationTime + button";
@@ -34,16 +32,11 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
-  void without_the_beta_the_field_stays_plain_but_accepts_flexible_input(E2EBrowser browser) {
+  void the_duration_accepts_flexible_input(E2EBrowser browser) {
     var date = LocalDate.parse("2026-06-18");
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, false);
       openNewBooking(page, date);
-
-      // classic field: no stepper, but the in-context beta hint is offered
-      assertThat(page.locator(STEPPER_INCREASE)).hasCount(0);
-      assertThat(page.getByText("Schnelleingabe testen")).isVisible();
 
       // "2h30" is normalised to HH:MM on blur and accepted by the server
       page.fill("#durationTime", "2h30");
@@ -57,15 +50,10 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
-  void the_beta_adds_a_snapping_stepper_and_additive_chips(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+  void the_duration_has_a_snapping_stepper_and_additive_chips(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, true);
       openNewBooking(page, LocalDate.parse("2026-06-19"));
-
-      // the hint gives way to the beta badge, which carries the Slack feedback channel
-      assertThat(page.getByText("Schnelleingabe testen")).hasCount(0);
-      assertThat(page.locator("span.badge[title*='#salat']")).isVisible();
 
       // empty field: the first step lands on the grid
       page.click(STEPPER_INCREASE);
@@ -107,9 +95,8 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void modifiers_work_the_same_for_buttons_arrow_keys_and_the_wheel(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, true);
       openNewBooking(page, LocalDate.parse("2026-06-19"));
 
       var shift = new Page.ClickOptions().setModifiers(List.of(KeyboardModifier.SHIFT));
@@ -166,23 +153,20 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void the_inline_duration_edit_uses_the_new_input(E2EBrowser browser) {
     var date = LocalDate.parse("2026-07-08");
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, false);
       openNewBooking(page, date);
       page.fill("#durationTime", "02:00");
       book(page, date);
 
-      // classic: plain field, but the tolerant parsing still applies
+      // the tolerant parsing applies here too
       var wrap = inlineDurationWrap(page);
-      assertThat(wrap.locator(".input-group > button")).hasCount(0);
       wrap.locator(".inline-edit-display").click();
       wrap.locator(".inline-edit-input").fill("2h30");
       page.locator("h3").first().click();
       // the display changes only with the answer, so this also waits for the save
       assertThat(inlineDurationWrap(page).locator(".inline-edit-display")).hasText("2:30");
 
-      setBeta(page, true);
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=" + date, EMPLOYEE));
 
       List<String> saves = new ArrayList<>();
@@ -251,9 +235,7 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void the_duration_badge_is_filled_when_the_form_loads_in_begin_end_mode(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
-
-      setBeta(page, true);
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
       List<String> scriptErrors = new ArrayList<>();
       page.onPageError(scriptErrors::add);
@@ -285,11 +267,10 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
-  void an_off_grid_duration_can_still_be_typed_and_saved_with_the_beta_on(E2EBrowser browser) {
+  void an_off_grid_duration_can_still_be_typed_and_saved(E2EBrowser browser) {
     var date = LocalDate.parse("2026-06-22");
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, true);
       openNewBooking(page, date);
 
       page.fill("#durationTime", "01:07");
@@ -301,18 +282,12 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
-  void the_beta_turns_the_workingday_times_into_typeable_fields(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+  void the_workingday_times_are_typeable_fields(E2EBrowser browser) {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, false);
-      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
-      // classic: the native picker stays
-      assertThat(page.locator("#startTime")).hasAttribute("type", "time");
-
-      setBeta(page, true);
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-24", EMPLOYEE));
 
-      // beta: a text field, so a phone shows the numeric keypad instead of the OS wheel
+      // a text field, so a phone shows the numeric keypad instead of the OS wheel
       assertThat(page.locator("#startTime")).hasAttribute("type", "text");
 
       // sized by character count rather than by a pinned pixel value, so the width follows the
@@ -368,9 +343,8 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
   void toggling_not_worked_still_swaps_the_form_and_hides_the_time_fields(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
+    runAsUser(browser, EMPLOYEE, "/dailyreport/daily", page -> {
 
-      setBeta(page, true);
       page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-29", EMPLOYEE));
       assertThat(page.locator("#start-field")).isVisible();
 
@@ -383,24 +357,6 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("#start-field")).isVisible();
       // and the field is enhanced again after the swap
       assertThat(page.locator("#start-field .input-group")).isVisible();
-    });
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
-  void the_hint_on_the_daily_page_activates_the_feature(E2EBrowser browser) {
-    runAsUser(browser, EMPLOYEE, "/settings", page -> {
-
-      setBeta(page, false);
-      page.navigate(urlWithLogin("/dailyreport/daily?mode=daily&date=2026-06-23", EMPLOYEE));
-
-      assertThat(page.locator("#beta-timeinput-hint")).isVisible();
-      page.locator("#beta-timeinput-hint").getByText("Aktivieren").click();
-
-      // the HX-Refresh response reloads the page: hint gone, workingday fields enhanced
-      page.waitForSelector("#start-field .input-group");
-      assertThat(page.locator("#beta-timeinput-hint")).hasCount(0);
-      assertThat(page.locator("#break-field .input-group")).isVisible();
     });
   }
 
@@ -438,29 +394,6 @@ class TimeInputBetaE2ETest extends PlaywrightE2ETestBase {
 
   private Locator chip(Page page, String label) {
     return page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(label));
-  }
-
-  /**
-   * Switches the beta flag and verifies it stuck — a silently unauthenticated POST would otherwise
-   * leave the tests asserting against the wrong variant.
-   */
-  private void setBeta(Page page, boolean enabled) {
-    page.navigate(urlWithLogin("/settings", EMPLOYEE));
-    var checkbox = page.locator("input[name='betaFeatures'][value='timeinput']");
-    if (enabled) {
-      checkbox.check();
-    } else {
-      checkbox.uncheck();
-    }
-    page.click("button[type=submit]");
-    page.waitForLoadState();
-    // the redirect after saving drops the dev-login query parameter, so navigate back explicitly
-    page.navigate(urlWithLogin("/settings", EMPLOYEE));
-    if (enabled) {
-      assertThat(checkbox).isChecked();
-    } else {
-      assertThat(checkbox).not().isChecked();
-    }
   }
 
 }

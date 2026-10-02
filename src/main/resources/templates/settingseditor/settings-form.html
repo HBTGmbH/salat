@@ -74,32 +74,33 @@
            th:data-check-url="${checkUrl}">Gravatar verwalten</a>
       </div>
 
-      <!--/* Beta features: one switch per BetaFeature constant, removed with the feature itself */-->
-      <hr id="beta"/>
-      <div class="mb-3">
-        <div class="d-flex align-items-center gap-2">
-          <span class="form-label mb-0" th:text="#{main.settings.beta.label}">Beta-Funktionen</span>
-          <span class="badge bg-azure-lt">Beta</span>
-        </div>
-        <div class="form-text" th:text="#{main.settings.beta.help}">
-          Zum Ausprobieren. Jederzeit wieder abschaltbar.
-        </div>
-        <div class="form-text mb-3" th:text="#{main.beta.feedback.hint}">
-          Beta-Funktion — Feedback und Probleme bitte im Slack-Channel #salat
-        </div>
+      <!--/* Beta features: one switch per BetaFeature constant; without one the section is gone */-->
+      <th:block th:unless="${betaFeatureOptions.isEmpty()}">
+        <hr id="beta"/>
+        <div class="mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="form-label mb-0" th:text="#{main.settings.beta.label}">Beta-Funktionen</span>
+            <span class="badge bg-azure-lt" th:text="#{main.beta.badge}">Beta</span>
+          </div>
+          <div class="form-text" th:text="#{main.settings.beta.help}">
+            Zum Ausprobieren. Jederzeit wieder abschaltbar.
+          </div>
+          <div class="form-text mb-3" th:text="#{main.beta.feedback.hint}">
+            Beta-Funktion — Feedback und Probleme bitte im Slack-Channel #salat
+          </div>
 
-        <label class="form-check form-switch">
-          <input class="form-check-input" type="checkbox"
-                 th:field="*{betaFeatures}" value="timeinput"/>
-          <span class="form-check-label">
-            <span th:text="#{main.settings.beta.timeinput.label}">Schnelleingabe für Zeit und Dauer</span>
-            <span class="d-block form-text mt-0"
-                  th:text="#{main.settings.beta.timeinput.help}">
-              15-Minuten-Schritte, Schnellwahl und flexible Eingabe statt Browser-Zeitauswahl.
+          <label class="form-check form-switch" th:each="feature : ${betaFeatureOptions}">
+            <input class="form-check-input" type="checkbox"
+                   th:field="*{betaFeatures}" th:value="${feature.key}"/>
+            <span class="form-check-label">
+              <span th:text="#{${feature.labelKey()}}">Name der Funktion</span>
+              <span class="d-block form-text mt-0" th:text="#{${feature.helpKey()}}">
+                Was die Funktion anders macht.
+              </span>
             </span>
-          </span>
-        </label>
-      </div>
+          </label>
+        </div>
+      </th:block>
 
     </salat:inputs>
     <salat:buttons>

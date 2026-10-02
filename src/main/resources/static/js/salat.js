@@ -619,9 +619,7 @@ window.addEventListener('pageshow', function (event) {
  * Saving on every step would swap the surrounding HTMX fragment away mid-edit and take the focus
  * with it.
  *
- * A field without data-time-step is the classic field: it keeps the tolerant parsing below and
- * gets no extra controls. That is how the beta flag is expressed — one attribute, not a second
- * code path.
+ * A field without data-time-step gets no extra controls, only the tolerant parsing below.
  * -------------------------------------------------------------------------- */
 
 const TIME_INPUT_DEFAULT_STEP = 15;
@@ -692,7 +690,6 @@ function timeOfDayMinutes(hour, minute) {
  */
 function timeMask(event) {
   const input = event.target;
-  if (input.type === 'time') return;
   const digits = input.value.replace(/\D/g, '').slice(0, 4);
   if (digits.length === 4)      input.value = digits.slice(0, 2) + ':' + digits.slice(2);
   else if (digits.length === 3) input.value = digits.slice(0, 1) + ':' + digits.slice(1);
@@ -712,8 +709,6 @@ function timeBlur(event) {
  */
 function durationMask(event) {
   const input = event.target;
-  // a native time input rejects intermediate values, so leave it to the browser (classic break field)
-  if (input.type === 'time') return;
   const raw = input.value;
   if (/[.,hm]/i.test(raw)) {
     const cleaned = raw.replace(/[^\d:.,hm ]/gi, '');
@@ -727,7 +722,6 @@ function durationMask(event) {
 }
 
 function durationBlur(event) {
-  if (event.target.type === 'time') return;
   const minutes = parseDurationValue(event.target.value);
   if (minutes !== null) {
     event.target.value = timeInputFormat(minutes);
