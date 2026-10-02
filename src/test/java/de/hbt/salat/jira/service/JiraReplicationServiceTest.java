@@ -80,6 +80,7 @@ class JiraReplicationServiceTest {
   @BeforeEach
   void setUp() {
     when(authorizedUser.isAuthenticated()).thenReturn(true);
+    when(authorizedUser.isManager()).thenReturn(true);
     when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
   }
 
