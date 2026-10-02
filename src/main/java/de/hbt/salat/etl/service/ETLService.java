@@ -103,11 +103,17 @@ public class ETLService {
    * generierte Spalte mit eindeutigem Index, an der der zweite Einfügeversuch scheitert. Dieselbe
    * Voraussetzung tragen die {@code @Scheduled}-Jobs der Anwendung ohnehin schon.
    *
+   * <p>Die Rechteprüfung steht hier selbst und nicht nur bei den Aufrufern (#1289): die Zeile ist die
+   * Sperre, und eine Methode, die sie schreibt, darf sich nicht darauf verlassen, dass jeder künftige
+   * Aufrufer vorher fragt.
+   *
+   * @throws AuthorizationException ohne ETL-Recht — geprüft vor allem anderen
    * @throws InvalidDataException wenn der Zeitraum verkehrt herum liegt — geprüft, <em>bevor</em>
    *     eine Zeile entsteht
    * @throws BusinessRuleException wenn bereits ein Lauf läuft
    */
   public synchronized ETLRunHistory startRun(LocalDateRange dateRange, Trigger trigger) {
+    checkAuthorizedForAnyETL();
     if (!dateRange.isValid()) {
       throw new InvalidDataException(ETL_INVALID_DATE_RANGE);
     }
@@ -132,6 +138,7 @@ public class ETLService {
    * abgeschalteten Anwendung nicht zu unterscheiden wäre.
    */
   public void recordSkippedRun(LocalDateRange dateRange, Trigger trigger, String message) {
+    checkAuthorizedForAnyETL();
     var now = DateTimeUtils.now();
     runHistoryRepo.save(ETLRunHistory.builder()
         .startedAt(now)
@@ -205,7 +212,8 @@ public class ETLService {
   }
 
   /**
-   * Die Vorprüfung, die <em>vor</em> {@link #startRun} fällt — und deshalb, bevor eine Zeile entsteht.
+   * Die Vorprüfung, die vor jeder Zeile fällt — in den Einstiegen und seit #1289 auch in
+   * {@link #startRun} und {@link #recordSkippedRun} selbst.
    *
    * <p>Die Zeile ist die Sperre. Entstünde sie vor der Rechteprüfung, könnte jede beliebige Anmeldung
    * über die REST-Schnittstelle — die nur nach Authentifizierung fragt — reihenweise Sperrzeilen
@@ -294,9 +302,15 @@ public class ETLService {
    * des Laufs.
    *
    * <p>Ohne Rechteprüfung, und das mit Absicht: sie ist in {@link #resolveManualRun} im Thread der
-   * Anfrage gefallen, wo es die anfragende Person noch gibt.
+   * Anfrage gefallen, wo es die anfragende Person noch gibt. Im Hintergrund käme jede Prüfung durch,
+   * denn {@code AuthorizedUser#initForJob} macht den Job-Benutzer zum Manager.
+   *
+   * <p><b>Deshalb paketsichtbar statt öffentlich</b> (#1289): der Schutz ist, dass nur
+   * {@link ETLRunLauncher} sie erreicht. Ein Controller oder ein anderes Modul, das einen eröffneten
+   * Lauf mit beliebigen Definitionen fortsetzen könnte, kommt an ihr nicht vorbei — das prüft der
+   * Compiler, nicht eine Laufzeitprüfung, die immer durchginge.
    */
-  public void continueRun(long runId, LocalDateRange dateRange, List<String> etlNames) {
+  void continueRun(long runId, LocalDateRange dateRange, List<String> etlNames) {
     var run = runHistoryRepo.findById(runId)
         .orElseThrow(() -> new InvalidDataException(ETL_RUN_NOT_FOUND));
     runWithHistory(run, dateRange, () -> etlNames);
@@ -529,7 +543,13 @@ public class ETLService {
     return ranges;
   }
 
+  /**
+   * Ob es die Definition gibt — nur für eine Anmeldung mit ETL-Recht (#1289). Ohne die Prüfung davor
+   * verriete die Antwort der REST-Schnittstelle jeder Anmeldung, welche Definitionsnamen es gibt:
+   * 404 für einen unbekannten Namen, 403 für einen bekannten.
+   */
   public boolean isETLExisting(String etlName) {
+    checkAuthorizedForAnyETL();
     return definitionRepo.findByName(etlName).isPresent();
   }
 
