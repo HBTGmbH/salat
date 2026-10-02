@@ -37,7 +37,6 @@ import de.hbt.salat.jira.domain.JiraFieldOption;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
 import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
-import de.hbt.salat.jira.domain.JiraReplicationRunOutcome;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -63,7 +62,7 @@ public class JiraReplicationConfigService {
   private static final String CASCADING_SELECT = "cascadingselect";
 
   private final JiraReplicationConfigRepository configRepository;
-  private final JiraReplicationLauncher jiraReplicationLauncher;
+  private final JiraReplicationRunService jiraReplicationRunService;
   private final JiraSearchClients jiraSearchClients;
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
@@ -112,8 +111,11 @@ public class JiraReplicationConfigService {
     checkManager();
     // The tickets already replicated in this scope stay: jira_ticket hangs off scope_sign, not off
     // the config, and the rows are not wrong — only no longer kept up to date. The confirmation
-    // before deleting says so.
-    configRepository.delete(load(id));
+    // before deleting says so. Its run history goes with it: a run nobody can name any more says
+    // nothing (#1282).
+    var config = load(id);
+    jiraReplicationRunService.deleteRunsOf(id);
+    configRepository.delete(config);
   }
 
   public void setEnabled(long id, boolean enabled) {
@@ -136,36 +138,6 @@ public class JiraReplicationConfigService {
   }
 
   /**
-   * Runs one replication right now, regardless of its {@code enabled} state — being able to try a
-   * config out before switching it on is the point of the button.
-   *
-   * <p>Runs synchronously and outside a transaction: the replication fetches all pages one after
-   * another and writes per page, so holding a transaction open across it would keep a database
-   * connection busy for the whole of a foreign system's response time. The caller is expected to
-   * make the wait visible.
-   *
-   * <p>The run itself goes to a thread of its own, the request thread only waits for it (#1282) —
-   * why it must not touch the request's EntityManager stands at {@link JiraReplicationLauncher}.
-   */
-  @Transactional(propagation = Propagation.NOT_SUPPORTED)
-  public JiraReplicationRunOutcome runNow(long id) {
-    checkManager();
-    var config = load(id);
-    try {
-      jiraReplicationLauncher.runAndWait(id);
-      return JiraReplicationRunOutcome.succeeded(config.getName());
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-      log.warn("Waiting for the manually started JIRA replication was interrupted: id={}, name={}",
-          id, config.getName());
-      return JiraReplicationRunOutcome.failed(config.getName(), redacted(ex, config.getPassword()));
-    } catch (Exception ex) {
-      log.error("Manually started JIRA replication failed: id={}, name={}", id, config.getName(), ex);
-      return JiraReplicationRunOutcome.failed(config.getName(), redacted(ex, config.getPassword()));
-    }
-  }
-
-  /**
    * The fields the JIRA instance behind this config knows (#1013), so the configuration can be
    * picked rather than typed from memory.
    *
@@ -174,8 +146,9 @@ public class JiraReplicationConfigService {
    * for any address the server can reach, which is a different capability from "maintain the
    * replications". The stored password is read here and goes no further than the request.
    *
-   * <p>Outside a transaction for the reason {@link #runNow} gives: a foreign system's response time
-   * must not hold a database connection.
+   * <p>Outside a transaction: a foreign system's response time must not hold a database connection.
+   * Nothing is written here, so the empty transaction scope this leaves inside the request is
+   * harmless — see AGENTS.md on {@code NOT_SUPPORTED} (#1282).
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public JiraFieldCatalog getSelectableFields(long id) {
@@ -187,7 +160,7 @@ public class JiraReplicationConfigService {
       return JiraFieldCatalog.of(toOptions(fields));
     } catch (Exception ex) {
       log.error("Could not read the JIRA field catalogue: id={}, name={}", id, config.getName(), ex);
-      return JiraFieldCatalog.failed(redacted(ex, config.getPassword()));
+      return JiraFieldCatalog.failed(JiraCredentialRedaction.redacted(ex, config.getPassword()));
     }
   }
 
@@ -459,15 +432,6 @@ public class JiraReplicationConfigService {
 
   private static String trimToNull(String value) {
     return isBlank(value) ? null : value.trim();
-  }
-
-  /**
-   * The reason a run failed, with the stored password taken out of it. A client library that puts
-   * the credentials it used into its message would otherwise print them as a toast.
-   */
-  private static String redacted(Exception ex, String password) {
-    var message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
-    return isBlank(password) ? message : message.replace(password, "***");
   }
 
   private void checkManager() {

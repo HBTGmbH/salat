@@ -32,7 +32,7 @@ import de.hbt.salat.jira.persistence.JiraWorklogSyncRepository;
  *
  * <p>Deliberately not {@code @Transactional}. Every step talks to JIRA over HTTP, and a transaction
  * around it would hold a database connection for the whole of a foreign system's response time —
- * the same reason {@code JiraReplicationConfigService.runNow} suspends one. It also means a worklog
+ * the same reason {@code JiraReplicationService} runs without one. It also means a worklog
  * that was written keeps its row in {@code jira_worklog_sync} even if a later one fails; a rollback
  * there would make SALAT forget a worklog it had just created, and the next run would write a second
  * one next to it.

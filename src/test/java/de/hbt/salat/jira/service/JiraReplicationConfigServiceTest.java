@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -59,7 +58,7 @@ class JiraReplicationConfigServiceTest {
   private JiraReplicationConfigRepository configRepository;
 
   @Mock
-  private JiraReplicationLauncher jiraReplicationLauncher;
+  private JiraReplicationRunService jiraReplicationRunService;
 
   @Mock
   private JiraSearchClients jiraSearchClients;
@@ -169,32 +168,6 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.setEnabled(ID, true);
     assertThat(saved().getEnabled()).isTrue();
     assertThat(saved().getPassword()).isEqualTo(STORED_PASSWORD);
-  }
-
-  @Test
-  void a_failed_run_is_reported_back_without_the_password_in_it() throws Exception {
-    var stored = existingConfig();
-    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
-    doThrow(new IllegalStateException("401 for user jira-user with token " + STORED_PASSWORD))
-        .when(jiraReplicationLauncher).runAndWait(ID);
-
-    var outcome = classUnderTest.runNow(ID);
-
-    assertThat(outcome.success()).isFalse();
-    assertThat(outcome.name()).isEqualTo("Alpha");
-    assertThat(outcome.message()).doesNotContain(STORED_PASSWORD).contains("***");
-  }
-
-  @Test
-  void a_run_started_by_hand_does_not_ask_whether_the_replication_is_enabled() throws Exception {
-    // Trying a config out before switching it on is the point of the button.
-    var stored = existingConfig();
-    stored.setEnabled(false);
-    when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
-
-    assertThat(classUnderTest.runNow(ID).success()).isTrue();
-
-    verify(jiraReplicationLauncher).runAndWait(ID);
   }
 
   @Test
@@ -377,7 +350,16 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.delete(ID);
 
     verify(configRepository).delete(stored);
-    verifyNoInteractions(jiraReplicationLauncher);
+  }
+
+  @Test
+  void deleting_a_replication_takes_its_runs_with_it() {
+    // a run nobody can name any more says nothing (#1282)
+    when(configRepository.findById(ID)).thenReturn(Optional.of(existingConfig()));
+
+    classUnderTest.delete(ID);
+
+    verify(jiraReplicationRunService).deleteRunsOf(ID);
   }
 
   @Test
@@ -401,11 +383,10 @@ class JiraReplicationConfigServiceTest {
     assertThatThrownBy(() -> classUnderTest.delete(ID)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.setEnabled(ID, true)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.resetWatermark(ID)).isInstanceOf(AuthorizationException.class);
-    assertThatThrownBy(() -> classUnderTest.runNow(ID)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.customerorderSignOf("ALPHA")).isInstanceOf(AuthorizationException.class);
 
-    verifyNoInteractions(configRepository, jiraReplicationLauncher, jiraSearchClients,
+    verifyNoInteractions(configRepository, jiraReplicationRunService, jiraSearchClients,
         customerorderService, suborderService);
   }
 

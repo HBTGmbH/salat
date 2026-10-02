@@ -2,6 +2,9 @@ package de.hbt.salat.jira.service;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.FAILED;
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.SUCCEEDED;
+import static de.hbt.salat.jira.service.JiraCredentialRedaction.redacted;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
+import de.hbt.salat.jira.domain.JiraReplicationRun.Trigger;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
@@ -33,18 +37,53 @@ public class JiraReplicationService {
   private final JiraReplicationConfigRepository configRepo;
   private final JiraTicketRepository ticketRepo;
   private final JiraWorklogSyncService worklogSyncService;
+  private final JiraReplicationRunService runService;
 
   public List<JiraReplicationConfig> getEnabledReplications() {
     return configRepo.findByEnabledTrue();
   }
 
-  public void runReplication(long replicationId) {
-    JiraReplicationConfig cfg = configRepo.findById(replicationId)
-        .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
-    runReplication(cfg);
+  /**
+   * Runs a replication and records it in the run history (#1282): opens the run, which is also the
+   * lock against a second run of the same replication, and writes its outcome at the end. The way
+   * of the scheduled run and of the REST interface.
+   *
+   * @throws de.hbt.salat.common.exception.BusinessRuleException when the replication is still
+   *     running — no row is written then, the caller decides what that means
+   */
+  public JiraReplicationResult runRecorded(long replicationId, Trigger trigger) {
+    var run = runService.startRun(replicationId, trigger);
+    return continueRun(run.getId(), replicationId);
   }
 
-  public void runReplication(JiraReplicationConfig cfg) {
+  /**
+   * Carries out a run that is already open (#1282) — the part of a manual run that goes on in the
+   * background, after the row was written on the request thread. Ids rather than entities: the row
+   * is read afresh at the end anyway, and between start and end lies the whole run.
+   */
+  public JiraReplicationResult continueRun(long runId, long replicationId) {
+    JiraReplicationConfig cfg = null;
+    JiraReplicationResult result;
+    try {
+      cfg = configRepo.findById(replicationId)
+          .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
+      result = runReplication(cfg);
+    } catch (RuntimeException ex) {
+      var password = cfg != null ? cfg.getPassword() : null;
+      runService.finishRun(runId, FAILED, "Abgebrochen: " + redacted(ex, password));
+      throw ex;
+    }
+    runService.finishRun(runId, result.succeeded() ? SUCCEEDED : FAILED, result.summary());
+    return result;
+  }
+
+  public JiraReplicationResult runReplication(long replicationId) {
+    JiraReplicationConfig cfg = configRepo.findById(replicationId)
+        .orElseThrow(() -> new IllegalArgumentException("Unknown replication config id=" + replicationId));
+    return runReplication(cfg);
+  }
+
+  public JiraReplicationResult runReplication(JiraReplicationConfig cfg) {
     requireNonNull(cfg.getBaseUrl(), "baseUrl");
     requireNonNull(cfg.getUsername(), "username");
     requireNonNull(cfg.getPassword(), "password");
@@ -142,11 +181,14 @@ public class JiraReplicationService {
     // Last, and with its own safety net (#1007): the worklogs are written against the tickets this
     // run has just replicated, and a failure while writing them must not take the watermark above
     // with it. Re-fetching the same tickets next time is harmless; losing the watermark is not.
+    String worklogSyncError = null;
     try {
       worklogSyncService.sync(cfg);
     } catch (Exception ex) {
       log.error("Worklog sync failed after the replication of {}: {}", cfg.getName(), ex.getMessage(), ex);
+      worklogSyncError = redacted(ex, cfg.getPassword());
     }
+    return new JiraReplicationResult(fetched, processed, failed, worklogSyncError);
   }
 
   /**

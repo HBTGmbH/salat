@@ -1,5 +1,7 @@
 package de.hbt.salat.jira.rest;
 
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.MANUAL;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,14 +34,14 @@ public class JiraReplicationRestController {
   @PostMapping(path = "/run")
   @ResponseStatus(HttpStatus.OK)
   public void runAll() {
-    scheduler.runAll();
+    scheduler.runAll(MANUAL);
   }
 
   @Operation(summary = "Trigger a specific replication by id")
   @PostMapping(path = "/run/{id}")
   @ResponseStatus(HttpStatus.OK)
   public void runOne(@PathVariable("id") long id) {
-    jiraReplicationService.runReplication(id);
+    jiraReplicationService.runRecorded(id, MANUAL);
   }
 
 }

@@ -17,7 +17,7 @@ import de.hbt.salat.e2e.PlaywrightE2ETestBase;
  *
  * <p>Two things here are only testable by walking the pages. The first is that the stored password
  * never comes back: it is absent from the list, from the edit form and from the message a failed run
- * produces, and each of those is a separate place it could leak from. The second is the boundary —
+ * leaves in the run history (#1282), and each of those is a separate place it could leak from. The second is the boundary —
  * these pages carry the credentials of a foreign system, so a backoffice or a people lead must not
  * reach them by knowing the URL either.
  *
@@ -84,10 +84,14 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
       assertThat(rowOf(page, renamed)).isVisible();
       assertThat(rowOf(page, renamed)).containsText(SUBORDER_SCOPE);
 
-      // --- run now: the failure comes back, with the stored password taken out of it -----------
-      rowOf(page, renamed).locator("form[data-run-form] button").click();
-      assertThat(page.locator(".alert-danger")).containsText("fehlgeschlagen");
+      // --- run now: it goes on in the background (#1282) and reports in the run tab, with the ---
+      // --- stored password taken out of its message ----------------------------------------------
+      rowOf(page, renamed).locator("form[action$='/run'] button").click();
+      assertThat(page.locator(".alert-success")).containsText("angestoßen");
+      assertThat(page.locator("#tab-runs")).isVisible();
+      assertRunFailed(page, renamed);
       assertPageIsFreeOf(page, PASSWORD);
+      page.locator("#tab-replications-button").click();
 
       // --- switch off, then on again ------------------------------------------------------------
       rowOf(page, renamed).getByTitle("Replikation ausschalten").click();
@@ -178,7 +182,27 @@ class JiraReplicationConfigE2ETest extends PlaywrightE2ETestBase {
 
   /** Re-resolved after every navigation: each action here reloads the list. */
   private static Locator rowOf(Page page, String name) {
-    return page.locator("tbody tr").filter(new Locator.FilterOptions().setHasText(name));
+    return page.locator("#tab-replications tbody tr").filter(new Locator.FilterOptions().setHasText(name));
+  }
+
+  /** The newest run of the replication — the run tab lists newest first (#1282). */
+  private static Locator latestRunOf(Page page, String name) {
+    return page.locator("#tab-runs tbody tr").filter(new Locator.FilterOptions().setHasText(name)).first();
+  }
+
+  /**
+   * The unreachable port fails the run at once, but in the background: the page shows the outcome
+   * after the next reload, and the reload keeps the run tab open through the address fragment.
+   */
+  private static void assertRunFailed(Page page, String name) {
+    for (int attempt = 0; attempt < 40; attempt++) {
+      // the row is there from the start, as "running" - textContent does not wait for it
+      if (latestRunOf(page, name).textContent().contains("Fehlgeschlagen")) break;
+      page.waitForTimeout(250);
+      page.reload();
+    }
+    assertThat(latestRunOf(page, name)).containsText("Fehlgeschlagen");
+    assertThat(page.locator("#tab-runs")).isVisible();
   }
 
   private static void assertPageIsFreeOf(Page page, String secret) {

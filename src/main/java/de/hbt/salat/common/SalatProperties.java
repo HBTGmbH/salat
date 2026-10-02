@@ -19,6 +19,7 @@ public class SalatProperties {
   private UiState uiState = new UiState();
   private Notifications notifications = new Notifications();
   private Etl etl = new Etl();
+  private Jira jira = new Jira();
   private BookingList bookingList = new BookingList();
 
   @Data
@@ -78,6 +79,17 @@ public class SalatProperties {
   public static class Etl {
     private History history = new History();
 
+    @Data
+    public static class History {
+      private int retentionDays = 14;
+    }
+  }
+
+  @Data
+  public static class Jira {
+    private History history = new History();
+
+    /** The run history of the replications (#1282). */
     @Data
     public static class History {
       private int retentionDays = 14;
