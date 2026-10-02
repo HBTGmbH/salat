@@ -43,6 +43,9 @@
   }
   /* Mittig zur Datumskachel wie vorher, als die Zelle noch mittig ausgerichtet war: 3rem sind die
      Hoehe der Kachel und der Unterschied der Zellenabstaende oben und unten (12px gegen 8px). */
+  /* Den Abstand zwischen Nicht gearbeitet und den Karten gibt gap, nicht ein Rand an der Badge: ein Rand
+     zaehlt in der zentrierten Spalte auch dann, wenn darunter nichts steht, und hob die Badge eines Tages
+     ohne Buchungen um 4px aus der Mitte (#1268). */
   .daily-day-content {
     flex: 1 1 20rem;
     min-width: 0;
@@ -50,6 +53,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    gap: 0.5rem;
   }
   /* Auf dem Smartphone steht je Tag eine Karte in der ganzen Breite (#1267). Die Zeilen mit Auftrag und
      Unterauftrag brechen nicht um; ohne contain zaehlte ihre volle Laenge zur Mindestbreite der Zelle,
@@ -881,10 +885,11 @@
                           th:text="${day.holidayName}"></span>
                   </div>
                   <div class="daily-day-content">
-                    <div th:if="${day.notWorked}" class="mb-2">
+                    <div th:if="${day.notWorked}">
                       <span th:replace="~{fragments/not-worked :: badge(false)}"></span>
                     </div>
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="d-flex flex-wrap gap-2"
+                         th:if="${not #lists.isEmpty(day.timereports) or (day.canCreate and !day.notWorked)}">
                       <th:block th:each="tr : ${day.timereports}"
                                 th:with="singleTr=${tr}, singleTrEditable=${listData.editableTimereportIds.contains(tr.id)}, singleTrDate=${day.date}, singleTrYearMonth=${yearMonth}">
                         <div th:replace="~{dailyreport/daily-list-card :: listTimereportCard}"></div>
