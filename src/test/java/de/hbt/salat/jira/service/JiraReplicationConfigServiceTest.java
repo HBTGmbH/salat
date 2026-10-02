@@ -59,7 +59,7 @@ class JiraReplicationConfigServiceTest {
   private JiraReplicationConfigRepository configRepository;
 
   @Mock
-  private JiraReplicationService jiraReplicationService;
+  private JiraReplicationLauncher jiraReplicationLauncher;
 
   @Mock
   private JiraSearchClients jiraSearchClients;
@@ -172,11 +172,11 @@ class JiraReplicationConfigServiceTest {
   }
 
   @Test
-  void a_failed_run_is_reported_back_without_the_password_in_it() {
+  void a_failed_run_is_reported_back_without_the_password_in_it() throws Exception {
     var stored = existingConfig();
     when(configRepository.findById(ID)).thenReturn(Optional.of(stored));
     doThrow(new IllegalStateException("401 for user jira-user with token " + STORED_PASSWORD))
-        .when(jiraReplicationService).runReplication(stored);
+        .when(jiraReplicationLauncher).runAndWait(ID);
 
     var outcome = classUnderTest.runNow(ID);
 
@@ -186,7 +186,7 @@ class JiraReplicationConfigServiceTest {
   }
 
   @Test
-  void a_run_started_by_hand_does_not_ask_whether_the_replication_is_enabled() {
+  void a_run_started_by_hand_does_not_ask_whether_the_replication_is_enabled() throws Exception {
     // Trying a config out before switching it on is the point of the button.
     var stored = existingConfig();
     stored.setEnabled(false);
@@ -194,7 +194,7 @@ class JiraReplicationConfigServiceTest {
 
     assertThat(classUnderTest.runNow(ID).success()).isTrue();
 
-    verify(jiraReplicationService).runReplication(stored);
+    verify(jiraReplicationLauncher).runAndWait(ID);
   }
 
   @Test
@@ -377,7 +377,7 @@ class JiraReplicationConfigServiceTest {
     classUnderTest.delete(ID);
 
     verify(configRepository).delete(stored);
-    verifyNoInteractions(jiraReplicationService);
+    verifyNoInteractions(jiraReplicationLauncher);
   }
 
   @Test
@@ -405,7 +405,7 @@ class JiraReplicationConfigServiceTest {
     assertThatThrownBy(() -> classUnderTest.getSelectableFields(ID)).isInstanceOf(AuthorizationException.class);
     assertThatThrownBy(() -> classUnderTest.customerorderSignOf("ALPHA")).isInstanceOf(AuthorizationException.class);
 
-    verifyNoInteractions(configRepository, jiraReplicationService, jiraSearchClients,
+    verifyNoInteractions(configRepository, jiraReplicationLauncher, jiraSearchClients,
         customerorderService, suborderService);
   }
 

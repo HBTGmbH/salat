@@ -63,7 +63,7 @@ public class JiraReplicationConfigService {
   private static final String CASCADING_SELECT = "cascadingselect";
 
   private final JiraReplicationConfigRepository configRepository;
-  private final JiraReplicationService jiraReplicationService;
+  private final JiraReplicationLauncher jiraReplicationLauncher;
   private final JiraSearchClients jiraSearchClients;
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
@@ -143,14 +143,22 @@ public class JiraReplicationConfigService {
    * another and writes per page, so holding a transaction open across it would keep a database
    * connection busy for the whole of a foreign system's response time. The caller is expected to
    * make the wait visible.
+   *
+   * <p>The run itself goes to a thread of its own, the request thread only waits for it (#1282) —
+   * why it must not touch the request's EntityManager stands at {@link JiraReplicationLauncher}.
    */
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public JiraReplicationRunOutcome runNow(long id) {
     checkManager();
     var config = load(id);
     try {
-      jiraReplicationService.runReplication(config);
+      jiraReplicationLauncher.runAndWait(id);
       return JiraReplicationRunOutcome.succeeded(config.getName());
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      log.warn("Waiting for the manually started JIRA replication was interrupted: id={}, name={}",
+          id, config.getName());
+      return JiraReplicationRunOutcome.failed(config.getName(), redacted(ex, config.getPassword()));
     } catch (Exception ex) {
       log.error("Manually started JIRA replication failed: id={}, name={}", id, config.getName(), ex);
       return JiraReplicationRunOutcome.failed(config.getName(), redacted(ex, config.getPassword()));
