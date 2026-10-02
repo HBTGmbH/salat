@@ -57,14 +57,17 @@ class EmployeeAuthorizationObjectProviderTest {
         assertThat(provider.judge("mus")).isEqualTo(UNKNOWN);
     }
 
-    /** Named like the person in every other select (#1266) — the stored login name is not what one recognises. */
+    /**
+     * Named like the person in every other select (#1266) — the stored login name is not what one recognises —, and
+     * once picked by the sign alone.
+     */
     @Test
     void theOfferedPersonIsNamedByNameAndSign() {
         var somebody = employee("l.muster", "mus");
         when(somebody.getName()).thenReturn("Lea Muster");
         when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
 
-        assertThat(provider.objects()).containsExactly(new AuthorizationObject("l.muster", "Lea Muster | mus"));
+        assertThat(provider.objects()).containsExactly(new AuthorizationObject("l.muster", "Lea Muster | mus", "mus"));
     }
 
     /**

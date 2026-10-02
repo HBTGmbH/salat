@@ -588,6 +588,9 @@ einer Stelle — einem View-Helper je Art. Ein Template verkettet keine Felder z
   (→ „The `hide` Flag").
 - Wo statt der Entität ein Datensatz mit den Einzelwerten vorliegt, nimmt der Helper die Werte
   (`label(name, sign)`); Java-Code ohne Instanz ruft die statischen `of(...)`.
+- **In einer Mehrfachauswahl trägt die Option ihre Kennung als `data-chip`** — Kürzel, Kurzname.
+  Der Chip des gewählten Eintrags zeigt nur sie, der volle Text steht als Tooltip daran; sonst
+  brechen schon zwei Einträge das Feld um.
 
 ### Free text field with remote suggestions
 

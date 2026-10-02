@@ -87,7 +87,7 @@
                       hx-swap="none"
                       hx-include="closest form"
                       hx-trigger="change">
-                <option th:each="e : ${employees}" th:value="${e.id()}" th:text="${@employeeLabelViewHelper.label(e.name(), e.sign())}"></option>
+                <option th:each="e : ${employees}" th:value="${e.id()}" th:data-chip="${e.sign()}" th:text="${@employeeLabelViewHelper.label(e.name(), e.sign())}"></option>
               </select>
               <small class="form-hint" th:text="#{main.bulkassignment.field.employees.hint}">
                 Ohne Auswahl gelten alle Mitarbeitenden.
@@ -180,6 +180,7 @@
               hx-trigger="change">
         <option th:each="e : ${employees}"
                 th:value="${e.id()}"
+                th:data-chip="${e.sign()}"
                 th:selected="${form.employeeIds != null and #lists.contains(form.employeeIds, e.id())}"
                 th:text="${@employeeLabelViewHelper.label(e.name(), e.sign())}"></option>
       </select>

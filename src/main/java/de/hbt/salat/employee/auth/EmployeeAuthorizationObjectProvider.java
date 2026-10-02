@@ -57,7 +57,8 @@ public class EmployeeAuthorizationObjectProvider implements AuthorizationObjectP
     employees.stream()
         .filter(employee -> employee.getLoginname() != null && !employee.getLoginname().isBlank())
         .forEach(employee -> byLoginname.putIfAbsent(employee.getLoginname(), new AuthorizationObject(
-            employee.getLoginname(), EmployeeLabelViewHelper.of(employee.getName(), employee.getSign()))));
+            employee.getLoginname(), EmployeeLabelViewHelper.of(employee.getName(), employee.getSign()),
+            employee.getSign())));
     return List.copyOf(byLoginname.values());
   }
 

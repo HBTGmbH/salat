@@ -324,6 +324,23 @@ const tomSelectConfig = (el) => {
     });
   }
 
+  // A picked entry of a multi-select is named by its short key (#1266): the option reads the whole
+  // label, the chip only what tells it apart — a sign, a short name —, so that a few picks do not
+  // wrap the field. The whole label stays at hand as the chip's tooltip.
+  const chips = multi
+    ? new Map(Array.from(el.options || []).filter(opt => opt.dataset.chip).map(opt => [opt.value, opt.dataset.chip]))
+    : new Map();
+  if (chips.size) {
+    config.render = Object.assign({}, config.render, {
+      item(data, escape) {
+        const chip = chips.get(String(data.value));
+        return chip
+          ? '<div title="' + escape(data.text) + '">' + escape(chip) + '</div>'
+          : '<div>' + escape(data.text) + '</div>';
+      },
+    });
+  }
+
   return config;
 };
 
