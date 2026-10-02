@@ -49,6 +49,7 @@ class EmployeeSignAuthorizationObjectProviderTest {
     void setUp() {
         var muster = mock(Employee.class);
         when(muster.getSign()).thenReturn(SIGN);
+        when(muster.getName()).thenReturn("Lea Muster");
         when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(muster));
         release = new ReleaseAuthorizationObjectProvider(employeeService);
         accept = new AcceptAuthorizationObjectProvider(employeeService);
@@ -73,7 +74,8 @@ class EmployeeSignAuthorizationObjectProviderTest {
 
     @Test
     void allThreeOfferTheEmployeeSigns() {
-        assertThat(release.objects()).containsExactly(new AuthorizationObject(SIGN, SIGN));
+        // named like the person in every other select (#1266); the id stays the sign
+        assertThat(release.objects()).containsExactly(new AuthorizationObject(SIGN, "Lea Muster | " + SIGN));
         assertThat(accept.objects()).isEqualTo(release.objects());
         assertThat(workingday.objects()).isEqualTo(release.objects());
         assertThat(release.judge(SIGN)).isEqualTo(VALID);

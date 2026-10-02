@@ -16,7 +16,9 @@
     <option value="" th:text="#{main.pricing.field.suborderSign.picker.none}">--- Unterauftrag wählen ---</option>
     <option th:each="so : ${suborders}"
             th:value="|${so.completeOrderSign}/|"
-            th:text="|${so.completeOrderSign} - ${so.shortdescription}|"></option>
+            th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+            th:attr="data-subtext=${subtext}"
+            th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
   </select>
 </div>
 

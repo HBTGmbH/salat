@@ -670,6 +670,8 @@ Alle `<select>` werden per [TomSelect](https://tom-select.github.io/) zu Suchfel
 zentral initialisiert in `salat.js`, auch nach HTMX-Swaps (`htmx:after:swap`).
 Klassenvertrag: `tomselect` = Einzelauswahl, `tomselect tomselect-multi` + `multiple` = Mehrfachauswahl.
 Optionen können über `data-subtext` eine zweite Zeile anzeigen (z. B. Vertragslaufzeit).
+Wie Personen, Verträge, Kunden, Aufträge und Unteraufträge darin heißen, legt AGENTS.md fest
+(„Bezeichnung von Stammdaten", #1266): überall gleich, aus einem View-Helper je Art.
 
 ### 5.4 Badges & Flags-Spalte
 Boolesche Zustände in Listen stehen gesammelt in einer **Flags-Spalte**

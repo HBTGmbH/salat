@@ -57,6 +57,16 @@ class EmployeeAuthorizationObjectProviderTest {
         assertThat(provider.judge("mus")).isEqualTo(UNKNOWN);
     }
 
+    /** Named like the person in every other select (#1266) — the stored login name is not what one recognises. */
+    @Test
+    void theOfferedPersonIsNamedByNameAndSign() {
+        var somebody = employee("l.muster", "mus");
+        when(somebody.getName()).thenReturn("Lea Muster");
+        when(employeeService.getSelectableEmployees(null)).thenReturn(List.of(somebody));
+
+        assertThat(provider.objects()).containsExactly(new AuthorizationObject("l.muster", "Lea Muster | mus"));
+    }
+
     /**
      * The id offered here has to be the value the checking site compares against. Taking over a login is the one
      * thing a rule can grant that grants everything else, so a mismatch here is worth its own test.

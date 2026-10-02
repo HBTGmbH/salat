@@ -183,20 +183,6 @@ public class Suborder extends AuditedEntity implements Serializable {
         return "";
     }
 
-    public String getSignAndDescription() {
-        return getSign() + " - " + getShortdescription();
-    }
-
-    public String getSignAndDescriptionWithExpirationDate() {
-        String result = getSign() + " - " + getShortdescription();
-        LocalDate from = getFromDate();
-        LocalDate until = getUntilDate();
-        if (from != null && until != null) {
-            result += " (" + DateUtils.format(from) + " - " + DateUtils.format(until) + ")";
-        }
-        return result;
-    }
-
     public String getCompleteOrderSignAndDescription() {
         return getCompleteOrderSign() + " - " + getShortdescription();
     }

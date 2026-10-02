@@ -142,7 +142,7 @@ class CommandPaletteCommandsE2ETest extends PlaywrightE2ETestBase {
       assertThat(page.locator("[name=referenceday]")).hasValue("2026-06-24");
       assertThat(page.locator("[name=durationTime]")).hasValue("1:30");
       assertThat(page.locator("#commentField")).hasValue("Review Release");
-      assertEquals(ALPHA + " · Entwicklung",
+      assertEquals(ALPHA + " - Entwicklung",
           page.evaluate("() => document.getElementById('suborderId').selectedOptions[0].text"));
       assertThat(page.locator("button[data-submit-shortcut]")).isFocused();
     });

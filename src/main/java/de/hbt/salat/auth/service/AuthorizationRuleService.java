@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
@@ -121,13 +122,13 @@ public class AuthorizationRuleService {
    * editor, so hiding somebody never makes an existing rule uneditable.
    */
   @Transactional(readOnly = true)
-  public List<String> getGranteeCandidates() {
+  public List<AuthorizationObject> getGranteeCandidates() {
     requireManager();
-    return granteeProviders.stream()
+    var byId = new TreeMap<String, AuthorizationObject>();
+    granteeProviders.stream()
         .flatMap(provider -> provider.granteeCandidates().stream())
-        .distinct()
-        .sorted()
-        .toList();
+        .forEach(candidate -> byId.putIfAbsent(candidate.id(), candidate));
+    return List.copyOf(byId.values());
   }
 
   /**

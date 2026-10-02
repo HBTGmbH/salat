@@ -33,9 +33,9 @@
               <option value="" th:text="#{main.invoice.choose.text}">-- Bitte wählen --</option>
               <option th:each="order : ${orders}"
                       th:value="${order.id}"
-                      th:with="customerLabel=${@customerorderViewHelper.customerLabel(order)}"
-                      th:attr="data-subtext=${customerLabel}"
-                      th:text="${order.signAndDescription}"></option>
+                      th:with="subtext=${@customerorderViewHelper.customerLabel(order)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@customerorderViewHelper.label(order)} + ${@hiddenMarkerViewHelper.suffix(order.hide)}"></option>
             </select>
           </div>
 
@@ -47,7 +47,9 @@
               <option value="" th:text="#{main.general.allsuborders.text}">-- Alle --</option>
               <option th:each="so : ${suborders}"
                       th:value="${so.id}"
-                      th:text="${so.completeOrderSignAndDescription}"></option>
+                      th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
             </select>
 
             <!--/* Alternative narrowing: bill what is assigned to a budget plan (#915) */-->

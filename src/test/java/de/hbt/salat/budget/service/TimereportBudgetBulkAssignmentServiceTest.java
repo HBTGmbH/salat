@@ -368,8 +368,7 @@ public class TimereportBudgetBulkAssignmentServiceTest {
     var employees = service.selectableEmployees(data(null, JAN, DEC, null, false));
 
     assertThat(employees).extracting(BulkAssignmentEmployee::sign).containsExactly("e1", "e2");
-    assertThat(employees).extracting(BulkAssignmentEmployee::label)
-        .containsExactly("e1 - Person 1", "e2 - Person 2");
+    assertThat(employees).extracting(BulkAssignmentEmployee::name).containsExactly("Person 1", "Person 2");
   }
 
   @Test

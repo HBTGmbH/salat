@@ -23,7 +23,7 @@
               <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
-                      th:text="${c.shortname + ' - ' + c.name} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"></option>
+                      th:text="${@customerLabelViewHelper.label(c)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"></option>
             </select>
             <div class="invalid-feedback" th:if="${#fields.hasErrors('customerId')}" th:errors="*{customerId}"></div>
           </div>
@@ -80,13 +80,13 @@
         <div class="col-md-6">
           <salat:select th:field="*{responsibleHbtIds}" th:label="#{main.customerorder.responsiblehbt.execution.text}" required multiple>
             <option th:each="e : ${employees}" th:value="${e.id}"
-                    th:text="${e.name} + ${@hiddenMarkerViewHelper.suffix(e.hide)}"></option>
+                    th:text="${@employeeLabelViewHelper.label(e)} + ${@hiddenMarkerViewHelper.suffix(e.hide)}"></option>
           </salat:select>
         </div>
         <div class="col-md-6">
           <salat:select th:field="*{respContrEmployeeId}" th:label="#{main.customerorder.responsiblehbt.contract.text}" required>
             <option th:each="e : ${employees}" th:value="${e.id}"
-                    th:text="${e.name} + ${@hiddenMarkerViewHelper.suffix(e.hide)}"></option>
+                    th:text="${@employeeLabelViewHelper.label(e)} + ${@hiddenMarkerViewHelper.suffix(e.hide)}"></option>
           </salat:select>
         </div>
       </div>

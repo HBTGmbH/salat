@@ -2,7 +2,6 @@ package de.hbt.salat.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -124,29 +123,24 @@ public class AuthorizationRuleController {
     model.addAttribute("accessLevels", AccessLevel.values());
     model.addAttribute("granteeCandidates", withKept(
         authorizationRuleService.getGranteeCandidates(), form.getGranteeIds()));
-    model.addAttribute("objectCandidates", objectCandidates(form));
+    model.addAttribute("objectCandidates", withKept(
+        authorizationRuleService.getObjects(form.getCategory()), form.getObjectIds()));
     model.addAttribute("objectHintKey", authorizationRuleService.getObjectHintKey(form.getCategory()));
   }
 
   /**
-   * The objects the category offers, plus whatever the rule already carries. Without the second part an edit would
-   * silently drop a value the module no longer lists — an order that has expired, say — and write back what the
-   * browser happened to preselect instead.
+   * What the editor offers, plus whatever the rule already carries. Without the second part an edit would silently
+   * drop a value the module no longer lists — an order that has expired, a person since hidden — and write back what
+   * the browser happened to preselect instead. A kept value nobody lists any more is shown as it is stored.
    */
-  private List<AuthorizationObject> objectCandidates(AuthorizationRuleForm form) {
-    var offered = authorizationRuleService.getObjects(form.getCategory());
+  private List<AuthorizationObject> withKept(List<AuthorizationObject> offered, List<String> current) {
     var candidates = new ArrayList<>(offered);
     Set<String> known = offered.stream().map(AuthorizationObject::id).collect(Collectors.toSet());
-    form.getObjectIds().stream()
-        .filter(objectId -> objectId != null && !objectId.isBlank() && !known.contains(objectId))
-        .forEach(objectId -> candidates.add(new AuthorizationObject(objectId, objectId)));
+    current.stream()
+        .filter(id -> id != null && !id.isBlank() && !known.contains(id))
+        .distinct()
+        .forEach(id -> candidates.add(new AuthorizationObject(id, id)));
     return candidates;
-  }
-
-  private List<String> withKept(List<String> candidates, List<String> current) {
-    var all = new LinkedHashSet<>(candidates);
-    current.stream().filter(value -> value != null && !value.isBlank()).forEach(all::add);
-    return List.copyOf(all);
   }
 
   private String storedMessage(AuthorizationRuleForm form, List<String> unknownObjects) {

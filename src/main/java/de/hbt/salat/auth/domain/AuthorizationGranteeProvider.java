@@ -12,9 +12,9 @@ import java.util.List;
 public interface AuthorizationGranteeProvider {
 
   /**
-   * The logins offered in the editor. Hidden people are left out — that is what hiding is for. What a rule already
+   * The logins offered in the editor, each with what to show for it. Hidden people are left out — that is what hiding is for. What a rule already
    * carries is added back by the editor, so hiding somebody never makes an existing rule uneditable.
    */
-  List<String> granteeCandidates();
+  List<AuthorizationObject> granteeCandidates();
 
 }

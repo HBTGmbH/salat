@@ -1,11 +1,10 @@
 package de.hbt.salat.employee.auth;
 
-import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AuthorizationGranteeProvider;
-import de.hbt.salat.employee.domain.Employee;
+import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.employee.service.EmployeeService;
 
 /**
@@ -21,13 +20,8 @@ public class EmployeeGranteeProvider implements AuthorizationGranteeProvider {
   private final EmployeeService employeeService;
 
   @Override
-  public List<String> granteeCandidates() {
-    return employeeService.getSelectableEmployees(null).stream()
-        .map(Employee::getLoginname)
-        .filter(loginname -> loginname != null && !loginname.isBlank())
-        .distinct()
-        .sorted(Comparator.naturalOrder())
-        .toList();
+  public List<AuthorizationObject> granteeCandidates() {
+    return EmployeeAuthorizationObjectProvider.byLoginname(employeeService.getSelectableEmployees(null));
   }
 
 }

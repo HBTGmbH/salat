@@ -26,7 +26,7 @@
               <option th:each="employee : ${employees}"
                       th:value="${employee.id}"
                       th:selected="${fEmployeeId == employee.id}"
-                      th:text="${employee.name + ' | ' + employee.sign}"></option>
+                      th:text="${@employeeLabelViewHelper.label(employee)} + ${@hiddenMarkerViewHelper.suffix(employee.hide)}"></option>
             </select>
           </div>
           <div class="col-md-auto ms-auto" th:if="${#authorization.expression('hasRole(''MANAGER'')')}">

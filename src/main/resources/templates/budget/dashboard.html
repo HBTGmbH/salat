@@ -32,7 +32,7 @@
             <option th:each="employee : ${responsibles}"
                     th:value="${employee.id}"
                     th:selected="${employee.id == fBudgetResponsibleId}"
-                    th:text="|${employee.sign} - ${employee.name}|"></option>
+                    th:text="${@employeeLabelViewHelper.label(employee)} + ${@hiddenMarkerViewHelper.suffix(employee.hide)}"></option>
           </select>
         </div>
       </form>

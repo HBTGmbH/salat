@@ -1,47 +1,44 @@
 package de.hbt.salat.order.viewhelper;
 
 import org.springframework.stereotype.Component;
+import de.hbt.salat.customer.viewhelper.CustomerLabelViewHelper;
 import de.hbt.salat.order.domain.Customerorder;
 
 /**
- * Labels for a customer order in dropdowns (→ ADR-0017).
+ * Labels for a customer order in dropdowns (#1266, → ADR-0017).
  *
- * <p>Every order select in the application shows the customer underneath the order, in the same
- * shape as the order line above it: short name, separator, full name. One place for it, because the
- * alternative was the same concatenation with the same null guard in eight templates.
+ * <p>Every order select in the application shows {@code Kennung - Kurzbeschreibung}, with the
+ * customer underneath in the shape {@link CustomerLabelViewHelper} gives it everywhere. The
+ * customer stands only there, never in the option text as well.
  *
- * <p>Used from templates as {@code ${@customerorderViewHelper.customerLabel(co)}}; salat.js renders
- * a {@code data-subtext} attribute as the second line of the option and searches it too, so the
- * customer becomes findable in an order select.
+ * <p>Used from templates as {@code ${@customerorderViewHelper.label(co)}} and
+ * {@code ${@customerorderViewHelper.customerLabel(co)}}; salat.js renders a {@code data-subtext}
+ * attribute as the second line of the option and searches it too, so the customer becomes findable
+ * in an order select.
  */
 @Component
 public class CustomerorderViewHelper {
 
+    public String label(Customerorder customerorder) {
+        return customerorder == null ? null : of(customerorder.getSign(), customerorder.getShortdescription());
+    }
+
     /** {@code null} when there is no customer to name — the attribute is then left out entirely. */
     public String customerLabel(Customerorder customerorder) {
+        return customerOf(customerorder);
+    }
+
+    /** {@link #customerLabel(Customerorder)} for code that has no instance at hand. */
+    public static String customerOf(Customerorder customerorder) {
         if (customerorder == null || customerorder.getCustomer() == null) {
             return null;
         }
-        var customer = customerorder.getCustomer();
-        var shortname = customer.getShortname();
-        var name = customer.getName();
-        if (name == null || name.isBlank()) {
-            return shortname;
-        }
-        if (shortname == null || shortname.isBlank() || derivedFromName(shortname, name)) {
-            return name;
-        }
-        return shortname + " - " + name;
+        return CustomerLabelViewHelper.of(customerorder.getCustomer().getShortname(), customerorder.getCustomer().getName());
     }
 
-    /**
-     * Whether {@code Customer#getShortname()} made this up out of the name — it does that when no
-     * short name is stored, returning the name itself or its first nine characters with an ellipsis.
-     * Prefixing the name with that would print it twice.
-     */
-    private static boolean derivedFromName(String shortname, String name) {
-        return shortname.equals(name)
-            || (shortname.endsWith("...") && name.startsWith(shortname.substring(0, shortname.length() - 3)));
+    /** Sign and short description, the bare sign where there is no description. */
+    public static String of(String sign, String shortdescription) {
+        return shortdescription == null || shortdescription.isBlank() ? sign : sign + " - " + shortdescription;
     }
 
 }

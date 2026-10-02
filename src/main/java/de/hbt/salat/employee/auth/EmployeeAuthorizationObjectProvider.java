@@ -1,12 +1,14 @@
 package de.hbt.salat.employee.auth;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.TreeMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.auth.domain.AuthorizationObjectProvider;
+import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 
 /**
  * What the rule editor may offer for the category {@code EMPLOYEE} (#1074).
@@ -43,13 +45,20 @@ public class EmployeeAuthorizationObjectProvider implements AuthorizationObjectP
 
   @Override
   public List<AuthorizationObject> objects() {
-    return employeeService.getSelectableEmployees(null).stream()
-        .map(employee -> employee.getLoginname())
-        .filter(loginname -> loginname != null && !loginname.isBlank())
-        .distinct()
-        .sorted(Comparator.naturalOrder())
-        .map(loginname -> new AuthorizationObject(loginname, loginname))
-        .toList();
+    return byLoginname(employeeService.getSelectableEmployees(null));
+  }
+
+  /**
+   * One entry per login name, in the order of the login names, named like the person in every other select (#1266).
+   * The grantees of a rule are logins as well ({@link EmployeeGranteeProvider}).
+   */
+  static List<AuthorizationObject> byLoginname(List<Employee> employees) {
+    var byLoginname = new TreeMap<String, AuthorizationObject>();
+    employees.stream()
+        .filter(employee -> employee.getLoginname() != null && !employee.getLoginname().isBlank())
+        .forEach(employee -> byLoginname.putIfAbsent(employee.getLoginname(), new AuthorizationObject(
+            employee.getLoginname(), EmployeeLabelViewHelper.of(employee.getName(), employee.getSign()))));
+    return List.copyOf(byLoginname.values());
   }
 
 }

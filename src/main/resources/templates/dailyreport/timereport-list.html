@@ -69,7 +69,7 @@
           <option th:each="employee : ${options.employees}"
                   th:value="${employee.id}"
                   th:selected="${selectedEmployeeIds.contains(employee.id)}"
-                  th:text="${employee.name} + ' | ' + ${employee.sign}"></option>
+                  th:text="${@employeeLabelViewHelper.label(employee.name(), employee.sign())}"></option>
         </select>
       </div>
 
@@ -82,8 +82,7 @@
           <option th:each="customer : ${options.customers}"
                   th:value="${customer.id}"
                   th:selected="${selectedCustomerIds.contains(customer.id)}"
-                  th:attr="data-subtext=${customer.name}"
-                  th:text="${customer.shortname}"></option>
+                  th:text="${@customerLabelViewHelper.label(customer.shortname(), customer.name())}"></option>
         </select>
       </div>
 

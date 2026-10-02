@@ -206,21 +206,15 @@ public class DailyReportPaletteProvider implements PaletteProvider {
         .filter(option -> query.isContainedIn(option.label(), option.subtext()))
         .sorted(rank)
         .forEach(option -> suggestions.add(new PaletteSuggestion(String.valueOf(option.id()), option.sign(),
-            description(option), option.id().equals(favoriteId) ? PaletteText.of("main.palette.suggestion.favorite")
+            option.description(), option.id().equals(favoriteId) ? PaletteText.of("main.palette.suggestion.favorite")
                 : recent.contains(option.id()) ? PaletteText.of("main.palette.suggestion.recent") : null,
             false, option.commentNecessary(), query.isKey(option.sign()))));
     elsewhere.stream()
         .filter(option -> query.isContainedIn(option.label(), option.subtext()))
         .forEach(option -> suggestions.add(new PaletteSuggestion(String.valueOf(option.id()), option.sign(),
-            description(option), PaletteText.of("main.palette.suggestion.notbookable", DATE.format(date)),
+            option.description(), PaletteText.of("main.palette.suggestion.notbookable", DATE.format(date)),
             true, option.commentNecessary(), query.isKey(option.sign()))));
     return suggestions;
-  }
-
-  /** The short description, where the form's label has one after the sign. */
-  private static String description(SuborderOption option) {
-    return option.label().length() > option.sign().length()
-        ? option.label().substring(option.sign().length()).replaceFirst("^ · ", "") : null;
   }
 
   /** The suborders of the bookings of the last days, the latest first ("zuletzt gebucht"). */
