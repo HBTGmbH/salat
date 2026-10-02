@@ -35,7 +35,8 @@ abstract class EmployeeSignAuthorizationObjectProvider implements AuthorizationO
     employeeService.getSelectableEmployees(null).stream()
         .filter(employee -> employee.getSign() != null && !employee.getSign().isBlank())
         .forEach(employee -> bySign.putIfAbsent(employee.getSign(),
-            new AuthorizationObject(employee.getSign(), EmployeeLabelViewHelper.of(employee.getName(), employee.getSign()))));
+            new AuthorizationObject(employee.getSign(), EmployeeLabelViewHelper.of(employee.getName(), employee.getSign()),
+                employee.getSign())));
     return List.copyOf(bySign.values());
   }
 

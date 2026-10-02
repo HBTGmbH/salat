@@ -75,7 +75,7 @@ class EmployeeSignAuthorizationObjectProviderTest {
     @Test
     void allThreeOfferTheEmployeeSigns() {
         // named like the person in every other select (#1266); the id stays the sign
-        assertThat(release.objects()).containsExactly(new AuthorizationObject(SIGN, "Lea Muster | " + SIGN));
+        assertThat(release.objects()).containsExactly(new AuthorizationObject(SIGN, "Lea Muster | " + SIGN, SIGN));
         assertThat(accept.objects()).isEqualTo(release.objects());
         assertThat(workingday.objects()).isEqualTo(release.objects());
         assertThat(release.judge(SIGN)).isEqualTo(VALID);

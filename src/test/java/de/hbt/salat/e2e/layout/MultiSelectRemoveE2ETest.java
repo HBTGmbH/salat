@@ -97,6 +97,9 @@ class MultiSelectRemoveE2ETest extends PlaywrightE2ETestBase {
   private void assertOnlyContosoIsLeft(Page page, String contosoId) {
     assertThat(chips(page)).hasCount(1);
     assertThat(chips(page).first()).containsText(CONTOSO);
+    // the chip names the customer by its short name, the whole label is its tooltip (#1266)
+    assertThat(chips(page).first()).not().containsText("Contoso AG");
+    assertThat(chips(page).first()).hasAttribute("title", "CONTOSO - Contoso AG");
     // the filter reloads on change, and the pushed address carries what is still selected
     assertThat(page).hasURL(Pattern.compile("fBookingsCustomers=" + contosoId + "(&|$)"));
   }

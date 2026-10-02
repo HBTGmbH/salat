@@ -64,7 +64,7 @@
                th:text="#{main.auth.rule.field.grantees}">Berechtigte</label>
         <select class="form-select tomselect tomselect-multi" th:field="*{granteeIds}" multiple>
           <option th:value="${anyObject}" th:text="#{main.auth.rule.grantee.any}">alle angemeldeten Benutzer</option>
-          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate.id}" th:text="${candidate.label}">kr</option>
+          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate.id}" th:data-chip="${candidate.chip}" th:text="${candidate.label}">kr</option>
         </select>
         <small class="form-text" th:text="#{main.auth.rule.field.grantees.help}">
           Anmeldenamen. Mehrere sind erlaubt.
@@ -119,7 +119,7 @@
           data-allow-create="true">
     <option th:value="${any}" th:text="#{main.auth.rule.object.any}"
             th:selected="${selected != null and selected.contains(any)}">alle Objekte</option>
-    <option th:each="candidate : ${candidates}" th:value="${candidate.id}"
+    <option th:each="candidate : ${candidates}" th:value="${candidate.id}" th:data-chip="${candidate.chip}"
             th:text="${candidate.label}"
             th:selected="${selected != null and selected.contains(candidate.id)}">ETL-Definition</option>
   </select>
