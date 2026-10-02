@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.StringJoiner;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,6 @@ import de.hbt.salat.common.exception.InvalidDataException;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.domain.RecentBooking;
-import de.hbt.salat.dailyreport.domain.Workingday;
 import de.hbt.salat.dailyreport.service.DailyService;
 import de.hbt.salat.dailyreport.service.TimereportService;
 import de.hbt.salat.dailyreport.service.WorkingdayService;
@@ -262,6 +262,7 @@ public class TimereportController {
             model.addAttribute("todaysBookings", List.of());
         }
         addAbsenceDuration(model, ecId, date, form.getId() != null);
+        addBookedUntil(model, ecId, date, form.getId());
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());
         model.addAttribute("oobSidebar", true);
         return "dailyreport/timereport-form :: ordersRefreshCompositeFragment";
@@ -560,30 +561,14 @@ public class TimereportController {
         model.addAttribute("todaysBookings", todaysBookings);
         model.addAttribute("recentBookings", loadRecentBookings(fEmployeeContractId, form));
         addAbsenceDuration(model, ecId, date, isEdit);
-        if (!isEdit && date != null && date.equals(today())) {
-            var workingday = workingdayService.getWorkingday(ecId, date);
-            // A day marked as not worked has no starting point. The suppression hangs on the type,
-            // not on "start is 00:00" as before — that also treated a deliberately stored 00:00 as
-            // unset, and it would have swallowed the fallback below (#851).
-            boolean notWorked = workingday != null
-                && workingday.getType() == Workingday.WorkingDayType.NOT_WORKED;
-            if (!notWorked) {
-                // same source as the daily view, which is showing this start time to the user
-                var effectiveStart = workingdayService.getEffectiveStart(workingday, ecId);
-                long breakMinutes = workingday != null
-                    ? workingday.getBreakhours() * 60L + workingday.getBreakminutes()
-                    : 0;
-                long bookedMinutes = todaysBookings.stream()
-                    .mapToLong(tr -> tr.getDuration().toMinutes())
-                    .sum();
-                long startMinutes = effectiveStart.getHour() * 60L + effectiveStart.getMinute()
-                    + breakMinutes + bookedMinutes;
-                // Only offer the live booking once that starting point is in the past. Otherwise the
-                // form would open with an end time before its begin time, which cannot be saved.
-                if (startMinutes < nowInMinutes()) {
-                    model.addAttribute("liveBookingStartMinutes", startMinutes);
-                }
-            }
+        var bookedUntil = addBookedUntil(model, ecId, date, isEdit ? form.getId() : null);
+        // The live booking begins where the day is booked up to, the same point the daily view shows
+        // as its quitting time. A day marked as not worked has none (#851). Only offered once that
+        // point is in the past: otherwise the form would open with an end before its begin, which
+        // cannot be saved.
+        if (!isEdit && date != null && date.equals(today())
+                && bookedUntil.isPresent() && bookedUntil.getAsLong() < nowInMinutes()) {
+            model.addAttribute("liveBookingStartMinutes", bookedUntil.getAsLong());
         }
         if (ecId > 0) {
             var ec = employeecontractService.getEmployeecontractById(ecId);
@@ -644,6 +629,20 @@ public class TimereportController {
         if (!isEdit && ecId > 0 && date != null) {
             model.addAttribute("absenceDurationMinutes", dailyService.getRemainingDayTarget(date, ecId).toMinutes());
         }
+    }
+
+    /**
+     * Up to when the day is booked without the booking in the form (#1263): the form adds the
+     * duration being entered and shows where that booking ends. Rendered on the suborder select, so
+     * that it comes again with every change of the date.
+     */
+    private OptionalLong addBookedUntil(Model model, long ecId, LocalDate date, Long editedTimereportId) {
+        if (ecId <= 0 || date == null) {
+            return OptionalLong.empty();
+        }
+        var bookedUntil = workingdayService.getBookedUntilMinutes(ecId, date, editedTimereportId);
+        bookedUntil.ifPresent(minutes -> model.addAttribute("bookedUntilMinutes", minutes));
+        return bookedUntil;
     }
 
     private void seedWorkingday(long ecId, LocalDate date, LocalTime beginTime) {
