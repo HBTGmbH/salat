@@ -735,7 +735,11 @@
     <div class="col-lg-4" th:if="${dailyData != null}">
 
       <!-- Week strip -->
-      <div class="card mb-3">
+      <!--/* Nur auf grossen Bildschirmen (#1269): neben dem Tag ist die Spalte darunter so schmal, dass
+             Nicht gearbeitet in den Innenabstand des Eintrags ragt, und unter 992px stuende die Leiste unter
+             dem Tag. Den Tag wechseln dort die Knoepfe darueber und die Befehlspalette. Ausgeblendet wird die
+             Karte, nicht die Liste: der Out-of-Band-Austausch findet #daily-week-strip so weiter. */-->
+      <div class="card mb-3 d-none d-xl-block">
         <div class="card-header">
           <h3 class="card-title" th:text="#{main.daily.week.title}">Diese Woche</h3>
         </div>
