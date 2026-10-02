@@ -787,6 +787,12 @@ Repository und `Specification`.
 ### Service Pattern
 - Class annotations: `@Service @RequiredArgsConstructor @Transactional @Authorized`
 - Read-only queries: annotate the method with `@Transactional(readOnly = true)`
+- **No repository writes under `@Transactional(propagation = NOT_SUPPORTED)` inside a request** (#1282).
+  With Open Session in View the empty scope splits the work across EntityManagers. Once a read
+  without its own transaction has run, reads come from the request's cached EntityManager, while
+  every `save` opens a fresh one. An entity written and then read and written again fails the
+  version check. Work that waits for a foreign system and writes entities on the way runs as a job on
+  an executor of its own (`JiraReplicationLauncher`, `ETLRunLauncher`).
 - **The role is checked by `@Authorized` alone** (#1256, → ADR-0006): `@Authorized(requiresManager = true)`
   on the method, or on the class when most of the service is management only — then every method
   open to any login says so with a plain `@Authorized` (`EmployeecontractService`: the reads, and the
