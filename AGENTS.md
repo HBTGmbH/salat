@@ -173,14 +173,16 @@ die vier verbliebenen benannt und begründet. Eines davon ist das Gelb selbst: T
 `#ffcc00`. Alles Abgeleitete mischt Tabler aus dem Token und folgt von selbst.
 
 Wo ein Wert zur Laufzeit gebraucht wird (Diagramme), wird das Token gelesen statt abgeschrieben:
-`--tblr-<name>` vom `body`, wie es `tabler.tabler.getColor` tut. **Modusabhängige Tokens taugen
-dafür nicht** — `--tblr-body-color` löst zu `light-dark(#374151, #e5e7eb)` auf, was keine
-Diagrammbibliothek parst; der aufgelöste Wert steht in der berechneten Textfarbe des `body`.
+`--tblr-<name>` vom `body`. **Seit Tabler 1.6 steht dort `oklch(…)`, kein Hex** — wer daraus eine
+Transparenzstufe oder Kanalwerte bildet, lässt den Browser umrechnen (Canvas oder `color-mix()`)
+und zerlegt den String nie selbst. **Modusabhängige Tokens taugen dafür nicht** —
+`--tblr-body-color` löst zu einem `light-dark(…)`-Ausdruck auf, den keine Diagrammbibliothek
+parst; der aufgelöste Wert steht in der berechneten Textfarbe des `body`.
 
 **Der verbindliche Kontrastmaßstab ist WCAG AA: 4,5:1 für jeden Text**, unabhängig von seiner
 Rolle, in **beiden** Farbmodi; 3:1 für reine Nicht-Text-Elemente. Es gibt keine Kulanzstufe für
 Sekundärtext. Die Sidebar ist immer dunkel (`data-bs-theme="dark"`) — Textfarben darin sind auch im
-hellen Modus gegen `#1f2937` zu prüfen.
+hellen Modus gegen `#262626` zu prüfen.
 
 Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Korrekturen in
 `salat.css` stehen im Style Guide. Fallstricke, die eine naive Prüfung verfehlt:
@@ -205,10 +207,10 @@ Werte werden **gemessen, nicht geschätzt**; Verfahren, Messtabellen und die Kor
 - Ein ersetztes Bedienelement bringt auch eigene **Maße** mit. TomSelect rechnet mit Zeilenhöhe
   `1.5`, Bootstrap hier mit `1.4285` — ohne Angleichung springt die Feldhöhe, sobald das Element
   übernommen wird.
-- **Ein geprüfter Ruhezustand sagt nichts über den Hover.** Tablers Hover-Füllung heißt `-darken`,
-  mischt aber mit 20 % Transparenz gegen den Untergrund: auf hellem Grund hellt sie auf, auf
-  dunklem dunkelt sie ab — jeweils in die Richtung, in der der Text verliert. Beide Zustände
-  messen.
+- **Ein geprüfter Ruhezustand sagt nichts über den Hover.** Tablers Hover-Füllung `-darken`
+  dunkelt seit Tabler 1.6 in beiden Modi ab — eine Füllung mit dunkler Schrift verliert dabei.
+  Dazu legt jeder `.btn` im Hover eine Fläche unter (`--tblr-hover-bg`), die einen Textknopf auf
+  dunklem Grund unter 4,5:1 drückt. Beide Zustände messen.
 - **Manche Töne lassen sich als Text nicht sättigen — das ist keine Nachlässigkeit, sondern die
   Farbe.** Ein Text mit 4,5:1 auf heller Fläche liegt unter einer relativen Leuchtdichte von 0,17,
   und dort ist jedes Gelb ein Braun; umgekehrt ist auf der dunklen Karte jedes Rot unterhalb von
