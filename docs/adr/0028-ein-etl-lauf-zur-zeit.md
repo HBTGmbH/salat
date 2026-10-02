@@ -3,6 +3,17 @@
 Date: 2026-09-24
 Status: Accepted
 
+> **Nachtrag 2026-10-02 (#1282):** Die JIRA-Replikationen folgen jetzt demselben Muster. „Jetzt
+> ausführen" wartet nicht mehr auf das Ergebnis, wie es der Kontext unten noch beschreibt. Der Lauf
+> geht auf einen eigenen Executor, läuft dort im Job-Modus und schreibt seine Zeile in
+> `jira_replication_run`. Das ist die Laufhistorie, die zweite Registerkarte der
+> Replikationsliste. Übernommen sind **A** (die `RUNNING`-Zeile ist die Sperre), **D** („als
+> beendet markieren") und `SKIPPED` für den geplanten Lauf. Ein Unterschied bleibt: Die Sperre gilt
+> **je Replikation**, nicht für alle zugleich. Zwei Replikationen schreiben in verschiedene
+> Geltungsbereiche und vertragen sich. Der Executor hat deshalb zwei Threads statt einem, die
+> Warteschlange bleibt bei null. Anlass war ein Versionskonflikt beim Lauf im Request-Thread, die
+> Begründung steht an `JiraReplicationLauncher`.
+
 ## Context and Problem Statement
 
 Mit #1071 lässt sich ein ETL-Lauf aus der Oberfläche anstoßen. Damit gibt es drei Wege in einen

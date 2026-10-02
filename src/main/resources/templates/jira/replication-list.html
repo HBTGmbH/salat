@@ -10,149 +10,271 @@
 ">
 <main layout:fragment="content">
 
-  <div class="card mb-3">
-    <div class="card-body">
-      <div class="row g-2 align-items-center">
-        <div class="col">
-          <p class="text-secondary mb-0" th:text="#{main.jira.replication.list.hint}">
-            Die Replikation holt die Tickets der eingeschalteten Konfigurationen taeglich.
-          </p>
-        </div>
-        <div class="col-auto">
-          <a class="btn btn-success" th:href="@{/jira/replications/create}">
-            <i class="icon ti ti-plus"></i>
-            <span th:text="#{main.jira.replication.button.create}">Neue Replikation</span>
+  <!--/* Two tabs (#1282): the replications are maintained here, unlike the ETL definitions, so the
+         page keeps its list to edit and gets the run history beside it rather than instead of it.
+         The tab sits in the fragment of the address; Tabler opens it on its own, and a run started
+         from the first tab lands on the second. */-->
+  <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" id="jiraReplicationTabs">
+        <li class="nav-item">
+          <a href="#tab-replications" class="nav-link active" data-bs-toggle="tab" id="tab-replications-button">
+            <i class="icon ti ti-settings me-1"></i>
+            <span th:text="#{main.jira.replication.tab.replications}">Replikationen</span>
           </a>
-        </div>
-      </div>
+        </li>
+        <li class="nav-item">
+          <a href="#tab-runs" class="nav-link" data-bs-toggle="tab" id="tab-runs-button">
+            <i class="icon ti ti-history me-1"></i>
+            <span th:text="#{main.jira.replication.tab.runs}">Läufe</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="card-body">
+      <div class="tab-content">
+
+        <!-- ── Tab 1: the replications ──────────────────────────────────── -->
+        <div class="tab-pane active show" id="tab-replications">
+          <div class="row g-2 align-items-center mb-3">
+            <div class="col">
+              <p class="text-secondary mb-0" th:text="#{main.jira.replication.list.hint}">
+                Die Replikation holt die Tickets der eingeschalteten Konfigurationen stuendlich.
+              </p>
+            </div>
+            <div class="col-auto">
+              <a class="btn btn-success" th:href="@{/jira/replications/create}">
+                <i class="icon ti ti-plus"></i>
+                <span th:text="#{main.jira.replication.button.create}">Neue Replikation</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-vcenter">
+              <thead>
+                <tr>
+                  <th th:text="#{main.jira.replication.field.name}">Name</th>
+                  <!--/* Several replications on one order are the point of #1025; the scope is what tells
+                         them apart. */-->
+                  <th th:text="#{main.jira.replication.field.scopeSign}">Geltungsbereich</th>
+                  <th th:text="#{main.jira.replication.field.baseUrl}">Basis-URL</th>
+                  <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.apiFlavor}">API-Variante</th>
+                  <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Merkmale</th>
+                  <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.lastMaxUpdated}">Wasserstand</th>
+                  <th class="w-1"></th>
+                  <th class="w-1"></th>
+                  <th class="w-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(replications)}">
+                  <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+                    Keine Einträge vorhanden
+                  </td>
+                </tr>
+                <tr th:each="replication : ${replications}" th:classappend="${!replication.enabled} ? 'text-muted' : ''">
+                  <td>
+                    <a th:href="@{/jira/replications/{id}/edit(id=${replication.id})}" th:text="${replication.name}">Name</a>
+                  </td>
+                  <td class="text-nowrap font-monospace small" th:text="${replication.scopeSign}">ALPHA/01</td>
+                  <td class="text-break small" th:text="${replication.baseUrl}">https://jira.example.com</td>
+                  <td class="d-none d-md-table-cell" th:text="#{${replication.apiFlavor.label}}">Server</td>
+                  <td class="d-none d-lg-table-cell text-nowrap">
+                    <!--/* The switch is the state: one click is what turning a replication on and off takes. */-->
+                    <form th:action="@{/jira/replications/{id}/enabled(id=${replication.id})}" method="post"
+                          class="d-inline align-middle">
+                      <input type="hidden" name="enabled" th:value="${!replication.enabled}"/>
+                      <!--/* `btn-sm` stays: with `p-0` the button only shows as the plate behind the flag,
+                             and `.btn` sizes that plate from its own padding variable rather than from the
+                             padding actually set — at the larger variant it grows by a third around an
+                             unchanged flag. What the flag measures hangs on `fs-5` below instead. */-->
+                      <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
+                              th:title="${replication.enabled}
+                                  ? #{main.jira.replication.action.disable}
+                                  : #{main.jira.replication.action.enable}">
+                        <!--/* A badge sizes itself in em, so inside a `btn-sm` it came out at 10.3px while
+                               every other list view draws its flags at 12px. `fs-5` is that 12px, as an
+                               absolute value and with the `!important` of a utility — which is what it
+                               takes, because `.badge` sets `font-size` itself and stands late in
+                               tabler.css. */-->
+                        <span class="badge fs-5" th:classappend="${replication.enabled} ? 'bg-green-lt' : 'bg-danger-lt'">
+                          <i class="bi" th:classappend="${replication.enabled} ? 'bi-play-fill' : 'bi-pause-fill'"></i>
+                        </span>
+                      </button>
+                    </form>
+                    <!--/* Writing back to JIRA (#1007) is the one thing a replication does outside SALAT —
+                           it belongs in the list, not only in the form.
+
+                           `fs-5` for the reason the switch above gives: both flags of this column are
+                           pinned to the 12px the flags of every other list view come out at, rather than
+                           to whatever their surroundings happen to be. */-->
+                    <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt fs-5 align-middle ms-1"
+                          th:title="#{main.jira.replication.flag.worklogsync}">
+                      <i class="bi bi-arrow-left-right"></i>
+                    </span>
+                    <!--/* Which bookings it writes (#1218) — with the icon the suborder list uses for
+                           invoiceable. Only next to the sync flag: without the sync it restricts nothing. */-->
+                    <span th:if="${replication.worklogSyncEnabled and replication.worklogSyncInvoiceableOnly}"
+                          class="badge bg-success-lt fs-5 align-middle ms-1"
+                          th:title="#{main.jira.replication.flag.worklogsyncinvoiceableonly}">
+                      <i class="bi bi-cash-stack"></i>
+                    </span>
+                  </td>
+                  <td class="d-none d-md-table-cell small">
+                    <!--/* This is where you see whether a replication still runs at all — an old date or none
+                           at all is the symptom a manager comes here for. */-->
+                    <span th:if="${replication.lastMaxUpdated != null}"
+                          th:text="${#temporals.format(replication.lastMaxUpdated, 'dd.MM.yyyy HH:mm')}">01.01.2026 02:00</span>
+                    <span th:if="${replication.lastMaxUpdated == null}" class="text-muted"
+                          th:text="#{main.jira.replication.watermark.none}">noch nie gelaufen</span>
+                  </td>
+                  <td>
+                    <!--/* The run goes on in the background (#1282). A replication that is still running
+                           offers no second start; the lock itself is its row in the run history, which
+                           also turns away a start from a second window. */-->
+                    <form th:action="@{/jira/replications/{id}/run(id=${replication.id})}" method="post">
+                      <button type="submit" class="btn btn-outline-primary btn-sm"
+                              th:disabled="${#sets.contains(runningReplicationIds, replication.id)}"
+                              th:title="${#sets.contains(runningReplicationIds, replication.id)}
+                                  ? #{main.jira.replication.action.run.running}
+                                  : #{main.jira.replication.action.run.title}"
+                              th:aria-label="#{main.jira.replication.action.run.title}">
+                        <i class="icon ti ti-player-play m-0"></i>
+                      </button>
+                    </form>
+                  </td>
+                  <td>
+                    <a class="btn btn-outline-primary btn-sm" th:href="@{/jira/replications/{id}/edit(id=${replication.id})}"
+                       th:title="#{main.button.label.edit.text}">
+                      <i class="icon ti ti-pencil m-0"></i>
+                    </a>
+                  </td>
+                  <td>
+                    <form th:action="@{/jira/replications/{id}/delete(id=${replication.id})}" method="post"
+                          data-confirm
+                          th:data-confirm-title="#{main.jira.replication.delete.confirm.title}"
+                          th:data-confirm-text="#{main.jira.replication.confirm.delete}"
+                          th:data-confirm-detail="${replication.name}"
+                          th:data-confirm-detail-secondary="${replication.scopeSign}"
+                          th:data-confirm-label="#{main.general.button.delete.text}"
+                          data-confirm-variant="danger">
+                      <button type="submit" class="btn btn-outline-danger btn-sm" th:title="#{main.button.label.delete.text}">
+                        <i class="icon ti ti-trash m-0"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div><!-- tab-replications -->
+
+        <!-- ── Tab 2: the run history ────────────────────────────────────── -->
+        <div class="tab-pane" id="tab-runs">
+          <!--/* The fragment in the action keeps the tab open across the filter: a GET form replaces
+                 the query of its action and leaves the fragment where it is. */-->
+          <form method="get" th:action="@{/jira/replications} + '#tab-runs'" data-filter-form="jira-runs"
+                class="mb-3">
+            <label class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" name="fJiraRunFailedOnly" value="true"
+                     th:checked="${fJiraRunFailedOnly}"/>
+              <!--/* Without the hidden field the switch would stay on: an unticked box sends nothing,
+                     and the UiState filter then fills in the remembered value. */-->
+              <input type="hidden" name="fJiraRunFailedOnly" value="false"/>
+              <span class="form-check-label" th:text="#{main.jira.replication.run.filter.failedonly}">Nur Fehlerhafte</span>
+            </label>
+          </form>
+          <p class="text-secondary" th:text="#{main.jira.replication.run.list.hint}">
+            Jeder Lauf schreibt seine Zeile beim Start und ergaenzt sie am Ende.
+          </p>
+
+          <div class="table-responsive">
+            <table class="table table-vcenter">
+              <thead>
+                <tr>
+                  <th th:text="#{main.jira.replication.run.field.startedAt}">Start</th>
+                  <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.run.field.finishedAt}">Ende</th>
+                  <th th:text="#{main.jira.replication.run.field.duration}">Dauer</th>
+                  <th th:text="#{main.jira.replication.field.name}">Name</th>
+                  <th th:text="#{main.jira.replication.run.field.status}">Status</th>
+                  <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.run.field.trigger}">Ausgeloest durch</th>
+                  <th th:text="#{main.jira.replication.run.field.message}">Meldung</th>
+                  <th class="w-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(runs)}">
+                  <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+                    Keine Einträge vorhanden
+                  </td>
+                </tr>
+                <tr th:each="run : ${runs}">
+                  <td class="text-nowrap"
+                      th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:00</td>
+                  <td class="d-none d-md-table-cell text-nowrap">
+                    <span th:if="${run.finishedAt != null}"
+                          th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 10:15:04</span>
+                    <span th:if="${run.finishedAt == null}" class="text-muted">&ndash;</span>
+                  </td>
+                  <td class="text-nowrap">
+                    <span th:if="${run.duration != null}" th:text="${run.duration}">4 s</span>
+                    <span th:if="${run.duration == null}" class="text-muted">&ndash;</span>
+                  </td>
+                  <td th:text="${run.replicationName}">Name</td>
+                  <td>
+                    <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'},skipped=${run.status.name() == 'SKIPPED'}"
+                          th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : (${skipped} ? 'bg-warning-lt' : 'bg-azure-lt'))"
+                          th:text="#{${'main.jira.replication.run.status.' + run.status}}">Erfolgreich</span>
+                  </td>
+                  <td class="d-none d-md-table-cell" th:text="#{${'main.jira.replication.run.trigger.' + run.triggeredBy}}">Stündlich</td>
+                  <!--/* An aborted run carries the exception text and grows long; the cell wraps it
+                         rather than stretching the table. */-->
+                  <td class="text-break small" th:text="${run.message}">12 Tickets geholt, 3 geschrieben.</td>
+                  <!--/* Only on a running row: what gets marked is an entry a crash left on
+                         "running", which turns away every new start of its replication. The dialogue
+                         names start and replication — the database id is no domain value. */-->
+                  <td>
+                    <form th:if="${run.status.name() == 'RUNNING'}" method="post"
+                          th:action="@{/jira/replications/runs/{id}/mark-finished(id=${run.id})}"
+                          data-confirm
+                          th:data-confirm-title="#{main.jira.replication.run.markfinished.confirm.title}"
+                          th:data-confirm-text="#{main.jira.replication.run.markfinished.confirm.text}"
+                          th:data-confirm-detail="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}"
+                          th:data-confirm-detail-secondary="${run.replicationName}"
+                          th:data-confirm-label="#{main.jira.replication.run.action.markfinished}"
+                          data-confirm-variant="warning">
+                      <button type="submit" class="btn btn-outline-warning btn-sm"
+                              th:title="#{main.jira.replication.run.action.markfinished}"
+                              th:aria-label="#{main.jira.replication.run.action.markfinished}">
+                        <i class="icon ti ti-check m-0"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div><!-- tab-runs -->
+
+      </div><!-- tab-content -->
     </div>
   </div>
 
-  <div class="table-responsive card">
-    <table class="table table-vcenter card-table">
-      <thead>
-        <tr>
-          <th th:text="#{main.jira.replication.field.name}">Name</th>
-          <!--/* Several replications on one order are the point of #1025; the scope is what tells
-                 them apart. */-->
-          <th th:text="#{main.jira.replication.field.scopeSign}">Geltungsbereich</th>
-          <th th:text="#{main.jira.replication.field.baseUrl}">Basis-URL</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.apiFlavor}">API-Variante</th>
-          <th class="d-none d-lg-table-cell" th:text="#{main.general.flags.text}">Merkmale</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.jira.replication.field.lastMaxUpdated}">Wasserstand</th>
-          <th class="w-1"></th>
-          <th class="w-1"></th>
-          <th class="w-1"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:if="${#lists.isEmpty(replications)}">
-          <td colspan="9" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
-            Keine Einträge vorhanden
-          </td>
-        </tr>
-        <tr th:each="replication : ${replications}" th:classappend="${!replication.enabled} ? 'text-muted' : ''">
-          <td>
-            <a th:href="@{/jira/replications/{id}/edit(id=${replication.id})}" th:text="${replication.name}">Name</a>
-          </td>
-          <td class="text-nowrap font-monospace small" th:text="${replication.scopeSign}">ALPHA/01</td>
-          <td class="text-break small" th:text="${replication.baseUrl}">https://jira.example.com</td>
-          <td class="d-none d-md-table-cell" th:text="#{${replication.apiFlavor.label}}">Server</td>
-          <td class="d-none d-lg-table-cell text-nowrap">
-            <!--/* The switch is the state: one click is what turning a replication on and off takes. */-->
-            <form th:action="@{/jira/replications/{id}/enabled(id=${replication.id})}" method="post"
-                  class="d-inline align-middle">
-              <input type="hidden" name="enabled" th:value="${!replication.enabled}"/>
-              <!--/* `btn-sm` stays: with `p-0` the button only shows as the plate behind the flag,
-                     and `.btn` sizes that plate from its own padding variable rather than from the
-                     padding actually set — at the larger variant it grows by a third around an
-                     unchanged flag. What the flag measures hangs on `fs-5` below instead. */-->
-              <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
-                      th:title="${replication.enabled}
-                          ? #{main.jira.replication.action.disable}
-                          : #{main.jira.replication.action.enable}">
-                <!--/* A badge sizes itself in em, so inside a `btn-sm` it came out at 10.3px while
-                       every other list view draws its flags at 12px. `fs-5` is that 12px, as an
-                       absolute value and with the `!important` of a utility — which is what it
-                       takes, because `.badge` sets `font-size` itself and stands late in
-                       tabler.css. */-->
-                <span class="badge fs-5" th:classappend="${replication.enabled} ? 'bg-green-lt' : 'bg-danger-lt'">
-                  <i class="bi" th:classappend="${replication.enabled} ? 'bi-play-fill' : 'bi-pause-fill'"></i>
-                </span>
-              </button>
-            </form>
-            <!--/* Writing back to JIRA (#1007) is the one thing a replication does outside SALAT —
-                   it belongs in the list, not only in the form.
-
-                   `fs-5` for the reason the switch above gives: both flags of this column are
-                   pinned to the 12px the flags of every other list view come out at, rather than
-                   to whatever their surroundings happen to be. */-->
-            <span th:if="${replication.worklogSyncEnabled}" class="badge bg-blue-lt fs-5 align-middle ms-1"
-                  th:title="#{main.jira.replication.flag.worklogsync}">
-              <i class="bi bi-arrow-left-right"></i>
-            </span>
-            <!--/* Which bookings it writes (#1218) — with the icon the suborder list uses for
-                   invoiceable. Only next to the sync flag: without the sync it restricts nothing. */-->
-            <span th:if="${replication.worklogSyncEnabled and replication.worklogSyncInvoiceableOnly}"
-                  class="badge bg-success-lt fs-5 align-middle ms-1"
-                  th:title="#{main.jira.replication.flag.worklogsyncinvoiceableonly}">
-              <i class="bi bi-cash-stack"></i>
-            </span>
-          </td>
-          <td class="d-none d-md-table-cell small">
-            <!--/* This is where you see whether a replication still runs at all — an old date or none
-                   at all is the symptom a manager comes here for. */-->
-            <span th:if="${replication.lastMaxUpdated != null}"
-                  th:text="${#temporals.format(replication.lastMaxUpdated, 'dd.MM.yyyy HH:mm')}">01.01.2026 02:00</span>
-            <span th:if="${replication.lastMaxUpdated == null}" class="text-muted"
-                  th:text="#{main.jira.replication.watermark.none}">noch nie gelaufen</span>
-          </td>
-          <td>
-            <!--/* Synchronous: the button says it waits and stops itself from being pressed twice. */-->
-            <form th:action="@{/jira/replications/{id}/run(id=${replication.id})}" method="post"
-                  data-run-form="true">
-              <button type="submit" class="btn btn-outline-primary btn-sm"
-                      th:title="#{main.jira.replication.action.run.title}">
-                <i class="icon ti ti-player-play m-0"></i>
-              </button>
-            </form>
-          </td>
-          <td>
-            <a class="btn btn-outline-primary btn-sm" th:href="@{/jira/replications/{id}/edit(id=${replication.id})}"
-               th:title="#{main.button.label.edit.text}">
-              <i class="icon ti ti-pencil m-0"></i>
-            </a>
-          </td>
-          <td>
-            <form th:action="@{/jira/replications/{id}/delete(id=${replication.id})}" method="post"
-                  data-confirm
-                  th:data-confirm-title="#{main.jira.replication.delete.confirm.title}"
-                  th:data-confirm-text="#{main.jira.replication.confirm.delete}"
-                  th:data-confirm-detail="${replication.name}"
-                  th:data-confirm-detail-secondary="${replication.scopeSign}"
-                  th:data-confirm-label="#{main.general.button.delete.text}"
-                  data-confirm-variant="danger">
-              <button type="submit" class="btn btn-outline-danger btn-sm" th:title="#{main.button.label.delete.text}">
-                <i class="icon ti ti-trash m-0"></i>
-              </button>
-            </form>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
   <script th:inline="none">
-    // A run fetches page after page from a foreign system; without this the page looks idle and
-    // invites a second click, which would start the same replication twice.
     document.addEventListener('DOMContentLoaded', function () {
-      document.querySelectorAll('form[data-run-form]').forEach(function (form) {
-        form.addEventListener('submit', function () {
-          const button = form.querySelector('button[type="submit"]');
-          if (!button) return;
-          button.disabled = true;
-          button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+      // The address follows the tab, so that a reload stays where it was. Opening the tab from the
+      // fragment is Tabler's own work (see dailyreport/my-accounts.html).
+      document.querySelectorAll('#jiraReplicationTabs [data-bs-toggle="tab"]').forEach(function (tab) {
+        tab.addEventListener('shown.bs.tab', function (e) {
+          history.replaceState(null, '', e.target.getAttribute('href'));
         });
+      });
+      const form = document.querySelector('form[data-filter-form="jira-runs"]');
+      if (!form) return;
+      form.querySelectorAll('input[type="checkbox"][name]').forEach(function (el) {
+        el.addEventListener('change', function () { form.requestSubmit(); });
       });
     });
   </script>

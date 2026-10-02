@@ -3,6 +3,7 @@ package de.hbt.salat.etl.viewhelper;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import de.hbt.salat.common.util.DurationUtils;
 import de.hbt.salat.etl.domain.ETLRunHistory;
 import de.hbt.salat.etl.domain.ETLRunHistory.Status;
 import de.hbt.salat.etl.domain.ETLRunHistory.Trigger;
@@ -28,22 +29,7 @@ public record ETLRunViewHelper(Long id, LocalDateTime startedAt, LocalDateTime f
     if (run.getStartedAt() == null || run.getFinishedAt() == null) {
       return null;
     }
-    return format(Duration.between(run.getStartedAt(), run.getFinishedAt()));
-  }
-
-  /**
-   * Ein ETL-Lauf dauert Sekunden bis Minuten. {@code DurationUtils.format} rechnet in {@code H:mm}
-   * und machte daraus „0:00"; die Einheiten hier sind SI und in beiden Sprachen dieselben.
-   */
-  private static String format(Duration duration) {
-    long seconds = Math.max(duration.toSeconds(), 0);
-    if (seconds < 60) {
-      return "%d s".formatted(seconds);
-    }
-    if (seconds < 3600) {
-      return "%d min %02d s".formatted(seconds / 60, seconds % 60);
-    }
-    return "%d h %02d min".formatted(seconds / 3600, (seconds % 3600) / 60);
+    return DurationUtils.formatElapsed(Duration.between(run.getStartedAt(), run.getFinishedAt()));
   }
 
 }

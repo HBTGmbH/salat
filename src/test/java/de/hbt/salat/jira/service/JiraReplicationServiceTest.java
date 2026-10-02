@@ -45,6 +45,7 @@ import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DateTimeUtils;
 import de.hbt.salat.jira.domain.JiraFieldConfig;
 import de.hbt.salat.jira.domain.JiraReplicationConfig;
+import de.hbt.salat.jira.domain.JiraReplicationRun;
 import de.hbt.salat.jira.domain.JiraTicket;
 import de.hbt.salat.jira.domain.ResolvedFieldValue;
 import de.hbt.salat.jira.persistence.JiraReplicationConfigRepository;
@@ -66,6 +67,9 @@ class JiraReplicationServiceTest {
   @MockitoBean
   private JiraTicketRepository ticketRepo;
 
+  @MockitoBean
+  private JiraReplicationRunService runService;
+
   @Autowired
   private JiraReplicationService jiraReplicationService;
 
@@ -86,6 +90,44 @@ class JiraReplicationServiceTest {
     verify(ticketRepo, times(1)).save(any(JiraTicket.class));
     verify(ticketRepo, times(1)).saveAll(anyList());
     verify(configRepo, times(1)).save(config);
+  }
+
+  @Test
+  void aRecordedRunWritesWhatItDidIntoItsRow() {
+    // #1282: the run history is where a manual run reports back, it has no page waiting for it
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(mockIssue()));
+
+    jiraReplicationService.continueRun(77L, config.getId());
+
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.SUCCEEDED, "1 Tickets geholt, 1 geschrieben.");
+  }
+
+  @Test
+  void aRunWithAnIssueItCouldNotStoreIsRecordedAsFailed() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    config.setLastMaxUpdated(LocalDateTime.of(2026, 6, 1, 8, 0, 0));
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenReturn(issues(
+        failingIssue(LocalDateTime.of(2026, 6, 10, 9, 0, 0)),
+        mockIssue(LocalDateTime.of(2026, 6, 20, 17, 30, 0))));
+
+    jiraReplicationService.continueRun(77L, config.getId());
+
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED,
+        "2 Tickets geholt, 1 geschrieben. 1 nicht verarbeitet — der Wasserstand rückt nicht über sie hinaus.");
+  }
+
+  @Test
+  void anAbortedRunIsRecordedWithoutThePasswordAndStillThrows() {
+    JiraReplicationConfig config = createMockReplicationConfig();
+    when(configRepo.findById(config.getId())).thenReturn(Optional.of(config));
+    when(searchClient.search(any())).thenThrow(new RestClientException("401 for mockUser:mockPassword"));
+
+    assertThrows(RestClientException.class, () -> jiraReplicationService.continueRun(77L, config.getId()));
+
+    verify(runService).finishRun(77L, JiraReplicationRun.Status.FAILED, "Abgebrochen: 401 for mockUser:***");
   }
 
   @Test

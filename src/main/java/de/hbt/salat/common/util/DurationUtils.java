@@ -17,6 +17,22 @@ public class DurationUtils {
     return format(duration, true);
   }
 
+  /**
+   * How long a background run took — seconds to hours, in SI units that read the same in both
+   * languages. {@link #format} counts in {@code H:mm} and would turn a run of a few seconds into
+   * "0:00". Shared by the run histories of the ETL and the JIRA replications (#1282).
+   */
+  public static String formatElapsed(Duration duration) {
+    long seconds = Math.max(duration.toSeconds(), 0);
+    if (seconds < 60) {
+      return "%d s".formatted(seconds);
+    }
+    if (seconds < 3600) {
+      return "%d min %02d s".formatted(seconds / 60, seconds % 60);
+    }
+    return "%d h %02d min".formatted(seconds / 3600, (seconds % 3600) / 60);
+  }
+
   public static String format(Duration duration, boolean printZero) {
     if(duration == null || duration.isZero()) {
       return printZero ? "0:00" : "";

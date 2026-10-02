@@ -1,5 +1,7 @@
 package de.hbt.salat.jira.controller;
 
+import static java.util.stream.Collectors.toMap;
+
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,11 @@ import de.hbt.salat.common.exception.ErrorCodeException;
 import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.jira.domain.JiraApiFlavor;
 import de.hbt.salat.jira.domain.JiraReplicationConfigData;
+import de.hbt.salat.jira.domain.JiraReplicationConfigInfo;
 import de.hbt.salat.jira.service.JiraReplicationConfigService;
+import de.hbt.salat.jira.service.JiraReplicationLauncher;
+import de.hbt.salat.jira.service.JiraReplicationRunService;
+import de.hbt.salat.jira.viewhelper.JiraReplicationRunViewHelper;
 import de.hbt.salat.order.domain.Suborder;
 import de.hbt.salat.order.service.CustomerorderService;
 import de.hbt.salat.order.service.SuborderService;
@@ -36,15 +42,38 @@ import de.hbt.salat.order.service.SuborderService;
 @Authorized(requiresManager = true)
 public class JiraReplicationConfigController {
 
+  /** How many runs the run tab shows — about a day of hourly runs over the usual number of configs. */
+  static final int RUN_LIMIT = 200;
+
+  /** The fragment that opens the run tab. */
+  static final String RUNS_TAB = "#tab-runs";
+
   private final JiraReplicationConfigService jiraReplicationConfigService;
+  private final JiraReplicationLauncher jiraReplicationLauncher;
+  private final JiraReplicationRunService jiraReplicationRunService;
   private final CustomerorderService customerorderService;
   private final SuborderService suborderService;
   private final ErrorCodeViewHelper errorCodeViewHelper;
   private final MessageSourceAccessor messages;
 
+  /**
+   * The page has two tabs (#1282): the replications to maintain, and the runs they left. The tab
+   * comes from the fragment of the address ({@code #tab-runs}), which Tabler opens on its own — the
+   * request never sees it, so both lists are always loaded.
+   */
   @GetMapping
-  public String list(Model model) {
-    model.addAttribute("replications", jiraReplicationConfigService.getAll());
+  public String list(@RequestParam(required = false) Boolean fJiraRunFailedOnly, Model model) {
+    var replications = jiraReplicationConfigService.getAll();
+    var namesById = replications.stream()
+        .collect(toMap(JiraReplicationConfigInfo::id, JiraReplicationConfigInfo::name));
+    boolean failedOnly = Boolean.TRUE.equals(fJiraRunFailedOnly);
+
+    model.addAttribute("replications", replications);
+    model.addAttribute("runningReplicationIds", jiraReplicationRunService.getRunningReplicationIds());
+    model.addAttribute("runs", jiraReplicationRunService.getLatestRuns(RUN_LIMIT, failedOnly).stream()
+        .map(run -> JiraReplicationRunViewHelper.from(run, namesById))
+        .toList());
+    model.addAttribute("fJiraRunFailedOnly", failedOnly);
     return "jira/replication-list";
   }
 
@@ -162,25 +191,35 @@ public class JiraReplicationConfigController {
   }
 
   /**
-   * Starts the replication and waits for it. The button that leads here says so and disables itself
-   * while the request is on its way — a replication of a large order fetches page after page.
+   * Starts the replication and returns at once (#1282): the run goes on in the background, like a
+   * manually started ETL run, and stands as "running" in the run tab the page lands on.
    */
   @PostMapping("/{id}/run")
   @Authorized(requiresManager = true)
   public String run(@PathVariable long id, RedirectAttributes redirectAttributes) {
     try {
-      var outcome = jiraReplicationConfigService.runNow(id);
-      if (outcome.success()) {
-        redirectAttributes.addFlashAttribute("toastSuccess",
-            messages.getMessage("main.jira.replication.message.executed", new Object[]{outcome.name()}));
-      } else {
-        redirectAttributes.addFlashAttribute("toastError", messages.getMessage(
-            "main.jira.replication.message.failed", new Object[]{outcome.name(), outcome.message()}));
-      }
+      var name = jiraReplicationConfigService.getById(id).name();
+      jiraReplicationLauncher.startManualRun(id);
+      redirectAttributes.addFlashAttribute("toastSuccess",
+          messages.getMessage("main.jira.replication.message.started", new Object[]{name}));
     } catch (ErrorCodeException ex) {
       redirectAttributes.addFlashAttribute("toastError", firstMessageOf(ex));
     }
-    return "redirect:/jira/replications";
+    return "redirect:/jira/replications" + RUNS_TAB;
+  }
+
+  /** Sets a run that only stands on "running" because of a crash to finished (#1282). */
+  @PostMapping("/runs/{runId}/mark-finished")
+  @Authorized(requiresManager = true)
+  public String markRunFinished(@PathVariable long runId, RedirectAttributes redirectAttributes) {
+    try {
+      jiraReplicationRunService.markFinished(runId);
+      redirectAttributes.addFlashAttribute("toastSuccess",
+          messages.getMessage("main.jira.replication.run.message.markedfinished"));
+    } catch (ErrorCodeException ex) {
+      redirectAttributes.addFlashAttribute("toastError", firstMessageOf(ex));
+    }
+    return "redirect:/jira/replications" + RUNS_TAB;
   }
 
   /**

@@ -33,6 +33,12 @@ salat:
       # mit dem vollständigen SQL-Text im message-Feld (~6 KB). Ohne Retention wächst die Tabelle
       # unbegrenzt weiter, während die Nutzdaten das nicht tun.
       retention-days: 14
+  jira:
+    history:
+      # env: SALAT_JIRA_HISTORY_RETENTION_DAYS — days to keep the run history of the JIRA
+      # replications before auto-delete. Jede eingeschaltete Replikation schreibt stündlich eine
+      # Zeile; ohne Retention wächst die Tabelle unbegrenzt.
+      retention-days: 14
   locale-cookie-name: SALAT_LOCALE    # env: SALAT_LOCALE_COOKIE_NAME — name of the browser cookie used to persist the user's language preference
   notifications:
     retention-days: 30               # env: SALAT_NOTIFICATIONS_RETENTION_DAYS — days to keep notifications before auto-delete

@@ -2,71 +2,94 @@ package de.hbt.salat.jira.service;
 
 import static org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes;
 import static org.springframework.web.context.request.RequestContextHolder.setRequestAttributes;
+import static de.hbt.salat.common.exception.ErrorCode.JI_REPLICATION_RUN_EXECUTOR_BUSY;
 import static de.hbt.salat.jira.configuration.JiraExecutorConfiguration.JIRA_REPLICATION_TASK_EXECUTOR;
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Status.FAILED;
+import static de.hbt.salat.jira.domain.JiraReplicationRun.Trigger.MANUAL;
 
-import java.util.concurrent.ExecutionException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import de.hbt.salat.auth.domain.Authorized;
 import de.hbt.salat.auth.domain.AuthorizedUser;
+import de.hbt.salat.common.exception.BusinessRuleException;
 import de.hbt.salat.common.scheduling.SchedulerRequestAttributes;
+import de.hbt.salat.jira.domain.JiraReplicationRun;
 
 /**
- * Runs a replication started by hand the way the scheduler runs it: on a thread of its own, in job
- * mode (→ ADR-0006), and waits for it (#1282).
+ * Starts a replication from the list (#1282), the way {@code ETLRunLauncher} starts an ETL run: the
+ * row in the run history is opened on the request thread, the run itself goes on in the background,
+ * and the list shows its outcome.
  *
- * <p><b>Why not on the request thread.</b> The request holds an EntityManager for its whole
- * duration (Open Session in View), and {@code JiraReplicationConfigService.runNow} suspends the
- * transaction with {@code NOT_SUPPORTED}, which leaves an empty transaction scope with active
- * synchronisation behind. The first repository read without a transaction of its own — the derived
- * finders of {@code JiraTicketRepository} are such reads — registers the request's EntityManager
- * with that scope. From then on every repository write ({@code save}, {@code saveAll}) suspends it
- * and opens an EntityManager of its own, while every read keeps coming from the request's one and
- * its first-level cache. A ticket written by {@code upsertIfChanged} therefore stays there with its
- * old version, {@code findByScopeSign} hands exactly that instance back, and merging it in
- * {@code resolveParentChains} fails the version check. The scheduled run has neither the
- * request's EntityManager nor the empty scope: every read gets a fresh EntityManager and sees the
- * current version. A thread of its own gives the manual run the same footing.
+ * <p><b>The background thread is also the fix of #1282.</b> On the request thread the run used the
+ * request's EntityManager (Open Session in View). Under the {@code NOT_SUPPORTED} it ran with then,
+ * reads came from that EntityManager's cache, while every {@code save} opened a fresh one — a
+ * ticket written by {@code upsertIfChanged} stayed in the cache with its old version, and saving
+ * its parent chain afterwards failed the version check. The scheduled run never had a request's
+ * EntityManager, and on a thread of its own the manual run has none either: every read gets a fresh
+ * EntityManager and sees the current version.
  *
- * <p>Everything that concerns the person asking — the manager check, which config — is decided on
- * the request thread before the hand-over, as in {@code ETLRunLauncher}. In the background the run
- * is {@code SYSTEM}; a permission check there would always pass.
- *
- * <p>Unlike the ETL run it waits: a replication keeps no run history the page could point at, so
- * the outcome is what the request has to report.
+ * <p>Everything that concerns the person asking — the manager check, the lock — is decided on the
+ * request thread before the hand-over. In the background the run is {@code SYSTEM}; a permission
+ * check there would always pass ({@link AuthorizedUser#initForJob}).
  */
+@Slf4j
 @Service
+@Authorized(requiresManager = true)
 public class JiraReplicationLauncher {
 
   private final JiraReplicationService replicationService;
+  private final JiraReplicationRunService runService;
   private final ObjectProvider<AuthorizedUser> authorizedUserProvider;
   private final ThreadPoolTaskExecutor executor;
 
   /** By hand rather than {@code @RequiredArgsConstructor}, for the {@link Qualifier} on the executor. */
   public JiraReplicationLauncher(JiraReplicationService replicationService,
+                                 JiraReplicationRunService runService,
                                  ObjectProvider<AuthorizedUser> authorizedUserProvider,
                                  @Qualifier(JIRA_REPLICATION_TASK_EXECUTOR) ThreadPoolTaskExecutor executor) {
     this.replicationService = replicationService;
+    this.runService = runService;
     this.authorizedUserProvider = authorizedUserProvider;
     this.executor = executor;
   }
 
-  /** Runs the replication and returns once it is done; its failure surfaces here unchanged. */
-  public void runAndWait(long replicationId) throws InterruptedException {
+  /**
+   * Starts a run and returns as soon as it is open — it stands as {@code RUNNING} in the list from
+   * now on.
+   *
+   * @throws BusinessRuleException when the replication is still running, or when every thread is
+   *     taken
+   */
+  public JiraReplicationRun startManualRun(long replicationId) {
+    var run = runService.startRun(replicationId, MANUAL);
     try {
-      executor.submit(() -> runAsJob(replicationId)).get();
-    } catch (ExecutionException ex) {
-      if (ex.getCause() instanceof RuntimeException runtimeException) throw runtimeException;
-      throw new IllegalStateException(ex.getCause());
+      executor.execute(() -> runInBackground(run.getId(), replicationId));
+    } catch (TaskRejectedException e) {
+      // The row must not stay on "running" and block every further start, and the person asking
+      // needs a message rather than an error page.
+      log.error("Manual JIRA replication could not be handed to the executor", e);
+      runService.finishRun(run.getId(), FAILED,
+          "Der Lauf konnte nicht gestartet werden: kein freier Ausführungsthread.");
+      throw new BusinessRuleException(JI_REPLICATION_RUN_EXECUTOR_BUSY, e);
     }
+    return run;
   }
 
-  private void runAsJob(long replicationId) {
+  private void runInBackground(long runId, long replicationId) {
+    // Without an HTTP request there is no request scope; the request-scoped AuthorizedUser needs the
+    // same preparation as in a scheduled job (→ ADR-0006).
     setRequestAttributes(new SchedulerRequestAttributes(), true);
     try {
       authorizedUserProvider.getObject().initForJob();
-      replicationService.runReplication(replicationId);
+      replicationService.continueRun(runId, replicationId);
+    } catch (Exception e) {
+      // The run keeps its failure in its own row; the exception would otherwise end in the thread
+      // without a word anywhere.
+      log.error("Manually started JIRA replication failed: id={}", replicationId, e);
     } finally {
       // Nothing is destroyed by hand - see SchedulerRequestAttributes (#1084).
       resetRequestAttributes();
