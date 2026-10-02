@@ -29,14 +29,6 @@
             <span th:text="#{main.jira.replication.tab.runs}">Läufe</span>
           </a>
         </li>
-        <!--/* Von beiden Tabs aus erreichbar (#1287): ein angestossener Lauf und die stuendlichen
-               Laeufe aendern die Liste im Hintergrund. Als letzter Eintrag der Tab-Leiste und nicht
-               als card-actions daneben: so bleibt der Kopf so hoch wie die Tabs, wie in Meine Konten.
-               Das Skript unten haengt den offenen Tab an den Link, der UiState-Filter ergaenzt „Nur
-               Fehlerhafte". */-->
-        <li class="nav-item ms-auto d-flex align-items-center">
-          <a th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications})}"></a>
-        </li>
       </ul>
     </div>
     <div class="card-body">
@@ -181,19 +173,26 @@
 
         <!-- ── Tab 2: the run history ────────────────────────────────────── -->
         <div class="tab-pane" id="tab-runs">
-          <!--/* The fragment in the action keeps the tab open across the filter: a GET form replaces
-                 the query of its action and leaves the fragment where it is. */-->
-          <form method="get" th:action="@{/jira/replications} + '#tab-runs'" data-filter-form="jira-runs"
-                class="mb-3">
-            <label class="form-check form-switch mb-0">
-              <input class="form-check-input" type="checkbox" name="fJiraRunFailedOnly" value="true"
-                     th:checked="${fJiraRunFailedOnly}"/>
-              <!--/* Without the hidden field the switch would stay on: an unticked box sends nothing,
-                     and the UiState filter then fills in the remembered value. */-->
-              <input type="hidden" name="fJiraRunFailedOnly" value="false"/>
-              <span class="form-check-label" th:text="#{main.jira.replication.run.filter.failedonly}">Nur Fehlerhafte</span>
-            </label>
-          </form>
+          <!--/* Filter links, Aktualisieren oben rechts (#1287): ein angestossener Lauf und die
+                 stuendlichen Laeufe aendern diese Liste im Hintergrund. Der Link traegt den Tab im
+                 Fragment, der UiState-Filter ergaenzt „Nur Fehlerhafte". */-->
+          <div class="d-flex align-items-center mb-3">
+            <!--/* The fragment in the action keeps the tab open across the filter: a GET form
+                   replaces the query of its action and leaves the fragment where it is. */-->
+            <form method="get" th:action="@{/jira/replications} + '#tab-runs'" data-filter-form="jira-runs">
+              <label class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" name="fJiraRunFailedOnly" value="true"
+                       th:checked="${fJiraRunFailedOnly}"/>
+                <!--/* Without the hidden field the switch would stay on: an unticked box sends nothing,
+                       and the UiState filter then fills in the remembered value. */-->
+                <input type="hidden" name="fJiraRunFailedOnly" value="false"/>
+                <span class="form-check-label" th:text="#{main.jira.replication.run.filter.failedonly}">Nur Fehlerhafte</span>
+              </label>
+            </form>
+            <div class="ms-auto">
+              <a th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications} + '#tab-runs')}"></a>
+            </div>
+          </div>
           <p class="text-secondary" th:text="#{main.jira.replication.run.list.hint}">
             Jeder Lauf schreibt seine Zeile beim Start und ergaenzt sie am Ende.
           </p>
@@ -274,16 +273,9 @@
     document.addEventListener('DOMContentLoaded', function () {
       // The address follows the tab, so that a reload stays where it was. Opening the tab from the
       // fragment is Tabler's own work (see dailyreport/my-accounts.html).
-      // The refresh link carries the open tab along, so that reloading lands where it was (#1287).
-      const refreshLink = document.querySelector('[data-refresh-link]');
-      const keepTab = function (hash) {
-        if (refreshLink) refreshLink.hash = hash || '';
-      };
-      keepTab(location.hash);
       document.querySelectorAll('#jiraReplicationTabs [data-bs-toggle="tab"]').forEach(function (tab) {
         tab.addEventListener('shown.bs.tab', function (e) {
           history.replaceState(null, '', e.target.getAttribute('href'));
-          keepTab(e.target.getAttribute('href'));
         });
       });
       const form = document.querySelector('form[data-filter-form="jira-runs"]');
