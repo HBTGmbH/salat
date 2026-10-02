@@ -6,7 +6,11 @@
   „Aktualisieren" im Kopf einer Liste, die sich im Hintergrund ändert (#1286, #1287): ein Lauf, der
   weiterläuft, nachdem die Seite zurückgekehrt ist, und die geplanten Läufe dazu. Ein Fragment,
   damit der Knopf in jeder solchen Liste gleich aussieht und an derselben Stelle sitzt — rechts im
-  Kopf der Karte (card-actions).
+  Kopf der Karte. Den Rahmen dafür setzt die Seite: card-actions neben einem Kartentitel, ein
+  letzter nav-item neben Tabs.
+
+  Klein (btn-sm), weil er niedriger bleiben muss als ein Tab: ein Knopf in voller Höhe machte den
+  Kopf einer Karte mit Tabs höher, und die Tabs säßen nicht mehr auf seiner Unterkante.
 
   Ein Link auf die Liste, kein location.reload(): der UiState-Filter ergänzt die gemerkten Filter,
   wenn der Parameter fehlt, und der Link geht auch ohne Skript und mit mittlerer Maustaste. Eine
@@ -15,11 +19,9 @@
   Beschriftet wie die Exportknöpfe der Buchungsliste: Icon und Text, der Text ist der zugängliche
   Name. Keine eigene Farbe, btn-outline-secondary trägt beide Farbmodi.
 */-->
-<div th:fragment="refreshButton(href)" class="card-actions btn-list">
-  <a class="btn btn-outline-secondary" th:href="${href}" data-refresh-link>
-    <i class="icon ti ti-refresh" aria-hidden="true"></i><span th:text="#{main.general.button.refresh}">Aktualisieren</span>
-  </a>
-</div>
+<a th:fragment="refreshButton(href)" class="btn btn-sm btn-outline-secondary" th:href="${href}" data-refresh-link>
+  <i class="icon ti ti-refresh" aria-hidden="true"></i><span th:text="#{main.general.button.refresh}">Aktualisieren</span>
+</a>
 
 </body>
 </html>
