@@ -30,6 +30,10 @@
           </a>
         </li>
       </ul>
+      <!--/* Von beiden Tabs aus erreichbar (#1287): ein angestossener Lauf und die stuendlichen
+             Laeufe aendern die Liste im Hintergrund. Das Skript unten haengt den offenen Tab an
+             den Link, der UiState-Filter ergaenzt „Nur Fehlerhafte". */-->
+      <div th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications})}"></div>
     </div>
     <div class="card-body">
       <div class="tab-content">
@@ -266,9 +270,16 @@
     document.addEventListener('DOMContentLoaded', function () {
       // The address follows the tab, so that a reload stays where it was. Opening the tab from the
       // fragment is Tabler's own work (see dailyreport/my-accounts.html).
+      // The refresh link carries the open tab along, so that reloading lands where it was (#1287).
+      const refreshLink = document.querySelector('[data-refresh-link]');
+      const keepTab = function (hash) {
+        if (refreshLink) refreshLink.hash = hash || '';
+      };
+      keepTab(location.hash);
       document.querySelectorAll('#jiraReplicationTabs [data-bs-toggle="tab"]').forEach(function (tab) {
         tab.addEventListener('shown.bs.tab', function (e) {
           history.replaceState(null, '', e.target.getAttribute('href'));
+          keepTab(e.target.getAttribute('href'));
         });
       });
       const form = document.querySelector('form[data-filter-form="jira-runs"]');

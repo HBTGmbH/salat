@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+  „Aktualisieren" im Kopf einer Liste, die sich im Hintergrund ändert (#1286, #1287): ein Lauf, der
+  weiterläuft, nachdem die Seite zurückgekehrt ist, und die geplanten Läufe dazu. Ein Fragment,
+  damit der Knopf in jeder solchen Liste gleich aussieht und an derselben Stelle sitzt — rechts im
+  Kopf der Karte (card-actions).
+
+  Ein Link auf die Liste, kein location.reload(): der UiState-Filter ergänzt die gemerkten Filter,
+  wenn der Parameter fehlt, und der Link geht auch ohne Skript und mit mittlerer Maustaste. Eine
+  Seite mit Tabs hält das Fragment des offenen Tabs selbst am Link (data-refresh-link).
+
+  Beschriftet wie die Exportknöpfe der Buchungsliste: Icon und Text, der Text ist der zugängliche
+  Name. Keine eigene Farbe, btn-outline-secondary trägt beide Farbmodi.
+*/-->
+<div th:fragment="refreshButton(href)" class="card-actions btn-list">
+  <a class="btn btn-outline-secondary" th:href="${href}" data-refresh-link>
+    <i class="icon ti ti-refresh" aria-hidden="true"></i><span th:text="#{main.general.button.refresh}">Aktualisieren</span>
+  </a>
+</div>
+
+</body>
+</html>

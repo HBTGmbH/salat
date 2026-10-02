@@ -112,79 +112,87 @@
     </div>
   </div>
 
-  <div class="table-responsive card">
-    <table class="table table-vcenter card-table">
-      <thead>
-        <tr>
-          <th th:text="#{main.etl.run.field.startedAt}">Start</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.finishedAt}">Ende</th>
-          <th th:text="#{main.etl.run.field.duration}">Dauer</th>
-          <th th:text="#{main.etl.run.field.status}">Status</th>
-          <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.trigger}">Ausgeloest durch</th>
-          <th class="d-none d-lg-table-cell" th:text="#{main.etl.run.field.daterange}">Zeitraum</th>
-          <th th:text="#{main.etl.run.field.message}">Meldung</th>
-          <th class="w-1"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:if="${#lists.isEmpty(runs)}">
-          <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
-            Keine Einträge vorhanden
-          </td>
-        </tr>
-        <tr th:each="run : ${runs}">
-          <td class="text-nowrap"
-              th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 02:00:00</td>
-          <td class="d-none d-md-table-cell text-nowrap">
-            <span th:if="${run.finishedAt != null}"
-                  th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 02:03:12</span>
-            <span th:if="${run.finishedAt == null}" class="text-muted">&ndash;</span>
-          </td>
-          <td class="text-nowrap">
-            <span th:if="${run.duration != null}" th:text="${run.duration}">3 min 12 s</span>
-            <span th:if="${run.duration == null}" class="text-muted">&ndash;</span>
-          </td>
-          <td>
-            <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'},skipped=${run.status.name() == 'SKIPPED'}"
-                  th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : (${skipped} ? 'bg-warning-lt' : 'bg-azure-lt'))"
-                  th:text="#{${'main.etl.run.status.' + run.status}}">Erfolgreich</span>
-          </td>
-          <td class="d-none d-md-table-cell" th:text="#{${'main.etl.run.trigger.' + run.triggeredBy}}">Nächtlich</td>
-          <td class="d-none d-lg-table-cell text-nowrap small">
-            <span th:if="${run.dateFrom != null}"
-                  th:text="|${#temporals.format(run.dateFrom, 'dd.MM.yyyy')} – ${#temporals.format(run.dateUntil, 'dd.MM.yyyy')}|">
-              01.06.2026 – 01.09.2026
-            </span>
-          </td>
-          <!--/* Die Meldung eines abgebrochenen Laufs traegt den Ausnahmetext und wird lang; die
-                 Zelle bricht ihn um, statt die Tabelle in die Breite zu ziehen. */-->
-          <td class="text-break small" th:text="${run.message}">12 Definition(en) ausgeführt</td>
-          <!--/* Nur an einer laufenden Zeile: markiert wird ein Eintrag, den ein Absturz auf
-                 „Laeuft" stehen liess und der jeden neuen Lauf abweist. Der Dialog nennt Start und
-                 Zeitraum — daran unterscheiden sich zwei benachbarte Zeilen, die Datenbank-Id ist
-                 keine fachliche Angabe (Style Guide 5.5). */-->
-          <td th:with="runRange=${run.dateFrom != null
-                  ? #temporals.format(run.dateFrom, 'dd.MM.yyyy') + ' – ' + #temporals.format(run.dateUntil, 'dd.MM.yyyy')
-                  : ''}">
-            <form th:if="${run.status.name() == 'RUNNING'}" method="post"
-                  th:action="@{/etl/runs/{id}/mark-finished(id=${run.id})}"
-                  data-confirm
-                  th:data-confirm-title="#{main.etl.run.markfinished.confirm.title}"
-                  th:data-confirm-text="#{main.etl.run.markfinished.confirm.text}"
-                  th:data-confirm-detail="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}"
-                  th:data-confirm-detail-secondary="${runRange}"
-                  th:data-confirm-label="#{main.etl.run.action.markfinished}"
-                  data-confirm-variant="warning">
-              <button type="submit" class="btn btn-outline-warning"
-                      th:title="#{main.etl.run.action.markfinished}"
-                      th:aria-label="#{main.etl.run.action.markfinished}">
-                <i class="icon ti ti-check m-0"></i>
-              </button>
-            </form>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="card">
+    <!--/* Der Kopf traegt den Knopf, mit dem die Liste neu geladen wird (#1286): ein angestossener
+           Lauf steht sofort als „Laeuft" da, sein Ergebnis kommt erst mit dem naechsten Laden. */-->
+    <div class="card-header">
+      <h3 class="card-title" th:text="#{main.etl.run.table.title}">Läufe</h3>
+      <div th:replace="~{fragments/refresh-button :: refreshButton(@{/etl/runs})}"></div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th th:text="#{main.etl.run.field.startedAt}">Start</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.finishedAt}">Ende</th>
+            <th th:text="#{main.etl.run.field.duration}">Dauer</th>
+            <th th:text="#{main.etl.run.field.status}">Status</th>
+            <th class="d-none d-md-table-cell" th:text="#{main.etl.run.field.trigger}">Ausgeloest durch</th>
+            <th class="d-none d-lg-table-cell" th:text="#{main.etl.run.field.daterange}">Zeitraum</th>
+            <th th:text="#{main.etl.run.field.message}">Meldung</th>
+            <th class="w-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(runs)}">
+            <td colspan="8" class="text-center text-muted py-4" th:text="#{main.general.norecords.text}">
+              Keine Einträge vorhanden
+            </td>
+          </tr>
+          <tr th:each="run : ${runs}">
+            <td class="text-nowrap"
+                th:text="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 02:00:00</td>
+            <td class="d-none d-md-table-cell text-nowrap">
+              <span th:if="${run.finishedAt != null}"
+                    th:text="${#temporals.format(run.finishedAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2026 02:03:12</span>
+              <span th:if="${run.finishedAt == null}" class="text-muted">&ndash;</span>
+            </td>
+            <td class="text-nowrap">
+              <span th:if="${run.duration != null}" th:text="${run.duration}">3 min 12 s</span>
+              <span th:if="${run.duration == null}" class="text-muted">&ndash;</span>
+            </td>
+            <td>
+              <span class="badge" th:with="succeeded=${run.status.name() == 'SUCCEEDED'},failed=${run.status.name() == 'FAILED'},skipped=${run.status.name() == 'SKIPPED'}"
+                    th:classappend="${succeeded} ? 'bg-green-lt' : (${failed} ? 'bg-danger-lt' : (${skipped} ? 'bg-warning-lt' : 'bg-azure-lt'))"
+                    th:text="#{${'main.etl.run.status.' + run.status}}">Erfolgreich</span>
+            </td>
+            <td class="d-none d-md-table-cell" th:text="#{${'main.etl.run.trigger.' + run.triggeredBy}}">Nächtlich</td>
+            <td class="d-none d-lg-table-cell text-nowrap small">
+              <span th:if="${run.dateFrom != null}"
+                    th:text="|${#temporals.format(run.dateFrom, 'dd.MM.yyyy')} – ${#temporals.format(run.dateUntil, 'dd.MM.yyyy')}|">
+                01.06.2026 – 01.09.2026
+              </span>
+            </td>
+            <!--/* Die Meldung eines abgebrochenen Laufs traegt den Ausnahmetext und wird lang; die
+                   Zelle bricht ihn um, statt die Tabelle in die Breite zu ziehen. */-->
+            <td class="text-break small" th:text="${run.message}">12 Definition(en) ausgeführt</td>
+            <!--/* Nur an einer laufenden Zeile: markiert wird ein Eintrag, den ein Absturz auf
+                   „Laeuft" stehen liess und der jeden neuen Lauf abweist. Der Dialog nennt Start und
+                   Zeitraum — daran unterscheiden sich zwei benachbarte Zeilen, die Datenbank-Id ist
+                   keine fachliche Angabe (Style Guide 5.5). */-->
+            <td th:with="runRange=${run.dateFrom != null
+                    ? #temporals.format(run.dateFrom, 'dd.MM.yyyy') + ' – ' + #temporals.format(run.dateUntil, 'dd.MM.yyyy')
+                    : ''}">
+              <form th:if="${run.status.name() == 'RUNNING'}" method="post"
+                    th:action="@{/etl/runs/{id}/mark-finished(id=${run.id})}"
+                    data-confirm
+                    th:data-confirm-title="#{main.etl.run.markfinished.confirm.title}"
+                    th:data-confirm-text="#{main.etl.run.markfinished.confirm.text}"
+                    th:data-confirm-detail="${#temporals.format(run.startedAt, 'dd.MM.yyyy HH:mm:ss')}"
+                    th:data-confirm-detail-secondary="${runRange}"
+                    th:data-confirm-label="#{main.etl.run.action.markfinished}"
+                    data-confirm-variant="warning">
+                <button type="submit" class="btn btn-outline-warning"
+                        th:title="#{main.etl.run.action.markfinished}"
+                        th:aria-label="#{main.etl.run.action.markfinished}">
+                  <i class="icon ti ti-check m-0"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script th:inline="none">

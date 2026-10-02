@@ -49,6 +49,24 @@ document.addEventListener('click', event => {
   if (link) selectContract(link.dataset.selectContract);
 });
 
+/* The refresh button of a list (#1286, #1287, fragments/refresh-button.html). A link that differs
+ * from the address only in its fragment does not load anything - the browser just scrolls to the
+ * anchor. That is the normal case on a page with tabs, whose open tab sits in the fragment; there
+ * the click reloads the page itself, which keeps the address with its tab. A modified click (new
+ * tab, new window) stays the browser's. */
+document.addEventListener('click', event => {
+  const link = event.target.closest('[data-refresh-link]');
+  if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const target = new URL(link.href);
+  const current = new URL(window.location.href);
+  target.hash = '';
+  current.hash = '';
+  if (target.href === current.href) {
+    event.preventDefault();
+    location.reload();
+  }
+});
+
 /* The settings moved from the header into the user menu (#1231). A dot on the trigger and "Neu" on
  * the entry point there until the menu has been opened once; then both stay away. The dot goes on
  * opening, the badge only when the menu closes again, so that it is seen once. Both are taken out
