@@ -51,6 +51,18 @@
     flex-direction: column;
     justify-content: center;
   }
+  /* Auf dem Smartphone steht je Tag eine Karte in der ganzen Breite (#1267). Die Zeilen mit Auftrag und
+     Unterauftrag brechen nicht um; ohne contain zaehlte ihre volle Laenge zur Mindestbreite der Zelle,
+     die Tabelle wuchs ueber den Rand, und spaetestens das Dauerfeld mit Plus und Minus schob die Stunden
+     hinaus. So kuerzen die Zeilen, und die Karte springt beim Bearbeiten nicht. */
+  @media (max-width: 575.98px) {
+    #daily-list [id^="tr-card-"] {
+      width: 100%;
+    }
+    #daily-list .daily-card-text {
+      contain: inline-size;
+    }
+  }
   .daily-day-badges {
     display: flex;
     gap: 0.25rem;
