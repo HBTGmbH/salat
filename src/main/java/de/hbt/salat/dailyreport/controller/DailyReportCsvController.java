@@ -36,6 +36,7 @@ import de.hbt.salat.dailyreport.service.ImportReport;
 import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 import de.hbt.salat.employee.service.EmployeeService;
 
 @Slf4j
@@ -62,8 +63,7 @@ public class DailyReportCsvController {
         if (ecId > 0) {
             var ec = employeecontractService.getEmployeecontractById(ecId);
             if (ec != null) {
-                model.addAttribute("selectedEmployeeName", ec.getEmployee().getName() + " | " + ec.getEmployee().getSign()
-                    + "  (" + ec.getTimeString() + (ec.getOpenEnd() ? " ∞" : "") + ")");
+                model.addAttribute("selectedEmployeeName", EmployeeLabelViewHelper.title(ec));
             }
         }
         model.addAttribute("availableMonths", availableMonths);

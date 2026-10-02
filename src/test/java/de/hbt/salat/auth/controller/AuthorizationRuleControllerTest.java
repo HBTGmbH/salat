@@ -46,7 +46,8 @@ class AuthorizationRuleControllerTest {
     @BeforeEach
     void setUp() {
         // the hidden person appears in neither list the modules offer
-        when(authorizationRuleService.getGranteeCandidates()).thenReturn(List.of(OFFERED_LOGIN));
+        when(authorizationRuleService.getGranteeCandidates())
+            .thenReturn(List.of(new AuthorizationObject(OFFERED_LOGIN, OFFERED_LOGIN)));
         when(authorizationRuleService.getObjects("EMPLOYEE"))
             .thenReturn(List.of(new AuthorizationObject(OFFERED_LOGIN, OFFERED_LOGIN)));
         when(authorizationRuleService.getCategories(null)).thenReturn(List.of("EMPLOYEE"));
@@ -55,7 +56,9 @@ class AuthorizationRuleControllerTest {
 
     @SuppressWarnings("unchecked")
     private static List<String> grantees(ExtendedModelMap model) {
-        return (List<String>) model.getAttribute("granteeCandidates");
+        return ((List<AuthorizationObject>) model.getAttribute("granteeCandidates")).stream()
+            .map(AuthorizationObject::id)
+            .toList();
     }
 
     @SuppressWarnings("unchecked")

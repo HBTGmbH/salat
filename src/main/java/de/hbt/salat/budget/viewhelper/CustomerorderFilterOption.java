@@ -15,17 +15,17 @@ import de.hbt.salat.order.viewhelper.CustomerorderViewHelper;
  *
  * @param customerLabel {@code null} when there is no customer to name; the attribute is then left
  *                      out entirely
+ * @param hide          whether the order is hidden, so the option can say so like every other select
  */
-public record CustomerorderFilterOption(String sign, String label, String customerLabel) {
+public record CustomerorderFilterOption(String sign, String label, String customerLabel, boolean hide) {
 
   public static CustomerorderFilterOption from(String sign, Customerorder customerorder,
       CustomerorderViewHelper customerorderViewHelper) {
     if (customerorder == null) {
-      return new CustomerorderFilterOption(sign, sign, null);
+      return new CustomerorderFilterOption(sign, sign, null, false);
     }
-    var description = customerorder.getShortdescription();
-    var label = description == null || description.isBlank() ? sign : sign + " - " + description;
-    return new CustomerorderFilterOption(sign, label, customerorderViewHelper.customerLabel(customerorder));
+    return new CustomerorderFilterOption(sign, customerorderViewHelper.label(customerorder),
+        customerorderViewHelper.customerLabel(customerorder), Boolean.TRUE.equals(customerorder.getHide()));
   }
 
 }

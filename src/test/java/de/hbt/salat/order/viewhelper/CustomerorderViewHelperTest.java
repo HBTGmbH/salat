@@ -9,13 +9,27 @@ import de.hbt.salat.customer.domain.Customer;
 import de.hbt.salat.order.domain.Customerorder;
 
 /**
- * The label every order select shows underneath the order. It exists once because the same
- * concatenation with the same null guard would otherwise sit in eight templates (→ ADR-0017).
+ * How every order select names an order and, underneath, its customer (#1266, → ADR-0017).
  */
 @DisplayNameGeneration(ReplaceUnderscores.class)
 public class CustomerorderViewHelperTest {
 
   private final CustomerorderViewHelper viewHelper = new CustomerorderViewHelper();
+
+  @Test
+  public void should_name_the_order_by_sign_and_short_description() {
+    var customerorder = order("ACME", "Acme Corporation");
+    customerorder.setSign("4711");
+    customerorder.setShortdescription("Plattform");
+    assertThat(viewHelper.label(customerorder)).isEqualTo("4711 - Plattform");
+  }
+
+  @Test
+  public void should_stand_on_the_sign_alone_without_a_description() {
+    var customerorder = order("ACME", "Acme Corporation");
+    customerorder.setSign("4711");
+    assertThat(viewHelper.label(customerorder)).isEqualTo("4711");
+  }
 
   @Test
   public void should_name_the_customer_short_name_first_then_the_full_name() {

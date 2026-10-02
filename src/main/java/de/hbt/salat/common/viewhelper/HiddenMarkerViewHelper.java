@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * when it is not.
  *
  * <p>Used from templates as
- * {@code th:text="|${c.shortname} - ${c.name}| + ${@hiddenMarkerViewHelper.suffix(c.hide)}"}. One
+ * {@code th:text="${@customerLabelViewHelper.label(c)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"}. One
  * place for it, because the alternative was the same conditional and the same message lookup in a
  * dozen option tags — the budget forms had written it out four times before this (#956).
  */

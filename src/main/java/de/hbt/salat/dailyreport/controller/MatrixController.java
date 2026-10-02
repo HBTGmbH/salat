@@ -23,6 +23,7 @@ import de.hbt.salat.common.viewhelper.ErrorCodeViewHelper;
 import de.hbt.salat.dailyreport.service.MatrixService;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 import de.hbt.salat.employee.service.EmployeeService;
 
 @Controller
@@ -64,8 +65,7 @@ public class MatrixController {
             .orElse(false);
 
         selectedContract.ifPresent(c -> model.addAttribute("selectedEmployeeName",
-            c.getEmployee().getName() + " | " + c.getEmployee().getSign()
-                + "  (" + c.getTimeString() + (c.getOpenEnd() ? " ∞" : "") + ")"));
+            EmployeeLabelViewHelper.title(c)));
         model.addAttribute("matrixData", matrixData);
         model.addAttribute("selectedContractId", ecId);
         model.addAttribute("monthReleased", monthReleased);

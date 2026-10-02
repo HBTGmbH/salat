@@ -7,9 +7,4 @@ package de.hbt.salat.budget.domain;
  */
 public record BulkAssignmentEmployee(long id, String sign, String name) {
 
-    /** Kürzel plus Name — the same shape the rest of the application uses for a person. */
-    public String label() {
-        return name == null || name.isBlank() ? sign : sign + " - " + name;
-    }
-
 }

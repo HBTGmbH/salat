@@ -17,9 +17,9 @@ import org.junit.jupiter.api.Test;
 class TimereportControllerTest {
 
   private static final SuborderOption TRAINING =
-      new SuborderOption(1L, "FORTBILDUNG", "FORTBILDUNG", "HBT", false, true, false);
+      new SuborderOption(1L, "FORTBILDUNG", null, "FORTBILDUNG", "HBT", false, true, false);
   private static final SuborderOption PROJECT =
-      new SuborderOption(2L, "ALPHA-DEV", "ALPHA-DEV", "Contoso", false, false, false);
+      new SuborderOption(2L, "ALPHA-DEV", null, "ALPHA-DEV", "Contoso", false, false, false);
   private static final LocalDate DATE = LocalDate.parse("2026-06-18");
 
   @Test

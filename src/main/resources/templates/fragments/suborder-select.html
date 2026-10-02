@@ -19,7 +19,9 @@
     <option th:each="so : ${suborders}"
             th:value="${so.completeOrderSign}"
             th:selected="${selected != null and selected == so.completeOrderSign}"
-            th:text="|${so.completeOrderSign} - ${so.shortdescription}| + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
+            th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+            th:attr="data-subtext=${subtext}"
+            th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
   </select>
 </div>
 

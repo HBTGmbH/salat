@@ -1,12 +1,12 @@
 package de.hbt.salat.dailyreport.auth;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.TreeMap;
 import lombok.RequiredArgsConstructor;
 import de.hbt.salat.auth.domain.AuthorizationObject;
 import de.hbt.salat.auth.domain.AuthorizationObjectProvider;
-import de.hbt.salat.employee.domain.Employee;
 import de.hbt.salat.employee.service.EmployeeService;
+import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 
 /**
  * Shared by the three categories of this module whose object is the person whose records are at stake (#1074):
@@ -30,12 +30,13 @@ abstract class EmployeeSignAuthorizationObjectProvider implements AuthorizationO
 
   @Override
   public List<AuthorizationObject> objects() {
-    return employeeService.getSelectableEmployees(null).stream()
-        .map(Employee::getSign)
-        .filter(sign -> sign != null && !sign.isBlank())
-        .sorted(Comparator.naturalOrder())
-        .map(sign -> new AuthorizationObject(sign, sign))
-        .toList();
+    // one entry per sign, in the order of the signs, named like the person in every other select (#1266)
+    var bySign = new TreeMap<String, AuthorizationObject>();
+    employeeService.getSelectableEmployees(null).stream()
+        .filter(employee -> employee.getSign() != null && !employee.getSign().isBlank())
+        .forEach(employee -> bySign.putIfAbsent(employee.getSign(),
+            new AuthorizationObject(employee.getSign(), EmployeeLabelViewHelper.of(employee.getName(), employee.getSign()))));
+    return List.copyOf(bySign.values());
   }
 
 }

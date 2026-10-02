@@ -19,7 +19,9 @@
               <option value="" th:text="#{main.employee.select.please}">--- Please select ---</option>
               <option th:each="ec : ${employeecontracts}"
                       th:value="${ec.id}"
-                      th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' &infin;' : '') + ')'} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}"
+                      th:with="subtext=${@employeeLabelViewHelper.contractPeriod(ec)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@employeeLabelViewHelper.contractLabel(ec)} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}"
                       th:selected="${fEmployeeOrderEmployeeContractId != null and fEmployeeOrderEmployeeContractId == ec.id}"></option>
             </select>
           </div>
@@ -38,7 +40,7 @@
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
-                      th:text="|${c.shortname} - ${c.name}| + ${@hiddenMarkerViewHelper.suffix(c.hide)}"
+                      th:text="${@customerLabelViewHelper.label(c)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"
                       th:selected="${fCustomerId != null and fCustomerId == c.id}"></option>
             </select>
           </div>
@@ -48,7 +50,9 @@
               <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
               <option th:each="co : ${orders}"
                       th:value="${co.id}"
-                      th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+                      th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
                       th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
             </select>
           </div>
@@ -84,7 +88,9 @@
                 <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
                 <option th:each="so : ${suborders}"
                         th:value="${so.id}"
-                        th:text="${so.completeOrderSign + ' - ' + so.shortdescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
+                        th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                        th:attr="data-subtext=${subtext}"
+                        th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
                         th:selected="${fSuborderId != null and fSuborderId == so.id}"></option>
               </select>
             </div>
@@ -205,7 +211,9 @@
         <option value="" th:text="#{main.customerorder.select.please}">--- Please select ---</option>
         <option th:each="co : ${orders}"
                 th:value="${co.id}"
-                th:text="${co.sign + ' - ' + co.shortdescription} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
+                th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"
                 th:selected="${fCustomerOrderId != null and fCustomerOrderId == co.id}"></option>
       </select>
     </div>
@@ -215,7 +223,9 @@
         <option value="" th:text="#{main.suborder.select.please}">--- Please select ---</option>
         <option th:each="so : ${suborders}"
                 th:value="${so.id}"
-                th:text="${so.completeOrderSign + ' - ' + so.shortdescription} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
+                th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"
                 th:selected="${fSuborderId != null and fSuborderId == so.id}"></option>
       </select>
     </div>

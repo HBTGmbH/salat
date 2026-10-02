@@ -37,7 +37,7 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="c : ${customers}"
                         th:value="${c.id}"
-                        th:text="${c.shortname + ' - ' + c.name}"></option>
+                        th:text="${@customerLabelViewHelper.label(c)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"></option>
               </select>
             </div>
 
@@ -51,7 +51,9 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="co : ${sourceCustomerOrders}"
                         th:value="${co.id}"
-                        th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                        th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                        th:attr="data-subtext=${subtext}"
+                        th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
               </select>
             </div>
 
@@ -61,7 +63,9 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="so : ${sourceSuborders}"
                         th:value="${so.id}"
-                        th:text="${so.completeOrderSignAndDescription}"></option>
+                        th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                        th:attr="data-subtext=${subtext}"
+                        th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
               </select>
             </div>
           </div>
@@ -85,7 +89,7 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="c : ${customers}"
                         th:value="${c.id}"
-                        th:text="${c.shortname + ' - ' + c.name}"></option>
+                        th:text="${@customerLabelViewHelper.label(c)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"></option>
               </select>
             </div>
 
@@ -99,7 +103,9 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="co : ${targetCustomerOrders}"
                         th:value="${co.id}"
-                        th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                        th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                        th:attr="data-subtext=${subtext}"
+                        th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
               </select>
             </div>
 
@@ -109,7 +115,9 @@
                 <option value="" th:text="#{main.general.selectone.text}">-- Auswählen --</option>
                 <option th:each="so : ${targetSuborders}"
                         th:value="${so.id}"
-                        th:text="${so.completeOrderSignAndDescription}"></option>
+                        th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                        th:attr="data-subtext=${subtext}"
+                        th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
               </select>
             </div>
           </div>
@@ -134,8 +142,9 @@
             <select class="form-select tomselect tomselect-multi" th:field="*{employeeContractIds}" multiple>
               <option th:each="ec : ${employeeContracts}"
                       th:value="${ec.id}"
-                      th:text="${ec.employee.name + ' (' + ec.employee.sign + ')'}"
-                      th:attr="data-subtext=${ec.timeString + (ec.openEnd ? ' ∞' : '')}"></option>
+                      th:with="subtext=${@employeeLabelViewHelper.contractPeriod(ec)}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${@employeeLabelViewHelper.contractLabel(ec)} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}"></option>
             </select>
           </div>
         </div>
@@ -160,7 +169,9 @@
         <option th:each="co : ${sourceCustomerOrders}"
                 th:value="${co.id}"
                 th:selected="${form.sourceCustomerOrderId != null and form.sourceCustomerOrderId == co.id}"
-                th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
       </select>
     </div>
 
@@ -171,7 +182,9 @@
         <option th:each="so : ${sourceSuborders}"
                 th:value="${so.id}"
                 th:selected="${form.sourceSuborderId != null and form.sourceSuborderId == so.id}"
-                th:text="${so.completeOrderSignAndDescription}"></option>
+                th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
       </select>
     </div>
 
@@ -186,7 +199,9 @@
         <option th:each="co : ${targetCustomerOrders}"
                 th:value="${co.id}"
                 th:selected="${form.targetCustomerOrderId != null and form.targetCustomerOrderId == co.id}"
-                th:text="${co.sign + ' - ' + co.shortdescription}"></option>
+                th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
       </select>
     </div>
 
@@ -197,7 +212,9 @@
         <option th:each="so : ${targetSuborders}"
                 th:value="${so.id}"
                 th:selected="${form.targetSuborderId != null and form.targetSuborderId == so.id}"
-                th:text="${so.completeOrderSignAndDescription}"></option>
+                th:with="subtext=${@suborderLabelViewHelper.subtext(so)}"
+                th:attr="data-subtext=${subtext}"
+                th:text="${@suborderLabelViewHelper.label(so)} + ${@hiddenMarkerViewHelper.suffix(so.hide)}"></option>
       </select>
     </div>
   </div>

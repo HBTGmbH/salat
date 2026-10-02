@@ -26,7 +26,7 @@
             <option value="" th:text="#{main.general.selectone.text}">-- Select --</option>
             <option th:each="employee : ${employees}"
                     th:value="${employee.id}"
-                    th:text="${employee.name + ' | ' + employee.sign}"></option>
+                    th:text="${@employeeLabelViewHelper.label(employee)} + ${@hiddenMarkerViewHelper.suffix(employee.hide)}"></option>
           </select>
           <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}"></div>
         </div>
@@ -41,7 +41,7 @@
         <select class="form-select tomselect tomselect-multi" id="supervisorIds"
                 th:field="*{supervisorIds}" multiple th:errorclass="is-invalid">
           <option th:each="s : ${supervisors}" th:value="${s.id}"
-                  th:text="${s.name} + ${@hiddenMarkerViewHelper.suffix(s.hide)}"></option>
+                  th:text="${@employeeLabelViewHelper.label(s)} + ${@hiddenMarkerViewHelper.suffix(s.hide)}"></option>
         </select>
         <div class="invalid-feedback" th:if="${#fields.hasErrors('supervisorIds')}" th:errors="*{supervisorIds}"></div>
       </div>

@@ -93,7 +93,8 @@ class AuthorizationRuleServiceTest {
             }
         };
         service = new AuthorizationRuleService(
-            authorizationRuleRepository, List.of(provider), List.of(() -> List.of("ar", "kr")), authService,
+            authorizationRuleRepository, List.of(provider), List.of(() -> List.of(new AuthorizationObject("kr", "Klara Rot | kr"), new AuthorizationObject("ar", "Anton Rot | ar"),
+                new AuthorizationObject("kr", "Klara Rot | kr"))), authService,
             authorizedUser);
     }
 
@@ -252,7 +253,9 @@ class AuthorizationRuleServiceTest {
     @Test
     void theGranteesOfferedAreTheOnesTheOwningModuleHandsOver() {
         // who is hidden is decided there, not here - auth may not even import the employee module
-        assertThat(service.getGranteeCandidates()).containsExactly("ar", "kr");
+        // one entry per login, in the order of the logins, named the way the owning module names them
+        assertThat(service.getGranteeCandidates()).containsExactly(
+            new AuthorizationObject("ar", "Anton Rot | ar"), new AuthorizationObject("kr", "Klara Rot | kr"));
     }
 
     @Test

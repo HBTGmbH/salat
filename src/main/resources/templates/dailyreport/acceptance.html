@@ -27,7 +27,7 @@
             <option th:each="s : ${supervisors}"
                     th:value="${s.id}"
                     th:selected="${supervisorId != null and supervisorId == s.id}"
-                    th:text="${s.name + ' | ' + s.sign}"></option>
+                    th:text="${@employeeLabelViewHelper.label(s)} + ${@hiddenMarkerViewHelper.suffix(s.hide)}"></option>
           </select>
         </div>
       </div>
@@ -43,7 +43,9 @@
             <option th:each="ec : ${employeeContracts}"
                     th:value="${ec.id}"
                     th:selected="${selectedContract != null and selectedContract.id == ec.id}"
-                    th:text="${ec.employee.name + ' | ' + ec.employee.sign + '  (' + ec.timeString + (ec.openEnd ? ' …' : '') + ')'}">
+                    th:with="subtext=${@employeeLabelViewHelper.contractPeriod(ec)}"
+                    th:attr="data-subtext=${subtext}"
+                    th:text="${@employeeLabelViewHelper.contractLabel(ec)} + ${@hiddenMarkerViewHelper.suffix(ec.hide)}">
             </option>
           </select>
           <span th:if="${#lists.isEmpty(employeeContracts)}" class="text-muted"

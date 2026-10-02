@@ -26,9 +26,9 @@
           <option value="" th:text="#{main.backfill.filter.allorders}">--- Alle Aufträge ---</option>
           <option th:each="co : ${customerorders}"
                   th:value="${co.sign}"
-                  th:with="customerLabel=${@customerorderViewHelper.customerLabel(co)}"
-                  th:attr="data-subtext=${customerLabel}"
-                  th:text="|${co.sign} - ${co.shortdescription}|"></option>
+                  th:with="subtext=${@customerorderViewHelper.customerLabel(co)}"
+                  th:attr="data-subtext=${subtext}"
+                  th:text="${@customerorderViewHelper.label(co)} + ${@hiddenMarkerViewHelper.suffix(co.hide)}"></option>
         </salat:select>
         <button type="submit" class="btn btn-primary">
           <i class="icon ti ti-player-play"></i>

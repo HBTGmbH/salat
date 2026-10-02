@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import de.hbt.salat.auth.domain.Authorized;
+import de.hbt.salat.dailyreport.controller.SuborderOption;
 import de.hbt.salat.dailyreport.preferences.DailyPreferenceService;
 import de.hbt.salat.dailyreport.preferences.DailyPreferences;
 import de.hbt.salat.dailyreport.preferences.DurationInputMode;
@@ -147,20 +148,8 @@ public class SettingsController {
     var loginEmployee = employeeService.getLoginEmployee();
     var contractOpt = employeecontractService.getCurrentContract(loginEmployee.getId());
     if (contractOpt.isEmpty()) return List.of();
-    long ecId = contractOpt.get().getId();
-    return customerorderService.getCustomerordersWithValidEmployeeOrders(ecId, today())
-        .stream()
-        .flatMap(order -> suborderService.getSuborderSummaries(ecId, order.getId(), today()).stream()
-            .map(s -> {
-              var desc = s.shortdescription();
-              var label = (desc != null && !desc.isBlank())
-                  ? s.completeOrderSign() + " · " + desc
-                  : s.completeOrderSign();
-              var subtext = order.getSign() + " · " + order.getShortdescription()
-                  + " · " + order.getCustomer().getShortname();
-              return new SuborderOption(s.id(), label, subtext);
-            }))
-        .toList();
+    // the same list the booking form offers today, so the favourite is one it can book
+    return SuborderOption.bookable(customerorderService, suborderService, contractOpt.get().getId(), today());
   }
 
   @Data

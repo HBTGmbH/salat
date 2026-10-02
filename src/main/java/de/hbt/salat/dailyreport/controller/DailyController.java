@@ -42,6 +42,7 @@ import de.hbt.salat.dailyreport.service.WorkingdayService;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 import java.time.Duration;
 import de.hbt.salat.favorites.domain.Favorite;
 import de.hbt.salat.favorites.service.FavoriteService;
@@ -99,8 +100,7 @@ public class DailyController {
         if (ecId > 0) {
             var ec = employeecontractService.getEmployeecontractById(ecId);
             if (ec != null) {
-                model.addAttribute("selectedEmployeeName", ec.getEmployee().getName() + " | " + ec.getEmployee().getSign()
-                    + "  (" + ec.getTimeString() + (ec.getOpenEnd() ? " ∞" : "") + ")");
+                model.addAttribute("selectedEmployeeName", EmployeeLabelViewHelper.title(ec));
             }
         }
         model.addAttribute("mode", effectiveMode);

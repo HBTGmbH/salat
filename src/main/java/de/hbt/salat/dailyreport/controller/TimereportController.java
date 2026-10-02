@@ -47,6 +47,7 @@ import de.hbt.salat.employee.domain.AuthorizedEmployee;
 import de.hbt.salat.employee.domain.Employeecontract;
 import de.hbt.salat.employee.service.EmployeeService;
 import de.hbt.salat.employee.service.EmployeecontractService;
+import de.hbt.salat.employee.viewhelper.EmployeeLabelViewHelper;
 import de.hbt.salat.favorites.domain.Favorite;
 import de.hbt.salat.favorites.service.FavoriteService;
 import de.hbt.salat.order.service.CustomerorderService;
@@ -587,8 +588,7 @@ public class TimereportController {
         if (ecId > 0) {
             var ec = employeecontractService.getEmployeecontractById(ecId);
             if (ec != null) {
-                model.addAttribute("selectedEmployeeName", ec.getEmployee().getName() + " | " + ec.getEmployee().getSign()
-                    + "  (" + ec.getTimeString() + (ec.getOpenEnd() ? " ∞" : "") + ")");
+                model.addAttribute("selectedEmployeeName", EmployeeLabelViewHelper.title(ec));
             }
         }
         model.addAttribute("favoriteSuborderId", timereportPreferenceService.getForCurrentUser().favoriteSuborderId());

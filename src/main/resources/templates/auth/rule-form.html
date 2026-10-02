@@ -64,7 +64,7 @@
                th:text="#{main.auth.rule.field.grantees}">Berechtigte</label>
         <select class="form-select tomselect tomselect-multi" th:field="*{granteeIds}" multiple>
           <option th:value="${anyObject}" th:text="#{main.auth.rule.grantee.any}">alle angemeldeten Benutzer</option>
-          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate}" th:text="${candidate}">kr</option>
+          <option th:each="candidate : ${granteeCandidates}" th:value="${candidate.id}" th:text="${candidate.label}">kr</option>
         </select>
         <small class="form-text" th:text="#{main.auth.rule.field.grantees.help}">
           Anmeldenamen. Mehrere sind erlaubt.

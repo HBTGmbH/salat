@@ -551,7 +551,9 @@ All `<select>` elements use [TomSelect](https://tom-select.github.io/) for searc
 ```html
 <select class="form-select tomselect" th:field="*{orderId}">
   <option value="">-- Select --</option>
-  <option th:each="o : ${orders}" th:value="${o.id}" th:text="${o.sign}"></option>
+  <option th:each="o : ${orders}" th:value="${o.id}"
+          th:with="subtext=${@customerorderViewHelper.customerLabel(o)}" th:attr="data-subtext=${subtext}"
+          th:text="${@customerorderViewHelper.label(o)}"></option>
 </select>
 ```
 
@@ -563,9 +565,29 @@ The class also switches on the `remove_button` plugin: every chip carries an × 
 
 ```html
 <select class="form-select tomselect tomselect-multi" th:field="*{contractIds}" multiple>
-  <option th:each="ec : ${contracts}" th:value="${ec.id}" th:text="${ec.employee.name}"></option>
+  <option th:each="ec : ${contracts}" th:value="${ec.id}" th:text="${@employeeLabelViewHelper.contractLabel(ec)}"></option>
 </select>
 ```
+
+### Bezeichnung von Stammdaten (#1266)
+
+Jede Art von Stammdaten heißt in jeder Auswahlliste gleich, und die Bezeichnung entsteht an genau
+einer Stelle — einem View-Helper je Art. Ein Template verkettet keine Felder zu einer Bezeichnung.
+
+| Stammdaten | Option | Unterzeile (`data-subtext`) | Helper |
+|---|---|---|---|
+| Person | `Vorname Nachname \| Kürzel` | – | `@employeeLabelViewHelper.label(e)` |
+| Vertrag | wie die Person | Zeitraum, offenes Ende `∞` | `.contractLabel(ec)`, `.contractPeriod(ec)` |
+| Kunde | `Kurzname - Name`, ohne eigenen Kurznamen der Name einmal | – | `@customerLabelViewHelper.label(c)` |
+| Auftrag | `Kennung - Kurzbeschreibung` | Kunde | `@customerorderViewHelper.label(co)`, `.customerLabel(co)` |
+| Unterauftrag | `Auftrag/Unterauftrag - Kurzbeschreibung` | `Auftrag-Kurzbeschreibung · Kunde` | `@suborderLabelViewHelper.label(so)`, `.subtext(so)` |
+
+- Ein Helper-Ergebnis in `data-subtext` erst mit `th:with` binden — `th:attr` erreicht keine Bohne
+  (→ „Bestätigungen und modale Dialoge").
+- Die Kennzeichnung ausgeblendeter Einträge hängt das Template an die Option
+  (→ „The `hide` Flag").
+- Wo statt der Entität ein Datensatz mit den Einzelwerten vorliegt, nimmt der Helper die Werte
+  (`label(name, sign)`); Java-Code ohne Instanz ruft die statischen `of(...)`.
 
 ### Free text field with remote suggestions
 

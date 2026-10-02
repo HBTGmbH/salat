@@ -19,7 +19,7 @@
               <option value="" th:text="#{main.customer.select.please}">--- Please select ---</option>
               <option th:each="c : ${customers}"
                       th:value="${c.id}"
-                      th:text="|${c.shortname} - ${c.name}|"
+                      th:text="${@customerLabelViewHelper.label(c)} + ${@hiddenMarkerViewHelper.suffix(c.hide)}"
                       th:selected="${fCustomerId != null and fCustomerId == c.id}"></option>
             </select>
           </div>

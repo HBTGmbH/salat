@@ -22,8 +22,9 @@
               <option value="" th:text="#{main.customerorder.select.please}">--- Auftrag ---</option>
               <option th:each="option : ${customerorderOptions}"
                       th:value="${option.sign}"
-                      th:attr="data-subtext=${option.customerLabel}"
-                      th:text="${option.label}"
+                      th:with="subtext=${option.customerLabel}"
+                      th:attr="data-subtext=${subtext}"
+                      th:text="${option.label} + ${@hiddenMarkerViewHelper.suffix(option.hide)}"
                       th:selected="${fCustomerOrderSign != null and fCustomerOrderSign == option.sign}"></option>
             </select>
           </div>
