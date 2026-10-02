@@ -837,7 +837,9 @@ Fehlerhinweis gelesen.
 - **Hover über einem Tag** ist in Matrix, Monatsübersicht und Wochenleiste gleich
   (`--salat-day-hover-*`): Fläche 18 %, Kopf bzw. Datumskachel 28 %, Tag und Wochentag blau. Volles
   Blau trägt auf diesen Tönungen nicht; die Schrift ist je Modus gemischt, bis die Datumskachel als
-  engste Stelle 4,58:1 erreicht (Werte an `--salat-day-hover-color` in `salat.css`).
+  engste Stelle hell 4,58:1 und dunkel 4,75:1 erreicht (Werte an `--salat-day-hover-color` in
+  `salat.css`). Der Hover **ersetzt** die Tönung von Wochenende und Feiertag, statt über ihr zu
+  liegen — in der Monatsübersicht sitzt sie am `tr` und wird im Hover eigens abgeräumt (#1297).
 
 ### 5.5 Rückmeldungen
 - **Erfolg/Fehler nach Redirect:** Flash-Attribute `toastSuccess` / `toastError` / `toastErrors`
@@ -1228,6 +1230,33 @@ und Feiertagsspalten der Matrix, die Fehlerzellen, die Kacheln des Dashboards un
 Tablers eigene Abstufungen taugen als Ersatz nicht — `-darken` war unter Tabler 1.5 auf hellem Grund
 *heller* als der Grundton (1,73:1–3,18:1) und `-fg` ist ein Fastweiß für gefüllte Flächen
 (1,04:1–1,11:1).
+
+#### Datumskacheln und Reiter (#1297)
+
+Die Regel für `bg-*-lt` setzt die Textfarbe an der getönten Fläche selbst. **Ein Kind mit eigener
+Farbklasse schlägt sie** — die Regel erbt sich nur, sie erzwingt nichts. Genau das taten Tag und
+Wochentag der Datumskachel in Einzel- und Monatsübersicht: `text-azure`, `text-warning`,
+`text-muted` bzw. `text-primary` am Kind, der Wochentag dazu `opacity-75`. Die gemischten
+`text-*`-Töne sind gegen Seitenfläche und Karte bemessen; die Kachel aber liegt am Wochenende und
+Feiertag getönt auf einer getönten Zeile. Tag und Wochentag tragen jetzt keine Farbklasse mehr, die
+Bedeutung steht in der Tönung allein.
+
+| Probe | hell vorher | hell nachher | dunkel vorher | dunkel nachher |
+|---|---|---|---|---|
+| Tag (Werktag, Wochenende, Feiertag, heute) | **4,18**–4,54 ✘ | 8,58–9,36 | **3,67**–6,36 ✘ | 7,63–11,08 |
+| Wochentag (mit eingerechneter Deckkraft) | **2,74–2,95** ✘ | 8,58–9,36 | **2,72–4,36** ✘ | 7,63–11,08 |
+| Kachel im Hover, Monatsübersicht | **4,28**–4,58 ✘ | 4,58 | **4,19**–4,75 ✘ | 4,75 |
+| Kachel im Hover, Wochenleiste | 4,58 | 4,58 | 4,75 | 4,75 |
+| inaktiver Reiter (`.nav-tabs`) | 4,54 | 4,54 | **3,19** ✘ | 6,00 |
+
+Der Hover fiel nur in der Monatsübersicht durch: dort sitzt die Tönung am `tr`, der Hover am `td`,
+und beide lagen übereinander. Matrix und Wochenleiste ersetzen die Tönung im Hover; die
+Monatsübersicht tut es jetzt auch, statt die Hover-Schrift dunkler zu mischen, die die Matrix
+mitbenutzt.
+
+Inaktive Reiter färbt Tabler über `--tblr-nav-link-color: var(--tblr-gray-500)` an `.nav`, in
+beiden Modi `#737373`; die Korrektur von `.text-muted` greift dort nicht. `salat.css` setzt die
+Variable für `.nav-tabs` auf `--tblr-secondary` — hell derselbe Ton, dunkel `#a3a3a3`.
 
 #### Ein satteres Gelb als Tablers
 

@@ -95,7 +95,17 @@
   }
   /* Hover wie in der Matrix (--salat-day-hover-* in salat.css): die Zeile getoent, die Datumskachel
      wie der Spaltenkopf kraeftiger und Tag und Wochentag blau. Die Schrift der Zeile bleibt - die
-     Buchungskarten erben sie. */
+     Buchungskarten erben sie. Die Toenung von Wochenende und Feiertag sitzt am tr, der Hover an
+     den td darueber; ohne die erste Regel laegen beide uebereinander und die blaue Schrift der
+     Kachel kaeme nur auf 4,19:1. So ersetzt der Hover die Toenung wie in Matrix und Wochenleiste:
+     hell 4,58:1, dunkel 4,75:1 auf jeder Kachel.
+     Tag und Wochentag der Kachel tragen im Ruhezustand bewusst keine Farbklasse und keine
+     Deckkraft: die Schrift kommt aus der bg-*-lt-Regel in salat.css, hell 8,58 bis 9,36:1, dunkel
+     7,63 bis 11,08:1. Ein text-* am Kind schlaegt diese Regel, und auf der doppelten Toenung von
+     Zeile und Kachel kam es auf 3,67:1, mit opacity-75 auf 2,72:1 (#1297). */
+  #daily-list tbody tr:hover {
+    background-color: transparent !important;
+  }
   #daily-list tbody tr:hover td {
     background-color: var(--salat-day-hover-bg) !important;
   }
@@ -610,12 +620,9 @@
                  th:classappend="(${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                  style="width:3rem">
               <div class="fw-bold lh-1"
-                   th:classappend="(${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
                    style="font-size:1.1rem"
                    th:text="${wd.date.dayOfMonth}"></div>
-              <div class="opacity-75"
-                   th:classappend="(${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
-                   style="font-size:0.65rem"
+              <div style="font-size:0.65rem"
                    th:text="${#temporals.format(wd.date, 'EEE')}"></div>
             </div>
           </div>
@@ -759,12 +766,9 @@
                    th:classappend="(${wd.isHoliday} ? 'bg-warning-lt' : (${wd.date.dayOfWeek.value >= 6} ? 'bg-azure-lt' : 'bg-secondary-lt'))"
                    style="width:3rem">
                 <div class="fw-bold lh-1"
-                     th:classappend="(${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
                      style="font-size:1.1rem"
                      th:text="${wd.date.dayOfMonth}"></div>
-                <div class="opacity-75"
-                     th:classappend="(${wd.isHoliday} ? 'text-warning' : (${wd.date.dayOfWeek.value >= 6} ? 'text-azure' : 'text-muted'))"
-                     style="font-size:0.65rem"
+                <div style="font-size:0.65rem"
                      th:text="${#temporals.format(wd.date, 'EEE')}"></div>
               </div>
             </div>
@@ -871,12 +875,9 @@
                    th:title="#{main.daily.viewday.title}"
                    style="width:3rem">
                   <div class="fw-bold lh-1"
-                       th:classappend="${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : (${day.isToday} ? 'text-primary' : 'text-muted'))"
                        style="font-size:1.1rem"
                        th:text="${day.date.dayOfMonth}"></div>
-                  <div class="opacity-75"
-                       th:classappend="${day.isHoliday} ? 'text-warning' : (${day.isWeekend} ? 'text-azure' : (${day.isToday} ? 'text-primary' : 'text-muted'))"
-                       style="font-size:0.65rem"
+                  <div style="font-size:0.65rem"
                        th:text="${#temporals.format(day.date, 'EEE')}"></div>
                 </a>
               </td>
