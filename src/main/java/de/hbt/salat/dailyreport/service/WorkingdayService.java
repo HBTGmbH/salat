@@ -393,6 +393,12 @@ public class WorkingdayService {
     return Duration.ofHours(MAX_HOURS_PER_DAY).minus(workedTime).isNegative();
   }
 
+  /**
+   * Prepares the working day a booking is made on: creates it with the given begin where there is
+   * none, and gives a day marked as not worked that begin. The start of a worked day is never
+   * touched — 00:00 is a deliberate value there (#851), and comparing hour and minute with zero one
+   * by one gave a start of 07:00 the minute of the next booking from 11:15 (#1274).
+   */
   public void seedWorkingday(long ecId, LocalDate date, int beginHour, int beginMinute) {
     var workingday = getWorkingday(ecId, date);
     if (workingday == null) {
@@ -403,9 +409,9 @@ public class WorkingdayService {
       workingday.setBreakminutes(0);
       workingday.setStarttimehour(beginHour);
       workingday.setStarttimeminute(beginMinute);
-    } else {
-      if (workingday.getStarttimehour() == 0) workingday.setStarttimehour(beginHour);
-      if (workingday.getStarttimeminute() == 0) workingday.setStarttimeminute(beginMinute);
+    } else if (workingday.getType() == NOT_WORKED) {
+      workingday.setStarttimehour(beginHour);
+      workingday.setStarttimeminute(beginMinute);
     }
     workingday.setType(Workingday.WorkingDayType.WORKED);
     upsertWorkingday(workingday);
