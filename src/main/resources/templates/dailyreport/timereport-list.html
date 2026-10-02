@@ -4,15 +4,6 @@
       layout:decorate="~{layout/base}" th:with="title=${pageTitle}">
 <main layout:fragment="content">
 
-<!--/* Die Seite ist neu und im Zuschnitt noch in Abstimmung; die Markierung sagt das, solange sie
-       gilt, und faellt mit ihr weg. */-->
-<div class="mb-3 d-print-none">
-  <span class="badge bg-azure-lt" th:text="#{main.beta.badge}">Beta</span>
-  <span class="text-secondary small ms-2" th:text="#{main.timereportlist.beta.hint}">
-    Neue Seite — Rückmeldungen willkommen.
-  </span>
-</div>
-
 <style>
   #bookings tbody tr:hover td {
     background-color: rgba(var(--tblr-primary-rgb), 0.08);
