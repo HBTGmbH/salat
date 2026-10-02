@@ -97,6 +97,26 @@ class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
     });
   }
 
+  /**
+   * The tooltip names what a click does, like the icon. The accessible name stays, aria-pressed
+   * carries the state (#1264).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_tooltip_of_the_pin_names_what_a_click_does(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard?sidebar=folded-hover", page -> {
+      Locator pin = page.locator(PIN);
+      page.locator("#salat-nav .navbar-collapse .nav-link >> nth=0").hover();
+      assertThat(pin).hasAttribute("title", "Navigation ausklappen");
+      assertThat(pin).hasAttribute("aria-label", "Navigation einklappen");
+
+      pin.click();
+      assertThat(pin).hasAttribute("title", "Navigation einklappen");
+      pin.click();
+      assertThat(pin).hasAttribute("title", "Navigation ausklappen");
+    });
+  }
+
   /** Tabler shows the pin only while the sidebar is hovered; unfolded it stays in sight (#1264). */
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")

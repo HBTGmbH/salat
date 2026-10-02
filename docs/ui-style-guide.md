@@ -70,7 +70,7 @@ Die Referenz ist der Tabler-Standard.
   wobei sie den Inhalt überlagert statt ihn zu schieben. Zwei Ergänzungen (#1264): Nach einem
   Mausklick gilt `folded`, bis die Maus die Leiste verlässt, sonst bliebe sie unter der Maus offen
   (`salat.js`). Der Knopf trägt beide Icons, `salat.css` zeigt je nach `data-bs-sidebar` das zum
-  Ein- oder Ausklappen.
+  Ein- oder Ausklappen; der Tooltip folgt ihm, das `aria-label` bleibt (`salat.js`).
 - **Icons der Sidebar:** Tabler Icons als Schrift (`ti ti-*`). Tabler reserviert in Navigation und
   Dropdown 1.25rem und erwartet ein SVG, das den Platz füllt; `salat.css` setzt die Schrift der
   Icons deshalb auf 1.25rem. Der Faltknopf ist 2rem groß, so hoch wie das Logo.

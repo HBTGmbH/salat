@@ -98,6 +98,19 @@ document.addEventListener('tabler:sidebar-folded', event => {
   }, { once: true });
 });
 
+/* Der Tooltip des Faltknopfs nennt wie sein Icon, was der Klick tut: gefaltet klappt er aus. Das
+ * aria-label bleibt, den Zustand traegt aria-pressed (base.html). */
+function syncSidebarPinTitle() {
+  const folded = (document.documentElement.getAttribute('data-bs-sidebar') ?? '').startsWith('folded');
+  document.querySelectorAll('[data-bs-toggle="sidebar-folded"][data-title-folded]').forEach(pin => {
+    pin.dataset.titleUnfolded ??= pin.title;
+    pin.title = folded ? pin.dataset.titleFolded : pin.dataset.titleUnfolded;
+  });
+}
+
+syncSidebarPinTitle();
+document.addEventListener('tabler:sidebar-folded', syncSidebarPinTitle);
+
 // The translated name sits on <body>, so no template with a multi-select has to bring it along. The
 // plugin puts it into the title only, and a role="button" takes its accessible name from its
 // content first — a screen reader would announce "×". Hence an element of our own with aria-label.
