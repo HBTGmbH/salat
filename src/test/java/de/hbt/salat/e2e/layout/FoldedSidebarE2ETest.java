@@ -18,13 +18,84 @@ import de.hbt.salat.e2e.PlaywrightE2ETestBase;
  * same loader also reads a {@code ?sidebar=} parameter, the folded state can be forced through the
  * URL without touching localStorage - which keeps the tests independent of each other.
  *
- * <p>No test here depends on hovering. The Playwright default viewport of 1280x720 is above the
+ * <p>Only the tests around folding with the mouse depend on hovering; Playwright moves the mouse
+ * onto every element it clicks or hovers. The Playwright default viewport of 1280x720 is above the
  * {@code md} breakpoint, so the folding is active.
  */
 class FoldedSidebarE2ETest extends PlaywrightE2ETestBase {
 
   private static final String PIN = "#salat-nav [data-bs-toggle='sidebar-folded']";
   private static final String OPEN_SECTION_MENU = "#salat-nav .navbar-collapse .dropdown-menu.show";
+  private static final String FIRST_SECTION_TITLE = "#salat-nav .navbar-collapse .nav-link-title >> nth=0";
+
+  /**
+   * Tabler folds to {@code folded-hover}, which stays open while the mouse is over the sidebar -
+   * and on the click it is right there, on the pin (#1264).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void a_click_on_the_pin_folds_the_sidebar_at_once(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      Locator title = page.locator(FIRST_SECTION_TITLE);
+      assertThat(title).isVisible();
+
+      page.locator(PIN).click();
+      assertThat(title).not().isVisible();
+
+      // once the mouse has left the rail, hovering opens it again, and folded-hover is what stays
+      page.mouse().move(800, 400);
+      assertThat(page.locator("html")).hasAttribute("data-bs-sidebar", "folded-hover");
+      page.locator("#salat-nav .navbar-collapse .nav-link >> nth=0").hover();
+      assertThat(title).isVisible();
+      assertEquals("folded-hover", page.evaluate("() => localStorage.getItem('tabler-sidebar')"));
+    });
+  }
+
+  /** With the keyboard the focus is on the pin, which the folded rail hides - Tabler keeps it open. */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_keyboard_folds_the_sidebar_but_keeps_it_open_while_focused(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      Locator pin = page.locator(PIN);
+      pin.focus();
+      page.keyboard().press("Enter");
+
+      assertThat(page.locator("html")).hasAttribute("data-bs-sidebar", "folded-hover");
+      assertThat(pin).isFocused();
+      assertThat(page.locator(FIRST_SECTION_TITLE)).isVisible();
+    });
+  }
+
+  /** Folded, the pin unfolds, so it points the other way - already on the first paint (#1264). */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_pin_points_the_way_it_folds(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      assertThat(page.locator(PIN + " .ti-layout-sidebar-left-collapse")).isVisible();
+      assertThat(page.locator(PIN + " .ti-layout-sidebar-left-expand")).not().isVisible();
+    });
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard?sidebar=folded-hover", page -> {
+      page.locator("#salat-nav .navbar-collapse .nav-link >> nth=0").hover();
+      assertThat(page.locator(PIN + " .ti-layout-sidebar-left-expand")).isVisible();
+      assertThat(page.locator(PIN + " .ti-layout-sidebar-left-collapse")).not().isVisible();
+    });
+  }
+
+  /**
+   * Tabler reserves 1.25rem for the icons of the navigation and of dropdown items and expects an
+   * SVG that fills it. A font icon follows the font size instead and drew 14px (#1264).
+   */
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")
+  void the_icons_of_the_sidebar_fill_the_space_tabler_gives_them(E2EBrowser browser) {
+    runAsUser(browser, E2ETestData.EMPLOYEE_MA_SIGN, "/dailyreport/dashboard", page -> {
+      assertEquals(true, page.evaluate("""
+          () => [...document.querySelectorAll('#salat-nav .nav-link-icon, #salat-nav .dropdown-item-icon')]
+              .every(icon => getComputedStyle(icon).fontSize === '20px')"""));
+      assertEquals(true, page.locator(PIN).evaluate("""
+          el => el.getBoundingClientRect().width === 32 && el.getBoundingClientRect().height === 32"""));
+    });
+  }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("de.hbt.salat.e2e.PlaywrightE2ETestBase#browsers")

@@ -66,8 +66,13 @@ Die Referenz ist der Tabler-Standard.
   setzt `data-bs-sidebar="folded-hover"` am `<html>`, merkt die Wahl unter
   `localStorage['tabler-sidebar']` und stellt sie beim nächsten Laden vor dem ersten Bildaufbau
   wieder her. Gefaltet ist die Leiste 4rem breit; Hover **und** Tastaturfokus klappen sie wieder auf,
-  wobei sie den Inhalt überlagert statt ihn zu schieben. Eigenes CSS oder JavaScript braucht das
-  nicht mehr.
+  wobei sie den Inhalt überlagert statt ihn zu schieben. Zwei Ergänzungen (#1264): Nach einem
+  Mausklick gilt `folded`, bis die Maus die Leiste verlässt, sonst bliebe sie unter der Maus offen
+  (`salat.js`). Der Knopf trägt beide Icons, `salat.css` zeigt je nach `data-bs-sidebar` das zum
+  Ein- oder Ausklappen.
+- **Icons der Sidebar:** Tabler Icons als Schrift (`ti ti-*`). Tabler reserviert in Navigation und
+  Dropdown 1.25rem und erwartet ein SVG, das den Platz füllt; `salat.css` setzt die Schrift der
+  Icons deshalb auf 1.25rem. Der Faltknopf ist 2rem groß, so hoch wie das Logo.
 - **Aufgeklappte Sektion:** der Bereich der aktuellen Seite wird serverseitig geöffnet gerendert —
   `show` am Menü **und** `aria-expanded` am Umschalter. Das Attribut ist keine Kür: Tabler findet die
   offenen Bäume nur darüber und ließe ein Menü beim Falten sonst als Panel neben der Leiste stehen.
