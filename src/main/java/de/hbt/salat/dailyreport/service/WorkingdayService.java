@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -371,6 +372,33 @@ public class WorkingdayService {
         .considerMandatoryBreak();
     return TargetEnd.of(getEffectiveStart(workingday, employeecontractId), bookedBreak, dayTarget,
         considerMandatoryBreak);
+  }
+
+  /**
+   * Up to when the day is booked, in minutes since midnight: the effective start plus the break plus
+   * the working time booked so far — the quitting time of the daily view, but without wrapping at
+   * midnight. The booking form adds the duration being entered to it and shows where that booking
+   * ends (#1263), and the live booking begins there (#851).
+   *
+   * @param excludedTimereportId the booking being edited, which counts with the duration in the form
+   *                             rather than with its stored one; {@code null} for a new booking
+   * @return empty on a day marked as not worked, which has no starting point
+   */
+  public OptionalLong getBookedUntilMinutes(long employeecontractId, LocalDate date, Long excludedTimereportId) {
+    var workingday = getWorkingday(employeecontractId, date);
+    if (workingday != null && workingday.getType() == NOT_WORKED) {
+      return OptionalLong.empty();
+    }
+    var start = getEffectiveStart(workingday, employeecontractId);
+    long breakMinutes = workingday != null
+        ? workingday.getBreakhours() * 60L + workingday.getBreakminutes()
+        : 0;
+    long workedMinutes = timereportDAO.getTimereportsByDateAndEmployeeContractId(employeecontractId, date).stream()
+        .filter(tr -> excludedTimereportId == null || tr.getId() != excludedTimereportId)
+        .map(TimereportDTO::getWorkingTime)
+        .mapToLong(Duration::toMinutes)
+        .sum();
+    return OptionalLong.of(start.getHour() * 60L + start.getMinute() + breakMinutes + workedMinutes);
   }
 
   private String endOfDay(Workingday workingday, long employeecontractId, Duration worked) {

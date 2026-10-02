@@ -15,9 +15,12 @@ import de.hbt.salat.order.viewhelper.SuborderLabelViewHelper;
  * @param label the sign with the short description, as every suborder select lists it (#1266)
  * @param absence whether its order is an absence — sickness, vacation and the like — which the form
  *                books with what is left of the target of the day (#1214)
+ * @param standby whether its order is standby, which is no working time and therefore does not move
+ *                the end of the day the form shows for the duration entered (#1263)
  */
 public record SuborderOption(Long id, String sign, String description, String label, String subtext,
-                             boolean commentNecessary, boolean trainingFlag, boolean absence) {
+                             boolean commentNecessary, boolean trainingFlag, boolean absence,
+                             boolean standby) {
 
     /**
      * What the contract can book on the day: the suborders of its employee orders valid then. The
@@ -33,7 +36,8 @@ public record SuborderOption(Long id, String sign, String description, String la
                     s.shortdescription() == null || s.shortdescription().isBlank() ? null : s.shortdescription(),
                     SuborderLabelViewHelper.of(s.completeOrderSign(), s.shortdescription()),
                     SuborderLabelViewHelper.subtextOfOrder(order), s.commentNecessary(), s.trainingFlag(),
-                    order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND)))
+                    order.getOrderType() == OrderType.KRANK_URLAUB_ABWESEND,
+                    order.getOrderType() == OrderType.BEREITSCHAFT)))
             .toList();
     }
 }

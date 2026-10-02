@@ -89,7 +89,8 @@
                   </div>
 
                   <!-- Duration entry -->
-                  <div id="durationSection" th:classappend="${beginEnd} ? 'd-none' : ''">
+                  <div id="durationSection" class="d-flex align-items-center gap-2"
+                       th:classappend="${beginEnd} ? 'd-none' : ''">
                     <input type="text" class="form-control" th:field="*{durationTime}"
                            placeholder="HH:MM" maxlength="8" inputmode="decimal"
                            style="width:auto" size="6"
@@ -102,6 +103,14 @@
                                     data-time-label-reset=#{main.timeinput.reset.tooltip},
                                     data-entry-focus=${entryFocus != null and entryFocus.name() == 'DURATION'} ? 'true' : null"
                            oninput="durationMask(event)" onblur="durationBlur(event)" onfocus="this.select()"/>
+                    <!--/* Where the booking ends (#1263): whoever notes down points in time rather than
+                           durations sees whether the duration fits without opening the daily view.
+                           Filled by updateBookingEndHint below; text-nowrap keeps label and time
+                           together when the row wraps on a phone. */-->
+                    <span id="bookingEndHint" class="text-muted text-nowrap d-none">
+                      <span th:text="#{main.timereport.form.duration.end.label}">bis ~</span>
+                      <strong id="bookingEndTime"></strong>
+                    </span>
                   </div>
 
                   <!-- Begin/End entry -->
@@ -147,6 +156,8 @@
             <!--/* data-absence-minutes (#1214): der Rest des Tagessolls, mit dem eine Abwesenheit
                    vorbelegt wird. Nur beim Anlegen gesetzt, und mit diesem Fragment bei jedem
                    Datumswechsel neu gerendert, damit er zum Tag im Formular passt.
+                   data-booked-until-minutes (#1263): bis wann der Tag ohne die Buchung im Formular
+                   gebucht ist; aus demselben Grund hier. Fehlt an einem Tag "nicht gearbeitet".
                    data-preselected-by-default: vorgewaehlt ist nur der erste der Liste, gewaehlt
                    hat ihn niemand */-->
             <div id="orders-suborders-wrapper" th:fragment="ordersAndSubordersFragment" class="mb-3">
@@ -156,6 +167,7 @@
                       data-favorite-target="/dailyreport/timereports/preferences/favorite-suborder"
                       th:attr="data-favorite-id=${favoriteSuborderId},
                                data-absence-minutes=${absenceDurationMinutes},
+                               data-booked-until-minutes=${bookedUntilMinutes},
                                data-preselected-by-default=${suborderPreselectedByDefault == true} ? 'true' : null,
                                data-entry-focus=${entryFocus != null and entryFocus.name() == 'SUBORDER'} ? 'true' : null"
                       hx-post="/dailyreport/timereports/refresh-sidebar"
@@ -167,7 +179,7 @@
                 <option th:each="s : ${suborders}"
                         th:value="${s.id}"
                         th:text="${s.label}"
-                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence}"
+                        th:attr="data-subtext=${s.subtext},data-cnr=${s.commentNecessary},data-training=${s.trainingFlag},data-absence=${s.absence},data-standby=${s.standby}"
                         th:selected="${timereportForm.suborderId != null and timereportForm.suborderId == s.id}"></option>
               </select>
               <small id="suborderId-subtext" class="form-text text-muted mt-1"></small>
@@ -492,6 +504,7 @@
       var end = minutes > 0 && begin !== null && begin + minutes < 24 * 60 ? timeInputFormat(begin + minutes) : '';
       prefillUntouched(document.getElementById('endTimeInput'), end);
       updateDurationBadge();
+      updateBookingEndHint();
     }
     function prefillUntouched(field, value) {
       if (!field || (field.value !== '' && field.value !== field.salatPrefilled)) return;
@@ -542,6 +555,25 @@
         ? Math.floor(mins / 60) + 'h' + String(mins % 60).padStart(2, '0')
         : '';
     }
+    // #1263: where the booking ends - booked up to so far, from the select, plus the duration in the
+    // field. Standby is no working time and moves nothing, and past midnight there is no time of day
+    // to show; both leave the hint out, as does a day marked as not worked, which carries no value.
+    function updateBookingEndHint() {
+      var hint = document.getElementById('bookingEndHint');
+      var sel = document.getElementById('suborderId');
+      if (!hint || !sel) return;
+      var opt = sel.options[sel.selectedIndex];
+      var bookedUntil = 'bookedUntilMinutes' in sel.dataset ? Number(sel.dataset.bookedUntilMinutes) : null;
+      var minutes = parseDurationValue(document.getElementById('durationTime').value);
+      var end = bookedUntil !== null && minutes > 0 && !(opt && opt.dataset.standby === 'true')
+        ? bookedUntil + minutes : null;
+      if (end === null || end > 24 * 60) {
+        hint.classList.add('d-none');
+        return;
+      }
+      document.getElementById('bookingEndTime').textContent = timeInputFormat(end);
+      hint.classList.remove('d-none');
+    }
     function loadShareRecipients() {
       var shareToggle = document.getElementById('shareToggle');
       var shareSection = document.getElementById('shareRecipientsSection');
@@ -586,10 +618,20 @@
     document.addEventListener('DOMContentLoaded', function() {
       var form = document.getElementById('timereportMainForm');
       form.addEventListener('change', function(e) {
-        if (e.target.id === 'suborderId') refreshShareRecipientsIfEnabled();
+        if (e.target.id === 'suborderId') {
+          refreshShareRecipientsIfEnabled();
+          updateBookingEndHint();
+        }
       });
       form.addEventListener('htmx:after:swap', function(e) {
-        if (e.target.id === 'referenceday') refreshShareRecipientsIfEnabled();
+        if (e.target.id === 'referenceday') {
+          refreshShareRecipientsIfEnabled();
+          updateBookingEndHint();
+        }
+      });
+      // every way the duration changes - typing, stepper, chips, reset - fires input (salat.js)
+      form.addEventListener('input', function(e) {
+        if (e.target.id === 'durationTime') updateBookingEndHint();
       });
       // #1196: a list that arrives after sharing was switched off again must not bring the
       // required choice back into the form
@@ -639,9 +681,10 @@
       // the rest of the day as well; a duration it was handed is not empty and therefore wins.
       // After the live booking, whose begin the end of the absence follows
       applyAbsenceDuration();
-      // the badge is computed on the client only, so it has to be filled once for whatever
-      // begin/end values the server rendered
+      // the badge and the end of the booking are computed on the client only, so they have to be
+      // filled once for whatever values the server rendered
       updateDurationBadge();
+      updateBookingEndHint();
     });
   </script>
 
