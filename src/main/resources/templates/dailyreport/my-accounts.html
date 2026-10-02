@@ -442,17 +442,24 @@
       const trainingChartOrderHours = [[${trainingChartOrderHours}]];
 
       /* Die Balkenfarben kommen aus den Tabler-Tokens statt als Literale aus dem JavaScript
-         (#1022). Gelesen wird wie in tabler.getColor die Variable --tblr-<name> vom Body; der
+         (#1022). Gelesen wird die Variable --tblr-<name> vom Body, wie es das abgekuendigte tabler.getColor tut; der
          Bundle-Aufruf selbst scheidet aus, weil tabler.min.js erst am Ende von base.html steht und
          dieses Skript davor laeuft. Die Farbtoene sind modusunabhaengig; alles Modusabhaengige -
          Schrift, Gitter, Tooltip - gestaltet salat.css, ein Nachziehen beim Moduswechsel entfaellt. */
       const tblrColor = (name) => getComputedStyle(document.body).getPropertyValue('--tblr-' + name).trim();
-      const withAlpha = (hex, alpha) => {
-        const n = parseInt(hex.replace('#', ''), 16);
-        return 'rgba(' + (n >> 16 & 255) + ', ' + (n >> 8 & 255) + ', ' + (n & 255) + ', ' + alpha + ')';
+      /* Seit Tabler 1.6 stehen die Tokens als oklch() da, nicht mehr als Hex. Den Kanalwert rechnet
+         deshalb der Browser aus: ein Pixel auf einer Leinwand, in der Farbe gefuellt, liefert ihn
+         in sRGB, gleich in welcher Schreibweise das Token steht. */
+      const swatch = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+      const withAlpha = (color, alpha) => {
+        swatch.clearRect(0, 0, 1, 1);
+        swatch.fillStyle = color;
+        swatch.fillRect(0, 0, 1, 1);
+        const [r, g, b] = swatch.getImageData(0, 0, 1, 1).data;
+        return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
       };
       // geplant: dieselbe Farbe in hellerer Stufe, wie .progress-bar-planned in den Balken
-      const planned = (hex) => withAlpha(hex, 0.45);
+      const planned = (color) => withAlpha(color, 0.45);
       const number = (value) => Number(value).toLocaleString(document.documentElement.lang || 'de',
           { maximumFractionDigits: 1 });
 
