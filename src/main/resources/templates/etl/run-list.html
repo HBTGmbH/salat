@@ -117,7 +117,9 @@
            Lauf steht sofort als „Laeuft" da, sein Ergebnis kommt erst mit dem naechsten Laden. */-->
     <div class="card-header">
       <h3 class="card-title" th:text="#{main.etl.run.table.title}">Läufe</h3>
-      <div th:replace="~{fragments/refresh-button :: refreshButton(@{/etl/runs})}"></div>
+      <div class="card-actions">
+        <a th:replace="~{fragments/refresh-button :: refreshButton(@{/etl/runs})}"></a>
+      </div>
     </div>
     <div class="table-responsive">
       <table class="table table-vcenter card-table">

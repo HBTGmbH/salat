@@ -19,21 +19,25 @@
       <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" id="jiraReplicationTabs">
         <li class="nav-item">
           <a href="#tab-replications" class="nav-link active" data-bs-toggle="tab" id="tab-replications-button">
-            <i class="icon ti ti-settings me-1"></i>
+            <i class="ti ti-settings me-1"></i>
             <span th:text="#{main.jira.replication.tab.replications}">Replikationen</span>
           </a>
         </li>
         <li class="nav-item">
           <a href="#tab-runs" class="nav-link" data-bs-toggle="tab" id="tab-runs-button">
-            <i class="icon ti ti-history me-1"></i>
+            <i class="ti ti-history me-1"></i>
             <span th:text="#{main.jira.replication.tab.runs}">Läufe</span>
           </a>
         </li>
+        <!--/* Von beiden Tabs aus erreichbar (#1287): ein angestossener Lauf und die stuendlichen
+               Laeufe aendern die Liste im Hintergrund. Als letzter Eintrag der Tab-Leiste und nicht
+               als card-actions daneben: so bleibt der Kopf so hoch wie die Tabs, wie in Meine Konten.
+               Das Skript unten haengt den offenen Tab an den Link, der UiState-Filter ergaenzt „Nur
+               Fehlerhafte". */-->
+        <li class="nav-item ms-auto d-flex align-items-center">
+          <a th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications})}"></a>
+        </li>
       </ul>
-      <!--/* Von beiden Tabs aus erreichbar (#1287): ein angestossener Lauf und die stuendlichen
-             Laeufe aendern die Liste im Hintergrund. Das Skript unten haengt den offenen Tab an
-             den Link, der UiState-Filter ergaenzt „Nur Fehlerhafte". */-->
-      <div th:replace="~{fragments/refresh-button :: refreshButton(@{/jira/replications})}"></div>
     </div>
     <div class="card-body">
       <div class="tab-content">
