@@ -40,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
+import de.hbt.salat.auth.domain.AuthorizedUser;
 import de.hbt.salat.common.domain.AuditedEntity;
 import de.hbt.salat.common.test.FixedClock;
 import de.hbt.salat.common.util.DateTimeUtils;
@@ -70,11 +71,15 @@ class JiraReplicationServiceTest {
   @MockitoBean
   private JiraReplicationRunService runService;
 
+  @MockitoBean
+  private AuthorizedUser authorizedUser;
+
   @Autowired
   private JiraReplicationService jiraReplicationService;
 
   @BeforeEach
   void setUp() {
+    when(authorizedUser.isAuthenticated()).thenReturn(true);
     when(searchClients.forFlavor(SERVER)).thenReturn(searchClient);
   }
 
